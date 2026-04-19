@@ -1,5 +1,7 @@
 ﻿using System.Windows;
-using ProGlassAutomation.Views.SGU;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
 
 namespace ProGlassAutomation
 {
@@ -9,23 +11,65 @@ namespace ProGlassAutomation
         {
             InitializeComponent();
 
-            // DEFAULT VIEW = SGU IN MAIN AREA
-            MainContent.Content = new SguView();
+            // DEFAULT VIEW (IMPORTANT)
+            LoadView("SGU");
         }
 
-        private void SGU_Click(object sender, RoutedEventArgs e)
+        // ================= ACTIVE BUTTON STYLE =================
+
+        private void SetActive(Border active)
         {
-            MainContent.Content = new SguView(); // ✔ shows SGU in main panel
+            SGUButton.Background = new SolidColorBrush(Color.FromRgb(45, 45, 48));
+            DGUButton.Background = new SolidColorBrush(Color.FromRgb(45, 45, 48));
+            LAMButton.Background = new SolidColorBrush(Color.FromRgb(45, 45, 48));
+
+            active.Background = new SolidColorBrush(Color.FromRgb(59, 130, 246));
         }
 
-        private void DGU_Click(object sender, RoutedEventArgs e)
+        // ================= VIEW LOADER =================
+
+        private void LoadView(string view)
         {
-            MessageBox.Show("DGU will load in main panel next step");
+            switch (view)
+            {
+                case "SGU":
+                    SetActive(SGUButton);
+                    MainPanel.Content =
+                        new Views.SGU.SguView();
+                    break;
+
+                case "DGU":
+                    SetActive(DGUButton);
+                    MainPanel.Content =
+                        new Views.DGU.DguView();
+                    break;
+
+                case "LAM":
+                    SetActive(LAMButton);
+
+                    MessageBox.Show("Lamination module coming soon!",
+                        "Info",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                    break;
+            }
         }
 
-        private void Lamination_Click(object sender, RoutedEventArgs e)
+        // ================= EVENTS =================
+
+        private void SGU_Click(object sender, MouseButtonEventArgs e)
         {
-            MessageBox.Show("Lamination coming soon");
+            LoadView("SGU");
+        }
+
+        private void DGU_Click(object sender, MouseButtonEventArgs e)
+        {
+            LoadView("DGU");
+        }
+
+        private void LAM_Click(object sender, MouseButtonEventArgs e)
+        {
+            LoadView("LAM");
         }
     }
 }

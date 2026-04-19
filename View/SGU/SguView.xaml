@@ -22,7 +22,7 @@
                            HorizontalAlignment="Center"
                            Margin="0,0,0,15"/>
 
-                <!-- THICKNESS CARD -->
+                <!-- THICKNESS -->
                 <Border Background="#F5F5F5"
                         CornerRadius="14"
                         Padding="10"
@@ -33,11 +33,8 @@
                         <TextBlock Text="Thickness"
                                    FontWeight="Bold"/>
 
-                        <!-- FIXED: STRING BASED DROPDOWN -->
                         <ComboBox SelectedItem="{Binding Thickness, Mode=TwoWay}"
                                   IsEditable="True"
-                                  Background="Transparent"
-                                  BorderThickness="0"
                                   Height="30">
 
                             <sys:String>6mm</sys:String>
@@ -53,7 +50,7 @@
 
                 </Border>
 
-                <!-- COLOR CARD -->
+                <!-- COLOR -->
                 <Border Background="#F5F5F5"
                         CornerRadius="14"
                         Padding="10"
@@ -64,11 +61,8 @@
                         <TextBlock Text="Color"
                                    FontWeight="Bold"/>
 
-                        <!-- FIXED: STRING BASED DROPDOWN -->
                         <ComboBox SelectedItem="{Binding Color, Mode=TwoWay}"
                                   IsEditable="True"
-                                  Background="Transparent"
-                                  BorderThickness="0"
                                   Height="30">
 
                             <sys:String>Clear</sys:String>
@@ -83,7 +77,7 @@
 
                 </Border>
 
-                <!-- INPUT SECTION -->
+                <!-- INPUTS -->
                 <Border Background="#F5F5F5"
                         CornerRadius="14"
                         Padding="10"
@@ -93,26 +87,18 @@
 
                         <TextBlock Text="Sheet Price"/>
                         <TextBox Text="{Binding Sheet, UpdateSourceTrigger=PropertyChanged}"
-                                 Background="Transparent"
-                                 BorderThickness="0"
                                  Height="30"/>
 
                         <TextBlock Text="Cutting"/>
                         <TextBox Text="{Binding Cutting, UpdateSourceTrigger=PropertyChanged}"
-                                 Background="Transparent"
-                                 BorderThickness="0"
                                  Height="30"/>
 
                         <TextBlock Text="Tempering"/>
                         <TextBox Text="{Binding Tempering, UpdateSourceTrigger=PropertyChanged}"
-                                 Background="Transparent"
-                                 BorderThickness="0"
                                  Height="30"/>
 
                         <TextBlock Text="Profit %"/>
                         <TextBox Text="{Binding Profit, UpdateSourceTrigger=PropertyChanged}"
-                                 Background="Transparent"
-                                 BorderThickness="0"
                                  Height="30"/>
 
                     </StackPanel>
@@ -129,6 +115,7 @@
                                FontSize="28"
                                FontWeight="Bold"
                                HorizontalAlignment="Center"/>
+
                 </Border>
 
                 <!-- SAVE -->
@@ -137,13 +124,14 @@
                         Height="45"
                         FontWeight="Bold"
                         Click="Save_Click"
-                        Margin="0,5,0,10"/>
+                        Margin="0,0,0,10"/>
 
-                <!-- HISTORY -->
+                <!-- HISTORY TITLE -->
                 <TextBlock Text="SGU HISTORY"
                            FontWeight="Bold"
-                           Margin="0,10,0,5"/>
+                           Margin="0,5,0,5"/>
 
+                <!-- HISTORY LIST (KEPT EXACTLY AS YOU WANTED) -->
                 <ListBox ItemsSource="{Binding Records}"
                          Height="160">
 

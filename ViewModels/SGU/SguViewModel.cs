@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using ProGlassAutomation.Models;
 using ProGlassAutomation.Data.Database;
 
 namespace ProGlassAutomation.ViewModels.SGU
@@ -16,10 +17,29 @@ namespace ProGlassAutomation.ViewModels.SGU
         public string Thickness { get; set; }
         public string Color { get; set; }
 
-        public string Sheet { get => sheet == 0 ? "" : sheet.ToString(); set { double.TryParse(value, out sheet); Calc(); } }
-        public string Cutting { get => cutting == 0 ? "" : cutting.ToString(); set { double.TryParse(value, out cutting); Calc(); } }
-        public string Tempering { get => tempering == 0 ? "" : tempering.ToString(); set { double.TryParse(value, out tempering); Calc(); } }
-        public string Profit { get => profit == 0 ? "" : profit.ToString(); set { double.TryParse(value, out profit); Calc(); } }
+        public string Sheet
+        {
+            get => sheet == 0 ? "" : sheet.ToString();
+            set { double.TryParse(value, out sheet); Calc(); }
+        }
+
+        public string Cutting
+        {
+            get => cutting == 0 ? "" : cutting.ToString();
+            set { double.TryParse(value, out cutting); Calc(); }
+        }
+
+        public string Tempering
+        {
+            get => tempering == 0 ? "" : tempering.ToString();
+            set { double.TryParse(value, out tempering); Calc(); }
+        }
+
+        public string Profit
+        {
+            get => profit == 0 ? "" : profit.ToString();
+            set { double.TryParse(value, out profit); Calc(); }
+        }
 
         double result;
         public string Result => result.ToString("0.00");
@@ -49,16 +69,5 @@ namespace ProGlassAutomation.ViewModels.SGU
             foreach (var r in DbHelper.GetAllFormatted())
                 Records.Add(r);
         }
-    }
-
-    public class SguRecord
-    {
-        public string Thickness { get; set; }
-        public string Color { get; set; }
-        public double Result { get; set; }
-        public string CreatedAt { get; set; }
-
-        // FINAL DISPLAY STRING
-        public string DisplayText { get; set; }
     }
 }
