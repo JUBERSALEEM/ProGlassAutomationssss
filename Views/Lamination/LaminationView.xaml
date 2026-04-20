@@ -1,0 +1,229 @@
+﻿<UserControl x:Class="ProGlassAutomation.Views.Lamination.LaminationView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid Background="#EAFBF3">
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+
+            <Grid HorizontalAlignment="Center">
+
+                <!-- MAIN CARD -->
+                <Border Width="650"
+                        Background="White"
+                        CornerRadius="14"
+                        Padding="15"
+                        Margin="10"
+                        BorderBrush="#CDEBDD"
+                        BorderThickness="1">
+
+                    <StackPanel>
+
+                        <!-- TITLE -->
+                        <Border Background="#065F46"
+                                CornerRadius="10"
+                                Padding="10"
+                                Margin="5">
+
+                            <TextBlock Text="LAMINATION CALCULATOR"
+                                       Foreground="White"
+                                       FontSize="20"
+                                       FontWeight="Bold"
+                                       HorizontalAlignment="Center"/>
+                        </Border>
+
+                        <!-- OUTER GLASS -->
+                        <Border Background="#FF8C00"
+                                CornerRadius="10"
+                                Padding="10"
+                                Margin="5">
+
+                            <StackPanel>
+
+                                <TextBlock Text="OUTER GLASS"
+                                           Foreground="White"
+                                           FontWeight="Bold"/>
+
+                                <TextBlock Text="Thickness" Foreground="White"/>
+                                <ComboBox ItemsSource="{Binding ThicknessOptions}"
+                                          SelectedItem="{Binding Thickness1, Mode=TwoWay}"
+                                          IsEditable="True"
+                                          Height="30"/>
+
+                                <TextBlock Text="Color" Foreground="White"/>
+                                <ComboBox ItemsSource="{Binding ColorOptions}"
+                                          SelectedItem="{Binding Color1, Mode=TwoWay}"
+                                          IsEditable="True"
+                                          Height="30"/>
+
+                                <TextBlock Text="Sheet" Foreground="White"/>
+                                <TextBox Text="{Binding Sheet1, UpdateSourceTrigger=PropertyChanged}"
+                                         Height="30"/>
+
+                            </StackPanel>
+
+                        </Border>
+
+                        <!-- INNER GLASS -->
+                        <Border Background="#2563EB"
+                                CornerRadius="10"
+                                Padding="10"
+                                Margin="5">
+
+                            <StackPanel>
+
+                                <TextBlock Text="INNER GLASS"
+                                           Foreground="White"
+                                           FontWeight="Bold"/>
+
+                                <TextBlock Text="Thickness" Foreground="White"/>
+                                <ComboBox ItemsSource="{Binding ThicknessOptions}"
+                                          SelectedItem="{Binding Thickness2, Mode=TwoWay}"
+                                          IsEditable="True"
+                                          Height="30"/>
+
+                                <TextBlock Text="Color" Foreground="White"/>
+                                <ComboBox ItemsSource="{Binding ColorOptions}"
+                                          SelectedItem="{Binding Color2, Mode=TwoWay}"
+                                          IsEditable="True"
+                                          Height="30"/>
+
+                                <TextBlock Text="Sheet" Foreground="White"/>
+                                <TextBox Text="{Binding Sheet2, UpdateSourceTrigger=PropertyChanged}"
+                                         Height="30"/>
+
+                            </StackPanel>
+
+                        </Border>
+
+                        <!-- PVB SECTION (CORRECTED) -->
+                        <Border Background="#7C3AED"
+                                CornerRadius="10"
+                                Padding="10"
+                                Margin="5">
+
+                            <StackPanel>
+
+                                <TextBlock Text="PVB LAYER"
+                                           Foreground="White"
+                                           FontWeight="Bold"/>
+
+                                <!-- TEXT ONLY -->
+                                <ComboBox ItemsSource="{Binding PVBOptions}"
+                                          SelectedItem="{Binding PVBType, Mode=TwoWay}"
+                                          Height="30"/>
+
+                                <!-- REAL PRICE INPUT (USED IN CALCULATION) -->
+                                <TextBox Text="{Binding PVBPrice, UpdateSourceTrigger=PropertyChanged}"
+                                         Height="30"
+                                         Margin="0,8,0,0"/>
+
+                            </StackPanel>
+
+                        </Border>
+
+                        <!-- CHARGES -->
+                        <Border Background="#374151"
+                                CornerRadius="10"
+                                Padding="10"
+                                Margin="5">
+
+                            <StackPanel>
+
+                                <TextBlock Text="CHARGES"
+                                           Foreground="White"
+                                           FontWeight="Bold"/>
+
+                                <CheckBox Content="Include Cutting"
+                                          Foreground="White"
+                                          IsChecked="{Binding IncludeCutting}"/>
+
+                                <TextBox Text="{Binding Cutting}"
+                                         Height="30"/>
+
+                                <CheckBox Content="Include Tempering"
+                                          Foreground="White"
+                                          IsChecked="{Binding IncludeTempering}"/>
+
+                                <TextBox Text="{Binding Tempering}"
+                                         Height="30"/>
+
+                            </StackPanel>
+
+                        </Border>
+
+                        <!-- PROFIT -->
+                        <Border Background="#0F766E"
+                                CornerRadius="10"
+                                Padding="10"
+                                Margin="5">
+
+                            <ComboBox ItemsSource="{Binding ProfitOptions}"
+                                      SelectedItem="{Binding Profit, Mode=TwoWay}"
+                                      Height="30"/>
+
+                        </Border>
+
+                        <!-- RESULT -->
+                        <Border Background="#DCFCE7"
+                                CornerRadius="12"
+                                Padding="10"
+                                Margin="8">
+
+                            <TextBlock Text="{Binding Result}"
+                                       FontSize="22"
+                                       FontWeight="Bold"
+                                       HorizontalAlignment="Center"
+                                       Foreground="#065F46"/>
+
+                        </Border>
+
+                        <!-- SAVE -->
+                        <Button Content="SAVE LAMINATION"
+                                Command="{Binding SaveCommand}"
+                                Background="#10B981"
+                                Foreground="White"
+                                FontWeight="Bold"
+                                Height="36"
+                                Margin="8"/>
+
+                        <!-- HISTORY -->
+                        <Border Background="#FF8C00"
+                                CornerRadius="10"
+                                Padding="8"
+                                Margin="5">
+
+                            <TextBlock Text="HISTORY"
+                                       Foreground="White"
+                                       FontWeight="Bold"
+                                       HorizontalAlignment="Center"/>
+                        </Border>
+
+                        <ListBox ItemsSource="{Binding Records}"
+                                 Height="180">
+
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#F3FAF7"
+                                            CornerRadius="8"
+                                            Padding="8"
+                                            Margin="3">
+
+                                        <TextBlock Text="{Binding DisplayText}"/>
+                                    </Border>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+
+                        </ListBox>
+
+                    </StackPanel>
+
+                </Border>
+
+            </Grid>
+
+        </ScrollViewer>
+
+    </Grid>
+
+</UserControl>
