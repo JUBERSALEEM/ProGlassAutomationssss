@@ -15,15 +15,21 @@
 
             <StackPanel>
 
-                <!-- TITLE -->
-                <TextBlock Text="SGU CALCULATOR"
-                           FontSize="26"
-                           FontWeight="Bold"
-                           HorizontalAlignment="Center"
-                           Margin="0,0,0,15"/>
+                <!-- HEADER -->
+                <Border Background="SaddleBrown"
+                CornerRadius="14"
+                Padding="10"
+                Margin="0,0,0,8">
+
+                    <TextBlock Text="SGU CALCULATOR"
+                       FontSize="20"
+                       FontWeight="Bold"
+                       Foreground="White"
+                       HorizontalAlignment="Center"/>
+                </Border>
 
                 <!-- THICKNESS -->
-                <Border Background="#D6ECFF"
+                <Border Background="#FF8C00"
                         CornerRadius="14"
                         Padding="10"
                         Margin="0,5,0,10">
@@ -51,7 +57,7 @@
                 </Border>
 
                 <!-- COLOR -->
-                <Border Background="#D6ECFF"
+                <Border Background="#FF8C00"
                         CornerRadius="14"
                         Padding="10"
                         Margin="0,0,0,10">
@@ -78,7 +84,7 @@
                 </Border>
 
                 <!-- INPUTS -->
-                <Border Background="#D6ECFF"
+                <Border Background="#FF8C00"
                         CornerRadius="14"
                         Padding="10"
                         Margin="0,0,0,10">
@@ -106,7 +112,7 @@
                 </Border>
 
                 <!-- RESULT -->
-                <Border Background="#D6ECFF"
+                <Border Background="#FF8C00"
                         CornerRadius="15"
                         Padding="15"
                         Margin="0,0,0,10">
@@ -120,16 +126,24 @@
 
                 <!-- SAVE -->
                 <Button Content="SAVE SGU"
-                        Background="#FF8C00"
+                        Background="SaddleBrown"
                         Height="45"
                         FontWeight="Bold"
                         Click="Save_Click"
                         Margin="0,0,0,10"/>
 
-                <!-- HISTORY TITLE -->
-                <TextBlock Text="SGU HISTORY"
-                           FontWeight="Bold"
-                           Margin="0,5,0,5"/>
+                <!-- HISTORY HEADER -->
+                <Border Background="SaddleBrown"
+              CornerRadius="14"
+              Padding="8"
+              Margin="5">
+
+                    <TextBlock Text="HISTORY"
+                     FontSize="16"
+                     FontWeight="Bold"
+                     Foreground="White"
+                     HorizontalAlignment="Center"/>
+                </Border>
 
                 <!-- HISTORY LIST (KEPT EXACTLY AS YOU WANTED) -->
                 <ListBox ItemsSource="{Binding Records}"
@@ -138,7 +152,7 @@
                     <ListBox.ItemTemplate>
                         <DataTemplate>
 
-                            <Border Background="#D6ECFF"
+                            <Border Background="SaddleBrown"
                                     CornerRadius="10"
                                     Padding="8"
                                     Margin="0,3">

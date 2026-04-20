@@ -1,0 +1,45 @@
+﻿<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+
+    <!-- Background -->
+    <circle cx="256" cy="256" r="240" fill="#E3F2FD"/>
+
+    <!-- Outer glass frame -->
+    <rect x="110" y="120" width="292" height="270" rx="30"
+          fill="#90CAF9" stroke="#1565C0" stroke-width="8"/>
+
+    <!-- Divider lines (SGU / DGU / LAMINATION) -->
+    <line x1="110" y1="210" x2="402" y2="210"
+          stroke="#0D47A1" stroke-width="3"/>
+
+    <line x1="110" y1="300" x2="402" y2="300"
+          stroke="#0D47A1" stroke-width="3"/>
+
+    <!-- SGU -->
+    <text x="256" y="190"
+          font-size="42"
+          font-family="Arial"
+          font-weight="bold"
+          text-anchor="middle"
+          fill="#0D47A1">SGU</text>
+
+    <!-- DGU -->
+    <text x="256" y="280"
+          font-size="42"
+          font-family="Arial"
+          font-weight="bold"
+          text-anchor="middle"
+          fill="#0D47A1">DGU</text>
+
+    <!-- LAMINATION -->
+    <text x="256" y="370"
+          font-size="34"
+          font-family="Arial"
+          font-weight="bold"
+          text-anchor="middle"
+          fill="#0D47A1">LAMINATION</text>
+
+    <!-- Glass shine effect -->
+    <path d="M140 140 L250 120 L220 240 Z"
+          fill="#BBDEFB" opacity="0.6"/>
+
+</svg>

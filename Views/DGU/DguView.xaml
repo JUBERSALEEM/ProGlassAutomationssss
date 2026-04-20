@@ -7,7 +7,7 @@
         <StackPanel Width="880" Margin="10" HorizontalAlignment="Center">
 
             <!-- HEADER -->
-            <Border Background="#FF8C00"
+            <Border Background="SaddleBrown"
                 CornerRadius="14"
                 Padding="10"
                 Margin="0,0,0,8">
@@ -20,7 +20,7 @@
             </Border>
 
             <!-- ================= GLASS 1 ================= -->
-            <Border Background="#C8E6C9"
+            <Border Background="#FF8C00"
                 CornerRadius="12"
                 Padding="10"
                 Margin="5">
@@ -30,7 +30,7 @@
                     <!-- THICKNESS -->
                     <TextBlock Text="Glass 1 Thickness (6mm–19mm)"
                            FontSize="11"
-                           Foreground="Gray"/>
+                           Foreground="Black"/>
 
                     <ComboBox ItemsSource="{Binding ThicknessList}"
                           SelectedItem="{Binding Thickness1}"
@@ -41,7 +41,7 @@
                     <!-- COLOR -->
                     <TextBlock Text="Glass 1 Sheet Color"
                            FontSize="11"
-                           Foreground="Gray"/>
+                           Foreground="Black"/>
 
                     <ComboBox ItemsSource="{Binding ColorList}"
                           SelectedItem="{Binding Color1}"
@@ -53,7 +53,7 @@
                     <!-- PRICE -->
                     <TextBlock Text="Glass 1 Sheet Price"
                            FontSize="11"
-                           Foreground="Gray"/>
+                           Foreground="Black"/>
 
                     <TextBox Text="{Binding Sheet1}"
                          Height="28"
@@ -64,7 +64,7 @@
             </Border>
 
             <!-- ================= GLASS 2 ================= -->
-            <Border Background="#DCEDC8"
+            <Border Background="#FF8C00"
                 CornerRadius="12"
                 Padding="10"
                 Margin="5">
@@ -74,7 +74,7 @@
                     <!-- THICKNESS -->
                     <TextBlock Text="Glass 2 Thickness (6mm–19mm)"
                            FontSize="11"
-                           Foreground="Gray"/>
+                           Foreground="Black"/>
 
                     <ComboBox ItemsSource="{Binding ThicknessList}"
                           SelectedItem="{Binding Thickness2}"
@@ -85,7 +85,7 @@
                     <!-- COLOR -->
                     <TextBlock Text="Glass 2 Sheet Color"
                            FontSize="11"
-                           Foreground="Gray"/>
+                           Foreground="Black"/>
 
                     <ComboBox ItemsSource="{Binding ColorList}"
                           SelectedItem="{Binding Color2}"
@@ -97,7 +97,7 @@
                     <!-- PRICE -->
                     <TextBlock Text="Glass 2 Sheet Price"
                            FontSize="11"
-                           Foreground="Gray"/>
+                           Foreground="Black"/>
 
                     <TextBox Text="{Binding Sheet2}"
                          Height="28"
@@ -108,7 +108,7 @@
             </Border>
 
             <!-- ================= ASP ================= -->
-            <Border Background="#BBDEFB"
+            <Border Background="#FF8C00"
                 CornerRadius="12"
                 Padding="10"
                 Margin="5">
@@ -117,7 +117,7 @@
 
                     <TextBlock Text="ASP TYPE (Normal / Black + auto pricing)"
                            FontSize="11"
-                           Foreground="Gray"/>
+                           Foreground="Black"/>
 
                     <ComboBox ItemsSource="{Binding AspList}"
                           SelectedItem="{Binding AspType}"
@@ -130,7 +130,7 @@
             </Border>
 
             <!-- ================= PROFIT ================= -->
-            <Border Background="#BBDEFB"
+            <Border Background="#FF8C00"
                 CornerRadius="12"
                 Padding="10"
                 Margin="5">
@@ -139,7 +139,7 @@
 
                     <TextBlock Text="PROFIT MARGIN (15%–35%)"
                            FontSize="11"
-                           Foreground="Gray"/>
+                           Foreground="Black"/>
 
                     <ComboBox ItemsSource="{Binding ProfitList}"
                           SelectedItem="{Binding Profit}"
@@ -167,14 +167,14 @@
             <Button Content="SAVE DGU"
                 Height="38"
                 Margin="5"
-                Background="#4CAF50"
+                Background="SaddleBrown"
                 Foreground="White"
                 FontWeight="Bold"
                 ToolTip="Save current calculation to history"
                 Click="Save_Click"/>
 
             <!-- HISTORY HEADER -->
-            <Border Background="#FF8C00"
+            <Border Background="SaddleBrown"
                 CornerRadius="14"
                 Padding="8"
                 Margin="5">
@@ -204,7 +204,7 @@
                     <ListBox.ItemTemplate>
                         <DataTemplate>
 
-                            <Border Background="#D6ECFF"
+                            <Border Background="SaddleBrown"
                                 CornerRadius="8"
                                 Padding="6"
                                 Margin="2"

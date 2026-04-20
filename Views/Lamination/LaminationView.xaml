@@ -20,7 +20,7 @@
                     <StackPanel>
 
                         <!-- TITLE -->
-                        <Border Background="#065F46"
+                        <Border Background="SaddleBrown"
                                 CornerRadius="10"
                                 Padding="10"
                                 Margin="5">
@@ -44,19 +44,19 @@
                                            Foreground="White"
                                            FontWeight="Bold"/>
 
-                                <TextBlock Text="Thickness" Foreground="White"/>
+                                <TextBlock Text="Thickness" Foreground="Black"/>
                                 <ComboBox ItemsSource="{Binding ThicknessOptions}"
                                           SelectedItem="{Binding Thickness1, Mode=TwoWay}"
                                           IsEditable="True"
                                           Height="30"/>
 
-                                <TextBlock Text="Color" Foreground="White"/>
+                                <TextBlock Text="Color" Foreground="Black"/>
                                 <ComboBox ItemsSource="{Binding ColorOptions}"
                                           SelectedItem="{Binding Color1, Mode=TwoWay}"
                                           IsEditable="True"
                                           Height="30"/>
 
-                                <TextBlock Text="Sheet" Foreground="White"/>
+                                <TextBlock Text="Sheet" Foreground="Black"/>
                                 <TextBox Text="{Binding Sheet1, UpdateSourceTrigger=PropertyChanged}"
                                          Height="30"/>
 
@@ -65,7 +65,7 @@
                         </Border>
 
                         <!-- INNER GLASS -->
-                        <Border Background="#2563EB"
+                        <Border Background="#FF8C00"
                                 CornerRadius="10"
                                 Padding="10"
                                 Margin="5">
@@ -76,19 +76,19 @@
                                            Foreground="White"
                                            FontWeight="Bold"/>
 
-                                <TextBlock Text="Thickness" Foreground="White"/>
+                                <TextBlock Text="Thickness" Foreground="Black"/>
                                 <ComboBox ItemsSource="{Binding ThicknessOptions}"
                                           SelectedItem="{Binding Thickness2, Mode=TwoWay}"
                                           IsEditable="True"
                                           Height="30"/>
 
-                                <TextBlock Text="Color" Foreground="White"/>
+                                <TextBlock Text="Color" Foreground="Black"/>
                                 <ComboBox ItemsSource="{Binding ColorOptions}"
                                           SelectedItem="{Binding Color2, Mode=TwoWay}"
                                           IsEditable="True"
                                           Height="30"/>
 
-                                <TextBlock Text="Sheet" Foreground="White"/>
+                                <TextBlock Text="Sheet" Foreground="Black"/>
                                 <TextBox Text="{Binding Sheet2, UpdateSourceTrigger=PropertyChanged}"
                                          Height="30"/>
 
@@ -97,7 +97,7 @@
                         </Border>
 
                         <!-- PVB SECTION (CORRECTED) -->
-                        <Border Background="#7C3AED"
+                        <Border Background="#FF8C00"
                                 CornerRadius="10"
                                 Padding="10"
                                 Margin="5">
@@ -123,7 +123,7 @@
                         </Border>
 
                         <!-- CHARGES -->
-                        <Border Background="#374151"
+                        <Border Background="#FF8C00"
                                 CornerRadius="10"
                                 Padding="10"
                                 Margin="5">
@@ -131,18 +131,18 @@
                             <StackPanel>
 
                                 <TextBlock Text="CHARGES"
-                                           Foreground="White"
+                                           Foreground="Black"
                                            FontWeight="Bold"/>
 
                                 <CheckBox Content="Include Cutting"
-                                          Foreground="White"
+                                          Foreground="Black"
                                           IsChecked="{Binding IncludeCutting}"/>
 
                                 <TextBox Text="{Binding Cutting}"
                                          Height="30"/>
 
                                 <CheckBox Content="Include Tempering"
-                                          Foreground="White"
+                                          Foreground="Black"
                                           IsChecked="{Binding IncludeTempering}"/>
 
                                 <TextBox Text="{Binding Tempering}"
@@ -165,7 +165,7 @@
                         </Border>
 
                         <!-- RESULT -->
-                        <Border Background="#DCFCE7"
+                        <Border Background="#FF8C00"
                                 CornerRadius="12"
                                 Padding="10"
                                 Margin="8">
@@ -181,14 +181,14 @@
                         <!-- SAVE -->
                         <Button Content="SAVE LAMINATION"
                                 Command="{Binding SaveCommand}"
-                                Background="#10B981"
+                                Background="SaddleBrown"
                                 Foreground="White"
                                 FontWeight="Bold"
                                 Height="36"
                                 Margin="8"/>
 
                         <!-- HISTORY -->
-                        <Border Background="#FF8C00"
+                        <Border Background="SaddleBrown"
                                 CornerRadius="10"
                                 Padding="8"
                                 Margin="5">

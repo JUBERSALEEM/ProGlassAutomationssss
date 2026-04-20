@@ -16,14 +16,14 @@
 
         <!-- ================= SIDEBAR (RESTORED STYLE) ================= -->
         <Border Grid.Column="0"
-                Background="#1F1F1F"
+                Background="SandyBrown"
                 Padding="15">
 
             <StackPanel>
 
                 <!-- HEADER (OLD STYLE RESTORED) -->
                 <TextBlock Text="GLASS ERP"
-                           Foreground="White"
+                           Foreground="Black"
                            FontSize="20"
                            FontWeight="Bold"
                            Margin="10"/>
@@ -32,7 +32,7 @@
                 <Border x:Name="SGUButton"
                         CornerRadius="12"
                         Margin="5"
-                        Background="#2D2D30"
+                        Background="SaddleBrown"
                         MouseDown="SGU_Click">
 
                     <TextBlock Text="SGU"
@@ -44,7 +44,7 @@
                 <Border x:Name="DGUButton"
                         CornerRadius="12"
                         Margin="5"
-                        Background="#2D2D30"
+                        Background="SaddleBrown"
                         MouseDown="DGU_Click">
 
                     <TextBlock Text="DGU"
@@ -56,7 +56,7 @@
                 <Border x:Name="LAMButton"
                         CornerRadius="12"
                         Margin="5"
-                        Background="#2D2D30"
+                        Background="SaddleBrown"
                         MouseDown="LAM_Click">
 
                     <TextBlock Text="LAMINATION"
