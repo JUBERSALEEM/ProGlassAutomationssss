@@ -1,14 +1,34 @@
-﻿using System.Configuration;
-using System.Data;
-using System.Windows;
+﻿using System.Windows;
+using ProGlassAutomation.Data.Database;
 
 namespace ProGlassAutomation
 {
-    /// <summary>
-    /// Interaction logic for App.xaml
-    /// </summary>
     public partial class App : Application
     {
-    }
+        protected override void OnStartup(StartupEventArgs e)
+        {
+            base.OnStartup(e);
 
+            try
+            {
+                // 🔵 Initialize database (VERY IMPORTANT)
+                DbHelper.Init();
+
+                System.Diagnostics.Debug.WriteLine("✔ DATABASE INITIALIZED");
+            }
+            catch (System.Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("❌ DB INIT FAILED: " + ex.Message);
+
+                MessageBox.Show(
+                    "Database initialization failed:\n" + ex.Message,
+                    "Database Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error
+                );
+
+                Shutdown();
+            }
+        }
+    }
 }

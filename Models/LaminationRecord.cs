@@ -14,11 +14,18 @@ namespace ProGlassAutomation.Models
 
         public string PVBType { get; set; }
 
-        // ✔ safer as decimal consistency
         public double Result { get; set; }
 
         public string CreatedAt { get; set; }
 
+        // ================= FIX: ADD MISSING FIELDS =================
+        public double Cutting { get; set; }
+        public double Tempering { get; set; }
+
+        public bool IncludeCutting { get; set; }
+        public bool IncludeTempering { get; set; }
+
+        // ================= DISPLAY =================
         public string DisplayText
         {
             get

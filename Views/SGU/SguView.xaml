@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
-    <Grid Background="#FF8C00">
+    <Grid Background="#D6ECFF">
 
         <!-- MAIN CARD -->
         <Border Width="650"
@@ -23,7 +23,7 @@
                            Margin="0,0,0,15"/>
 
                 <!-- THICKNESS -->
-                <Border Background="#F5F5F5"
+                <Border Background="#D6ECFF"
                         CornerRadius="14"
                         Padding="10"
                         Margin="0,5,0,10">
@@ -51,7 +51,7 @@
                 </Border>
 
                 <!-- COLOR -->
-                <Border Background="#F5F5F5"
+                <Border Background="#D6ECFF"
                         CornerRadius="14"
                         Padding="10"
                         Margin="0,0,0,10">
@@ -78,7 +78,7 @@
                 </Border>
 
                 <!-- INPUTS -->
-                <Border Background="#F5F5F5"
+                <Border Background="#D6ECFF"
                         CornerRadius="14"
                         Padding="10"
                         Margin="0,0,0,10">
@@ -106,7 +106,7 @@
                 </Border>
 
                 <!-- RESULT -->
-                <Border Background="#FFF3E0"
+                <Border Background="#D6ECFF"
                         CornerRadius="15"
                         Padding="15"
                         Margin="0,0,0,10">
@@ -138,7 +138,7 @@
                     <ListBox.ItemTemplate>
                         <DataTemplate>
 
-                            <Border Background="#F5F5F5"
+                            <Border Background="#D6ECFF"
                                     CornerRadius="10"
                                     Padding="8"
                                     Margin="0,3">
