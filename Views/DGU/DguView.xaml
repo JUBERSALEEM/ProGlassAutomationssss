@@ -7,7 +7,7 @@
         <ScrollViewer VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled">
 
-            <!-- ✅ OUTER WHITE CARD (MATCH SGU STYLE) -->
+            <!-- OUTER CARD -->
             <Border Width="900"
                     Padding="20"
                     CornerRadius="25"
@@ -31,7 +31,7 @@
                                    HorizontalAlignment="Center"/>
                     </Border>
 
-                    <!-- GLASS 1 -->
+                    <!-- ================= GLASS 1 ================= -->
                     <Border Background="#0A6ED1"
                             CornerRadius="14"
                             Padding="10"
@@ -43,32 +43,41 @@
                                        Foreground="White"
                                        FontSize="11"/>
 
+                            <!-- FIXED: Editable + dropdown -->
                             <ComboBox ItemsSource="{Binding ThicknessList}"
-                                      SelectedItem="{Binding Thickness1}"
-                                      Height="28"/>
+                                      SelectedItem="{Binding Thickness1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      IsEditable="True"
+                                      StaysOpenOnEdit="True"
+                                      Height="28"
+                                      ToolTip="Enter or select thickness (6mm–19mm)"/>
 
                             <TextBlock Text="🎨 Glass 1 Sheet Color"
                                        Foreground="White"
                                        FontSize="11"
                                        Margin="0,5,0,0"/>
 
+                            <!-- FIXED: Editable -->
                             <ComboBox ItemsSource="{Binding ColorList}"
-                                      SelectedItem="{Binding Color1}"
-                                      Height="28"/>
+                                      SelectedItem="{Binding Color1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      IsEditable="True"
+                                      StaysOpenOnEdit="True"
+                                      Height="28"
+                                      ToolTip="Enter or select glass color"/>
 
                             <TextBlock Text="💰 Glass 1 Sheet Price"
                                        Foreground="White"
                                        FontSize="11"
                                        Margin="0,5,0,0"/>
 
-                            <TextBox Text="{Binding Sheet1}"
-                                     Height="28"/>
+                            <TextBox Text="{Binding Sheet1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     Height="28"
+                                     ToolTip="Enter sheet price"/>
 
                         </StackPanel>
 
                     </Border>
 
-                    <!-- GLASS 2 -->
+                    <!-- ================= GLASS 2 ================= -->
                     <Border Background="#0A6ED1"
                             CornerRadius="14"
                             Padding="10"
@@ -81,8 +90,11 @@
                                        FontSize="11"/>
 
                             <ComboBox ItemsSource="{Binding ThicknessList}"
-                                      SelectedItem="{Binding Thickness2}"
-                                      Height="28"/>
+                                      SelectedItem="{Binding Thickness2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      IsEditable="True"
+                                      StaysOpenOnEdit="True"
+                                      Height="28"
+                                      ToolTip="Enter or select thickness"/>
 
                             <TextBlock Text="🎨 Glass 2 Sheet Color"
                                        Foreground="White"
@@ -90,16 +102,20 @@
                                        Margin="0,5,0,0"/>
 
                             <ComboBox ItemsSource="{Binding ColorList}"
-                                      SelectedItem="{Binding Color2}"
-                                      Height="28"/>
+                                      SelectedItem="{Binding Color2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      IsEditable="True"
+                                      StaysOpenOnEdit="True"
+                                      Height="28"
+                                      ToolTip="Enter or select color"/>
 
                             <TextBlock Text="💰 Glass 2 Sheet Price"
                                        Foreground="White"
                                        FontSize="11"
                                        Margin="0,5,0,0"/>
 
-                            <TextBox Text="{Binding Sheet2}"
-                                     Height="28"/>
+                            <TextBox Text="{Binding Sheet2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     Height="28"
+                                     ToolTip="Enter sheet price"/>
 
                         </StackPanel>
 
@@ -118,8 +134,10 @@
                                        FontSize="11"/>
 
                             <ComboBox ItemsSource="{Binding AspList}"
-                                      SelectedItem="{Binding AspType}"
-                                      Height="28"/>
+                                      SelectedItem="{Binding AspType, Mode=TwoWay}"
+                                      IsEditable="True"
+                                      Height="28"
+                                      ToolTip="Select ASP type"/>
 
                         </StackPanel>
 
@@ -138,8 +156,10 @@
                                        FontSize="11"/>
 
                             <ComboBox ItemsSource="{Binding ProfitList}"
-                                      SelectedItem="{Binding Profit}"
-                                      Height="28"/>
+                                      SelectedItem="{Binding Profit, Mode=TwoWay}"
+                                      IsEditable="True"
+                                      Height="28"
+                                      ToolTip="Select profit margin"/>
 
                         </StackPanel>
 
@@ -177,7 +197,8 @@
                             Background="#0854A0"
                             Foreground="White"
                             FontWeight="Bold"
-                            Click="Save_Click"/>
+                            Click="Save_Click"
+                            ToolTip="Save DGU calculation"/>
 
                     <!-- HISTORY HEADER -->
                     <Border Background="#0A6ED1"
@@ -195,7 +216,8 @@
                     <!-- SEARCH -->
                     <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                              Height="28"
-                             Margin="5"/>
+                             Margin="5"
+                             ToolTip="Search history"/>
 
                     <!-- HISTORY LIST -->
                     <Border Background="White"
