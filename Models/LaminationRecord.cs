@@ -18,14 +18,12 @@ namespace ProGlassAutomation.Models
 
         public string CreatedAt { get; set; }
 
-        // ================= FIX: ADD MISSING FIELDS =================
+        // 🔥 NEW (SAFE ERP EXTENSION)
         public double Cutting { get; set; }
         public double Tempering { get; set; }
-
         public bool IncludeCutting { get; set; }
         public bool IncludeTempering { get; set; }
 
-        // ================= DISPLAY =================
         public string DisplayText
         {
             get

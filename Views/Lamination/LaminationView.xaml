@@ -25,7 +25,7 @@
                                 Padding="10"
                                 Margin="5">
 
-                            <TextBlock Text="LAMINATION CALCULATOR"
+                            <TextBlock Text="🧪 LAMINATION CALCULATOR"
                                        Foreground="White"
                                        FontSize="20"
                                        FontWeight="Bold"
@@ -40,23 +40,23 @@
 
                             <StackPanel>
 
-                                <TextBlock Text="OUTER GLASS"
+                                <TextBlock Text="🪟 OUTER GLASS"
                                            Foreground="White"
                                            FontWeight="Bold"/>
 
-                                <TextBlock Text="Thickness" Foreground="Black"/>
+                                <TextBlock Text="📏 Thickness" Foreground="Black"/>
                                 <ComboBox ItemsSource="{Binding ThicknessOptions}"
                                           SelectedItem="{Binding Thickness1, Mode=TwoWay}"
                                           IsEditable="True"
                                           Height="30"/>
 
-                                <TextBlock Text="Color" Foreground="Black"/>
+                                <TextBlock Text="🎨 Color" Foreground="Black"/>
                                 <ComboBox ItemsSource="{Binding ColorOptions}"
                                           SelectedItem="{Binding Color1, Mode=TwoWay}"
                                           IsEditable="True"
                                           Height="30"/>
 
-                                <TextBlock Text="Sheet" Foreground="Black"/>
+                                <TextBlock Text="💰 Sheet" Foreground="Black"/>
                                 <TextBox Text="{Binding Sheet1, UpdateSourceTrigger=PropertyChanged}"
                                          Height="30"/>
 
@@ -72,23 +72,23 @@
 
                             <StackPanel>
 
-                                <TextBlock Text="INNER GLASS"
+                                <TextBlock Text="🪟 INNER GLASS"
                                            Foreground="White"
                                            FontWeight="Bold"/>
 
-                                <TextBlock Text="Thickness" Foreground="Black"/>
+                                <TextBlock Text="📏 Thickness" Foreground="Black"/>
                                 <ComboBox ItemsSource="{Binding ThicknessOptions}"
                                           SelectedItem="{Binding Thickness2, Mode=TwoWay}"
                                           IsEditable="True"
                                           Height="30"/>
 
-                                <TextBlock Text="Color" Foreground="Black"/>
+                                <TextBlock Text="🎨 Color" Foreground="Black"/>
                                 <ComboBox ItemsSource="{Binding ColorOptions}"
                                           SelectedItem="{Binding Color2, Mode=TwoWay}"
                                           IsEditable="True"
                                           Height="30"/>
 
-                                <TextBlock Text="Sheet" Foreground="Black"/>
+                                <TextBlock Text="💰 Sheet" Foreground="Black"/>
                                 <TextBox Text="{Binding Sheet2, UpdateSourceTrigger=PropertyChanged}"
                                          Height="30"/>
 
@@ -96,7 +96,7 @@
 
                         </Border>
 
-                        <!-- PVB SECTION (CORRECTED) -->
+                        <!-- PVB SECTION -->
                         <Border Background="#FF8C00"
                                 CornerRadius="10"
                                 Padding="10"
@@ -104,16 +104,14 @@
 
                             <StackPanel>
 
-                                <TextBlock Text="PVB LAYER"
+                                <TextBlock Text="🧴 PVB LAYER"
                                            Foreground="White"
                                            FontWeight="Bold"/>
 
-                                <!-- TEXT ONLY -->
                                 <ComboBox ItemsSource="{Binding PVBOptions}"
                                           SelectedItem="{Binding PVBType, Mode=TwoWay}"
                                           Height="30"/>
 
-                                <!-- REAL PRICE INPUT (USED IN CALCULATION) -->
                                 <TextBox Text="{Binding PVBPrice, UpdateSourceTrigger=PropertyChanged}"
                                          Height="30"
                                          Margin="0,8,0,0"/>
@@ -130,18 +128,18 @@
 
                             <StackPanel>
 
-                                <TextBlock Text="CHARGES"
+                                <TextBlock Text="⚙ CHARGES"
                                            Foreground="Black"
                                            FontWeight="Bold"/>
 
-                                <CheckBox Content="Include Cutting"
+                                <CheckBox Content="✂ Include Cutting"
                                           Foreground="Black"
                                           IsChecked="{Binding IncludeCutting}"/>
 
                                 <TextBox Text="{Binding Cutting}"
                                          Height="30"/>
 
-                                <CheckBox Content="Include Tempering"
+                                <CheckBox Content="🔥 Include Tempering"
                                           Foreground="Black"
                                           IsChecked="{Binding IncludeTempering}"/>
 
@@ -158,9 +156,17 @@
                                 Padding="10"
                                 Margin="5">
 
-                            <ComboBox ItemsSource="{Binding ProfitOptions}"
-                                      SelectedItem="{Binding Profit, Mode=TwoWay}"
-                                      Height="30"/>
+                            <StackPanel>
+
+                                <TextBlock Text="📈 PROFIT"
+                                           Foreground="White"
+                                           FontWeight="Bold"/>
+
+                                <ComboBox ItemsSource="{Binding ProfitOptions}"
+                                          SelectedItem="{Binding Profit, Mode=TwoWay}"
+                                          Height="30"/>
+
+                            </StackPanel>
 
                         </Border>
 
@@ -170,16 +176,26 @@
                                 Padding="10"
                                 Margin="8">
 
-                            <TextBlock Text="{Binding Result}"
-                                       FontSize="22"
-                                       FontWeight="Bold"
-                                       HorizontalAlignment="Center"
-                                       Foreground="#065F46"/>
+                            <StackPanel HorizontalAlignment="Center">
+
+                                <TextBlock Text="📊 RESULT"
+                                           FontSize="14"
+                                           FontWeight="Bold"
+                                           HorizontalAlignment="Center"
+                                           Margin="0,0,0,5"/>
+
+                                <TextBlock Text="{Binding Result}"
+                                           FontSize="22"
+                                           FontWeight="Bold"
+                                           HorizontalAlignment="Center"
+                                           Foreground="#065F46"/>
+
+                            </StackPanel>
 
                         </Border>
 
                         <!-- SAVE -->
-                        <Button Content="SAVE LAMINATION"
+                        <Button Content="💾 SAVE LAMINATION"
                                 Command="{Binding SaveCommand}"
                                 Background="SaddleBrown"
                                 Foreground="White"
@@ -193,7 +209,7 @@
                                 Padding="8"
                                 Margin="5">
 
-                            <TextBlock Text="HISTORY"
+                            <TextBlock Text="📜 HISTORY"
                                        Foreground="White"
                                        FontWeight="Bold"
                                        HorizontalAlignment="Center"/>
@@ -204,13 +220,16 @@
 
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
+
                                     <Border Background="SaddleBrown"
                                             CornerRadius="8"
                                             Padding="8"
                                             Margin="3">
 
-                                        <TextBlock Text="{Binding DisplayText}"/>
+                                        <TextBlock Text="{Binding DisplayText}"
+                                                   Foreground="White"/>
                                     </Border>
+
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
 

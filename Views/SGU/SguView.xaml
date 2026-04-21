@@ -17,18 +17,18 @@
 
                 <!-- HEADER -->
                 <Border Background="SaddleBrown"
-                CornerRadius="14"
-                Padding="10"
-                Margin="0,0,0,8">
+                        CornerRadius="14"
+                        Padding="10"
+                        Margin="0,0,0,8">
 
-                    <TextBlock Text="SGU CALCULATOR"
-                       FontSize="20"
-                       FontWeight="Bold"
-                       Foreground="White"
-                       HorizontalAlignment="Center"/>
+                    <TextBlock Text="📊 SGU CALCULATOR"
+                               FontSize="20"
+                               FontWeight="Bold"
+                               Foreground="White"
+                               HorizontalAlignment="Center"/>
                 </Border>
 
-                <!-- THICKNESS -->
+                <!-- THICKNESS (FIXED DROPDOWN) -->
                 <Border Background="#FF8C00"
                         CornerRadius="14"
                         Padding="10"
@@ -36,13 +36,14 @@
 
                     <StackPanel>
 
-                        <TextBlock Text="Thickness"
+                        <TextBlock Text="📏 Thickness"
                                    FontWeight="Bold"/>
 
                         <ComboBox SelectedItem="{Binding Thickness, Mode=TwoWay}"
                                   IsEditable="True"
                                   Height="30">
 
+                            <!-- RESTORED ITEMS -->
                             <sys:String>6mm</sys:String>
                             <sys:String>8mm</sys:String>
                             <sys:String>10mm</sys:String>
@@ -56,7 +57,7 @@
 
                 </Border>
 
-                <!-- COLOR -->
+                <!-- COLOR (FIXED DROPDOWN) -->
                 <Border Background="#FF8C00"
                         CornerRadius="14"
                         Padding="10"
@@ -64,13 +65,14 @@
 
                     <StackPanel>
 
-                        <TextBlock Text="Color"
+                        <TextBlock Text="🎨 Color"
                                    FontWeight="Bold"/>
 
                         <ComboBox SelectedItem="{Binding Color, Mode=TwoWay}"
                                   IsEditable="True"
                                   Height="30">
 
+                            <!-- RESTORED ITEMS -->
                             <sys:String>Clear</sys:String>
                             <sys:String>HD Grey</sys:String>
                             <sys:String>HD Blue</sys:String>
@@ -91,19 +93,19 @@
 
                     <StackPanel>
 
-                        <TextBlock Text="Sheet Price"/>
+                        <TextBlock Text="💰 Sheet Price"/>
                         <TextBox Text="{Binding Sheet, UpdateSourceTrigger=PropertyChanged}"
                                  Height="30"/>
 
-                        <TextBlock Text="Cutting"/>
+                        <TextBlock Text="✂ Cutting"/>
                         <TextBox Text="{Binding Cutting, UpdateSourceTrigger=PropertyChanged}"
                                  Height="30"/>
 
-                        <TextBlock Text="Tempering"/>
+                        <TextBlock Text="🔥 Tempering"/>
                         <TextBox Text="{Binding Tempering, UpdateSourceTrigger=PropertyChanged}"
                                  Height="30"/>
 
-                        <TextBlock Text="Profit %"/>
+                        <TextBlock Text="📈 Profit %"/>
                         <TextBox Text="{Binding Profit, UpdateSourceTrigger=PropertyChanged}"
                                  Height="30"/>
 
@@ -117,35 +119,44 @@
                         Padding="15"
                         Margin="0,0,0,10">
 
-                    <TextBlock Text="{Binding Result}"
-                               FontSize="28"
-                               FontWeight="Bold"
-                               HorizontalAlignment="Center"/>
+                    <StackPanel HorizontalAlignment="Center">
+
+                        <TextBlock Text="📊 RESULT"
+                                   FontSize="14"
+                                   FontWeight="Bold"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,0,0,5"/>
+
+                        <TextBlock Text="{Binding Result}"
+                                   FontSize="28"
+                                   FontWeight="Bold"
+                                   HorizontalAlignment="Center"/>
+
+                    </StackPanel>
 
                 </Border>
 
                 <!-- SAVE -->
-                <Button Content="SAVE SGU"
+                <Button Content="💾 SAVE SGU"
                         Background="SaddleBrown"
                         Height="45"
                         FontWeight="Bold"
                         Click="Save_Click"
                         Margin="0,0,0,10"/>
 
-                <!-- HISTORY HEADER -->
+                <!-- HISTORY -->
                 <Border Background="SaddleBrown"
-              CornerRadius="14"
-              Padding="8"
-              Margin="5">
+                        CornerRadius="14"
+                        Padding="8"
+                        Margin="5">
 
-                    <TextBlock Text="HISTORY"
-                     FontSize="16"
-                     FontWeight="Bold"
-                     Foreground="White"
-                     HorizontalAlignment="Center"/>
+                    <TextBlock Text="📜 HISTORY"
+                               FontSize="16"
+                               FontWeight="Bold"
+                               Foreground="White"
+                               HorizontalAlignment="Center"/>
                 </Border>
 
-                <!-- HISTORY LIST (KEPT EXACTLY AS YOU WANTED) -->
                 <ListBox ItemsSource="{Binding Records}"
                          Height="160">
 
@@ -158,8 +169,8 @@
                                     Margin="0,3">
 
                                 <TextBlock Text="{Binding DisplayText}"
+                                           Foreground="White"
                                            FontWeight="SemiBold"/>
-
                             </Border>
 
                         </DataTemplate>

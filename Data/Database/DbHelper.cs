@@ -137,9 +137,7 @@ namespace ProGlassAutomation.Data.Database
             ExecuteSafeAlter(conn, "ALTER TABLE LaminationRecords ADD COLUMN IncludeTempering INTEGER DEFAULT 0");
         }
 
-        // =====================================================
-        // AUTO BACKUP SYSTEM
-        // =====================================================
+        // ================= BACKUP =================
         public static void AutoBackup()
         {
             try
@@ -162,9 +160,7 @@ namespace ProGlassAutomation.Data.Database
             catch { }
         }
 
-        // =====================================================
-        // SGU
-        // =====================================================
+        // ================= SGU =================
         public static void Save(string thickness, string color, double result)
         {
             using var conn = new SqliteConnection(connStr);
@@ -211,9 +207,7 @@ namespace ProGlassAutomation.Data.Database
             return list;
         }
 
-        // =====================================================
-        // DGU
-        // =====================================================
+        // ================= DGU =================
         public static void SaveDgu(string t1, string c1, string t2, string c2, string spacer, double result)
         {
             using var conn = new SqliteConnection(connStr);
@@ -267,9 +261,7 @@ namespace ProGlassAutomation.Data.Database
             return list;
         }
 
-        // =====================================================
-        // LAMINATION
-        // =====================================================
+        // ================= LAMINATION =================
         public static void SaveLamination(LaminationRecord r)
         {
             using var conn = new SqliteConnection(connStr);
@@ -323,16 +315,19 @@ namespace ProGlassAutomation.Data.Database
                     Color2 = r.GetString(4),
                     PVBType = r.GetString(5),
                     Result = r.GetDouble(6),
-                    CreatedAt = r.GetString(7)
+                    CreatedAt = r.GetString(7),
+
+                    Cutting = r.FieldCount > 8 && !r.IsDBNull(8) ? r.GetDouble(8) : 0,
+                    Tempering = r.FieldCount > 9 && !r.IsDBNull(9) ? r.GetDouble(9) : 0,
+                    IncludeCutting = r.FieldCount > 10 && !r.IsDBNull(10) && r.GetInt32(10) == 1,
+                    IncludeTempering = r.FieldCount > 11 && !r.IsDBNull(11) && r.GetInt32(11) == 1
                 });
             }
 
             return list;
         }
 
-        // =====================================================
-        // SEARCH SYSTEM
-        // =====================================================
+        // ================= SEARCH =================
         public static List<SguRecord> SearchSGU(string k)
         {
             var list = new List<SguRecord>();

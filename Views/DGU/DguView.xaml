@@ -4,225 +4,219 @@
 
     <Grid Background="#D6ECFF">
 
-        <StackPanel Width="880" Margin="10" HorizontalAlignment="Center">
+        <!-- SCROLL -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
 
-            <!-- HEADER -->
-            <Border Background="SaddleBrown"
-                CornerRadius="14"
-                Padding="10"
-                Margin="0,0,0,8">
+            <StackPanel Width="880"
+                        Margin="10"
+                        HorizontalAlignment="Center">
 
-                <TextBlock Text="DGU CALCULATOR"
-                       FontSize="20"
-                       FontWeight="Bold"
-                       Foreground="White"
-                       HorizontalAlignment="Center"/>
-            </Border>
+                <!-- HEADER -->
+                <Border Background="SaddleBrown"
+                        CornerRadius="14"
+                        Padding="10"
+                        Margin="0,0,0,8">
 
-            <!-- ================= GLASS 1 ================= -->
-            <Border Background="#FF8C00"
-                CornerRadius="12"
-                Padding="10"
-                Margin="5">
+                    <TextBlock Text="🧮 DGU CALCULATOR"
+                               FontSize="20"
+                               FontWeight="Bold"
+                               Foreground="White"
+                               HorizontalAlignment="Center"/>
+                </Border>
 
-                <StackPanel>
+                <!-- GLASS 1 -->
+                <Border Background="#FF8C00"
+                        CornerRadius="12"
+                        Padding="10"
+                        Margin="5">
 
-                    <!-- THICKNESS -->
-                    <TextBlock Text="Glass 1 Thickness (6mm–19mm)"
-                           FontSize="11"
-                           Foreground="Black"/>
+                    <StackPanel>
 
-                    <ComboBox ItemsSource="{Binding ThicknessList}"
-                          SelectedItem="{Binding Thickness1}"
-                          Height="28"
-                          IsEditable="True"
-                          ToolTip="Select or manually enter thickness (6mm, 8mm, 10mm, 12mm, 15mm, 19mm)"/>
+                        <TextBlock Text="🔷 Glass 1 Thickness (6mm–19mm)"
+                                   FontSize="11"/>
 
-                    <!-- COLOR -->
-                    <TextBlock Text="Glass 1 Sheet Color"
-                           FontSize="11"
-                           Foreground="Black"/>
+                        <ComboBox ItemsSource="{Binding ThicknessList}"
+                                  SelectedItem="{Binding Thickness1}"
+                                  Height="28"
+                                  IsEditable="True"/>
 
-                    <ComboBox ItemsSource="{Binding ColorList}"
-                          SelectedItem="{Binding Color1}"
-                          Height="28"
-                          Margin="0,3"
-                          IsEditable="True"
-                          ToolTip="Select or type sheet color"/>
+                        <TextBlock Text="🎨 Glass 1 Sheet Color"
+                                   FontSize="11"/>
 
-                    <!-- PRICE -->
-                    <TextBlock Text="Glass 1 Sheet Price"
-                           FontSize="11"
-                           Foreground="Black"/>
+                        <ComboBox ItemsSource="{Binding ColorList}"
+                                  SelectedItem="{Binding Color1}"
+                                  Height="28"
+                                  Margin="0,3"
+                                  IsEditable="True"/>
 
-                    <TextBox Text="{Binding Sheet1}"
+                        <TextBlock Text="💰 Glass 1 Sheet Price"
+                                   FontSize="11"/>
+
+                        <TextBox Text="{Binding Sheet1}"
+                                 Height="28"/>
+
+                    </StackPanel>
+
+                </Border>
+
+                <!-- GLASS 2 -->
+                <Border Background="#FF8C00"
+                        CornerRadius="12"
+                        Padding="10"
+                        Margin="5">
+
+                    <StackPanel>
+
+                        <TextBlock Text="🔷 Glass 2 Thickness (6mm–19mm)"
+                                   FontSize="11"/>
+
+                        <ComboBox ItemsSource="{Binding ThicknessList}"
+                                  SelectedItem="{Binding Thickness2}"
+                                  Height="28"
+                                  IsEditable="True"/>
+
+                        <TextBlock Text="🎨 Glass 2 Sheet Color"
+                                   FontSize="11"/>
+
+                        <ComboBox ItemsSource="{Binding ColorList}"
+                                  SelectedItem="{Binding Color2}"
+                                  Height="28"
+                                  Margin="0,3"
+                                  IsEditable="True"/>
+
+                        <TextBlock Text="💰 Glass 2 Sheet Price"
+                                   FontSize="11"/>
+
+                        <TextBox Text="{Binding Sheet2}"
+                                 Height="28"/>
+
+                    </StackPanel>
+
+                </Border>
+
+                <!-- ASP -->
+                <Border Background="#FF8C00"
+                        CornerRadius="12"
+                        Padding="10"
+                        Margin="5">
+
+                    <StackPanel>
+
+                        <TextBlock Text="⚙ ASP TYPE (Normal / Black)"
+                                   FontSize="11"/>
+
+                        <ComboBox ItemsSource="{Binding AspList}"
+                                  SelectedItem="{Binding AspType}"
+                                  Height="28"
+                                  IsEditable="True"/>
+
+                    </StackPanel>
+
+                </Border>
+
+                <!-- PROFIT -->
+                <Border Background="#FF8C00"
+                        CornerRadius="12"
+                        Padding="10"
+                        Margin="5">
+
+                    <StackPanel>
+
+                        <TextBlock Text="📈 PROFIT MARGIN (15%–35%)"
+                                   FontSize="11"/>
+
+                        <ComboBox ItemsSource="{Binding ProfitList}"
+                                  SelectedItem="{Binding Profit}"
+                                  Height="28"
+                                  IsEditable="True"/>
+
+                    </StackPanel>
+
+                </Border>
+
+                <!-- RESULT (ICON ADDED) -->
+                <Border Background="SaddleBrown"
+                        CornerRadius="12"
+                        Padding="10"
+                        Margin="5">
+
+                    <StackPanel HorizontalAlignment="Center">
+
+                        <!-- ICON LABEL -->
+                        <TextBlock Text="📊 DGU RESULT"
+                                   FontSize="14"
+                                   FontWeight="Bold"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,0,0,5"/>
+
+                        <!-- VALUE -->
+                        <TextBlock Text="{Binding Result}"
+                                   FontSize="22"
+                                   FontWeight="Bold"
+                                   HorizontalAlignment="Center"/>
+
+                    </StackPanel>
+
+                </Border>
+
+                <!-- SAVE -->
+                <Button Content="💾 SAVE DGU"
+                        Height="38"
+                        Margin="5"
+                        Background="SaddleBrown"
+                        Foreground="White"
+                        FontWeight="Bold"
+                        Click="Save_Click"/>
+
+                <!-- HISTORY -->
+                <Border Background="SaddleBrown"
+                        CornerRadius="14"
+                        Padding="8"
+                        Margin="5">
+
+                    <TextBlock Text="📜 HISTORY"
+                               FontSize="16"
+                               FontWeight="Bold"
+                               Foreground="White"
+                               HorizontalAlignment="Center"/>
+                </Border>
+
+                <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                          Height="28"
-                         ToolTip="Enter sheet price for Glass 1"/>
+                         Margin="5"/>
 
-                </StackPanel>
+                <!-- HISTORY LIST -->
+                <Border Background="White"
+                        CornerRadius="12"
+                        Padding="5"
+                        Margin="5">
 
-            </Border>
+                    <ListBox ItemsSource="{Binding FilteredRecords}">
 
-            <!-- ================= GLASS 2 ================= -->
-            <Border Background="#FF8C00"
-                CornerRadius="12"
-                Padding="10"
-                Margin="5">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
 
-                <StackPanel>
+                                <Border Background="SaddleBrown"
+                                        CornerRadius="8"
+                                        Padding="6"
+                                        Margin="2">
 
-                    <!-- THICKNESS -->
-                    <TextBlock Text="Glass 2 Thickness (6mm–19mm)"
-                           FontSize="11"
-                           Foreground="Black"/>
+                                    <TextBlock Text="{Binding DisplayText}"
+                                               FontSize="12"
+                                               Foreground="White"/>
+                                </Border>
 
-                    <ComboBox ItemsSource="{Binding ThicknessList}"
-                          SelectedItem="{Binding Thickness2}"
-                          Height="28"
-                          IsEditable="True"
-                          ToolTip="Select or manually enter thickness"/>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
 
-                    <!-- COLOR -->
-                    <TextBlock Text="Glass 2 Sheet Color"
-                           FontSize="11"
-                           Foreground="Black"/>
+                    </ListBox>
 
-                    <ComboBox ItemsSource="{Binding ColorList}"
-                          SelectedItem="{Binding Color2}"
-                          Height="28"
-                          Margin="0,3"
-                          IsEditable="True"
-                          ToolTip="Select or type sheet color"/>
+                </Border>
 
-                    <!-- PRICE -->
-                    <TextBlock Text="Glass 2 Sheet Price"
-                           FontSize="11"
-                           Foreground="Black"/>
+            </StackPanel>
 
-                    <TextBox Text="{Binding Sheet2}"
-                         Height="28"
-                         ToolTip="Enter sheet price for Glass 2"/>
-
-                </StackPanel>
-
-            </Border>
-
-            <!-- ================= ASP ================= -->
-            <Border Background="#FF8C00"
-                CornerRadius="12"
-                Padding="10"
-                Margin="5">
-
-                <StackPanel>
-
-                    <TextBlock Text="ASP TYPE (Normal / Black + auto pricing)"
-                           FontSize="11"
-                           Foreground="Black"/>
-
-                    <ComboBox ItemsSource="{Binding AspList}"
-                          SelectedItem="{Binding AspType}"
-                          Height="28"
-                          IsEditable="True"
-                          ToolTip="ASP type auto adds price based on thickness"/>
-
-                </StackPanel>
-
-            </Border>
-
-            <!-- ================= PROFIT ================= -->
-            <Border Background="#FF8C00"
-                CornerRadius="12"
-                Padding="10"
-                Margin="5">
-
-                <StackPanel>
-
-                    <TextBlock Text="PROFIT MARGIN (15%–35%)"
-                           FontSize="11"
-                           Foreground="Black"/>
-
-                    <ComboBox ItemsSource="{Binding ProfitList}"
-                          SelectedItem="{Binding Profit}"
-                          Height="28"
-                          IsEditable="True"
-                          ToolTip="Select or manually adjust profit margin"/>
-
-                </StackPanel>
-
-            </Border>
-
-            <!-- RESULT -->
-            <Border Background="White"
-                CornerRadius="12"
-                Padding="10"
-                Margin="5">
-
-                <TextBlock Text="{Binding Result}"
-                       FontSize="22"
-                       FontWeight="Bold"
-                       HorizontalAlignment="Center"/>
-            </Border>
-
-            <!-- SAVE -->
-            <Button Content="SAVE DGU"
-                Height="38"
-                Margin="5"
-                Background="SaddleBrown"
-                Foreground="White"
-                FontWeight="Bold"
-                ToolTip="Save current calculation to history"
-                Click="Save_Click"/>
-
-            <!-- HISTORY HEADER -->
-            <Border Background="SaddleBrown"
-                CornerRadius="14"
-                Padding="8"
-                Margin="5">
-
-                <TextBlock Text="HISTORY"
-                       FontSize="16"
-                       FontWeight="Bold"
-                       Foreground="White"
-                       HorizontalAlignment="Center"/>
-            </Border>
-
-            <!-- SEARCH -->
-            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                 Height="28"
-                 Margin="5"
-                 ToolTip="Search saved DGU records"/>
-
-            <!-- HISTORY LIST -->
-            <Border Background="White"
-                CornerRadius="12"
-                Padding="5"
-                Margin="5">
-
-                <ListBox ItemsSource="{Binding FilteredRecords}"
-                     Height="120">
-
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-
-                            <Border Background="SaddleBrown"
-                                CornerRadius="8"
-                                Padding="6"
-                                Margin="2"
-                                ToolTip="Click to view record">
-
-                                <TextBlock Text="{Binding DisplayText}"
-                                       FontSize="12"/>
-
-                            </Border>
-
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-
-                </ListBox>
-
-            </Border>
-
-        </StackPanel>
+        </ScrollViewer>
 
     </Grid>
 </UserControl>
