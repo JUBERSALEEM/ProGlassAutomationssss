@@ -8,20 +8,20 @@
 
             <Grid HorizontalAlignment="Center">
 
-                <!-- MAIN CARD -->
-                <Border Width="650"
+                <!-- MAIN CARD (MATCH DGU WIDTH 900px) -->
+                <Border Width="900"
                         Background="White"
-                        CornerRadius="14"
-                        Padding="15"
+                        CornerRadius="25"
+                        Padding="20"
                         Margin="10"
-                        BorderBrush="#CDEBDD"
+                        BorderBrush="#DCEBFF"
                         BorderThickness="1">
 
                     <StackPanel>
 
                         <!-- TITLE -->
-                        <Border Background="SaddleBrown"
-                                CornerRadius="10"
+                        <Border Background="#0A6ED1"
+                                CornerRadius="14"
                                 Padding="10"
                                 Margin="5">
 
@@ -33,8 +33,8 @@
                         </Border>
 
                         <!-- OUTER GLASS -->
-                        <Border Background="#FF8C00"
-                                CornerRadius="10"
+                        <Border Background="#0A6ED1"
+                                CornerRadius="14"
                                 Padding="10"
                                 Margin="5">
 
@@ -44,20 +44,20 @@
                                            Foreground="White"
                                            FontWeight="Bold"/>
 
-                                <TextBlock Text="📏 Thickness" Foreground="Black"/>
+                                <TextBlock Text="📏 Thickness" Foreground="White"/>
                                 <ComboBox ItemsSource="{Binding ThicknessOptions}"
                                           SelectedItem="{Binding Thickness1, Mode=TwoWay}"
                                           IsEditable="True"
                                           Height="30"/>
 
-                                <TextBlock Text="🎨 Color" Foreground="Black"/>
+                                <TextBlock Text="🎨 Color" Foreground="White"/>
                                 <ComboBox ItemsSource="{Binding ColorOptions}"
                                           SelectedItem="{Binding Color1, Mode=TwoWay}"
                                           IsEditable="True"
                                           Height="30"/>
 
-                                <TextBlock Text="💰 Sheet" Foreground="Black"/>
-                                <TextBox Text="{Binding Sheet1, UpdateSourceTrigger=PropertyChanged}"
+                                <TextBlock Text="💰 Sheet" Foreground="White"/>
+                                <TextBox Text="{Binding Sheet1}"
                                          Height="30"/>
 
                             </StackPanel>
@@ -65,8 +65,8 @@
                         </Border>
 
                         <!-- INNER GLASS -->
-                        <Border Background="#FF8C00"
-                                CornerRadius="10"
+                        <Border Background="#0A6ED1"
+                                CornerRadius="14"
                                 Padding="10"
                                 Margin="5">
 
@@ -76,20 +76,20 @@
                                            Foreground="White"
                                            FontWeight="Bold"/>
 
-                                <TextBlock Text="📏 Thickness" Foreground="Black"/>
+                                <TextBlock Text="📏 Thickness" Foreground="White"/>
                                 <ComboBox ItemsSource="{Binding ThicknessOptions}"
                                           SelectedItem="{Binding Thickness2, Mode=TwoWay}"
                                           IsEditable="True"
                                           Height="30"/>
 
-                                <TextBlock Text="🎨 Color" Foreground="Black"/>
+                                <TextBlock Text="🎨 Color" Foreground="White"/>
                                 <ComboBox ItemsSource="{Binding ColorOptions}"
                                           SelectedItem="{Binding Color2, Mode=TwoWay}"
                                           IsEditable="True"
                                           Height="30"/>
 
-                                <TextBlock Text="💰 Sheet" Foreground="Black"/>
-                                <TextBox Text="{Binding Sheet2, UpdateSourceTrigger=PropertyChanged}"
+                                <TextBlock Text="💰 Sheet" Foreground="White"/>
+                                <TextBox Text="{Binding Sheet2}"
                                          Height="30"/>
 
                             </StackPanel>
@@ -97,8 +97,8 @@
                         </Border>
 
                         <!-- PVB SECTION -->
-                        <Border Background="#FF8C00"
-                                CornerRadius="10"
+                        <Border Background="#0854A0"
+                                CornerRadius="14"
                                 Padding="10"
                                 Margin="5">
 
@@ -112,7 +112,7 @@
                                           SelectedItem="{Binding PVBType, Mode=TwoWay}"
                                           Height="30"/>
 
-                                <TextBox Text="{Binding PVBPrice, UpdateSourceTrigger=PropertyChanged}"
+                                <TextBox Text="{Binding PVBPrice}"
                                          Height="30"
                                          Margin="0,8,0,0"/>
 
@@ -121,26 +121,26 @@
                         </Border>
 
                         <!-- CHARGES -->
-                        <Border Background="#FF8C00"
-                                CornerRadius="10"
+                        <Border Background="#0854A0"
+                                CornerRadius="14"
                                 Padding="10"
                                 Margin="5">
 
                             <StackPanel>
 
                                 <TextBlock Text="⚙ CHARGES"
-                                           Foreground="Black"
+                                           Foreground="White"
                                            FontWeight="Bold"/>
 
                                 <CheckBox Content="✂ Include Cutting"
-                                          Foreground="Black"
+                                          Foreground="White"
                                           IsChecked="{Binding IncludeCutting}"/>
 
                                 <TextBox Text="{Binding Cutting}"
                                          Height="30"/>
 
                                 <CheckBox Content="🔥 Include Tempering"
-                                          Foreground="Black"
+                                          Foreground="White"
                                           IsChecked="{Binding IncludeTempering}"/>
 
                                 <TextBox Text="{Binding Tempering}"
@@ -151,8 +151,8 @@
                         </Border>
 
                         <!-- PROFIT -->
-                        <Border Background="#0F766E"
-                                CornerRadius="10"
+                        <Border Background="#0A6ED1"
+                                CornerRadius="14"
                                 Padding="10"
                                 Margin="5">
 
@@ -171,8 +171,8 @@
                         </Border>
 
                         <!-- RESULT -->
-                        <Border Background="#FF8C00"
-                                CornerRadius="12"
+                        <Border Background="#0A6ED1"
+                                CornerRadius="14"
                                 Padding="10"
                                 Margin="8">
 
@@ -181,14 +181,15 @@
                                 <TextBlock Text="📊 RESULT"
                                            FontSize="14"
                                            FontWeight="Bold"
+                                           Foreground="White"
                                            HorizontalAlignment="Center"
                                            Margin="0,0,0,5"/>
 
                                 <TextBlock Text="{Binding Result}"
                                            FontSize="22"
                                            FontWeight="Bold"
-                                           HorizontalAlignment="Center"
-                                           Foreground="#065F46"/>
+                                           Foreground="White"
+                                           HorizontalAlignment="Center"/>
 
                             </StackPanel>
 
@@ -197,15 +198,15 @@
                         <!-- SAVE -->
                         <Button Content="💾 SAVE LAMINATION"
                                 Command="{Binding SaveCommand}"
-                                Background="SaddleBrown"
+                                Background="#0854A0"
                                 Foreground="White"
                                 FontWeight="Bold"
                                 Height="36"
                                 Margin="8"/>
 
                         <!-- HISTORY -->
-                        <Border Background="SaddleBrown"
-                                CornerRadius="10"
+                        <Border Background="#0A6ED1"
+                                CornerRadius="14"
                                 Padding="8"
                                 Margin="5">
 
@@ -221,7 +222,7 @@
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
 
-                                    <Border Background="SaddleBrown"
+                                    <Border Background="#0A6ED1"
                                             CornerRadius="8"
                                             Padding="8"
                                             Margin="3">
