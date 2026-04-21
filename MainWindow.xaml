@@ -17,7 +17,7 @@
                           Opacity="0.18"
                           Color="#000000"/>
 
-        <!-- ================= SAP FIORI ANIMATION STYLE ================= -->
+        <!-- ================= FIORI CARD STYLE (UNCHANGED ANIMATION) ================= -->
         <Style x:Key="FioriCard" TargetType="Border">
 
             <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
@@ -33,7 +33,6 @@
 
             <Style.Triggers>
 
-                <!-- HOVER -->
                 <EventTrigger RoutedEvent="MouseEnter">
                     <BeginStoryboard>
                         <Storyboard>
@@ -47,7 +46,6 @@
                     </BeginStoryboard>
                 </EventTrigger>
 
-                <!-- LEAVE -->
                 <EventTrigger RoutedEvent="MouseLeave">
                     <BeginStoryboard>
                         <Storyboard>
@@ -61,7 +59,6 @@
                     </BeginStoryboard>
                 </EventTrigger>
 
-                <!-- CLICK PRESS -->
                 <EventTrigger RoutedEvent="MouseDown">
                     <BeginStoryboard>
                         <Storyboard>
@@ -75,7 +72,6 @@
                     </BeginStoryboard>
                 </EventTrigger>
 
-                <!-- RELEASE -->
                 <EventTrigger RoutedEvent="MouseUp">
                     <BeginStoryboard>
                         <Storyboard>
@@ -119,7 +115,6 @@
 
             <Grid>
 
-                <!-- TITLE -->
                 <TextBlock Text="🏭 GLASS ERP SYSTEM"
                            Foreground="White"
                            FontSize="22"
@@ -127,39 +122,49 @@
                            VerticalAlignment="Center"
                            Margin="20,0,0,0"/>
 
-                <!-- ================= RIGHT HEADER PANEL ================= -->
+                <!-- RIGHT PANEL -->
                 <StackPanel Orientation="Horizontal"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"
                             Margin="0,0,20,0">
 
-                    <!-- DATE TIME CARD -->
+                    <!-- DATE TIME -->
                     <Border Background="White"
                             CornerRadius="10"
                             Padding="8"
                             Margin="4"
-                            Width="180"
+                            Width="220"
                             Height="60"
                             Style="{StaticResource FioriCard}">
 
-                        <StackPanel>
-                            <TextBlock Text="📅 DATE"
-                                       Foreground="#0A6ED1"
-                                       FontWeight="Bold"
-                                       FontSize="11"/>
-                            <TextBlock Text="{Binding CurrentDateText}"
-                                       FontSize="11"/>
-                            <TextBlock Text="⏰ TIME"
-                                       Foreground="#0A6ED1"
-                                       FontWeight="Bold"
-                                       FontSize="11"/>
-                            <TextBlock Text="{Binding ClockText}"
-                                       FontSize="11"/>
+                        <StackPanel Orientation="Horizontal">
+                            <StackPanel Margin="0,0,10,0">
+                                <TextBlock Text="📅 DATE"
+                                           Foreground="#0A6ED1"
+                                           FontWeight="Bold"
+                                           FontSize="10"/>
+                                <TextBlock Text="{Binding CurrentDateText}"
+                                           FontSize="11"/>
+                            </StackPanel>
+
+                            <TextBlock Text="|"
+                                       VerticalAlignment="Center"
+                                       Foreground="#A0AEC0"
+                                       Margin="5,0"/>
+
+                            <StackPanel Margin="10,0,0,0">
+                                <TextBlock Text="⏰ TIME"
+                                           Foreground="#0A6ED1"
+                                           FontWeight="Bold"
+                                           FontSize="10"/>
+                                <TextBlock Text="{Binding ClockText}"
+                                           FontSize="11"/>
+                            </StackPanel>
                         </StackPanel>
 
                     </Border>
 
-                    <!-- DEVELOPER -->
+                    <!-- DEV -->
                     <Border Background="White"
                             CornerRadius="10"
                             Padding="8"
@@ -167,14 +172,12 @@
                             Width="130"
                             Height="60"
                             Style="{StaticResource FioriCard}">
-
                         <StackPanel>
                             <TextBlock Text="👤 DEV"
                                        Foreground="#0A6ED1"
                                        FontWeight="Bold"/>
                             <TextBlock Text="JUBER SALEEM"/>
                         </StackPanel>
-
                     </Border>
 
                     <!-- COUNTRY -->
@@ -185,14 +188,12 @@
                             Width="110"
                             Height="60"
                             Style="{StaticResource FioriCard}">
-
                         <StackPanel>
                             <TextBlock Text="🌍 COUNTRY"
                                        Foreground="#0A6ED1"
                                        FontWeight="Bold"/>
                             <TextBlock Text="India"/>
                         </StackPanel>
-
                     </Border>
 
                     <!-- CONTACT -->
@@ -203,14 +204,12 @@
                             Width="150"
                             Height="60"
                             Style="{StaticResource FioriCard}">
-
                         <StackPanel>
                             <TextBlock Text="📞 CONTACT"
                                        Foreground="#0A6ED1"
                                        FontWeight="Bold"/>
                             <TextBlock Text="+971-559117727"/>
                         </StackPanel>
-
                     </Border>
 
                     <!-- EMAIL -->
@@ -221,14 +220,12 @@
                             Width="240"
                             Height="60"
                             Style="{StaticResource FioriCard}">
-
                         <StackPanel>
                             <TextBlock Text="📧 EMAIL"
                                        Foreground="#0A6ED1"
                                        FontWeight="Bold"/>
                             <TextBlock Text="jubersaleem01@gmail.com"/>
                         </StackPanel>
-
                     </Border>
 
                 </StackPanel>
@@ -252,7 +249,6 @@
                         CornerRadius="10"
                         MouseDown="SGU_Click"
                         Style="{StaticResource FioriCard}">
-
                     <TextBlock Text="📊 SGU"
                                Foreground="White"
                                Padding="12"
@@ -264,7 +260,6 @@
                         CornerRadius="10"
                         MouseDown="DGU_Click"
                         Style="{StaticResource FioriCard}">
-
                     <TextBlock Text="🧮 DGU"
                                Foreground="White"
                                Padding="12"
@@ -276,7 +271,6 @@
                         CornerRadius="10"
                         MouseDown="LAM_Click"
                         Style="{StaticResource FioriCard}">
-
                     <TextBlock Text="🧪 LAMINATION"
                                Foreground="White"
                                Padding="12"
@@ -294,9 +288,7 @@
                 Background="White"
                 CornerRadius="14"
                 Effect="{StaticResource CardShadow}">
-
             <ContentControl x:Name="MainPanel"/>
-
         </Border>
 
         <!-- ================= STATUS BAR ================= -->
@@ -320,14 +312,12 @@
                         Padding="8"
                         Margin="5"
                         Style="{StaticResource FioriCard}">
-
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <TextBlock Text="🟢"/>
                         <TextBlock Text="SYSTEM ACTIVE"
                                    Foreground="#0A6ED1"
                                    FontWeight="Bold"/>
                     </StackPanel>
-
                 </Border>
 
                 <Border Grid.Column="1"
@@ -336,14 +326,12 @@
                         Padding="8"
                         Margin="5"
                         Style="{StaticResource FioriCard}">
-
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <TextBlock Text="⚙"/>
                         <TextBlock Text="ERP RUNNING"
                                    Foreground="#0A6ED1"
                                    FontWeight="Bold"/>
                     </StackPanel>
-
                 </Border>
 
                 <Border Grid.Column="2"
@@ -352,14 +340,12 @@
                         Padding="8"
                         Margin="5"
                         Style="{StaticResource FioriCard}">
-
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <TextBlock Text="🛡"/>
                         <TextBlock Text="STABLE MODE"
                                    Foreground="#22C55E"
                                    FontWeight="Bold"/>
                     </StackPanel>
-
                 </Border>
 
             </Grid>
@@ -367,5 +353,4 @@
         </Border>
 
     </Grid>
-
 </Window>
