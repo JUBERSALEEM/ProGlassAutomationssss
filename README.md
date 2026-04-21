@@ -1,23 +1,6 @@
 # 🏭 GLASS ERP SYSTEM - FULL UPDATE PACKAGE
 
 =====================================================
-📌 GIT COMMIT MESSAGE
-=====================================================
-
-feat: ERP UI enhancement with icon system and stable module architecture
-
-- Added icon-based UI system for SGU, DGU, Lamination modules
-- Improved result section readability with ERP icons
-- Fixed SGU dropdown binding and manual edit support
-- Fixed module navigation crash (UserControl loading issue)
-- Fixed MainWindow ContentControl view switching
-- Restored welcome screen stability and default load state
-- Fixed duplicate ClockText binding issue
-- Improved ERP status indicators (SGU / DGU / Lamination READY)
-- Standardized UI consistency across all modules
-- Fixed SGUView, DguView, LaminationView mapping errors
-
-=====================================================
 📌 FULL CHANGE DESCRIPTION
 =====================================================
 
@@ -63,81 +46,180 @@ This update enhances the Glass ERP WPF system with:
 
 # 🏭 Glass ERP System (WPF .NET)
 
-## 🚀 Overview
-Professional Glass Industry ERP System built using WPF (.NET)
+A modern **Glass ERP Calculation System** built using **WPF (.NET)** for glass manufacturing estimation including SGU, DGU, and Lamination modules with a **SAP/Fiori inspired UI redesign**.
 
 ---
 
-## 📊 Modules
-- SGU (Single Glass Unit Calculator)
-- DGU (Double Glass Unit Calculator)
-- Lamination Calculator
+# ✨ FEATURES
+
+## 🧮 Core Modules
+
+### 📊 SGU Module
+- Single Glass Unit calculator
+- Thickness selection (6mm–19mm)
+- Color selection system
+- Sheet price calculation
+- Profit integration
+- Live result generation
 
 ---
 
-## 🎯 FEATURES
-
-✔ Icon-based ERP UI system  
-✔ Live system date & time  
-✔ Module status dashboard  
-✔ SGU / DGU / Lamination calculators  
-✔ History tracking system  
-✔ Profit calculation system  
-✔ SAP-style UI design  
+### 🧮 DGU Module
+- Double Glass Unit calculation
+- Dual glass configuration system
+- ASP type selection (Normal / Black)
+- Profit margin control
+- Live filtered history system
 
 ---
 
-## 🖥 MAIN SCREEN
-- Welcome dashboard on startup
-- Shows SGU / DGU / Lamination status
-- Displays ERP system ready state
-- Developer info panel integrated
+### 🧪 Lamination Module
+- Multi-layer glass system
+- Outer + Inner glass setup
+- PVB layer pricing support
+- Cutting & tempering charges
+- Advanced final pricing engine
 
 ---
 
-## 🛠 FIXES INCLUDED
+# 🖥️ UI / UX DESIGN (NEW SAP REDESIGN)
 
-✔ SGU dropdown fixed  
-✔ Module navigation crash fixed  
-✔ UserControl mapping fixed  
-✔ Clock binding duplication fixed  
-✔ ContentControl loading fixed  
-✔ Welcome screen restored  
-
----
-
-## 📁 STRUCTURE
-
-ProGlassAutomation
-│
-├── MainWindow.xaml
-├── MainWindow.xaml.cs
-│
-├── Views
-│   ├── SGU
-│   │   └── SguView.xaml
-│   │
-│   ├── DGU
-│   │   └── DguView.xaml
-│   │
-│   └── Lamination
-│       └── LaminationView.xaml
+## 🎨 SAP/Fiori Style Interface
+- Modern enterprise ERP design
+- Card-based dashboard layout
+- Gradient header system
+- Clean spacing system
+- Professional alignment fixes
 
 ---
 
-## ⚙ REQUIREMENTS
-- .NET 6 / .NET 8 WPF
-- Visual Studio 2022+
-- Windows OS
+## 🏷️ HEADER PANEL (IMPROVED)
+
+### Includes:
+- 🏭 System Title (Glass ERP System)
+- 📅 Live Date & Time card
+- 👤 Developer card
+- 🌍 Country card
+- 📞 Contact card
+- 📧 Email card
+
+✔ Fixed WPF DockPanel padding crash  
+✔ Proper card alignment system  
+✔ Responsive width adjustment  
 
 ---
 
-## 🏁 STATUS
-✔ Production Ready ERP Base  
-✔ Stable UI Architecture  
-✔ Modular Expandable System  
-✔ Ready for Database Integration  
+## 🟢 LIVE ERP STATUS SYSTEM
+
+- SYSTEM ACTIVE indicator
+- ERP RUNNING status
+- STABLE MODE indicator
+- Green live status design
 
 ---
 
-👨‍💻 Glass ERP System - WPF Edition
+## 🧭 SIDEBAR NAVIGATION
+
+- 📊 SGU Module
+- 🧮 DGU Module
+- 🧪 LAMINATION Module
+
+### ✨ Enhancements
+- Hover animation (scale effect)
+- SAP-style interaction feedback
+- Smooth UI transitions
+
+---
+
+## 📊 STATUS BAR (BOTTOM)
+
+- Live system status cards
+- ERP health indicators
+- Clean dark SAP-style footer
+- Responsive column layout
+
+---
+
+# 🛠️ FIXES INCLUDED
+
+## ❌ Fixed Issues
+- DockPanel `Padding` error resolved (WPF limitation fix)
+- UI alignment mismatch fixed
+- Header card overflow fixed
+- Hover animation crash fixed
+- Sidebar button overlap fixed
+
+---
+
+## ⚙️ Stability Improvements
+- Safe WPF resource structure
+- Clean separation of UI layers
+- No runtime binding crashes
+- Optimized rendering performance
+
+---
+
+# 🎯 DESIGN STYLE
+
+This system follows:
+
+✔ SAP Fiori design principles  
+✔ Enterprise ERP dashboard layout  
+✔ Card-based UI system  
+✔ Glass manufacturing industry theme  
+✔ Professional gradient UI system  
+
+---
+
+# 🧑‍💻 DEVELOPER INFO
+
+- 👤 Developer: Juber Malik  
+- 🌍 Country: India  
+- 📞 Contact: +971-559117727  
+- 📧 Email: jubersaleem01@gmail.com  
+
+---
+
+# 🚀 TECHNOLOGY STACK
+
+- WPF (.NET Framework / .NET 6+)
+- C# MVVM Architecture
+- XAML UI Design
+- DispatcherTimer (Live Clock)
+- Data Binding System
+
+---
+
+# 🔮 FUTURE UPGRADES
+
+Planned enhancements:
+
+- 🌙 Dark Mode UI
+- 📊 Dashboard analytics charts
+- 🧾 PDF invoice generation
+- 💾 SQL Server integration
+- 📦 Inventory management system
+- 🔐 Login authentication system
+- 📱 SAP-style tile home dashboard
+
+---
+
+# 📌 SUMMARY
+
+This ERP system is designed for:
+
+✔ Glass estimation industry  
+✔ Manufacturing pricing system  
+✔ Real-time calculation system  
+✔ Enterprise-level UI experience  
+
+---
+
+# ⚡ NOTE
+
+If you want next upgrade, I can convert this into:
+
+🔥 Full SAP clone dashboard UI  
+🔥 Database connected ERP system  
+🔥 Multi-user login system  
+🔥 Cloud sync ERP version

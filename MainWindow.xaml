@@ -5,15 +5,67 @@
         Height="780"
         Width="1280"
         WindowStartupLocation="CenterScreen"
-        Background="#F3F3F3">
+        Background="#F4F6F9">
+
+    <!-- ================= RESOURCES ================= -->
+    <Window.Resources>
+
+        <!-- SHADOW -->
+        <DropShadowEffect x:Key="CardShadow"
+                          BlurRadius="18"
+                          ShadowDepth="2"
+                          Opacity="0.15"
+                          Color="#000000"/>
+
+        <!-- HOVER ANIMATION -->
+        <Style x:Key="HoverCardStyle" TargetType="Border">
+            <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <ScaleTransform ScaleX="1" ScaleY="1"/>
+                </Setter.Value>
+            </Setter>
+
+            <Style.Triggers>
+
+                <EventTrigger RoutedEvent="MouseEnter">
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleX"
+                                             To="1.05"
+                                             Duration="0:0:0.15"/>
+                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleY"
+                                             To="1.05"
+                                             Duration="0:0:0.15"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+
+                <EventTrigger RoutedEvent="MouseLeave">
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleX"
+                                             To="1"
+                                             Duration="0:0:0.15"/>
+                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleY"
+                                             To="1"
+                                             Duration="0:0:0.15"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+
+            </Style.Triggers>
+        </Style>
+
+    </Window.Resources>
 
     <Grid>
 
         <!-- ROWS -->
         <Grid.RowDefinitions>
-            <RowDefinition Height="100"/>
+            <RowDefinition Height="130"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="120"/>
+            <RowDefinition Height="110"/>
         </Grid.RowDefinitions>
 
         <!-- COLUMNS -->
@@ -22,176 +74,207 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- ================= HEADER (RESTORED FULL RIGHT CARDS) ================= -->
+        <!-- ================= HEADER (FIXED DOCKPANEL PADDING ISSUE) ================= -->
         <Border Grid.Row="0"
                 Grid.ColumnSpan="2"
-                Margin="8"
+                Margin="10"
                 CornerRadius="16"
-                Background="White"
-                Padding="12">
+                Background="#0A6ED1"
+                Effect="{StaticResource CardShadow}">
 
-            <DockPanel LastChildFill="True">
+            <!-- ✅ FIX: Padding moved into Border (NOT DockPanel) -->
+            <Border Padding="15"
+                    Background="Transparent">
 
-                <!-- LEFT TITLE -->
-                <StackPanel Orientation="Horizontal"
-                            VerticalAlignment="Center">
+                <DockPanel LastChildFill="True">
 
-                    <TextBlock Text="🧮"
-                               FontSize="24"
-                               Margin="0,0,8,0"/>
+                    <!-- TITLE -->
+                    <StackPanel Orientation="Horizontal"
+                                VerticalAlignment="Center">
 
-                    <TextBlock Text="🏭 GLASS ERP SYSTEM"
-                               FontSize="22"
-                               FontWeight="Bold"/>
-                </StackPanel>
+                        <TextBlock Text="🏭"
+                                   FontSize="26"
+                                   Foreground="White"
+                                   Margin="0,0,8,0"/>
 
-                <!-- ================= RESTORED DEVELOPER CARDS (TOP RIGHT) ================= -->
-                <StackPanel DockPanel.Dock="Right"
-                            Orientation="Horizontal"
-                            HorizontalAlignment="Right">
+                        <TextBlock Text="GLASS ERP SYSTEM"
+                                   FontSize="22"
+                                   FontWeight="Bold"
+                                   Foreground="White"/>
+                    </StackPanel>
 
-                    <!-- DEVELOPER -->
-                    <Border Background="#FFF7ED"
-                            CornerRadius="10"
-                            Padding="8"
-                            Margin="3"
-                            Width="140">
+                    <!-- ================= RIGHT INFO CARDS ================= -->
+                    <StackPanel DockPanel.Dock="Right"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center">
 
-                        <StackPanel>
-                            <TextBlock Text="👤 Developer" FontWeight="Bold"/>
-                            <TextBlock Text="Juber Malik"/>
-                        </StackPanel>
+                        <!-- DATE / TIME -->
+                        <Border Background="White"
+                                CornerRadius="12"
+                                Padding="10"
+                                Margin="4"
+                                Width="200"
+                                Height="65">
 
-                    </Border>
+                            <StackPanel>
+                                <TextBlock Text="📅 DATE / TIME"
+                                           FontWeight="Bold"
+                                           Foreground="#0A6ED1"
+                                           FontSize="11"/>
 
-                    <!-- COUNTRY -->
-                    <Border Background="#ECFDF5"
-                            CornerRadius="10"
-                            Padding="8"
-                            Margin="3"
-                            Width="120">
+                                <TextBlock Text="{Binding CurrentDateText}"
+                                           FontSize="11"/>
 
-                        <StackPanel>
-                            <TextBlock Text="🌍 Country" FontWeight="Bold"/>
-                            <TextBlock Text="India"/>
-                        </StackPanel>
+                                <TextBlock Text="{Binding ClockText}"
+                                           FontSize="11"/>
+                            </StackPanel>
 
-                    </Border>
+                        </Border>
 
-                    <!-- CONTACT -->
-                    <Border Background="#EFF6FF"
-                            CornerRadius="10"
-                            Padding="8"
-                            Margin="3"
-                            Width="160">
+                        <!-- DEVELOPER -->
+                        <Border Background="White"
+                                CornerRadius="12"
+                                Padding="10"
+                                Margin="4"
+                                Width="130"
+                                Height="65">
 
-                        <StackPanel>
-                            <TextBlock Text="📞 Contact" FontWeight="Bold"/>
-                            <TextBlock Text="+971-559117727"/>
-                        </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="👤 DEV"
+                                           FontWeight="Bold"
+                                           Foreground="#0A6ED1"
+                                           FontSize="11"/>
+                                <TextBlock Text="Juber Malik"
+                                           FontSize="11"/>
+                            </StackPanel>
 
-                    </Border>
+                        </Border>
 
-                    <!-- EMAIL -->
-                    <Border Background="#FDF2F8"
-                            CornerRadius="10"
-                            Padding="8"
-                            Margin="3"
-                            Width="220">
+                        <!-- COUNTRY -->
+                        <Border Background="White"
+                                CornerRadius="12"
+                                Padding="10"
+                                Margin="4"
+                                Width="110"
+                                Height="65">
 
-                        <StackPanel>
-                            <TextBlock Text="📧 Email" FontWeight="Bold"/>
-                            <TextBlock Text="jubersaleem01@gmail.com"/>
-                        </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="🌍 COUNTRY"
+                                           FontWeight="Bold"
+                                           Foreground="#0A6ED1"
+                                           FontSize="11"/>
+                                <TextBlock Text="India"
+                                           FontSize="11"/>
+                            </StackPanel>
 
-                    </Border>
+                        </Border>
 
-                </StackPanel>
+                        <!-- CONTACT -->
+                        <Border Background="White"
+                                CornerRadius="12"
+                                Padding="10"
+                                Margin="4"
+                                Width="150"
+                                Height="65">
 
-            </DockPanel>
+                            <StackPanel>
+                                <TextBlock Text="📞 CONTACT"
+                                           FontWeight="Bold"
+                                           Foreground="#0A6ED1"
+                                           FontSize="11"/>
+                                <TextBlock Text="+971-559117727"
+                                           FontSize="11"/>
+                            </StackPanel>
+
+                        </Border>
+
+                        <!-- EMAIL -->
+                        <Border Background="White"
+                                CornerRadius="12"
+                                Padding="10"
+                                Margin="4"
+                                Width="240"
+                                Height="65">
+
+                            <StackPanel>
+                                <TextBlock Text="📧 EMAIL"
+                                           FontWeight="Bold"
+                                           Foreground="#0A6ED1"
+                                           FontSize="11"/>
+                                <TextBlock Text="jubersaleem01@gmail.com"
+                                           FontSize="10"/>
+                            </StackPanel>
+
+                        </Border>
+
+                    </StackPanel>
+
+                </DockPanel>
+
+            </Border>
 
         </Border>
 
         <!-- ================= SIDEBAR ================= -->
         <Border Grid.Row="1"
                 Grid.Column="0"
-                Background="#FFF4E1"
-                Padding="10">
+                Background="White"
+                Margin="10"
+                CornerRadius="14"
+                Effect="{StaticResource CardShadow}">
 
             <StackPanel>
 
-                <Border Background="#D2691E" Margin="6" CornerRadius="10" MouseDown="SGU_Click">
-                    <TextBlock Text="📊 SGU" Foreground="White" Padding="12"/>
+                <Border Background="#0A6ED1"
+                        Margin="6"
+                        CornerRadius="10"
+                        MouseDown="SGU_Click"
+                        Style="{StaticResource HoverCardStyle}">
+
+                    <TextBlock Text="📊 SGU"
+                               Foreground="White"
+                               Padding="12"
+                               HorizontalAlignment="Center"/>
                 </Border>
 
-                <Border Background="#D2691E" Margin="6" CornerRadius="10" MouseDown="DGU_Click">
-                    <TextBlock Text="🧮 DGU" Foreground="White" Padding="12"/>
+                <Border Background="#0854A0"
+                        Margin="6"
+                        CornerRadius="10"
+                        MouseDown="DGU_Click"
+                        Style="{StaticResource HoverCardStyle}">
+
+                    <TextBlock Text="🧮 DGU"
+                               Foreground="White"
+                               Padding="12"
+                               HorizontalAlignment="Center"/>
                 </Border>
 
-                <Border Background="#D2691E" Margin="6" CornerRadius="10" MouseDown="LAM_Click">
-                    <TextBlock Text="🧪 LAMINATION" Foreground="White" Padding="12"/>
+                <Border Background="#0A6ED1"
+                        Margin="6"
+                        CornerRadius="10"
+                        MouseDown="LAM_Click"
+                        Style="{StaticResource HoverCardStyle}">
+
+                    <TextBlock Text="🧪 LAMINATION"
+                               Foreground="White"
+                               Padding="12"
+                               HorizontalAlignment="Center"/>
                 </Border>
 
             </StackPanel>
 
         </Border>
 
-        <!-- ================= MAIN WELCOME SCREEN (CLEAN) ================= -->
+        <!-- ================= MAIN PANEL ================= -->
         <Border Grid.Row="1"
                 Grid.Column="1"
                 Margin="10"
                 Background="White"
-                CornerRadius="12">
+                CornerRadius="14"
+                Effect="{StaticResource CardShadow}">
 
-            <ContentControl x:Name="MainPanel">
-
-                <Grid>
-
-                    <StackPanel HorizontalAlignment="Center"
-                                VerticalAlignment="Center">
-
-                        <TextBlock Text="🏭 WELCOME TO GLASS ERP SYSTEM"
-                                   FontSize="28"
-                                   FontWeight="Bold"
-                                   HorizontalAlignment="Center"/>
-
-                        <TextBlock Text="📊 SGU • DGU • LAMINATION CALCULATION SYSTEM"
-                                   FontSize="16"
-                                   Margin="0,10,0,20"
-                                   HorizontalAlignment="Center"/>
-
-                        <!-- MODULE STATUS -->
-                        <StackPanel Orientation="Horizontal"
-                                    HorizontalAlignment="Center">
-
-                            <Border Background="#ECFDF5" CornerRadius="10" Padding="15" Margin="5" Width="160">
-                                <StackPanel>
-                                    <TextBlock Text="📊 SGU"/>
-                                    <TextBlock Text="READY" Foreground="Green"/>
-                                </StackPanel>
-                            </Border>
-
-                            <Border Background="#EFF6FF" CornerRadius="10" Padding="15" Margin="5" Width="160">
-                                <StackPanel>
-                                    <TextBlock Text="🧮 DGU"/>
-                                    <TextBlock Text="READY" Foreground="Green"/>
-                                </StackPanel>
-                            </Border>
-
-                            <Border Background="#FDF2F8" CornerRadius="10" Padding="15" Margin="5" Width="160">
-                                <StackPanel>
-                                    <TextBlock Text="🧪 LAMINATION"/>
-                                    <TextBlock Text="READY" Foreground="Green"/>
-                                </StackPanel>
-                            </Border>
-
-                        </StackPanel>
-
-                    </StackPanel>
-
-                </Grid>
-
-            </ContentControl>
+            <ContentControl x:Name="MainPanel"/>
 
         </Border>
 
@@ -200,9 +283,9 @@
               Grid.ColumnSpan="2"
               Margin="10">
 
-            <Border Background="#1F2937"
+            <Border Background="#0A6ED1"
                     CornerRadius="14"
-                    Padding="15">
+                    Padding="12">
 
                 <Grid>
 
@@ -212,20 +295,49 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <StackPanel Grid.Column="0">
-                        <TextBlock Text="📅 DATE" Foreground="#9CA3AF"/>
-                        <TextBlock Text="{Binding CurrentDateText}" Foreground="White"/>
-                    </StackPanel>
+                    <Border Background="White"
+                            CornerRadius="10"
+                            Margin="4"
+                            Padding="8">
 
-                    <StackPanel Grid.Column="1" HorizontalAlignment="Center">
-                        <TextBlock Text="⏰ TIME" Foreground="#9CA3AF"/>
-                        <TextBlock Text="{Binding ClockText}" Foreground="White"/>
-                    </StackPanel>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <TextBlock Text="🟢"/>
+                            <TextBlock Text="SYSTEM ACTIVE"
+                                       Foreground="#0A6ED1"
+                                       FontWeight="Bold"/>
+                        </StackPanel>
 
-                    <StackPanel Grid.Column="2" HorizontalAlignment="Right">
-                        <TextBlock Text="🟢 ERP STATUS" Foreground="#9CA3AF"/>
-                        <TextBlock Text="SYSTEM READY" Foreground="#22C55E"/>
-                    </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="1"
+                            Background="White"
+                            CornerRadius="10"
+                            Margin="4"
+                            Padding="8">
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <TextBlock Text="⚙"/>
+                            <TextBlock Text="ERP RUNNING"
+                                       Foreground="#0A6ED1"
+                                       FontWeight="Bold"/>
+                        </StackPanel>
+
+                    </Border>
+
+                    <Border Grid.Column="2"
+                            Background="White"
+                            CornerRadius="10"
+                            Margin="4"
+                            Padding="8">
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <TextBlock Text="🛡"/>
+                            <TextBlock Text="STABLE MODE"
+                                       Foreground="#0A6ED1"
+                                       FontWeight="Bold"/>
+                        </StackPanel>
+
+                    </Border>
 
                 </Grid>
 
@@ -234,4 +346,5 @@
         </Grid>
 
     </Grid>
+
 </Window>
