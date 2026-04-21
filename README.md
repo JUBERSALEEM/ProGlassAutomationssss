@@ -161,13 +161,74 @@ A modern **Glass ERP Calculation System** built using **WPF (.NET)** for glass m
 
 # 🎯 DESIGN STYLE
 
-This system follows:
+T## ⚡ UI ANIMATION SYSTEM UPDATE (FIORI STYLE)
 
-✔ SAP Fiori design principles  
-✔ Enterprise ERP dashboard layout  
-✔ Card-based UI system  
-✔ Glass manufacturing industry theme  
-✔ Professional gradient UI system  
+### 🎯 New Animation System Added
+
+The ERP system now includes a **SAP Fiori inspired animation engine** applied across all UI components.
+
+---
+
+### 🧩 Hover Animation (NEW)
+
+All interactive cards now include smooth hover scaling:
+
+- Scale Up: `1.00 → 1.04`
+- Smooth transition duration: `0.12s`
+- Soft SAP-style elevation feel
+
+---
+
+### 👆 Click / Press Animation (NEW)
+
+Added responsive click feedback:
+
+- Press effect: `0.97 scale shrink`
+- Release: smooth restore animation
+- Gives real enterprise UI feedback feel
+
+---
+
+### 🖱 Cursor Interaction
+
+- Hand cursor added to all clickable elements
+- Sidebar buttons now feel interactive and modern
+
+---
+
+### 📌 Applied Components
+
+Animations applied to:
+
+- SGU Button
+- DGU Button
+- LAMINATION Button
+- Header Info Cards
+- ERP Status Cards
+- Dashboard Tiles
+- Welcome Screen Cards
+
+---
+
+### 🎨 SAP FIORI BEHAVIOR STYLE
+
+This update makes UI behave like SAP Fiori enterprise system:
+
+✔ Smooth transitions  
+✔ Soft scaling effects  
+✔ Minimal UI disruption  
+✔ Clean professional motion design  
+
+---
+
+### 🚀 RESULT
+
+The ERP system now feels:
+
+- More modern
+- More interactive
+- SAP enterprise grade
+- Smooth and responsive
 
 ---
 
