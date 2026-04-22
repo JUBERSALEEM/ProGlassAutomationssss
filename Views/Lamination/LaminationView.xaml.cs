@@ -1,6 +1,5 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
-using ProGlassAutomation.Views.Lamination;
 
 namespace ProGlassAutomation.Views.Lamination
 {
@@ -9,9 +8,14 @@ namespace ProGlassAutomation.Views.Lamination
         public LaminationView()
         {
             InitializeComponent();
+        }
 
-            // ONLY ONE CONSTRUCTOR — NO DUPLICATION
-            this.DataContext = new LaminationViewModel();
+        private void SelectAllText_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (sender is TextBox textBox)
+            {
+                textBox.SelectAll();
+            }
         }
     }
 }

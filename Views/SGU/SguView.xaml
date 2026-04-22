@@ -1,191 +1,453 @@
 ﻿<UserControl x:Class="ProGlassAutomation.Views.SGU.SguView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ProGlassAutomation.Views.SGU"
              xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
-    <Grid Background="#D6ECFF">
+    <UserControl.DataContext>
+        <vm:SguViewModel/>
+    </UserControl.DataContext>
 
-        <ScrollViewer VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Disabled">
+    <!-- Rest of XAML continues... -->
 
-            <!-- ✅ UNIFIED SAP WIDTH (MATCH DGU + LAMINATION = 900) -->
-            <Border Width="900"
-                    Padding="20"
-                    CornerRadius="25"
-                    Background="White"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Top"
-                    Margin="10">
+    <UserControl.Resources>
 
-                <StackPanel>
+        <BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
 
-                    <!-- HEADER -->
-                    <Border Background="#0A6ED1"
-                            CornerRadius="14"
-                            Padding="10"
-                            Margin="0,0,0,10">
+        <!-- ToolTip Style -->
+        <Style TargetType="ToolTip">
+            <Setter Property="Placement" Value="Mouse"/>
+            <Setter Property="Background" Value="#1E3A5F"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="BorderBrush" Value="#3B82F6"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
 
-                        <TextBlock Text="📊 SGU CALCULATOR"
-                                   FontSize="20"
-                                   FontWeight="Bold"
-                                   Foreground="White"
-                                   HorizontalAlignment="Center"/>
-                    </Border>
+        <!-- Toggle Button Style -->
+        <Style x:Key="ToggleButtonStyle" TargetType="ToggleButton">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="6"
+                                Padding="12">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter Property="Background" Value="#0D9488"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="False">
+                                <Setter Property="Background" Value="#14B8A6"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
-                    <!-- THICKNESS -->
-                    <Border Background="#0A6ED1"
-                            CornerRadius="14"
-                            Padding="10"
-                            Margin="0,5,0,10">
+        <!-- Label Style -->
+        <Style x:Key="LabelStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Foreground" Value="#64748B"/>
+            <Setter Property="Margin" Value="0,6,0,2"/>
+        </Style>
 
-                        <StackPanel>
+        <!-- Section Header Style -->
+        <Style x:Key="SectionHeaderStyle" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="#1E3A5F"/>
+        </Style>
 
-                            <TextBlock Text="📏 Thickness"
-                                       Foreground="White"
-                                       FontWeight="Bold"/>
+    </UserControl.Resources>
 
-                            <ComboBox SelectedItem="{Binding Thickness, Mode=TwoWay}"
-                                      IsEditable="True"
-                                      Height="30">
+    <Grid Background="#E8F4FC">
 
-                                <sys:String>6mm</sys:String>
-                                <sys:String>8mm</sys:String>
-                                <sys:String>10mm</sys:String>
-                                <sys:String>12mm</sys:String>
-                                <sys:String>15mm</sys:String>
-                                <sys:String>19mm</sys:String>
+        <Grid Margin="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
-                            </ComboBox>
+            <!-- ================= HEADER ================= -->
+            <Border Grid.Row="0"
+                    CornerRadius="12"
+                    Padding="15,12"
+                    Margin="0,0,0,10">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#1E3A5F" Offset="0"/>
+                        <GradientStop Color="#2563EB" Offset="1"/>
+                    </LinearGradientBrush>
+                </Border.Background>
 
-                        </StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                    </Border>
+                    <TextBlock Grid.Column="0"
+                               Text="📊 SGU CALCULATOR"
+                               Foreground="White"
+                               FontSize="18"
+                               FontWeight="Bold"
+                               HorizontalAlignment="Left"
+                               VerticalAlignment="Center"/>
 
-                    <!-- COLOR -->
-                    <Border Background="#0A6ED1"
-                            CornerRadius="14"
-                            Padding="10"
-                            Margin="0,0,0,10">
-
-                        <StackPanel>
-
-                            <TextBlock Text="🎨 Color"
-                                       Foreground="White"
-                                       FontWeight="Bold"/>
-
-                            <ComboBox SelectedItem="{Binding Color, Mode=TwoWay}"
-                                      IsEditable="True"
-                                      Height="30">
-
-                                <sys:String>Clear</sys:String>
-                                <sys:String>HD Grey</sys:String>
-                                <sys:String>HD Blue</sys:String>
-                                <sys:String>HD Green</sys:String>
-                                <sys:String>HD Bronze</sys:String>
-
-                            </ComboBox>
-
-                        </StackPanel>
-
-                    </Border>
-
-                    <!-- INPUTS -->
-                    <Border Background="#0A6ED1"
-                            CornerRadius="14"
-                            Padding="10"
-                            Margin="0,0,0,10">
-
-                        <StackPanel>
-
-                            <TextBlock Text="💰 Sheet Price" Foreground="White"/>
-                            <TextBox Text="{Binding Sheet}" Height="30"/>
-
-                            <TextBlock Text="✂ Cutting" Foreground="White"/>
-                            <TextBox Text="{Binding Cutting}" Height="30"/>
-
-                            <TextBlock Text="🔥 Tempering" Foreground="White"/>
-                            <TextBox Text="{Binding Tempering}" Height="30"/>
-
-                            <TextBlock Text="📈 Profit %" Foreground="White"/>
-                            <TextBox Text="{Binding Profit}" Height="30"/>
-
-                        </StackPanel>
-
-                    </Border>
-
-                    <!-- RESULT -->
-                    <Border Background="#0A6ED1"
-                            CornerRadius="14"
-                            Padding="15"
-                            Margin="5">
-
-                        <StackPanel HorizontalAlignment="Center">
-
-                            <TextBlock Text="📊 RESULT"
+                    <Border Grid.Column="1"
+                            Background="White"
+                            CornerRadius="8"
+                            Padding="12,8">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="📊 RESULT: "
+                                       FontWeight="Bold"
                                        FontSize="14"
-                                       FontWeight="Bold"
-                                       Foreground="White"
-                                       HorizontalAlignment="Center"
-                                       Margin="0,0,0,5"/>
-
+                                       Foreground="#1E3A5F"
+                                       VerticalAlignment="Center"/>
                             <TextBlock Text="{Binding Result}"
-                                       FontSize="28"
+                                       FontSize="18"
                                        FontWeight="Bold"
-                                       Foreground="White"
-                                       HorizontalAlignment="Center"/>
-
+                                       Foreground="#0891B2"
+                                       VerticalAlignment="Center"
+                                       MinWidth="60"
+                                       TextAlignment="Right"/>
+                            <TextBlock Text=" AED"
+                                       FontSize="12"
+                                       Foreground="#64748B"
+                                       VerticalAlignment="Center"
+                                       Margin="4,0,0,0"/>
                         </StackPanel>
-
                     </Border>
-
-                    <!-- SAVE -->
-                    <Button Content="💾 SAVE SGU"
-                            Background="#0854A0"
-                            Foreground="White"
-                            FontWeight="Bold"
-                            Height="45"
-                            Margin="5"
-                            Click="Save_Click"/>
-
-                    <!-- HISTORY -->
-                    <Border Background="#0A6ED1"
-                            CornerRadius="14"
-                            Padding="8"
-                            Margin="5">
-
-                        <TextBlock Text="📜 HISTORY"
-                                   FontSize="16"
-                                   FontWeight="Bold"
-                                   Foreground="White"
-                                   HorizontalAlignment="Center"/>
-                    </Border>
-
-                    <ListBox ItemsSource="{Binding Records}"
-                             Height="160">
-
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-
-                                <Border Background="#0A6ED1"
-                                        CornerRadius="10"
-                                        Padding="8"
-                                        Margin="3">
-
-                                    <TextBlock Text="{Binding DisplayText}"
-                                               Foreground="White"
-                                               FontWeight="SemiBold"/>
-                                </Border>
-
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-
-                    </ListBox>
-
-                </StackPanel>
-
+                </Grid>
             </Border>
 
-        </ScrollViewer>
+            <!-- ================= MAIN CONTENT ================= -->
+            <Border Grid.Row="1"
+                    Background="White"
+                    CornerRadius="16"
+                    Padding="16"
+                    BorderBrush="#CBD5E1"
+                    BorderThickness="1">
+                <Border.Effect>
+                    <DropShadowEffect Color="#1E3A5F" 
+                                      BlurRadius="15" 
+                                      ShadowDepth="2" 
+                                      Opacity="0.12"/>
+                </Border.Effect>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- ================= LEFT COLUMN ================= -->
+                    <StackPanel Grid.Column="0" Margin="0,0,8,0">
+
+                        <!-- GLASS SPECIFICATION -->
+                        <Border Background="#F0F9FF"
+                                CornerRadius="10"
+                                Padding="12"
+                                Margin="0,0,0,8"
+                                BorderBrush="#BAE6FD"
+                                BorderThickness="1">
+
+                            <StackPanel>
+                                <TextBlock Text="🪟 GLASS SPECIFICATION" Style="{StaticResource SectionHeaderStyle}"/>
+
+                                <TextBlock Text="Thickness (mm)" Style="{StaticResource LabelStyle}"/>
+                                <ComboBox ItemsSource="{Binding ThicknessOptions}"
+                                          SelectedItem="{Binding Thickness}"
+                                          Height="28"/>
+
+                                <TextBlock Text="Color" Style="{StaticResource LabelStyle}"/>
+                                <ComboBox ItemsSource="{Binding ColorOptions}"
+                                          SelectedItem="{Binding Color}"
+                                          Height="28"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- PRICE BREAK -->
+                        <Border Background="#F8FAFC"
+                                CornerRadius="10"
+                                Padding="12"
+                                BorderBrush="#CBD5E1"
+                                BorderThickness="1">
+
+                            <StackPanel>
+                                <TextBlock Text="💰 PRICE BREAK" Style="{StaticResource SectionHeaderStyle}"/>
+
+                                <TextBlock Text="Sheet Price" Style="{StaticResource LabelStyle}"/>
+                                <TextBox x:Name="SheetBox"
+                                         Text="{Binding Sheet, UpdateSourceTrigger=PropertyChanged}"
+                                         Height="28"
+                                         ToolTip="Glass sheet price per SQM"
+                                         GotFocus="SelectAllText_GotFocus"/>
+
+                                <TextBlock Text="Cutting Charge" Style="{StaticResource LabelStyle}"/>
+                                <TextBox x:Name="CuttingBox"
+                                         Text="{Binding Cutting, UpdateSourceTrigger=PropertyChanged}"
+                                         Height="28"
+                                         ToolTip="Fabrication cost"
+                                         GotFocus="SelectAllText_GotFocus"/>
+
+                                <TextBlock Text="Tempering Charge" Style="{StaticResource LabelStyle}"/>
+                                <TextBox x:Name="TemperingBox"
+                                         Text="{Binding Tempering, UpdateSourceTrigger=PropertyChanged}"
+                                         Height="28"
+                                         ToolTip="Heat treatment cost"
+                                         GotFocus="SelectAllText_GotFocus"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- ================= MIDDLE COLUMN ================= -->
+                    <StackPanel Grid.Column="1" Margin="8,0">
+
+                        <!-- PROFIT SECTION -->
+                        <Border Background="#FEF3C7"
+                                CornerRadius="10"
+                                Padding="12"
+                                Margin="0,0,0,8"
+                                BorderBrush="#FCD34D"
+                                BorderThickness="1">
+
+                            <StackPanel>
+                                <TextBlock Text="💰 PROFIT MARGIN" Style="{StaticResource SectionHeaderStyle}"/>
+                                <ComboBox ItemsSource="{Binding ProfitOptions}"
+                                          SelectedItem="{Binding Profit}"
+                                          Height="28"
+                                          Margin="0,24,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- SAVE BUTTON -->
+                        <Button Content="💾 SAVE"
+                                Command="{Binding SaveCommand}"
+                                Background="#1E40AF"
+                                Foreground="White"
+                                FontWeight="Bold"
+                                FontSize="13"
+                                Height="45"
+                                Margin="0,0,0,8"/>
+
+                        <!-- CURRENT STAGE INDICATOR -->
+                        <Border Background="#FEF3C7"
+                                CornerRadius="10"
+                                Padding="12"
+                                BorderBrush="#FCD34D"
+                                BorderThickness="1">
+
+                            <StackPanel>
+                                <TextBlock Text="🔄 CURRENT STAGE"
+                                           FontWeight="Bold"
+                                           FontSize="12"
+                                           Foreground="#92400E"
+                                           Margin="0,0,0,8"/>
+
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,2">
+                                        <Ellipse Width="10" Height="10" Margin="0,0,6,0" Fill="#22C55E"/>
+                                        <TextBlock Text="1. Glass Base" FontSize="10" Foreground="#374151"/>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,2">
+                                        <Ellipse Width="10" Height="10" Margin="0,0,6,0" Fill="#3B82F6"/>
+                                        <TextBlock Text="2. Add Charges" FontSize="10" Foreground="#374151"/>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,2">
+                                        <Ellipse Width="10" Height="10" Margin="0,0,6,0" Fill="#EAB308"/>
+                                        <TextBlock Text="3. Apply Margin" FontSize="10" Foreground="#374151"/>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,2">
+                                        <Ellipse Width="10" Height="10" Margin="0,0,6,0" Fill="#0891B2"/>
+                                        <TextBlock Text="4. Final Result" FontSize="10" Foreground="#374151" FontWeight="Bold"/>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- ================= RIGHT COLUMN ================= -->
+                    <StackPanel Grid.Column="2" Margin="8,0,0,0">
+
+                        <!-- GUIDE SECTION -->
+                        <Border Background="#ECFDF5"
+                                CornerRadius="10"
+                                Padding="12"
+                                Margin="0,0,0,8"
+                                BorderBrush="#6EE7B7"
+                                BorderThickness="1">
+
+                            <StackPanel>
+                                <TextBlock Text="📘 HOW TO USE"
+                                           FontWeight="Bold"
+                                           FontSize="12"
+                                           Foreground="#047857"
+                                           Margin="0,0,0,6"/>
+
+                                <TextBlock Text="1️⃣ Select glass thickness" FontSize="10" Foreground="#374151" TextWrapping="Wrap"/>
+                                <TextBlock Text="2️⃣ Choose glass color" FontSize="10" Foreground="#374151" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                <TextBlock Text="3️⃣ Enter sheet price per SQM" FontSize="10" Foreground="#374151" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                <TextBlock Text="4️⃣ Add cutting charge if needed" FontSize="10" Foreground="#374151" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                <TextBlock Text="5️⃣ Add tempering if needed" FontSize="10" Foreground="#374151" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                <TextBlock Text="6️⃣ Set profit margin %" FontSize="10" Foreground="#374151" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                <TextBlock Text="7️⃣ Click SAVE to store" FontSize="10" Foreground="#374151" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- SYSTEM STATUS -->
+                        <Border Background="#F8FAFC"
+                                CornerRadius="10"
+                                Padding="12"
+                                BorderBrush="#CBD5E1"
+                                BorderThickness="1">
+
+                            <StackPanel>
+                                <TextBlock Text="📊 SYSTEM STATUS"
+                                           FontWeight="Bold"
+                                           FontSize="12"
+                                           Foreground="#1E3A5F"
+                                           HorizontalAlignment="Center"
+                                           Margin="0,0,0,8"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0">
+                                        <StackPanel Orientation="Horizontal" Margin="0,3">
+                                            <Ellipse Width="12" Height="12" Margin="0,0,6,0">
+                                                <Ellipse.Fill>
+                                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                        <GradientStop Color="#22C55E" Offset="0"/>
+                                                        <GradientStop Color="#16A34A" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </Ellipse.Fill>
+                                            </Ellipse>
+                                            <TextBlock Text="Ready" FontSize="11" FontWeight="Medium" Foreground="#16A34A"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,3">
+                                            <Ellipse Width="12" Height="12" Margin="0,0,6,0">
+                                                <Ellipse.Fill>
+                                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                        <GradientStop Color="#EAB308" Offset="0"/>
+                                                        <GradientStop Color="#CA8A04" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </Ellipse.Fill>
+                                            </Ellipse>
+                                            <TextBlock Text="Waiting" FontSize="11" FontWeight="Medium" Foreground="#CA8A04"/>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="1">
+                                        <StackPanel Orientation="Horizontal" Margin="0,3">
+                                            <Ellipse Width="12" Height="12" Margin="0,0,6,0">
+                                                <Ellipse.Fill>
+                                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                        <GradientStop Color="#3B82F6" Offset="0"/>
+                                                        <GradientStop Color="#2563EB" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </Ellipse.Fill>
+                                            </Ellipse>
+                                            <TextBlock Text="Calculating" FontSize="11" FontWeight="Medium" Foreground="#2563EB"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,3">
+                                            <Ellipse Width="12" Height="12" Margin="0,0,6,0">
+                                                <Ellipse.Fill>
+                                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                        <GradientStop Color="#EF4444" Offset="0"/>
+                                                        <GradientStop Color="#DC2626" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </Ellipse.Fill>
+                                            </Ellipse>
+                                            <TextBlock Text="Error" FontSize="11" FontWeight="Medium" Foreground="#DC2626"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- ================= HISTORY SECTION ================= -->
+            <Border Grid.Row="2"
+                    Margin="0,10,0,0">
+
+                <StackPanel>
+                    <ToggleButton Content="📜 HISTORY"
+                                  IsChecked="{Binding IsHistoryVisible}"
+                                  Style="{StaticResource ToggleButtonStyle}"
+                                  HorizontalAlignment="Stretch"/>
+
+                    <Border Background="#F0F9FF"
+                            CornerRadius="10"
+                            Padding="12"
+                            Margin="0,8,0,0"
+                            Height="180"
+                            BorderBrush="#BAE6FD"
+                            BorderThickness="1"
+                            Visibility="{Binding IsHistoryVisible, Converter={StaticResource BoolToVisConverter}}">
+
+                        <ListBox ItemsSource="{Binding Records}"
+                                 Background="Transparent"
+                                 BorderThickness="0"
+                                 ScrollViewer.VerticalScrollBarVisibility="Auto">
+                            <ListBox.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ListBox.ItemsPanel>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="White"
+                                            CornerRadius="8"
+                                            Padding="10"
+                                            Margin="4"
+                                            BorderBrush="#E2E8F0"
+                                            BorderThickness="1"
+                                            MinWidth="280">
+                                        <TextBlock Text="{Binding DisplayText}"
+                                                   TextWrapping="Wrap"
+                                                   FontSize="11"
+                                                   Foreground="#334155"
+                                                   ToolTip="{Binding DisplayText}"/>
+                                    </Border>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+        </Grid>
 
     </Grid>
 

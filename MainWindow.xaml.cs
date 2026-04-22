@@ -8,8 +8,6 @@ using System.Windows.Threading;
 using ProGlassAutomation.Views.SGU;
 using ProGlassAutomation.Views.DGU;
 using ProGlassAutomation.Views.Lamination;
-
-// ================= FIX ADDED (IMPORTANT) =================
 using ProGlassAutomation.Views.DGULamination;
 
 namespace ProGlassAutomation
@@ -112,7 +110,7 @@ namespace ProGlassAutomation
                                     CreateStatusCard("📊 SGU MODULE", "LIVE READY", Brushes.LimeGreen),
                                     CreateStatusCard("🧮 DGU MODULE", "LIVE READY", Brushes.LimeGreen),
                                     CreateStatusCard("🧪 LAMINATION", "LIVE READY", Brushes.LimeGreen),
-                                    CreateStatusCard("🧮\U0001f9ea DGU+LAMINATION MODULE", "LIVE READY", Brushes.LimeGreen),
+                                    CreateStatusCard("🧩 DGU+LAMINATION", "LIVE READY", Brushes.LimeGreen)
                                 }
                             },
 
@@ -176,11 +174,11 @@ namespace ProGlassAutomation
                 if (view != null)
                     MainPanel.Content = view;
                 else
-                    MessageBox.Show("Module not found.");
+                    MessageBox.Show("Module not found.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error loading module: " + ex.Message);
+                MessageBox.Show("Error loading module: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -200,18 +198,9 @@ namespace ProGlassAutomation
             LoadModule(new LaminationView());
         }
 
-        // ================= FIXED: DGU + LAMINATION MODULE =================
         private void DguLam_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            try
-            {
-                // ✔ REAL VIEW LOADING (NO UI CHANGE, ONLY FIX)
-                LoadModule(new DGULaminationView());
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("DGU + LAMINATION MODULE ERROR: " + ex.Message);
-            }
+            LoadModule(new DGULaminationView());
         }
 
         // ================= PROPERTY CHANGE =================

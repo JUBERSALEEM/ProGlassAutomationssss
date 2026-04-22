@@ -7,7 +7,6 @@
         WindowStartupLocation="CenterScreen"
         Background="#F4F6F9">
 
-    <!-- ================= RESOURCES ================= -->
     <Window.Resources>
 
         <DropShadowEffect x:Key="CardShadow"
@@ -65,7 +64,6 @@
 
     <Grid>
 
-        <!-- ================= LAYOUT ================= -->
         <Grid.RowDefinitions>
             <RowDefinition Height="120"/>
             <RowDefinition Height="*"/>
@@ -195,7 +193,6 @@
 
             <StackPanel>
 
-                <!-- SGU Module -->
                 <Border Background="#0A6ED1"
                         Margin="6"
                         CornerRadius="12"
@@ -208,7 +205,6 @@
                                HorizontalAlignment="Center"/>
                 </Border>
 
-                <!-- DGU Module -->
                 <Border Background="#0854A0"
                         Margin="6"
                         CornerRadius="12"
@@ -221,7 +217,6 @@
                                HorizontalAlignment="Center"/>
                 </Border>
 
-                <!-- LAMINATION Module -->
                 <Border Background="#1E88E5"
                         Margin="6"
                         CornerRadius="12"
@@ -234,7 +229,6 @@
                                HorizontalAlignment="Center"/>
                 </Border>
 
-                <!-- DGU + LAMINATION Module -->
                 <Border Background="#D32F2F"
                         Margin="6"
                         CornerRadius="12"
@@ -251,7 +245,7 @@
 
         </Border>
 
-        <!-- ================= WELCOME SCREEN (PROFESSIONAL) ================= -->
+        <!-- ================= WELCOME SCREEN ================= -->
         <Border Grid.Row="1"
                 Grid.Column="1"
                 Margin="10"
@@ -261,7 +255,6 @@
                 x:Name="WelcomeScreen">
 
             <Grid>
-                <!-- Welcome Content -->
                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="20">
 
                     <!-- Welcome Header -->
@@ -300,7 +293,6 @@
                         <!-- Left Column -->
                         <StackPanel Grid.Column="0" Margin="0,0,15,0">
 
-                            <!-- SGU Card -->
                             <Border Background="#0A6ED1"
                                     CornerRadius="16"
                                     Padding="24"
@@ -323,7 +315,6 @@
                                 </StackPanel>
                             </Border>
 
-                            <!-- DGU Card -->
                             <Border Background="#0854A0"
                                     CornerRadius="16"
                                     Padding="24"
@@ -351,7 +342,6 @@
                         <!-- Right Column -->
                         <StackPanel Grid.Column="1" Margin="15,0,0,0">
 
-                            <!-- LAMINATION Card -->
                             <Border Background="#1E88E5"
                                     CornerRadius="16"
                                     Padding="24"
@@ -363,7 +353,7 @@
                                     <TextBlock Text="LAMINATION"
                                                FontSize="16"
                                                FontWeight="Bold"
-                                               Foreground="DarkGreen"
+                                               Foreground="White"
                                                HorizontalAlignment="Center"
                                                Margin="0,8,0,0"/>
                                     <TextBlock Text="Safety glass processing"
@@ -374,8 +364,7 @@
                                 </StackPanel>
                             </Border>
 
-                            <!-- DGU + LAMINATION Card -->
-                            <Border Background="Blue"
+                            <Border Background="#D32F2F"
                                     CornerRadius="16"
                                     Padding="24"
                                     Margin="0,0,0,0"

@@ -1,23 +1,21 @@
-﻿using System.Windows.Controls;
-using ProGlassAutomation.ViewModels.SGU;
+﻿using System.Windows;
+using System.Windows.Controls;
 
 namespace ProGlassAutomation.Views.SGU
 {
     public partial class SguView : UserControl
     {
-        private readonly SguViewModel vm;
-
         public SguView()
         {
             InitializeComponent();
-
-            vm = new SguViewModel();
-            DataContext = vm;
         }
 
-        private void Save_Click(object sender, System.Windows.RoutedEventArgs e)
+        private void SelectAllText_GotFocus(object sender, RoutedEventArgs e)
         {
-            vm?.Save();
+            if (sender is TextBox textBox)
+            {
+                textBox.SelectAll();
+            }
         }
     }
 }
