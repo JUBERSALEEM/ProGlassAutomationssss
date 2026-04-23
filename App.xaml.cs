@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
 using ProGlassAutomation.Data.Database;
 
 namespace ProGlassAutomation
@@ -9,14 +10,13 @@ namespace ProGlassAutomation
         {
             base.OnStartup(e);
 
+            // 🔵 Initialize database
             try
             {
-                // 🔵 Initialize database (VERY IMPORTANT)
                 DbHelper.Init();
-
                 System.Diagnostics.Debug.WriteLine("✔ DATABASE INITIALIZED");
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine("❌ DB INIT FAILED: " + ex.Message);
 

@@ -7,9 +7,6 @@ namespace ProGlassAutomation.Views.DGULamination
         public DGULaminationView()
         {
             InitializeComponent();
-
-            // 🔥 CRITICAL FIX (THIS WAS MISSING = BLANK PAGE ISSUE)
-            DataContext = new DGULaminationViewModel();
         }
     }
 }

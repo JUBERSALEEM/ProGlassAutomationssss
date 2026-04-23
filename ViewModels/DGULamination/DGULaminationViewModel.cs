@@ -2,14 +2,14 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Windows;
+using System.Windows.Input;
 
 namespace ProGlassAutomation.Views.DGULamination
 {
     public class DGULaminationViewModel : INotifyPropertyChanged
     {
         // =====================================================
-        // 🚨 SINGLE PROPERTY CHANGED EVENT (NO AMBIGUITY)
+        // EVENT HANDLER
         // =====================================================
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -18,294 +18,249 @@ namespace ProGlassAutomation.Views.DGULamination
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
-        private bool _lock;
+        // =====================================================
+        // COLLECTIONS
+        // =====================================================
+        public ObservableCollection<string> GlassThicknessOptions { get; } = new ObservableCollection<string>
+        {
+            "3mm", "4mm", "5mm", "6mm", "8mm", "10mm", "12mm", "15mm", "19mm"
+        };
+
+        public ObservableCollection<string> ColorOptions { get; } = new ObservableCollection<string>
+        {
+            "Clear", "HD Grey", "Green", "Blue", "Grey", "Bronze", "Tinted", "Reflective"
+        };
+
+        public ObservableCollection<string> AspThicknessOptions { get; } = new ObservableCollection<string>
+        {
+            "6mm", "8mm", "10mm", "12mm", "14mm", "16mm", "18mm", "20mm", "22mm", "24mm"
+        };
+
+        public ObservableCollection<string> AspTypeOptions { get; } = new ObservableCollection<string>
+        {
+            "Normal", "Black"
+        };
+
+        public ObservableCollection<string> ProfitOptions { get; } = new ObservableCollection<string>
+        {
+            "15%", "20%", "25%", "30%", "35%"
+        };
+
+        public ObservableCollection<RecordModel> Records { get; } = new ObservableCollection<RecordModel>();
 
         // =====================================================
-        // 🪟 GLASS PROPERTIES (NEW)
+        // PRICE PROPERTIES
+        // =====================================================
+        private string _sheet1 = "46";
+        public string Sheet1
+        {
+            get => _sheet1;
+            set { _sheet1 = value; OnPropertyChanged(); Calculate(); }
+        }
+
+        private string _sheet2 = "29";
+        public string Sheet2
+        {
+            get => _sheet2;
+            set { _sheet2 = value; OnPropertyChanged(); Calculate(); }
+        }
+
+        private string _sheet3 = "29";
+        public string Sheet3
+        {
+            get => _sheet3;
+            set { _sheet3 = value; OnPropertyChanged(); Calculate(); }
+        }
+
+        private string _aspPrice = "45";
+        public string AspPrice
+        {
+            get => _aspPrice;
+            set { _aspPrice = value; OnPropertyChanged(); Calculate(); }
+        }
+
+        private string _outsourcePrice = "100";
+        public string OutsourcePrice
+        {
+            get => _outsourcePrice;
+            set { _outsourcePrice = value; OnPropertyChanged(); Calculate(); }
+        }
+
+        // =====================================================
+        // GLASS PROPERTIES
         // =====================================================
         private string _thickness1 = "6mm";
         public string Thickness1
         {
             get => _thickness1;
-            set { _thickness1 = value; Recalc(); OnPropertyChanged(); }
+            set { _thickness1 = value; OnPropertyChanged(); Calculate(); }
         }
 
         private string _color1 = "Clear";
         public string Color1
         {
             get => _color1;
-            set { _color1 = value; Recalc(); OnPropertyChanged(); }
+            set { _color1 = value; OnPropertyChanged(); }
         }
 
         private string _thickness2 = "6mm";
         public string Thickness2
         {
             get => _thickness2;
-            set { _thickness2 = value; Recalc(); OnPropertyChanged(); }
+            set { _thickness2 = value; OnPropertyChanged(); Calculate(); }
         }
 
         private string _color2 = "Clear";
         public string Color2
         {
             get => _color2;
-            set { _color2 = value; Recalc(); OnPropertyChanged(); }
+            set { _color2 = value; OnPropertyChanged(); }
         }
 
         private string _thickness3 = "6mm";
         public string Thickness3
         {
             get => _thickness3;
-            set { _thickness3 = value; Recalc(); OnPropertyChanged(); }
+            set { _thickness3 = value; OnPropertyChanged(); Calculate(); }
         }
 
         private string _color3 = "Clear";
         public string Color3
         {
             get => _color3;
-            set { _color3 = value; Recalc(); OnPropertyChanged(); }
+            set { _color3 = value; OnPropertyChanged(); }
         }
 
         // =====================================================
-        // 💰 PRICE INPUTS (Keep existing)
-        // =====================================================
-        private double _sheet1 = 46;
-        public double Sheet1
-        {
-            get => _sheet1;
-            set { _sheet1 = value; Recalc(); }
-        }
-
-        private double _sheet2 = 29;
-        public double Sheet2
-        {
-            get => _sheet2;
-            set { _sheet2 = value; Recalc(); }
-        }
-
-        private double _sheet3 = 29;
-        public double Sheet3
-        {
-            get => _sheet3;
-            set { _sheet3 = value; Recalc(); }
-        }
-
-        // =====================================================
-        // 📏 ASP SETTINGS
+        // ASP SETTINGS
         // =====================================================
         private string _aspThickness = "12mm";
         public string AspThickness
         {
             get => _aspThickness;
-            set { _aspThickness = value; Recalc(); }
+            set { _aspThickness = value; OnPropertyChanged(); Calculate(); }
         }
 
         private string _aspType = "Normal";
         public string AspType
         {
             get => _aspType;
-            set { _aspType = value; Recalc(); }
-        }
-
-        private double _aspPrice = 45;
-        public double AspPrice
-        {
-            get => _aspPrice;
-            set { _aspPrice = value; Recalc(); }
+            set { _aspType = value; OnPropertyChanged(); Calculate(); }
         }
 
         // =====================================================
-        // 🚚 OUTSOURCE
+        // PROFIT MARGIN
         // =====================================================
-        private double _outsource = 100;
-        public double OutsourcePrice
-        {
-            get => _outsource;
-            set { _outsource = value; Recalc(); }
-        }
-
-        // =====================================================
-        // 📈 PROFIT
-        // =====================================================
-        private string _profit = "15%";
+        private string _profitMargin = "20%";
         public string ProfitMargin
         {
-            get => _profit;
-            set { _profit = value; Recalc(); }
+            get => _profitMargin;
+            set { _profitMargin = value; OnPropertyChanged(); Calculate(); }
         }
 
         // =====================================================
-        // 📊 RESULT
+        // RESULT
         // =====================================================
         private string _result = "0.00";
         public string Result
         {
             get => _result;
-            set
-            {
-                _result = value;
-                OnPropertyChanged();
-            }
+            set { _result = value; OnPropertyChanged(); }
         }
 
         // =====================================================
-        // 🟢 STATUS INDICATORS (For colorful balls)
+        // HISTORY VISIBILITY
         // =====================================================
-        private bool _isOuterActive = true;
-        public bool IsOuterActive
+        private bool _isHistoryVisible = false;
+        public bool IsHistoryVisible
         {
-            get => _isOuterActive;
-            set { _isOuterActive = value; OnPropertyChanged(); }
-        }
-
-        private bool _isInnerActive = true;
-        public bool IsInnerActive
-        {
-            get => _isInnerActive;
-            set { _isInnerActive = value; OnPropertyChanged(); }
-        }
-
-        private bool _isLaminationActive = false;
-        public bool IsLaminationActive
-        {
-            get => _isLaminationActive;
-            set { _isLaminationActive = value; OnPropertyChanged(); }
-        }
-
-        private bool _isAspActive = true;
-        public bool IsAspActive
-        {
-            get => _isAspActive;
-            set { _isAspActive = value; OnPropertyChanged(); }
+            get => _isHistoryVisible;
+            set { _isHistoryVisible = value; OnPropertyChanged(); }
         }
 
         // =====================================================
-        // 📦 COLLECTIONS
+        // SAVE COMMAND
         // =====================================================
-        public ObservableCollection<string> GlassThicknessOptions { get; set; }
-        public ObservableCollection<string> AspThicknessOptions { get; set; }
-        public ObservableCollection<string> AspTypeOptions { get; set; }
-        public ObservableCollection<string> ColorOptions { get; set; }
-
-        public ObservableCollection<RecordModel> Records { get; set; }
+        public ICommand SaveCommand { get; }
 
         // =====================================================
-        // 🚀 CONSTRUCTOR
+        // CONSTRUCTOR
         // =====================================================
         public DGULaminationViewModel()
         {
-            GlassThicknessOptions = new()
-            {
-                "6mm","8mm","10mm","12mm","15mm","19mm"
-            };
-
-            AspThicknessOptions = new()
-            {
-                "6mm","8mm","10mm","12mm","14mm","16mm",
-                "18mm","20mm","22mm","24mm"
-            };
-
-            AspTypeOptions = new() { "Normal", "Black" };
-
-            ColorOptions = new()
-            {
-                "Clear", "HD Grey", "Green", "Blue", "Grey", "Bronze"
-            };
-
-            Records = new ObservableCollection<RecordModel>();
-
-            Recalc();
+            SaveCommand = new RelayCommand(SaveRecord);
+            Calculate();
         }
 
         // =====================================================
-        // 🧠 MAIN CALC ENGINE + CLEAN HISTORY FORMAT
+        // 🧠 LIVE CALCULATION ENGINE
         // =====================================================
-        private void Recalc()
+        private void Calculate()
         {
-            if (_lock) return;
-
             try
             {
-                _lock = true;
+                double s1 = ParseDouble(Sheet1);
+                double s2 = ParseDouble(Sheet2);
+                double s3 = ParseDouble(Sheet3);
+                double asp = ParseDouble(AspPrice);
+                double outsource = ParseDouble(OutsourcePrice);
 
-                // 🔹 GLASS TOTAL
-                double glassTotal = Sheet1 + Sheet2 + Sheet3;
-
-                // 🔹 PROFIT FACTOR
+                double glassTotal = s1 + s2 + s3;
                 double factor = GetProfitFactor();
-
                 double step1 = glassTotal / factor;
-
-                // 🔹 ASP CALC
-                double asp = GetAsp();
-
-                // 🔹 BASE
-                double baseValue = step1 + asp + OutsourcePrice;
-
-                // 🔹 FINAL PROFIT
-                double profit = GetProfitPercent();
-
-                double final = baseValue * (1 + profit);
+                double aspValue = GetAspValue();
+                double baseValue = step1 + aspValue + outsource;
+                double profitPercent = GetProfitPercent();
+                double final = baseValue * (1 + profitPercent);
 
                 Result = final.ToString("0.00");
+            }
+            catch
+            {
+                Result = "0.00";
+            }
+        }
 
-                // 🎯 CLEAN PROFESSIONAL HISTORY FORMAT WITH DATE/TIME
-                string history = BuildCleanHistoryString(final);
+        // =====================================================
+        // 💾 SAVE RECORD (COMPACT FORMAT)
+        // =====================================================
+        private void SaveRecord()
+        {
+            try
+            {
+                string timestamp = DateTime.Now.ToString("dd-MMMM-yyyy - hh:mmtt");
+                double final = ParseDouble(Result);
 
-                Records.Insert(0, new RecordModel
-                {
-                    DisplayText = history
-                });
+                // Build compact specification string
+                string spec = $"{Thickness1} {Color1} FT Glass + " +
+                             $"1.52mm {Color3} PVB + " +
+                             $"{Thickness3} {Color3} FT Glass";
 
-                // Limit history to 10 items
-                if (Records.Count > 10)
+                // Final compact format
+                string record = $"{spec} - {final:0.00} AED - {timestamp}";
+
+                Records.Insert(0, new RecordModel { DisplayText = record });
+
+                while (Records.Count > 10)
                     Records.RemoveAt(Records.Count - 1);
-
-                // Update status indicators
-                UpdateStatusIndicators();
-
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show("CALC ERROR: " + ex.Message);
-            }
-            finally
-            {
-                _lock = false;
-            }
+            catch { }
         }
 
         // =====================================================
-        // 📝 BUILD CLEAN HISTORY STRING WITH DATE/TIME & RESULT
+        // HELPER: Parse Double Safely
         // =====================================================
-        private string BuildCleanHistoryString(double finalPrice)
+        private double ParseDouble(string value)
         {
-            string timestamp = DateTime.Now.ToString("dd MMM yyyy | HH:mm:ss");
-
-            return $"📋 {timestamp}\n" +
-                   $"{Thickness1} {Color1} FT Glass +\n" +
-                   $"{AspThickness} {AspType} ASP +\n" +
-                   $"{Thickness2} {Color2} FT Glass +\n" +
-                   $"1.52 {Color3} PVB +\n" +
-                   $"{Thickness3} {Color3} FT Glass\n" +
-                   $"━━━━━━━━━━━━━━━\n" +
-                   $"💰 TOTAL: {finalPrice:0.00}";
+            if (string.IsNullOrEmpty(value)) return 0;
+            if (double.TryParse(value, out double result)) return result;
+            return 0;
         }
 
         // =====================================================
-        // 🟢 UPDATE STATUS INDICATORS
+        // ASP VALUE LOGIC
         // =====================================================
-        private void UpdateStatusIndicators()
-        {
-            IsOuterActive = !string.IsNullOrEmpty(Thickness1) && Sheet1 > 0;
-            IsInnerActive = !string.IsNullOrEmpty(Thickness2) && Sheet2 > 0;
-            IsLaminationActive = !string.IsNullOrEmpty(Thickness3) && Sheet3 > 0;
-            IsAspActive = !string.IsNullOrEmpty(AspThickness) && AspPrice > 0;
-        }
-
-        // =====================================================
-        // 🧪 ASP LOGIC (NORMAL + BLACK +10)
-        // =====================================================
-        private double GetAsp()
+        private double GetAspValue()
         {
             double baseAsp = AspThickness switch
             {
@@ -329,7 +284,7 @@ namespace ProGlassAutomation.Views.DGULamination
         }
 
         // =====================================================
-        // 📊 PROFIT FACTOR
+        // PROFIT FACTOR
         // =====================================================
         private double GetProfitFactor()
         {
@@ -340,12 +295,12 @@ namespace ProGlassAutomation.Views.DGULamination
                 "25%" => 0.75,
                 "30%" => 0.70,
                 "35%" => 0.65,
-                _ => 0.85
+                _ => 0.80
             };
         }
 
         // =====================================================
-        // 📈 PROFIT %
+        // PROFIT PERCENTAGE
         // =====================================================
         private double GetProfitPercent()
         {
@@ -356,21 +311,29 @@ namespace ProGlassAutomation.Views.DGULamination
                 "25%" => 0.25,
                 "30%" => 0.30,
                 "35%" => 0.35,
-                _ => 0.15
+                _ => 0.20
             };
         }
     }
 
     // =====================================================
-    // 📜 ENHANCED HISTORY MODEL
+    // RECORD MODEL
     // =====================================================
     public class RecordModel
     {
-        public string DisplayText { get; set; }
+        public string DisplayText { get; set; } = "";
+        public override string ToString() => DisplayText;
+    }
 
-        public override string ToString()
-        {
-            return DisplayText;
-        }
+    // =====================================================
+    // RELAY COMMAND
+    // =====================================================
+    public class RelayCommand : ICommand
+    {
+        private readonly Action _execute;
+        public RelayCommand(Action execute) => _execute = execute;
+        public event EventHandler CanExecuteChanged;
+        public bool CanExecute(object parameter) => true;
+        public void Execute(object parameter) => _execute();
     }
 }
