@@ -1,6 +1,6 @@
-﻿using System;
+﻿using QuestPDF;
+using QuestPDF.Infrastructure;
 using System.Windows;
-using ProGlassAutomation.Data.Database;
 
 namespace ProGlassAutomation
 {
@@ -10,25 +10,8 @@ namespace ProGlassAutomation
         {
             base.OnStartup(e);
 
-            // 🔵 Initialize database
-            try
-            {
-                DbHelper.Init();
-                System.Diagnostics.Debug.WriteLine("✔ DATABASE INITIALIZED");
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine("❌ DB INIT FAILED: " + ex.Message);
-
-                MessageBox.Show(
-                    "Database initialization failed:\n" + ex.Message,
-                    "Database Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error
-                );
-
-                Shutdown();
-            }
+            // Apply QuestPDF Community License (Free for non-commercial)
+            QuestPDF.Settings.License = LicenseType.Community;
         }
     }
 }

@@ -389,5 +389,15 @@ namespace ProGlassAutomation.Data.Database
 
             return list;
         }
+
+        internal static void DeleteDgu(int id)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal static void DeleteSgu(int id)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

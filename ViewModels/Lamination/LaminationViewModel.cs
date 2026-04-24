@@ -7,6 +7,7 @@ using System.Windows.Input;
 using ProGlassAutomation.Models;
 using ProGlassAutomation.Data.Database;
 using ProGlassAutomation.Views.SGU;
+using ProGlassAutomation.Helpers;
 
 namespace ProGlassAutomation.Views.Lamination
 {

@@ -2,486 +2,191 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Glass ERP System - SAP Fiori Enterprise"
-        Height="780"
-        Width="1280"
+        Height="780" Width="1280"
         WindowStartupLocation="CenterScreen"
         Background="#F4F6F9">
-
     <Window.Resources>
-
-        <DropShadowEffect x:Key="CardShadow"
-                          BlurRadius="20"
-                          ShadowDepth="2"
-                          Opacity="0.18"
-                          Color="#000000"/>
-
+        <DropShadowEffect x:Key="CardShadow" BlurRadius="20" ShadowDepth="2" Opacity="0.18" Color="#000000"/>
         <Style x:Key="FioriCard" TargetType="Border">
-            <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Effect" Value="{StaticResource CardShadow}"/>
             <Setter Property="RenderTransform">
                 <Setter.Value>
                     <ScaleTransform ScaleX="1" ScaleY="1"/>
                 </Setter.Value>
             </Setter>
-            <Setter Property="Effect" Value="{StaticResource CardShadow}"/>
             <Style.Triggers>
-                <EventTrigger RoutedEvent="MouseEnter">
-                    <BeginStoryboard>
-                        <Storyboard>
-                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleX" To="1.04" Duration="0:0:0.12"/>
-                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleY" To="1.04" Duration="0:0:0.12"/>
-                        </Storyboard>
-                    </BeginStoryboard>
-                </EventTrigger>
-                <EventTrigger RoutedEvent="MouseLeave">
-                    <BeginStoryboard>
-                        <Storyboard>
-                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleX" To="1" Duration="0:0:0.12"/>
-                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleY" To="1" Duration="0:0:0.12"/>
-                        </Storyboard>
-                    </BeginStoryboard>
-                </EventTrigger>
-                <EventTrigger RoutedEvent="MouseDown">
-                    <BeginStoryboard>
-                        <Storyboard>
-                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleX" To="0.97" Duration="0:0:0.05"/>
-                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleY" To="0.97" Duration="0:0:0.05"/>
-                        </Storyboard>
-                    </BeginStoryboard>
-                </EventTrigger>
-                <EventTrigger RoutedEvent="MouseUp">
-                    <BeginStoryboard>
-                        <Storyboard>
-                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleX" To="1.04" Duration="0:0:0.08"/>
-                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleY" To="1.04" Duration="0:0:0.08"/>
-                        </Storyboard>
-                    </BeginStoryboard>
-                </EventTrigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="RenderTransform">
+                        <Setter.Value>
+                            <ScaleTransform ScaleX="1.04" ScaleY="1.04"/>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
             </Style.Triggers>
         </Style>
-
     </Window.Resources>
-
     <Grid>
-
         <Grid.RowDefinitions>
             <RowDefinition Height="120"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="100"/>
         </Grid.RowDefinitions>
-
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="240"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- ================= HEADER ================= -->
-        <Border Grid.Row="0"
-                Grid.ColumnSpan="2"
-                Margin="10"
-                CornerRadius="18"
-                Background="#0A6ED1"
-                Effect="{StaticResource CardShadow}">
-
+        <!-- HEADER -->
+        <Border Grid.Row="0" Grid.ColumnSpan="2" Margin="10" CornerRadius="18" Background="#0A6ED1" Effect="{StaticResource CardShadow}">
             <Grid>
-
-                <TextBlock Text="🏭 PROGLASS ERP SYSTEM"
-                           Foreground="White"
-                           FontSize="26"
-                           FontWeight="Bold"
-                           VerticalAlignment="Center"
-                           Margin="20,0,0,0"/>
-
-                <StackPanel Orientation="Horizontal"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            Margin="0,0,20,0">
-
-                    <Border Background="White"
-                            CornerRadius="10"
-                            Padding="10"
-                            Margin="4"
-                            Width="220"
-                            Height="60"
-                            Style="{StaticResource FioriCard}">
+                <TextBlock Text="🏭 PROGLASS ERP SYSTEM" Foreground="White" FontSize="26" FontWeight="Bold" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,20,0">
+                    <Border Background="White" CornerRadius="10" Padding="10" Margin="4" Width="220" Height="60" Style="{StaticResource FioriCard}">
                         <StackPanel Orientation="Horizontal">
                             <StackPanel Margin="0,0,10,0">
-                                <TextBlock Text="📅 DATE"
-                                           Foreground="#0A6ED1"
-                                           FontWeight="Bold"
-                                           FontSize="10"/>
-                                <TextBlock Text="{Binding CurrentDateText}"
-                                           FontSize="12"/>
+                                <TextBlock Text="📅 DATE" Foreground="#0A6ED1" FontWeight="Bold" FontSize="10"/>
+                                <TextBlock Text="{Binding CurrentDateText}" FontSize="12"/>
                             </StackPanel>
-                            <TextBlock Text="|"
-                                       VerticalAlignment="Center"
-                                       FontSize="14"/>
+                            <TextBlock Text="|" VerticalAlignment="Center" FontSize="14"/>
                             <StackPanel Margin="10,0,0,0">
-                                <TextBlock Text="⏰ TIME"
-                                           Foreground="#0A6ED1"
-                                           FontWeight="Bold"
-                                           FontSize="10"/>
-                                <TextBlock Text="{Binding ClockText}"
-                                           FontSize="12"/>
+                                <TextBlock Text="⏰ TIME" Foreground="#0A6ED1" FontWeight="Bold" FontSize="10"/>
+                                <TextBlock Text="{Binding ClockText}" FontSize="12"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>
-
-                    <Border Background="White"
-                            CornerRadius="10"
-                            Padding="10"
-                            Margin="4"
-                            Width="130"
-                            Height="60"
-                            Style="{StaticResource FioriCard}">
+                    <Border Background="White" CornerRadius="10" Padding="10" Margin="4" Width="130" Height="60" Style="{StaticResource FioriCard}">
                         <StackPanel>
-                            <TextBlock Text="👤 USER"
-                                       Foreground="#0A6ED1"
-                                       FontWeight="Bold"
-                                       FontSize="10"/>
-                            <TextBlock Text="JUBER SALEEM"
-                                       FontSize="12"/>
+                            <TextBlock Text="👤 DEVELOPER" Foreground="#0A6ED1" FontWeight="Bold" FontSize="10"/>
+                            <TextBlock Text="JUBER SALEEM" FontSize="12"/>
                         </StackPanel>
                     </Border>
-
-                    <Border Background="White"
-                            CornerRadius="10"
-                            Padding="10"
-                            Margin="4"
-                            Width="110"
-                            Height="60"
-                            Style="{StaticResource FioriCard}">
+                    <Border Background="White" CornerRadius="10" Padding="10" Margin="4" Width="110" Height="60" Style="{StaticResource FioriCard}">
                         <StackPanel>
-                            <TextBlock Text="🌍 LOCATION"
-                                       Foreground="#0A6ED1"
-                                       FontWeight="Bold"
-                                       FontSize="10"/>
-                            <TextBlock Text="DUBAI, UAE"
-                                       FontSize="12"/>
+                            <TextBlock Text="🌍 LOCATION" Foreground="#0A6ED1" FontWeight="Bold" FontSize="10"/>
+                            <TextBlock Text="DUBAI, UAE" FontSize="12"/>
                         </StackPanel>
                     </Border>
-
-                    <Border Background="White"
-                            CornerRadius="10"
-                            Padding="10"
-                            Margin="4"
-                            Width="140"
-                            Height="60"
-                            Style="{StaticResource FioriCard}">
+                    <Border Background="White" CornerRadius="10" Padding="10" Margin="4" Width="140" Height="60" Style="{StaticResource FioriCard}">
                         <StackPanel>
-                            <TextBlock Text="📞 CONTACT"
-                                       Foreground="#0A6ED1"
-                                       FontWeight="Bold"
-                                       FontSize="10"/>
-                            <TextBlock Text="+971-559117727"
-                                       FontSize="12"/>
+                            <TextBlock Text="📞 CONTACT" Foreground="#0A6ED1" FontWeight="Bold" FontSize="10"/>
+                            <TextBlock Text="+971-559117727" FontSize="12"/>
                         </StackPanel>
                     </Border>
-
                 </StackPanel>
-
             </Grid>
         </Border>
 
-        <!-- ================= SIDEBAR ================= -->
-        <Border Grid.Row="1"
-                Grid.Column="0"
-                Background="WhiteSmoke"
-                Margin="10"
-                CornerRadius="14"
-                Effect="{StaticResource CardShadow}">
-
+        <!-- SIDEBAR -->
+        <Border Grid.Row="1" Grid.Column="0" Background="WhiteSmoke" Margin="10" CornerRadius="14" Effect="{StaticResource CardShadow}">
             <StackPanel>
-
-                <Border Background="#0A6ED1"
-                        Margin="6"
-                        CornerRadius="12"
-                        MouseDown="SGU_Click"
-                        Style="{StaticResource FioriCard}">
-                    <TextBlock Text="📊 SGU"
-                               Foreground="White"
-                               FontWeight="SemiBold"
-                               Padding="14"
-                               HorizontalAlignment="Center"/>
+                <Border Background="#0A6ED1" Margin="6" CornerRadius="12" MouseLeftButtonDown="SGU_Click" Style="{StaticResource FioriCard}">
+                    <TextBlock Text="📊 SGU" Foreground="White" FontWeight="SemiBold" Padding="14" HorizontalAlignment="Center"/>
                 </Border>
-
-                <Border Background="#0854A0"
-                        Margin="6"
-                        CornerRadius="12"
-                        MouseDown="DGU_Click"
-                        Style="{StaticResource FioriCard}">
-                    <TextBlock Text="🧮 DGU"
-                               Foreground="White"
-                               FontWeight="SemiBold"
-                               Padding="14"
-                               HorizontalAlignment="Center"/>
+                <Border Background="#0854A0" Margin="6" CornerRadius="12" MouseLeftButtonDown="DGU_Click" Style="{StaticResource FioriCard}">
+                    <TextBlock Text="🧮 DGU" Foreground="White" FontWeight="SemiBold" Padding="14" HorizontalAlignment="Center"/>
                 </Border>
-
-                <Border Background="#1E88E5"
-                        Margin="6"
-                        CornerRadius="12"
-                        MouseDown="LAM_Click"
-                        Style="{StaticResource FioriCard}">
-                    <TextBlock Text="🧪 LAMINATION"
-                               Foreground="White"
-                               FontWeight="SemiBold"
-                               Padding="14"
-                               HorizontalAlignment="Center"/>
+                <Border Background="#1E88E5" Margin="6" CornerRadius="12" MouseLeftButtonDown="LAM_Click" Style="{StaticResource FioriCard}">
+                    <TextBlock Text="🧪 LAMINATION" Foreground="White" FontWeight="SemiBold" Padding="14" HorizontalAlignment="Center"/>
                 </Border>
-
-                <Border Background="#D32F2F"
-                        Margin="6"
-                        CornerRadius="12"
-                        MouseDown="DguLam_Click"
-                        Style="{StaticResource FioriCard}">
-                    <TextBlock Text="🧩 DGU + LAMINATION"
-                               Foreground="White"
-                               FontWeight="SemiBold"
-                               Padding="14"
-                               HorizontalAlignment="Center"/>
+                <Border Background="#D32F2F" Margin="6" CornerRadius="12" MouseLeftButtonDown="DguLam_Click" Style="{StaticResource FioriCard}">
+                    <TextBlock Text="🧩 DGU + LAMINATION" Foreground="White" FontWeight="SemiBold" Padding="14" HorizontalAlignment="Center"/>
                 </Border>
-
             </StackPanel>
-
         </Border>
 
-        <!-- ================= WELCOME SCREEN ================= -->
-        <Border Grid.Row="1"
-                Grid.Column="1"
-                Margin="10"
-                CornerRadius="16"
-                Effect="{StaticResource CardShadow}"
-                Visibility="Visible"
-                x:Name="WelcomeScreen">
-
+        <!-- WELCOME SCREEN -->
+        <Border Grid.Row="1" Grid.Column="1" Margin="10" CornerRadius="16" Effect="{StaticResource CardShadow}" Visibility="Visible" x:Name="WelcomeScreen">
             <Grid>
                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="20">
-
-                    <!-- Welcome Header -->
-                    <Border Background="White"
-                            CornerRadius="20"
-                            Padding="40"
-                            Margin="0,0,0,30"
-                            Width="700"
-                            Effect="{StaticResource CardShadow}">
+                    <Border Background="White" CornerRadius="20" Padding="40" Margin="0,0,0,30" Width="700" Effect="{StaticResource CardShadow}">
                         <StackPanel HorizontalAlignment="Center">
-                            <TextBlock Text="🎉 WELCOME TO PROGLASS ERP"
-                                       FontSize="32"
-                                       FontWeight="Bold"
-                                       Foreground="#0A6ED1"
-                                       HorizontalAlignment="Center"/>
-                            <TextBlock Text="Advanced Glass Processing Calculator Suite"
-                                       FontSize="16"
-                                       Foreground="#64748B"
-                                       HorizontalAlignment="Center"
-                                       Margin="0,8,0,0"/>
-                            <TextBlock Text="Professional Solutions for Glass Industry"
-                                       FontSize="13"
-                                       Foreground="#94A3B8"
-                                       HorizontalAlignment="Center"
-                                       Margin="0,4,0,0"/>
+                            <TextBlock Text="🎉 WELCOME TO PROGLASS ERP" FontSize="32" FontWeight="Bold" Foreground="#0A6ED1" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Advanced Glass Processing Calculator Suite" FontSize="16" Foreground="#64748B" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                            <TextBlock Text="Professional Solutions for Glass Industry" FontSize="13" Foreground="#94A3B8" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                         </StackPanel>
                     </Border>
-
-                    <!-- Modules Grid -->
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-
-                        <!-- Left Column -->
                         <StackPanel Grid.Column="0" Margin="0,0,15,0">
-
-                            <Border Background="#0A6ED1"
-                                    CornerRadius="16"
-                                    Padding="24"
-                                    Margin="0,0,0,16"
-                                    Style="{StaticResource FioriCard}"
-                                    MouseDown="SGU_Click">
-                                <StackPanel>
+                            <Border Background="#0A6ED1" CornerRadius="16" Padding="24" Margin="0,0,0,16" Style="{StaticResource FioriCard}" MouseLeftButtonDown="SGU_Click">
+                                <StackPanel HorizontalAlignment="Center">
                                     <TextBlock Text="📊" FontSize="32" HorizontalAlignment="Center"/>
-                                    <TextBlock Text="SINGLE GLAZED UNIT"
-                                               FontSize="16"
-                                               FontWeight="Bold"
-                                               Foreground="White"
-                                               HorizontalAlignment="Center"
-                                               Margin="0,8,0,0"/>
-                                    <TextBlock Text="Basic glass pricing calculator"
-                                               FontSize="12"
-                                               Foreground="#BFDBFE"
-                                               HorizontalAlignment="Center"
-                                               Margin="0,4,0,0"/>
+                                    <TextBlock Text="SINGLE GLAZED UNIT" FontSize="16" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                                    <TextBlock Text="Basic glass pricing calculator" FontSize="12" Foreground="#BFDBFE" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                                 </StackPanel>
                             </Border>
-
-                            <Border Background="#0854A0"
-                                    CornerRadius="16"
-                                    Padding="24"
-                                    Margin="0,0,0,0"
-                                    Style="{StaticResource FioriCard}"
-                                    MouseDown="DGU_Click">
-                                <StackPanel>
+                            <Border Background="#0854A0" CornerRadius="16" Padding="24" Style="{StaticResource FioriCard}" MouseLeftButtonDown="DGU_Click">
+                                <StackPanel HorizontalAlignment="Center">
                                     <TextBlock Text="🧮" FontSize="32" HorizontalAlignment="Center"/>
-                                    <TextBlock Text="DOUBLE GLAZED UNIT"
-                                               FontSize="16"
-                                               FontWeight="Bold"
-                                               Foreground="White"
-                                               HorizontalAlignment="Center"
-                                               Margin="0,8,0,0"/>
-                                    <TextBlock Text="Insulated glass units calculator"
-                                               FontSize="12"
-                                               Foreground="#BFDBFE"
-                                               HorizontalAlignment="Center"
-                                               Margin="0,4,0,0"/>
+                                    <TextBlock Text="DOUBLE GLAZED UNIT" FontSize="16" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                                    <TextBlock Text="Insulated glass units calculator" FontSize="12" Foreground="#BFDBFE" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                                 </StackPanel>
                             </Border>
-
                         </StackPanel>
-
-                        <!-- Right Column -->
                         <StackPanel Grid.Column="1" Margin="15,0,0,0">
-
-                            <Border Background="#1E88E5"
-                                    CornerRadius="16"
-                                    Padding="24"
-                                    Margin="0,0,0,16"
-                                    Style="{StaticResource FioriCard}"
-                                    MouseDown="LAM_Click">
-                                <StackPanel>
+                            <Border Background="#1E88E5" CornerRadius="16" Padding="24" Margin="0,0,0,16" Style="{StaticResource FioriCard}" MouseLeftButtonDown="LAM_Click">
+                                <StackPanel HorizontalAlignment="Center">
                                     <TextBlock Text="🧪" FontSize="32" HorizontalAlignment="Center"/>
-                                    <TextBlock Text="LAMINATION"
-                                               FontSize="16"
-                                               FontWeight="Bold"
-                                               Foreground="White"
-                                               HorizontalAlignment="Center"
-                                               Margin="0,8,0,0"/>
-                                    <TextBlock Text="Safety glass processing"
-                                               FontSize="12"
-                                               Foreground="#BFDBFE"
-                                               HorizontalAlignment="Center"
-                                               Margin="0,4,0,0"/>
+                                    <TextBlock Text="LAMINATION" FontSize="16" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                                    <TextBlock Text="Safety glass processing" FontSize="12" Foreground="#BFDBFE" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                                 </StackPanel>
                             </Border>
-
-                            <Border Background="#D32F2F"
-                                    CornerRadius="16"
-                                    Padding="24"
-                                    Margin="0,0,0,0"
-                                    Style="{StaticResource FioriCard}"
-                                    MouseDown="DguLam_Click">
-                                <StackPanel>
+                            <Border Background="#D32F2F" CornerRadius="16" Padding="24" Style="{StaticResource FioriCard}" MouseLeftButtonDown="DguLam_Click">
+                                <StackPanel HorizontalAlignment="Center">
                                     <TextBlock Text="🧩" FontSize="32" HorizontalAlignment="Center"/>
-                                    <TextBlock Text="DGU + LAMINATION"
-                                               FontSize="16"
-                                               FontWeight="Bold"
-                                               Foreground="White"
-                                               HorizontalAlignment="Center"
-                                               Margin="0,8,0,0"/>
-                                    <TextBlock Text="Advanced hybrid units"
-                                               FontSize="12"
-                                               Foreground="#FEE2E2"
-                                               HorizontalAlignment="Center"
-                                               Margin="0,4,0,0"/>
+                                    <TextBlock Text="DGU + LAMINATION" FontSize="16" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                                    <TextBlock Text="Advanced hybrid units" FontSize="12" Foreground="#FEE2E2" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                                 </StackPanel>
                             </Border>
-
                         </StackPanel>
                     </Grid>
-
-                    <!-- Footer -->
-                    <Border Background="White"
-                            CornerRadius="12"
-                            Padding="16"
-                            Margin="0,20,0,0"
-                            Width="700">
+                    <Border Background="White" CornerRadius="12" Padding="16" Margin="0,20,0,0" Width="700">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <TextBlock Text="🏭 PROGLASS LLC | TRN: 123456789V | DUBAI, UAE"
-                                       Foreground="#64748B"
-                                       FontSize="12"/>
-                            <TextBlock Text="  |  "
-                                       Foreground="#CBD5E1"/>
-                            <TextBlock Text="📧 jubersaleem01@gmail.com"
-                                       Foreground="#64748B"
-                                       FontSize="12"/>
+                            <TextBlock Text="🏭 PROGLASS LLC | TRN: 123456789V | DUBAI, UAE" Foreground="#64748B" FontSize="12"/>
+                            <TextBlock Text="  |  " Foreground="#CBD5E1"/>
+                            <TextBlock Text="📧 jubersaleem01@gmail.com" Foreground="#64748B" FontSize="12"/>
                         </StackPanel>
                     </Border>
-
                 </StackPanel>
             </Grid>
-
         </Border>
 
-        <!-- ================= MAIN PANEL ================= -->
-        <Border Grid.Row="1"
-                Grid.Column="1"
-                Margin="10"
-                Background="White"
-                CornerRadius="16"
-                Effect="{StaticResource CardShadow}">
+        <!-- MAIN PANEL -->
+        <Border Grid.Row="1" Grid.Column="1" Margin="10" Background="White" CornerRadius="16" Effect="{StaticResource CardShadow}">
             <ContentControl x:Name="MainPanel"/>
         </Border>
 
-        <!-- ================= STATUS BAR ================= -->
-        <Border Grid.Row="2"
-                Grid.ColumnSpan="2"
-                Margin="10"
-                Background="#0A6ED1"
-                CornerRadius="14"
-                Padding="12">
-
+        <!-- STATUS BAR -->
+        <Border Grid.Row="2" Grid.ColumnSpan="2" Margin="10" Background="#0A6ED1" CornerRadius="14" Padding="12">
             <Grid>
-
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-
-                <Border Background="White"
-                        CornerRadius="10"
-                        Padding="12"
-                        Margin="4"
-                        Style="{StaticResource FioriCard}">
+                <Border Background="White" CornerRadius="10" Padding="12" Margin="4" Style="{StaticResource FioriCard}">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <Ellipse Width="12" Height="12" Fill="#10B981" Margin="0,0,8,0"/>
-                        <TextBlock Text="SYSTEM ACTIVE"
-                                   Foreground="#059669"
-                                   FontWeight="SemiBold"/>
+                        <TextBlock Text="SYSTEM ACTIVE" Foreground="#059669" FontWeight="SemiBold"/>
                     </StackPanel>
                 </Border>
-
-                <Border Grid.Column="1"
-                        Background="White"
-                        CornerRadius="10"
-                        Padding="12"
-                        Margin="4"
-                        Style="{StaticResource FioriCard}">
+                <Border Grid.Column="1" Background="White" CornerRadius="10" Padding="12" Margin="4" Style="{StaticResource FioriCard}">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <Ellipse Width="12" Height="12" Fill="#F59E0B" Margin="0,0,8,0"/>
-                        <TextBlock Text="CALCULATORS READY"
-                                   Foreground="#D97706"
-                                   FontWeight="SemiBold"/>
+                        <TextBlock Text="CALCULATORS READY" Foreground="#D97706" FontWeight="SemiBold"/>
                     </StackPanel>
                 </Border>
-
-                <Border Grid.Column="2"
-                        Background="White"
-                        CornerRadius="10"
-                        Padding="12"
-                        Margin="4"
-                        Style="{StaticResource FioriCard}">
+                <Border Grid.Column="2" Background="White" CornerRadius="10" Padding="12" Margin="4" Style="{StaticResource FioriCard}">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <Ellipse Width="12" Height="12" Fill="#22C55E" Margin="0,0,8,0"/>
-                        <TextBlock Text="PRODUCTION LIVE"
-                                   Foreground="#16A34A"
-                                   FontWeight="SemiBold"/>
+                        <TextBlock Text="PRODUCTION LIVE" Foreground="#16A34A" FontWeight="SemiBold"/>
                     </StackPanel>
                 </Border>
-
             </Grid>
-
         </Border>
-
     </Grid>
 </Window>

@@ -169,9 +169,9 @@
                                 <TextBlock Text="💰 PRICE INPUT (AED)" FontWeight="Bold" FontSize="13" Foreground="#92400E" Margin="0,0,0,8"/>
                                 <TextBlock Text="Outer Glass Price" FontSize="12" FontWeight="Bold" Foreground="#DC2626" Margin="0,6,0,4"/>
                                 <TextBox Text="{Binding Sheet1, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ThemedBox}"/>
-                                <TextBlock Text="Inner Glass Price" FontSize="12" FontWeight="Bold" Foreground="#DC2626" Margin="0,6,0,4"/>
+                                <TextBlock Text="Lami Outer Glass Price" FontSize="12" FontWeight="Bold" Foreground="#DC2626" Margin="0,6,0,4"/>
                                 <TextBox Text="{Binding Sheet2, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ThemedBox}"/>
-                                <TextBlock Text="Lamination Price" FontSize="12" FontWeight="Bold" Foreground="#DC2626" Margin="0,6,0,4"/>
+                                <TextBlock Text="Lami Inner Glass Price" FontSize="12" FontWeight="Bold" Foreground="#DC2626" Margin="0,6,0,4"/>
                                 <TextBox Text="{Binding Sheet3, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ThemedBox}"/>
                                 <TextBlock Text="ASP Price" FontSize="12" FontWeight="Bold" Foreground="#DC2626" Margin="0,6,0,4"/>
                                 <TextBox Text="{Binding AspPrice, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ThemedBox}"/>
