@@ -1,82 +1,75 @@
 ﻿using System;
-using System.ComponentModel;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Threading;
-using ProGlassAutomation.Views.SGU;
-using ProGlassAutomation.Views.DGU;
-using ProGlassAutomation.Views.Lamination;
-using ProGlassAutomation.Views.DGULamination;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using Microsoft.Win32;
 
 namespace ProGlassAutomation
 {
-    public partial class MainWindow : Window, INotifyPropertyChanged
+    public partial class MainWindow : Window
     {
-        private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(1) };
-
-        public string CurrentDateText { get; set; }
-        public string ClockText { get; set; }
+        public string CurrentDateText { get; set; } = "";
+        public string ClockText { get; set; } = "";
+        public string CompanyName { get; set; } = "PROGLASS AUTOMATION";
+        public string CompanyTRN { get; set; } = "100001234500003";
 
         public MainWindow()
         {
             InitializeComponent();
             DataContext = this;
-            CurrentDateText = DateTime.Now.ToString("dd MMM yyyy");
-            ClockText = DateTime.Now.ToString("HH:mm:ss");
-            _timer.Tick += (s, e) => { CurrentDateText = DateTime.Now.ToString("dd MMM yyyy"); ClockText = DateTime.Now.ToString("HH:mm:ss"); OnPropertyChanged(nameof(CurrentDateText)); OnPropertyChanged(nameof(ClockText)); };
-            _timer.Start();
-            LoadWelcome();
+            var t = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+            t.Tick += (s, e) => { ClockText = DateTime.Now.ToString("HH:mm:ss"); CurrentDateText = DateTime.Now.ToString("dd/MM/yyyy"); };
+            t.Start();
         }
 
-        private void LoadWelcome() => MainPanel.Content = new Grid
+        void LogoButton_Click(object sender, MouseButtonEventArgs e)
         {
-            Children =
+            var d = new OpenFileDialog { Filter = "Image Files|*.jpg;*.jpeg;*.png;*.bmp" };
+            if (d.ShowDialog() == true)
             {
-                new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Children =
+                try
                 {
-                    new TextBlock { Text = "🏭 WELCOME TO GLASS ERP SYSTEM", FontSize = 26, FontWeight = FontWeights.Bold, HorizontalAlignment = HorizontalAlignment.Center },
-                    new TextBlock { Text = "Select module from sidebar to continue", FontSize = 14, Margin = new Thickness(0,10,0,25), HorizontalAlignment = HorizontalAlignment.Center },
-                    new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Children =
-                    {
-                        CreateStatusCard("📊 SGU MODULE", "LIVE READY", System.Windows.Media.Brushes.LimeGreen),
-                        CreateStatusCard("🧮 DGU MODULE", "LIVE READY", System.Windows.Media.Brushes.LimeGreen),
-                        CreateStatusCard("🧪 LAMINATION", "LIVE READY", System.Windows.Media.Brushes.LimeGreen),
-                        CreateStatusCard("🧩 DGU+LAMINATION", "LIVE READY", System.Windows.Media.Brushes.LimeGreen)
-                    }},
-                    new TextBlock { Text = "🟢 ALL SYSTEMS ONLINE", Margin = new Thickness(0,25,0,0), Foreground = System.Windows.Media.Brushes.Green, FontWeight = FontWeights.Bold, HorizontalAlignment = HorizontalAlignment.Center }
-                }}
-            }
-        };
-
-        private UIElement CreateStatusCard(string title, string status, System.Windows.Media.Brush color) => new Border
-        {
-            Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(241, 245, 249)),
-            CornerRadius = new CornerRadius(12),
-            BorderBrush = System.Windows.Media.Brushes.Gray,
-            BorderThickness = new Thickness(1),
-            Padding = new Thickness(15),
-            Margin = new Thickness(10),
-            Width = 180,
-            Height = 90,
-            Child = new StackPanel
-            {
-                Children =
+                    var bitmap = new BitmapImage();
+                    bitmap.BeginInit();
+                    bitmap.UriSource = new Uri(d.FileName);
+                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmap.EndInit();
+                    bitmap.Freeze();
+                    LogoEllipse.Fill = new ImageBrush(bitmap) { Stretch = Stretch.UniformToFill };
+                }
+                catch (Exception ex)
                 {
-                    new TextBlock { Text = title, FontWeight = FontWeights.Bold, TextAlignment = TextAlignment.Center },
-                    new TextBlock { Text = status, Foreground = color, FontWeight = FontWeights.Bold, FontSize = 14, TextAlignment = TextAlignment.Center }
+                    MessageBox.Show("Failed to load image: " + ex.Message, "Error");
                 }
             }
-        };
+        }
 
-        private void LoadModule(UserControl view) { if (view != null) MainPanel.Content = view; else MessageBox.Show("Module not found.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning); }
+        void SGU_Click(object sender, MouseButtonEventArgs e) => LoadModule("SGU");
+        void DGU_Click(object sender, MouseButtonEventArgs e) => LoadModule("DGU");
+        void LAM_Click(object sender, MouseButtonEventArgs e) => LoadModule("LAMINATION");
+        void DguLam_Click(object sender, MouseButtonEventArgs e) => LoadModule("DGU_LAM");
+        void GlassOpt_Click(object sender, MouseButtonEventArgs e) => LoadModule("OPTIMIZATION");
 
-        private void SGU_Click(object sender, MouseButtonEventArgs e) => LoadModule(new SguView());
-        private void DGU_Click(object sender, MouseButtonEventArgs e) => LoadModule(new DguView());
-        private void LAM_Click(object sender, MouseButtonEventArgs e) => LoadModule(new LaminationView());
-        private void DguLam_Click(object sender, MouseButtonEventArgs e) => LoadModule(new DGULaminationView());
-
-        public event PropertyChangedEventHandler PropertyChanged;
-        private void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        void LoadModule(string name)
+        {
+            WelcomeScreen.Visibility = Visibility.Collapsed;
+            try
+            {
+                MainPanel.Content = name switch
+                {
+                    "SGU" => new Views.SGU.SguView(),
+                    "DGU" => new Views.DGU.DguView(),
+                    "LAMINATION" => new Views.Lamination.LaminationView(),
+                    "DGU_LAM" => new Views.DGULamination.DGULaminationView(),
+                    "OPTIMIZATION" => new Views.GlassOptimization.GlassOptimizationView(),
+                    _ => null
+                };
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading {name}: {ex.Message}", "Error");
+            }
+        }
     }
 }

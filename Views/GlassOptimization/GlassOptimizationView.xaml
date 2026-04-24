@@ -1,0 +1,260 @@
+﻿<UserControl x:Class="ProGlassAutomation.Views.GlassOptimization.GlassOptimizationView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ProGlassAutomation.Views.GlassOptimization">
+    <UserControl.DataContext>
+        <vm:GlassOptimizationViewModel/>
+    </UserControl.DataContext>
+    <Grid Background="#F1F5F9" Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0" Background="White" CornerRadius="12" Padding="20,15" Margin="0,0,0,10">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.1"/>
+            </Border.Effect>
+            <Grid>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="📐" FontSize="24" VerticalAlignment="Center"/>
+                    <TextBlock Text="GLASS OPTIMIZATION" FontSize="20" FontWeight="Bold" Foreground="#1E3A5F" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Border Background="#F0FDF4" CornerRadius="8" Padding="15,10" Margin="5,0">
+                        <StackPanel>
+                            <TextBlock Text="SHEET 1" FontSize="9" FontWeight="Bold" Foreground="#166534" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding Sheets[0].ResultText}" FontSize="18" FontWeight="Bold" Foreground="#15803D" HorizontalAlignment="Center"/>
+                            <TextBlock Text="AED" FontSize="10" Foreground="#166534" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="#FFFBEB" CornerRadius="8" Padding="15,10" Margin="5,0">
+                        <StackPanel>
+                            <TextBlock Text="SHEET 2" FontSize="9" FontWeight="Bold" Foreground="#92400E" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding Sheets[1].ResultText}" FontSize="18" FontWeight="Bold" Foreground="#B45309" HorizontalAlignment="Center"/>
+                            <TextBlock Text="AED" FontSize="10" Foreground="#92400E" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="#EFF6FF" CornerRadius="8" Padding="15,10" Margin="5,0">
+                        <StackPanel>
+                            <TextBlock Text="SHEET 3" FontSize="9" FontWeight="Bold" Foreground="#1E40AF" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding Sheets[2].ResultText}" FontSize="18" FontWeight="Bold" Foreground="#2563EB" HorizontalAlignment="Center"/>
+                            <TextBlock Text="AED" FontSize="10" Foreground="#1E40AF" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="#F5F3FF" CornerRadius="8" Padding="15,10" Margin="5,0">
+                        <StackPanel>
+                            <TextBlock Text="SHEET 4" FontSize="9" FontWeight="Bold" Foreground="#6B21A8" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding Sheets[3].ResultText}" FontSize="18" FontWeight="Bold" Foreground="#7C3AED" HorizontalAlignment="Center"/>
+                            <TextBlock Text="AED" FontSize="10" Foreground="#6B21A8" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="#FDF2F8" CornerRadius="8" Padding="15,10" Margin="5,0">
+                        <StackPanel>
+                            <TextBlock Text="SHEET 5" FontSize="9" FontWeight="Bold" Foreground="#9D174D" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding Sheets[4].ResultText}" FontSize="18" FontWeight="Bold" Foreground="#EC4899" HorizontalAlignment="Center"/>
+                            <TextBlock Text="AED" FontSize="10" Foreground="#9D174D" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Border Grid.Column="0" Background="White" CornerRadius="12" Padding="15" Margin="0,0,10,0">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.1"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0" Margin="0,0,0,10">
+                        <TextBlock Text="📋 SHEETS" FontSize="16" FontWeight="Bold" Foreground="#1E3A5F"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Content="➕ ADD" Command="{Binding AddCommand}" Background="#22C55E" Foreground="White" FontWeight="SemiBold" Padding="12,6" Margin="0,0,5,0"/>
+                            <Button Content="🗑 CLEAR" Command="{Binding ClearAllCommand}" Background="#EF4444" Foreground="White" FontWeight="SemiBold" Padding="12,6"/>
+                        </StackPanel>
+                    </Grid>
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding Sheets}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#F8FAFC" CornerRadius="10" Padding="12" Margin="0,0,8,8" Width="220" BorderBrush="#E2E8F0" BorderThickness="1">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            <StackPanel Grid.Row="0" Orientation="Horizontal">
+                                                <Border Background="#E0E7FF" CornerRadius="4" Padding="6,3">
+                                                    <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="11" Foreground="#3730A3"/>
+                                                </Border>
+                                                <Button Content="✕" Command="{Binding DataContext.RemoveCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Background="#EF4444" Foreground="White" Width="20" Height="20" FontSize="9" Margin="5,0,0,0"/>
+                                            </StackPanel>
+                                            <TextBlock Grid.Row="1" FontSize="10" Foreground="#64748B" Margin="0,5,0,0"><Run Text="{Binding Color}"/> | <Run Text="{Binding Thickness}"/></TextBlock>
+                                            <TextBlock Grid.Row="2" FontSize="10" Foreground="#1E3A5F" FontWeight="SemiBold" Margin="0,3,0,0"><Run Text="{Binding Width, StringFormat={}{0:0}}"/> × <Run Text="{Binding Height, StringFormat={}{0:0}}"/> cm</TextBlock>
+                                            <TextBlock Grid.Row="3" FontSize="9" Foreground="#64748B" Margin="0,2,0,0"><Run Text="Qty:"/><Run Text="{Binding Qty}"/> | <Run Text="Util:"/><Run Text="{Binding Util, StringFormat={}{0:0.00}}"/><Run Text="%"/> | <Run Text="Price:"/><Run Text="{Binding Price, StringFormat={}{0:0}}"/></TextBlock>
+                                            <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,8,0,0">
+                                                <Border Background="#F0FDF4" CornerRadius="4" Padding="6,4" Margin="0,0,4,0">
+                                                    <TextBlock Text="{Binding Section1Text}" FontSize="11" FontWeight="Bold" Foreground="#15803D"/>
+                                                </Border>
+                                                <Border Background="#FFFBEB" CornerRadius="4" Padding="6,4" Margin="0,0,4,0">
+                                                    <TextBlock Text="{Binding Section2Text}" FontSize="11" FontWeight="Bold" Foreground="#B45309"/>
+                                                </Border>
+                                                <Border Background="#DBEAFE" CornerRadius="4" Padding="6,4">
+                                                    <TextBlock Text="{Binding ResultText}" FontSize="11" FontWeight="Bold" Foreground="#2563EB"/>
+                                                </Border>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                    <Border Grid.Row="2" Background="#1E3A5F" CornerRadius="10" Padding="15" Margin="0,10,0,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                                <TextBlock Text="TOTAL SEC1" FontSize="10" FontWeight="Bold" Foreground="#93C5FD" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding TotalSec1}" FontSize="18" FontWeight="Bold" Foreground="White"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                                <TextBlock Text="TOTAL SEC2" FontSize="10" FontWeight="Bold" Foreground="#93C5FD" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding TotalSec2}" FontSize="18" FontWeight="Bold" Foreground="White"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                                <TextBlock Text="TOTAL" FontSize="10" FontWeight="Bold" Foreground="#93C5FD" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding TotalResult}" FontSize="18" FontWeight="Bold" Foreground="#22C55E"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Border>
+            <Grid Grid.Column="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Border Grid.Row="0" Background="White" CornerRadius="12" Padding="15" Margin="0,0,0,10">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.1"/>
+                    </Border.Effect>
+                    <StackPanel>
+                        <Grid Margin="0,0,0,10">
+                            <TextBlock Text="✏ SHEET DETAILS" FontSize="16" FontWeight="Bold" Foreground="#1E3A5F"/>
+                            <ComboBox ItemsSource="{Binding ProfitOptions}" SelectedItem="{Binding ProfitMargin}" Width="80" HorizontalAlignment="Right"/>
+                        </Grid>
+                        <Border Background="#F0F9FF" CornerRadius="10" Padding="15" BorderBrush="#BAE6FD" BorderThickness="1">
+                            <StackPanel>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Margin="0,0,5,0">
+                                        <TextBlock Text="Sheet Name" FontSize="11" Foreground="#64748B"/>
+                                        <TextBox Text="{Binding EditName, UpdateSourceTrigger=PropertyChanged}" Height="30" BorderBrush="#CBD5E1"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Margin="5,0,0,0">
+                                        <TextBlock Text="Thickness" FontSize="11" Foreground="#64748B"/>
+                                        <TextBox Text="{Binding EditThickness, UpdateSourceTrigger=PropertyChanged}" Height="30" BorderBrush="#CBD5E1"/>
+                                    </StackPanel>
+                                </Grid>
+                                <TextBlock Text="Glass Color" FontSize="11" Foreground="#64748B" Margin="0,10,0,2"/>
+                                <ComboBox ItemsSource="{Binding Colors}" SelectedItem="{Binding EditColor}" IsEditable="True" Height="30"/>
+                                <Grid Margin="0,10,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Margin="0,0,5,0">
+                                        <TextBlock Text="Width (cm)" FontSize="11" Foreground="#64748B"/>
+                                        <TextBox Text="{Binding EditWidth, UpdateSourceTrigger=PropertyChanged}" Height="30" GotFocus="SelectAll" BorderBrush="#CBD5E1"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Margin="5,0,0,0">
+                                        <TextBlock Text="Height (cm)" FontSize="11" Foreground="#64748B"/>
+                                        <TextBox Text="{Binding EditHeight, UpdateSourceTrigger=PropertyChanged}" Height="30" GotFocus="SelectAll" BorderBrush="#CBD5E1"/>
+                                    </StackPanel>
+                                </Grid>
+                                <Grid Margin="0,10,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Margin="0,0,5,0">
+                                        <TextBlock Text="Qty" FontSize="11" Foreground="#64748B"/>
+                                        <TextBox Text="{Binding EditQty, UpdateSourceTrigger=PropertyChanged}" Height="30" GotFocus="SelectAll" BorderBrush="#CBD5E1"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Margin="5,0,0,0">
+                                        <TextBlock Text="Util %" FontSize="11" Foreground="#64748B"/>
+                                        <TextBox Text="{Binding EditUtil, UpdateSourceTrigger=PropertyChanged}" Height="30" GotFocus="SelectAll" BorderBrush="#CBD5E1"/>
+                                    </StackPanel>
+                                </Grid>
+                                <TextBlock Text="Sheet Price (AED)" FontSize="11" Foreground="#64748B" Margin="0,10,0,2"/>
+                                <TextBox Text="{Binding EditPrice, UpdateSourceTrigger=PropertyChanged}" Height="30" GotFocus="SelectAll" BorderBrush="#CBD5E1"/>
+                                <Button Content="💾 UPDATE SHEET" Command="{Binding UpdateCommand}" Background="#1E40AF" Foreground="White" FontWeight="Bold" FontSize="13" Height="40" Margin="0,15,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Row="1" Background="#FFF7ED" CornerRadius="12" Padding="15" BorderBrush="#FED7AA" BorderThickness="2">
+                    <StackPanel>
+                        <Border Background="#EA580C" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left" Margin="0,0,0,10">
+                            <TextBlock Text="📘 HOW TO USE" FontSize="13" FontWeight="Bold" Foreground="White"/>
+                        </Border>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="25"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" Grid.Column="0" Background="#1E3A5F" CornerRadius="12" Width="20" Height="20" Margin="0,0,5,5">
+                                <TextBlock Text="1" Foreground="White" FontWeight="Bold" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Grid.Row="0" Grid.Column="1" Text="Click ADD to add new sheet" FontSize="11" Foreground="#9A3412" Margin="0,0,0,5" VerticalAlignment="Center"/>
+                            <Border Grid.Row="1" Grid.Column="0" Background="#1E3A5F" CornerRadius="12" Width="20" Height="20" Margin="0,0,5,5">
+                                <TextBlock Text="2" Foreground="White" FontWeight="Bold" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="Select sheet from list to edit" FontSize="11" Foreground="#9A3412" Margin="0,0,0,5" VerticalAlignment="Center"/>
+                            <Border Grid.Row="2" Grid.Column="0" Background="#1E3A5F" CornerRadius="12" Width="20" Height="20" Margin="0,0,5,5">
+                                <TextBlock Text="3" Foreground="White" FontWeight="Bold" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Grid.Row="2" Grid.Column="1" Text="Enter: Color, Thickness, Width, Height, Qty, Util %" FontSize="11" Foreground="#9A3412" Margin="0,0,0,5" VerticalAlignment="Center"/>
+                            <Border Grid.Row="3" Grid.Column="0" Background="#1E3A5F" CornerRadius="12" Width="20" Height="20" Margin="0,0,5,5">
+                                <TextBlock Text="4" Foreground="White" FontWeight="Bold" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Grid.Row="3" Grid.Column="1" Text="Enter Sheet Price in AED" FontSize="11" Foreground="#9A3412" Margin="0,0,0,5" VerticalAlignment="Center"/>
+                            <Border Grid.Row="4" Grid.Column="0" Background="#1E3A5F" CornerRadius="12" Width="20" Height="20" Margin="0,0,5,0">
+                                <TextBlock Text="5" Foreground="White" FontWeight="Bold" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Grid.Row="4" Grid.Column="1" Text="SEC1 = Price÷(Util÷100) | SEC2 = Price÷Factor | Result = SEC1-SEC2" FontSize="10" Foreground="#9A3412" VerticalAlignment="Center"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>
