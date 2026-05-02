@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using ProGlassAutomation.Models;
@@ -14,7 +15,6 @@ namespace ProGlassAutomation.Views.SheetStore
         public SheetDialog(Sheet? sheet = null)
         {
             InitializeComponent();
-
             _isEdit = sheet != null;
             Sheet = sheet ?? new Sheet();
 
@@ -42,10 +42,10 @@ namespace ProGlassAutomation.Views.SheetStore
             SupplierText.Text = Sheet.SupplierName;
             DescriptionText.Text = Sheet.Description;
 
-            // Set category combo box
             for (int i = 0; i < CategoryComboBox.Items.Count; i++)
             {
-                if (CategoryComboBox.Items[i] is ComboBoxItem item && item.Content.ToString() == Sheet.Category)
+                if (CategoryComboBox.Items[i] is ComboBoxItem item &&
+                    item.Content?.ToString() == Sheet.Category)
                 {
                     CategoryComboBox.SelectedIndex = i;
                     break;
@@ -53,65 +53,56 @@ namespace ProGlassAutomation.Views.SheetStore
             }
         }
 
+        private List<string> ValidateForm()
+        {
+            var errors = new List<string>();
+
+            if (string.IsNullOrWhiteSpace(ThicknessText.Text))
+                errors.Add("• Thickness is required");
+
+            if (string.IsNullOrWhiteSpace(ColorText.Text))
+                errors.Add("• Color is required");
+
+            if (CategoryComboBox.SelectedItem == null)
+                errors.Add("• Series is required");
+
+            if (!decimal.TryParse(WidthText.Text, out decimal width) || width <= 0)
+                errors.Add("• Invalid width");
+
+            if (!decimal.TryParse(HeightText.Text, out decimal height) || height <= 0)
+                errors.Add("• Invalid height");
+
+            if (!decimal.TryParse(PurchasePriceText.Text, out decimal purchasePrice) || purchasePrice < 0)
+                errors.Add("• Invalid purchase price");
+
+            if (!decimal.TryParse(SellPriceText.Text, out decimal sellPrice) || sellPrice < 0)
+                errors.Add("• Invalid sell price");
+
+            return errors;
+        }
+
         private void Save_Click(object sender, RoutedEventArgs e)
         {
+            var errors = ValidateForm();
+            if (errors.Count > 0)
+            {
+                MessageBox.Show(string.Join("\n", errors), "Validation Errors",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             try
             {
-                // Validate required fields
-                if (string.IsNullOrWhiteSpace(ThicknessText.Text))
-                {
-                    MessageBox.Show("Thickness is required", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    ThicknessText.Focus();
-                    return;
-                }
-
-                if (string.IsNullOrWhiteSpace(ColorText.Text))
-                {
-                    MessageBox.Show("Color is required", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    ColorText.Focus();
-                    return;
-                }
-
-                if (CategoryComboBox.SelectedItem == null)
-                {
-                    MessageBox.Show("Series is required", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
-                if (!decimal.TryParse(WidthText.Text, out decimal width))
-                {
-                    MessageBox.Show("Invalid width", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    WidthText.Focus();
-                    return;
-                }
-
-                if (!decimal.TryParse(HeightText.Text, out decimal height))
-                {
-                    MessageBox.Show("Invalid height", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    HeightText.Focus();
-                    return;
-                }
-
-                if (!decimal.TryParse(PurchasePriceText.Text, out decimal purchasePrice))
-                {
-                    MessageBox.Show("Invalid purchase price", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    PurchasePriceText.Focus();
-                    return;
-                }
-
-                if (!decimal.TryParse(SellPriceText.Text, out decimal sellPrice))
-                {
-                    MessageBox.Show("Invalid sell price", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    SellPriceText.Focus();
-                    return;
-                }
-
-                // Get category from combo box
                 string category = "";
                 if (CategoryComboBox.SelectedItem is ComboBoxItem selectedItem)
                 {
-                    category = selectedItem.Content.ToString() ?? "";
+                    category = selectedItem.Content?.ToString() ?? "";
                 }
+
+                decimal width = decimal.Parse(WidthText.Text.Trim());
+                decimal height = decimal.Parse(HeightText.Text.Trim());
+                decimal purchasePrice = decimal.Parse(PurchasePriceText.Text.Trim());
+                decimal sellPrice = decimal.Parse(SellPriceText.Text.Trim());
 
                 Sheet.Thickness = ThicknessText.Text.Trim();
                 Sheet.Color = ColorText.Text.Trim();
@@ -125,24 +116,25 @@ namespace ProGlassAutomation.Views.SheetStore
                 Sheet.PricePerSqft = sellPrice;
                 Sheet.PricePerSqmeter = sellPrice * 10.764m;
 
-                bool success;
+                (bool Success, string Message) result;
+
                 if (_isEdit)
                 {
-                    success = SheetStoreService.Instance.UpdateSheet(Sheet);
+                    result = SheetStoreService.Instance.UpdateSheet(Sheet);
                 }
                 else
                 {
-                    success = SheetStoreService.Instance.AddSheet(Sheet);
+                    result = SheetStoreService.Instance.AddSheet(Sheet);
                 }
 
-                if (success)
+                if (result.Success)
                 {
                     DialogResult = true;
                     Close();
                 }
                 else
                 {
-                    MessageBox.Show("Failed to save sheet", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show(result.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             catch (Exception ex)

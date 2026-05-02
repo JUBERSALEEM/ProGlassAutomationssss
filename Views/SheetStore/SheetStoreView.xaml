@@ -3,258 +3,309 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="#F3F4F6">
 
-    <Grid Margin="16">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="20">
 
-        <!-- Header -->
-        <Border Grid.Row="0" Background="#0A6ED1" CornerRadius="10" Padding="20,16" Margin="0,0,0,16">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Background="White" CornerRadius="8" Padding="12,10">
-                        <TextBlock Text="🪟" FontSize="24"/>
-                    </Border>
-                    <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
-                        <TextBlock Text="SHEET STORE" FontSize="22" FontWeight="Bold" Foreground="White"/>
-                        <TextBlock Text="Glass inventory management" FontSize="12" Foreground="#BFDBFE"/>
-                    </StackPanel>
-                </StackPanel>
-
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Content="📊 History" Click="ViewHistory_Click"
-                            Padding="18,12" Background="White" Foreground="#0A6ED1"
-                            FontWeight="SemiBold" BorderThickness="0" Cursor="Hand"/>
-                    <Button Content="➕ Add Sheet" Click="AddSheet_Click"
-                            Padding="18,12" Background="#10B981" Foreground="White"
-                            FontWeight="SemiBold" BorderThickness="0" Cursor="Hand" Margin="10,0,0,0"/>
-                </StackPanel>
-            </Grid>
-        </Border>
-
-        <!-- Stats Cards - Bigger Height -->
-        <Grid Grid.Row="1" Margin="0,0,0,16">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-
-            <!-- Total Sheets -->
-            <Border Grid.Column="0" Background="White" CornerRadius="10" Padding="16" Margin="0,0,8,0">
-                <StackPanel>
-                    <TextBlock Text="📋" FontSize="28"/>
-                    <TextBlock Text="TOTAL SHEETS" FontSize="12" Foreground="#6B7280" FontWeight="Medium" Margin="0,8,0,4"/>
-                    <TextBlock x:Name="TotalSheetsText" Text="0" FontSize="32" FontWeight="Bold" Foreground="#1E40AF"/>
-                    <TextBlock Text="items in store" FontSize="10" Foreground="#9CA3AF" Margin="0,4,0,0"/>
-                </StackPanel>
-            </Border>
-
-            <!-- Categories -->
-            <Border Grid.Column="1" Background="White" CornerRadius="10" Padding="16" Margin="8,0">
-                <StackPanel>
-                    <TextBlock Text="📁" FontSize="28"/>
-                    <TextBlock Text="SERIES" FontSize="12" Foreground="#6B7280" FontWeight="Medium" Margin="0,8,0,4"/>
-                    <TextBlock x:Name="CategoriesCountText" Text="5" FontSize="32" FontWeight="Bold" Foreground="#6D28D9"/>
-                    <TextBlock Text="glass types" FontSize="10" Foreground="#9CA3AF" Margin="0,4,0,0"/>
-                </StackPanel>
-            </Border>
-
-            <!-- Thicknesses -->
-            <Border Grid.Column="2" Background="White" CornerRadius="10" Padding="16" Margin="8,0">
-                <StackPanel>
-                    <TextBlock Text="📐" FontSize="28"/>
-                    <TextBlock Text="THICKNESS" FontSize="12" Foreground="#6B7280" FontWeight="Medium" Margin="0,8,0,4"/>
-                    <TextBlock x:Name="ThicknessCountText" Text="7" FontSize="32" FontWeight="Bold" Foreground="#047857"/>
-                    <TextBlock Text="mm options" FontSize="10" Foreground="#9CA3AF" Margin="0,4,0,0"/>
-                </StackPanel>
-            </Border>
-
-            <!-- Colors -->
-            <Border Grid.Column="3" Background="White" CornerRadius="10" Padding="16" Margin="8,0">
-                <StackPanel>
-                    <TextBlock Text="🎨" FontSize="28"/>
-                    <TextBlock Text="COLORS" FontSize="12" Foreground="#6B7280" FontWeight="Medium" Margin="0,8,0,4"/>
-                    <TextBlock x:Name="ColorsCountText" Text="0" FontSize="32" FontWeight="Bold" Foreground="#B45309"/>
-                    <TextBlock Text="available" FontSize="10" Foreground="#9CA3AF" Margin="0,4,0,0"/>
-                </StackPanel>
-            </Border>
-
-            <!-- Last Purchase -->
-            <Border Grid.Column="4" Background="White" CornerRadius="10" Padding="16" Margin="8,0,0,0">
-                <StackPanel>
-                    <TextBlock Text="🕐" FontSize="28"/>
-                    <TextBlock Text="LAST PURCHASE" FontSize="12" Foreground="#6B7280" FontWeight="Medium" Margin="0,8,0,4"/>
-                    <TextBlock x:Name="LastUpdateText" Text="-" FontSize="16" FontWeight="Bold" Foreground="#DC2626" TextWrapping="Wrap"/>
-                    <TextBlock Text="recent buy" FontSize="10" Foreground="#9CA3AF" Margin="0,4,0,0"/>
-                </StackPanel>
-            </Border>
-        </Grid>
-
-        <!-- Thickness Grid - Show All Sizes -->
-        <Border Grid.Row="1" Background="White" CornerRadius="10" Padding="14" Margin="0,180,0,0" VerticalAlignment="Top">
-            <StackPanel>
-                <TextBlock Text="📐 THICKNESS OPTIONS" FontSize="12" FontWeight="Bold" Foreground="#374151" Margin="0,0,0,10"/>
-                <WrapPanel>
-                    <Border Background="#DBEAFE" CornerRadius="8" Padding="12,8" Margin="0,0,8,8">
-                        <TextBlock Text="4mm" FontSize="13" FontWeight="SemiBold" Foreground="#1E40AF"/>
-                    </Border>
-                    <Border Background="#DBEAFE" CornerRadius="8" Padding="12,8" Margin="0,0,8,8">
-                        <TextBlock Text="6mm" FontSize="13" FontWeight="SemiBold" Foreground="#1E40AF"/>
-                    </Border>
-                    <Border Background="#DBEAFE" CornerRadius="8" Padding="12,8" Margin="0,0,8,8">
-                        <TextBlock Text="8mm" FontSize="13" FontWeight="SemiBold" Foreground="#1E40AF"/>
-                    </Border>
-                    <Border Background="#DBEAFE" CornerRadius="8" Padding="12,8" Margin="0,0,8,8">
-                        <TextBlock Text="10mm" FontSize="13" FontWeight="SemiBold" Foreground="#1E40AF"/>
-                    </Border>
-                    <Border Background="#DBEAFE" CornerRadius="8" Padding="12,8" Margin="0,0,8,8">
-                        <TextBlock Text="12mm" FontSize="13" FontWeight="SemiBold" Foreground="#1E40AF"/>
-                    </Border>
-                    <Border Background="#DBEAFE" CornerRadius="8" Padding="12,8" Margin="0,0,8,8">
-                        <TextBlock Text="15mm" FontSize="13" FontWeight="SemiBold" Foreground="#1E40AF"/>
-                    </Border>
-                    <Border Background="#DBEAFE" CornerRadius="8" Padding="12,8" Margin="0,0,8,8">
-                        <TextBlock Text="19mm" FontSize="13" FontWeight="SemiBold" Foreground="#1E40AF"/>
-                    </Border>
-                </WrapPanel>
-            </StackPanel>
-        </Border>
-
-        <!-- Main Content -->
-        <Grid Grid.Row="2" Margin="0,70,0,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="200"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-
-            <!-- Left Panel -->
-            <Border Grid.Column="0" Background="White" CornerRadius="10" Padding="18" Margin="0,0,12,0">
-                <StackPanel>
-                    <TextBlock Text="⚡ QUICK ACTIONS" FontSize="12" FontWeight="Bold" Foreground="#374151" Margin="0,0,0,14"/>
-
-                    <Button Content="💰 Update Prices" Click="UpdatePurchasePrice_Click"
-                            Padding="14,12" Background="#0A6ED1" Foreground="White"
-                            BorderThickness="0" Cursor="Hand" FontWeight="SemiBold"
-                            HorizontalAlignment="Stretch"/>
-
-                    <Button Content="📤 Export Excel" Click="ExportExcel_Click"
-                            Padding="14,12" Background="#F3F4F6" Foreground="#374151"
-                            BorderThickness="0" Cursor="Hand" Margin="0,8,0,0"
-                            HorizontalAlignment="Stretch"/>
-
-                    <Button Content="📥 Import Excel" Click="ImportExcel_Click"
-                            Padding="14,12" Background="#F3F4F6" Foreground="#374151"
-                            BorderThickness="0" Cursor="Hand" Margin="0,8,0,0"
-                            HorizontalAlignment="Stretch"/>
-
-                    <Border Background="#F0FDF4" CornerRadius="8" Padding="14" Margin="0,20,0,0">
-                        <StackPanel>
-                            <TextBlock Text="📋 AVAILABLE SERIES" FontSize="10" FontWeight="Bold" Foreground="#047857" Margin="0,0,0,10"/>
-                            <TextBlock Text="• HD Series" FontSize="12" Foreground="#374151"/>
-                            <TextBlock Text="• Belgium Series" FontSize="12" Foreground="#374151"/>
-                            <TextBlock Text="• PNA" FontSize="12" Foreground="#374151"/>
-                            <TextBlock Text="• Tinted Series" FontSize="12" Foreground="#374151"/>
-                            <TextBlock Text="• Sunlux Series" FontSize="12" Foreground="#374151"/>
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
-            </Border>
-
-            <!-- Data Table - Full Width -->
-            <Border Grid.Column="1" Background="White" CornerRadius="10" Padding="0">
+            <!-- Header Card -->
+            <Border Background="White" CornerRadius="12" Padding="24" Margin="0,0,0,16">
                 <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                    <!-- Table Header -->
-                    <Border Grid.Row="0" Background="#0A6ED1" CornerRadius="10,10,0,0" Padding="16,14">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="2*"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="2*"/>
-                                <ColumnDefinition Width="2*"/>
-                                <ColumnDefinition Width="2*"/>
-                                <ColumnDefinition Width="3*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="SERIES" FontWeight="Bold" FontSize="11" Foreground="White"/>
-                            <TextBlock Grid.Column="1" Text="THICKNESS" FontWeight="Bold" FontSize="11" Foreground="White"/>
-                            <TextBlock Grid.Column="2" Text="COLOR" FontWeight="Bold" FontSize="11" Foreground="White"/>
-                            <TextBlock Grid.Column="3" Text="SIZE" FontWeight="Bold" FontSize="11" Foreground="White"/>
-                            <TextBlock Grid.Column="4" Text="PURCHASE" FontWeight="Bold" FontSize="11" Foreground="White"/>
-                            <TextBlock Grid.Column="5" Text="SELL" FontWeight="Bold" FontSize="11" Foreground="White"/>
-                            <TextBlock Grid.Column="6" Text="LAST PURCHASE" FontWeight="Bold" FontSize="11" Foreground="White"/>
-                            <TextBlock Grid.Column="7" Text="ACTIONS" FontWeight="Bold" FontSize="11" Foreground="White"/>
-                        </Grid>
-                    </Border>
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Background="#2563EB" CornerRadius="10" Padding="14,12">
+                            <TextBlock Text="S" FontSize="20" FontWeight="Bold" Foreground="White"/>
+                        </Border>
+                        <StackPanel Margin="14,0,0,0">
+                            <TextBlock Text="Sheet Store" FontSize="22" FontWeight="SemiBold" Foreground="#111827"/>
+                            <TextBlock Text="Glass inventory management" FontSize="12" Foreground="#6B7280"/>
+                        </StackPanel>
+                    </StackPanel>
 
-                    <!-- Data Rows -->
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                        <ItemsControl x:Name="SheetItemsControl">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border BorderBrush="#E5E7EB" BorderThickness="0,0,0,1" Padding="16,14">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="2*"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="2*"/>
-                                                <ColumnDefinition Width="2*"/>
-                                                <ColumnDefinition Width="2*"/>
-                                                <ColumnDefinition Width="3*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
+                    <Button Grid.Column="1" Click="ViewHistory_Click" 
+                            Background="Transparent" Foreground="#374151" 
+                            Padding="16,10" Margin="0,0,10,0" 
+                            BorderThickness="1" BorderBrush="#D1D5DB" Cursor="Hand">
+                        <TextBlock Text="History" FontSize="13"/>
+                    </Button>
 
-                                            <TextBlock Grid.Column="0" Text="{Binding Category}" FontWeight="SemiBold" Foreground="#0A6ED1" VerticalAlignment="Center"/>
-                                            <TextBlock Grid.Column="1" Text="{Binding Thickness}" VerticalAlignment="Center"/>
-                                            <TextBlock Grid.Column="2" Text="{Binding Color}" VerticalAlignment="Center"/>
-                                            <TextBlock Grid.Column="3" Text="{Binding DisplayDimensions}" VerticalAlignment="Center"/>
-                                            <TextBlock Grid.Column="4" Text="{Binding PurchasePrice, StringFormat='AED {0:N2}'}" FontWeight="Bold" Foreground="#DC2626" VerticalAlignment="Center"/>
-                                            <TextBlock Grid.Column="5" Text="{Binding SellPrice, StringFormat='AED {0:N2}'}" FontWeight="Bold" Foreground="#047857" VerticalAlignment="Center"/>
-                                            <TextBlock Grid.Column="6" Text="{Binding DisplayPurchaseInfo}" Foreground="#6D28D9" FontSize="11" VerticalAlignment="Center"/>
-
-                                            <StackPanel Grid.Column="7" Orientation="Horizontal" VerticalAlignment="Center">
-                                                <Button Content="Buy" Tag="{Binding Id}" Click="UpdatePurchasePrice_Click"
-                                                        Background="#10B981" Foreground="White"
-                                                        Padding="12,6" FontSize="11" FontWeight="SemiBold"
-                                                        Cursor="Hand" BorderThickness="0"/>
-                                                <Button Content="Edit" Tag="{Binding Id}" Click="EditSheet_Click"
-                                                        Background="#F3F4F6" Foreground="#374151"
-                                                        Padding="10,6" FontSize="11" FontWeight="Medium"
-                                                        Margin="6,0,0,0" Cursor="Hand" BorderThickness="0"/>
-                                                <Button Content="Delete" Tag="{Binding Id}" Click="DeleteSheet_Click"
-                                                        Background="#FEE2E2" Foreground="#DC2626"
-                                                        Padding="8,6" FontSize="11" FontWeight="Medium"
-                                                        Margin="6,0,0,0" Cursor="Hand" BorderThickness="0"/>
-                                            </StackPanel>
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                        </ItemsControl>
-                    </ScrollViewer>
+                    <Button Grid.Column="2" Click="AddSheet_Click" 
+                            Background="#2563EB" Foreground="White" 
+                            Padding="20,10" BorderThickness="0" Cursor="Hand">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="+" FontSize="16" FontWeight="Bold" Margin="0,0,6,0"/>
+                            <TextBlock Text="Add Sheet" FontSize="13" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Button>
                 </Grid>
             </Border>
-        </Grid>
-    </Grid>
+
+            <!-- Stats Cards -->
+            <Grid Margin="0,0,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Total Card -->
+                <Border Grid.Column="0" Background="White" CornerRadius="12" Padding="18" Margin="0,0,6,0">
+                    <StackPanel Orientation="Horizontal">
+                        <Border Background="#DBEAFE" CornerRadius="10" Padding="12">
+                            <TextBlock Text="#" FontSize="18" FontWeight="Bold" Foreground="#2563EB"/>
+                        </Border>
+                        <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="Total Sheets" FontSize="11" Foreground="#6B7280"/>
+                            <TextBlock x:Name="TotalSheetsText" Text="0" FontSize="24" FontWeight="Bold" Foreground="#111827"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Thickness Card -->
+                <Border Grid.Column="1" Background="White" CornerRadius="12" Padding="18" Margin="3,0">
+                    <StackPanel Orientation="Horizontal">
+                        <Border Background="#D1FAE5" CornerRadius="10" Padding="12">
+                            <TextBlock Text="T" FontSize="18" FontWeight="Bold" Foreground="#059669"/>
+                        </Border>
+                        <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="Thickness" FontSize="11" Foreground="#6B7280"/>
+                            <TextBlock x:Name="ThicknessCountText" Text="0" FontSize="24" FontWeight="Bold" Foreground="#111827"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Colors Card -->
+                <Border Grid.Column="2" Background="White" CornerRadius="12" Padding="18" Margin="3,0">
+                    <StackPanel Orientation="Horizontal">
+                        <Border Background="#FEF3C7" CornerRadius="10" Padding="12">
+                            <TextBlock Text="C" FontSize="18" FontWeight="Bold" Foreground="#D97706"/>
+                        </Border>
+                        <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="Colors" FontSize="11" Foreground="#6B7280"/>
+                            <TextBlock x:Name="ColorsCountText" Text="0" FontSize="24" FontWeight="Bold" Foreground="#111827"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Last Update Card -->
+                <Border Grid.Column="3" Background="White" CornerRadius="12" Padding="18" Margin="6,0,0,0">
+                    <StackPanel Orientation="Horizontal">
+                        <Border Background="#EDE9FE" CornerRadius="10" Padding="12">
+                            <TextBlock Text="D" FontSize="18" FontWeight="Bold" Foreground="#7C3AED"/>
+                        </Border>
+                        <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="Last Update" FontSize="11" Foreground="#6B7280"/>
+                            <TextBlock x:Name="LastUpdateText" Text="-" FontSize="14" FontWeight="Bold" Foreground="#111827"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Main Content -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="200"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Left Actions Card -->
+                <Border Grid.Column="0" Background="White" CornerRadius="12" Padding="18" Margin="0,0,10,0">
+                    <StackPanel>
+                        <TextBlock Text="Quick Actions" FontSize="14" FontWeight="SemiBold" Foreground="#111827" Margin="0,0,0,16"/>
+
+                        <Button Click="UpdatePurchasePrice_Click" 
+                                Background="#2563EB" Foreground="White" 
+                                Padding="14,12" Margin="0,0,0,8" 
+                                BorderThickness="0" Cursor="Hand" HorizontalAlignment="Stretch">
+                            <TextBlock Text="Update Prices" FontSize="13" FontWeight="Medium"/>
+                        </Button>
+
+                        <Button Click="ExportExcel_Click" 
+                                Background="Transparent" Foreground="#374151" 
+                                Padding="14,12" Margin="0,0,0,8" 
+                                BorderThickness="1" BorderBrush="#D1D5DB" 
+                                Cursor="Hand" HorizontalAlignment="Stretch">
+                            <TextBlock Text="Export Excel" FontSize="13"/>
+                        </Button>
+
+                        <Button Click="ImportExcel_Click" 
+                                Background="Transparent" Foreground="#374151" 
+                                Padding="14,12" Margin="0,0,0,8" 
+                                BorderThickness="1" BorderBrush="#D1D5DB" 
+                                Cursor="Hand" HorizontalAlignment="Stretch">
+                            <TextBlock Text="Import Excel" FontSize="13"/>
+                        </Button>
+
+                        <Border Background="#F9FAFB" CornerRadius="10" Padding="14" Margin="0,16,0,0">
+                            <StackPanel>
+                                <TextBlock Text="Info" FontSize="11" FontWeight="SemiBold" Foreground="#6B7280" Margin="0,0,0,8"/>
+                                <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#6B7280">
+                                    Track purchase and sell prices for all glass sheets
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- Right Table Card -->
+                <Border Grid.Column="1" Background="White" CornerRadius="12" Padding="18">
+                    <StackPanel>
+                        <TextBlock Text="All Sheets" FontSize="16" FontWeight="SemiBold" Foreground="#111827" Margin="0,0,0,14"/>
+
+                        <DataGrid x:Name="SheetGrid" AutoGenerateColumns="False" 
+                                  CanUserAddRows="False" IsReadOnly="True"
+                                  GridLinesVisibility="Horizontal" BorderThickness="0"
+                                  RowHeight="44" HeadersVisibility="Column"
+                                  Background="Transparent" RowBackground="White"
+                                  AlternatingRowBackground="#F9FAFB"
+                                  HorizontalGridLinesBrush="#E5E7EB">
+
+                            <DataGrid.Resources>
+                                <Style x:Key="ThicknessHeader" TargetType="DataGridColumnHeader">
+                                    <Setter Property="Background" Value="#DBEAFE"/>
+                                    <Setter Property="Foreground" Value="#1E40AF"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                    <Setter Property="FontSize" Value="11"/>
+                                    <Setter Property="Padding" Value="12,10"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                </Style>
+                                <Style x:Key="ColorHeader" TargetType="DataGridColumnHeader">
+                                    <Setter Property="Background" Value="#FEF3C7"/>
+                                    <Setter Property="Foreground" Value="#92400E"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                    <Setter Property="FontSize" Value="11"/>
+                                    <Setter Property="Padding" Value="12,10"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                </Style>
+                                <Style x:Key="CategoryHeader" TargetType="DataGridColumnHeader">
+                                    <Setter Property="Background" Value="#EDE9FE"/>
+                                    <Setter Property="Foreground" Value="#5B21B6"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                    <Setter Property="FontSize" Value="11"/>
+                                    <Setter Property="Padding" Value="12,10"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                </Style>
+                                <Style x:Key="SizeHeader" TargetType="DataGridColumnHeader">
+                                    <Setter Property="Background" Value="#F3F4F6"/>
+                                    <Setter Property="Foreground" Value="#374151"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                    <Setter Property="FontSize" Value="11"/>
+                                    <Setter Property="Padding" Value="12,10"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                </Style>
+                                <Style x:Key="PurchaseHeader" TargetType="DataGridColumnHeader">
+                                    <Setter Property="Background" Value="#FEE2E2"/>
+                                    <Setter Property="Foreground" Value="#991B1B"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                    <Setter Property="FontSize" Value="11"/>
+                                    <Setter Property="Padding" Value="12,10"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                </Style>
+                                <Style x:Key="SellHeader" TargetType="DataGridColumnHeader">
+                                    <Setter Property="Background" Value="#D1FAE5"/>
+                                    <Setter Property="Foreground" Value="#065F46"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                    <Setter Property="FontSize" Value="11"/>
+                                    <Setter Property="Padding" Value="12,10"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                </Style>
+                                <Style x:Key="LastPurchaseHeader" TargetType="DataGridColumnHeader">
+                                    <Setter Property="Background" Value="#EDE9FE"/>
+                                    <Setter Property="Foreground" Value="#5B21B6"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                    <Setter Property="FontSize" Value="11"/>
+                                    <Setter Property="Padding" Value="12,10"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                </Style>
+                                <Style x:Key="ActionsHeader" TargetType="DataGridColumnHeader">
+                                    <Setter Property="Background" Value="#F3F4F6"/>
+                                    <Setter Property="Foreground" Value="#374151"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                    <Setter Property="FontSize" Value="11"/>
+                                    <Setter Property="Padding" Value="12,10"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                </Style>
+                            </DataGrid.Resources>
+
+                            <DataGrid.CellStyle>
+                                <Style TargetType="DataGridCell">
+                                    <Setter Property="Padding" Value="12,0"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="DataGridCell">
+                                                <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter VerticalAlignment="Center"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </DataGrid.CellStyle>
+
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="THICKNESS" Binding="{Binding Thickness}" Width="95" HeaderStyle="{StaticResource ThicknessHeader}">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                            <Setter Property="Foreground" Value="#2563EB"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="COLOR" Binding="{Binding Color}" Width="100" HeaderStyle="{StaticResource ColorHeader}"/>
+                                <DataGridTextColumn Header="CATEGORY" Binding="{Binding Category}" Width="120" HeaderStyle="{StaticResource CategoryHeader}"/>
+                                <DataGridTextColumn Header="SIZE (mm)" Binding="{Binding DisplayDimensions}" Width="115" HeaderStyle="{StaticResource SizeHeader}"/>
+                                <DataGridTextColumn Header="PURCHASE (AED)" Binding="{Binding PurchasePrice, StringFormat=N2}" Width="125" HeaderStyle="{StaticResource PurchaseHeader}">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                            <Setter Property="Foreground" Value="#DC2626"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="SELL (AED)" Binding="{Binding SellPrice, StringFormat=N2}" Width="100" HeaderStyle="{StaticResource SellHeader}">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                            <Setter Property="Foreground" Value="#059669"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="LAST PURCHASE" Binding="{Binding DisplayPurchaseInfo}" Width="130" HeaderStyle="{StaticResource LastPurchaseHeader}">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="#7C3AED"/>
+                                            <Setter Property="FontSize" Value="11"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTemplateColumn Header="ACTIONS" Width="165" HeaderStyle="{StaticResource ActionsHeader}">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Button Content="Buy" Click="UpdatePurchasePrice_Click" Tag="{Binding Id}" 
+                                                        Background="#2563EB" Foreground="White" 
+                                                        Padding="10,6" FontSize="11" Cursor="Hand" BorderThickness="0"/>
+                                                <Button Content="Edit" Click="EditSheet_Click" Tag="{Binding Id}" 
+                                                        Background="#F3F4F6" Foreground="#374151" 
+                                                        Padding="10,6" FontSize="11" Margin="5,0,0,0" Cursor="Hand" BorderThickness="0"/>
+                                                <Button Content="X" Click="DeleteSheet_Click" Tag="{Binding Id}" 
+                                                        Background="#DC2626" Foreground="White" 
+                                                        Padding="10,6" FontSize="11" Margin="5,0,0,0" Cursor="Hand" BorderThickness="0" Width="32"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
 </UserControl>

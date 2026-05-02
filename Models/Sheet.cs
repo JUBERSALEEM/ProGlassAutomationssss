@@ -20,7 +20,6 @@ namespace ProGlassAutomation.Models
         public bool IsActive { get; set; } = true;
         public DateTime CreatedDate { get; set; } = DateTime.Now;
         public string Description { get; set; } = "";
-
         public decimal LastPurchasePrice { get; set; }
         public DateTime LastPurchaseDate { get; set; }
         public DateTime LastPurchaseTime { get; set; }
@@ -29,11 +28,10 @@ namespace ProGlassAutomation.Models
 
         public string DisplayName => $"{Thickness} - {Color}";
         public string DisplayDimensions => $"{Width} x {Height} mm";
+        public decimal Area => (Width / 1000) * (Height / 1000);
 
         public string DisplayPurchaseInfo => LastPurchaseDate > DateTime.MinValue
             ? $"AED {LastPurchasePrice:N2} | {LastPurchaseDate:dd-MMM-yyyy} {LastPurchaseTime:HH:mm}"
             : "No purchase";
-
-        public decimal Area => (Width / 1000) * (Height / 1000);
     }
 }

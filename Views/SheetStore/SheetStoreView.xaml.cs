@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using Microsoft.Win32;
 using ProGlassAutomation.Models;
 using ProGlassAutomation.Services;
 
@@ -19,33 +20,21 @@ namespace ProGlassAutomation.Views.SheetStore
         private void LoadSheets()
         {
             var sheets = SheetStoreService.Instance.GetAllSheets();
-            SheetItemsControl.ItemsSource = sheets;
+            SheetGrid.ItemsSource = sheets;
         }
 
         private void UpdateStats()
         {
-            var sheets = SheetStoreService.Instance.GetAllSheets();
-
-            TotalSheetsText.Text = sheets.Count.ToString();
-            CategoriesCountText.Text = SheetStoreService.Instance.GetAllCategories().Count.ToString();
+            TotalSheetsText.Text = SheetStoreService.Instance.GetAllSheets().Count.ToString();
             ThicknessCountText.Text = SheetStoreService.Instance.GetAllThicknesses().Count.ToString();
             ColorsCountText.Text = SheetStoreService.Instance.GetAllColors().Count.ToString();
 
-            // Find the most recent purchase
-            var lastPurchase = sheets
-                .Where(s => s.LastPurchaseDate > DateTime.MinValue)
-                .OrderByDescending(s => s.LastPurchaseDate)
-                .ThenByDescending(s => s.LastPurchaseTime)
+            var lastUpdate = SheetStoreService.Instance.GetAllSheets()
+                .Where(s => s.LatestPurchaseDate > DateTime.MinValue)
+                .OrderByDescending(s => s.LatestPurchaseDate)
                 .FirstOrDefault();
 
-            if (lastPurchase != null && lastPurchase.LastPurchaseDate > DateTime.MinValue)
-            {
-                LastUpdateText.Text = $"{lastPurchase.LastPurchaseDate:dd-MMM}\n{lastPurchase.LastPurchaseTime:HH:mm}";
-            }
-            else
-            {
-                LastUpdateText.Text = "-";
-            }
+            LastUpdateText.Text = lastUpdate?.LatestPurchaseDate.ToString("dd-MMM") ?? "None";
         }
 
         private void AddSheet_Click(object sender, RoutedEventArgs e)
@@ -54,8 +43,16 @@ namespace ProGlassAutomation.Views.SheetStore
             dialog.Owner = Window.GetWindow(this);
             if (dialog.ShowDialog() == true)
             {
-                LoadSheets();
-                UpdateStats();
+                var result = SheetStoreService.Instance.AddSheet(dialog.Sheet);
+                if (result.Success)
+                {
+                    LoadSheets();
+                    UpdateStats();
+                }
+                else
+                {
+                    MessageBox.Show(result.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
 
@@ -70,7 +67,15 @@ namespace ProGlassAutomation.Views.SheetStore
                     dialog.Owner = Window.GetWindow(this);
                     if (dialog.ShowDialog() == true)
                     {
-                        LoadSheets();
+                        var result = SheetStoreService.Instance.UpdateSheet(dialog.Sheet);
+                        if (result.Success)
+                        {
+                            LoadSheets();
+                        }
+                        else
+                        {
+                            MessageBox.Show(result.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
                     }
                 }
             }
@@ -80,19 +85,18 @@ namespace ProGlassAutomation.Views.SheetStore
         {
             if (sender is Button btn && btn.Tag is string id)
             {
-                var result = MessageBox.Show(
-                    "Are you sure you want to delete this sheet?",
-                    "Confirm Delete",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Question);
-
+                var result = MessageBox.Show("Delete this sheet?", "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question);
                 if (result == MessageBoxResult.Yes)
                 {
-                    if (SheetStoreService.Instance.DeleteSheet(id))
+                    var deleteResult = SheetStoreService.Instance.DeleteSheet(id);
+                    if (deleteResult.Success)
                     {
                         LoadSheets();
                         UpdateStats();
-                        MessageBox.Show("Sheet deleted successfully", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                    else
+                    {
+                        MessageBox.Show(deleteResult.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
             }
@@ -101,9 +105,9 @@ namespace ProGlassAutomation.Views.SheetStore
         private void UpdatePurchasePrice_Click(object sender, RoutedEventArgs e)
         {
             string? sheetId = null;
-            if (sender is Button btn)
+            if (sender is Button btn && btn.Tag is string tagId)
             {
-                sheetId = btn.Tag as string;
+                sheetId = tagId;
             }
 
             var dialog = new PurchasePriceDialog(sheetId);
@@ -122,14 +126,43 @@ namespace ProGlassAutomation.Views.SheetStore
             dialog.ShowDialog();
         }
 
-        private void ExportExcel_Click(object sender, RoutedEventArgs e)
+        private async void ExportExcel_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Export - Coming soon!", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+            var dialog = new SaveFileDialog
+            {
+                Filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*",
+                DefaultExt = "csv",
+                FileName = $"sheets_export_{DateTime.Now:yyyyMMdd_HHmmss}.csv"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                var result = await SheetStoreService.Instance.ExportToExcelAsync(dialog.FileName);
+                MessageBox.Show(result.Message, result.Success ? "Success" : "Error", MessageBoxButton.OK,
+                    result.Success ? MessageBoxImage.Information : MessageBoxImage.Error);
+            }
         }
 
-        private void ImportExcel_Click(object sender, RoutedEventArgs e)
+        private async void ImportExcel_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Import - Coming soon!", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+            var dialog = new OpenFileDialog
+            {
+                Filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*",
+                DefaultExt = "csv"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                var result = await SheetStoreService.Instance.ImportFromExcelAsync(dialog.FileName);
+                MessageBox.Show(result.Message, result.Success ? "Success" : "Error", MessageBoxButton.OK,
+                    result.Success ? MessageBoxImage.Information : MessageBoxImage.Error);
+
+                if (result.Success)
+                {
+                    LoadSheets();
+                    UpdateStats();
+                }
+            }
         }
     }
 }
