@@ -8,96 +8,128 @@
     </UserControl.DataContext>
 
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
+        <SolidColorBrush x:Key="FioriPrimary" Color="#0A6EBB"/>
+        <SolidColorBrush x:Key="FioriBackground" Color="#F0F0F0"/>
+        <SolidColorBrush x:Key="FioriCardBackground" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="FioriTextPrimary" Color="#32363A"/>
+        <SolidColorBrush x:Key="FioriTextSecondary" Color="#6A6D70"/>
+        <SolidColorBrush x:Key="FioriBorder" Color="#D9D9D9"/>
+
+        <Style x:Key="EditCombo" TargetType="ComboBox">
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Margin" Value="0,4,0,6"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="IsEditable" Value="True"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="{StaticResource FioriBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <Style x:Key="ThemedBox" TargetType="TextBox">
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,4,0,6"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="{StaticResource FioriBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <Style x:Key="FioriCard" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource FioriCardBackground}"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="12"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="BorderBrush" Value="{StaticResource FioriBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <Style x:Key="SectionTitle" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="{StaticResource FioriTextPrimary}"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+        </Style>
+
+        <Style x:Key="FieldLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{StaticResource FioriTextSecondary}"/>
+            <Setter Property="Margin" Value="0,6,0,3"/>
+        </Style>
 
         <Style x:Key="ToggleBtn" TargetType="ToggleButton">
+            <Setter Property="Background" Value="#14B8A6"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="13"/>
-            <Setter Property="Height" Value="40"/>
+            <Setter Property="Height" Value="36"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ToggleButton">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="12">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="12,8">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter Property="Background" Value="#0D9488"/>
-                            </Trigger>
-                            <Trigger Property="IsChecked" Value="False">
-                                <Setter Property="Background" Value="#14B8A6"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
 
-        <!-- ComboBox Style - Manual Edit + Dropdown -->
-        <Style x:Key="EditCombo" TargetType="ComboBox">
-            <Setter Property="Height" Value="32"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Margin" Value="0,2,0,6"/>
-            <Setter Property="Padding" Value="8,4"/>
-            <Setter Property="IsEditable" Value="True"/>
-        </Style>
-
-        <Style x:Key="ThemedBox" TargetType="TextBox">
-            <Setter Property="Height" Value="32"/>
+        <Style x:Key="PrimaryBtn" TargetType="Button">
+            <Setter Property="Background" Value="#0A6EBB"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="13"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Margin" Value="0,2,0,6"/>
-            <Setter Property="Padding" Value="6,4"/>
-        </Style>
-
-        <Style x:Key="SecBorder" TargetType="Border">
-            <Setter Property="CornerRadius" Value="12"/>
-            <Setter Property="Padding" Value="12"/>
-            <Setter Property="Margin" Value="0,0,0,10"/>
-            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="16,10">
+                            <ContentPresenter HorizontalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </UserControl.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <Grid Background="#E8F4FC" Margin="8">
+        <Grid Background="{StaticResource FioriBackground}" Margin="8">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- HEADER + RESULT -->
-            <Border Grid.Row="0" CornerRadius="12" Padding="12" Margin="0,0,0,8">
-                <Border.Background>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#1E3A5F" Offset="0"/>
-                        <GradientStop Color="#2563EB" Offset="1"/>
-                    </LinearGradientBrush>
-                </Border.Background>
+            <!-- HEADER -->
+            <Border Grid.Row="0" CornerRadius="8" Padding="20,16" Margin="0,0,0,10" Background="{StaticResource FioriPrimary}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-
                     <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                        <TextBlock Text="🧩 DGU + LAMINATION CALCULATOR" Foreground="White" FontSize="18" FontWeight="Bold"/>
-                        <TextBlock Text="Double Glazed Unit with Lamination" Foreground="#BFDBFE" FontSize="10" Margin="0,4,0,0"/>
+                        <TextBlock Text="DGU + LAMINATION CALCULATOR" Foreground="White" FontSize="18" FontWeight="Bold"/>
+                        <TextBlock Text="Double Glazed Unit with Lamination" Foreground="#D1E9F9" FontSize="11" Margin="0,4,0,0"/>
                     </StackPanel>
-
-                    <Border Grid.Column="1" Background="White" CornerRadius="8" Padding="10" Width="180">
+                    <Border Grid.Column="1" Background="White" CornerRadius="8" Padding="16,10" MinWidth="200">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <TextBlock Text="📊 RESULT: " FontWeight="Bold" FontSize="14" Foreground="#1E3A5F" VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding Result}" FontSize="18" FontWeight="Bold" Foreground="#0891B2" VerticalAlignment="Center"/>
+                            <TextBlock Text="RESULT: " FontWeight="Bold" FontSize="14" Foreground="{StaticResource FioriTextPrimary}" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding Result}" FontSize="20" FontWeight="Bold" Foreground="{StaticResource FioriPrimary}" VerticalAlignment="Center"/>
+                            <TextBlock Text=" AED" FontSize="11" Foreground="{StaticResource FioriTextSecondary}" VerticalAlignment="Center" Margin="4,0,0,0"/>
                         </StackPanel>
                     </Border>
                 </Grid>
             </Border>
 
             <!-- MAIN CONTENT -->
-            <Border Grid.Row="1" Background="White" CornerRadius="14" Padding="16">
+            <Border Grid.Row="1" Background="White" CornerRadius="8" Padding="16" BorderBrush="{StaticResource FioriBorder}" BorderThickness="1">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -105,180 +137,286 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- LEFT - GLASS SELECTION -->
+                    <!-- LEFT - GLASS SELECTION + HELP -->
                     <StackPanel Grid.Column="0" Margin="0,0,8,0">
-                        <Border Style="{StaticResource SecBorder}" Background="#F0F9FF" BorderBrush="#BAE6FD">
+                        <Border Style="{StaticResource FioriCard}" Background="#F5F5F5">
                             <StackPanel>
-                                <TextBlock Text="🪟 OUTER GLASS" FontWeight="Bold" FontSize="14" Foreground="#1E3A5F" Margin="0,0,0,6"/>
-                                <TextBlock Text="Thickness" FontSize="12" FontWeight="Bold" Foreground="#1E3A5F" Margin="0,8,0,4"/>
-                                <ComboBox ItemsSource="{Binding GlassThicknessOptions}" 
-                                          SelectedItem="{Binding Thickness1}" 
-                                          Text="{Binding Thickness1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          IsEditable="True"
-                                          Style="{StaticResource EditCombo}"/>
-                                <TextBlock Text="Color" FontSize="12" FontWeight="Bold" Foreground="#1E3A5F" Margin="0,8,0,4"/>
-                                <ComboBox ItemsSource="{Binding ColorOptions}" 
-                                          SelectedItem="{Binding Color1}" 
-                                          Text="{Binding Color1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          IsEditable="True"
-                                          Style="{StaticResource EditCombo}"/>
+                                <TextBlock Text="OUTER GLASS" Style="{StaticResource SectionTitle}"/>
+                                <TextBlock Text="Thickness (mm)" Style="{StaticResource FieldLabel}"/>
+                                <ComboBox Style="{StaticResource EditCombo}" ItemsSource="{Binding GlassThicknessOptions}" SelectedItem="{Binding Thickness1}" Text="{Binding Thickness1, UpdateSourceTrigger=PropertyChanged}"/>
+                                <TextBlock Text="Color" Style="{StaticResource FieldLabel}"/>
+                                <ComboBox Style="{StaticResource EditCombo}" ItemsSource="{Binding ColorOptions}" SelectedItem="{Binding Color1}" Text="{Binding Color1, UpdateSourceTrigger=PropertyChanged}"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource FioriCard}" Background="#F5F5F5">
+                            <StackPanel>
+                                <TextBlock Text="INNER GLASS" Style="{StaticResource SectionTitle}"/>
+                                <TextBlock Text="Thickness (mm)" Style="{StaticResource FieldLabel}"/>
+                                <ComboBox Style="{StaticResource EditCombo}" ItemsSource="{Binding GlassThicknessOptions}" SelectedItem="{Binding Thickness2}" Text="{Binding Thickness2, UpdateSourceTrigger=PropertyChanged}"/>
+                                <TextBlock Text="Color" Style="{StaticResource FieldLabel}"/>
+                                <ComboBox Style="{StaticResource EditCombo}" ItemsSource="{Binding ColorOptions}" SelectedItem="{Binding Color2}" Text="{Binding Color2, UpdateSourceTrigger=PropertyChanged}"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource FioriCard}" Background="#F5F5F5">
+                            <StackPanel>
+                                <TextBlock Text="LAMINATION GLASS" Style="{StaticResource SectionTitle}"/>
+                                <TextBlock Text="Thickness (mm)" Style="{StaticResource FieldLabel}"/>
+                                <ComboBox Style="{StaticResource EditCombo}" ItemsSource="{Binding GlassThicknessOptions}" SelectedItem="{Binding Thickness3}" Text="{Binding Thickness3, UpdateSourceTrigger=PropertyChanged}"/>
+                                <TextBlock Text="Color" Style="{StaticResource FieldLabel}"/>
+                                <ComboBox Style="{StaticResource EditCombo}" ItemsSource="{Binding ColorOptions}" SelectedItem="{Binding Color3}" Text="{Binding Color3, UpdateSourceTrigger=PropertyChanged}"/>
                             </StackPanel>
                         </Border>
 
-                        <Border Style="{StaticResource SecBorder}" Background="#F0F9FF" BorderBrush="#BAE6FD">
+                        <!-- HOW TO USE -->
+                        <Border Style="{StaticResource FioriCard}" Background="#F0FDF4" BorderBrush="#86EFAC">
                             <StackPanel>
-                                <TextBlock Text="🪟 INNER GLASS" FontWeight="Bold" FontSize="14" Foreground="#1E3A5F" Margin="0,0,0,6"/>
-                                <TextBlock Text="Thickness" FontSize="12" FontWeight="Bold" Foreground="#1E3A5F" Margin="0,8,0,4"/>
-                                <ComboBox ItemsSource="{Binding GlassThicknessOptions}" 
-                                          SelectedItem="{Binding Thickness2}" 
-                                          Text="{Binding Thickness2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          IsEditable="True"
-                                          Style="{StaticResource EditCombo}"/>
-                                <TextBlock Text="Color" FontSize="12" FontWeight="Bold" Foreground="#1E3A5F" Margin="0,8,0,4"/>
-                                <ComboBox ItemsSource="{Binding ColorOptions}" 
-                                          SelectedItem="{Binding Color2}" 
-                                          Text="{Binding Color2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          IsEditable="True"
-                                          Style="{StaticResource EditCombo}"/>
+                                <TextBlock Text="HOW TO USE" Style="{StaticResource SectionTitle}" Foreground="#166534"/>
+                                <TextBlock Text="1. Select glass thickness" FontSize="10" Foreground="#32363A" Margin="0,2,0,0"/>
+                                <TextBlock Text="2. Choose glass color" FontSize="10" Foreground="#32363A" Margin="0,2,0,0"/>
+                                <TextBlock Text="3. Enter all glass prices" FontSize="10" Foreground="#32363A" Margin="0,2,0,0"/>
+                                <TextBlock Text="4. Set ASP, PVB, Cut, Temp" FontSize="10" Foreground="#32363A" Margin="0,2,0,0"/>
+                                <TextBlock Text="5. Apply profit margin" FontSize="10" Foreground="#32363A" Margin="0,2,0,0"/>
+                                <TextBlock Text="6. Click SAVE to store" FontSize="10" Foreground="#32363A" Margin="0,2,0,0"/>
                             </StackPanel>
                         </Border>
 
-                        <Border Style="{StaticResource SecBorder}" Background="#F0F9FF" BorderBrush="#BAE6FD">
+                        <!-- MODULE STATUS -->
+                        <Border Style="{StaticResource FioriCard}" Background="#F0F4F8">
                             <StackPanel>
-                                <TextBlock Text="🧪 LAMINATION GLASS" FontWeight="Bold" FontSize="14" Foreground="#1E3A5F" Margin="0,0,0,6"/>
-                                <TextBlock Text="Thickness" FontSize="12" FontWeight="Bold" Foreground="#1E3A5F" Margin="0,8,0,4"/>
-                                <ComboBox ItemsSource="{Binding GlassThicknessOptions}" 
-                                          SelectedItem="{Binding Thickness3}" 
-                                          Text="{Binding Thickness3, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          IsEditable="True"
-                                          Style="{StaticResource EditCombo}"/>
-                                <TextBlock Text="Color" FontSize="12" FontWeight="Bold" Foreground="#1E3A5F" Margin="0,8,0,4"/>
-                                <ComboBox ItemsSource="{Binding ColorOptions}" 
-                                          SelectedItem="{Binding Color3}" 
-                                          Text="{Binding Color3, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          IsEditable="True"
-                                          Style="{StaticResource EditCombo}"/>
+                                <TextBlock Text="MODULE STATUS" Style="{StaticResource SectionTitle}"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                    <Ellipse Width="8" Height="8" Fill="#0A6EBB"/>
+                                    <TextBlock Text="Outer Glass - Ready" FontSize="10" Foreground="#32363A" Margin="8,0,0,0"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                    <Ellipse Width="8" Height="8" Fill="#E7650B"/>
+                                    <TextBlock Text="Inner Glass - Ready" FontSize="10" Foreground="#32363A" Margin="8,0,0,0"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                    <Ellipse Width="8" Height="8" Fill="#BB0000"/>
+                                    <TextBlock Text="Lamination - Ready" FontSize="10" Foreground="#32363A" Margin="8,0,0,0"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                    <Ellipse Width="8" Height="8" Fill="#107E3E"/>
+                                    <TextBlock Text="ASP Module - Ready" FontSize="10" Foreground="#32363A" Margin="8,0,0,0"/>
+                                </StackPanel>
                             </StackPanel>
                         </Border>
                     </StackPanel>
 
                     <!-- MIDDLE - PRICE INPUT -->
                     <StackPanel Grid.Column="1" Margin="8,0">
-                        <Border Style="{StaticResource SecBorder}" Background="#FEF9C3" BorderBrush="#FCD34D" BorderThickness="2">
+                        <Border Style="{StaticResource FioriCard}" Background="#FEF9C7" BorderBrush="#FCD34D" BorderThickness="1">
                             <StackPanel>
-                                <TextBlock Text="💰 PRICE INPUT (AED)" FontWeight="Bold" FontSize="13" Foreground="#92400E" Margin="0,0,0,8"/>
-                                <TextBlock Text="Outer Glass Price" FontSize="12" FontWeight="Bold" Foreground="#DC2626" Margin="0,6,0,4"/>
-                                <TextBox Text="{Binding Sheet1, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ThemedBox}"/>
-                                <TextBlock Text="Lami Outer Glass Price" FontSize="12" FontWeight="Bold" Foreground="#DC2626" Margin="0,6,0,4"/>
-                                <TextBox Text="{Binding Sheet2, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ThemedBox}"/>
-                                <TextBlock Text="Lami Inner Glass Price" FontSize="12" FontWeight="Bold" Foreground="#DC2626" Margin="0,6,0,4"/>
-                                <TextBox Text="{Binding Sheet3, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ThemedBox}"/>
-                                <TextBlock Text="ASP Price" FontSize="12" FontWeight="Bold" Foreground="#DC2626" Margin="0,6,0,4"/>
-                                <TextBox Text="{Binding AspPrice, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ThemedBox}"/>
-                                <TextBlock Text="Outsource PVB Cost" FontSize="12" FontWeight="Bold" Foreground="#DC2626" Margin="0,6,0,4"/>
-                                <TextBox Text="{Binding OutsourcePrice, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ThemedBox}"/>
+                                <TextBlock Text="PRICE INPUT (AED)" Style="{StaticResource SectionTitle}" Foreground="#92400E"/>
+                                <TextBlock Text="Sheet1 Price" Style="{StaticResource FieldLabel}" Foreground="#92400E"/>
+                                <TextBox Style="{StaticResource ThemedBox}" Text="{Binding Sheet1, UpdateSourceTrigger=PropertyChanged}"/>
+                                <TextBlock Text="Sheet2 Price" Style="{StaticResource FieldLabel}" Foreground="#92400E"/>
+                                <TextBox Style="{StaticResource ThemedBox}" Text="{Binding Sheet2, UpdateSourceTrigger=PropertyChanged}"/>
+                                <TextBlock Text="Sheet3 Price" Style="{StaticResource FieldLabel}" Foreground="#92400E"/>
+                                <TextBox Style="{StaticResource ThemedBox}" Text="{Binding Sheet3, UpdateSourceTrigger=PropertyChanged}"/>
+                                <TextBlock Text="ASP Price" Style="{StaticResource FieldLabel}" Foreground="#92400E"/>
+                                <TextBox Style="{StaticResource ThemedBox}" Text="{Binding AspPrice, UpdateSourceTrigger=PropertyChanged}"/>
+                                <TextBlock Text="Outsource PVB" Style="{StaticResource FieldLabel}" Foreground="#92400E"/>
+                                <TextBox Style="{StaticResource ThemedBox}" Text="{Binding OutsourcePrice, UpdateSourceTrigger=PropertyChanged}"/>
+                                <TextBlock Text="Cutting Charge" Style="{StaticResource FieldLabel}" Foreground="#92400E"/>
+                                <TextBox Style="{StaticResource ThemedBox}" Text="{Binding CuttingCharge, UpdateSourceTrigger=PropertyChanged}"/>
+                                <TextBlock Text="Tempering Charge" Style="{StaticResource FieldLabel}" Foreground="#92400E"/>
+                                <TextBox Style="{StaticResource ThemedBox}" Text="{Binding TemperingCharge, UpdateSourceTrigger=PropertyChanged}"/>
                             </StackPanel>
                         </Border>
-
-                        <Border Style="{StaticResource SecBorder}" Background="#F0F9FF" BorderBrush="#BAE6FD">
+                        <Border Style="{StaticResource FioriCard}" Background="#F5F5F5">
                             <StackPanel>
-                                <TextBlock Text="⚙ ASP MODULE" FontWeight="Bold" FontSize="14" Foreground="#1E3A5F" Margin="0,0,0,6"/>
-                                <TextBlock Text="Thickness" FontSize="12" FontWeight="Bold" Foreground="#1E3A5F" Margin="0,8,0,4"/>
-                                <ComboBox ItemsSource="{Binding AspThicknessOptions}" 
-                                          SelectedItem="{Binding AspThickness}" 
-                                          Text="{Binding AspThickness, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          IsEditable="True"
-                                          Style="{StaticResource EditCombo}"/>
-                                <TextBlock Text="Type" FontSize="12" FontWeight="Bold" Foreground="#1E3A5F" Margin="0,8,0,4"/>
-                                <ComboBox ItemsSource="{Binding AspTypeOptions}" 
-                                          SelectedItem="{Binding AspType}" 
-                                          Text="{Binding AspType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          IsEditable="True"
-                                          Style="{StaticResource EditCombo}"/>
+                                <TextBlock Text="ASP MODULE" Style="{StaticResource SectionTitle}"/>
+                                <TextBlock Text="Thickness" Style="{StaticResource FieldLabel}"/>
+                                <ComboBox Style="{StaticResource EditCombo}" ItemsSource="{Binding AspThicknessOptions}" SelectedItem="{Binding AspThickness}" Text="{Binding AspThickness, UpdateSourceTrigger=PropertyChanged}"/>
+                                <TextBlock Text="Type" Style="{StaticResource FieldLabel}"/>
+                                <ComboBox Style="{StaticResource EditCombo}" ItemsSource="{Binding AspTypeOptions}" SelectedItem="{Binding AspType}" Text="{Binding AspType, UpdateSourceTrigger=PropertyChanged}"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>
 
-                    <!-- RIGHT - PROFIT + SAVE + GUIDE + STATUS -->
+                    <!-- RIGHT - PROFIT MARGIN + PREVIEW + SAVE -->
                     <StackPanel Grid.Column="2" Margin="8,0,0,0">
-
-                        <!-- PROFIT MARGIN -->
-                        <Border Style="{StaticResource SecBorder}" Background="#F0FDFA" BorderBrush="#5EEAD4">
+                        <Border Style="{StaticResource FioriCard}" Background="#F0FDF4" BorderBrush="#86EFAC">
                             <StackPanel>
-                                <TextBlock Text="📈 PROFIT MARGIN" FontSize="12" FontWeight="Bold" Foreground="#1E3A5F" Margin="0,8,0,4"/>
-                                <ComboBox ItemsSource="{Binding ProfitOptions}" 
-                                          SelectedItem="{Binding ProfitMargin}" 
-                                          Text="{Binding ProfitMargin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          IsEditable="True"
-                                          Style="{StaticResource EditCombo}"/>
+                                <TextBlock Text="PROFIT MARGIN" Style="{StaticResource SectionTitle}" Foreground="#166534"/>
+                                <ComboBox Style="{StaticResource EditCombo}" ItemsSource="{Binding ProfitOptions}" SelectedItem="{Binding ProfitMargin}" Text="{Binding ProfitMargin, UpdateSourceTrigger=PropertyChanged}"/>
                             </StackPanel>
                         </Border>
 
-                        <!-- SAVE BUTTON -->
-                        <Button Content="💾 SAVE RECORD" Command="{Binding SaveCommand}" Background="#1E40AF" Foreground="White" FontWeight="Bold" FontSize="13" Height="40" Margin="0,0,0,10"/>
-
-                        <!-- STEP GUIDE -->
-                        <Border Style="{StaticResource SecBorder}" Background="#F0FDFA" BorderBrush="#5EEAD4">
+                        <!-- CALCULATION PREVIEW -->
+                        <Border Style="{StaticResource FioriCard}" Background="#E8F4FD" BorderBrush="#BAE6FD" BorderThickness="1">
                             <StackPanel>
-                                <TextBlock Text="📘 STEP GUIDE" FontWeight="Bold" FontSize="12" Foreground="#0F766E" Margin="0,0,0,8"/>
-                                <TextBlock Text="1️⃣ Select glass thickness" FontSize="11" Foreground="#334155" Margin="0,4,0,0"/>
-                                <TextBlock Text="2️⃣ Choose color type" FontSize="11" Foreground="#334155" Margin="0,4,0,0"/>
-                                <TextBlock Text="3️⃣ Enter price per sheet" FontSize="11" Foreground="#334155" Margin="0,4,0,0"/>
-                                <TextBlock Text="4️⃣ Configure ASP system" FontSize="11" Foreground="#334155" Margin="0,4,0,0"/>
-                                <TextBlock Text="5️⃣ Set PVB bonding" FontSize="11" Foreground="#334155" Margin="0,4,0,0"/>
-                                <TextBlock Text="6️⃣ Apply profit margin" FontSize="11" Foreground="#334155" Margin="0,4,0,0"/>
-                                <TextBlock Text="7️⃣ Add outsource cost" FontSize="11" Foreground="#334155" Margin="0,4,0,0"/>
+                                <TextBlock Text="CALCULATION PREVIEW" FontWeight="Bold" FontSize="11" Foreground="#1E40AF" Margin="0,0,0,8"/>
+
+                                <Border Background="#F8FAFC" CornerRadius="4" Padding="8" Margin="0,0,0,8" BorderBrush="#E2E8F0" BorderThickness="1">
+                                    <StackPanel>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            <TextBlock Grid.Row="0" Text="Sheet1:" FontSize="10" Foreground="#64748B"/>
+                                            <TextBlock Grid.Row="0" Grid.Column="1" FontSize="10" FontWeight="Bold" Foreground="#1E40AF">
+                                                <Run Text="{Binding Sheet1, Mode=OneWay}"/><Run Text=" AED"/>
+                                            </TextBlock>
+                                            <TextBlock Grid.Row="1" Text="Sheet2:" FontSize="10" Foreground="#64748B" Margin="0,2,0,0"/>
+                                            <TextBlock Grid.Row="1" Grid.Column="1" FontSize="10" FontWeight="Bold" Foreground="#1E40AF" Margin="0,2,0,0">
+                                                <Run Text="{Binding Sheet2, Mode=OneWay}"/><Run Text=" AED"/>
+                                            </TextBlock>
+                                            <TextBlock Grid.Row="2" Text="Sheet3:" FontSize="10" Foreground="#64748B" Margin="0,2,0,0"/>
+                                            <TextBlock Grid.Row="2" Grid.Column="1" FontSize="10" FontWeight="Bold" Foreground="#1E40AF" Margin="0,2,0,0">
+                                                <Run Text="{Binding Sheet3, Mode=OneWay}"/><Run Text=" AED"/>
+                                            </TextBlock>
+                                            <TextBlock Grid.Row="3" Text="Profit Factor:" FontSize="10" Foreground="#64748B" Margin="0,2,0,0"/>
+                                            <TextBlock Grid.Row="3" Grid.Column="1" FontSize="10" FontWeight="Bold" Foreground="#7C3AED" Margin="0,2,0,0">
+                                                <Run Text="{Binding ProfitFactor, Mode=OneWay}"/>
+                                            </TextBlock>
+                                            <TextBlock Grid.Row="4" Text="ASP:" FontSize="10" Foreground="#64748B" Margin="0,2,0,0"/>
+                                            <TextBlock Grid.Row="4" Grid.Column="1" FontSize="10" FontWeight="Bold" Foreground="#1E40AF" Margin="0,2,0,0">
+                                                <Run Text="{Binding AspPrice, Mode=OneWay}"/><Run Text=" AED"/>
+                                            </TextBlock>
+                                            <TextBlock Grid.Row="5" Text="PVB:" FontSize="10" Foreground="#64748B" Margin="0,2,0,0"/>
+                                            <TextBlock Grid.Row="5" Grid.Column="1" FontSize="10" FontWeight="Bold" Foreground="#1E40AF" Margin="0,2,0,0">
+                                                <Run Text="{Binding OutsourcePrice, Mode=OneWay}"/><Run Text=" AED"/>
+                                            </TextBlock>
+                                            <TextBlock Grid.Row="6" Text="Cutting:" FontSize="10" Foreground="#64748B" Margin="0,2,0,0"/>
+                                            <TextBlock Grid.Row="6" Grid.Column="1" FontSize="10" FontWeight="Bold" Foreground="#1E40AF" Margin="0,2,0,0">
+                                                <Run Text="{Binding CuttingCharge, Mode=OneWay}"/><Run Text=" AED"/>
+                                            </TextBlock>
+                                            <TextBlock Grid.Row="7" Text="Tempering:" FontSize="10" Foreground="#64748B" Margin="0,2,0,0"/>
+                                            <TextBlock Grid.Row="7" Grid.Column="1" FontSize="10" FontWeight="Bold" Foreground="#1E40AF" Margin="0,2,0,0">
+                                                <Run Text="{Binding TemperingCharge, Mode=OneWay}"/><Run Text=" AED"/>
+                                            </TextBlock>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Background="#F0FDF4" CornerRadius="4" Padding="8" BorderBrush="#86EFAC" BorderThickness="1">
+                                    <StackPanel>
+                                        <TextBlock Text="CALCULATION STEPS" FontWeight="Bold" FontSize="10" Foreground="#166534" Margin="0,0,0,6"/>
+
+                                        <!-- Step 1 -->
+                                        <Border Background="White" CornerRadius="4" Padding="8" Margin="0,0,0,6" BorderBrush="#E0E0E0" BorderThickness="1">
+                                            <StackPanel>
+                                                <TextBlock Text="Step 1: Sum of Glass Prices" FontWeight="Bold" FontSize="10" Foreground="#166534"/>
+                                                <TextBlock FontSize="10" Foreground="#64748B" TextWrapping="Wrap" Margin="0,4,0,0">
+                                                    <Run Text="{Binding Sheet1, Mode=OneWay}"/><Run Text=" + "/><Run Text="{Binding Sheet2, Mode=OneWay}"/><Run Text=" + "/><Run Text="{Binding Sheet3, Mode=OneWay}"/><Run Text=" = "/><Run Text="{Binding Result1, Mode=OneWay}" FontWeight="Bold" Foreground="#0A6EBB"/><Run Text=" AED"/>
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- Step 2 -->
+                                        <Border Background="White" CornerRadius="4" Padding="8" Margin="0,0,0,6" BorderBrush="#E0E0E0" BorderThickness="1">
+                                            <StackPanel>
+                                                <TextBlock Text="Step 2: Apply Profit Factor" FontWeight="Bold" FontSize="10" Foreground="#166534"/>
+                                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                                    <TextBlock FontSize="10" Foreground="#64748B">
+                                                        <Run Text="{Binding Result1, Mode=OneWay}" FontWeight="Bold"/>
+                                                        <Run Text=" / " Foreground="#7C3AED" FontWeight="Bold"/>
+                                                        <Run Text="(" Foreground="#64748B"/>
+                                                        <Run Text="Profit Factor: " Foreground="#7C3AED" FontWeight="Bold"/>
+                                                        <Run Text="{Binding ProfitFactor, Mode=OneWay}" Foreground="#7C3AED" FontWeight="Bold"/>
+                                                        <Run Text=")" Foreground="#64748B"/>
+                                                        <Run Text=" = "/>
+                                                    </TextBlock>
+                                                    <TextBlock FontSize="10" FontWeight="Bold" Foreground="#0A6EBB">
+                                                        <Run Text="{Binding Result2, Mode=OneWay}"/><Run Text=" AED"/>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- Step 3 -->
+                                        <Border Background="White" CornerRadius="4" Padding="8" Margin="0,0,0,6" BorderBrush="#E0E0E0" BorderThickness="1">
+                                            <StackPanel>
+                                                <TextBlock Text="Step 3: Add Charges" FontWeight="Bold" FontSize="10" Foreground="#166534"/>
+                                                <TextBlock FontSize="10" Foreground="#64748B" TextWrapping="Wrap" Margin="0,4,0,0">
+                                                    <Run Text="{Binding Result2, Mode=OneWay}" FontWeight="Bold"/><Run Text=" + "/><Run Text="{Binding AspPrice, Mode=OneWay}" FontWeight="Bold"/><Run Text=" + "/><Run Text="{Binding OutsourcePrice, Mode=OneWay}" FontWeight="Bold"/><Run Text=" + "/><Run Text="{Binding CuttingCharge, Mode=OneWay}" FontWeight="Bold"/><Run Text=" + "/><Run Text="{Binding TemperingCharge, Mode=OneWay}" FontWeight="Bold"/>
+                                                </TextBlock>
+                                                <TextBlock FontSize="10" Foreground="#64748B" TextWrapping="Wrap" Margin="0,4,0,0">
+                                                    <Run Text="= "/><Run Text="{Binding Result3, Mode=OneWay}" FontWeight="Bold" Foreground="#0A6EBB"/><Run Text=" AED"/>
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- Step 4 -->
+                                        <Border Background="White" CornerRadius="4" Padding="8" Margin="0,0,0,0" BorderBrush="#E0E0E0" BorderThickness="1">
+                                            <StackPanel>
+                                                <TextBlock Text="Step 4: Apply Profit Margin" FontWeight="Bold" FontSize="10" Foreground="#166534"/>
+                                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                                    <TextBlock FontSize="10" Foreground="#64748B">
+                                                        <Run Text="{Binding Result3, Mode=OneWay}" FontWeight="Bold"/>
+                                                        <Run Text=" x " Foreground="#059669" FontWeight="Bold"/>
+                                                        <Run Text="(" Foreground="#64748B"/>
+                                                        <Run Text="Profit Margin: " Foreground="#059669" FontWeight="Bold"/>
+                                                        <Run Text="{Binding ProfitMargin, Mode=OneWay}" Foreground="#059669" FontWeight="Bold"/>
+                                                        <Run Text=")" Foreground="#64748B"/>
+                                                        <Run Text=" = "/>
+                                                    </TextBlock>
+                                                    <TextBlock FontSize="10" FontWeight="Bold" Foreground="#059669">
+                                                        <Run Text="{Binding Result4, Mode=OneWay}"/><Run Text=" AED"/>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Background="#FDECEC" CornerRadius="6" Padding="12" Margin="0,8,0,0" BorderBrush="#BB0000" BorderThickness="2">
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <TextBlock Text="FINAL RESULT" FontWeight="Bold" FontSize="11" Foreground="#BB0000" HorizontalAlignment="Center"/>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,0">
+                                            <TextBlock Text="{Binding Result, Mode=OneWay}" FontSize="24" FontWeight="Bold" Foreground="#BB0000"/>
+                                            <TextBlock Text=" AED" FontSize="14" FontWeight="Bold" Foreground="#BB0000" VerticalAlignment="Bottom" Margin="4,0,0,3"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
                             </StackPanel>
                         </Border>
 
-                        <!-- MODULE STATUS -->
-                        <Border Style="{StaticResource SecBorder}" Background="#E0F2FE" BorderBrush="#7DD3FC">
-                            <StackPanel>
-                                <TextBlock Text="📊 MODULE STATUS" FontWeight="Bold" FontSize="13" Foreground="#0369A1" Margin="0,0,0,12"/>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                    <Ellipse Width="14" Height="14" Fill="#10B981" Stroke="White" StrokeThickness="2"/>
-                                    <TextBlock Text="Outer Glass" FontWeight="SemiBold" FontSize="12" Foreground="#1E3A5F" VerticalAlignment="Center" Margin="10,0,0,0"/>
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                    <Ellipse Width="14" Height="14" Fill="#F59E0B" Stroke="White" StrokeThickness="2"/>
-                                    <TextBlock Text="Inner Glass" FontWeight="SemiBold" FontSize="12" Foreground="#1E3A5F" VerticalAlignment="Center" Margin="10,0,0,0"/>
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                    <Ellipse Width="14" Height="14" Fill="#EF4444" Stroke="White" StrokeThickness="2"/>
-                                    <TextBlock Text="Lamination" FontWeight="SemiBold" FontSize="12" Foreground="#1E3A5F" VerticalAlignment="Center" Margin="10,0,0,0"/>
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal">
-                                    <Ellipse Width="14" Height="14" Fill="#10B981" Stroke="White" StrokeThickness="2"/>
-                                    <TextBlock Text="ASP Module" FontWeight="SemiBold" FontSize="12" Foreground="#1E3A5F" VerticalAlignment="Center" Margin="10,0,0,0"/>
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
+                        <Button Content="SAVE RECORD" Command="{Binding SaveCommand}" Style="{StaticResource PrimaryBtn}" Margin="0,8,0,0"/>
                     </StackPanel>
                 </Grid>
             </Border>
 
             <!-- HISTORY SECTION -->
-            <Border Grid.Row="2" Margin="0,10,0,0">
-                <StackPanel>
-                    <ToggleButton Content="📜 HISTORY RECORDS" IsChecked="{Binding IsHistoryVisible}" Style="{StaticResource ToggleBtn}" HorizontalAlignment="Stretch"/>
-                    <Border Background="#F0F9FF" CornerRadius="10" Padding="12" Margin="0,10,0,0" Height="150" BorderBrush="#BAE6FD" BorderThickness="1" Visibility="{Binding IsHistoryVisible, Converter={StaticResource BoolToVisConverter}}">
-                        <ListBox ItemsSource="{Binding Records}" Background="Transparent" BorderThickness="0" ScrollViewer.VerticalScrollBarVisibility="Auto">
-                            <ListBox.ItemsPanel>
+            <StackPanel Grid.Row="2" Margin="0,10,0,0">
+                <ToggleButton Content="HISTORY RECORDS" IsChecked="{Binding IsHistoryVisible, Mode=TwoWay}" Style="{StaticResource ToggleBtn}" HorizontalAlignment="Stretch"/>
+                <Border Background="#F5F5F5" CornerRadius="8" Padding="12" Margin="0,8,0,0" MinHeight="80" MaxHeight="180" BorderBrush="{StaticResource FioriBorder}" BorderThickness="1" Visibility="{Binding IsHistoryVisible, Converter={StaticResource BoolToVis}}">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <ItemsControl ItemsSource="{Binding Records}">
+                            <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <WrapPanel Orientation="Horizontal"/>
                                 </ItemsPanelTemplate>
-                            </ListBox.ItemsPanel>
-                            <ListBox.ItemTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Background="White" CornerRadius="8" Padding="10" Margin="4" BorderBrush="#E2E8F0" BorderThickness="1" MinWidth="280">
-                                        <TextBlock Text="{Binding DisplayText}" TextWrapping="Wrap" FontSize="11" Foreground="#334155"/>
+                                    <Border Background="White" CornerRadius="6" Padding="10" Margin="4" BorderBrush="#E0E0E0" BorderThickness="1" MinWidth="250" MaxWidth="300">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding DisplayText}" TextWrapping="Wrap" FontSize="11" Foreground="#32363A"/>
+                                            <TextBlock Text="{Binding DetailText}" TextWrapping="Wrap" FontSize="10" Foreground="#6A6D70" Margin="0,4,0,0"/>
+                                            <TextBlock Text="{Binding Timestamp, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" FontSize="9" Foreground="#9CA3AF" Margin="0,2,0,0"/>
+                                        </StackPanel>
                                     </Border>
                                 </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
-                    </Border>
-                </StackPanel>
-            </Border>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Border>
+            </StackPanel>
         </Grid>
     </ScrollViewer>
 </UserControl>

@@ -1,0 +1,178 @@
+﻿<UserControl x:Class="ProGlassAutomation.Views.Payment.PaymentView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="#F4F6F9">
+
+    <UserControl.Resources>
+        <DropShadowEffect x:Key="CardShadow" BlurRadius="20" ShadowDepth="2" Opacity="0.15"/>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="25">
+
+            <!-- Header -->
+            <TextBlock Text="SECURE PAYMENT" FontSize="24" FontWeight="Bold" Foreground="#0A6ED1" HorizontalAlignment="Center"/>
+            <TextBlock Text="Complete your payment to activate your subscription" FontSize="12" Foreground="#6B7280" HorizontalAlignment="Center" Margin="0,6,0,25"/>
+
+            <!-- Selected Plan Info -->
+            <Border x:Name="SelectedPlanBorder" Background="White" CornerRadius="16" Padding="20" Margin="0,0,0,20" BorderBrush="#0A6ED1" BorderThickness="2" Effect="{StaticResource CardShadow}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="SELECTED PLAN" FontSize="10" Foreground="#6B7280"/>
+                        <TextBlock x:Name="PlanNameText" Text="Monthly Plan" FontSize="20" FontWeight="Bold" Foreground="#0A6ED1" Margin="0,4,0,0"/>
+                        <TextBlock x:Name="PlanDaysText" Text="30 Days Access" FontSize="12" Foreground="#6B7280" Margin="0,4,0,0"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                        <TextBlock Text="TOTAL" FontSize="10" Foreground="#6B7280"/>
+                        <TextBlock x:Name="PlanAmountText" Text="AED 60" FontSize="28" FontWeight="Bold" Foreground="#1F2937"/>
+                        <TextBlock x:Name="PlanCurrencyText" Text="AED (UAE Dirham)" FontSize="10" Foreground="#6B7280"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Payment Methods -->
+            <TextBlock Text="SELECT PAYMENT METHOD" FontSize="14" FontWeight="Bold" Foreground="#1F2937" Margin="0,0,0,15"/>
+
+            <WrapPanel HorizontalAlignment="Center">
+
+                <!-- PayPal -->
+                <Border x:Name="PayPalCard" Background="White" CornerRadius="12" Padding="20" Margin="10" Width="220" Height="140" BorderBrush="#E5E7EB" BorderThickness="2" Cursor="Hand" MouseLeftButtonDown="PayPal_Click">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="15" ShadowDepth="2" Opacity="0.1"/>
+                    </Border.Effect>
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Border Width="60" Height="40" Background="#003087" CornerRadius="6">
+                            <TextBlock Text="PayPal" FontSize="14" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Pay with PayPal" FontSize="11" Foreground="#6B7280" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Stripe -->
+                <Border x:Name="StripeCard" Background="White" CornerRadius="12" Padding="20" Margin="10" Width="220" Height="140" BorderBrush="#E5E7EB" BorderThickness="2" Cursor="Hand" MouseLeftButtonDown="Stripe_Click">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="15" ShadowDepth="2" Opacity="0.1"/>
+                    </Border.Effect>
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Border Width="60" Height="40" Background="#635BFF" CornerRadius="6">
+                            <TextBlock Text="Stripe" FontSize="14" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Pay with Stripe" FontSize="11" Foreground="#6B7280" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Razorpay -->
+                <Border x:Name="RazorpayCard" Background="White" CornerRadius="12" Padding="20" Margin="10" Width="220" Height="140" BorderBrush="#E5E7EB" BorderThickness="2" Cursor="Hand" MouseLeftButtonDown="Razorpay_Click">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="15" ShadowDepth="2" Opacity="0.1"/>
+                    </Border.Effect>
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Border Width="60" Height="40" Background="#0066FF" CornerRadius="6">
+                            <TextBlock Text="Razorpay" FontSize="11" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Pay with Razorpay" FontSize="11" Foreground="#6B7280" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Bank Transfer -->
+                <Border x:Name="BankCard" Background="White" CornerRadius="12" Padding="20" Margin="10" Width="220" Height="140" BorderBrush="#E5E7EB" BorderThickness="2" Cursor="Hand" MouseLeftButtonDown="BankTransfer_Click">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="15" ShadowDepth="2" Opacity="0.1"/>
+                    </Border.Effect>
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Border Width="60" Height="40" Background="#059669" CornerRadius="6">
+                            <TextBlock Text="Bank" FontSize="14" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Bank Transfer" FontSize="11" Foreground="#6B7280" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                    </StackPanel>
+                </Border>
+            </WrapPanel>
+
+            <!-- Payment Instructions -->
+            <Border x:Name="InstructionsBorder" Background="#FEF3C7" CornerRadius="12" Padding="20" Margin="0,20,0,0" BorderBrush="#F59E0B" BorderThickness="1">
+                <StackPanel>
+                    <TextBlock Text="IMPORTANT INSTRUCTIONS" FontSize="14" FontWeight="Bold" Foreground="#92400E"/>
+                    <TextBlock Text="1. Complete your payment using any method above" FontSize="11" Foreground="#78350F" Margin="0,8,0,0"/>
+                    <TextBlock Text="2. After payment, contact us via WhatsApp with payment proof" FontSize="11" Foreground="#78350F" Margin="0,4,0,0"/>
+                    <TextBlock Text="3. We will generate and provide your activation key" FontSize="11" Foreground="#78350F" Margin="0,4,0,0"/>
+                    <TextBlock Text="4. Enter the key below to activate your subscription" FontSize="11" Foreground="#78350F" Margin="0,4,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Manual Key Activation -->
+            <Border Background="White" CornerRadius="16" Padding="24" Margin="0,20,0,0" BorderBrush="#E5E7EB" BorderThickness="1" Effect="{StaticResource CardShadow}">
+                <StackPanel>
+                    <TextBlock Text="ENTER ACTIVATION KEY" FontSize="16" FontWeight="Bold" Foreground="#1F2937" Margin="0,0,0,10"/>
+                    <TextBlock Text="After payment completion, enter your activation key here" FontSize="11" Foreground="#6B7280" Margin="0,0,0,15"/>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBox x:Name="ActivationKeyInput" Grid.Column="0" Height="50" FontSize="14" FontWeight="Bold" Padding="15,0" VerticalContentAlignment="Center" VerticalAlignment="Center"/>
+
+                        <Button Grid.Column="1" Content="ACTIVATE" Background="#10B981" Foreground="White" FontWeight="Bold" FontSize="13" Height="50" Padding="30,0" Margin="10,0,0,0" Cursor="Hand" Click="ActivateKey_Click">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" CornerRadius="10">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </Grid>
+
+                    <TextBlock x:Name="ErrorText" Text="" FontSize="11" Foreground="#DC2626" Margin="0,10,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Contact for Payment -->
+            <Border Background="#0A6ED1" CornerRadius="16" Padding="25" Margin="0,20,0,0" Effect="{StaticResource CardShadow}">
+                <StackPanel HorizontalAlignment="Center">
+                    <TextBlock Text="NEED HELP WITH PAYMENT?" FontSize="16" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Contact us directly for payment assistance" FontSize="11" Foreground="#D1E9F9" HorizontalAlignment="Center" Margin="0,6,0,15"/>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Button Content="WhatsApp: +971-559117727" Background="White" Foreground="#0A6ED1" FontWeight="Bold" FontSize="11" Height="40" Padding="18,0" Cursor="Hand" Click="ContactWhatsApp_Click">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" CornerRadius="10">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                        <Button Content="Email: Jubersaleem01@gmail.com" Background="#1E3A5F" Foreground="White" FontWeight="Bold" FontSize="11" Height="40" Padding="18,0" Margin="10,0,0,0" Cursor="Hand" Click="ContactEmail_Click">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" CornerRadius="10">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Back Button -->
+            <Button Content="BACK TO SUBSCRIPTION PLANS" Background="#F3F4F6" Foreground="#374151" FontWeight="Bold" FontSize="11" Height="40" Margin="0,20,0,0" Cursor="Hand" Click="BackToPlans_Click">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="10" BorderBrush="#D1D5DB" BorderThickness="1">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

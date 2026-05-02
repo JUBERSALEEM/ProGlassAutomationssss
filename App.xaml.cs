@@ -1,5 +1,4 @@
-﻿using QuestPDF;
-using QuestPDF.Infrastructure;
+﻿using ProGlassAutomation;
 using System.Windows;
 
 namespace ProGlassAutomation
@@ -9,9 +8,8 @@ namespace ProGlassAutomation
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
-
-            // Apply QuestPDF Community License (Free for non-commercial)
-            QuestPDF.Settings.License = LicenseType.Community;
+            MainWindow mainWindow = new MainWindow();
+            mainWindow.Show();
         }
     }
 }

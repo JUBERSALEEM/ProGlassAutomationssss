@@ -4,271 +4,227 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
-using ProGlassAutomation.Models;
-using ProGlassAutomation.Data.Database;
-using ProGlassAutomation.Views.SGU;
 using ProGlassAutomation.Helpers;
 
 namespace ProGlassAutomation.Views.Lamination
 {
     public class LaminationViewModel : INotifyPropertyChanged
     {
-        public ObservableCollection<string> ThicknessOptions { get; set; }
-        public ObservableCollection<string> ColorOptions { get; set; }
-        public ObservableCollection<string> PVBOptions { get; set; }
-        public ObservableCollection<string> ProfitOptions { get; set; }
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string n = null)
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
 
-        public ObservableCollection<LaminationRecordUI> Records { get; set; }
+        // Options
+        public ObservableCollection<string> ThicknessOptions { get; } = new() { "4mm", "5mm", "6mm", "8mm", "10mm", "12mm", "15mm", "19mm" };
+        public ObservableCollection<string> ColorOptions { get; } = new() { "Clear", "Extra Clear", "HD Grey", "HD Blue", "Green", "Bronze", "Dark Grey" };
+        public ObservableCollection<string> PVBOptions { get; } = new() { "0.38 Clear", "0.76 Clear", "1.14 Clear", "1.52 Clear", "2.28 Clear", "3.04 Clear" };
+        public ObservableCollection<string> ProfitOptions { get; } = new() { "0%", "5%", "10%", "15%", "20%", "25%", "30%", "35%", "40%", "50%" };
+        public ObservableCollection<LaminationRecordUI> Records { get; } = new();
 
-        public ICommand SaveCommand { get; set; }
+        // Properties
+        private string _t1 = "6mm";
+        public string Thickness1 { get => _t1; set { _t1 = value; OnPropertyChanged(); Recalc(); } }
+
+        private string _t2 = "6mm";
+        public string Thickness2 { get => _t2; set { _t2 = value; OnPropertyChanged(); Recalc(); } }
+
+        private string _c1 = "Clear";
+        public string Color1 { get => _c1; set { _c1 = value; OnPropertyChanged(); Recalc(); } }
+
+        private string _c2 = "Clear";
+        public string Color2 { get => _c2; set { _c2 = value; OnPropertyChanged(); Recalc(); } }
+
+        private string _pvb = "1.52 Clear";
+        public string PVBType { get => _pvb; set { _pvb = value; OnPropertyChanged(); Recalc(); } }
+
+        private string _profit = "15%";
+        public string Profit
+        {
+            get => _profit;
+            set
+            {
+                _profit = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(ProfitFactor));   // e.g., 0.85 for 15%
+                OnPropertyChanged(nameof(ProfitMargin));  // e.g., 1.15 for 15%
+                Recalc();
+            }
+        }
+
+        private double _s1 = 36;
+        public double Sheet1 { get => _s1; set { _s1 = value; OnPropertyChanged(); Recalc(); } }
+
+        private double _s2 = 36;
+        public double Sheet2 { get => _s2; set { _s2 = value; OnPropertyChanged(); Recalc(); } }
+
+        private double _pvbPrice = 100;
+        public double PVBPrice { get => _pvbPrice; set { _pvbPrice = value; OnPropertyChanged(); Recalc(); } }
+
+        private double _cutting = 10;
+        public double Cutting { get => _cutting; set { _cutting = value; OnPropertyChanged(); Recalc(); } }
+
+        private double _tempering = 16;
+        public double Tempering { get => _tempering; set { _tempering = value; OnPropertyChanged(); Recalc(); } }
+
+        private double _result;
+        public double Result { get => _result; set { _result = value; OnPropertyChanged(); } }
+
+        // Step-by-step calculation results
+        private double _result1;
+        public double Result1 { get => _result1; private set { _result1 = value; OnPropertyChanged(); } }
+
+        private double _result2;
+        public double Result2 { get => _result2; private set { _result2 = value; OnPropertyChanged(); } }
+
+        private double _result3;
+        public double Result3 { get => _result3; private set { _result3 = value; OnPropertyChanged(); } }
+
+        private double _result4;
+        public double Result4 { get => _result4; private set { _result4 = value; OnPropertyChanged(); } }
+
+        // Profit Factor (Divisor) - e.g., 0.85 for 15%
+        private double _profitFactor;
+        public double ProfitFactor { get => _profitFactor; private set { _profitFactor = value; OnPropertyChanged(); } }
+
+        // Profit Margin (Multiplier) - e.g., 1.15 for 15%
+        private double _profitMargin;
+        public double ProfitMargin { get => _profitMargin; private set { _profitMargin = value; OnPropertyChanged(); } }
+
+        private bool _isHistoryVisible = true;
+        public bool IsHistoryVisible { get => _isHistoryVisible; set { _isHistoryVisible = value; OnPropertyChanged(); } }
+
+        // Commands
+        public ICommand SaveCommand { get; }
+        public ICommand ClearCommand { get; }
+        public ICommand DeleteCommand { get; }
+        public ICommand ClearAllCommand { get; }
+        public ICommand CopyCommand { get; }
 
         public LaminationViewModel()
         {
-            ThicknessOptions = new ObservableCollection<string>
+            SaveCommand = new RelayCommand(p => Save());
+            ClearCommand = new RelayCommand(p => Clear());
+            DeleteCommand = new RelayCommand(p => DeleteRecord(p));
+            ClearAllCommand = new RelayCommand(p => Records.Clear());
+            CopyCommand = new RelayCommand(p => CopyToClipboard());
+            Recalc();
+        }
+
+        // ================= CALCULATION =================
+        void Recalc()
+        {
+            // Get profit values based on profit percentage
+            var (factor, margin) = GetProfitValues(Profit);
+            ProfitFactor = factor;
+            ProfitMargin = margin;
+
+            // Step 1: Sheet1 + Sheet2
+            Result1 = Sheet1 + Sheet2;
+
+            // Step 2: Result1 / ProfitFactor
+            Result2 = Result1 / ProfitFactor;
+
+            // Step 3: Result2 + PVBPrice + Cutting + Tempering
+            Result3 = Result2 + PVBPrice + Cutting + Tempering;
+
+            // Step 4: Result3 * ProfitMargin
+            Result4 = Result3 * ProfitMargin;
+
+            // Final Result
+            Result = Result4;
+        }
+
+        // Get ProfitFactor and ProfitMargin from Profit percentage
+        (double Factor, double Margin) GetProfitValues(string profit) => profit switch
+        {
+            "0%" => (1.00, 1.00),
+            "5%" => (0.95, 1.05),
+            "10%" => (0.90, 1.10),
+            "15%" => (0.85, 1.15),
+            "20%" => (0.80, 1.20),
+            "25%" => (0.75, 1.25),
+            "30%" => (0.70, 1.30),
+            "35%" => (0.65, 1.35),
+            "40%" => (0.60, 1.40),
+            "50%" => (0.50, 1.50),
+            _ => (0.85, 1.15)
+        };
+
+        // ================= ACTIONS =================
+        void Save()
+        {
+            var record = new LaminationRecordUI
             {
-                "6mm","8mm","10mm","12mm","15mm","19mm"
+                DisplayText = $"{Thickness1} {Color1} + {PVBType} + {Thickness2} {Color2}",
+                DetailText = $"Profit: {Profit} | Final: {Result:F2} AED",
+                Timestamp = DateTime.Now,
+                Result = Result
             };
 
-            ColorOptions = new ObservableCollection<string>
-            {
-                "Clear","HD Grey","HD Blue","Green","Bronze"
-            };
+            Records.Insert(0, record);
 
-            PVBOptions = new ObservableCollection<string>
-            {
-                "1.14 Clear","1.52 Clear","2.28 Clear"
-            };
+            while (Records.Count > 50)
+                Records.RemoveAt(Records.Count - 1);
 
-            ProfitOptions = new ObservableCollection<string>
-            {
-                "15%","20%","25%","30%","35%"
-            };
+            MessageBox.Show($"Saved!\nTotal: {Result:F2} AED", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
 
-            Records = new ObservableCollection<LaminationRecordUI>();
-
-            // Load history from database
-            LoadHistory();
-
-            SaveCommand = new RelayCommand(Save);
-
-            // DEFAULTS
+        void Clear()
+        {
+            Sheet1 = 36;
+            Sheet2 = 36;
+            PVBPrice = 100;
+            Cutting = 10;
+            Tempering = 16;
             Thickness1 = "6mm";
             Thickness2 = "6mm";
             Color1 = "Clear";
             Color2 = "Clear";
             PVBType = "1.52 Clear";
-
             Profit = "15%";
-
-            Cutting = "";
-            Tempering = "";
-            PVBPrice = 0;
-
-            Sheet1 = 0;
-            Sheet2 = 0;
-
-            // History is OPEN by default
-            IsHistoryVisible = true;
+            Recalc();
         }
 
-        private void LoadHistory()
+        void DeleteRecord(object p)
         {
-            try
-            {
-                var dbRecords = DbHelper.GetAllLamination();
-
-                Records.Clear();
-
-                foreach (var r in dbRecords)
-                {
-                    Records.Add(new LaminationRecordUI
-                    {
-                        DisplayText = $"{r.Thickness1} {r.Color1} + {r.PVBType} + {r.Thickness2} {r.Color2} = {r.Result:0.00} AED"
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine("Load History Failed: " + ex.Message);
-            }
+            if (p is LaminationRecordUI r)
+                Records.Remove(r);
         }
 
-        // ================= PRICES =================
-
-        private double _sheet1;
-        public double Sheet1
+        void CopyToClipboard()
         {
-            get => _sheet1;
-            set { _sheet1 = value; OnPropertyChanged(); Recalculate(); }
-        }
+            string text = $"LAMINATION QUOTATION\n" +
+                         $"========================\n" +
+                         $"Outer Glass: {Thickness1} {Color1}\n" +
+                         $"Inner Glass: {Thickness2} {Color2}\n" +
+                         $"PVB Layer: {PVBType}\n" +
+                         $"========================\n" +
+                         $"Step 1: Sheet1 + Sheet2\n" +
+                         $"        {Sheet1:F2} + {Sheet2:F2} = {Result1:F2}\n" +
+                         $"------------------------\n" +
+                         $"Step 2: / ProfitFactor ({ProfitFactor:F2})\n" +
+                         $"        {Result1:F2} / {ProfitFactor:F2} = {Result2:F2}\n" +
+                         $"------------------------\n" +
+                         $"Step 3: + PVB + Cutting + Tempering\n" +
+                         $"        {Result2:F2} + {PVBPrice:F2} + {Cutting:F2} + {Tempering:F2} = {Result3:F2}\n" +
+                         $"------------------------\n" +
+                         $"Step 4: x ProfitMargin ({ProfitMargin:F2})\n" +
+                         $"        {Result3:F2} x {ProfitMargin:F2} = {Result4:F2}\n" +
+                         $"========================\n" +
+                         $"FINAL PRICE: {Result:F2} AED\n" +
+                         $"========================\n" +
+                         $"Generated: {DateTime.Now:yyyy-MM-dd HH:mm}";
 
-        private double _sheet2;
-        public double Sheet2
-        {
-            get => _sheet2;
-            set { _sheet2 = value; OnPropertyChanged(); Recalculate(); }
-        }
-
-        public string Thickness1 { get; set; }
-        public string Thickness2 { get; set; }
-        public string Color1 { get; set; }
-        public string Color2 { get; set; }
-
-        private string _pvbType;
-        public string PVBType
-        {
-            get => _pvbType;
-            set { _pvbType = value; OnPropertyChanged(); Recalculate(); }
-        }
-
-        private double _pvbPrice;
-        public double PVBPrice
-        {
-            get => _pvbPrice;
-            set { _pvbPrice = value; OnPropertyChanged(); Recalculate(); }
-        }
-
-        private string _profit;
-        public string Profit
-        {
-            get => _profit;
-            set { _profit = value; OnPropertyChanged(); Recalculate(); }
-        }
-
-        // ================= CUTTING AND TEMPERING =================
-
-        private string _cutting;
-        public string Cutting
-        {
-            get => _cutting;
-            set { _cutting = value; OnPropertyChanged(); Recalculate(); }
-        }
-
-        private string _tempering;
-        public string Tempering
-        {
-            get => _tempering;
-            set { _tempering = value; OnPropertyChanged(); Recalculate(); }
-        }
-
-        // ================= RESULT =================
-
-        private string _result;
-        public string Result
-        {
-            get => _result;
-            set { _result = value; OnPropertyChanged(); }
-        }
-
-        // ================= HISTORY VISIBILITY (BOOL FOR TOGGLE) =================
-
-        private bool _isHistoryVisible = true;  // CHANGED: true = history open by default
-
-        public bool IsHistoryVisible
-        {
-            get => _isHistoryVisible;
-            set => SetProperty(ref _isHistoryVisible, value);
-        }
-
-        // ================= PARSER =================
-
-        private double ParseSafe(string input)
-        {
-            if (string.IsNullOrWhiteSpace(input))
-                return 0;
-
-            return double.TryParse(input, out var v) ? v : 0;
-        }
-
-        private double ParseProfit(string p)
-        {
-            if (string.IsNullOrWhiteSpace(p)) return 15;
-
-            p = p.Replace("%", "");
-            return double.TryParse(p, out var r) ? r : 15;
-        }
-
-        // ================= CALCULATION =================
-
-        private void Recalculate()
-        {
-            double baseGlass = Sheet1 + Sheet2;
-
-            double profit = ParseProfit(Profit);
-            double factor = 1 - (profit / 100.0);
-            double stage1 = factor > 0 ? baseGlass / factor : baseGlass;
-
-            double stage2 = stage1 + PVBPrice;
-
-            double cutting = ParseSafe(Cutting);
-            double tempering = ParseSafe(Tempering);
-            double stage3 = stage2 + cutting + tempering;
-
-            double final = stage3 + (stage3 * profit / 100.0);
-
-            Result = final.ToString("0.00");
-        }
-
-        // ================= SAVE =================
-
-        private void Save()
-        {
-            double final = 0;
-            double.TryParse(Result, out final);
-
-            var dbRecord = new LaminationRecord
-            {
-                Thickness1 = Thickness1,
-                Color1 = Color1,
-                Thickness2 = Thickness2,
-                Color2 = Color2,
-                PVBType = PVBType,
-                Result = final,
-                CreatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
-                Cutting = ParseSafe(Cutting),
-                Tempering = ParseSafe(Tempering)
-            };
-
-            try
-            {
-                DbHelper.SaveLamination(dbRecord);
-
-                // Add to top of list
-                Records.Insert(0, new LaminationRecordUI
-                {
-                    DisplayText = $"{Thickness1} {Color1} + {PVBType} + {Thickness2} {Color2} = {final:0.00} AED"
-                });
-
-                MessageBox.Show("Saved Successfully!");
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Save Failed: " + ex.Message);
-            }
-        }
-
-        // ================= MVVM =================
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        private void OnPropertyChanged([CallerMemberName] string n = null)
-            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
-
-        protected bool SetProperty<T>(ref T field, T newValue, [CallerMemberName] string propertyName = null)
-        {
-            if (!Equals(field, newValue))
-            {
-                field = newValue;
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-                return true;
-            }
-
-            return false;
+            Clipboard.SetText(text);
+            MessageBox.Show("Copied to clipboard!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
         }
     }
 
     public class LaminationRecordUI
     {
         public string DisplayText { get; set; }
+        public string DetailText { get; set; }
+        public DateTime Timestamp { get; set; }
+        public double Result { get; set; }
     }
 }

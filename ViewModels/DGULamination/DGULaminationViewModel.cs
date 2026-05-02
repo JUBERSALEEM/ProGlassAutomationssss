@@ -8,19 +8,13 @@ namespace ProGlassAutomation.Views.DGULamination
 {
     public class DGULaminationViewModel : INotifyPropertyChanged
     {
-        // =====================================================
-        // EVENT HANDLER
-        // =====================================================
         public event PropertyChangedEventHandler PropertyChanged;
-
         protected void OnPropertyChanged([CallerMemberName] string name = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
-        // =====================================================
-        // COLLECTIONS
-        // =====================================================
+        // Collections
         public ObservableCollection<string> GlassThicknessOptions { get; } = new ObservableCollection<string>
         {
             "3mm", "4mm", "5mm", "6mm", "8mm", "10mm", "12mm", "15mm", "19mm"
@@ -43,14 +37,12 @@ namespace ProGlassAutomation.Views.DGULamination
 
         public ObservableCollection<string> ProfitOptions { get; } = new ObservableCollection<string>
         {
-            "15%", "20%", "25%", "30%", "35%"
+            "5%", "10%", "15%", "17%", "20%", "25%", "30%", "35%", "40%", "50%", "97%"
         };
 
         public ObservableCollection<RecordModel> Records { get; } = new ObservableCollection<RecordModel>();
 
-        // =====================================================
-        // PRICE PROPERTIES
-        // =====================================================
+        // Price Properties
         private string _sheet1 = "46";
         public string Sheet1
         {
@@ -79,21 +71,33 @@ namespace ProGlassAutomation.Views.DGULamination
             set { _aspPrice = value; OnPropertyChanged(); Calculate(); }
         }
 
-        private string _outsourcePrice = "100";
+        private string _outsourcePrice = "110";
         public string OutsourcePrice
         {
             get => _outsourcePrice;
             set { _outsourcePrice = value; OnPropertyChanged(); Calculate(); }
         }
 
-        // =====================================================
-        // GLASS PROPERTIES
-        // =====================================================
+        private string _cuttingCharge = "10";
+        public string CuttingCharge
+        {
+            get => _cuttingCharge;
+            set { _cuttingCharge = value; OnPropertyChanged(); Calculate(); }
+        }
+
+        private string _temperingCharge = "20";
+        public string TemperingCharge
+        {
+            get => _temperingCharge;
+            set { _temperingCharge = value; OnPropertyChanged(); Calculate(); }
+        }
+
+        // Glass Properties
         private string _thickness1 = "6mm";
         public string Thickness1
         {
             get => _thickness1;
-            set { _thickness1 = value; OnPropertyChanged(); Calculate(); }
+            set { _thickness1 = value; OnPropertyChanged(); }
         }
 
         private string _color1 = "Clear";
@@ -107,7 +111,7 @@ namespace ProGlassAutomation.Views.DGULamination
         public string Thickness2
         {
             get => _thickness2;
-            set { _thickness2 = value; OnPropertyChanged(); Calculate(); }
+            set { _thickness2 = value; OnPropertyChanged(); }
         }
 
         private string _color2 = "Clear";
@@ -121,7 +125,7 @@ namespace ProGlassAutomation.Views.DGULamination
         public string Thickness3
         {
             get => _thickness3;
-            set { _thickness3 = value; OnPropertyChanged(); Calculate(); }
+            set { _thickness3 = value; OnPropertyChanged(); }
         }
 
         private string _color3 = "Clear";
@@ -131,36 +135,67 @@ namespace ProGlassAutomation.Views.DGULamination
             set { _color3 = value; OnPropertyChanged(); }
         }
 
-        // =====================================================
-        // ASP SETTINGS
-        // =====================================================
+        // ASP Properties
         private string _aspThickness = "12mm";
         public string AspThickness
         {
             get => _aspThickness;
-            set { _aspThickness = value; OnPropertyChanged(); Calculate(); }
+            set { _aspThickness = value; OnPropertyChanged(); }
         }
 
         private string _aspType = "Normal";
         public string AspType
         {
             get => _aspType;
-            set { _aspType = value; OnPropertyChanged(); Calculate(); }
+            set { _aspType = value; OnPropertyChanged(); }
         }
 
-        // =====================================================
-        // PROFIT MARGIN
-        // =====================================================
-        private string _profitMargin = "20%";
+        // PROFIT MARGIN - ONLY THIS IS SHOWN IN UI
+        private string _profitMargin = "15%";
         public string ProfitMargin
         {
             get => _profitMargin;
             set { _profitMargin = value; OnPropertyChanged(); Calculate(); }
         }
 
-        // =====================================================
-        // RESULT
-        // =====================================================
+        // PROFIT FACTOR - AUTO CALCULATED (NOT SHOWN IN UI INPUT)
+        private string _profitFactor = "0.85";
+        public string ProfitFactor
+        {
+            get => _profitFactor;
+            private set { _profitFactor = value; OnPropertyChanged(); }
+        }
+
+        // Calculation Preview Properties
+        private string _result1 = "0.00";
+        public string Result1
+        {
+            get => _result1;
+            set { _result1 = value; OnPropertyChanged(); }
+        }
+
+        private string _result2 = "0.00";
+        public string Result2
+        {
+            get => _result2;
+            set { _result2 = value; OnPropertyChanged(); }
+        }
+
+        private string _result3 = "0.00";
+        public string Result3
+        {
+            get => _result3;
+            set { _result3 = value; OnPropertyChanged(); }
+        }
+
+        private string _result4 = "0.00";
+        public string Result4
+        {
+            get => _result4;
+            set { _result4 = value; OnPropertyChanged(); }
+        }
+
+        // Final Result
         private string _result = "0.00";
         public string Result
         {
@@ -168,9 +203,7 @@ namespace ProGlassAutomation.Views.DGULamination
             set { _result = value; OnPropertyChanged(); }
         }
 
-        // =====================================================
-        // HISTORY VISIBILITY
-        // =====================================================
+        // History Visibility
         private bool _isHistoryVisible = false;
         public bool IsHistoryVisible
         {
@@ -178,23 +211,35 @@ namespace ProGlassAutomation.Views.DGULamination
             set { _isHistoryVisible = value; OnPropertyChanged(); }
         }
 
-        // =====================================================
-        // SAVE COMMAND
-        // =====================================================
+        // Commands
         public ICommand SaveCommand { get; }
 
-        // =====================================================
-        // CONSTRUCTOR
-        // =====================================================
+        // Constructor
         public DGULaminationViewModel()
         {
             SaveCommand = new RelayCommand(SaveRecord);
             Calculate();
         }
 
-        // =====================================================
-        // 🧠 LIVE CALCULATION ENGINE
-        // =====================================================
+        // Parse profit margin percentage to double
+        private double ParseProfitPercentage(string profit)
+        {
+            if (string.IsNullOrEmpty(profit)) return 0.15;
+            string clean = profit.Replace("%", "").Trim();
+            if (double.TryParse(clean, out double value))
+                return value / 100.0;
+            return 0.15;
+        }
+
+        // Calculate Profit Factor from Profit Margin
+        private void UpdateProfitFactor()
+        {
+            double margin = ParseProfitPercentage(ProfitMargin);
+            double factor = 1 - margin;
+            ProfitFactor = factor.ToString("0.00");
+        }
+
+        // Calculation Engine
         private void Calculate()
         {
             try
@@ -204,130 +249,95 @@ namespace ProGlassAutomation.Views.DGULamination
                 double s3 = ParseDouble(Sheet3);
                 double asp = ParseDouble(AspPrice);
                 double outsource = ParseDouble(OutsourcePrice);
+                double cutting = ParseDouble(CuttingCharge);
+                double tempering = ParseDouble(TemperingCharge);
 
+                // UPDATE PROFIT FACTOR BASED ON PROFIT MARGIN
+                UpdateProfitFactor();
+
+                double factor = ParseDouble(ProfitFactor);
+
+                // Step 1: Sum of all glass prices
                 double glassTotal = s1 + s2 + s3;
-                double factor = GetProfitFactor();
-                double step1 = glassTotal / factor;
-                double aspValue = GetAspValue();
-                double baseValue = step1 + aspValue + outsource;
-                double profitPercent = GetProfitPercent();
-                double final = baseValue * (1 + profitPercent);
+                Result1 = glassTotal.ToString("0.00");
 
+                // Step 2: Divide by factor
+                double step1 = glassTotal / factor;
+                Result2 = step1.ToString("0.00");
+
+                // Step 3: Add ASP + Outsource + Cutting + Tempering
+                double charges = asp + outsource + cutting + tempering;
+                double step2 = step1 + charges;
+                Result3 = step2.ToString("0.00");
+
+                // Step 4: Apply profit margin (FINAL RESULT)
+                double margin = 1 + ParseProfitPercentage(ProfitMargin);
+                double final = step2 * margin;
+                Result4 = final.ToString("0.00");
                 Result = final.ToString("0.00");
             }
             catch
             {
+                Result1 = "0.00";
+                Result2 = "0.00";
+                Result3 = "0.00";
+                Result4 = "0.00";
                 Result = "0.00";
             }
         }
 
-        // =====================================================
-        // 💾 SAVE RECORD (COMPACT FORMAT)
-        // =====================================================
+        // Save Record
         private void SaveRecord()
         {
             try
             {
-                string timestamp = DateTime.Now.ToString("dd-MMMM-yyyy - hh:mmtt");
+                DateTime now = DateTime.Now;
+                string timestamp = now.ToString("yyyy-MM-dd HH:mm");
                 double final = ParseDouble(Result);
 
-                // Build compact specification string
-                string spec = $"{Thickness1} {Color1} FT Glass + " +
-                             $"1.52mm {Color3} PVB + " +
-                             $"{Thickness3} {Color3} FT Glass";
+                string spec = Thickness1 + " " + Color1 + " Outer + " +
+                             Thickness2 + " " + Color2 + " Inner + " +
+                             Thickness3 + " " + Color3 + " Lami";
 
-                // Final compact format
-                string record = $"{spec} - {final:0.00} AED - {timestamp}";
+                string detail = "ASP: " + AspThickness + " " + AspType + " | " +
+                               "PVB: " + OutsourcePrice + " AED | " +
+                               "Cut: " + CuttingCharge + " AED | " +
+                               "Temp: " + TemperingCharge + " AED | " +
+                               "Profit: " + ProfitMargin;
 
-                Records.Insert(0, new RecordModel { DisplayText = record });
+                Records.Insert(0, new RecordModel
+                {
+                    DisplayText = spec + " - " + final.ToString("0.00") + " AED - " + timestamp,
+                    DetailText = detail,
+                    Timestamp = now,
+                    Result = final
+                });
 
-                while (Records.Count > 10)
+                while (Records.Count > 50)
                     Records.RemoveAt(Records.Count - 1);
             }
             catch { }
         }
 
-        // =====================================================
-        // HELPER: Parse Double Safely
-        // =====================================================
+        // Helper: Parse Double
         private double ParseDouble(string value)
         {
             if (string.IsNullOrEmpty(value)) return 0;
             if (double.TryParse(value, out double result)) return result;
             return 0;
         }
-
-        // =====================================================
-        // ASP VALUE LOGIC
-        // =====================================================
-        private double GetAspValue()
-        {
-            double baseAsp = AspThickness switch
-            {
-                "6mm" => 45,
-                "8mm" => 45,
-                "10mm" => 45,
-                "12mm" => 45,
-                "14mm" => 48,
-                "16mm" => 50,
-                "18mm" => 52,
-                "20mm" => 55,
-                "22mm" => 58,
-                "24mm" => 60,
-                _ => 45
-            };
-
-            if (AspType == "Black")
-                baseAsp += 10;
-
-            return baseAsp;
-        }
-
-        // =====================================================
-        // PROFIT FACTOR
-        // =====================================================
-        private double GetProfitFactor()
-        {
-            return ProfitMargin switch
-            {
-                "15%" => 0.85,
-                "20%" => 0.80,
-                "25%" => 0.75,
-                "30%" => 0.70,
-                "35%" => 0.65,
-                _ => 0.80
-            };
-        }
-
-        // =====================================================
-        // PROFIT PERCENTAGE
-        // =====================================================
-        private double GetProfitPercent()
-        {
-            return ProfitMargin switch
-            {
-                "15%" => 0.15,
-                "20%" => 0.20,
-                "25%" => 0.25,
-                "30%" => 0.30,
-                "35%" => 0.35,
-                _ => 0.20
-            };
-        }
     }
 
-    // =====================================================
-    // RECORD MODEL
-    // =====================================================
+    // Record Model
     public class RecordModel
     {
         public string DisplayText { get; set; } = "";
-        public override string ToString() => DisplayText;
+        public string DetailText { get; set; } = "";
+        public DateTime Timestamp { get; set; }
+        public double Result { get; set; }
     }
 
-    // =====================================================
-    // RELAY COMMAND
-    // =====================================================
+    // Relay Command
     public class RelayCommand : ICommand
     {
         private readonly Action _execute;
