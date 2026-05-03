@@ -162,10 +162,10 @@ namespace ProGlassAutomation.Models
         };
 
         // ==================== THICKNESS ====================
-        public static List<string> Thicknesses = new List<string>
-        {
-            "2mm", "3mm", "4mm", "5mm", "6mm", "8mm", "10mm", "12mm", "15mm", "19mm"
-        };
+        public static string[] Thicknesses { get; } = new string[]
+{
+    "2mm", "2.5mm", "3mm", "4mm", "5mm", "6mm", "8mm", "10mm", "12mm", "15mm", "19mm"
+};
 
         // ==================== COLORS ====================
         public static List<GlassColorItem> ColorItems = new List<GlassColorItem>
