@@ -3,60 +3,36 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
-        <Style TargetType="ToolTip">
-            <Setter Property="Placement" Value="Mouse"/>
-            <Setter Property="Background" Value="#1E3A5F"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="8"/>
-            <Setter Property="FontSize" Value="10"/>
-            <Setter Property="BorderBrush" Value="#3B82F6"/>
-            <Setter Property="BorderThickness" Value="1"/>
-        </Style>
-        <Style x:Key="ToggleButtonStyle" TargetType="ToggleButton">
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Height" Value="40"/>
-            <Setter Property="Cursor" Value="Hand"/>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
+        <!-- ToggleButton Style -->
+        <Style TargetType="ToggleButton">
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ToggleButton">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="12">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Border x:Name="bd" Background="#14B8A6" CornerRadius="6" Padding="12">
+                            <ContentPresenter HorizontalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter Property="Background" Value="#0D9488"/>
-                            </Trigger>
-                            <Trigger Property="IsChecked" Value="False">
-                                <Setter Property="Background" Value="#14B8A6"/>
-                            </Trigger>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Opacity" Value="0.9"/>
+                                <Setter TargetName="bd" Property="Background" Value="#0D9488"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-        </Style>
-        <Style x:Key="LabelStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="11"/>
-            <Setter Property="Foreground" Value="#64748B"/>
-            <Setter Property="Margin" Value="0,6,0,2"/>
-        </Style>
-        <Style x:Key="SectionHeaderStyle" TargetType="TextBlock">
-            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Foreground" Value="#1E3A5F"/>
+            <Setter Property="Height" Value="40"/>
         </Style>
     </UserControl.Resources>
 
-    <Grid Background="#E8F4FC">
-        <Grid Margin="10">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <Grid Background="#E8F4FC" Margin="10">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
@@ -69,21 +45,18 @@
                     </LinearGradientBrush>
                 </Border.Background>
                 <Grid>
-                    <TextBlock Text="🧮 DGU CALCULATOR" Foreground="White" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    <Border Background="White" CornerRadius="8" Padding="10" HorizontalAlignment="Right" Width="180">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <TextBlock Text="📊 RESULT: " FontWeight="Bold" FontSize="14" Foreground="#1E3A5F" VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding Result}" FontSize="18" FontWeight="Bold" Foreground="#0891B2" VerticalAlignment="Center"/>
+                    <TextBlock Text="DGU CALCULATOR" Foreground="White" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
+                    <Border Background="White" CornerRadius="8" Padding="10" HorizontalAlignment="Right">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="RESULT: " FontWeight="Bold" FontSize="14" Foreground="#1E3A5F" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding Result}" FontSize="18" FontWeight="Bold" Foreground="#0891B2"/>
                         </StackPanel>
                     </Border>
                 </Grid>
             </Border>
 
             <!-- MAIN CONTENT -->
-            <Border Grid.Row="1" Background="White" CornerRadius="16" Padding="16" BorderBrush="#CBD5E1" BorderThickness="1">
-                <Border.Effect>
-                    <DropShadowEffect Color="#1E3A5F" BlurRadius="15" ShadowDepth="2" Opacity="0.12"/>
-                </Border.Effect>
+            <Border Grid.Row="1" Background="White" CornerRadius="16" Padding="16">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -91,96 +64,191 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- LEFT COLUMN -->
+                    <!-- LEFT: GLASS CONFIG -->
                     <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                        <!-- Glass 1 -->
                         <Border Background="#F0F9FF" CornerRadius="10" Padding="12" Margin="0,0,0,8" BorderBrush="#BAE6FD" BorderThickness="1">
                             <StackPanel>
-                                <TextBlock Text="🔷 GLASS 1" Style="{StaticResource SectionHeaderStyle}"/>
-                                <TextBlock Text="Thickness (mm)" Style="{StaticResource LabelStyle}"/>
-                                <ComboBox ItemsSource="{Binding ThicknessList}" SelectedItem="{Binding Thickness1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEditable="True" StaysOpenOnEdit="True" Height="28"/>
-                                <TextBlock Text="Color" Style="{StaticResource LabelStyle}"/>
-                                <ComboBox ItemsSource="{Binding ColorList}" SelectedItem="{Binding Color1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEditable="True" Height="28"/>
+                                <TextBlock Text="GLASS 1" FontWeight="SemiBold" FontSize="12" Foreground="#1E3A5F" Margin="0,0,0,8"/>
+                                <TextBlock Text="Category" FontSize="11" Foreground="#64748B" Margin="0,0,0,2"/>
+                                <ComboBox ItemsSource="{Binding CategoryOptions}" SelectedItem="{Binding Category1, Mode=TwoWay}" IsEditable="True" Height="28"/>
+                                <TextBlock Text="Thickness" FontSize="11" Foreground="#64748B" Margin="0,6,0,2"/>
+                                <ComboBox ItemsSource="{Binding ThicknessOptions1}" SelectedItem="{Binding Thickness1, Mode=TwoWay}" IsEditable="True" Height="28"/>
+                                <TextBlock Text="Color" FontSize="11" Foreground="#64748B" Margin="0,6,0,2"/>
+                                <ComboBox ItemsSource="{Binding ColorOptions1}" SelectedItem="{Binding Color1, Mode=TwoWay}" IsEditable="True" Height="28"/>
+                                <TextBlock Text="Sheet Price" FontSize="11" Foreground="#64748B" Margin="0,6,0,2"/>
+                                <TextBox Text="{Binding Sheet1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="28"/>
                             </StackPanel>
                         </Border>
-                        <Border Background="#F0F9FF" CornerRadius="10" Padding="12" BorderBrush="#BAE6FD" BorderThickness="1">
+                        <!-- Glass 2 -->
+                        <Border Background="#F0FDF4" CornerRadius="10" Padding="12" BorderBrush="#BBF7D0" BorderThickness="1">
                             <StackPanel>
-                                <TextBlock Text="🔷 GLASS 2" Style="{StaticResource SectionHeaderStyle}"/>
-                                <TextBlock Text="Thickness (mm)" Style="{StaticResource LabelStyle}"/>
-                                <ComboBox ItemsSource="{Binding ThicknessList}" SelectedItem="{Binding Thickness2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEditable="True" Height="28"/>
-                                <TextBlock Text="Color" Style="{StaticResource LabelStyle}"/>
-                                <ComboBox ItemsSource="{Binding ColorList}" SelectedItem="{Binding Color2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEditable="True" Height="28"/>
+                                <TextBlock Text="GLASS 2" FontWeight="SemiBold" FontSize="12" Foreground="#1E3A5F" Margin="0,0,0,8"/>
+                                <TextBlock Text="Category" FontSize="11" Foreground="#64748B" Margin="0,0,0,2"/>
+                                <ComboBox ItemsSource="{Binding CategoryOptions}" SelectedItem="{Binding Category2, Mode=TwoWay}" IsEditable="True" Height="28"/>
+                                <TextBlock Text="Thickness" FontSize="11" Foreground="#64748B" Margin="0,6,0,2"/>
+                                <ComboBox ItemsSource="{Binding ThicknessOptions2}" SelectedItem="{Binding Thickness2, Mode=TwoWay}" IsEditable="True" Height="28"/>
+                                <TextBlock Text="Color" FontSize="11" Foreground="#64748B" Margin="0,6,0,2"/>
+                                <ComboBox ItemsSource="{Binding ColorOptions2}" SelectedItem="{Binding Color2, Mode=TwoWay}" IsEditable="True" Height="28"/>
+                                <TextBlock Text="Sheet Price" FontSize="11" Foreground="#64748B" Margin="0,6,0,2"/>
+                                <TextBox Text="{Binding Sheet2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="28"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>
 
-                    <!-- MIDDLE COLUMN -->
+                    <!-- MIDDLE: ASP & PRICING -->
                     <StackPanel Grid.Column="1" Margin="8,0">
-                        <Border Background="#F8FAFC" CornerRadius="10" Padding="12" Margin="0,0,0,8" BorderBrush="#CBD5E1" BorderThickness="1">
+                        <!-- Spacer Config -->
+                        <Border Background="#FEF3C7" CornerRadius="10" Padding="12" Margin="0,0,0,8" BorderBrush="#FCD34D" BorderThickness="1">
                             <StackPanel>
-                                <TextBlock Text="💰 PRICE BREAK" Style="{StaticResource SectionHeaderStyle}"/>
-                                <TextBlock Text="Glass 1 Sheet Price" Style="{StaticResource LabelStyle}"/>
-                                <TextBox Text="{Binding Sheet1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="28" ToolTip="Glass 1 cost per SQM"/>
-                                <TextBlock Text="Glass 2 Sheet Price" Style="{StaticResource LabelStyle}"/>
-                                <TextBox Text="{Binding Sheet2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="28" ToolTip="Glass 2 cost per SQM"/>
+                                <TextBlock Text="AIR SPACER (ASP)" FontWeight="SemiBold" FontSize="12" Foreground="#92400E" Margin="0,0,0,8"/>
+                                <TextBlock Text="Spacer Thickness" FontSize="11" Foreground="#B45309" Margin="0,0,0,2"/>
+                                <ComboBox ItemsSource="{Binding SpacerSizeOptions}" SelectedItem="{Binding SpacerSize, Mode=TwoWay}" IsEditable="True" Height="32" Margin="0,0,0,8"/>
+                                <TextBlock Text="Spacer Color" FontSize="11" Foreground="#B45309" Margin="0,0,0,2"/>
+                                <ComboBox ItemsSource="{Binding SpacerColorOptions}" SelectedItem="{Binding SpacerColor, Mode=TwoWay}" IsEditable="True" Height="32"/>
                             </StackPanel>
                         </Border>
-                        <Border Background="#FEF3C7" CornerRadius="10" Padding="12" BorderBrush="#FCD34D" BorderThickness="1">
+                        <!-- Profit -->
+                        <Border Background="#F5F3FF" CornerRadius="10" Padding="12" Margin="0,0,0,8" BorderBrush="#C4B5FD" BorderThickness="1">
                             <StackPanel>
-                                <TextBlock Text="⚙ ASP TYPE" Style="{StaticResource SectionHeaderStyle}"/>
-                                <ComboBox ItemsSource="{Binding AspList}" SelectedItem="{Binding AspType, Mode=TwoWay}" IsEditable="True" Height="28" Margin="0,4,0,0"/>
-                                <TextBlock Text="📈 PROFIT MARGIN" Style="{StaticResource LabelStyle}"/>
-                                <ComboBox ItemsSource="{Binding ProfitList}" SelectedItem="{Binding Profit, Mode=TwoWay}" IsEditable="True" Height="28"/>
+                                <TextBlock Text="PROFIT MARGIN" FontWeight="SemiBold" FontSize="12" Foreground="#5B21B6" Margin="0,0,0,8"/>
+                                <ComboBox ItemsSource="{Binding ProfitList}" SelectedItem="{Binding Profit, Mode=TwoWay}" Height="32"/>
+                            </StackPanel>
+                        </Border>
+                        <!-- Dimensions -->
+                        <Border Background="#F8FAFC" CornerRadius="10" Padding="12" BorderBrush="#CBD5E1" BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock Text="DIMENSIONS" FontWeight="SemiBold" FontSize="12" Foreground="#1E3A5F" Margin="0,0,0,8"/>
+
+                                <!-- Standard Size Dropdown -->
+                                <TextBlock Text="Standard Size" FontSize="11" Foreground="#64748B" Margin="0,0,0,2"/>
+                                <ComboBox ItemsSource="{Binding AvailableSizes}" SelectedItem="{Binding SelectedSize, Mode=TwoWay}" IsEditable="True" Height="32" Margin="0,0,0,8"/>
+
+                                <!-- Custom Size -->
+                                <TextBlock Text="OR Custom Size (mm)" FontSize="10" Foreground="#94A3B8" Margin="0,0,0,4"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Width" FontSize="11" Foreground="#64748B"/>
+                                        <TextBox Text="{Binding Width, Mode=TwoWay}" Height="28"/>
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="1" Text="x" FontSize="14" FontWeight="Bold" VerticalAlignment="Bottom" Margin="6,0,6,4"/>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="Height" FontSize="11" Foreground="#64748B"/>
+                                        <TextBox Text="{Binding Height, Mode=TwoWay}" Height="28"/>
+                                    </StackPanel>
+                                </Grid>
+                                <TextBlock Text="Quantity" FontSize="11" Foreground="#64748B" Margin="0,6,0,2"/>
+                                <TextBox Text="{Binding Qty, Mode=TwoWay}" Height="28"/>
+
+                                <!-- Size Warning -->
+                                <Border Background="#FEF3C7" CornerRadius="6" Padding="8" Margin="0,8,0,0" 
+                                        Visibility="{Binding SizeWarning, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock Text="{Binding SizeWarningMessage}" FontSize="10" Foreground="#92400E" TextWrapping="Wrap"/>
+                                </Border>
                             </StackPanel>
                         </Border>
                     </StackPanel>
 
-                    <!-- RIGHT COLUMN -->
+                    <!-- RIGHT: ACTIONS & TOTALS -->
                     <StackPanel Grid.Column="2" Margin="8,0,0,0">
-                        <Button Content="💾 SAVE DGU" Command="{Binding SaveCommand}" Background="#1E40AF" Foreground="White" FontWeight="Bold" FontSize="13" Height="40" Margin="0,0,0,8"/>
-                        <Button Content="📄 EXPORT TO PDF" Command="{Binding ExportPdfCommand}" Background="#059669" Foreground="White" FontWeight="Bold" FontSize="13" Height="40" Margin="0,0,0,8"/>
-                        <Border Background="#F0FDFA" CornerRadius="10" Padding="12" Margin="0,0,0,8" BorderBrush="#5EEAD4" BorderThickness="1">
+                        <!-- Actions -->
+                        <Button Content="SAVE DGU" Command="{Binding SaveCommand}" Background="#1E40AF" Foreground="White" FontWeight="Bold" Height="38" Margin="0,0,0,6"/>
+                        <Button Content="EXPORT PDF" Command="{Binding ExportPdfCommand}" Background="#059669" Foreground="White" FontWeight="Bold" Height="38" Margin="0,0,0,6"/>
+                        <Button Content="CLEAR" Command="{Binding ClearCommand}" Background="#DC2626" Foreground="White" FontWeight="Bold" Height="38" Margin="0,0,0,8"/>
+
+                        <!-- Totals -->
+                        <Border Background="#ECFDF5" CornerRadius="10" Padding="12" Margin="0,0,0,8" BorderBrush="#6EE7B7" BorderThickness="1">
                             <StackPanel>
-                                <TextBlock Text="🔍 SEARCH HISTORY" Style="{StaticResource SectionHeaderStyle}"/>
-                                <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Height="28" Margin="0,8,0,0" ToolTip="Search saved records"/>
+                                <TextBlock Text="PRICE SUMMARY" FontWeight="SemiBold" FontSize="12" Foreground="#065F46" Margin="0,0,0,8"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Total SQM:" Foreground="#047857" FontSize="11"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding TotalSqm}" Foreground="#059669" FontWeight="Bold" FontSize="11" TextAlignment="Right"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Sub Total:" Foreground="#047857" FontSize="11" Margin="0,4,0,0"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding TotalPrice, StringFormat={}{0:F2} AED}" Foreground="#059669" FontWeight="Bold" FontSize="11" TextAlignment="Right" Margin="0,4,0,0"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="5% VAT:" Foreground="#047857" FontSize="11" Margin="0,4,0,0"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding VatAmount, StringFormat={}{0:F2} AED}" Foreground="#059669" FontWeight="Bold" FontSize="11" TextAlignment="Right" Margin="0,4,0,0"/>
+                                    <Rectangle Grid.Row="3" Grid.ColumnSpan="2" Height="1" Fill="#A7F3D0" Margin="0,8,0,8"/>
+                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="GROSS TOTAL:" Foreground="#065F46" FontWeight="Bold" FontSize="12"/>
+                                    <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding GrossTotal, StringFormat={}{0:F2} AED}" Foreground="#10B981" FontWeight="Bold" FontSize="14" TextAlignment="Right"/>
+                                </Grid>
                             </StackPanel>
                         </Border>
-                        <Border Background="#F0FDFA" CornerRadius="10" Padding="12" BorderBrush="#5EEAD4" BorderThickness="1">
+
+                        <!-- Spec Summary -->
+                        <Border Background="#FFF7ED" CornerRadius="10" Padding="12" BorderBrush="#FED7AA" BorderThickness="1">
                             <StackPanel>
-                                <TextBlock Text="📘 GUIDE" FontWeight="Bold" FontSize="12" Foreground="#0F766E" Margin="0,0,0,6"/>
-                                <TextBlock Text="• Select glass 1 &amp; glass 2 details" FontSize="10" Foreground="#334155"/>
-                                <TextBlock Text="• Choose ASP type" FontSize="10" Foreground="#334155" Margin="0,3,0,0"/>
-                                <TextBlock Text="• Enter sheet prices per SQM" FontSize="10" Foreground="#334155" Margin="0,3,0,0"/>
-                                <TextBlock Text="• Set profit margin" FontSize="10" Foreground="#334155" Margin="0,3,0,0"/>
-                                <TextBlock Text="• Save to track calculations" FontSize="10" Foreground="#334155" Margin="0,3,0,0"/>
-                                <TextBlock Text="• Export PDF for customer" FontSize="10" Foreground="#334155" Margin="0,3,0,0"/>
+                                <TextBlock Text="SPECIFICATION" FontWeight="SemiBold" FontSize="11" Foreground="#9A3412" Margin="0,0,0,6"/>
+                                <TextBlock Text="{Binding SpecificationSummary}" TextWrapping="Wrap" FontSize="10" Foreground="#C2410C" FontStyle="Italic"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>
                 </Grid>
             </Border>
 
-            <!-- HISTORY SECTION -->
+            <!-- HISTORY -->
             <Border Grid.Row="2" Margin="0,10,0,0">
                 <StackPanel>
-                    <ToggleButton Content="📜 HISTORY" IsChecked="{Binding IsHistoryVisible}" Style="{StaticResource ToggleButtonStyle}" HorizontalAlignment="Stretch"/>
-                    <Border Background="#F0F9FF" CornerRadius="10" Padding="12" Margin="0,8,0,0" Height="200" BorderBrush="#BAE6FD" BorderThickness="1" Visibility="{Binding IsHistoryVisible, Converter={StaticResource BoolToVisConverter}}">
-                        <ListBox ItemsSource="{Binding FilteredRecords}" Background="Transparent" BorderThickness="0" ScrollViewer.VerticalScrollBarVisibility="Auto">
-                            <ListBox.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <WrapPanel Orientation="Horizontal"/>
-                                </ItemsPanelTemplate>
-                            </ListBox.ItemsPanel>
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Background="White" CornerRadius="8" Padding="10" Margin="4" BorderBrush="#E2E8F0" BorderThickness="1" MinWidth="280">
-                                        <TextBlock Text="{Binding DisplayText}" TextWrapping="Wrap" FontSize="11" Foreground="#334155" ToolTip="{Binding DisplayText}"/>
-                                    </Border>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
+                    <ToggleButton Content="HISTORY" IsChecked="{Binding IsHistoryVisible}" HorizontalAlignment="Stretch"/>
+                    <Border Background="#F8FAFC" CornerRadius="10" Padding="12" Margin="0,8,0,0" MinHeight="180" MaxHeight="300"
+                            BorderBrush="#CBD5E1" BorderThickness="1" 
+                            Visibility="{Binding IsHistoryVisible, Converter={StaticResource BoolToVis}}">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <ItemsControl ItemsSource="{Binding Records}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="White" CornerRadius="8" Padding="10" Margin="4" 
+                                                BorderBrush="#E2E8F0" BorderThickness="1" MinWidth="280" MaxWidth="320">
+                                            <StackPanel>
+                                                <Grid Margin="0,0,0,4">
+                                                    <Border Background="#2563EB" CornerRadius="4" Padding="6,2" HorizontalAlignment="Left">
+                                                        <TextBlock Text="{Binding CreatedAt}" FontSize="9" Foreground="White"/>
+                                                    </Border>
+                                                    <Button Content="X" Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" 
+                                                            CommandParameter="{Binding}" Background="#FEE2E2" Foreground="#DC2626" 
+                                                            FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" Padding="4,2"/>
+                                                </Grid>
+                                                <TextBlock FontSize="10" Foreground="#334155">
+                                                    <Run Text="G1: "/><Run Text="{Binding Thickness1}" FontWeight="SemiBold"/><Run Text=" "/><Run Text="{Binding Color1}"/>
+                                                </TextBlock>
+                                                <TextBlock FontSize="10" Foreground="#334155">
+                                                    <Run Text="G2: "/><Run Text="{Binding Thickness2}" FontWeight="SemiBold"/><Run Text=" "/><Run Text="{Binding Color2}"/>
+                                                </TextBlock>
+                                                <TextBlock FontSize="10" Foreground="#334155">
+                                                    <Run Text="Spacer: "/><Run Text="{Binding Spacer}" FontWeight="SemiBold" Foreground="#D97706"/>
+                                                </TextBlock>
+                                                <TextBlock FontSize="12" Foreground="#059669" FontWeight="Bold" Margin="0,4,0,0">
+                                                    <Run Text="{Binding Result, StringFormat={}{0:F2}}"/><Run Text=" AED"/>
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
                     </Border>
                 </StackPanel>
             </Border>
         </Grid>
-    </Grid>
+    </ScrollViewer>
 </UserControl>

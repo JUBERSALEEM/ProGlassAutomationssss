@@ -30,7 +30,7 @@ namespace ProGlassAutomation.Views.DGU
 
         private void Refresh_Click(object sender, RoutedEventArgs e)
         {
-            _vm.Calculate();
+            _vm.Calc();
         }
     }
 }

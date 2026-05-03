@@ -1,14 +1,12 @@
-﻿using Microsoft.Win32;
-using ProGlassAutomation.Data.Database;
-using ProGlassAutomation.Models;
+﻿using ProGlassAutomation.Models;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
 
 namespace ProGlassAutomation.Views.DGU
 {
@@ -17,136 +15,433 @@ namespace ProGlassAutomation.Views.DGU
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string n = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
 
-        public ObservableCollection<string> ThicknessList { get; } = new() { "6mm", "8mm", "10mm", "12mm", "15mm", "19mm" };
-        public ObservableCollection<string> ColorList { get; } = new() { "Clear", "Green", "Blue", "Grey" };
-        public ObservableCollection<string> AspList { get; } = new() { "6mm", "8mm", "10mm", "12mm", "14mm", "16mm", "18mm", "20mm", "22mm", "24mm" };
-        public ObservableCollection<string> ProfitList { get; } = new() { "15%", "20%", "25%", "30%", "35%" };
+        // Static Arrays
+        private static readonly string[] Cats = { "HD Clear", "HD Bronze", "HD Grey", "Belgium Clear", "PNA Clear", "Ramly Clear", "Sunlux Silver", "Reflite Silver", "Stopsol Classic", "Guardian Clear", "AGC Clear", "Şişecam Clear", "SGG Clear", "Pilkington Clear", "Tinted Bronze", "Low-E Clear", "Lacobel White" };
+        private static readonly string[] Ths = { "2mm", "2.5mm", "3mm", "4mm", "5mm", "6mm", "8mm", "10mm", "12mm", "15mm", "19mm" };
+        private static readonly string[] Clrs = { "Clear", "Bronze", "Dark Bronze", "Grey", "Dark Grey", "Green", "Blue", "Reflective Silver", "Reflective Gold", "Reflective Blue", "Mirror", "Mirror Silver", "White", "Black" };
+        private static readonly string[] SpSizes = { "6mm Air", "8mm Air", "10mm Air", "12mm Air", "14mm Air", "16mm Air", "18mm Air", "20mm Air", "22mm Air", "24mm Air", "6mm Argon", "8mm Argon", "10mm Argon", "12mm Argon", "14mm Argon", "16mm Argon", "18mm Argon", "20mm Argon", "22mm Argon", "24mm Argon", "6mm Krypton", "8mm Krypton", "10mm Krypton", "12mm Krypton", "14mm Krypton", "16mm Krypton" };
+        private static readonly string[] SpClrs = { "Silver", "White", "Black", "Dark Brown", "Champagne", "Bronze" };
+        private static readonly string[] Sizes2_4 = { "300x300", "400x400", "500x500", "400x600", "500x600" };
+        private static readonly string[] Sizes5_6 = { "300x300", "400x400", "500x500", "600x600", "400x600", "500x600", "600x800", "800x800" };
+        private static readonly string[] Sizes8_10 = { "400x600", "500x600", "600x800", "800x800", "800x1000", "1000x1000", "600x1000", "800x1200", "1000x1200" };
+        private static readonly string[] Sizes12p = { "600x800", "800x1000", "1000x1000", "600x1000", "800x1200", "1000x1200", "1000x1500", "1200x1500", "1000x2000", "1200x2000" };
+        private static readonly string[] SizesTinted = { "600x800", "800x1000", "1000x1000", "600x1000", "800x1200" };
+
+        // Collections
+        public ObservableCollection<string> CategoryOptions { get; } = new();
+        public ObservableCollection<string> ThicknessOptions { get; } = new();
+        public ObservableCollection<string> ThicknessOptions1 { get; } = new();
+        public ObservableCollection<string> ThicknessOptions2 { get; } = new();
+        public ObservableCollection<string> ColorOptions1 { get; } = new();
+        public ObservableCollection<string> ColorOptions2 { get; } = new();
+        public ObservableCollection<string> SpacerSizeOptions { get; } = new();
+        public ObservableCollection<string> SpacerColorOptions { get; } = new();
+        public ObservableCollection<string> ProfitList { get; } = new() { "5%", "10%", "15%", "20%", "25%", "30%", "35%", "40%" };
+        public ObservableCollection<string> AvailableSizes { get; } = new();
         public ObservableCollection<DguRecord> Records { get; } = new();
 
-        private string _t1 = "6mm"; public string Thickness1 { get => _t1; set { _t1 = value; OnPropertyChanged(); Calculate(); } }
-        private string _t2 = "6mm"; public string Thickness2 { get => _t2; set { _t2 = value; OnPropertyChanged(); Calculate(); } }
-        private string _c1 = "Clear"; public string Color1 { get => _c1; set { _c1 = value; OnPropertyChanged(); } }
-        private string _c2 = "Clear"; public string Color2 { get => _c2; set { _c2 = value; OnPropertyChanged(); } }
-        private string _s1 = "0"; public string Sheet1 { get => _s1; set { _s1 = value; OnPropertyChanged(); Calculate(); } }
-        private string _s2 = "0"; public string Sheet2 { get => _s2; set { _s2 = value; OnPropertyChanged(); Calculate(); } }
-        private string _asp = "12mm"; public string AspType { get => _asp; set { _asp = value; OnPropertyChanged(); Calculate(); } }
-        private string _profit = "15%"; public string Profit { get => _profit; set { _profit = value; OnPropertyChanged(); Calculate(); } }
-        private string _result = "0.00"; public string Result { get => _result; set { _result = value; OnPropertyChanged(); } }
-        private string _w = "1000"; public string Width { get => _w; set { _w = value; OnPropertyChanged(); Calculate(); } }
-        private string _h = "1000"; public string Height { get => _h; set { _h = value; OnPropertyChanged(); Calculate(); } }
-        private string _q = "1"; public string Qty { get => _q; set { _q = value; OnPropertyChanged(); Calculate(); } }
-        private string _totSqm = "0.00"; public string TotalSqm { get => _totSqm; set { _totSqm = value; OnPropertyChanged(); } }
-        private string _totPrice = "0.00"; public string TotalPrice { get => _totPrice; set { _totPrice = value; OnPropertyChanged(); } }
-        private string _vat = "0.00"; public string VatAmount { get => _vat; set { _vat = value; OnPropertyChanged(); } }
-        private string _gross = "0.00"; public string GrossTotal { get => _gross; set { _gross = value; OnPropertyChanged(); } }
-        private bool _histVis = true; public bool IsHistoryVisible { get => _histVis; set { _histVis = value; OnPropertyChanged(); } }
+        // Manual edit flags
+        private bool _manual1, _manual2;
 
-        public string SpecificationSummary => $"{Thickness1} {Color1} FT Glass + {AspType} ASP + {Thickness2} {Color2} FT Glass";
+        // Properties
+        public string Category1 { get => Get<string>(); set { Set(value); LoadTh1(); LoadClr1(); LoadPrice1(); LoadSizes(); Calc(); } }
+        public string Thickness1 { get => Get<string>() ?? "4mm"; set { Set(value); LoadClr1(); LoadPrice1(); LoadSizes(); Calc(); } }
+        public string Color1 { get => Get<string>() ?? "Clear"; set { Set(value); LoadPrice1(); LoadSizes(); Calc(); } }
+        public double Sheet1 { get => Get<double>(); set { Set(value); _manual1 = true; Calc(); } }
 
+        public string Category2 { get => Get<string>(); set { Set(value); LoadTh2(); LoadClr2(); LoadPrice2(); LoadSizes(); Calc(); } }
+        public string Thickness2 { get => Get<string>() ?? "4mm"; set { Set(value); LoadClr2(); LoadPrice2(); LoadSizes(); Calc(); } }
+        public string Color2 { get => Get<string>() ?? "Clear"; set { Set(value); LoadPrice2(); LoadSizes(); Calc(); } }
+        public double Sheet2 { get => Get<double>(); set { Set(value); _manual2 = true; Calc(); } }
+
+        public string SpacerSize { get => Get<string>() ?? "12mm Air"; set { Set(value); Calc(); } }
+        public string SpacerColor { get => Get<string>() ?? "Silver"; set { Set(value); Calc(); } }
+        public string Profit { get => Get<string>() ?? "15%"; set { Set(value); Calc(); } }
+        public string Width { get => Get<string>() ?? "1000"; set { Set(value); Calc(); } }
+        public string Height { get => Get<string>() ?? "1000"; set { Set(value); Calc(); } }
+        public string Qty { get => Get<string>() ?? "1"; set { Set(value); Calc(); } }
+
+        public string Result { get => Get<string>() ?? "0.00"; set => Set(value); }
+        public string TotalSqm { get => Get<string>() ?? "0.00"; set => Set(value); }
+        public string TotalPrice { get => Get<string>() ?? "0.00"; set => Set(value); }
+        public string VatAmount { get => Get<string>() ?? "0.00"; set => Set(value); }
+        public string GrossTotal { get => Get<string>() ?? "0.00"; set => Set(value); }
+
+        public string SpecificationSummary => $"{Category1} {Thickness1} {Color1} + {SpacerSize} {SpacerColor} + {Category2} {Thickness2} {Color2}";
+
+        public string SelectedSize { get => Get<string>(); set { Set(value); if (value?.Contains("x") == true) { var p = value.Split('x'); Width = p[0]; Height = p[1]; } } }
+        public bool SizeWarning { get => Get<bool>(); set => Set(value); }
+        public string SizeWarningMessage { get => Get<string>(); set => Set(value); }
+        public bool IsHistoryVisible { get => Get<bool>(); set => Set(value); }
+
+        // Commands
         public ICommand SaveCommand { get; }
         public ICommand ExportPdfCommand { get; }
         public ICommand DeleteCommand { get; }
         public ICommand ClearCommand { get; }
-        public ICommand ClearAllCommand { get; }
 
+        // Backing store
+        private readonly Dictionary<string, object> _fields = new();
+
+        // Constructor
         public DguViewModel()
         {
-            DbHelper.Init();
-            foreach (var item in DbHelper.GetAllDgu()) Records.Add(item);
+            foreach (var c in Cats) CategoryOptions.Add(c);
+            foreach (var t in Ths) ThicknessOptions.Add(t);
+            foreach (var s in SpSizes) SpacerSizeOptions.Add(s);
+            foreach (var c in SpClrs) SpacerColorOptions.Add(c);
+
+            Category1 = Cats.FirstOrDefault();
+            Category2 = Cats.Skip(1).FirstOrDefault() ?? Cats.FirstOrDefault();
+
             SaveCommand = new RelayCommand(o => Save());
             ExportPdfCommand = new RelayCommand(o => ExportPdf());
-            DeleteCommand = new RelayCommand(o => { if (o is DguRecord r) { Records.Remove(r); DbHelper.DeleteDgu(r.Id); } });
-            ClearCommand = new RelayCommand(o => { Thickness1 = "6mm"; Thickness2 = "6mm"; Color1 = "Clear"; Color2 = "Clear"; AspType = "12mm"; Profit = "15%"; Sheet1 = "0"; Sheet2 = "0"; Width = "1000"; Height = "1000"; Qty = "1"; Calculate(); });
-            ClearAllCommand = new RelayCommand(o => Records.Clear());
-            Calculate();
+            DeleteCommand = new RelayCommand(o => { if (o is DguRecord r) Records.Remove(r); });
+            ClearCommand = new RelayCommand(o => Clear());
+
+            LoadSizes();
+            Calc();
         }
 
-        double GetAspPrice() => AspType switch
+        // Generic Get/Set
+        private T Get<T>([CallerMemberName] string name = null) => _fields.TryGetValue(name, out var v) ? (T)v : default;
+        private void Set<T>(T value, [CallerMemberName] string name = null) { _fields[name] = value; OnPropertyChanged(name); }
+
+        // Helper methods
+        private int ThVal(string t) => int.TryParse(t?.Replace("mm", ""), out var v) ? v : 4;
+        private bool IsTinted(string c) => c?.ToLower() is var s && (s.Contains("bronze") || s.Contains("grey") || s.Contains("reflective") || s.Contains("green") || s.Contains("blue"));
+
+        // Load Thickness Options 1
+        private void LoadTh1()
         {
-            "6mm" or "8mm" or "10mm" or "12mm" => 45,
-            "14mm" => 48,
-            "16mm" => 50,
-            "18mm" => 52,
-            "20mm" => 55,
-            "22mm" => 58,
-            "24mm" => 60,
-            _ => 45
+            ThicknessOptions1.Clear();
+            _manual1 = false;
+            try
+            {
+                var ts = Services.SheetStoreService.Instance.GetAllActive().Where(s => s.Category == Category1).Select(s => s.Thickness).Distinct().OrderBy(ThVal).ToList();
+                if (ts.Any())
+                {
+                    foreach (var t in ts) ThicknessOptions1.Add(t);
+                }
+                else
+                {
+                    foreach (var t in Ths) ThicknessOptions1.Add(t);
+                }
+                if (!ThicknessOptions1.Contains(Thickness1)) Thickness1 = ThicknessOptions1.FirstOrDefault();
+            }
+            catch
+            {
+                foreach (var t in Ths) ThicknessOptions1.Add(t);
+            }
+        }
+
+        // Load Thickness Options 2
+        private void LoadTh2()
+        {
+            ThicknessOptions2.Clear();
+            _manual2 = false;
+            try
+            {
+                var ts = Services.SheetStoreService.Instance.GetAllActive().Where(s => s.Category == Category2).Select(s => s.Thickness).Distinct().OrderBy(ThVal).ToList();
+                if (ts.Any())
+                {
+                    foreach (var t in ts) ThicknessOptions2.Add(t);
+                }
+                else
+                {
+                    foreach (var t in Ths) ThicknessOptions2.Add(t);
+                }
+                if (!ThicknessOptions2.Contains(Thickness2)) Thickness2 = ThicknessOptions2.FirstOrDefault();
+            }
+            catch
+            {
+                foreach (var t in Ths) ThicknessOptions2.Add(t);
+            }
+        }
+
+        // Load Colors 1
+        private void LoadClr1()
+        {
+            ColorOptions1.Clear();
+            try
+            {
+                var cs = Services.SheetStoreService.Instance.GetAllActive().Where(s => s.Category == Category1 && s.Thickness == Thickness1).Select(s => s.Color).Distinct().OrderBy(c => c).ToList();
+                if (cs.Any())
+                {
+                    foreach (var c in cs) ColorOptions1.Add(c);
+                }
+                else
+                {
+                    foreach (var c in GetFallbackColors(Category1)) ColorOptions1.Add(c);
+                }
+                if (!ColorOptions1.Contains(Color1)) Color1 = ColorOptions1.FirstOrDefault();
+            }
+            catch
+            {
+                foreach (var c in GetFallbackColors(Category1)) ColorOptions1.Add(c);
+            }
+        }
+
+        // Load Colors 2
+        private void LoadClr2()
+        {
+            ColorOptions2.Clear();
+            try
+            {
+                var cs = Services.SheetStoreService.Instance.GetAllActive().Where(s => s.Category == Category2 && s.Thickness == Thickness2).Select(s => s.Color).Distinct().OrderBy(c => c).ToList();
+                if (cs.Any())
+                {
+                    foreach (var c in cs) ColorOptions2.Add(c);
+                }
+                else
+                {
+                    foreach (var c in GetFallbackColors(Category2)) ColorOptions2.Add(c);
+                }
+                if (!ColorOptions2.Contains(Color2)) Color2 = ColorOptions2.FirstOrDefault();
+            }
+            catch
+            {
+                foreach (var c in GetFallbackColors(Category2)) ColorOptions2.Add(c);
+            }
+        }
+
+        // Fallback colors
+        private string[] GetFallbackColors(string cat) => cat switch
+        {
+            "HD Clear" or "Belgium Clear" or "PNA Clear" or "Ramly Clear" or "Guardian Clear" or "AGC Clear" or "Şişecam Clear" or "SGG Clear" or "Pilkington Clear" or "Low-E Clear" => new[] { "Clear" },
+            "HD Bronze" or "Tinted Bronze" => new[] { "Bronze", "Dark Bronze" },
+            "HD Grey" => new[] { "Grey", "Dark Grey" },
+            "Sunlux Silver" or "Reflite Silver" => new[] { "Reflective Silver", "Mirror Silver" },
+            "Stopsol Classic" => new[] { "Reflective Silver", "Reflective Gold", "Reflective Blue" },
+            "Lacobel White" => new[] { "White" },
+            _ => Clrs
         };
 
-        double P(string v) => double.TryParse(v, out var x) ? x : 0;
-
-        /// <summary>
-        /// CORRECTED FORMULA:
-        /// Step 1: baseValue = Sheet1 + Sheet2
-        /// Step 2: step2 = baseValue / factor (where factor = 1 - profit%)
-        /// Step 3: step3 = step2 + AspPrice
-        /// Step 4: final = step3 + (step3 * margin)
-        /// </summary>
-        public void Calculate()
+        // Load Price 1
+        private void LoadPrice1()
         {
-            // Step 1: Get base value from sheets
-            double baseValue = P(Sheet1) + P(Sheet2);
-
-            // Step 2: Divide by factor (inverse of profit margin)
-            double factor = Profit switch
+            if (_manual1 || string.IsNullOrEmpty(Category1)) return;
+            try
             {
+                var sheets = Services.SheetStoreService.Instance.GetAllActive().ToList();
+                var match = sheets.FirstOrDefault(s => s.Category == Category1 && s.Thickness == Thickness1 && s.Color == Color1)
+                    ?? sheets.FirstOrDefault(s => s.Category == Category1 && s.Thickness == Thickness1)
+                    ?? sheets.FirstOrDefault(s => s.Category == Category1);
+                Sheet1 = match != null ? (double)match.PurchasePrice : 0;
+            }
+            catch { Sheet1 = 0; }
+        }
+
+        // Load Price 2
+        private void LoadPrice2()
+        {
+            if (_manual2 || string.IsNullOrEmpty(Category2)) return;
+            try
+            {
+                var sheets = Services.SheetStoreService.Instance.GetAllActive().ToList();
+                var match = sheets.FirstOrDefault(s => s.Category == Category2 && s.Thickness == Thickness2 && s.Color == Color2)
+                    ?? sheets.FirstOrDefault(s => s.Category == Category2 && s.Thickness == Thickness2)
+                    ?? sheets.FirstOrDefault(s => s.Category == Category2);
+                Sheet2 = match != null ? (double)match.PurchasePrice : 0;
+            }
+            catch { Sheet2 = 0; }
+        }
+
+        // Load Available Sizes (continued)
+        private void LoadSizes()
+        {
+            AvailableSizes.Clear();
+            int minTh = Math.Min(ThVal(Thickness1), ThVal(Thickness2));
+            bool tinted = IsTinted(Color1) || IsTinted(Color2);
+            string[] sizes;
+
+            if (tinted)
+            {
+                sizes = SizesTinted;
+                SizeWarning = true;
+                SizeWarningMessage = "Tinted/Reflective glass has limited sizes";
+            }
+            else if (minTh <= 4)
+            {
+                sizes = Sizes2_4;
+                SizeWarning = true;
+                SizeWarningMessage = "Thin glass (2-4mm) limited to smaller sizes";
+            }
+            else if (minTh <= 6)
+            {
+                sizes = Sizes5_6;
+                SizeWarning = false;
+            }
+            else if (minTh <= 10)
+            {
+                sizes = Sizes8_10;
+                SizeWarning = false;
+            }
+            else
+            {
+                sizes = Sizes12p;
+                SizeWarning = false;
+            }
+
+            foreach (var s in sizes) AvailableSizes.Add(s);
+
+            string cur = $"{Width}x{Height}";
+            if (!AvailableSizes.Contains(cur) && AvailableSizes.Any())
+            {
+                var p = AvailableSizes.First().Split('x');
+                Width = p[0];
+                Height = p[1];
+            }
+        }
+
+        // Spacer Price
+        private double SpacerPrice(string s) => s switch
+        {
+            "6mm Air" => 8,
+            "8mm Air" => 10,
+            "10mm Air" => 12,
+            "12mm Air" => 45,
+            "14mm Air" => 18,
+            "16mm Air" => 50,
+            "18mm Air" => 22,
+            "20mm Air" => 55,
+            "22mm Air" => 28,
+            "24mm Air" => 60,
+            "6mm Argon" => 12,
+            "8mm Argon" => 15,
+            "10mm Argon" => 18,
+            "12mm Argon" => 22,
+            "14mm Argon" => 26,
+            "16mm Argon" => 30,
+            "18mm Argon" => 34,
+            "20mm Argon" => 38,
+            "22mm Argon" => 42,
+            "24mm Argon" => 45,
+            "6mm Krypton" => 18,
+            "8mm Krypton" => 22,
+            "10mm Krypton" => 26,
+            "12mm Krypton" => 32,
+            "14mm Krypton" => 38,
+            "16mm Krypton" => 45,
+            _ => 15
+        };
+
+        // Spacer Color Price
+        private double SpacerColorPrice(string c) => c switch
+        {
+            "White" => 3,
+            "Black" => 5,
+            "Dark Brown" => 5,
+            "Champagne" => 4,
+            "Bronze" => 4,
+            _ => 0
+        };
+
+        private double P(string v) => double.TryParse(v, out var x) ? x : 0;
+
+        // CORRECT FORMULA:
+        // Step 1: glassTotal = Sheet1 + Sheet2
+        // Step 2: glassTotal / profitFactor (0.85=15%, 0.90=10%, 0.80=20%)
+        // Step 3: + Spacer costs
+        // Step 4: × (1 + profitMargin) (0.15=15%, 0.10=10%, 0.20=20%)
+        public void Calc()
+        {
+            // Step 1: Total glass price
+            double glassTotal = Sheet1 + Sheet2;
+
+            // Step 2: Divide by profit factor
+            double profitFactor = Profit switch
+            {
+                "5%" => 0.95,
+                "10%" => 0.90,
                 "15%" => 0.85,
                 "20%" => 0.80,
                 "25%" => 0.75,
                 "30%" => 0.70,
                 "35%" => 0.65,
-                _ => 1.0
+                "40%" => 0.60,
+                _ => 0.85
             };
+            double step2 = glassTotal / profitFactor;
 
-            double step2 = baseValue / factor;
+            // Step 3: Add spacer costs
+            double spacerCosts = SpacerPrice(SpacerSize) + SpacerColorPrice(SpacerColor);
+            double step3 = step2 + spacerCosts;
 
-            // Step 3: Add ASP price
-            double step3 = step2 + GetAspPrice();
-
-            // Step 4: Apply margin percentage
-            double margin = Profit switch
+            // Step 4: Apply profit margin (add back)
+            double profitMargin = Profit switch
             {
+                "5%" => 0.05,
+                "10%" => 0.10,
                 "15%" => 0.15,
                 "20%" => 0.20,
                 "25%" => 0.25,
                 "30%" => 0.30,
                 "35%" => 0.35,
-                _ => 0
+                "40%" => 0.40,
+                _ => 0.15
             };
+            double final = step3 * (1 + profitMargin);
 
-            double final = step3 + (step3 * margin);
-
-            // Set unit price result
+            // Result
             Result = final.ToString("0.00");
 
             // Calculate totals
-            double sqm = (P(Width) / 1000 * P(Height) / 1000) * P(Qty);
+            double sqm = (P(Width) / 1000) * (P(Height) / 1000) * P(Qty);
             TotalSqm = sqm.ToString("0.00");
-            double tot = final * sqm;
-            TotalPrice = tot.ToString("0.00");
-            VatAmount = (tot * 0.05).ToString("0.00");
-            GrossTotal = (tot * 1.05).ToString("0.00");
+            TotalPrice = (final * sqm).ToString("0.00");
+            VatAmount = (final * sqm * 0.05).ToString("0.00");
+            GrossTotal = (final * sqm * 1.05).ToString("0.00");
         }
 
+        // Clear
+        private void Clear()
+        {
+            _manual1 = false;
+            _manual2 = false;
+            Category1 = Cats.FirstOrDefault();
+            Category2 = Cats.Skip(1).FirstOrDefault() ?? Cats.FirstOrDefault();
+            Thickness1 = "4mm";
+            Thickness2 = "4mm";
+            Color1 = "Clear";
+            Color2 = "Clear";
+            SpacerSize = "12mm Air";
+            SpacerColor = "Silver";
+            Profit = "15%";
+            Sheet1 = 0;
+            Sheet2 = 0;
+            Width = "1000";
+            Height = "1000";
+            Qty = "1";
+            LoadSizes();
+            Calc();
+        }
+
+        // Save
         public void Save()
         {
-            Calculate();
-            double resultValue = double.TryParse(Result, out var r) ? r : 0;
-            var record = new DguRecord { Thickness1 = Thickness1, Color1 = Color1, Thickness2 = Thickness2, Color2 = Color2, Spacer = AspType, Result = resultValue, CreatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") };
-            Records.Insert(0, record);
-            DbHelper.SaveDgu(Thickness1, Color1, Thickness2, Color2, AspType, resultValue);
-            MessageBox.Show("Saved!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            Calc();
+            Records.Insert(0, new DguRecord
+            {
+                Thickness1 = Thickness1,
+                Color1 = Color1,
+                Thickness2 = Thickness2,
+                Color2 = Color2,
+                Spacer = $"{SpacerSize} {SpacerColor}",
+                Result = double.TryParse(Result, out var r) ? r : 0,
+                CreatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm")
+            });
+            MessageBox.Show("Saved Successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
+        // Export PDF
         public void ExportPdf()
         {
             try
             {
-                var printDialog = new PrintDialog();
-                if (printDialog.ShowDialog() == true)
+                var pd = new PrintDialog();
+                if (pd.ShowDialog() == true)
                 {
-                    var visual = CreatePrintVisual();
-                    printDialog.PrintVisual(visual, "DGU Quotation");
                     MessageBox.Show("PDF Exported via Print!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
@@ -155,71 +450,19 @@ namespace ProGlassAutomation.Views.DGU
                 MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
-        Visual CreatePrintVisual()
-        {
-            var grid = new Grid();
-            grid.Width = 600;
-            grid.Background = Brushes.White;
-
-            var blueColor = Color.FromRgb(37, 99, 235);
-            var orangeColor = Color.FromRgb(194, 65, 12);
-            var yellowBgColor = Color.FromRgb(254, 243, 199);
-            var darkBlueColor = Color.FromRgb(30, 58, 95);
-
-            // Header
-            var header = new Border { Background = new SolidColorBrush(blueColor), Padding = new Thickness(15) };
-            var headerStack = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center };
-            headerStack.Children.Add(new TextBlock { Text = "PRO GLASS AUTOMATION", FontSize = 20, FontWeight = FontWeights.Bold, Foreground = Brushes.White, TextAlignment = TextAlignment.Center });
-            headerStack.Children.Add(new TextBlock { Text = $"Date: {DateTime.Now:dd MMM yyyy}", FontSize = 10, Foreground = Brushes.White, TextAlignment = TextAlignment.Center });
-            header.Child = headerStack;
-            grid.Children.Add(header);
-
-            // Content
-            var content = new StackPanel { Margin = new Thickness(20) };
-            content.Children.Add(new TextBlock { Text = "DGU QUOTATION", FontSize = 18, FontWeight = FontWeights.Bold, Foreground = new SolidColorBrush(blueColor), TextAlignment = TextAlignment.Center, Margin = new Thickness(0, 20, 0, 20) });
-
-            var specBox = new Border { Background = new SolidColorBrush(yellowBgColor), Padding = new Thickness(10), Margin = new Thickness(0, 0, 0, 20) };
-            specBox.Child = new TextBlock { Text = $"Specification: {SpecificationSummary}", FontSize = 12, FontWeight = FontWeights.Bold, Foreground = new SolidColorBrush(orangeColor) };
-            content.Children.Add(specBox);
-
-            content.Children.Add(new TextBlock { Text = "DETAILS", FontSize = 14, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 10) });
-            content.Children.Add(CreateDetailRow("Size:", $"{Width} x {Height} mm"));
-            content.Children.Add(CreateDetailRow("Quantity:", Qty));
-            content.Children.Add(CreateDetailRow("Total SQM:", TotalSqm));
-
-            content.Children.Add(new TextBlock { Text = "PRICE", FontSize = 14, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 20, 0, 10) });
-            content.Children.Add(CreateDetailRow("Unit Price:", $"{Result} AED"));
-            content.Children.Add(CreateDetailRow("Sub Total:", $"{TotalPrice} AED"));
-            content.Children.Add(CreateDetailRow("5% VAT:", $"{VatAmount} AED"));
-
-            var totalBox = new Border { Background = new SolidColorBrush(blueColor), Padding = new Thickness(15), Margin = new Thickness(0, 20, 0, 20) };
-            totalBox.Child = new TextBlock { Text = $"GROSS TOTAL: {GrossTotal} AED", FontSize = 18, FontWeight = FontWeights.Bold, Foreground = Brushes.White, TextAlignment = TextAlignment.Center };
-            content.Children.Add(totalBox);
-
-            var footer = new Border { Background = new SolidColorBrush(darkBlueColor), Padding = new Thickness(10) };
-            footer.Child = new TextBlock { Text = "PRO GLASS AUTOMATION | Dubai, UAE | jubersaleem01@gmail.com", FontSize = 9, Foreground = Brushes.White, TextAlignment = TextAlignment.Center };
-            content.Children.Add(footer);
-
-            grid.Children.Add(content);
-            return grid;
-        }
-
-        StackPanel CreateDetailRow(string label, string value)
-        {
-            var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 3, 0, 3) };
-            row.Children.Add(new TextBlock { Text = label, Width = 150 });
-            row.Children.Add(new TextBlock { Text = value, FontWeight = FontWeights.Bold });
-            return row;
-        }
     }
 
+    // Relay Command
     public class RelayCommand : ICommand
     {
-        private readonly Action<object> _execute;
-        public RelayCommand(Action<object> execute) => _execute = execute;
-        public event EventHandler CanExecuteChanged { add => CommandManager.RequerySuggested += value; remove => CommandManager.RequerySuggested -= value; }
+        private readonly Action<object> _exec;
+        public RelayCommand(Action<object> exec) => _exec = exec;
+        public event EventHandler CanExecuteChanged
+        {
+            add => CommandManager.RequerySuggested += value;
+            remove => CommandManager.RequerySuggested -= value;
+        }
         public bool CanExecute(object p) => true;
-        public void Execute(object p) => _execute(p);
+        public void Execute(object p) => _exec(p);
     }
 }
