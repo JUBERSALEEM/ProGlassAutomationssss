@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using ProGlassAutomation.Models;
@@ -8,87 +9,130 @@ namespace ProGlassAutomation.Views.SheetStore
 {
     public partial class PurchasePriceDialog : Window
     {
-        private string? _preselectedId;
+        private string _selectedCategory = "All Categories";
 
-        public PurchasePriceDialog(string? sheetId = null)
+        public PurchasePriceDialog()
         {
             InitializeComponent();
-            _preselectedId = sheetId;
-            LoadSheets();
+            LoadCategories();
+            UpdatePreview();
         }
 
-        private void LoadSheets()
+        private void LoadCategories()
         {
-            var sheets = SheetStoreService.Instance.GetAllSheets();
-            SheetComboBox.ItemsSource = sheets;
-            SheetComboBox.SelectedIndex = 0;
+            CategoryFilterCombo.Items.Clear();
+            CategoryFilterCombo.Items.Add(new ComboBoxItem { Content = "All Categories", IsSelected = true });
 
-            if (!string.IsNullOrEmpty(_preselectedId))
+            foreach (string cat in Sheet.Categories)
+                CategoryFilterCombo.Items.Add(new ComboBoxItem { Content = cat });
+
+            CategoryFilterCombo.SelectedIndex = 0;
+        }
+
+        private int GetFilteredCount()
+        {
+            var allSheets = SheetStoreService.Instance.GetAllActive().ToList();
+            if (_selectedCategory == "All Categories")
+                return allSheets.Count;
+            return allSheets.Count(s => s.Category == _selectedCategory);
+        }
+
+        private void UpdatePreview()
+        {
+            ItemsCountText.Text = GetFilteredCount().ToString();
+
+            if (decimal.TryParse(NewPurchasePriceText.Text, out decimal price))
+                PreviewPriceText.Text = "AED " + price.ToString("N2");
+            else
+                PreviewPriceText.Text = "AED 0.00";
+        }
+
+        private void CategoryFilterCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var item = CategoryFilterCombo.SelectedItem as ComboBoxItem;
+            _selectedCategory = item?.Content?.ToString() ?? "All Categories";
+            UpdatePreview();
+        }
+
+        private void DecreasePercent_Click(object sender, RoutedEventArgs e)
+        {
+            if (int.TryParse(PercentText.Text, out int percent) && percent > 0)
             {
-                for (int i = 0; i < sheets.Count; i++)
-                {
-                    if (sheets[i].Id == _preselectedId)
-                    {
-                        SheetComboBox.SelectedIndex = i;
-                        break;
-                    }
-                }
+                PercentText.Text = (percent - 5).ToString();
+                ApplyPercentage();
             }
         }
 
-        private void SheetComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void IncreasePercent_Click(object sender, RoutedEventArgs e)
         {
-            if (SheetComboBox.SelectedItem is Sheet sheet)
+            if (int.TryParse(PercentText.Text, out int percent))
             {
-                PurchasePriceTextBox.Text = sheet.PurchasePrice.ToString("F2");
-                SellPriceTextBox.Text = sheet.SellPrice.ToString("F2");
+                PercentText.Text = (percent + 5).ToString();
+                ApplyPercentage();
             }
         }
 
-        private void Save_Click(object sender, RoutedEventArgs e)
+        private void ApplyPercentage()
+        {
+            if (!int.TryParse(PercentText.Text, out int percent)) return;
+
+            var sheets = SheetStoreService.Instance.GetAllActive().ToList();
+            if (sheets.Count == 0) return;
+
+            var filtered = _selectedCategory == "All Categories"
+                ? sheets
+                : sheets.Where(s => s.Category == _selectedCategory).ToList();
+
+            if (filtered.Count == 0) return;
+
+            decimal avgPrice = filtered.Average(s => s.PurchasePrice);
+            decimal newPrice = avgPrice + (avgPrice * percent / 100);
+            NewPurchasePriceText.Text = newPrice.ToString("N2");
+            UpdatePreview();
+        }
+
+        private void Apply_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                if (SheetComboBox.SelectedItem == null)
+                if (!decimal.TryParse(NewPurchasePriceText.Text, out decimal newPrice))
                 {
-                    MessageBox.Show("Select a sheet", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show("Please enter a valid price!", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
-                if (!decimal.TryParse(PurchasePriceTextBox.Text, out decimal purchasePrice) || purchasePrice < 0)
+                var allSheets = SheetStoreService.Instance.GetAllActive().ToList();
+
+                var sheetsToUpdate = _selectedCategory == "All Categories"
+                    ? allSheets
+                    : allSheets.Where(s => s.Category == _selectedCategory).ToList();
+
+                if (sheetsToUpdate.Count == 0)
                 {
-                    MessageBox.Show("Enter valid purchase price", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    PurchasePriceTextBox.Focus();
+                    MessageBox.Show("No sheets found to update!", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
 
-                if (!decimal.TryParse(SellPriceTextBox.Text, out decimal sellPrice) || sellPrice <= 0)
+                string unit = (PriceUnitCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Sheet";
+                int updated = 0;
+
+                foreach (var sheet in sheetsToUpdate)
                 {
-                    MessageBox.Show("Enter valid sell price", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    SellPriceTextBox.Focus();
-                    return;
+                    decimal finalPrice = newPrice;
+
+                    if (unit == "SQM" && sheet.SquareMeter > 0)
+                        finalPrice = newPrice * (decimal)sheet.SquareMeter;
+                    else if (unit == "Sqft" && sheet.SquareMeter > 0)
+                        finalPrice = newPrice * (decimal)(sheet.SquareMeter * 10.764);
+
+                    sheet.PurchasePrice = Math.Round(finalPrice, 2);
+                    SheetStoreService.Instance.UpdateSheet(sheet);
+                    updated++;
                 }
 
-                var sheet = SheetComboBox.SelectedItem as Sheet;
-                if (sheet == null) return;
-
-                var result = SheetStoreService.Instance.UpdateBothPrices(
-                    sheet.Id,
-                    purchasePrice,
-                    sellPrice,
-                    SupplierTextBox.Text.Trim(),
-                    NotesTextBox.Text.Trim()
-                );
-
-                if (result.Success)
-                {
-                    DialogResult = true;
-                    Close();
-                }
-                else
-                {
-                    MessageBox.Show(result.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+                MessageBox.Show($"Successfully updated {updated} sheets!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                DialogResult = true;
+                Close();
             }
             catch (Exception ex)
             {
@@ -96,7 +140,7 @@ namespace ProGlassAutomation.Views.SheetStore
             }
         }
 
-        private void Cancel_Click(object sender, RoutedEventArgs e)
+        private void Close_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
             Close();

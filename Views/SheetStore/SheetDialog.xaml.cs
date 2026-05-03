@@ -1,145 +1,226 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using ProGlassAutomation.Models;
-using ProGlassAutomation.Services;
 
 namespace ProGlassAutomation.Views.SheetStore
 {
     public partial class SheetDialog : Window
     {
-        public Sheet Sheet { get; private set; }
-        private readonly bool _isEdit;
+        public Sheet NewSheet { get; private set; }
+        public bool IsEditMode { get; set; }
+        public int EditId { get; set; }
 
-        public SheetDialog(Sheet? sheet = null)
+        public SheetDialog()
         {
             InitializeComponent();
-            _isEdit = sheet != null;
-            Sheet = sheet ?? new Sheet();
-
-            if (_isEdit)
-            {
-                HeaderText.Text = "EDIT SHEET";
-                LoadSheetData();
-            }
-            else
-            {
-                HeaderText.Text = "ADD NEW SHEET";
-            }
-
-            DataContext = this;
+            LoadPredefinedData();
+            SetupDefaults();
         }
 
-        private void LoadSheetData()
+        public SheetDialog(Sheet sheet) : this()
         {
-            ThicknessText.Text = Sheet.Thickness;
-            ColorText.Text = Sheet.Color;
-            WidthText.Text = Sheet.Width.ToString();
-            HeightText.Text = Sheet.Height.ToString();
-            PurchasePriceText.Text = Sheet.PurchasePrice.ToString("F2");
-            SellPriceText.Text = Sheet.SellPrice.ToString("F2");
-            SupplierText.Text = Sheet.SupplierName;
-            DescriptionText.Text = Sheet.Description;
+            LoadSheet(sheet);
+        }
 
+        private void LoadPredefinedData()
+        {
+            // Categories (150+)
+            foreach (string c in Sheet.Categories)
+                CategoryComboBox.Items.Add(c);
+            CategoryComboBox.SelectedIndex = 0;
+
+            // Thicknesses (10)
+            foreach (string t in Sheet.Thicknesses)
+                ThicknessComboBox.Items.Add(t);
+            ThicknessComboBox.SelectedIndex = 2; // 4mm
+
+            // Colors (18)
+            ColorComboBox.ItemsSource = Sheet.ColorItems;
+
+            // Sizes (100+)
+            foreach (var size in Sheet.StandardSizes)
+            {
+                if (!WidthComboBox.Items.Contains(size.Width.ToString()))
+                    WidthComboBox.Items.Add(size.Width.ToString());
+                if (!HeightComboBox.Items.Contains(size.Height.ToString()))
+                    HeightComboBox.Items.Add(size.Height.ToString());
+            }
+            WidthComboBox.SelectedIndex = 0;
+            HeightComboBox.SelectedIndex = 0;
+        }
+
+        private void SetupDefaults()
+        {
+            DatePicker.SelectedDate = DateTime.Now;
+            TimeText.Text = DateTime.Now.ToString("HH:mm:ss");
+            ColorComboBox.SelectedIndex = 0;
+
+            TotalStockText.TextChanged += delegate { UpdateBalance(); };
+            UsedSheetsText.TextChanged += delegate { UpdateBalance(); };
+            WidthComboBox.SelectionChanged += delegate { UpdateSqm(); };
+            HeightComboBox.SelectionChanged += delegate { UpdateSqm(); };
+        }
+
+        private void LoadSheet(Sheet sheet)
+        {
+            if (sheet == null) return;
+
+            IsEditMode = true;
+            EditId = sheet.Id;
+            HeaderText.Text = "EDIT SHEET";
+
+            // Category
             for (int i = 0; i < CategoryComboBox.Items.Count; i++)
             {
-                if (CategoryComboBox.Items[i] is ComboBoxItem item &&
-                    item.Content?.ToString() == Sheet.Category)
+                if (CategoryComboBox.Items[i].ToString() == sheet.Category)
                 {
                     CategoryComboBox.SelectedIndex = i;
                     break;
                 }
             }
+
+            // Thickness
+            for (int i = 0; i < ThicknessComboBox.Items.Count; i++)
+            {
+                if (ThicknessComboBox.Items[i].ToString() == sheet.Thickness)
+                {
+                    ThicknessComboBox.SelectedIndex = i;
+                    break;
+                }
+            }
+
+            // Color
+            for (int i = 0; i < Sheet.ColorItems.Count; i++)
+            {
+                if (Sheet.ColorItems[i].Name == sheet.Color)
+                {
+                    ColorComboBox.SelectedIndex = i;
+                    break;
+                }
+            }
+
+            // Width
+            for (int i = 0; i < WidthComboBox.Items.Count; i++)
+            {
+                if (WidthComboBox.Items[i].ToString() == sheet.Width.ToString())
+                {
+                    WidthComboBox.SelectedIndex = i;
+                    break;
+                }
+            }
+
+            // Height
+            for (int i = 0; i < HeightComboBox.Items.Count; i++)
+            {
+                if (HeightComboBox.Items[i].ToString() == sheet.Height.ToString())
+                {
+                    HeightComboBox.SelectedIndex = i;
+                    break;
+                }
+            }
+
+            // Other fields
+            PurchasePriceText.Text = sheet.PurchasePrice.ToString();
+            SellPriceText.Text = sheet.SellPrice.ToString();
+            TotalStockText.Text = sheet.TotalStock.ToString();
+            UsedSheetsText.Text = sheet.UsedSheets.ToString();
+            SupplierText.Text = sheet.Supplier ?? "";
+            DescriptionText.Text = sheet.Description ?? "";
+            DatePicker.SelectedDate = sheet.CreatedDate;
+            TimeText.Text = sheet.CreatedDate.ToString("HH:mm:ss");
+
+            UpdateBalance();
+            UpdateSqm();
         }
 
-        private List<string> ValidateForm()
+        private void UpdateSqm()
         {
-            var errors = new List<string>();
+            int w = 0, h = 0;
+            int.TryParse(WidthComboBox.SelectedItem?.ToString(), out w);
+            int.TryParse(HeightComboBox.SelectedItem?.ToString(), out h);
+            if (w > 0 && h > 0)
+                SqmText.Text = Math.Round(w * h / 1000000.0, 2).ToString("N2");
+        }
 
-            if (string.IsNullOrWhiteSpace(ThicknessText.Text))
-                errors.Add("• Thickness is required");
-
-            if (string.IsNullOrWhiteSpace(ColorText.Text))
-                errors.Add("• Color is required");
-
-            if (CategoryComboBox.SelectedItem == null)
-                errors.Add("• Series is required");
-
-            if (!decimal.TryParse(WidthText.Text, out decimal width) || width <= 0)
-                errors.Add("• Invalid width");
-
-            if (!decimal.TryParse(HeightText.Text, out decimal height) || height <= 0)
-                errors.Add("• Invalid height");
-
-            if (!decimal.TryParse(PurchasePriceText.Text, out decimal purchasePrice) || purchasePrice < 0)
-                errors.Add("• Invalid purchase price");
-
-            if (!decimal.TryParse(SellPriceText.Text, out decimal sellPrice) || sellPrice < 0)
-                errors.Add("• Invalid sell price");
-
-            return errors;
+        private void UpdateBalance()
+        {
+            int total = 0, used = 0;
+            int.TryParse(TotalStockText.Text, out total);
+            int.TryParse(UsedSheetsText.Text, out used);
+            BalanceText.Text = (total - used).ToString();
         }
 
         private void Save_Click(object sender, RoutedEventArgs e)
         {
-            var errors = ValidateForm();
-            if (errors.Count > 0)
-            {
-                MessageBox.Show(string.Join("\n", errors), "Validation Errors",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
             try
             {
-                string category = "";
-                if (CategoryComboBox.SelectedItem is ComboBoxItem selectedItem)
+                if (string.IsNullOrWhiteSpace(ThicknessComboBox.Text))
                 {
-                    category = selectedItem.Content?.ToString() ?? "";
+                    MessageBox.Show("Thickness is required!");
+                    return;
                 }
 
-                decimal width = decimal.Parse(WidthText.Text.Trim());
-                decimal height = decimal.Parse(HeightText.Text.Trim());
-                decimal purchasePrice = decimal.Parse(PurchasePriceText.Text.Trim());
-                decimal sellPrice = decimal.Parse(SellPriceText.Text.Trim());
-
-                Sheet.Thickness = ThicknessText.Text.Trim();
-                Sheet.Color = ColorText.Text.Trim();
-                Sheet.Category = category;
-                Sheet.Width = width;
-                Sheet.Height = height;
-                Sheet.PurchasePrice = purchasePrice;
-                Sheet.SellPrice = sellPrice;
-                Sheet.SupplierName = SupplierText.Text.Trim();
-                Sheet.Description = DescriptionText.Text.Trim();
-                Sheet.PricePerSqft = sellPrice;
-                Sheet.PricePerSqmeter = sellPrice * 10.764m;
-
-                (bool Success, string Message) result;
-
-                if (_isEdit)
+                // Get color
+                string colorName = "Clear";
+                string colorHex = "#E8F4F8";
+                if (ColorComboBox.SelectedItem is GlassColorItem selectedColor)
                 {
-                    result = SheetStoreService.Instance.UpdateSheet(Sheet);
-                }
-                else
-                {
-                    result = SheetStoreService.Instance.AddSheet(Sheet);
+                    colorName = selectedColor.Name;
+                    colorHex = selectedColor.Hex;
                 }
 
-                if (result.Success)
+                // Get dimensions
+                int width = 0, height = 0;
+                int.TryParse(WidthComboBox.SelectedItem?.ToString(), out width);
+                int.TryParse(HeightComboBox.SelectedItem?.ToString(), out height);
+
+                // Parse values
+                int stock = 0, used = 0;
+                decimal purchase = 0, sell = 0;
+                int.TryParse(TotalStockText.Text, out stock);
+                int.TryParse(UsedSheetsText.Text, out used);
+                decimal.TryParse(PurchasePriceText.Text, out purchase);
+                decimal.TryParse(SellPriceText.Text, out sell);
+
+                // Calculate SQM
+                double sqm = (width > 0 && height > 0) ? Math.Round(width * height / 1000000.0, 2) : 0;
+
+                // Date
+                DateTime date = DatePicker.SelectedDate ?? DateTime.Now;
+                if (TimeSpan.TryParse(TimeText.Text, out TimeSpan time))
+                    date = date.Date + time;
+
+                NewSheet = new Sheet
                 {
-                    DialogResult = true;
-                    Close();
-                }
-                else
-                {
-                    MessageBox.Show(result.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+                    Id = IsEditMode ? EditId : 0,
+                    SrNo = 0,
+                    Category = CategoryComboBox.SelectedItem?.ToString() ?? "HD Clear",
+                    Thickness = ThicknessComboBox.SelectedItem?.ToString() ?? "4mm",
+                    Color = colorName,
+                    ColorHex = colorHex,
+                    Width = width,
+                    Height = height,
+                    SquareMeter = sqm,
+                    PurchasePrice = purchase,
+                    SellPrice = sell,
+                    TotalStock = stock,
+                    UsedSheets = used,
+                    BalanceSheets = stock - used,
+                    IsActive = true,
+                    Supplier = SupplierText.Text,
+                    SupplierName = SupplierText.Text,
+                    Description = DescriptionText.Text,
+                    CreatedDate = date,
+                    LatestPurchaseDate = date
+                };
+
+                DialogResult = true;
+                Close();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Error: " + ex.Message);
             }
         }
 

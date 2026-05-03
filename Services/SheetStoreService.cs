@@ -1,437 +1,259 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Text.Json;
-using System.Threading.Tasks;
+using System.Xml.Linq;
 using ProGlassAutomation.Models;
 
 namespace ProGlassAutomation.Services
 {
     public class SheetStoreService
     {
-        private static SheetStoreService? _instance;
-        public static SheetStoreService Instance => _instance ??= new SheetStoreService();
+        private static SheetStoreService _instance;
+        public static SheetStoreService Instance => _instance ?? (_instance = new SheetStoreService());
 
-        private readonly string _dataFile;
-        private List<Sheet> _sheets;
+        private readonly string _filePath = "sheets.xml";
+        private ObservableCollection<Sheet> _sheets;
 
         private SheetStoreService()
         {
-            _dataFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "sheets.json");
-            _sheets = LoadSheets();
+            _sheets = LoadFromFile();
         }
 
-        // ==================== GET METHODS ====================
-
-        public List<Sheet> GetAllSheets()
+        // ==================== GET ====================
+        public ObservableCollection<Sheet> GetAllActive()
         {
-            return _sheets.Where(s => s.IsActive).OrderBy(s => s.Thickness).ThenBy(s => s.Color).ToList();
+            return new ObservableCollection<Sheet>(_sheets.Where(s => s.IsActive).OrderBy(s => s.SrNo));
         }
 
-        public Sheet? GetSheet(string id)
+        public Sheet GetById(int id)
         {
-            return _sheets.FirstOrDefault(s => s.Id == id && s.IsActive);
+            foreach (var s in _sheets)
+                if (s.Id == id) return s;
+            return null;
         }
 
-        public decimal GetPrice(string thickness, string color)
+        public ObservableCollection<Sheet> Search(string keyword)
         {
-            var sheet = _sheets.FirstOrDefault(s =>
-                s.IsActive && s.Thickness == thickness &&
-                s.Color.ToLower() == color.ToLower());
-            return sheet?.SellPrice ?? 0;
+            if (string.IsNullOrWhiteSpace(keyword)) return GetAllActive();
+            keyword = keyword.ToLower();
+            return new ObservableCollection<Sheet>(_sheets.Where(s => s.IsActive && (
+                s.Category.ToLower().Contains(keyword) ||
+                s.Thickness.ToLower().Contains(keyword) ||
+                s.Color.ToLower().Contains(keyword) ||
+                s.Supplier.ToLower().Contains(keyword))));
         }
 
-        public decimal GetPurchasePrice(string thickness, string color)
+        public ObservableCollection<Sheet> GetByCategory(string category)
         {
-            var sheet = _sheets.FirstOrDefault(s =>
-                s.IsActive && s.Thickness == thickness &&
-                s.Color.ToLower() == color.ToLower());
-            return sheet?.PurchasePrice ?? 0;
+            return new ObservableCollection<Sheet>(_sheets.Where(s => s.IsActive && s.Category == category));
         }
 
-        public List<string> GetAllThicknesses()
+        public ObservableCollection<string> GetCategories()
         {
-            return _sheets.Where(s => s.IsActive).Select(s => s.Thickness).Distinct().OrderBy(t => t).ToList();
+            return new ObservableCollection<string>(_sheets.Where(s => s.IsActive).Select(s => s.Category).Distinct().OrderBy(c => c));
         }
 
-        public List<string> GetAllColors()
+        // ==================== ADD ====================
+        public void AddSheet(Sheet sheet)
         {
-            return _sheets.Where(s => s.IsActive).Select(s => s.Color).Distinct().OrderBy(c => c).ToList();
+            sheet.Id = _sheets.Count > 0 ? _sheets.Max(s => s.Id) + 1 : 1;
+            sheet.SrNo = _sheets.Count > 0 ? _sheets.Max(s => s.SrNo) + 1 : 1;
+            sheet.CreatedDate = DateTime.Now;
+            sheet.BalanceSheets = sheet.TotalStock;
+            _sheets.Add(sheet);
+            SaveToFile();
         }
 
-        public List<string> GetAllCategories()
+        // ==================== UPDATE ====================
+        public void UpdateSheet(Sheet sheet)
         {
-            return _sheets.Where(s => s.IsActive).Select(s => s.Category).Distinct().OrderBy(c => c).ToList();
+            for (int i = 0; i < _sheets.Count; i++)
+            {
+                if (_sheets[i].Id == sheet.Id)
+                {
+                    _sheets[i] = sheet;
+                    SaveToFile();
+                    return;
+                }
+            }
         }
 
-        public List<PriceHistory> GetPurchaseHistory(string id)
+        // ==================== DELETE ====================
+        public void DeleteSheet(int id)
         {
-            var sheet = _sheets.FirstOrDefault(s => s.Id == id);
+            for (int i = 0; i < _sheets.Count; i++)
+            {
+                if (_sheets[i].Id == id)
+                {
+                    _sheets[i].IsActive = false;
+                    SaveToFile();
+                    return;
+                }
+            }
+        }
+
+        // ==================== PRICE ====================
+        public void UpdatePurchasePrice(int id, decimal price)
+        {
+            var sheet = GetById(id);
             if (sheet != null)
             {
-                return sheet.PriceHistory.OrderByDescending(p => p.Date).ToList();
-            }
-            return new List<PriceHistory>();
-        }
-
-        public List<Sheet> SearchSheets(string? searchTerm, string? thickness, string? color, string? category)
-        {
-            var query = _sheets.Where(s => s.IsActive);
-
-            if (!string.IsNullOrEmpty(searchTerm))
-                query = query.Where(s =>
-                    s.Thickness.Contains(searchTerm) ||
-                    s.Color.ToLower().Contains(searchTerm.ToLower()) ||
-                    s.Category.ToLower().Contains(searchTerm.ToLower()));
-
-            if (!string.IsNullOrEmpty(thickness))
-                query = query.Where(s => s.Thickness == thickness);
-
-            if (!string.IsNullOrEmpty(color))
-                query = query.Where(s => s.Color.ToLower().Contains(color.ToLower()));
-
-            if (!string.IsNullOrEmpty(category))
-                query = query.Where(s => s.Category.ToLower().Contains(category.ToLower()));
-
-            return query.OrderBy(s => s.Thickness).ThenBy(s => s.Color).ToList();
-        }
-
-        // ==================== CRUD OPERATIONS ====================
-
-        public (bool Success, string Message) AddSheet(Sheet sheet)
-        {
-            try
-            {
-                sheet.Id = Guid.NewGuid().ToString();
-                sheet.CreatedDate = DateTime.Now;
-                sheet.IsActive = true;
-                _sheets.Add(sheet);
-                SaveSheets();
-                return (true, "Sheet added successfully");
-            }
-            catch (Exception ex)
-            {
-                return (false, "Error: " + ex.Message);
+                sheet.PurchasePrice = price;
+                SaveToFile();
             }
         }
 
-        public (bool Success, string Message) UpdateSheet(Sheet sheet)
+        public void UpdatePurchasePriceByCategory(string category, decimal price)
         {
-            try
+            foreach (var sheet in _sheets.Where(s => s.IsActive && s.Category == category))
+                sheet.PurchasePrice = price;
+            SaveToFile();
+        }
+
+        public void BulkUpdateByCategory(string category, decimal purchasePrice, decimal sellPrice)
+        {
+            foreach (var sheet in _sheets.Where(s => s.IsActive && s.Category == category))
             {
-                var existing = _sheets.FirstOrDefault(s => s.Id == sheet.Id);
-                if (existing != null)
+                sheet.PurchasePrice = purchasePrice;
+                sheet.SellPrice = sellPrice;
+            }
+            SaveToFile();
+        }
+
+        // ==================== STOCK ====================
+        public void RecordUsage(int id, int used)
+        {
+            var sheet = GetById(id);
+            if (sheet != null)
+            {
+                sheet.UsedSheets += used;
+                sheet.BalanceSheets = sheet.TotalStock - sheet.UsedSheets;
+                SaveToFile();
+            }
+        }
+
+        // ==================== EXPORT / IMPORT ====================
+        public void ExportToExcel(string filePath)
+        {
+            var lines = new List<string> { "SrNo,Category,Thickness,Color,Width,Height,SQM,Purchase,Sell,Stock,Used,Balance,Supplier,Date" };
+            foreach (var s in _sheets.Where(s => s.IsActive))
+            {
+                lines.Add($"{s.SrNo},{s.Category},{s.Thickness},{s.Color},{s.Width},{s.Height},{s.SquareMeter},{s.PurchasePrice},{s.SellPrice},{s.TotalStock},{s.UsedSheets},{s.BalanceSheets},{s.Supplier},{s.CreatedDate}");
+            }
+            File.WriteAllLines(filePath, lines);
+        }
+
+        public int ImportFromExcel(string filePath)
+        {
+            if (!File.Exists(filePath)) return 0;
+            var lines = File.ReadAllLines(filePath);
+            int count = 0;
+            for (int i = 1; i < lines.Length; i++)
+            {
+                var parts = lines[i].Split(',');
+                if (parts.Length >= 10)
                 {
-                    existing.Thickness = sheet.Thickness;
-                    existing.Color = sheet.Color;
-                    existing.Category = sheet.Category;
-                    existing.Width = sheet.Width;
-                    existing.Height = sheet.Height;
-                    existing.PurchasePrice = sheet.PurchasePrice;
-                    existing.SellPrice = sheet.SellPrice;
-                    existing.LatestPurchaseDate = sheet.LatestPurchaseDate;
-                    existing.PricePerSqft = sheet.PricePerSqft;
-                    existing.PricePerSqmeter = sheet.PricePerSqmeter;
-                    existing.Description = sheet.Description;
-                    SaveSheets();
-                    return (true, "Sheet updated successfully");
-                }
-                return (false, "Sheet not found");
-            }
-            catch (Exception ex)
-            {
-                return (false, "Error: " + ex.Message);
-            }
-        }
-
-        public (bool Success, string Message) DeleteSheet(string id)
-        {
-            try
-            {
-                var sheet = _sheets.FirstOrDefault(s => s.Id == id);
-                if (sheet != null)
-                {
-                    sheet.IsActive = false;
-                    SaveSheets();
-                    return (true, "Sheet deleted successfully");
-                }
-                return (false, "Sheet not found");
-            }
-            catch (Exception ex)
-            {
-                return (false, "Error: " + ex.Message);
-            }
-        }
-
-        // ==================== PRICE UPDATE METHODS ====================
-
-        public (bool Success, string Message) UpdatePurchasePrice(string id, decimal purchasePrice, string supplier = "", string notes = "")
-        {
-            try
-            {
-                var sheet = _sheets.FirstOrDefault(s => s.Id == id);
-                if (sheet != null)
-                {
-                    var history = new PriceHistory
+                    var sheet = new Sheet
                     {
-                        Date = DateTime.Now,
-                        PurchasePrice = purchasePrice,
-                        SellingPrice = sheet.SellPrice,
-                        SupplierName = supplier,
-                        Notes = notes
+                        Category = parts[1],
+                        Thickness = parts[2],
+                        Color = parts[3],
+                        Width = int.TryParse(parts[4], out int w) ? w : 0,
+                        Height = int.TryParse(parts[5], out int h) ? h : 0,
+                        PurchasePrice = decimal.TryParse(parts[7], out decimal p) ? p : 0,
+                        SellPrice = decimal.TryParse(parts[8], out decimal s) ? s : 0,
+                        TotalStock = int.TryParse(parts[9], out int t) ? t : 0,
+                        IsActive = true,
+                        CreatedDate = DateTime.Now
                     };
-                    sheet.PriceHistory.Add(history);
-
-                    sheet.PurchasePrice = purchasePrice;
-                    sheet.LatestPurchaseDate = DateTime.Now;
-                    sheet.LastPurchasePrice = purchasePrice;
-                    sheet.LastPurchaseDate = DateTime.Now;
-                    sheet.SupplierName = supplier;
-
-                    SaveSheets();
-                    return (true, "Purchase price updated successfully");
+                    sheet.SquareMeter = Math.Round(sheet.Width * sheet.Height / 1000000.0, 2);
+                    sheet.BalanceSheets = sheet.TotalStock;
+                    AddSheet(sheet);
+                    count++;
                 }
-                return (false, "Sheet not found");
             }
-            catch (Exception ex)
-            {
-                return (false, "Error: " + ex.Message);
-            }
+            return count;
         }
 
-        public (bool Success, string Message) UpdateSellingPrice(string id, decimal sellingPrice)
+        // ==================== FILE LOAD ====================
+        private ObservableCollection<Sheet> LoadFromFile()
         {
             try
             {
-                var sheet = _sheets.FirstOrDefault(s => s.Id == id);
-                if (sheet != null)
+                if (!File.Exists(_filePath)) return new ObservableCollection<Sheet>();
+                var doc = XDocument.Load(_filePath);
+                var sheets = new ObservableCollection<Sheet>();
+                foreach (var el in doc.Root.Elements("Sheet"))
                 {
-                    sheet.SellPrice = sellingPrice;
-                    sheet.PricePerSqft = sellingPrice;
-                    sheet.PricePerSqmeter = sellingPrice * 10.764m;
-
-                    if (sheet.PriceHistory.Count > 0)
+                    sheets.Add(new Sheet
                     {
-                        var latest = sheet.PriceHistory.OrderByDescending(h => h.Date).First();
-                        latest.SellingPrice = sellingPrice;
-                    }
-
-                    SaveSheets();
-                    return (true, "Selling price updated successfully");
+                        Id = int.Parse(el.Attribute("Id")?.Value ?? "0"),
+                        SrNo = int.Parse(el.Attribute("SrNo")?.Value ?? "0"),
+                        Category = el.Attribute("Category")?.Value ?? "",
+                        Thickness = el.Attribute("Thickness")?.Value ?? "",
+                        Color = el.Attribute("Color")?.Value ?? "",
+                        ColorHex = el.Attribute("ColorHex")?.Value ?? "#E8F4F8",
+                        Width = int.Parse(el.Attribute("Width")?.Value ?? "0"),
+                        Height = int.Parse(el.Attribute("Height")?.Value ?? "0"),
+                        SquareMeter = double.Parse(el.Attribute("SquareMeter")?.Value ?? "0"),
+                        PurchasePrice = decimal.Parse(el.Attribute("PurchasePrice")?.Value ?? "0"),
+                        SellPrice = decimal.Parse(el.Attribute("SellPrice")?.Value ?? "0"),
+                        TotalStock = int.Parse(el.Attribute("TotalStock")?.Value ?? "0"),
+                        UsedSheets = int.Parse(el.Attribute("UsedSheets")?.Value ?? "0"),
+                        BalanceSheets = int.Parse(el.Attribute("BalanceSheets")?.Value ?? "0"),
+                        IsActive = bool.Parse(el.Attribute("IsActive")?.Value ?? "true"),
+                        Supplier = el.Attribute("Supplier")?.Value ?? "",
+                        SupplierName = el.Attribute("SupplierName")?.Value ?? "",
+                        Description = el.Attribute("Description")?.Value ?? "",
+                        CreatedDate = DateTime.Parse(el.Attribute("CreatedDate")?.Value ?? DateTime.Now.ToString()),
+                        LatestPurchaseDate = !string.IsNullOrEmpty(el.Attribute("LatestPurchaseDate")?.Value)
+                            ? DateTime.Parse(el.Attribute("LatestPurchaseDate").Value) : (DateTime?)null
+                    });
                 }
-                return (false, "Sheet not found");
+                return sheets;
             }
-            catch (Exception ex)
+            catch
             {
-                return (false, "Error: " + ex.Message);
+                return new ObservableCollection<Sheet>();
             }
         }
 
-        public (bool Success, string Message) UpdateBothPrices(string id, decimal purchasePrice, decimal sellingPrice, string supplier = "", string notes = "")
+        // ==================== FILE SAVE ====================
+        private void SaveToFile()
         {
             try
             {
-                var sheet = _sheets.FirstOrDefault(s => s.Id == id);
-                if (sheet != null)
+                var doc = new XDocument(new XElement("Sheets"));
+                foreach (var sheet in _sheets)
                 {
-                    var history = new PriceHistory
-                    {
-                        Date = DateTime.Now,
-                        PurchasePrice = purchasePrice,
-                        SellingPrice = sellingPrice,
-                        SupplierName = supplier,
-                        Notes = notes
-                    };
-                    sheet.PriceHistory.Add(history);
-
-                    sheet.PurchasePrice = purchasePrice;
-                    sheet.SellPrice = sellingPrice;
-                    sheet.PricePerSqft = sellingPrice;
-                    sheet.PricePerSqmeter = sellingPrice * 10.764m;
-                    sheet.LatestPurchaseDate = DateTime.Now;
-                    sheet.LastPurchasePrice = purchasePrice;
-                    sheet.LastPurchaseDate = DateTime.Now;
-                    sheet.SupplierName = supplier;
-
-                    SaveSheets();
-                    return (true, "Prices updated successfully");
+                    doc.Root.Add(new XElement("Sheet",
+                        new XAttribute("Id", sheet.Id),
+                        new XAttribute("SrNo", sheet.SrNo),
+                        new XAttribute("Category", sheet.Category ?? ""),
+                        new XAttribute("Thickness", sheet.Thickness ?? ""),
+                        new XAttribute("Color", sheet.Color ?? ""),
+                        new XAttribute("ColorHex", sheet.ColorHex ?? "#E8F4F8"),
+                        new XAttribute("Width", sheet.Width),
+                        new XAttribute("Height", sheet.Height),
+                        new XAttribute("SquareMeter", sheet.SquareMeter),
+                        new XAttribute("PurchasePrice", sheet.PurchasePrice),
+                        new XAttribute("SellPrice", sheet.SellPrice),
+                        new XAttribute("TotalStock", sheet.TotalStock),
+                        new XAttribute("UsedSheets", sheet.UsedSheets),
+                        new XAttribute("BalanceSheets", sheet.BalanceSheets),
+                        new XAttribute("IsActive", sheet.IsActive),
+                        new XAttribute("Supplier", sheet.Supplier ?? ""),
+                        new XAttribute("SupplierName", sheet.SupplierName ?? ""),
+                        new XAttribute("Description", sheet.Description ?? ""),
+                        new XAttribute("CreatedDate", sheet.CreatedDate),
+                        new XAttribute("LatestPurchaseDate", sheet.LatestPurchaseDate?.ToString() ?? "")
+                    ));
                 }
-                return (false, "Sheet not found");
-            }
-            catch (Exception ex)
-            {
-                return (false, "Error: " + ex.Message);
-            }
-        }
-
-        // ==================== EXCEL METHODS ====================
-
-        public async Task<(bool Success, string Message)> ExportToExcelAsync(string filePath)
-        {
-            try
-            {
-                await Task.Run(() =>
-                {
-                    var sheets = GetAllSheets();
-                    var lines = new List<string>
-                    {
-                        "Thickness,Color,Category,Width,Height,PurchasePrice,SellPrice,Supplier,LatestPurchaseDate,Description"
-                    };
-
-                    foreach (var sheet in sheets)
-                    {
-                        lines.Add($"\"{sheet.Thickness}\",\"{sheet.Color}\",\"{sheet.Category}\",{sheet.Width},{sheet.Height},{sheet.PurchasePrice},{sheet.SellPrice},\"{sheet.SupplierName}\",\"{sheet.LatestPurchaseDate:yyyy-MM-dd}\",\"{sheet.Description}\"");
-                    }
-
-                    File.WriteAllLines(filePath, lines);
-                });
-
-                return (true, "Exported successfully to " + filePath);
-            }
-            catch (Exception ex)
-            {
-                return (false, "Export error: " + ex.Message);
-            }
-        }
-
-        public async Task<(bool Success, string Message)> ImportFromExcelAsync(string filePath)
-        {
-            try
-            {
-                var result = await Task.Run<(bool Success, string Message)>(() =>
-                {
-                    try
-                    {
-                        var lines = File.ReadAllLines(filePath);
-                        if (lines.Length <= 1)
-                            return (false, "No data found in file");
-
-                        int imported = 0;
-                        for (int i = 1; i < lines.Length; i++)
-                        {
-                            var parts = ParseCSVLine(lines[i]);
-                            if (parts.Length >= 7)
-                            {
-                                var sheet = new Sheet
-                                {
-                                    Thickness = parts[0].Trim('"'),
-                                    Color = parts[1].Trim('"'),
-                                    Category = parts[2].Trim('"'),
-                                    Width = decimal.TryParse(parts[3], out var w) ? w : 2440,
-                                    Height = decimal.TryParse(parts[4], out var h) ? h : 1830,
-                                    PurchasePrice = decimal.TryParse(parts[5], out var p) ? p : 0,
-                                    SellPrice = decimal.TryParse(parts[6], out var s) ? s : 0,
-                                    SupplierName = parts.Length > 7 ? parts[7].Trim('"') : "",
-                                    Description = parts.Length > 9 ? parts[9].Trim('"') : ""
-                                };
-
-                                if (!string.IsNullOrEmpty(sheet.Thickness) && !string.IsNullOrEmpty(sheet.Color))
-                                {
-                                    var existing = _sheets.FirstOrDefault(x =>
-                                        x.IsActive && x.Thickness == sheet.Thickness && x.Color == sheet.Color);
-
-                                    if (existing != null)
-                                    {
-                                        existing.PurchasePrice = sheet.PurchasePrice;
-                                        existing.SellPrice = sheet.SellPrice;
-                                        existing.SupplierName = sheet.SupplierName;
-                                        existing.Description = sheet.Description;
-                                    }
-                                    else
-                                    {
-                                        AddSheet(sheet);
-                                    }
-                                    imported++;
-                                }
-                            }
-                        }
-
-                        SaveSheets();
-                        return (true, $"Imported {imported} sheets successfully");
-                    }
-                    catch (Exception ex)
-                    {
-                        return (false, "Import error: " + ex.Message);
-                    }
-                });
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                return (false, "Import error: " + ex.Message);
-            }
-        }
-
-        private string[] ParseCSVLine(string line)
-        {
-            var result = new List<string>();
-            var current = "";
-            var inQuotes = false;
-
-            foreach (var c in line)
-            {
-                if (c == '"')
-                {
-                    inQuotes = !inQuotes;
-                }
-                else if (c == ',' && !inQuotes)
-                {
-                    result.Add(current);
-                    current = "";
-                }
-                else
-                {
-                    current += c;
-                }
-            }
-            result.Add(current);
-            return result.ToArray();
-        }
-
-        // ==================== LOAD / SAVE ====================
-
-        private List<Sheet> LoadSheets()
-        {
-            try
-            {
-                if (File.Exists(_dataFile))
-                {
-                    string json = File.ReadAllText(_dataFile);
-                    var sheets = JsonSerializer.Deserialize<List<Sheet>>(json);
-                    if (sheets != null && sheets.Count > 0) return sheets;
-                }
+                doc.Save(_filePath);
             }
             catch { }
-            return GetDefaultSheets();
-        }
-
-        private void SaveSheets()
-        {
-            try
-            {
-                string json = JsonSerializer.Serialize(_sheets, new JsonSerializerOptions { WriteIndented = true });
-                File.WriteAllText(_dataFile, json);
-            }
-            catch { }
-        }
-
-        private List<Sheet> GetDefaultSheets()
-        {
-            return new List<Sheet>
-            {
-                new Sheet { Thickness = "4", Color = "Clear", Category = "Clear Glass", Width = 2440, Height = 1830, PurchasePrice = 100, SellPrice = 120 },
-                new Sheet { Thickness = "5", Color = "Clear", Category = "Clear Glass", Width = 2440, Height = 1830, PurchasePrice = 110, SellPrice = 130 },
-                new Sheet { Thickness = "6", Color = "Clear", Category = "Clear Glass", Width = 2440, Height = 1830, PurchasePrice = 130, SellPrice = 150 },
-                new Sheet { Thickness = "8", Color = "Clear", Category = "Clear Glass", Width = 2440, Height = 1830, PurchasePrice = 160, SellPrice = 180 },
-                new Sheet { Thickness = "4", Color = "Grey", Category = "Tinted Glass", Width = 2440, Height = 1830, PurchasePrice = 110, SellPrice = 130 },
-                new Sheet { Thickness = "6", Color = "Grey", Category = "Tinted Glass", Width = 2440, Height = 1830, PurchasePrice = 140, SellPrice = 160 },
-                new Sheet { Thickness = "4", Color = "Bronze", Category = "Tinted Glass", Width = 2440, Height = 1830, PurchasePrice = 110, SellPrice = 130 },
-                new Sheet { Thickness = "6", Color = "Bronze", Category = "Tinted Glass", Width = 2440, Height = 1830, PurchasePrice = 140, SellPrice = 160 },
-                new Sheet { Thickness = "4", Color = "Green", Category = "Tinted Glass", Width = 2440, Height = 1830, PurchasePrice = 120, SellPrice = 140 },
-                new Sheet { Thickness = "6", Color = "Green", Category = "Tinted Glass", Width = 2440, Height = 1830, PurchasePrice = 150, SellPrice = 170 },
-            };
         }
     }
 }

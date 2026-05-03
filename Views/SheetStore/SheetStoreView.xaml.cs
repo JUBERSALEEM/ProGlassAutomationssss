@@ -1,8 +1,8 @@
 ﻿using System;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using Microsoft.Win32;
 using ProGlassAutomation.Models;
 using ProGlassAutomation.Services;
 
@@ -10,159 +10,239 @@ namespace ProGlassAutomation.Views.SheetStore
 {
     public partial class SheetStoreView : UserControl
     {
+        public ObservableCollection<Sheet> AllSheets { get; set; }
+        public ObservableCollection<Sheet> FilteredSheets { get; set; }
+        public ObservableCollection<string> Categories { get; set; }
+
         public SheetStoreView()
         {
             InitializeComponent();
-            LoadSheets();
-            UpdateStats();
+            LoadData();
         }
 
-        private void LoadSheets()
+        private void LoadData()
         {
-            var sheets = SheetStoreService.Instance.GetAllSheets();
-            SheetGrid.ItemsSource = sheets;
+            try
+            {
+                AllSheets = SheetStoreService.Instance.GetAllActive();
+                FilteredSheets = new ObservableCollection<Sheet>(AllSheets);
+                Categories = SheetStoreService.Instance.GetCategories();
+                SheetGrid.ItemsSource = FilteredSheets;
+                CategoryListBox.ItemsSource = Categories;
+                UpdateStats();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading data: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void UpdateStats()
         {
-            TotalSheetsText.Text = SheetStoreService.Instance.GetAllSheets().Count.ToString();
-            ThicknessCountText.Text = SheetStoreService.Instance.GetAllThicknesses().Count.ToString();
-            ColorsCountText.Text = SheetStoreService.Instance.GetAllColors().Count.ToString();
+            TotalSheetsText.Text = FilteredSheets.Count.ToString();
+            TotalStockText.Text = FilteredSheets.Sum(s => s.TotalStock).ToString();
+            UsedSheetsText.Text = FilteredSheets.Sum(s => s.UsedSheets).ToString();
+            BalanceSheetsText.Text = FilteredSheets.Sum(s => s.BalanceSheets).ToString();
+            ShowingCountText.Text = FilteredSheets.Count.ToString();
+            TotalEntriesText.Text = AllSheets.Count.ToString();
+            TotalAllText.Text = AllSheets.Count.ToString();
 
-            var lastUpdate = SheetStoreService.Instance.GetAllSheets()
-                .Where(s => s.LatestPurchaseDate > DateTime.MinValue)
-                .OrderByDescending(s => s.LatestPurchaseDate)
-                .FirstOrDefault();
+            var lastPurchase = FilteredSheets.Where(s => s.LatestPurchaseDate.HasValue).OrderByDescending(s => s.LatestPurchaseDate).FirstOrDefault();
+            LastPurchaseText.Text = lastPurchase != null ? lastPurchase.Thickness + " " + lastPurchase.Color : "-";
 
-            LastUpdateText.Text = lastUpdate?.LatestPurchaseDate.ToString("dd-MMM") ?? "None";
+            var lastUpdate = FilteredSheets.OrderByDescending(s => s.CreatedDate).FirstOrDefault();
+            LastUpdateText.Text = lastUpdate?.DisplayDateTime ?? "-";
+        }
+
+        private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            try
+            {
+                string search = SearchBox.Text?.ToLower() ?? "";
+                FilteredSheets = string.IsNullOrWhiteSpace(search)
+                    ? new ObservableCollection<Sheet>(AllSheets)
+                    : new ObservableCollection<Sheet>(AllSheets.Where(s =>
+                        s.Thickness.ToLower().Contains(search) ||
+                        s.Color.ToLower().Contains(search) ||
+                        s.Category.ToLower().Contains(search) ||
+                        s.Supplier.ToLower().Contains(search)));
+                SheetGrid.ItemsSource = FilteredSheets;
+                UpdateStats();
+            }
+            catch { }
+        }
+
+        private void CategoryListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            try
+            {
+                string cat = CategoryListBox.SelectedItem?.ToString() ?? "";
+                if (string.IsNullOrEmpty(cat)) return;
+                FilteredSheets = new ObservableCollection<Sheet>(AllSheets.Where(s => s.Category == cat));
+                SheetGrid.ItemsSource = FilteredSheets;
+                UpdateStats();
+            }
+            catch { }
+        }
+
+        private void ClearCategoryFilter_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                CategoryListBox.SelectedItem = null;
+                FilteredSheets = new ObservableCollection<Sheet>(AllSheets);
+                SheetGrid.ItemsSource = FilteredSheets;
+                UpdateStats();
+            }
+            catch { }
         }
 
         private void AddSheet_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new SheetDialog(null);
-            dialog.Owner = Window.GetWindow(this);
-            if (dialog.ShowDialog() == true)
+            try
             {
-                var result = SheetStoreService.Instance.AddSheet(dialog.Sheet);
-                if (result.Success)
+                var dialog = new SheetDialog(null) { Owner = Window.GetWindow(this) };
+                if (dialog.ShowDialog() == true)
                 {
-                    LoadSheets();
-                    UpdateStats();
+                    SheetStoreService.Instance.AddSheet(dialog.NewSheet);
+                    LoadData();
                 }
-                else
-                {
-                    MessageBox.Show(result.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
         private void EditSheet_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button btn && btn.Tag is string id)
+            try
             {
-                var sheet = SheetStoreService.Instance.GetSheet(id);
-                if (sheet != null)
+                if ((sender as Button)?.Tag is int id)
                 {
-                    var dialog = new SheetDialog(sheet);
-                    dialog.Owner = Window.GetWindow(this);
-                    if (dialog.ShowDialog() == true)
+                    var sheet = SheetStoreService.Instance.GetById(id);
+                    if (sheet != null)
                     {
-                        var result = SheetStoreService.Instance.UpdateSheet(dialog.Sheet);
-                        if (result.Success)
+                        var dialog = new SheetDialog(sheet) { Owner = Window.GetWindow(this) };
+                        if (dialog.ShowDialog() == true)
                         {
-                            LoadSheets();
-                        }
-                        else
-                        {
-                            MessageBox.Show(result.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            SheetStoreService.Instance.UpdateSheet(dialog.NewSheet);
+                            LoadData();
                         }
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void BuySheet_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if ((sender as Button)?.Tag is int id)
+                {
+                    var sheet = SheetStoreService.Instance.GetById(id);
+                    if (sheet != null)
+                    {
+                        sheet.TotalStock++;
+                        sheet.LatestPurchaseDate = DateTime.Now;
+                        SheetStoreService.Instance.UpdateSheet(sheet);
+                        LoadData();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
         private void DeleteSheet_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button btn && btn.Tag is string id)
+            try
             {
-                var result = MessageBox.Show("Delete this sheet?", "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question);
-                if (result == MessageBoxResult.Yes)
+                if ((sender as Button)?.Tag is int id)
                 {
-                    var deleteResult = SheetStoreService.Instance.DeleteSheet(id);
-                    if (deleteResult.Success)
+                    var result = MessageBox.Show("Delete this sheet?", "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                    if (result == MessageBoxResult.Yes)
                     {
-                        LoadSheets();
-                        UpdateStats();
-                    }
-                    else
-                    {
-                        MessageBox.Show(deleteResult.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        SheetStoreService.Instance.DeleteSheet(id);
+                        LoadData();
                     }
                 }
             }
-        }
-
-        private void UpdatePurchasePrice_Click(object sender, RoutedEventArgs e)
-        {
-            string? sheetId = null;
-            if (sender is Button btn && btn.Tag is string tagId)
+            catch (Exception ex)
             {
-                sheetId = tagId;
-            }
-
-            var dialog = new PurchasePriceDialog(sheetId);
-            dialog.Owner = Window.GetWindow(this);
-            if (dialog.ShowDialog() == true)
-            {
-                LoadSheets();
-                UpdateStats();
+                MessageBox.Show("Error: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
         private void ViewHistory_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new PriceHistoryDialog();
-            dialog.Owner = Window.GetWindow(this);
-            dialog.ShowDialog();
-        }
-
-        private async void ExportExcel_Click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new SaveFileDialog
+            try
             {
-                Filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*",
-                DefaultExt = "csv",
-                FileName = $"sheets_export_{DateTime.Now:yyyyMMdd_HHmmss}.csv"
-            };
-
-            if (dialog.ShowDialog() == true)
+                var historyDialog = new PriceHistoryDialog();
+                historyDialog.Owner = Window.GetWindow(this);
+                historyDialog.ShowDialog();
+            }
+            catch (Exception ex)
             {
-                var result = await SheetStoreService.Instance.ExportToExcelAsync(dialog.FileName);
-                MessageBox.Show(result.Message, result.Success ? "Success" : "Error", MessageBoxButton.OK,
-                    result.Success ? MessageBoxImage.Information : MessageBoxImage.Error);
+                MessageBox.Show("Error opening history: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        private async void ImportExcel_Click(object sender, RoutedEventArgs e)
+        private void UpdatePurchasePrice_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new OpenFileDialog
+            try
             {
-                Filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*",
-                DefaultExt = "csv"
-            };
-
-            if (dialog.ShowDialog() == true)
+                var dialog = new PurchasePriceDialog { Owner = Window.GetWindow(this) };
+                if (dialog.ShowDialog() == true) LoadData();
+            }
+            catch (Exception ex)
             {
-                var result = await SheetStoreService.Instance.ImportFromExcelAsync(dialog.FileName);
-                MessageBox.Show(result.Message, result.Success ? "Success" : "Error", MessageBoxButton.OK,
-                    result.Success ? MessageBoxImage.Information : MessageBoxImage.Error);
+                MessageBox.Show("Error: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
 
-                if (result.Success)
+        private void ExportExcel_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var dialog = new Microsoft.Win32.SaveFileDialog { Filter = "CSV|*.csv", FileName = "SheetInventory_" + DateTime.Now.ToString("yyyyMMdd") };
+                if (dialog.ShowDialog() == true)
                 {
-                    LoadSheets();
-                    UpdateStats();
+                    SheetStoreService.Instance.ExportToExcel(dialog.FileName);
+                    MessageBox.Show("Export completed!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
+
+        private void ImportExcel_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var dialog = new Microsoft.Win32.OpenFileDialog { Filter = "CSV|*.csv" };
+                if (dialog.ShowDialog() == true)
+                {
+                    int count = SheetStoreService.Instance.ImportFromExcel(dialog.FileName);
+                    LoadData();
+                    MessageBox.Show($"Imported {count} sheets!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void PreviousPage_Click(object sender, RoutedEventArgs e) { }
+        private void NextPage_Click(object sender, RoutedEventArgs e) { }
     }
 }
