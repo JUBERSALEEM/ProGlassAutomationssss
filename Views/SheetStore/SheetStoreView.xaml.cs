@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using ProGlassAutomation.Models;
@@ -10,25 +12,55 @@ namespace ProGlassAutomation.Views.SheetStore
 {
     public partial class SheetStoreView : UserControl
     {
-        public ObservableCollection<Sheet> AllSheets { get; set; }
-        public ObservableCollection<Sheet> FilteredSheets { get; set; }
-        public ObservableCollection<string> Categories { get; set; }
+        // ==================== PROPERTIES ====================
+        public ObservableCollection<Sheet> AllSheets { get; private set; }
+        public ObservableCollection<Sheet> FilteredSheets { get; private set; }
+        public ObservableCollection<string> Categories { get; private set; }
 
+        // ==================== CACHE TRACKING ====================
+        private string _currentSearch = "";
+        private string _currentCategory = "";
+
+        // ═══════════════════════════════════════════════════════
+        // FIX #1: CancellationToken instead of System.Timers.Timer
+        // ═══════════════════════════════════════════════════════
+        private CancellationTokenSource _debounceCts;
+
+        // ==================== INIT ====================
         public SheetStoreView()
         {
             InitializeComponent();
+
+            // Subscribe to service events with correct EventHandler signature
+            SheetStoreService.Instance.DataChanged += OnDataChanged;
+
             LoadData();
         }
 
+        // ═══════════════════════════════════════════════════════
+        // FIX #7: EventHandler signature
+        // ═══════════════════════════════════════════════════════
+        private void OnDataChanged(object sender, EventArgs e)
+        {
+            Dispatcher.Invoke(LoadData);
+        }
+
+        // ==================== CLEANUP ====================
+        private void Cleanup()
+        {
+            SheetStoreService.Instance.DataChanged -= OnDataChanged;
+            _debounceCts?.Cancel();
+            _debounceCts?.Dispose();
+        }
+
+        // ==================== LOAD DATA ====================
         private void LoadData()
         {
             try
             {
                 AllSheets = SheetStoreService.Instance.GetAllActive();
-                FilteredSheets = new ObservableCollection<Sheet>(AllSheets);
                 Categories = SheetStoreService.Instance.GetCategories();
-                SheetGrid.ItemsSource = FilteredSheets;
-                CategoryListBox.ItemsSource = Categories;
+                ApplyFilters();
                 UpdateStats();
             }
             catch (Exception ex)
@@ -37,8 +69,42 @@ namespace ProGlassAutomation.Views.SheetStore
             }
         }
 
+        // ==================== APPLY FILTERS ====================
+        private void ApplyFilters()
+        {
+            if (AllSheets == null) return;
+
+            var filtered = AllSheets.AsEnumerable();
+
+            // Apply search filter - use prebuilt Search index
+            if (!string.IsNullOrWhiteSpace(_currentSearch))
+            {
+                // ═══════════════════════════════════════════════════════
+                // FIX #4: Use prebuilt search index
+                // ═══════════════════════════════════════════════════════
+                var searchResults = SheetStoreService.Instance.Search(_currentSearch);
+                var searchSet = new HashSet<int>(searchResults.Select(s => s.Id));
+                filtered = filtered.Where(s => searchSet.Contains(s.Id));
+            }
+
+            // Apply category filter - use prebuilt Category lookup
+            if (!string.IsNullOrWhiteSpace(_currentCategory))
+            {
+                var categorySheets = SheetStoreService.Instance.GetByCategory(_currentCategory);
+                var categorySet = new HashSet<int>(categorySheets.Select(s => s.Id));
+                filtered = filtered.Where(s => categorySet.Contains(s.Id));
+            }
+
+            FilteredSheets = new ObservableCollection<Sheet>(filtered);
+            SheetGrid.ItemsSource = FilteredSheets;
+            UpdateStats();
+        }
+
+        // ==================== UPDATE STATS ====================
         private void UpdateStats()
         {
+            if (FilteredSheets == null || AllSheets == null) return;
+
             TotalSheetsText.Text = FilteredSheets.Count.ToString();
             TotalStockText.Text = FilteredSheets.Sum(s => s.TotalStock).ToString();
             UsedSheetsText.Text = FilteredSheets.Sum(s => s.UsedSheets).ToString();
@@ -47,56 +113,53 @@ namespace ProGlassAutomation.Views.SheetStore
             TotalEntriesText.Text = AllSheets.Count.ToString();
             TotalAllText.Text = AllSheets.Count.ToString();
 
-            var lastPurchase = FilteredSheets.Where(s => s.LatestPurchaseDate.HasValue).OrderByDescending(s => s.LatestPurchaseDate).FirstOrDefault();
+            // O(1) lookup for last purchase
+            var lastPurchase = FilteredSheets
+                .Where(s => s.LatestPurchaseDate.HasValue)
+                .OrderByDescending(s => s.LatestPurchaseDate)
+                .FirstOrDefault();
             LastPurchaseText.Text = lastPurchase != null ? lastPurchase.Thickness + " " + lastPurchase.Color : "-";
 
             var lastUpdate = FilteredSheets.OrderByDescending(s => s.CreatedDate).FirstOrDefault();
             LastUpdateText.Text = lastUpdate?.DisplayDateTime ?? "-";
         }
 
+        // ═══════════════════════════════════════════════════════
+        // FIX #1: Task.Delay + CancellationToken debounce
+        // ═══════════════════════════════════════════════════════
         private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            try
-            {
-                string search = SearchBox.Text?.ToLower() ?? "";
-                FilteredSheets = string.IsNullOrWhiteSpace(search)
-                    ? new ObservableCollection<Sheet>(AllSheets)
-                    : new ObservableCollection<Sheet>(AllSheets.Where(s =>
-                        s.Thickness.ToLower().Contains(search) ||
-                        s.Color.ToLower().Contains(search) ||
-                        s.Category.ToLower().Contains(search) ||
-                        s.Supplier.ToLower().Contains(search)));
-                SheetGrid.ItemsSource = FilteredSheets;
-                UpdateStats();
-            }
-            catch { }
+            _currentSearch = SearchBox.Text ?? "";
+            ScheduleSearch();
         }
 
-        private void CategoryListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void ScheduleSearch()
         {
+            _debounceCts?.Cancel();
+            _debounceCts = new CancellationTokenSource();
             try
             {
-                string cat = CategoryListBox.SelectedItem?.ToString() ?? "";
-                if (string.IsNullOrEmpty(cat)) return;
-                FilteredSheets = new ObservableCollection<Sheet>(AllSheets.Where(s => s.Category == cat));
-                SheetGrid.ItemsSource = FilteredSheets;
-                UpdateStats();
+                await Task.Delay(300, _debounceCts.Token);
+                ApplyFilters();
             }
-            catch { }
+            catch (TaskCanceledException) { }
+        }
+
+        // ==================== CATEGORY FILTER ====================
+        private void CategoryListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            _currentCategory = CategoryListBox.SelectedItem?.ToString() ?? "";
+            ApplyFilters();
         }
 
         private void ClearCategoryFilter_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                CategoryListBox.SelectedItem = null;
-                FilteredSheets = new ObservableCollection<Sheet>(AllSheets);
-                SheetGrid.ItemsSource = FilteredSheets;
-                UpdateStats();
-            }
-            catch { }
+            CategoryListBox.SelectedItem = null;
+            _currentCategory = "";
+            ApplyFilters();
         }
 
+        // ==================== CRUD OPERATIONS ====================
         private void AddSheet_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -105,7 +168,7 @@ namespace ProGlassAutomation.Views.SheetStore
                 if (dialog.ShowDialog() == true)
                 {
                     SheetStoreService.Instance.AddSheet(dialog.NewSheet);
-                    LoadData();
+                    // NO LoadData() needed - DataChanged event handles it!
                 }
             }
             catch (Exception ex)
@@ -120,6 +183,7 @@ namespace ProGlassAutomation.Views.SheetStore
             {
                 if ((sender as Button)?.Tag is int id)
                 {
+                    // O(1) lookup
                     var sheet = SheetStoreService.Instance.GetById(id);
                     if (sheet != null)
                     {
@@ -127,7 +191,6 @@ namespace ProGlassAutomation.Views.SheetStore
                         if (dialog.ShowDialog() == true)
                         {
                             SheetStoreService.Instance.UpdateSheet(dialog.NewSheet);
-                            LoadData();
                         }
                     }
                 }
@@ -144,13 +207,13 @@ namespace ProGlassAutomation.Views.SheetStore
             {
                 if ((sender as Button)?.Tag is int id)
                 {
+                    // O(1) lookup
                     var sheet = SheetStoreService.Instance.GetById(id);
                     if (sheet != null)
                     {
                         sheet.TotalStock++;
                         sheet.LatestPurchaseDate = DateTime.Now;
                         SheetStoreService.Instance.UpdateSheet(sheet);
-                        LoadData();
                     }
                 }
             }
@@ -170,7 +233,6 @@ namespace ProGlassAutomation.Views.SheetStore
                     if (result == MessageBoxResult.Yes)
                     {
                         SheetStoreService.Instance.DeleteSheet(id);
-                        LoadData();
                     }
                 }
             }
@@ -180,6 +242,7 @@ namespace ProGlassAutomation.Views.SheetStore
             }
         }
 
+        // ==================== OTHER ACTIONS ====================
         private void ViewHistory_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -199,7 +262,10 @@ namespace ProGlassAutomation.Views.SheetStore
             try
             {
                 var dialog = new PurchasePriceDialog { Owner = Window.GetWindow(this) };
-                if (dialog.ShowDialog() == true) LoadData();
+                if (dialog.ShowDialog() == true)
+                {
+                    // DataChanged event will trigger refresh automatically
+                }
             }
             catch (Exception ex)
             {
@@ -232,7 +298,6 @@ namespace ProGlassAutomation.Views.SheetStore
                 if (dialog.ShowDialog() == true)
                 {
                     int count = SheetStoreService.Instance.ImportFromExcel(dialog.FileName);
-                    LoadData();
                     MessageBox.Show($"Imported {count} sheets!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }

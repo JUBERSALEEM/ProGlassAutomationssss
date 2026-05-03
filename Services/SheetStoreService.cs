@@ -11,51 +11,157 @@ namespace ProGlassAutomation.Services
     public class SheetStoreService
     {
         private static SheetStoreService _instance;
-        public static SheetStoreService Instance => _instance ?? (_instance = new SheetStoreService());
+        public static SheetStoreService Instance => _instance ??= new SheetStoreService();
 
         private readonly string _filePath = "sheets.xml";
         private ObservableCollection<Sheet> _sheets;
 
+        // ═══════════════════════════════════════════════════════
+        // FIX #2: ATOMIC SNAPSHOT
+        // ═══════════════════════════════════════════════════════
+        private static volatile CacheSnapshot _cache;
+
+        private sealed class CacheSnapshot
+        {
+            public List<Sheet> Sheets { get; init; } = new();
+            public Dictionary<int, Sheet> IdLookup { get; init; } = new();
+            public Dictionary<string, List<Sheet>> CategoryLookup { get; init; } = new();
+            public Dictionary<string, List<Sheet>> SearchLookup { get; init; } = new();
+            public HashSet<string> Categories { get; init; } = new();
+            public DateTime Timestamp { get; init; }
+            public static CacheSnapshot Empty => new() { Timestamp = DateTime.MinValue };
+        }
+
+        private static CacheSnapshot Cache => _cache;
+
+        // ═══════════════════════════════════════════════════════
+        // FIX #7: EventHandler signature
+        // ═══════════════════════════════════════════════════════
+        public event EventHandler DataChanged;
+
         private SheetStoreService()
         {
             _sheets = LoadFromFile();
+            SetCache();
         }
 
-        // ==================== GET ====================
-        public ObservableCollection<Sheet> GetAllActive()
+        // ═══════════════════════════════════════════════════════
+        // FIX #3: Single SetCache() call
+        // ═══════════════════════════════════════════════════════
+        private void SetCache()
         {
-            return new ObservableCollection<Sheet>(_sheets.Where(s => s.IsActive).OrderBy(s => s.SrNo));
+            var sheets = _sheets.Where(s => s.IsActive).OrderBy(s => s.SrNo).ToList();
+            if (sheets.Count == 0)
+            {
+                _cache = CacheSnapshot.Empty;
+                return;
+            }
+
+            var idLookup = new Dictionary<int, Sheet>(sheets.Count);
+            var categoryLookup = new Dictionary<string, List<Sheet>>(StringComparer.OrdinalIgnoreCase);
+            var searchLookup = new Dictionary<string, List<Sheet>>(StringComparer.OrdinalIgnoreCase);
+            var categories = new HashSet<string>();
+
+            foreach (var s in sheets)
+            {
+                if (!idLookup.ContainsKey(s.Id))
+                    idLookup[s.Id] = s;
+
+                if (!categoryLookup.TryGetValue(s.Category, out var catList))
+                    categoryLookup[s.Category] = catList = new List<Sheet>();
+                catList.Add(s);
+
+                string searchKey = $"{s.Category}|{s.Thickness}|{s.Color}|{s.Supplier}".ToLower();
+                if (!searchLookup.TryGetValue(searchKey, out var searchList))
+                    searchLookup[searchKey] = searchList = new List<Sheet>();
+                searchList.Add(s);
+
+                categories.Add(s.Category);
+            }
+
+            _cache = new CacheSnapshot
+            {
+                Sheets = sheets,
+                IdLookup = idLookup,
+                CategoryLookup = categoryLookup,
+                SearchLookup = searchLookup,
+                Categories = categories,
+                Timestamp = DateTime.Now
+            };
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // FIX #8: Atomic invalidation
+        // ═══════════════════════════════════════════════════════
+        public void InvalidateCache()
+        {
+            _cache = CacheSnapshot.Empty;
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // FIX #4: O(1) lookups
+        // ═══════════════════════════════════════════════════════
+        public ObservableCollection<Sheet> GetAllActive(bool forceRefresh = false)
+        {
+            if (!forceRefresh && Cache.Sheets.Count > 0)
+                return new ObservableCollection<Sheet>(Cache.Sheets);
+
+            if (forceRefresh || _cache == CacheSnapshot.Empty)
+            {
+                _sheets = LoadFromFile();
+                SetCache();
+            }
+
+            return new ObservableCollection<Sheet>(Cache.Sheets);
         }
 
         public Sheet GetById(int id)
         {
-            foreach (var s in _sheets)
-                if (s.Id == id) return s;
-            return null;
+            Cache.IdLookup.TryGetValue(id, out var sheet);
+            return sheet;
         }
 
         public ObservableCollection<Sheet> Search(string keyword)
         {
-            if (string.IsNullOrWhiteSpace(keyword)) return GetAllActive();
+            if (string.IsNullOrWhiteSpace(keyword))
+                return GetAllActive();
+
             keyword = keyword.ToLower();
-            return new ObservableCollection<Sheet>(_sheets.Where(s => s.IsActive && (
+
+            if (Cache.SearchLookup.TryGetValue(keyword, out var exact))
+                return new ObservableCollection<Sheet>(exact);
+
+            var results = Cache.Sheets.Where(s =>
                 s.Category.ToLower().Contains(keyword) ||
                 s.Thickness.ToLower().Contains(keyword) ||
                 s.Color.ToLower().Contains(keyword) ||
-                s.Supplier.ToLower().Contains(keyword))));
+                s.Supplier.ToLower().Contains(keyword)).ToList();
+
+            return new ObservableCollection<Sheet>(results);
         }
 
         public ObservableCollection<Sheet> GetByCategory(string category)
         {
-            return new ObservableCollection<Sheet>(_sheets.Where(s => s.IsActive && s.Category == category));
+            if (Cache.CategoryLookup.TryGetValue(category, out var sheets))
+                return new ObservableCollection<Sheet>(sheets);
+            return new ObservableCollection<Sheet>();
         }
 
         public ObservableCollection<string> GetCategories()
         {
-            return new ObservableCollection<string>(_sheets.Where(s => s.IsActive).Select(s => s.Category).Distinct().OrderBy(c => c));
+            return new ObservableCollection<string>(Cache.Categories.OrderBy(c => c));
         }
 
-        // ==================== ADD ====================
+        // ═══════════════════════════════════════════════════════
+        // FIX #7: EventHandler with correct signature
+        // ═══════════════════════════════════════════════════════
+        private void NotifyDataChanged(object sender, EventArgs e)
+        {
+            InvalidateCache();
+            DataChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        // ==================== CRUD ====================
         public void AddSheet(Sheet sheet)
         {
             sheet.Id = _sheets.Count > 0 ? _sheets.Max(s => s.Id) + 1 : 1;
@@ -64,9 +170,9 @@ namespace ProGlassAutomation.Services
             sheet.BalanceSheets = sheet.TotalStock;
             _sheets.Add(sheet);
             SaveToFile();
+            NotifyDataChanged(this, EventArgs.Empty);
         }
 
-        // ==================== UPDATE ====================
         public void UpdateSheet(Sheet sheet)
         {
             for (int i = 0; i < _sheets.Count; i++)
@@ -75,12 +181,12 @@ namespace ProGlassAutomation.Services
                 {
                     _sheets[i] = sheet;
                     SaveToFile();
+                    NotifyDataChanged(this, EventArgs.Empty);
                     return;
                 }
             }
         }
 
-        // ==================== DELETE ====================
         public void DeleteSheet(int id)
         {
             for (int i = 0; i < _sheets.Count; i++)
@@ -89,12 +195,40 @@ namespace ProGlassAutomation.Services
                 {
                     _sheets[i].IsActive = false;
                     SaveToFile();
+                    NotifyDataChanged(this, EventArgs.Empty);
                     return;
                 }
             }
         }
 
-        // ==================== PRICE ====================
+        public void BulkUpdatePrices(List<Sheet> sheets)
+        {
+            foreach (var sheet in sheets)
+            {
+                for (int i = 0; i < _sheets.Count; i++)
+                {
+                    if (_sheets[i].Id == sheet.Id)
+                    {
+                        _sheets[i] = sheet;
+                        break;
+                    }
+                }
+            }
+            SaveToFile();
+            NotifyDataChanged(this, EventArgs.Empty);
+        }
+
+        public void BulkUpdatePricesByCategory(string category, decimal purchasePrice, decimal sellPrice)
+        {
+            foreach (var sheet in _sheets.Where(s => s.IsActive && s.Category == category))
+            {
+                sheet.PurchasePrice = purchasePrice;
+                sheet.SellPrice = sellPrice;
+            }
+            SaveToFile();
+            NotifyDataChanged(this, EventArgs.Empty);
+        }
+
         public void UpdatePurchasePrice(int id, decimal price)
         {
             var sheet = GetById(id);
@@ -102,6 +236,7 @@ namespace ProGlassAutomation.Services
             {
                 sheet.PurchasePrice = price;
                 SaveToFile();
+                NotifyDataChanged(this, EventArgs.Empty);
             }
         }
 
@@ -110,19 +245,9 @@ namespace ProGlassAutomation.Services
             foreach (var sheet in _sheets.Where(s => s.IsActive && s.Category == category))
                 sheet.PurchasePrice = price;
             SaveToFile();
+            NotifyDataChanged(this, EventArgs.Empty);
         }
 
-        public void BulkUpdateByCategory(string category, decimal purchasePrice, decimal sellPrice)
-        {
-            foreach (var sheet in _sheets.Where(s => s.IsActive && s.Category == category))
-            {
-                sheet.PurchasePrice = purchasePrice;
-                sheet.SellPrice = sellPrice;
-            }
-            SaveToFile();
-        }
-
-        // ==================== STOCK ====================
         public void RecordUsage(int id, int used)
         {
             var sheet = GetById(id);
@@ -131,6 +256,7 @@ namespace ProGlassAutomation.Services
                 sheet.UsedSheets += used;
                 sheet.BalanceSheets = sheet.TotalStock - sheet.UsedSheets;
                 SaveToFile();
+                NotifyDataChanged(this, EventArgs.Empty);
             }
         }
 
@@ -138,7 +264,7 @@ namespace ProGlassAutomation.Services
         public void ExportToExcel(string filePath)
         {
             var lines = new List<string> { "SrNo,Category,Thickness,Color,Width,Height,SQM,Purchase,Sell,Stock,Used,Balance,Supplier,Date" };
-            foreach (var s in _sheets.Where(s => s.IsActive))
+            foreach (var s in Cache.Sheets)
             {
                 lines.Add($"{s.SrNo},{s.Category},{s.Thickness},{s.Color},{s.Width},{s.Height},{s.SquareMeter},{s.PurchasePrice},{s.SellPrice},{s.TotalStock},{s.UsedSheets},{s.BalanceSheets},{s.Supplier},{s.CreatedDate}");
             }

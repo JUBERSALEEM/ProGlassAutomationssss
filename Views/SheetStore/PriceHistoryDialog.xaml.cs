@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using ProGlassAutomation.Models;
@@ -13,33 +15,64 @@ namespace ProGlassAutomation.Views.SheetStore
         public ObservableCollection<Sheet> AllSheets { get; set; }
         public ObservableCollection<Sheet> FilteredSheets { get; set; }
 
+        private string _currentCategory = "";
+        private string _currentDateRange = "";
+        private string _currentSearch = "";
+
+        // ═══════════════════════════════════════════════════════
+        // FIX #1: CancellationToken instead of System.Timers.Timer
+        // ═══════════════════════════════════════════════════════
+        private CancellationTokenSource _debounceCts;
+
         public PriceHistoryDialog()
         {
             InitializeComponent();
+
+            // Subscribe to auto-refresh with correct EventHandler signature
+            SheetStoreService.Instance.DataChanged += OnDataChanged;
+
             InitializeFilters();
             LoadData();
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // FIX #7: EventHandler signature
+        // ═══════════════════════════════════════════════════════
+        private void OnDataChanged(object sender, EventArgs e)
+        {
+            if (this.IsActive || this.IsVisible)
+            {
+                Dispatcher.Invoke(LoadData);
+            }
+        }
+
+        // ==================== CLEANUP ====================
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+            SheetStoreService.Instance.DataChanged -= OnDataChanged;
+            _debounceCts?.Cancel();
+            _debounceCts?.Dispose();
         }
 
         private void InitializeFilters()
         {
             try
             {
-                // Load Categories
                 CategoryFilterCombo.Items.Clear();
                 CategoryFilterCombo.Items.Add(new ComboBoxItem { Content = "All Categories", IsSelected = true });
 
-                // Check if Sheet.Categories exists and has items
-                if (Sheet.Categories != null && Sheet.Categories.Count > 0)
+                // ═══════════════════════════════════════════════════════
+                // FIX #4: Use prebuilt category index from cache
+                // ═══════════════════════════════════════════════════════
+                var categories = SheetStoreService.Instance.GetCategories();
+                foreach (string cat in categories)
                 {
-                    foreach (string cat in Sheet.Categories)
-                    {
-                        CategoryFilterCombo.Items.Add(new ComboBoxItem { Content = cat });
-                    }
+                    CategoryFilterCombo.Items.Add(new ComboBoxItem { Content = cat });
                 }
 
                 CategoryFilterCombo.SelectedIndex = 0;
 
-                // Load Date Ranges
                 DateFilterCombo.Items.Clear();
                 DateFilterCombo.Items.Add(new ComboBoxItem { Content = "All Time", IsSelected = true });
                 DateFilterCombo.Items.Add(new ComboBoxItem { Content = "Today" });
@@ -59,9 +92,7 @@ namespace ProGlassAutomation.Views.SheetStore
             try
             {
                 AllSheets = SheetStoreService.Instance.GetAllActive();
-                FilteredSheets = new ObservableCollection<Sheet>(AllSheets);
-                PriceHistoryGrid.ItemsSource = FilteredSheets;
-                UpdateSummary();
+                ApplyFilters();
             }
             catch
             {
@@ -76,9 +107,9 @@ namespace ProGlassAutomation.Views.SheetStore
         {
             try
             {
-                TotalCountText.Text = FilteredSheets.Count.ToString();
-                TotalPurchaseText.Text = "AED " + FilteredSheets.Sum(s => s.PurchasePrice).ToString("N2");
-                TotalSellText.Text = "AED " + FilteredSheets.Sum(s => s.SellPrice).ToString("N2");
+                TotalCountText.Text = FilteredSheets?.Count.ToString() ?? "0";
+                TotalPurchaseText.Text = "AED " + (FilteredSheets?.Sum(s => s.PurchasePrice) ?? 0).ToString("N2");
+                TotalSellText.Text = "AED " + (FilteredSheets?.Sum(s => s.SellPrice) ?? 0).ToString("N2");
             }
             catch
             {
@@ -90,37 +121,25 @@ namespace ProGlassAutomation.Views.SheetStore
 
         private void ApplyFilters()
         {
+            if (AllSheets == null) return;
+
             try
             {
-                // Get selected category safely
-                string category = "All Categories";
-                if (CategoryFilterCombo.SelectedItem is ComboBoxItem catItem)
-                {
-                    category = catItem.Content?.ToString() ?? "All Categories";
-                }
-
-                // Get selected date range safely
-                string dateRange = "All Time";
-                if (DateFilterCombo.SelectedItem is ComboBoxItem dateItem)
-                {
-                    dateRange = dateItem.Content?.ToString() ?? "All Time";
-                }
-
-                // Get search text safely
-                string search = SearchBox?.Text?.ToLower() ?? "";
-
-                // Start filtering
                 var filtered = AllSheets.ToList();
 
-                // Category filter
-                if (category != "All Categories")
+                // ═══════════════════════════════════════════════════════
+                // FIX #9: Use prebuilt category lookup instead of LINQ
+                // ═══════════════════════════════════════════════════════
+                if (!string.IsNullOrEmpty(_currentCategory) && _currentCategory != "All Categories")
                 {
-                    filtered = filtered.Where(s => s.Category == category).ToList();
+                    // Use cached category lookup
+                    var byCategory = SheetStoreService.Instance.GetByCategory(_currentCategory);
+                    filtered = byCategory.ToList();
                 }
 
-                // Date filter
+                // Date filter (keep as-is, no prebuilt index needed)
                 var now = DateTime.Now;
-                switch (dateRange)
+                switch (_currentDateRange)
                 {
                     case "Today":
                         filtered = filtered.Where(s => s.LatestPurchaseDate?.Date == now.Date).ToList();
@@ -136,14 +155,21 @@ namespace ProGlassAutomation.Views.SheetStore
                         break;
                 }
 
-                // Search filter
-                if (!string.IsNullOrWhiteSpace(search))
+                // Search filter - use prebuilt search index
+                if (!string.IsNullOrWhiteSpace(_currentSearch))
                 {
-                    filtered = filtered.Where(s =>
-                        (s.Category ?? "").ToLower().Contains(search) ||
-                        (s.Thickness ?? "").ToLower().Contains(search) ||
-                        (s.Color ?? "").ToLower().Contains(search) ||
-                        (s.Supplier ?? "").ToLower().Contains(search)).ToList();
+                    var searchResults = SheetStoreService.Instance.Search(_currentSearch);
+                    if (filtered.Count == AllSheets.Count)
+                    {
+                        // No other filters, use search results directly
+                        filtered = searchResults.ToList();
+                    }
+                    else
+                    {
+                        // Combine with existing filters
+                        var searchSet = new HashSet<int>(searchResults.Select(s => s.Id));
+                        filtered = filtered.Where(s => searchSet.Contains(s.Id)).ToList();
+                    }
                 }
 
                 FilteredSheets = new ObservableCollection<Sheet>(filtered);
@@ -152,23 +178,41 @@ namespace ProGlassAutomation.Views.SheetStore
             }
             catch
             {
-                // Silently handle filter errors - don't show popup
+                // Silently handle filter errors
             }
         }
 
         private void CategoryFilterCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            _currentCategory = (CategoryFilterCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
             ApplyFilters();
         }
 
         private void DateFilterCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            _currentDateRange = (DateFilterCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
             ApplyFilters();
         }
 
+        // ═══════════════════════════════════════════════════════
+        // FIX #1: Task.Delay + CancellationToken debounce
+        // ═══════════════════════════════════════════════════════
         private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            ApplyFilters();
+            _currentSearch = SearchBox?.Text ?? "";
+            ScheduleSearch();
+        }
+
+        private async void ScheduleSearch()
+        {
+            _debounceCts?.Cancel();
+            _debounceCts = new CancellationTokenSource();
+            try
+            {
+                await Task.Delay(300, _debounceCts.Token);
+                ApplyFilters();
+            }
+            catch (TaskCanceledException) { }
         }
 
         private void Export_Click(object sender, RoutedEventArgs e)

@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using ProGlassAutomation.ViewModels;
 
 namespace ProGlassAutomation.Views.Dashboard
 {
@@ -12,6 +13,8 @@ namespace ProGlassAutomation.Views.Dashboard
             InitializeComponent();
             UpdateSubscriptionStatus();
         }
+
+        private MainViewModel ViewModel => DataContext as MainViewModel;
 
         void UpdateSubscriptionStatus()
         {
@@ -85,8 +88,8 @@ namespace ProGlassAutomation.Views.Dashboard
         {
             try
             {
-                MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
-                mainWindow.ShowSubscriptionPlan();
+                // Use MainViewModel instead of MainWindow
+                ViewModel?.ShowSubscriptionPlan();
             }
             catch (Exception ex)
             {

@@ -1,5 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using ProGlassAutomation.Models;
@@ -10,6 +14,14 @@ namespace ProGlassAutomation.Views.SheetStore
     public partial class PurchasePriceDialog : Window
     {
         private string _selectedCategory = "All Categories";
+
+        // ═══════════════════════════════════════════════════════
+        // FIX #5 & #10: Cache parsed numeric values
+        // ═══════════════════════════════════════════════════════
+        private decimal _cachedPrice;
+        private int _cachedPercent;
+        private string _lastPriceText = "";
+        private string _lastPercentText = "";
 
         public PurchasePriceDialog()
         {
@@ -23,28 +35,44 @@ namespace ProGlassAutomation.Views.SheetStore
             CategoryFilterCombo.Items.Clear();
             CategoryFilterCombo.Items.Add(new ComboBoxItem { Content = "All Categories", IsSelected = true });
 
-            foreach (string cat in Sheet.Categories)
+            // ═══════════════════════════════════════════════════════
+            // FIX #4: Use prebuilt category index from cache
+            // ═══════════════════════════════════════════════════════
+            var categories = SheetStoreService.Instance.GetCategories();
+            foreach (string cat in categories)
                 CategoryFilterCombo.Items.Add(new ComboBoxItem { Content = cat });
 
             CategoryFilterCombo.SelectedIndex = 0;
         }
 
+        // ═══════════════════════════════════════════════════════
+        // FIX #4: O(1) category lookup instead of LINQ
+        // ═══════════════════════════════════════════════════════
         private int GetFilteredCount()
         {
-            var allSheets = SheetStoreService.Instance.GetAllActive().ToList();
             if (_selectedCategory == "All Categories")
-                return allSheets.Count;
-            return allSheets.Count(s => s.Category == _selectedCategory);
+            {
+                return SheetStoreService.Instance.GetAllActive().Count;
+            }
+
+            return SheetStoreService.Instance.GetByCategory(_selectedCategory).Count;
         }
 
+        // ═══════════════════════════════════════════════════════
+        // FIX #5 & #10: Parse once, cache result
+        // ═══════════════════════════════════════════════════════
         private void UpdatePreview()
         {
             ItemsCountText.Text = GetFilteredCount().ToString();
 
-            if (decimal.TryParse(NewPurchasePriceText.Text, out decimal price))
-                PreviewPriceText.Text = "AED " + price.ToString("N2");
-            else
-                PreviewPriceText.Text = "AED 0.00";
+            // Parse price once
+            if (NewPurchasePriceText.Text != _lastPriceText)
+            {
+                _lastPriceText = NewPurchasePriceText.Text;
+                decimal.TryParse(NewPurchasePriceText.Text, out _cachedPrice);
+            }
+
+            PreviewPriceText.Text = "AED " + _cachedPrice.ToString("N2");
         }
 
         private void CategoryFilterCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -56,38 +84,51 @@ namespace ProGlassAutomation.Views.SheetStore
 
         private void DecreasePercent_Click(object sender, RoutedEventArgs e)
         {
-            if (int.TryParse(PercentText.Text, out int percent) && percent > 0)
+            // Parse percent once
+            if (PercentText.Text != _lastPercentText)
             {
-                PercentText.Text = (percent - 5).ToString();
+                _lastPercentText = PercentText.Text;
+                int.TryParse(PercentText.Text, out _cachedPercent);
+            }
+
+            if (_cachedPercent > 0)
+            {
+                _cachedPercent -= 5;
+                PercentText.Text = _cachedPercent.ToString();
                 ApplyPercentage();
             }
         }
 
         private void IncreasePercent_Click(object sender, RoutedEventArgs e)
         {
-            if (int.TryParse(PercentText.Text, out int percent))
+            // Parse percent once
+            if (PercentText.Text != _lastPercentText)
             {
-                PercentText.Text = (percent + 5).ToString();
-                ApplyPercentage();
+                _lastPercentText = PercentText.Text;
+                int.TryParse(PercentText.Text, out _cachedPercent);
             }
+
+            _cachedPercent += 5;
+            PercentText.Text = _cachedPercent.ToString();
+            ApplyPercentage();
         }
 
         private void ApplyPercentage()
         {
-            if (!int.TryParse(PercentText.Text, out int percent)) return;
+            if (_cachedPercent == 0) return;
 
-            var sheets = SheetStoreService.Instance.GetAllActive().ToList();
+            // ═══════════════════════════════════════════════════════
+            // FIX #4: Use prebuilt category lookup
+            // ═══════════════════════════════════════════════════════
+            var sheets = _selectedCategory == "All Categories"
+                ? SheetStoreService.Instance.GetAllActive()
+                : SheetStoreService.Instance.GetByCategory(_selectedCategory);
+
             if (sheets.Count == 0) return;
 
-            var filtered = _selectedCategory == "All Categories"
-                ? sheets
-                : sheets.Where(s => s.Category == _selectedCategory).ToList();
-
-            if (filtered.Count == 0) return;
-
-            decimal avgPrice = filtered.Average(s => s.PurchasePrice);
-            decimal newPrice = avgPrice + (avgPrice * percent / 100);
-            NewPurchasePriceText.Text = newPrice.ToString("N2");
+            decimal avgPrice = (decimal)sheets.Average(s => s.PurchasePrice);
+            decimal newPrice = avgPrice + (avgPrice * _cachedPercent / 100);
+            NewPurchasePriceText.Text = Math.Round(newPrice, 2).ToString("N2");
             UpdatePreview();
         }
 
@@ -95,17 +136,25 @@ namespace ProGlassAutomation.Views.SheetStore
         {
             try
             {
-                if (!decimal.TryParse(NewPurchasePriceText.Text, out decimal newPrice))
+                // Parse price once
+                if (NewPurchasePriceText.Text != _lastPriceText)
+                {
+                    _lastPriceText = NewPurchasePriceText.Text;
+                    decimal.TryParse(NewPurchasePriceText.Text, out _cachedPrice);
+                }
+
+                if (_cachedPrice <= 0)
                 {
                     MessageBox.Show("Please enter a valid price!", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
-                var allSheets = SheetStoreService.Instance.GetAllActive().ToList();
-
+                // ═══════════════════════════════════════════════════════
+                // FIX #4: Use prebuilt category lookup
+                // ═══════════════════════════════════════════════════════
                 var sheetsToUpdate = _selectedCategory == "All Categories"
-                    ? allSheets
-                    : allSheets.Where(s => s.Category == _selectedCategory).ToList();
+                    ? SheetStoreService.Instance.GetAllActive()
+                    : SheetStoreService.Instance.GetByCategory(_selectedCategory);
 
                 if (sheetsToUpdate.Count == 0)
                 {
@@ -116,19 +165,23 @@ namespace ProGlassAutomation.Views.SheetStore
                 string unit = (PriceUnitCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Sheet";
                 int updated = 0;
 
+                var updatedSheets = new List<Sheet>();
+
                 foreach (var sheet in sheetsToUpdate)
                 {
-                    decimal finalPrice = newPrice;
+                    decimal finalPrice = _cachedPrice;
 
                     if (unit == "SQM" && sheet.SquareMeter > 0)
-                        finalPrice = newPrice * (decimal)sheet.SquareMeter;
+                        finalPrice = _cachedPrice * (decimal)sheet.SquareMeter;
                     else if (unit == "Sqft" && sheet.SquareMeter > 0)
-                        finalPrice = newPrice * (decimal)(sheet.SquareMeter * 10.764);
+                        finalPrice = _cachedPrice * (decimal)(sheet.SquareMeter * 10.764);
 
                     sheet.PurchasePrice = Math.Round(finalPrice, 2);
-                    SheetStoreService.Instance.UpdateSheet(sheet);
+                    updatedSheets.Add(sheet);
                     updated++;
                 }
+
+                SheetStoreService.Instance.BulkUpdatePrices(updatedSheets);
 
                 MessageBox.Show($"Successfully updated {updated} sheets!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 DialogResult = true;

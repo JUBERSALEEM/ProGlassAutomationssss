@@ -8,27 +8,88 @@ namespace ProGlassAutomation.Data.Database
 {
     public static class DbHelper
     {
-        private static string connStr = "Data Source=glass.db";
+        // ================= PATH CONFIG (PRODUCTION SAFE) =================
+        private static readonly string DbPath =
+            Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "ProGlassAutomation",
+                "glass.db");
 
-        private static int LatestVersion = 3;
+        private static readonly string ConnStr =
+            $"Data Source={DbPath};Cache=Shared";
+
+        private static readonly int LatestVersion = 3;
+
+        // ================= CONNECTION =================
+        private static SqliteConnection CreateConnection()
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(DbPath)!);
+            return new SqliteConnection(ConnStr);
+        }
+
+        // ================= EXECUTION CORE =================
+        private static void Execute(Action<SqliteConnection> action)
+        {
+            using var conn = CreateConnection();
+            conn.Open();
+
+            try
+            {
+                action(conn);
+            }
+            catch (Exception ex)
+            {
+                Log(ex);
+                throw;
+            }
+        }
+
+        private static T Execute<T>(Func<SqliteConnection, T> func)
+        {
+            using var conn = CreateConnection();
+            conn.Open();
+
+            try
+            {
+                return func(conn);
+            }
+            catch (Exception ex)
+            {
+                Log(ex);
+                throw;
+            }
+        }
+
+        // ================= LOGGING =================
+        private static void Log(Exception ex)
+        {
+            try
+            {
+                File.AppendAllText(
+                    Path.Combine(Path.GetDirectoryName(DbPath)!, "db_log.txt"),
+                    $"[{DateTime.Now}] {ex}\n\n"
+                );
+            }
+            catch { }
+        }
 
         // ================= INIT =================
         public static void Init()
         {
-            using var conn = new SqliteConnection(connStr);
-            conn.Open();
-
-            CreateVersionTable(conn);
-
-            int current = GetVersion(conn);
-
-            for (int v = current + 1; v <= LatestVersion; v++)
+            Execute(conn =>
             {
-                ApplyMigration(conn, v);
-                SetVersion(conn, v);
-            }
+                CreateVersionTable(conn);
 
-            EnsureLaminationColumns(conn);
+                int current = GetVersion(conn);
+
+                for (int v = current + 1; v <= LatestVersion; v++)
+                {
+                    ApplyMigration(conn, v);
+                    SetVersion(conn, v);
+                }
+
+                EnsureLaminationColumns(conn);
+            });
         }
 
         // ================= VERSION =================
@@ -63,7 +124,7 @@ namespace ProGlassAutomation.Data.Database
             cmd.ExecuteNonQuery();
         }
 
-        // ================= MIGRATION =================
+        // ================= MIGRATION (UNCHANGED LOGIC) =================
         private static void ApplyMigration(SqliteConnection conn, int version)
         {
             switch (version)
@@ -142,262 +203,269 @@ namespace ProGlassAutomation.Data.Database
         {
             try
             {
-                string source = "glass.db";
-
                 string folder = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-                    "GlassBackup"
-                );
+                    "GlassBackup");
 
-                if (!Directory.Exists(folder))
-                    Directory.CreateDirectory(folder);
+                Directory.CreateDirectory(folder);
 
                 string backupFile =
                     Path.Combine(folder, $"glass_backup_{DateTime.Now:yyyyMMdd_HHmmss}.db");
 
-                File.Copy(source, backupFile, true);
+                File.Copy(DbPath, backupFile, true);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log(ex);
+            }
         }
 
         // ================= SGU =================
         public static void Save(string thickness, string color, double result)
         {
-            using var conn = new SqliteConnection(connStr);
-            conn.Open();
+            Execute(conn =>
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"
+                INSERT INTO SGURecords (Thickness, Color, Result, CreatedAt)
+                VALUES ($t, $c, $r, $d);";
 
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = @"
-            INSERT INTO SGURecords (Thickness, Color, Result, CreatedAt)
-            VALUES ($t, $c, $r, $d);
-            ";
+                cmd.Parameters.AddWithValue("$t", thickness ?? "");
+                cmd.Parameters.AddWithValue("$c", color ?? "");
+                cmd.Parameters.AddWithValue("$r", result);
+                cmd.Parameters.AddWithValue("$d", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
 
-            cmd.Parameters.AddWithValue("$t", thickness ?? "");
-            cmd.Parameters.AddWithValue("$c", color ?? "");
-            cmd.Parameters.AddWithValue("$r", result);
-            cmd.Parameters.AddWithValue("$d", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
-
-            cmd.ExecuteNonQuery();
+                cmd.ExecuteNonQuery();
+            });
         }
 
         public static List<SguRecord> GetAllFormatted()
         {
-            var list = new List<SguRecord>();
-
-            using var conn = new SqliteConnection(connStr);
-            conn.Open();
-
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = "SELECT * FROM SGURecords ORDER BY Id DESC";
-
-            using var r = cmd.ExecuteReader();
-
-            while (r.Read())
+            return Execute(conn =>
             {
-                list.Add(new SguRecord
-                {
-                    Id = r.GetInt32(0),
-                    Thickness = r.GetString(1),
-                    Color = r.GetString(2),
-                    Result = r.GetDouble(3),
-                    CreatedAt = r.GetString(4)
-                });
-            }
+                var list = new List<SguRecord>();
 
-            return list;
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"SELECT Id, Thickness, Color, Result, CreatedAt FROM SGURecords ORDER BY Id DESC";
+
+                using var r = cmd.ExecuteReader();
+
+                while (r.Read())
+                {
+                    list.Add(new SguRecord
+                    {
+                        Id = r.GetInt32(0),
+                        Thickness = r.GetString(1),
+                        Color = r.GetString(2),
+                        Result = r.GetDouble(3),
+                        CreatedAt = r.GetString(4)
+                    });
+                }
+
+                return list;
+            });
         }
 
         // ================= DGU =================
         public static void SaveDgu(string t1, string c1, string t2, string c2, string spacer, double result)
         {
-            using var conn = new SqliteConnection(connStr);
-            conn.Open();
+            Execute(conn =>
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"
+                INSERT INTO DGURecords 
+                (Thickness1, Color1, Thickness2, Color2, Spacer, Result, CreatedAt)
+                VALUES ($t1,$c1,$t2,$c2,$s,$r,$d);";
 
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = @"
-            INSERT INTO DGURecords 
-            (Thickness1, Color1, Thickness2, Color2, Spacer, Result, CreatedAt)
-            VALUES ($t1,$c1,$t2,$c2,$s,$r,$d);
-            ";
+                cmd.Parameters.AddWithValue("$t1", t1 ?? "");
+                cmd.Parameters.AddWithValue("$c1", c1 ?? "");
+                cmd.Parameters.AddWithValue("$t2", t2 ?? "");
+                cmd.Parameters.AddWithValue("$c2", c2 ?? "");
+                cmd.Parameters.AddWithValue("$s", spacer ?? "");
+                cmd.Parameters.AddWithValue("$r", result);
+                cmd.Parameters.AddWithValue("$d", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
 
-            cmd.Parameters.AddWithValue("$t1", t1 ?? "");
-            cmd.Parameters.AddWithValue("$c1", c1 ?? "");
-            cmd.Parameters.AddWithValue("$t2", t2 ?? "");
-            cmd.Parameters.AddWithValue("$c2", c2 ?? "");
-            cmd.Parameters.AddWithValue("$s", spacer ?? "");
-            cmd.Parameters.AddWithValue("$r", result);
-            cmd.Parameters.AddWithValue("$d", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
-
-            cmd.ExecuteNonQuery();
+                cmd.ExecuteNonQuery();
+            });
         }
 
         public static List<DguRecord> GetAllDgu()
         {
-            var list = new List<DguRecord>();
-
-            using var conn = new SqliteConnection(connStr);
-            conn.Open();
-
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = "SELECT * FROM DGURecords ORDER BY Id DESC";
-
-            using var r = cmd.ExecuteReader();
-
-            while (r.Read())
+            return Execute(conn =>
             {
-                list.Add(new DguRecord
-                {
-                    Id = r.GetInt32(0),
-                    Thickness1 = r.GetString(1),
-                    Color1 = r.GetString(2),
-                    Thickness2 = r.GetString(3),
-                    Color2 = r.GetString(4),
-                    Spacer = r.GetString(5),
-                    Result = r.GetDouble(6),
-                    CreatedAt = r.GetString(7)
-                });
-            }
+                var list = new List<DguRecord>();
 
-            return list;
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"SELECT Id, Thickness1, Color1, Thickness2, Color2, Spacer, Result, CreatedAt FROM DGURecords ORDER BY Id DESC";
+
+                using var r = cmd.ExecuteReader();
+
+                while (r.Read())
+                {
+                    list.Add(new DguRecord
+                    {
+                        Id = r.GetInt32(0),
+                        Thickness1 = r.GetString(1),
+                        Color1 = r.GetString(2),
+                        Thickness2 = r.GetString(3),
+                        Color2 = r.GetString(4),
+                        Spacer = r.GetString(5),
+                        Result = r.GetDouble(6),
+                        CreatedAt = r.GetString(7)
+                    });
+                }
+
+                return list;
+            });
         }
 
         // ================= LAMINATION =================
         public static void SaveLamination(LaminationRecord r)
         {
-            using var conn = new SqliteConnection(connStr);
-            conn.Open();
+            Execute(conn =>
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"
+                INSERT INTO LaminationRecords
+                (Thickness1, Color1, Thickness2, Color2, PVBType, Result, CreatedAt,
+                 Cutting, Tempering, IncludeCutting, IncludeTempering)
+                VALUES
+                ($t1,$c1,$t2,$c2,$p,$r,$d,$cut,$temp,$ic,$it);";
 
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = @"
-            INSERT INTO LaminationRecords
-            (Thickness1, Color1, Thickness2, Color2, PVBType, Result, CreatedAt,
-             Cutting, Tempering, IncludeCutting, IncludeTempering)
-            VALUES
-            ($t1,$c1,$t2,$c2,$p,$r,$d,$cut,$temp,$ic,$it);
-            ";
+                cmd.Parameters.AddWithValue("$t1", r.Thickness1 ?? "");
+                cmd.Parameters.AddWithValue("$c1", r.Color1 ?? "");
+                cmd.Parameters.AddWithValue("$t2", r.Thickness2 ?? "");
+                cmd.Parameters.AddWithValue("$c2", r.Color2 ?? "");
+                cmd.Parameters.AddWithValue("$p", r.PVBType ?? "");
+                cmd.Parameters.AddWithValue("$r", r.Result);
+                cmd.Parameters.AddWithValue("$d", r.CreatedAt ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
+                cmd.Parameters.AddWithValue("$cut", r.Cutting);
+                cmd.Parameters.AddWithValue("$temp", r.Tempering);
+                cmd.Parameters.AddWithValue("$ic", r.IncludeCutting ? 1 : 0);
+                cmd.Parameters.AddWithValue("$it", r.IncludeTempering ? 1 : 0);
 
-            cmd.Parameters.AddWithValue("$t1", r.Thickness1 ?? "");
-            cmd.Parameters.AddWithValue("$c1", r.Color1 ?? "");
-            cmd.Parameters.AddWithValue("$t2", r.Thickness2 ?? "");
-            cmd.Parameters.AddWithValue("$c2", r.Color2 ?? "");
-            cmd.Parameters.AddWithValue("$p", r.PVBType ?? "");
-            cmd.Parameters.AddWithValue("$r", r.Result);
-            cmd.Parameters.AddWithValue("$d", r.CreatedAt ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
-
-            cmd.Parameters.AddWithValue("$cut", r.Cutting);
-            cmd.Parameters.AddWithValue("$temp", r.Tempering);
-            cmd.Parameters.AddWithValue("$ic", r.IncludeCutting ? 1 : 0);
-            cmd.Parameters.AddWithValue("$it", r.IncludeTempering ? 1 : 0);
-
-            cmd.ExecuteNonQuery();
+                cmd.ExecuteNonQuery();
+            });
         }
 
         public static List<LaminationRecord> GetAllLamination()
         {
-            var list = new List<LaminationRecord>();
-
-            using var conn = new SqliteConnection(connStr);
-            conn.Open();
-
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = "SELECT * FROM LaminationRecords ORDER BY Id DESC";
-
-            using var r = cmd.ExecuteReader();
-
-            while (r.Read())
+            return Execute(conn =>
             {
-                list.Add(new LaminationRecord
+                var list = new List<LaminationRecord>();
+
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"SELECT * FROM LaminationRecords ORDER BY Id DESC";
+
+                using var r = cmd.ExecuteReader();
+
+                while (r.Read())
                 {
-                    Id = r.GetInt32(0),
-                    Thickness1 = r.GetString(1),
-                    Color1 = r.GetString(2),
-                    Thickness2 = r.GetString(3),
-                    Color2 = r.GetString(4),
-                    PVBType = r.GetString(5),
-                    Result = r.GetDouble(6),
-                    CreatedAt = r.GetString(7),
+                    list.Add(new LaminationRecord
+                    {
+                        Id = r.GetInt32(0),
+                        Thickness1 = r.GetString(1),
+                        Color1 = r.GetString(2),
+                        Thickness2 = r.GetString(3),
+                        Color2 = r.GetString(4),
+                        PVBType = r.GetString(5),
+                        Result = r.GetDouble(6),
+                        CreatedAt = r.GetString(7),
+                        Cutting = r.FieldCount > 8 && !r.IsDBNull(8) ? r.GetDouble(8) : 0,
+                        Tempering = r.FieldCount > 9 && !r.IsDBNull(9) ? r.GetDouble(9) : 0,
+                        IncludeCutting = r.FieldCount > 10 && !r.IsDBNull(10) && r.GetInt32(10) == 1,
+                        IncludeTempering = r.FieldCount > 11 && !r.IsDBNull(11) && r.GetInt32(11) == 1
+                    });
+                }
 
-                    Cutting = r.FieldCount > 8 && !r.IsDBNull(8) ? r.GetDouble(8) : 0,
-                    Tempering = r.FieldCount > 9 && !r.IsDBNull(9) ? r.GetDouble(9) : 0,
-                    IncludeCutting = r.FieldCount > 10 && !r.IsDBNull(10) && r.GetInt32(10) == 1,
-                    IncludeTempering = r.FieldCount > 11 && !r.IsDBNull(11) && r.GetInt32(11) == 1
-                });
-            }
-
-            return list;
+                return list;
+            });
         }
 
         // ================= SEARCH =================
         public static List<SguRecord> SearchSGU(string k)
         {
-            var list = new List<SguRecord>();
-
-            using var conn = new SqliteConnection(connStr);
-            conn.Open();
-
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = "SELECT * FROM SGURecords WHERE Thickness LIKE $k OR Color LIKE $k ORDER BY Id DESC";
-            cmd.Parameters.AddWithValue("$k", "%" + k + "%");
-
-            using var r = cmd.ExecuteReader();
-
-            while (r.Read())
+            return Execute(conn =>
             {
-                list.Add(new SguRecord
-                {
-                    Id = r.GetInt32(0),
-                    Thickness = r.GetString(1),
-                    Color = r.GetString(2),
-                    Result = r.GetDouble(3),
-                    CreatedAt = r.GetString(4)
-                });
-            }
+                var list = new List<SguRecord>();
 
-            return list;
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"SELECT * FROM SGURecords WHERE Thickness LIKE $k OR Color LIKE $k ORDER BY Id DESC";
+                cmd.Parameters.AddWithValue("$k", "%" + k + "%");
+
+                using var r = cmd.ExecuteReader();
+
+                while (r.Read())
+                {
+                    list.Add(new SguRecord
+                    {
+                        Id = r.GetInt32(0),
+                        Thickness = r.GetString(1),
+                        Color = r.GetString(2),
+                        Result = r.GetDouble(3),
+                        CreatedAt = r.GetString(4)
+                    });
+                }
+
+                return list;
+            });
         }
 
         public static List<DguRecord> SearchDGU(string k)
         {
-            var list = new List<DguRecord>();
-
-            using var conn = new SqliteConnection(connStr);
-            conn.Open();
-
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = @"
-            SELECT * FROM DGURecords
-            WHERE Thickness1 LIKE $k OR Thickness2 LIKE $k OR Color1 LIKE $k OR Color2 LIKE $k
-            ORDER BY Id DESC";
-            cmd.Parameters.AddWithValue("$k", "%" + k + "%");
-
-            using var r = cmd.ExecuteReader();
-
-            while (r.Read())
+            return Execute(conn =>
             {
-                list.Add(new DguRecord
-                {
-                    Id = r.GetInt32(0),
-                    Thickness1 = r.GetString(1),
-                    Color1 = r.GetString(2),
-                    Thickness2 = r.GetString(3),
-                    Color2 = r.GetString(4),
-                    Spacer = r.GetString(5),
-                    Result = r.GetDouble(6),
-                    CreatedAt = r.GetString(7)
-                });
-            }
+                var list = new List<DguRecord>();
 
-            return list;
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"
+                SELECT * FROM DGURecords
+                WHERE Thickness1 LIKE $k OR Thickness2 LIKE $k OR Color1 LIKE $k OR Color2 LIKE $k
+                ORDER BY Id DESC";
+
+                cmd.Parameters.AddWithValue("$k", "%" + k + "%");
+
+                using var r = cmd.ExecuteReader();
+
+                while (r.Read())
+                {
+                    list.Add(new DguRecord
+                    {
+                        Id = r.GetInt32(0),
+                        Thickness1 = r.GetString(1),
+                        Color1 = r.GetString(2),
+                        Thickness2 = r.GetString(3),
+                        Color2 = r.GetString(4),
+                        Spacer = r.GetString(5),
+                        Result = r.GetDouble(6),
+                        CreatedAt = r.GetString(7)
+                    });
+                }
+
+                return list;
+            });
         }
 
         internal static void DeleteDgu(int id)
         {
-            throw new NotImplementedException();
+            Execute(conn =>
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "DELETE FROM DGURecords WHERE Id = $id";
+                cmd.Parameters.AddWithValue("$id", id);
+                cmd.ExecuteNonQuery();
+            });
         }
 
         internal static void DeleteSgu(int id)
         {
-            throw new NotImplementedException();
+            Execute(conn =>
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "DELETE FROM SGURecords WHERE Id = $id";
+                cmd.Parameters.AddWithValue("$id", id);
+                cmd.ExecuteNonQuery();
+            });
         }
     }
 }

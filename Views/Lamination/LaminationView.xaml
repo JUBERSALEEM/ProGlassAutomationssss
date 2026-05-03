@@ -27,6 +27,7 @@
             <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Background" Value="White"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
 
         <!-- Editable ComboBox Style -->
@@ -38,6 +39,7 @@
             <Setter Property="Background" Value="White"/>
             <Setter Property="IsEditable" Value="True"/>
             <Setter Property="IsReadOnly" Value="False"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
 
         <Style TargetType="Label">
@@ -173,15 +175,20 @@
                         <Border Style="{StaticResource CardBorder}" Margin="0,0,0,8">
                             <StackPanel>
                                 <TextBlock Text="OUTER GLASS" Style="{StaticResource SectionTitle}"/>
+                                <Label Content="Category"/>
+                                <ComboBox Style="{StaticResource EditableComboBox}"
+                                          ItemsSource="{Binding CategoryOptions}" 
+                                          SelectedItem="{Binding Category1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          Text="{Binding Category1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                 <Label Content="Thickness (mm)"/>
                                 <ComboBox Style="{StaticResource EditableComboBox}"
                                           ItemsSource="{Binding ThicknessOptions}" 
-                                          SelectedItem="{Binding Thickness1, Mode=TwoWay}"
+                                          SelectedItem="{Binding Thickness1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           Text="{Binding Thickness1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                 <Label Content="Color"/>
                                 <ComboBox Style="{StaticResource EditableComboBox}"
                                           ItemsSource="{Binding ColorOptions}" 
-                                          SelectedItem="{Binding Color1, Mode=TwoWay}"
+                                          SelectedItem="{Binding Color1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           Text="{Binding Color1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                             </StackPanel>
                         </Border>
@@ -190,15 +197,20 @@
                         <Border Style="{StaticResource CardBorder}" Margin="0,0,0,8">
                             <StackPanel>
                                 <TextBlock Text="INNER GLASS" Style="{StaticResource SectionTitle}"/>
+                                <Label Content="Category"/>
+                                <ComboBox Style="{StaticResource EditableComboBox}"
+                                          ItemsSource="{Binding CategoryOptions}" 
+                                          SelectedItem="{Binding Category2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          Text="{Binding Category2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                 <Label Content="Thickness (mm)"/>
                                 <ComboBox Style="{StaticResource EditableComboBox}"
                                           ItemsSource="{Binding ThicknessOptions}" 
-                                          SelectedItem="{Binding Thickness2, Mode=TwoWay}"
+                                          SelectedItem="{Binding Thickness2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           Text="{Binding Thickness2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                 <Label Content="Color"/>
                                 <ComboBox Style="{StaticResource EditableComboBox}"
                                           ItemsSource="{Binding ColorOptions}" 
-                                          SelectedItem="{Binding Color2, Mode=TwoWay}"
+                                          SelectedItem="{Binding Color2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           Text="{Binding Color2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                             </StackPanel>
                         </Border>
@@ -209,7 +221,7 @@
                                 <TextBlock Text="PROFIT MARGIN" Style="{StaticResource SectionTitle}"/>
                                 <ComboBox Style="{StaticResource EditableComboBox}"
                                           ItemsSource="{Binding ProfitOptions}" 
-                                          SelectedItem="{Binding Profit, Mode=TwoWay}"
+                                          SelectedItem="{Binding Profit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           Text="{Binding Profit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           Margin="0,24,0,0"/>
                                 <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
@@ -425,7 +437,7 @@
                                 <Label Content="Type"/>
                                 <ComboBox Style="{StaticResource EditableComboBox}"
                                           ItemsSource="{Binding PVBOptions}" 
-                                          SelectedItem="{Binding PVBType, Mode=TwoWay}"
+                                          SelectedItem="{Binding PVBType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           Text="{Binding PVBType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                             </StackPanel>
                         </Border>
@@ -434,8 +446,8 @@
                         <Border Style="{StaticResource CardBorder}" Background="#ECFDF5" BorderBrush="#6EE7B7" Margin="0,0,0,8">
                             <StackPanel>
                                 <TextBlock Text="HOW TO USE" FontWeight="Bold" FontSize="12" Foreground="#047857" Margin="0,0,0,6"/>
-                                <TextBlock Text="1. Select outer &amp; inner glass thickness" FontSize="10" Foreground="#374151"/>
-                                <TextBlock Text="2. Choose glass colors for both layers" FontSize="10" Foreground="#374151" Margin="0,2,0,0"/>
+                                <TextBlock Text="1. Select outer &amp; inner glass category" FontSize="10" Foreground="#374151"/>
+                                <TextBlock Text="2. Choose thickness and colors" FontSize="10" Foreground="#374151" Margin="0,2,0,0"/>
                                 <TextBlock Text="3. Enter PVB layer price &amp; type" FontSize="10" Foreground="#374151" Margin="0,2,0,0"/>
                                 <TextBlock Text="4. Add sheet prices in price section" FontSize="10" Foreground="#374151" Margin="0,2,0,0"/>
                                 <TextBlock Text="5. Set profit margin percentage" FontSize="10" Foreground="#374151" Margin="0,2,0,0"/>
@@ -443,21 +455,35 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- Status -->
+                        <!-- Cache Status -->
                         <Border Style="{StaticResource CardBorder}" Background="#F8FAFC">
                             <StackPanel>
-                                <TextBlock Text="SYSTEM STATUS" FontWeight="Bold" FontSize="12"
+                                <TextBlock Text="DATA STATUS" FontWeight="Bold" FontSize="12"
                                            Foreground="{StaticResource PrimaryBrush}" HorizontalAlignment="Center" Margin="0,0,0,8"/>
-                                <WrapPanel>
-                                    <StackPanel Orientation="Horizontal" Margin="0,3,16,3">
-                                        <Ellipse Width="12" Height="12" Fill="#22C55E" Margin="0,0,6,0"/>
-                                        <TextBlock Text="Ready" FontSize="11" Foreground="#16A34A"/>
-                                    </StackPanel>
-                                    <StackPanel Orientation="Horizontal" Margin="0,3,0,3">
-                                        <Ellipse Width="12" Height="12" Fill="#3B82F6" Margin="0,0,6,0"/>
-                                        <TextBlock Text="Calculating" FontSize="11" Foreground="#2563EB"/>
-                                    </StackPanel>
-                                </WrapPanel>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Row="0" Text="Categories:" FontSize="10" Foreground="#64748B"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding CacheStats.Categories, Mode=OneWay}" FontSize="10" FontWeight="Bold" Foreground="#1E40AF" HorizontalAlignment="Right"/>
+
+                                    <TextBlock Grid.Row="1" Text="Thicknesses:" FontSize="10" Foreground="#64748B" Margin="0,2,0,0"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding CacheStats.Thicknesses, Mode=OneWay}" FontSize="10" FontWeight="Bold" Foreground="#1E40AF" HorizontalAlignment="Right" Margin="0,2,0,0"/>
+
+                                    <TextBlock Grid.Row="2" Text="Colors:" FontSize="10" Foreground="#64748B" Margin="0,2,0,0"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding CacheStats.Colors, Mode=OneWay}" FontSize="10" FontWeight="Bold" Foreground="#1E40AF" HorizontalAlignment="Right" Margin="0,2,0,0"/>
+                                </Grid>
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0" HorizontalAlignment="Center">
+                                    <Ellipse Width="10" Height="10" Fill="#22C55E" Margin="0,0,6,0"/>
+                                    <TextBlock Text="Cache Active" FontSize="10" Foreground="#16A34A"/>
+                                </StackPanel>
                             </StackPanel>
                         </Border>
                     </StackPanel>
@@ -466,8 +492,16 @@
 
             <!-- HISTORY SECTION -->
             <StackPanel Grid.Row="2" Margin="0,10,0,0">
-                <ToggleButton Content="HISTORY" IsChecked="{Binding IsHistoryVisible, Mode=TwoWay}" Style="{StaticResource ToggleBtn}"
-                              HorizontalAlignment="Stretch"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <ToggleButton Content="HISTORY" IsChecked="{Binding IsHistoryVisible, Mode=TwoWay}" Style="{StaticResource ToggleBtn}"/>
+                    <Button Grid.Column="1" Content="CLEAR ALL" Command="{Binding ClearAllCommand}" 
+                            Background="#DC2626" Foreground="White" FontWeight="Bold" Padding="12,6" Margin="8,0,0,0"
+                            VerticalAlignment="Center"/>
+                </Grid>
 
                 <Border Background="#F0F9FF" CornerRadius="10" Padding="12" Margin="0,8,0,0"
                         MinHeight="100" MaxHeight="200" BorderBrush="#BAE6FD" BorderThickness="1"
@@ -483,14 +517,38 @@
                                 <DataTemplate>
                                     <Border Background="White" CornerRadius="8" Padding="10" Margin="4"
                                             BorderBrush="#E2E8F0" BorderThickness="1" MinWidth="260" MaxWidth="320">
-                                        <StackPanel>
-                                            <TextBlock Text="{Binding DisplayText, Mode=OneWay}" TextWrapping="Wrap" 
-                                                       FontSize="11" Foreground="#334155"/>
-                                            <TextBlock Text="{Binding DetailText, Mode=OneWay}" TextWrapping="Wrap" 
-                                                       FontSize="10" Foreground="#64748B" Margin="0,4,0,0"/>
-                                            <TextBlock Text="{Binding Timestamp, Mode=OneWay, StringFormat={}{0:yyyy-MM-dd HH:mm}}" 
-                                                       FontSize="9" Foreground="#94A3B8" Margin="0,2,0,0"/>
-                                        </StackPanel>
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+
+                                            <Grid Grid.Row="0">
+                                                <Border Background="#2563EB" CornerRadius="4" Padding="6,2" HorizontalAlignment="Left">
+                                                    <TextBlock Text="{Binding Timestamp, Mode=OneWay, StringFormat={}{0:yyyy-MM-dd HH:mm}}" FontSize="9" Foreground="White"/>
+                                                </Border>
+                                                <Button Content="X" 
+                                                        Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" 
+                                                        CommandParameter="{Binding}" 
+                                                        Background="#FEE2E2" Foreground="#DC2626" 
+                                                        FontSize="9" FontWeight="Bold" 
+                                                        HorizontalAlignment="Right" Padding="4,2"
+                                                        Width="20" Height="20"/>
+                                            </Grid>
+
+                                            <StackPanel Grid.Row="1" Margin="0,6,0,0">
+                                                <TextBlock Text="{Binding DisplayText, Mode=OneWay}" TextWrapping="Wrap" FontSize="11" Foreground="#334155" FontWeight="SemiBold"/>
+                                                <TextBlock Text="{Binding DetailText, Mode=OneWay}" TextWrapping="Wrap" FontSize="10" Foreground="#64748B" Margin="0,4,0,0"/>
+                                            </StackPanel>
+
+                                            <Border Grid.Row="2" Background="#ECFDF5" CornerRadius="4" Padding="6,4" Margin="0,6,0,0" HorizontalAlignment="Left">
+                                                <TextBlock FontSize="12" Foreground="#059669" FontWeight="Bold">
+                                                    <Run Text="{Binding Result, Mode=OneWay, StringFormat={}{0:N2}}" FontWeight="Bold"/>
+                                                    <Run Text=" AED"/>
+                                                </TextBlock>
+                                            </Border>
+                                        </Grid>
                                     </Border>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>

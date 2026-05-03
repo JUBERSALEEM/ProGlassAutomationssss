@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using ProGlassAutomation.ViewModels;
 
 namespace ProGlassAutomation.Views.Subscription
 {
@@ -17,6 +18,8 @@ namespace ProGlassAutomation.Views.Subscription
             UpdateStatus();
             UpdatePlanSelection();
         }
+
+        private MainViewModel ViewModel => DataContext as MainViewModel;
 
         private void UpdateStatus()
         {
@@ -164,9 +167,8 @@ namespace ProGlassAutomation.Views.Subscription
 
                 if (Services.SubscriptionService.Instance.ActivateLicense(key))
                 {
-                    // Get MainWindow and unlock modules instantly
-                    MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
-                    mainWindow.OnLicenseActivated(key);
+                    // Use MainViewModel to unlock modules instantly
+                    ViewModel?.OnLicenseActivated(key);
 
                     // Update local status
                     UpdateStatus();
@@ -196,9 +198,8 @@ namespace ProGlassAutomation.Views.Subscription
                 {
                     Services.SubscriptionService.Instance.DeactivateLicense();
 
-                    // Get MainWindow and lock modules instantly
-                    MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
-                    mainWindow.OnLicenseDeactivated();
+                    // Use MainViewModel to lock modules instantly
+                    ViewModel?.OnLicenseDeactivated();
 
                     // Update local status
                     UpdateStatus();

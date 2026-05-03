@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using ProGlassAutomation.ViewModels;
 
 namespace ProGlassAutomation.Views.Payment
 {
@@ -32,6 +33,8 @@ namespace ProGlassAutomation.Views.Payment
             PlanDaysText.Text = $"{days} Days Access";
             PlanAmountText.Text = $"AED {amount}";
         }
+
+        private MainViewModel ViewModel => DataContext as MainViewModel;
 
         private void PayPal_Click(object sender, MouseButtonEventArgs e)
         {
@@ -197,6 +200,9 @@ We will provide your activation key after payment verification.
                         MessageBoxImage.Information
                     );
 
+                    // Call OnLicenseActivated on ViewModel
+                    ViewModel?.OnLicenseActivated(key);
+
                     // Navigate to dashboard
                     GoToDashboard();
                 }
@@ -241,8 +247,8 @@ We will provide your activation key after payment verification.
         {
             try
             {
-                MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
-                mainWindow.ShowSubscriptionPlan();
+                // Use MainViewModel instead of MainWindow
+                ViewModel?.ShowSubscriptionPlan();
             }
             catch (Exception ex)
             {
@@ -254,8 +260,8 @@ We will provide your activation key after payment verification.
         {
             try
             {
-                MainWindow mainWindow = (MainWindow)Application.Current.MainWindow;
-                mainWindow.ShowDashboard();
+                // Use MainViewModel instead of MainWindow
+                ViewModel?.ShowDashboard();
             }
             catch { }
         }
