@@ -106,13 +106,8 @@ namespace ProGlassAutomation.ViewModels
         // ═══════════════════════════════════════════════════════
         public SheetStoreViewModel()
         {
-            System.Diagnostics.Debug.WriteLine("SheetStoreViewModel: Constructor started");
-
-            // Subscribe to DataChanged event
             SheetStoreService.Instance.DataChanged += OnServiceDataChanged;
-            System.Diagnostics.Debug.WriteLine("SheetStoreViewModel: DataChanged event subscribed");
 
-            // Initialize commands
             AddSheetCommand = new RelayCommand(AddSheet);
             EditSheetCommand = new RelayCommand(EditSheet, CanEditOrDelete);
             DeleteSheetCommand = new RelayCommand(DeleteSheet, CanEditOrDelete);
@@ -126,7 +121,6 @@ namespace ProGlassAutomation.ViewModels
             ViewHistoryCommand = new RelayCommand(ViewHistory);
 
             LoadData();
-            System.Diagnostics.Debug.WriteLine("SheetStoreViewModel: Constructor completed");
         }
 
         // ═══════════════════════════════════════════════════════
@@ -134,7 +128,6 @@ namespace ProGlassAutomation.ViewModels
         // ═══════════════════════════════════════════════════════
         public void Cleanup()
         {
-            System.Diagnostics.Debug.WriteLine("SheetStoreViewModel: Cleanup - unsubscribing from DataChanged");
             SheetStoreService.Instance.DataChanged -= OnServiceDataChanged;
         }
 
@@ -143,25 +136,10 @@ namespace ProGlassAutomation.ViewModels
         // ═══════════════════════════════════════════════════════
         private void OnServiceDataChanged(object sender, EventArgs e)
         {
-            System.Diagnostics.Debug.WriteLine("SheetStoreViewModel: OnServiceDataChanged fired");
-
-            if (Application.Current == null)
-            {
-                System.Diagnostics.Debug.WriteLine("SheetStoreViewModel: Application.Current is null, loading directly");
+            if (Application.Current?.Dispatcher?.CheckAccess() == true)
                 LoadData();
-                return;
-            }
-
-            if (Application.Current.Dispatcher.CheckAccess())
-            {
-                System.Diagnostics.Debug.WriteLine("SheetStoreViewModel: Loading on UI thread");
-                LoadData();
-            }
             else
-            {
-                System.Diagnostics.Debug.WriteLine("SheetStoreViewModel: Loading on dispatcher thread");
-                Application.Current.Dispatcher.BeginInvoke(new Action(LoadData));
-            }
+                Application.Current?.Dispatcher?.BeginInvoke(new Action(LoadData));
         }
 
         // ═══════════════════════════════════════════════════════
@@ -171,25 +149,19 @@ namespace ProGlassAutomation.ViewModels
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("SheetStoreViewModel: LoadData started");
-
                 var sheets = SheetStoreService.Instance.GetAllActive();
                 AllSheets = new ObservableCollection<Sheet>(sheets);
-                System.Diagnostics.Debug.WriteLine($"SheetStoreViewModel: Loaded {sheets.Count} sheets");
 
                 Categories.Clear();
                 foreach (var c in SheetStoreService.Instance.GetCategories())
                     Categories.Add(c);
-                System.Diagnostics.Debug.WriteLine($"SheetStoreViewModel: Loaded {Categories.Count} categories");
 
                 ApplyFilters();
                 UpdateStats();
-
-                System.Diagnostics.Debug.WriteLine("SheetStoreViewModel: LoadData completed");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"SheetStoreViewModel: Error in LoadData: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"LoadData Error: {ex.Message}");
             }
         }
 
@@ -207,9 +179,7 @@ namespace ProGlassAutomation.ViewModels
             var filtered = AllSheets.AsEnumerable();
 
             if (!string.IsNullOrEmpty(SelectedCategory))
-            {
                 filtered = filtered.Where(s => s.Category == SelectedCategory);
-            }
 
             if (!string.IsNullOrEmpty(SearchText))
             {
@@ -262,9 +232,7 @@ namespace ProGlassAutomation.ViewModels
             {
                 var dialog = new Views.SheetStore.SheetDialog(null);
                 if (dialog.ShowDialog() == true)
-                {
                     SheetStoreService.Instance.AddSheet(dialog.NewSheet);
-                }
             }
             catch (Exception ex)
             {
@@ -276,17 +244,12 @@ namespace ProGlassAutomation.ViewModels
         {
             try
             {
-                Sheet? sheet = parameter as Sheet;
-                if (sheet == null)
-                    sheet = SelectedSheet;
-
+                Sheet? sheet = parameter as Sheet ?? SelectedSheet;
                 if (sheet == null) return;
 
                 var dialog = new Views.SheetStore.SheetDialog(sheet);
                 if (dialog.ShowDialog() == true)
-                {
                     SheetStoreService.Instance.UpdateSheet(dialog.NewSheet);
-                }
             }
             catch (Exception ex)
             {
@@ -298,10 +261,7 @@ namespace ProGlassAutomation.ViewModels
         {
             try
             {
-                Sheet? sheet = parameter as Sheet;
-                if (sheet == null)
-                    sheet = SelectedSheet;
-
+                Sheet? sheet = parameter as Sheet ?? SelectedSheet;
                 if (sheet == null) return;
 
                 var result = MessageBox.Show(
@@ -311,9 +271,7 @@ namespace ProGlassAutomation.ViewModels
                     MessageBoxImage.Warning);
 
                 if (result == MessageBoxResult.Yes)
-                {
                     SheetStoreService.Instance.DeleteSheet(sheet.Id);
-                }
             }
             catch (Exception ex)
             {
@@ -322,7 +280,7 @@ namespace ProGlassAutomation.ViewModels
         }
 
         // ═══════════════════════════════════════════════════════
-        // BUY SHEETS - UPDATED WITH DIALOG
+        // BUY SHEETS
         // ═══════════════════════════════════════════════════════
         public void BuySheet(object parameter = null)
         {
@@ -334,37 +292,36 @@ namespace ProGlassAutomation.ViewModels
 
                 if (sheet == null)
                 {
-                    MessageBox.Show("Please select a sheet first!", "No Selection", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show("Please select a sheet first!", "No Selection");
                     return;
                 }
 
-                // Open purchase dialog
                 var dialog = new Views.SheetStore.BuySheetDialog(sheet);
                 if (dialog.ShowDialog() == true)
                 {
-                    var record = dialog.ViewModel.ToPurchaseRecord();
+                    var record = new SheetPurchase
+                    {
+                        SheetId = sheet.Id,
+                        Quantity = dialog.Quantity,
+                        UnitPrice = dialog.UnitPrice,
+                        Supplier = dialog.Supplier,
+                        PurchasedOn = dialog.PurchasedOn,
+                        CreatedAt = DateTime.Now
+                    };
+
                     SheetStoreService.Instance.AddPurchaseRecord(record);
 
-                    MessageBox.Show(
-                        $"✅ Purchase Successful!\n\n" +
-                        $"Purchased: {record.Quantity} sheets\n" +
-                        $"Unit Price: {record.UnitPrice:N2} AED\n" +
-                        $"Total: {record.TotalAmt:N2} AED\n\n" +
-                        $"New Stock: {sheet.TotalStock}\n" +
-                        $"Balance: {sheet.BalanceSheets}",
-                        "Success",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
+                    MessageBox.Show($"Purchased {record.Quantity} sheets at {record.UnitPrice} AED each!", "Success");
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error buying sheet: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
         // ═══════════════════════════════════════════════════════
-        // USE / DEDUCT SHEETS - FOR STEP 5
+        // USE / DEDUCT SHEETS
         // ═══════════════════════════════════════════════════════
         public void UseSheets(object parameter = null)
         {
@@ -376,39 +333,38 @@ namespace ProGlassAutomation.ViewModels
 
                 if (sheet == null)
                 {
-                    MessageBox.Show("Please select a sheet first!", "No Selection", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show("Please select a sheet first!", "No Selection");
                     return;
                 }
 
-                // Check balance
-                if (sheet.BalanceSheets <= 0)
+                int balance = sheet.TotalStock - sheet.UsedSheets;
+                if (balance <= 0)
                 {
-                    MessageBox.Show("No sheets available to use!\n\nCurrent Balance: 0",
-                        "Insufficient Stock", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show("No sheets available to use!", "Insufficient Stock");
                     return;
                 }
 
-                // Open use dialog
-                var dialog = new Views.SheetStore.UseSheetsDialog(sheet);
+                // ✅ Pass balance to dialog
+                var dialog = new Views.SheetStore.UseSheetsDialog(balance);
                 if (dialog.ShowDialog() == true)
                 {
-                    var record = dialog.ViewModel.ToUsageRecord();
+                    var record = new SheetUsage
+                    {
+                        SheetId = sheet.Id,
+                        Quantity = dialog.Quantity,
+                        Reason = dialog.Reason,
+                        UsedOn = dialog.UsedOn,
+                        CreatedAt = DateTime.Now
+                    };
+
                     SheetStoreService.Instance.AddUsageRecord(record);
 
-                    MessageBox.Show(
-                        $"✅ Sheets Used!\n\n" +
-                        $"Used: {record.Quantity} sheets\n" +
-                        $"Reason: {record.Reason}\n\n" +
-                        $"Used Total: {sheet.UsedSheets}\n" +
-                        $"Balance: {sheet.BalanceSheets}",
-                        "Success",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
+                    MessageBox.Show($"Used {record.Quantity} sheets!", "Success");
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error using sheet: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -418,11 +374,17 @@ namespace ProGlassAutomation.ViewModels
             return SelectedSheet != null;
         }
 
+        // ═══════════════════════════════════════════════════════
+        // SAVE
+        // ═══════════════════════════════════════════════════════
         public void Save()
         {
             UpdateStats();
         }
 
+        // ═══════════════════════════════════════════════════════
+        // EXPORT / IMPORT
+        // ═══════════════════════════════════════════════════════
         public void ExportExcel()
         {
             try
@@ -462,6 +424,9 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
+        // ═══════════════════════════════════════════════════════
+        // UPDATE PRICES
+        // ═══════════════════════════════════════════════════════
         public void UpdatePurchasePrice()
         {
             try
@@ -478,12 +443,18 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
+        // ═══════════════════════════════════════════════════════
+        // FILTER
+        // ═══════════════════════════════════════════════════════
         public void ClearFilter()
         {
             SelectedCategory = "";
             SearchText = "";
         }
 
+        // ═══════════════════════════════════════════════════════
+        // HISTORY
+        // ═══════════════════════════════════════════════════════
         public void ViewHistory()
         {
             try

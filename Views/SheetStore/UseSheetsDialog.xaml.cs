@@ -1,27 +1,42 @@
 ﻿using System;
 using System.Windows;
-using ProGlassAutomation.Models;
+using System.Windows.Controls;
 
 namespace ProGlassAutomation.Views.SheetStore
 {
     public partial class UseSheetsDialog : Window
     {
-        public UseSheetsViewModel ViewModel { get; }
+        private readonly int _availableBalance;
 
-        public UseSheetsDialog(Sheet sheet)
+        public UseSheetsDialog(int availableBalance)
         {
             InitializeComponent();
-            ViewModel = new UseSheetsViewModel(sheet);
-            DataContext = ViewModel;
-            QtyTextBox.Focus();
+            _availableBalance = availableBalance;
+
+            // ✅ Set balance display
+            BalanceText.Text = availableBalance.ToString();
+
+            // Set default date
+            DatePicker.SelectedDate = DateTime.Today;
+
+            // Initialize hour combo
+            for (int i = 0; i < 24; i++)
+            {
+                HourCombo.Items.Add(i.ToString("00"));
+            }
+            HourCombo.SelectedIndex = DateTime.Now.Hour;
         }
 
-        private void Use_Click(object sender, RoutedEventArgs e)
+        // ✅ Public properties for ViewModel to access
+        public int Quantity => int.TryParse(QtyTextBox.Text, out int qty) ? qty : 0;
+        public string Reason => ReasonTextBox.Text.Trim();
+        public DateTime UsedOn
         {
-            if (ViewModel.Validate())
+            get
             {
-                DialogResult = true;
-                Close();
+                var date = DatePicker.SelectedDate ?? DateTime.Today;
+                var hour = int.TryParse(HourCombo.SelectedItem?.ToString(), out int h) ? h : 0;
+                return date.Date.AddHours(hour);
             }
         }
 
@@ -30,80 +45,36 @@ namespace ProGlassAutomation.Views.SheetStore
             DialogResult = false;
             Close();
         }
-    }
 
-    public class UseSheetsViewModel
-    {
-        private readonly Sheet _sheet;
-
-        // Display properties
-        public string SheetInfo => $"{_sheet.Category} | {_sheet.Thickness} | {_sheet.Color}";
-        public int BalanceSheets => _sheet.TotalStock - _sheet.UsedSheets;
-
-        // Input properties
-        public int Quantity { get; set; } = 1;
-        public string Reason { get; set; } = "";
-        public DateTime UsedOn { get; set; } = DateTime.Now;
-
-        // Common reasons
-        public string[] CommonReasons => new[]
+        private void Use_Click(object sender, RoutedEventArgs e)
         {
-            "Used for project",
-            "Used for DGU Lamination",
-            "Used for SGU",
-            "Used for mirror cutting",
-            "Damaged/Broken",
-            "Returned to supplier",
-            "Sample/Display",
-            "Other"
-        };
-
-        public UseSheetsViewModel(Sheet sheet)
-        {
-            _sheet = sheet;
-        }
-
-        public bool Validate()
-        {
-            if (Quantity <= 0)
+            // Validate quantity
+            if (!int.TryParse(QtyTextBox.Text, out int qty) || qty <= 0)
             {
-                MessageBox.Show("Please enter a valid quantity (minimum 1)!",
-                    "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return false;
+                MessageBox.Show("Please enter a valid quantity.", "Validation Error",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
             }
 
-            if (Quantity > BalanceSheets)
+            // Check balance
+            if (qty > _availableBalance)
             {
-                MessageBox.Show($"Only {BalanceSheets} sheets available!\n\nPlease enter a smaller quantity.",
+                MessageBox.Show($"Not enough sheets. Available: {_availableBalance}",
                     "Insufficient Stock", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return false;
+                return;
             }
 
-            if (string.IsNullOrWhiteSpace(Reason))
+            // Validate reason
+            if (string.IsNullOrWhiteSpace(ReasonTextBox.Text))
             {
-                var result = MessageBox.Show(
-                    "Are you sure you want to use sheets without specifying a reason?",
-                    "No Reason Provided",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Question);
-
-                if (result != MessageBoxResult.Yes)
-                    return false;
+                MessageBox.Show("Please enter a reason.", "Validation Error",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
             }
 
-            return true;
-        }
-
-        public SheetUsage ToUsageRecord()
-        {
-            return new SheetUsage
-            {
-                SheetId = _sheet.Id,
-                Quantity = Quantity,
-                Reason = Reason ?? "",
-                UsedOn = UsedOn,
-                CreatedAt = DateTime.Now
-            };
+            // ✅ Success
+            DialogResult = true;
+            Close();
         }
     }
 }

@@ -4,9 +4,6 @@
              xmlns:vm="clr-namespace:ProGlassAutomation.ViewModels"
              Background="#F1F5F9">
 
-    <!-- ═══════════════════════════════════════════════════════
-         SET DATACONTEXT TO VIEWMODEL
-         ═══════════════════════════════════════════════════════ -->
     <UserControl.DataContext>
         <vm:SheetStoreViewModel/>
     </UserControl.DataContext>
@@ -58,62 +55,48 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- STAT 1: SHOWING -->
-                <Border Grid.Column="0" Background="#F8FAFC" CornerRadius="10" Padding="14" Margin="0,0,8,0" BorderBrush="#CBD5E1" BorderThickness="1">
+                <Border Grid.Column="0" Background="#ECFDF5" CornerRadius="10" Padding="16" Margin="0,0,8,0" BorderBrush="#A7F3D0" BorderThickness="1">
                     <StackPanel>
-                        <TextBlock Text="SHOWING" FontSize="9" Foreground="#64748B"/>
-                        <TextBlock Text="{Binding FilteredCount}" FontSize="22" FontWeight="Bold"/>
+                        <TextBlock Text="TOTAL STOCK" FontSize="10" Foreground="#059669" FontWeight="SemiBold"/>
+                        <TextBlock Text="{Binding TotalStock}" FontSize="28" FontWeight="Bold" Foreground="#059669"/>
                     </StackPanel>
                 </Border>
 
-                <!-- STAT 2: TOTAL STOCK -->
-                <Border Grid.Column="1" Background="#ECFDF5" CornerRadius="10" Padding="14" Margin="0,0,8,0" BorderBrush="#A7F3D0" BorderThickness="1">
+                <Border Grid.Column="1" Background="#FEF2F2" CornerRadius="10" Padding="16" Margin="0,0,8,0" BorderBrush="#FECACA" BorderThickness="1">
                     <StackPanel>
-                        <TextBlock Text="TOTAL STOCK" FontSize="9" Foreground="#059669"/>
-                        <TextBlock Text="{Binding TotalStock}" FontSize="22" FontWeight="Bold" Foreground="#059669"/>
+                        <TextBlock Text="USED" FontSize="10" Foreground="#DC2626" FontWeight="SemiBold"/>
+                        <TextBlock Text="{Binding TotalUsed}" FontSize="28" FontWeight="Bold" Foreground="#DC2626"/>
                     </StackPanel>
                 </Border>
 
-                <!-- STAT 3: USED -->
-                <Border Grid.Column="2" Background="#FEF2F2" CornerRadius="10" Padding="14" Margin="0,0,8,0" BorderBrush="#FECACA" BorderThickness="1">
+                <Border Grid.Column="2" Background="#FFFBEB" CornerRadius="10" Padding="16" Margin="0,0,8,0" BorderBrush="#FDE68A" BorderThickness="1">
                     <StackPanel>
-                        <TextBlock Text="USED" FontSize="9" Foreground="#DC2626"/>
-                        <TextBlock Text="{Binding TotalUsed}" FontSize="22" FontWeight="Bold" Foreground="#DC2626"/>
+                        <TextBlock Text="BALANCE" FontSize="10" Foreground="#D97706" FontWeight="SemiBold"/>
+                        <TextBlock Text="{Binding BalanceSheets}" FontSize="28" FontWeight="Bold" Foreground="#D97706"/>
                     </StackPanel>
                 </Border>
 
-                <!-- STAT 4: BALANCE -->
-                <Border Grid.Column="3" Background="#FFFBEB" CornerRadius="10" Padding="14" Margin="0,0,8,0" BorderBrush="#FDE68A" BorderThickness="1">
+                <Border Grid.Column="3" Background="#F5F3FF" CornerRadius="10" Padding="16" Margin="0,0,8,0" BorderBrush="#DDD6FE" BorderThickness="1">
                     <StackPanel>
-                        <TextBlock Text="BALANCE" FontSize="9" Foreground="#D97706"/>
-                        <TextBlock Text="{Binding BalanceSheets}" FontSize="22" FontWeight="Bold" Foreground="#D97706"/>
+                        <TextBlock Text="LAST PURCHASE" FontSize="10" Foreground="#7C3AED" FontWeight="SemiBold"/>
+                        <TextBlock Text="{Binding LastPurchase}" FontSize="14" FontWeight="Bold" Foreground="#7C3AED"/>
                     </StackPanel>
                 </Border>
 
-                <!-- STAT 5: LAST PURCHASE -->
-                <Border Grid.Column="4" Background="#F5F3FF" CornerRadius="10" Padding="14" Margin="0,0,8,0" BorderBrush="#DDD6FE" BorderThickness="1">
+                <Border Grid.Column="4" Background="#F0F9FF" CornerRadius="10" Padding="16" Margin="0,0,8,0" BorderBrush="#BAE6FD" BorderThickness="1">
                     <StackPanel>
-                        <TextBlock Text="LAST PURCHASE" FontSize="9" Foreground="#7C3AED"/>
-                        <TextBlock Text="{Binding LastPurchase}" FontSize="13" FontWeight="Bold" Foreground="#7C3AED"/>
+                        <TextBlock Text="LAST UPDATE" FontSize="10" Foreground="#0284C7" FontWeight="SemiBold"/>
+                        <TextBlock Text="{Binding LastUpdate}" FontSize="13" FontWeight="Bold" Foreground="#0284C7"/>
                     </StackPanel>
                 </Border>
 
-                <!-- STAT 6: LAST UPDATE -->
-                <Border Grid.Column="5" Background="#F0F9FF" CornerRadius="10" Padding="14" Margin="0,0,8,0" BorderBrush="#BAE6FD" BorderThickness="1">
+                <Border Grid.Column="5" Background="#1E293B" CornerRadius="10" Padding="16" BorderBrush="#334155" BorderThickness="1">
                     <StackPanel>
-                        <TextBlock Text="LAST UPDATE" FontSize="9" Foreground="#0284C7"/>
-                        <TextBlock Text="{Binding LastUpdate}" FontSize="12" FontWeight="Bold" Foreground="#0284C7"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- STAT 7: TOTAL ALL -->
-                <Border Grid.Column="6" Background="#F1F5F9" CornerRadius="10" Padding="14" BorderBrush="#CBD5E1" BorderThickness="1">
-                    <StackPanel>
-                        <TextBlock Text="TOTAL ALL" FontSize="9" Foreground="#475569"/>
-                        <TextBlock Text="{Binding TotalAll, StringFormat=N2}" FontSize="22" FontWeight="Bold"/>
+                        <TextBlock Text="TOTAL VALUE" FontSize="10" Foreground="#94A3B8" FontWeight="SemiBold"/>
+                        <TextBlock Text="{Binding TotalAll, StringFormat=N0}" FontSize="24" FontWeight="Bold" Foreground="White"/>
+                        <TextBlock Text="AED" FontSize="10" Foreground="#64748B"/>
                     </StackPanel>
                 </Border>
             </Grid>
@@ -124,13 +107,11 @@
              ═══════════════════════════════════════════════════════ -->
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="260"/>
+                <ColumnDefinition Width="240"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- SIDEBAR -->
             <StackPanel Grid.Column="0" Margin="0,0,12,0">
-                <!-- Quick Actions -->
                 <Border Background="White" CornerRadius="12" Margin="0,0,0,12" BorderBrush="#E2E8F0" BorderThickness="1">
                     <StackPanel Margin="16">
                         <TextBlock Text="⚡ Quick Actions" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,12"/>
@@ -145,16 +126,16 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Categories -->
                 <Border Background="White" CornerRadius="12" BorderBrush="#E2E8F0" BorderThickness="1">
                     <StackPanel Margin="16">
                         <TextBlock Text="📋 Categories" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,12"/>
                         <ListBox ItemsSource="{Binding Categories}" 
                                  SelectedItem="{Binding SelectedCategory}"
-                                 Background="Transparent" BorderThickness="0">
+                                 Background="Transparent" BorderThickness="0"
+                                 MaxHeight="300">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding}" Padding="10,8"/>
+                                    <TextBlock Text="{Binding}" Padding="10,6" FontSize="11"/>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>
@@ -164,7 +145,6 @@
                 </Border>
             </StackPanel>
 
-            <!-- GRID -->
             <Border Grid.Column="1" Background="White" CornerRadius="12" BorderBrush="#E2E8F0" BorderThickness="1">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -172,23 +152,30 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Grid Header -->
                     <Border Grid.Row="0" Background="#F8FAFC" CornerRadius="12,12,0,0" BorderBrush="#E2E8F0" BorderThickness="0,0,0,1">
                         <Grid Margin="16,12">
-                            <TextBlock Text="📋 All Sheets Inventory" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="📋 All Sheets Inventory" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center"/>
+                                <Border Background="#E0E7FF" CornerRadius="20" Padding="10,4" Margin="12,0,0,0">
+                                    <TextBlock FontSize="11" Foreground="#3730A3">
+                                        <Run Text="{Binding FilteredCount, Mode=OneWay}"/>
+                                        <Run Text=" items"/>
+                                    </TextBlock>
+                                </Border>
+                            </StackPanel>
                             <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, Delay=300}"
-                                     Width="250" HorizontalAlignment="Right" Padding="10,8"/>
+                                     Width="220" HorizontalAlignment="Right" Padding="10,8"
+                                     BorderBrush="#CBD5E1"/>
                         </Grid>
                     </Border>
 
-                    <!-- DataGrid -->
                     <DataGrid Grid.Row="1" 
                               ItemsSource="{Binding FilteredSheets}"
                               SelectedItem="{Binding SelectedSheet}"
                               AutoGenerateColumns="False" 
                               CanUserAddRows="False" 
                               IsReadOnly="True" 
-                              RowHeight="44" 
+                              RowHeight="48" 
                               BorderThickness="0" 
                               Background="White" 
                               GridLinesVisibility="Horizontal" 
@@ -203,160 +190,242 @@
                                 <Setter Property="Foreground" Value="White"/>
                                 <Setter Property="FontWeight" Value="Bold"/>
                                 <Setter Property="FontSize" Value="11"/>
-                                <Setter Property="Padding" Value="10,12"/>
+                                <Setter Property="Padding" Value="12,14"/>
                                 <Setter Property="HorizontalContentAlignment" Value="Center"/>
                             </Style>
                         </DataGrid.ColumnHeaderStyle>
 
                         <DataGrid.Columns>
-                            <!-- SR -->
                             <DataGridTextColumn Header="SR" Binding="{Binding SrNo}" Width="50">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="HorizontalAlignment" Value="Center"/>
                                         <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
 
-                            <!-- CATEGORY -->
-                            <DataGridTextColumn Header="CATEGORY" Binding="{Binding Category}" Width="120">
+                            <DataGridTextColumn Header="CATEGORY" Binding="{Binding Category}" Width="150">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Setter Property="FontWeight" Value="Medium"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <DataGridTextColumn Header="THICK" Binding="{Binding Thickness}" Width="70">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="HorizontalAlignment" Value="Center"/>
                                         <Setter Property="VerticalAlignment" Value="Center"/>
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
 
-                            <!-- THICKNESS -->
-                            <DataGridTextColumn Header="THICKNESS" Binding="{Binding Thickness}" Width="80">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="VerticalAlignment" Value="Center"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-
-                            <!-- COLOR -->
-                            <DataGridTemplateColumn Header="COLOR" Width="110">
+                            <DataGridTemplateColumn Header="COLOR" Width="120">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <Border Width="14" Height="14" CornerRadius="3" 
-                                                    Margin="0,0,8,0" Background="{Binding ColorBrush}"/>
-                                            <TextBlock Text="{Binding Color}"/>
+                                            <Border Width="16" Height="16" CornerRadius="4" 
+                                                    Margin="0,0,10,0" Background="{Binding ColorBrush}"/>
+                                            <TextBlock Text="{Binding Color}" FontSize="12"/>
                                         </StackPanel>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
 
-                            <!-- WIDTH -->
-                            <DataGridTextColumn Header="WIDTH" Binding="{Binding Width}" Width="70">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="HorizontalAlignment" Value="Center"/>
-                                        <Setter Property="VerticalAlignment" Value="Center"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
+                            <DataGridTemplateColumn Header="SIZE (mm)" Width="130">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                            <TextBlock Text="{Binding Width}" FontWeight="SemiBold"/>
+                                            <TextBlock Text=" × "/>
+                                            <TextBlock Text="{Binding Height}" FontWeight="SemiBold"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
 
-                            <!-- HEIGHT -->
-                            <DataGridTextColumn Header="HEIGHT" Binding="{Binding Height}" Width="70">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="HorizontalAlignment" Value="Center"/>
-                                        <Setter Property="VerticalAlignment" Value="Center"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-
-                            <!-- SQM -->
-                            <DataGridTextColumn Header="SQM" Binding="{Binding SquareMeter, StringFormat=N2}" Width="65">
+                            <DataGridTextColumn Header="SQM" Binding="{Binding SquareMeter, StringFormat=N2}" Width="70">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="HorizontalAlignment" Value="Center"/>
                                         <Setter Property="VerticalAlignment" Value="Center"/>
                                         <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="Foreground" Value="#64748B"/>
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
 
-                            <!-- PURCHASE -->
-                            <DataGridTextColumn Header="PURCHASE" Binding="{Binding PurchasePrice, StringFormat=N2}" Width="90">
+                            <DataGridTextColumn Header="PURCHASE (AED)" Binding="{Binding PurchasePrice, StringFormat=N2}" Width="110">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="HorizontalAlignment" Value="Right"/>
                                         <Setter Property="VerticalAlignment" Value="Center"/>
                                         <Setter Property="Foreground" Value="#DC2626"/>
+                                        <Setter Property="Margin" Value="0,0,10,0"/>
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
 
-                            <!-- SELL -->
-                            <DataGridTextColumn Header="SELL" Binding="{Binding SellPrice, StringFormat=N2}" Width="80">
+                            <DataGridTextColumn Header="SELL (AED)" Binding="{Binding SellPrice, StringFormat=N2}" Width="100">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="HorizontalAlignment" Value="Right"/>
                                         <Setter Property="VerticalAlignment" Value="Center"/>
-                                        <Setter Property="FontWeight" Value="SemiBold"/>
-                                        <Setter Property="Foreground" Value="#16A34A"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-
-                            <!-- STOCK -->
-                            <DataGridTextColumn Header="STOCK" Binding="{Binding TotalStock}" Width="60">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="HorizontalAlignment" Value="Center"/>
-                                        <Setter Property="VerticalAlignment" Value="Center"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-
-                            <!-- USED -->
-                            <DataGridTextColumn Header="USED" Binding="{Binding UsedSheets}" Width="60">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="HorizontalAlignment" Value="Center"/>
-                                        <Setter Property="VerticalAlignment" Value="Center"/>
-                                        <Setter Property="Foreground" Value="#EF4444"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-
-                            <!-- BALANCE -->
-                            <DataGridTextColumn Header="BAL" Binding="{Binding BalanceSheets}" Width="55">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="HorizontalAlignment" Value="Center"/>
-                                        <Setter Property="VerticalAlignment" Value="Center"/>
                                         <Setter Property="FontWeight" Value="Bold"/>
-                                        <Setter Property="Foreground" Value="#D97706"/>
+                                        <Setter Property="Foreground" Value="#16A34A"/>
+                                        <Setter Property="Margin" Value="0,0,10,0"/>
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
 
-                            <!-- ACTIONS -->
-                            <DataGridTemplateColumn Header="ACTIONS" Width="160">
+                            <DataGridTemplateColumn Header="STOCK" Width="80">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                            <Button Content="Buy" 
-                                                    Command="{Binding DataContext.BuySheetCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                    CommandParameter="{Binding}"
-                                                    Background="#2563EB" Foreground="White" 
-                                                    Padding="8,4" FontSize="10" BorderThickness="0"/>
-                                            <Button Content="Edit" 
-                                                    Command="{Binding DataContext.EditSheetCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                    CommandParameter="{Binding}"
-                                                    Background="#F1F5F9" Padding="8,4" FontSize="10" Margin="4,0,0,0" BorderThickness="0"/>
-                                            <Button Content="✕" 
-                                                    Command="{Binding DataContext.DeleteSheetCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                    CommandParameter="{Binding}"
-                                                    Background="#FEF2F2" Foreground="#DC2626" 
-                                                    Padding="6,4" FontSize="10" Margin="4,0,0,0" BorderThickness="0" Width="28"/>
-                                        </StackPanel>
+                                        <Border Background="#ECFDF5" CornerRadius="6" Padding="8,4" 
+                                                HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding TotalStock}" FontWeight="Bold" Foreground="#059669"/>
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <DataGridTemplateColumn Header="USED" Width="75">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#FEF2F2" CornerRadius="6" Padding="8,4" 
+                                                HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding UsedSheets}" FontWeight="Bold" Foreground="#DC2626"/>
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <DataGridTemplateColumn Header="BALANCE" Width="85">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#FFFBEB" CornerRadius="6" Padding="8,4" 
+                                                HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding BalanceSheets}" FontWeight="Bold" Foreground="#D97706"/>
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <!-- ═══════════════════════════════════════════════════════
+                                 ACTIONS - REDESIGNED
+                                 ═══════════════════════════════════════════════════════ -->
+                            <DataGridTemplateColumn Header="ACTIONS" Width="190">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#F8FAFC" CornerRadius="8" Padding="6,2" 
+                                                HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Button Content="Buy"
+                                                        Command="{Binding DataContext.BuySheetCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                        CommandParameter="{Binding}"
+                                                        Background="#10B981" Foreground="White" Padding="14,6"
+                                                        FontSize="11" BorderThickness="0" FontWeight="SemiBold"
+                                                        Cursor="Hand">
+                                                    <Button.Style>
+                                                        <Style TargetType="Button">
+                                                            <Setter Property="Template">
+                                                                <Setter.Value>
+                                                                    <ControlTemplate TargetType="Button">
+                                                                        <Border x:Name="bg" Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                        </Border>
+                                                                        <ControlTemplate.Triggers>
+                                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                                <Setter TargetName="bg" Property="Background" Value="#059669"/>
+                                                                            </Trigger>
+                                                                        </ControlTemplate.Triggers>
+                                                                    </ControlTemplate>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                        </Style>
+                                                    </Button.Style>
+                                                </Button>
+                                                <Button Content="Use"
+                                                        Command="{Binding DataContext.UseSheetsCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                        CommandParameter="{Binding}"
+                                                        Background="#3B82F6" Foreground="White" Padding="14,6"
+                                                        FontSize="11" BorderThickness="0" FontWeight="SemiBold"
+                                                        Cursor="Hand" Margin="6                                                        ,0,0,0">
+                                                    <Button.Style>
+                                                        <Style TargetType="Button">
+                                                            <Setter Property="Template">
+                                                                <Setter.Value>
+                                                                    <ControlTemplate TargetType="Button">
+                                                                        <Border x:Name="bg" Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                        </Border>
+                                                                        <ControlTemplate.Triggers>
+                                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                                <Setter TargetName="bg" Property="Background" Value="#2563EB"/>
+                                                                            </Trigger>
+                                                                        </ControlTemplate.Triggers>
+                                                                    </ControlTemplate>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                        </Style>
+                                                    </Button.Style>
+                                                </Button>
+                                                <Button Content="✏️"
+                                                        Command="{Binding DataContext.EditSheetCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                        CommandParameter="{Binding}"
+                                                        Padding="10,6" FontSize="12" Margin="10,0,0,0"
+                                                        BorderBrush="#E2E8F0" BorderThickness="1" Cursor="Hand" ToolTip="Edit">
+                                                    <Button.Style>
+                                                        <Style TargetType="Button">
+                                                            <Setter Property="Template">
+                                                                <Setter.Value>
+                                                                    <ControlTemplate TargetType="Button">
+                                                                        <Border x:Name="bg" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="Transparent" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                        </Border>
+                                                                        <ControlTemplate.Triggers>
+                                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                                <Setter TargetName="bg" Property="Background" Value="#F1F5F9"/>
+                                                                                <Setter TargetName="bg" Property="BorderBrush" Value="#CBD5E1"/>
+                                                                            </Trigger>
+                                                                        </ControlTemplate.Triggers>
+                                                                    </ControlTemplate>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                        </Style>
+                                                    </Button.Style>
+                                                </Button>
+                                                <Button Content="🗑️"
+                                                        Command="{Binding DataContext.DeleteSheetCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                        CommandParameter="{Binding}"
+                                                        Padding="10,6" FontSize="12" Margin="6,0,0,0"
+                                                        BorderBrush="#FEE2E2" BorderThickness="1" Foreground="#EF4444" Cursor="Hand" ToolTip="Delete">
+                                                    <Button.Style>
+                                                        <Style TargetType="Button">
+                                                            <Setter Property="Template">
+                                                                <Setter.Value>
+                                                                    <ControlTemplate TargetType="Button">
+                                                                        <Border x:Name="bg" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="Transparent" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                        </Border>
+                                                                        <ControlTemplate.Triggers>
+                                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                                <Setter TargetName="bg" Property="Background" Value="#FEE2E2"/>
+                                                                                <Setter TargetName="bg" Property="BorderBrush" Value="#FECACA"/>
+                                                                            </Trigger>
+                                                                        </ControlTemplate.Triggers>
+                                                                    </ControlTemplate>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                        </Style>
+                                                    </Button.Style>
+                                                </Button>
+                                            </StackPanel>
+                                        </Border>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
@@ -372,11 +441,11 @@
         <Border Grid.Row="3" Background="White" CornerRadius="12" Margin="0,12,0,0" BorderBrush="#E2E8F0" BorderThickness="1">
             <Grid Margin="16,12">
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="Showing" Foreground="#64748B"/>
-                    <TextBlock Text="{Binding FilteredCount}" FontWeight="Bold" Margin="6,0"/>
-                    <TextBlock Text="of" Foreground="#64748B"/>
-                    <TextBlock Text="{Binding TotalSheets}" FontWeight="Bold" Margin="6,0"/>
-                    <TextBlock Text="entries" Foreground="#64748B"/>
+                    <TextBlock Text="Showing" Foreground="#64748B" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding FilteredCount}" FontWeight="Bold" Margin="6,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="of" Foreground="#64748B" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding TotalSheets}" FontWeight="Bold" Margin="6,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="entries" Foreground="#64748B" VerticalAlignment="Center"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Content="◀ Prev" Padding="12,6" Background="#F1F5F9" BorderThickness="1" BorderBrush="#CBD5E1"/>

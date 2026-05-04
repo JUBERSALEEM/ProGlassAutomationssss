@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
-using ProGlassAutomation.Views.DGU;
+using ProGlassAutomation.ViewModels;
 
 namespace ProGlassAutomation.Views.DGU
 {
