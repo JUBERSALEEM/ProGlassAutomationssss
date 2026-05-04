@@ -93,6 +93,7 @@ namespace ProGlassAutomation.ViewModels
         public ICommand EditSheetCommand { get; }
         public ICommand DeleteSheetCommand { get; }
         public ICommand BuySheetCommand { get; }
+        public ICommand UseSheetsCommand { get; }
         public ICommand SaveCommand { get; }
         public ICommand ExportExcelCommand { get; }
         public ICommand ImportExcelCommand { get; }
@@ -111,10 +112,12 @@ namespace ProGlassAutomation.ViewModels
             SheetStoreService.Instance.DataChanged += OnServiceDataChanged;
             System.Diagnostics.Debug.WriteLine("SheetStoreViewModel: DataChanged event subscribed");
 
+            // Initialize commands
             AddSheetCommand = new RelayCommand(AddSheet);
             EditSheetCommand = new RelayCommand(EditSheet, CanEditOrDelete);
             DeleteSheetCommand = new RelayCommand(DeleteSheet, CanEditOrDelete);
             BuySheetCommand = new RelayCommand(BuySheet, CanEditOrDelete);
+            UseSheetsCommand = new RelayCommand(UseSheets, CanEditOrDelete);
             SaveCommand = new RelayCommand(Save);
             ExportExcelCommand = new RelayCommand(ExportExcel);
             ImportExcelCommand = new RelayCommand(ImportExcel);
@@ -257,23 +260,14 @@ namespace ProGlassAutomation.ViewModels
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("SheetStoreViewModel: AddSheet started");
-
                 var dialog = new Views.SheetStore.SheetDialog(null);
                 if (dialog.ShowDialog() == true)
                 {
-                    System.Diagnostics.Debug.WriteLine($"SheetStoreViewModel: Dialog returned, NewSheet={dialog.NewSheet?.Category}");
                     SheetStoreService.Instance.AddSheet(dialog.NewSheet);
-                    System.Diagnostics.Debug.WriteLine("SheetStoreViewModel: AddSheet completed");
-                }
-                else
-                {
-                    System.Diagnostics.Debug.WriteLine("SheetStoreViewModel: AddSheet cancelled");
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"SheetStoreViewModel: Error adding sheet: {ex.Message}");
                 MessageBox.Show($"Error adding sheet: {ex.Message}", "Error");
             }
         }
@@ -286,25 +280,16 @@ namespace ProGlassAutomation.ViewModels
                 if (sheet == null)
                     sheet = SelectedSheet;
 
-                if (sheet == null)
-                {
-                    System.Diagnostics.Debug.WriteLine("SheetStoreViewModel: EditSheet - no sheet selected");
-                    return;
-                }
-
-                System.Diagnostics.Debug.WriteLine($"SheetStoreViewModel: EditSheet started for ID={sheet.Id}");
+                if (sheet == null) return;
 
                 var dialog = new Views.SheetStore.SheetDialog(sheet);
                 if (dialog.ShowDialog() == true)
                 {
-                    System.Diagnostics.Debug.WriteLine($"SheetStoreViewModel: Dialog returned, updating ID={dialog.NewSheet?.Id}");
                     SheetStoreService.Instance.UpdateSheet(dialog.NewSheet);
-                    System.Diagnostics.Debug.WriteLine("SheetStoreViewModel: EditSheet completed");
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"SheetStoreViewModel: Error editing sheet: {ex.Message}");
                 MessageBox.Show($"Error editing sheet: {ex.Message}", "Error");
             }
         }
@@ -327,7 +312,6 @@ namespace ProGlassAutomation.ViewModels
 
                 if (result == MessageBoxResult.Yes)
                 {
-                    System.Diagnostics.Debug.WriteLine($"SheetStoreViewModel: Deleting sheet ID={sheet.Id}");
                     SheetStoreService.Instance.DeleteSheet(sheet.Id);
                 }
             }
@@ -337,6 +321,9 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
+        // ═══════════════════════════════════════════════════════
+        // BUY SHEETS - UPDATED WITH DIALOG
+        // ═══════════════════════════════════════════════════════
         public void BuySheet(object parameter = null)
         {
             try
@@ -345,15 +332,83 @@ namespace ProGlassAutomation.ViewModels
                 if (sheet == null)
                     sheet = SelectedSheet;
 
-                if (sheet == null) return;
+                if (sheet == null)
+                {
+                    MessageBox.Show("Please select a sheet first!", "No Selection", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
 
-                sheet.TotalStock++;
-                sheet.LatestPurchaseDate = DateTime.Now;
-                SheetStoreService.Instance.UpdateSheet(sheet);
+                // Open purchase dialog
+                var dialog = new Views.SheetStore.BuySheetDialog(sheet);
+                if (dialog.ShowDialog() == true)
+                {
+                    var record = dialog.ViewModel.ToPurchaseRecord();
+                    SheetStoreService.Instance.AddPurchaseRecord(record);
+
+                    MessageBox.Show(
+                        $"✅ Purchase Successful!\n\n" +
+                        $"Purchased: {record.Quantity} sheets\n" +
+                        $"Unit Price: {record.UnitPrice:N2} AED\n" +
+                        $"Total: {record.TotalAmt:N2} AED\n\n" +
+                        $"New Stock: {sheet.TotalStock}\n" +
+                        $"Balance: {sheet.BalanceSheets}",
+                        "Success",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error buying sheet: {ex.Message}", "Error");
+                MessageBox.Show($"Error buying sheet: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // USE / DEDUCT SHEETS - FOR STEP 5
+        // ═══════════════════════════════════════════════════════
+        public void UseSheets(object parameter = null)
+        {
+            try
+            {
+                Sheet? sheet = parameter as Sheet;
+                if (sheet == null)
+                    sheet = SelectedSheet;
+
+                if (sheet == null)
+                {
+                    MessageBox.Show("Please select a sheet first!", "No Selection", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // Check balance
+                if (sheet.BalanceSheets <= 0)
+                {
+                    MessageBox.Show("No sheets available to use!\n\nCurrent Balance: 0",
+                        "Insufficient Stock", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // Open use dialog
+                var dialog = new Views.SheetStore.UseSheetsDialog(sheet);
+                if (dialog.ShowDialog() == true)
+                {
+                    var record = dialog.ViewModel.ToUsageRecord();
+                    SheetStoreService.Instance.AddUsageRecord(record);
+
+                    MessageBox.Show(
+                        $"✅ Sheets Used!\n\n" +
+                        $"Used: {record.Quantity} sheets\n" +
+                        $"Reason: {record.Reason}\n\n" +
+                        $"Used Total: {sheet.UsedSheets}\n" +
+                        $"Balance: {sheet.BalanceSheets}",
+                        "Success",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error using sheet: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

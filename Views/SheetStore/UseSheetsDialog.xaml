@@ -1,0 +1,76 @@
+﻿<Window x:Class="ProGlassAutomation.Views.SheetStore.UseSheetsDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Use / Deduct Sheets" 
+        Height="400" Width="400"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="White">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="100"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Grid.ColumnSpan="2" 
+                Background="#DC2626" Padding="15" Margin="0,0,0,20" CornerRadius="5">
+            <TextBlock Text="USE / DEDUCT SHEETS" FontSize="18" FontWeight="Bold" 
+                       Foreground="White" HorizontalAlignment="Center"/>
+        </Border>
+
+        <!-- Current Balance Info -->
+        <Border Grid.Row="1" Grid.ColumnSpan="2" 
+                Background="#FEF2F2" Padding="12" Margin="0,0,0,15" CornerRadius="5">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <TextBlock Text="Available Balance: " FontSize="16" Foreground="#991B1B"/>
+                <TextBlock Text="{Binding BalanceSheets}" FontWeight="Bold" FontSize="20" Foreground="#991B1B"/>
+                <TextBlock Text=" sheets" FontSize="16" Foreground="#991B1B"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Quantity to Use -->
+        <TextBlock Grid.Row="2" Grid.Column="0" Text="Quantity:" 
+                   VerticalAlignment="Center" FontWeight="Bold"/>
+        <TextBox Grid.Row="2" Grid.Column="1" x:Name="QtyTextBox" 
+                 Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}"
+                 FontSize="16" Padding="8" Margin="0,0,0,12" 
+                 BorderBrush="#D1D5DB" BorderThickness="1"/>
+
+        <!-- Reason / Purpose -->
+        <TextBlock Grid.Row="3" Grid.Column="0" Text="Reason:" 
+                   VerticalAlignment="Top" FontWeight="Bold" Margin="0,5,0,0"/>
+        <TextBox Grid.Row="3" Grid.Column="1" x:Name="ReasonTextBox"
+                 Text="{Binding Reason, UpdateSourceTrigger=PropertyChanged}"
+                 Height="60" AcceptsReturn="True" TextWrapping="Wrap"
+                 Padding="8" Margin="0,0,0,12" BorderBrush="#D1D5DB" BorderThickness="1"/>
+
+        <!-- Date -->
+        <TextBlock Grid.Row="4" Grid.Column="0" Text="Date:" 
+                   VerticalAlignment="Center" FontWeight="Bold"/>
+        <DatePicker Grid.Row="4" Grid.Column="1" x:Name="DatePicker"
+                    SelectedDate="{Binding UsedOn}"
+                    Padding="8" Margin="0,0,0,12"/>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="6" Grid.ColumnSpan="2" 
+                    Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+            <Button Content="CANCEL" Width="100" Height="40" 
+                    Click="Cancel_Click" Margin="0,0,10,0"
+                    Background="#E5E7EB" FontWeight="Bold"/>
+            <Button Content="USE" Width="100" Height="40" 
+                    Click="Use_Click" Background="#DC2626" Foreground="White"
+                    FontWeight="Bold" BorderThickness="0"/>
+        </StackPanel>
+    </Grid>
+</Window>

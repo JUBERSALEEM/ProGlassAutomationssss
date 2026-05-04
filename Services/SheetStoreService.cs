@@ -142,7 +142,9 @@ namespace ProGlassAutomation.Services
                         SupplierName = sheet.SupplierName ?? "",
                         Description = sheet.Description ?? "",
                         CreatedDate = DateTime.Now,
-                        LatestPurchaseDate = sheet.LatestPurchaseDate
+                        LatestPurchaseDate = sheet.LatestPurchaseDate,
+                        PurchaseHistory = new List<SheetPurchase>(),
+                        UseHistory = new List<SheetUsage>()
                     };
 
                     _sheets.Add(newSheet);
@@ -249,6 +251,128 @@ namespace ProGlassAutomation.Services
         }
 
         // ═══════════════════════════════════════════════════════
+        // PURCHASE SHEETS
+        // ═══════════════════════════════════════════════════════
+        public void AddPurchaseRecord(SheetPurchase record)
+        {
+            lock (_lock)
+            {
+                try
+                {
+                    var sheet = _sheets.FirstOrDefault(s => s.Id == record.SheetId);
+                    if (sheet == null)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"AddPurchaseRecord: Sheet not found ID={record.SheetId}");
+                        throw new Exception("Sheet not found!");
+                    }
+
+                    // Ensure lists are initialized
+                    if (sheet.PurchaseHistory == null)
+                        sheet.PurchaseHistory = new List<SheetPurchase>();
+
+                    // Assign ID
+                    record.Id = sheet.PurchaseHistory.Count > 0
+                        ? sheet.PurchaseHistory.Max(p => p.Id) + 1
+                        : 1;
+                    record.CreatedAt = DateTime.Now;
+
+                    // Add to history
+                    sheet.PurchaseHistory.Add(record);
+
+                    // Update sheet stock
+                    sheet.TotalStock += record.Quantity;
+                    sheet.LatestPurchaseDate = record.PurchasedOn;
+                    sheet.PurchasePrice = record.UnitPrice;
+
+                    // Update supplier if provided
+                    if (!string.IsNullOrEmpty(record.Supplier))
+                    {
+                        sheet.Supplier = record.Supplier;
+                        sheet.SupplierName = record.Supplier;
+                    }
+
+                    System.Diagnostics.Debug.WriteLine($"AddPurchaseRecord: Added {record.Quantity} sheets to ID={sheet.Id}, New Stock={sheet.TotalStock}");
+
+                    SaveToFile();
+                    RefreshCache();
+                    NotifyDataChanged();
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error adding purchase record: {ex.Message}");
+                    throw;
+                }
+            }
+        }
+
+        public List<SheetPurchase> GetPurchaseHistory(int sheetId)
+        {
+            var sheet = _sheets.FirstOrDefault(s => s.Id == sheetId);
+            return sheet?.PurchaseHistory ?? new List<SheetPurchase>();
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // USE / DEDUCT SHEETS
+        // ═══════════════════════════════════════════════════════
+        public void AddUsageRecord(SheetUsage record)
+        {
+            lock (_lock)
+            {
+                try
+                {
+                    var sheet = _sheets.FirstOrDefault(s => s.Id == record.SheetId);
+                    if (sheet == null)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"AddUsageRecord: Sheet not found ID={record.SheetId}");
+                        throw new Exception("Sheet not found!");
+                    }
+
+                    // Check available balance
+                    int availableBalance = sheet.TotalStock - sheet.UsedSheets;
+                    if (record.Quantity > availableBalance)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"AddUsageRecord: Insufficient stock. Requested={record.Quantity}, Available={availableBalance}");
+                        throw new Exception($"Only {availableBalance} sheets available!");
+                    }
+
+                    // Ensure lists are initialized
+                    if (sheet.UseHistory == null)
+                        sheet.UseHistory = new List<SheetUsage>();
+
+                    // Assign ID
+                    record.Id = sheet.UseHistory.Count > 0
+                        ? sheet.UseHistory.Max(u => u.Id) + 1
+                        : 1;
+                    record.CreatedAt = DateTime.Now;
+
+                    // Add to history
+                    sheet.UseHistory.Add(record);
+
+                    // Update used count
+                    sheet.UsedSheets += record.Quantity;
+                    sheet.BalanceSheets = sheet.TotalStock - sheet.UsedSheets;
+
+                    System.Diagnostics.Debug.WriteLine($"AddUsageRecord: Used {record.Quantity} sheets from ID={sheet.Id}, New Balance={sheet.BalanceSheets}");
+
+                    SaveToFile();
+                    RefreshCache();
+                    NotifyDataChanged();
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error adding usage record: {ex.Message}");
+                    throw;
+                }
+            }
+        }
+
+        public List<SheetUsage> GetUsageHistory(int sheetId)
+        {
+            var sheet = _sheets.FirstOrDefault(s => s.Id == sheetId);
+            return sheet?.UseHistory ?? new List<SheetUsage>();
+        }
+
+        // ═══════════════════════════════════════════════════════
         // FILE OPERATIONS
         // ═══════════════════════════════════════════════════════
         private List<Sheet> LoadFromFile()
@@ -294,6 +418,39 @@ namespace ProGlassAutomation.Services
                             CreatedDate = DateTime.TryParse(el.Attribute("CreatedDate")?.Value, out DateTime cd) ? cd : DateTime.Now,
                             LatestPurchaseDate = DateTime.TryParse(el.Attribute("LatestPurchaseDate")?.Value, out DateTime lpd) ? lpd : (DateTime?)null
                         };
+
+                        // Load Purchase History
+                        sheet.PurchaseHistory = new List<SheetPurchase>();
+                        foreach (var purchEl in el.Elements("Purchase"))
+                        {
+                            sheet.PurchaseHistory.Add(new SheetPurchase
+                            {
+                                Id = int.TryParse(purchEl.Attribute("Id")?.Value, out int pid) ? pid : 0,
+                                SheetId = sheet.Id,
+                                Quantity = int.TryParse(purchEl.Attribute("Quantity")?.Value, out int pq) ? pq : 0,
+                                UnitPrice = decimal.TryParse(purchEl.Attribute("UnitPrice")?.Value, out decimal upp) ? upp : 0,
+                                Supplier = purchEl.Attribute("Supplier")?.Value ?? "",
+                                PurchasedOn = DateTime.TryParse(purchEl.Attribute("PurchasedOn")?.Value, out DateTime ppo) ? ppo : DateTime.Now,
+                                Notes = purchEl.Attribute("Notes")?.Value ?? "",
+                                CreatedAt = DateTime.TryParse(purchEl.Attribute("CreatedAt")?.Value, out DateTime pca) ? pca : DateTime.Now
+                            });
+                        }
+
+                        // Load Use History
+                        sheet.UseHistory = new List<SheetUsage>();
+                        foreach (var useEl in el.Elements("Usage"))
+                        {
+                            sheet.UseHistory.Add(new SheetUsage
+                            {
+                                Id = int.TryParse(useEl.Attribute("Id")?.Value, out int uid) ? uid : 0,
+                                SheetId = sheet.Id,
+                                Quantity = int.TryParse(useEl.Attribute("Quantity")?.Value, out int uq) ? uq : 0,
+                                Reason = useEl.Attribute("Reason")?.Value ?? "",
+                                UsedOn = DateTime.TryParse(useEl.Attribute("UsedOn")?.Value, out DateTime uuo) ? uuo : DateTime.Now,
+                                CreatedAt = DateTime.TryParse(useEl.Attribute("CreatedAt")?.Value, out DateTime uca) ? uca : DateTime.Now
+                            });
+                        }
+
                         sheets.Add(sheet);
                     }
                     catch (Exception ex)
@@ -320,7 +477,7 @@ namespace ProGlassAutomation.Services
 
                 foreach (var sheet in _sheets)
                 {
-                    doc.Root.Add(new XElement("Sheet",
+                    var sheetEl = new XElement("Sheet",
                         new XAttribute("Id", sheet.Id),
                         new XAttribute("SrNo", sheet.SrNo),
                         new XAttribute("Category", sheet.Category ?? ""),
@@ -331,7 +488,7 @@ namespace ProGlassAutomation.Services
                         new XAttribute("Height", sheet.Height),
                         new XAttribute("SquareMeter", sheet.SquareMeter),
                         new XAttribute("PurchasePrice", sheet.PurchasePrice),
-                        new XAttribute("SellPrice", sheet.SellPrice),
+                                                new XAttribute("SellPrice", sheet.SellPrice),
                         new XAttribute("TotalStock", sheet.TotalStock),
                         new XAttribute("UsedSheets", sheet.UsedSheets),
                         new XAttribute("BalanceSheets", sheet.BalanceSheets),
@@ -341,7 +498,41 @@ namespace ProGlassAutomation.Services
                         new XAttribute("Description", sheet.Description ?? ""),
                         new XAttribute("CreatedDate", sheet.CreatedDate),
                         new XAttribute("LatestPurchaseDate", sheet.LatestPurchaseDate?.ToString() ?? "")
-                    ));
+                    );
+
+                    // Save Purchase History
+                    if (sheet.PurchaseHistory != null && sheet.PurchaseHistory.Count > 0)
+                    {
+                        foreach (var purch in sheet.PurchaseHistory)
+                        {
+                            sheetEl.Add(new XElement("Purchase",
+                                new XAttribute("Id", purch.Id),
+                                new XAttribute("Quantity", purch.Quantity),
+                                new XAttribute("UnitPrice", purch.UnitPrice),
+                                new XAttribute("Supplier", purch.Supplier ?? ""),
+                                new XAttribute("PurchasedOn", purch.PurchasedOn),
+                                new XAttribute("Notes", purch.Notes ?? ""),
+                                new XAttribute("CreatedAt", purch.CreatedAt)
+                            ));
+                        }
+                    }
+
+                    // Save Use History
+                    if (sheet.UseHistory != null && sheet.UseHistory.Count > 0)
+                    {
+                        foreach (var use in sheet.UseHistory)
+                        {
+                            sheetEl.Add(new XElement("Usage",
+                                new XAttribute("Id", use.Id),
+                                new XAttribute("Quantity", use.Quantity),
+                                new XAttribute("Reason", use.Reason ?? ""),
+                                new XAttribute("UsedOn", use.UsedOn),
+                                new XAttribute("CreatedAt", use.CreatedAt)
+                            ));
+                        }
+                    }
+
+                    doc.Root.Add(sheetEl);
                 }
 
                 doc.Save(_filePath);
