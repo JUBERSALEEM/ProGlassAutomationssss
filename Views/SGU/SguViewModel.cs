@@ -41,28 +41,143 @@ namespace ProGlassAutomation.Views.SGU
         private double _cachedTempering = 10;
         private double _cachedProfitFactor = 1.15;
 
+        private const double CostRecoveryFactor = 0.85;
+
+        // CATEGORIES - Match Sheet.cs Categories exactly
         private static readonly string[] AllCategories = new string[]
         {
-            "HD Clear", "HD Bronze", "HD Grey", "Belgium Clear", "PNA Clear",
-            "Ramly Clear", "Sunlux Silver", "Reflite Silver", "Stopsol Classic",
-            "Guardian Clear", "AGC Clear", "Şişecam Clear", "SGG Clear",
-            "Pilkington Clear", "Tinted Bronze", "Low-E Clear", "Lacobel White"
+            // CLEAR
+            "Clear Float", "Ultra Clear", "Crystal Clear", "Optifloat Clear",
+            
+            // HD SERIES
+            "HD Clear", "HD Bronze", "HD Grey", "HD Green", "HD Blue", "HD Black",
+            
+            // BELGIUM / PLANIBEL
+            "Belgium Clear", "Belgium Bronze", "Belgium Grey", "Belgium Green",
+            "Planibel Clear", "Planibel A", "Planibel Top N+",
+            "Planibel Grey", "Planibel Bronze", "Planibel Green",
+            
+            // PNA
+            "PNA Clear", "PNA Bronze", "PNA Grey", "PNA Green", "PNA Blue",
+            "PNA Reflective Silver", "PNA Reflective Gold",
+            
+            // RAMLY
+            "Ramly Clear", "Ramly Bronze", "Ramly Grey", "Ramly Green", "Ramly Blue",
+            
+            // SUNLUX / REFLITE
+            "Sunlux Silver", "Sunlux Gold", "Sunlux Blue", "Sunlux Green", "Sunlux Bronze",
+            "Reflite Silver", "Reflite Gold", "Reflite Blue", "Reflite Green", "Reflite Bronze",
+            
+            // STOPSOL (AGC)
+            "Stopsol Classic Clear", "Stopsol Classic Bronze", "Stopsol Classic Grey",
+            "Stopsol Classic Green", "Stopsol Classic Blue",
+            "Stopsol Superburn Clear", "Stopsol Superburn Bronze", "Stopsol Superburn Grey",
+            "Stopsol Superburn Green", "Stopsol Superburn Blue",
+            "Stopsol Silver Lite", "Stopsol Silver Dark",
+            
+            // STOPRAY (AGC)
+            "Stopray Classic Clear", "Stopray Classic Bronze", "Stopray Classic Grey",
+            "Stopray Classic Green", "Stopray Classic Blue",
+            "Stopray Silver", "Stopray Gold", "Stopray Vision",
+            
+            // CHROMAFLOAT (AGC)
+            "Chromafloat Silver", "Chromafloat Gold", "Chromafloat Blue", "Chromafloat Green",
+            
+            // SUNERGY (AGC)
+            "Sunergy Clear", "Sunergy Bronze", "Sunergy Grey", "Sunergy Green", "Sunergy Plus",
+            
+            // TINTED
+            "Tinted Bronze", "Tinted Grey", "Tinted Green", "Tinted Blue", "Tinted Black",
+            
+            // GUARDIAN
+            "Guardian Clear", "Guardian Ultra Clear",
+            "SunGuard Clear", "SunGuard Blue", "SunGuard Green", "SunGuard Bronze", "SunGuard Grey",
+            "SunGuard Neutral 63", "SunGuard Neutral 70",
+            "Solarban 60", "Solarban 70", "Solarban 70XL", "Solarban 90",
+            "Guardian Reflective Silver", "Guardian Reflective Gold",
+            
+            // AGC
+            "AGC Clear", "AGC Ultra Clear", "AGC Low Iron",
+            "AGC Tinted Bronze", "AGC Tinted Grey", "AGC Tinted Green", "AGC Tinted Blue",
+            
+            // ŞIŞECAM / TRAKYA (Turkey)
+            "Şişecam Clear", "Şişecam Ultra Clear",
+            "Şişecam Stopray Bronze", "Şişecam Stopray Grey", "Şişecam Stopray Green",
+            "Şişecam Tinted Bronze", "Şişecam Tinted Grey", "Şişecam Tinted Green",
+            "Şişecam Reflective Silver", "Şişecam Reflective Gold",
+            "Trakya Clear", "Trakya Tinted", "Trakya Stopray",
+            
+            // SGG (Saint Gobain)
+            "SGG Clear", "SGG Ultra Clear",
+            "SGG Planitherm One", "SGG Planitherm Total", "SGG Planitherm Ultra N",
+            "SGG Reflective Silver", "SGG Reflective Gold", "SGG Reflective Blue",
+            "SGG Tinted Bronze", "SGG Tinted Grey", "SGG Tinted Green",
+            "SGG Climalit", "SGG Antelio",
+            
+            // PILKINGTON
+            "Pilkington Optifloat Clear", "Pilkington Optifloat Tinted",
+            "Pilkington K Glass", "Pilkington Low-E",
+            "Pilkington Sunshade", "Pilkington Arctic Blue",
+            
+            // PGI (South Africa)
+            "PGI Clear", "PGI Tinted Bronze", "PGI Tinted Grey", "PGI Tinted Green",
+            "PGI Reflective Silver", "PGI Reflective Blue",
+            
+            // TAIWAN GLASS
+            "Taiwan Clear", "Taiwan Tinted Bronze", "Taiwan Tinted Grey", "Taiwan Tinted Green",
+            "Taiwan Reflective Silver", "Taiwan Reflective Blue",
+            
+            // XINYI (China)
+            "Xinyi Clear", "Xinyi Tinted", "Xinyi Low-E",
+            
+            // LOW-E
+            "Low-E Clear", "Low-E Neutral", "Low-E Silver",
+            "iPlus 1.0", "iPlus 1.1", "iPlus 1.2",
+            "Comfort Plus", "Energy Advantage",
+            
+            // ANTELIO / MIRALITE / SPECTRAN
+            "Antelio Silver", "Antelio Gold", "Antelio Blue", "Antelio Green",
+            "Miralite Silver", "Miralite Gold", "Miralite Bronze",
+            "Spectran Silver", "Spectran Blue",
+            
+            // SUNFILM / COMFILM
+            "Sunfilm Clear", "Sunfilm Ceramic", "Sunfilm Privacy",
+            "Comfilm Safety", "Comfilm UV",
+            
+            // PRIVACY / DECORATIVE
+            "Matelux Clear", "Matelux Bronze", "Matelux Grey", "Matelux Green",
+            "Decormatt", "Mastercote", "Satinato", "Masterglass",
+            
+            // LACOBEL (Painted)
+            "Lacobel White", "Lacobel Black", "Lacobel Grey", "Lacobel Red",
+            "Lacobel Blue", "Lacobel Brown", "Lacobel Green",
+            "Lacobel Extra White", "Lacobel Extra Black", "Lacobel Easy Clean",
+            
+            // PYROGLASS (Fire Rated)
+            "Pyrobel Clear", "Pyrobel Bronze",
+            "Pyrostop 30", "Pyrostop 60", "Pyrostop 90",
+            "Pyrodur", "Pyroguard",
+            
+            // CUSTOM
+            "Custom", "Other"
         };
 
+        // THICKNESS - Match Sheet.cs Thicknesses exactly
         private static readonly string[] AllThicknesses = new string[]
         {
             "2mm", "2.5mm", "3mm", "4mm", "5mm", "6mm", "8mm", "10mm", "12mm", "15mm", "19mm"
         };
 
+        // COLORS - Match Sheet.cs ColorItems exactly
         private static readonly string[] AllColors = new string[]
         {
-            "Clear", "Bronze", "Dark Bronze", "Grey", "Dark Grey", "Green",
-            "Blue", "Reflective Silver", "Reflective Gold", "Reflective Blue",
-            "Mirror", "Mirror Silver", "White", "Black"
+            "Clear", "Ultra Clear", "Bronze", "Grey", "Green", "Blue", "Black",
+            "Silver", "Gold", "Pink", "Ocean Blue", "Dark Grey", "Amber",
+            "White", "Red", "Brown", "Neutral", "Arctic Blue"
         };
 
-        // CACHE REBUILD FLAGS - prevent race conditions
         private bool _isRebuildingCache = false;
+        private bool _isManualSheetPrice = false;
 
         public ObservableCollection<string> CategoryOptions { get; } = new();
         public ObservableCollection<string> ThicknessOptions { get; } = new();
@@ -74,21 +189,21 @@ namespace ProGlassAutomation.Views.SGU
         public string Category
         {
             get => _cat;
-            set { _cat = value; OnPropertyChanged(); LoadColorsByCategory(); SchedulePriceLoad(); }
+            set { _cat = value; _isManualSheetPrice = false; OnPropertyChanged(); LoadColorsByCategory(); SchedulePriceLoad(); }
         }
 
         private string _th = "6mm";
         public string Thickness
         {
             get => _th;
-            set { _th = value; OnPropertyChanged(); SchedulePriceLoad(); ScheduleCalculate(); }
+            set { _th = value; _isManualSheetPrice = false; OnPropertyChanged(); SchedulePriceLoad(); ScheduleCalculate(); }
         }
 
         private string _c = "Clear";
         public string ColorName
         {
             get => _c;
-            set { _c = value; OnPropertyChanged(); SchedulePriceLoad(); ScheduleCalculate(); }
+            set { _c = value; _isManualSheetPrice = false; OnPropertyChanged(); SchedulePriceLoad(); ScheduleCalculate(); }
         }
 
         private string _p = "15%";
@@ -108,25 +223,62 @@ namespace ProGlassAutomation.Views.SGU
             set { _result = value; OnPropertyChanged(); }
         }
 
+        // Formula breakdown properties
+        public double BaseCost => _cachedSheetPrice / CostRecoveryFactor;
+        public double ProcessingCost => _cachedCutting + _cachedTempering;
+        public double Subtotal => BaseCost + ProcessingCost;
+        public double FinalPrice => Subtotal * _cachedProfitFactor;
+
         private double _sh;
         public double SheetPrice
         {
             get => _sh;
-            set { _sh = value; OnPropertyChanged(); ScheduleCalculate(); }
+            set
+            {
+                _sh = value;
+                _cachedSheetPrice = value;
+                _isManualSheetPrice = true;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(BaseCost));
+                OnPropertyChanged(nameof(Subtotal));
+                OnPropertyChanged(nameof(FinalPrice));
+                OnPropertyChanged(nameof(Result));
+                Calculate();
+            }
         }
 
         private double _cutting = 5;
         public double Cutting
         {
             get => _cutting;
-            set { _cachedCutting = value; OnPropertyChanged(); ScheduleCalculate(); }
+            set
+            {
+                _cutting = value;
+                _cachedCutting = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(ProcessingCost));
+                OnPropertyChanged(nameof(Subtotal));
+                OnPropertyChanged(nameof(FinalPrice));
+                OnPropertyChanged(nameof(Result));
+                Calculate();
+            }
         }
 
         private double _tempering = 10;
         public double Tempering
         {
             get => _tempering;
-            set { _cachedTempering = value; OnPropertyChanged(); ScheduleCalculate(); }
+            set
+            {
+                _tempering = value;
+                _cachedTempering = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(ProcessingCost));
+                OnPropertyChanged(nameof(Subtotal));
+                OnPropertyChanged(nameof(FinalPrice));
+                OnPropertyChanged(nameof(Result));
+                Calculate();
+            }
         }
 
         private bool _histVis = true;
@@ -144,7 +296,24 @@ namespace ProGlassAutomation.Views.SGU
 
         public SguViewModel()
         {
-            // AUTO-INVALIDATION: Subscribe to SheetStoreService event
+            // Debug: Check SheetStoreService on startup
+            try
+            {
+                var service = Services.SheetStoreService.Instance;
+                var sheets = service.GetAllActive().ToList();
+                System.Diagnostics.Debug.WriteLine($"[SGU INIT] SheetStore has {sheets.Count} sheets");
+
+                foreach (var s in sheets.Take(5))
+                {
+                    System.Diagnostics.Debug.WriteLine($"[SGU INIT] {s.Category} | {s.Thickness} | {s.Color} | {s.PurchasePrice}");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[SGU INIT ERROR] {ex.Message}");
+            }
+
+            // Subscribe to SheetStoreService event
             try
             {
                 var service = Services.SheetStoreService.Instance;
@@ -170,6 +339,7 @@ namespace ProGlassAutomation.Views.SGU
 
             ClearCommand = new RelayCommand(o =>
             {
+                _isManualSheetPrice = false;
                 SheetPrice = 0;
                 _cachedCutting = 5;
                 _cachedTempering = 10;
@@ -178,7 +348,9 @@ namespace ProGlassAutomation.Views.SGU
                 _c = "Clear";
                 _cutting = 5;
                 _tempering = 10;
-                Notify("Cutting", "Tempering", "PF", "Thickness", "ColorName");
+                OnPropertyChanged(nameof(Cutting));
+                OnPropertyChanged(nameof(Tempering));
+                Notify("PF", "Thickness", "ColorName", "BaseCost", "ProcessingCost", "Subtotal", "FinalPrice", "Result");
                 if (CategoryOptions.Count > 0)
                     Category = CategoryOptions[0];
                 Calculate();
@@ -195,7 +367,6 @@ namespace ProGlassAutomation.Views.SGU
             Calculate();
         }
 
-        // FIXED: Thread-safe debounce with lock
         private void ScheduleDebounced(Action action, int ms = DebounceMs)
         {
             lock (_debounceLock)
@@ -250,6 +421,7 @@ namespace ProGlassAutomation.Views.SGU
         private void LoadColorsByCategory()
         {
             ColorOptions.Clear();
+
             if (string.IsNullOrEmpty(Category))
             {
                 foreach (var c in AllColors)
@@ -257,39 +429,44 @@ namespace ProGlassAutomation.Views.SGU
                 return;
             }
 
-            switch (Category)
+            string[] commonColors = new[] { "Clear", "Ultra Clear" };
+
+            var categoryColors = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
             {
-                case "HD Clear":
-                case "Belgium Clear":
-                case "PNA Clear":
-                case "Ramly Clear":
-                case "Guardian Clear":
-                case "AGC Clear":
-                case "Şişecam Clear":
-                case "SGG Clear":
-                case "Pilkington Clear":
-                case "Low-E Clear":
-                    ColorOptions.Add("Clear"); break;
-                case "HD Bronze":
-                case "Tinted Bronze":
-                    ColorOptions.Add("Bronze");
-                    ColorOptions.Add("Dark Bronze"); break;
-                case "HD Grey":
-                    ColorOptions.Add("Grey");
-                    ColorOptions.Add("Dark Grey"); break;
-                case "Sunlux Silver":
-                case "Reflite Silver":
-                    ColorOptions.Add("Reflective Silver");
-                    ColorOptions.Add("Mirror Silver"); break;
-                case "Stopsol Classic":
-                    ColorOptions.Add("Reflective Silver");
-                    ColorOptions.Add("Reflective Gold");
-                    ColorOptions.Add("Reflective Blue"); break;
-                case "Lacobel White":
-                    ColorOptions.Add("White"); break;
-                default:
-                    foreach (var c in AllColors)
-                        ColorOptions.Add(c); break;
+                { "Bronze", new[] { "Bronze", "Clear" } },
+                { "Grey", new[] { "Grey", "Dark Grey", "Clear" } },
+                { "Green", new[] { "Green", "Clear" } },
+                { "Blue", new[] { "Blue", "Ocean Blue", "Clear" } },
+                { "Black", new[] { "Black", "Clear" } },
+                { "Silver", new[] { "Silver", "Clear" } },
+                { "Gold", new[] { "Gold", "Clear" } },
+                { "Reflective", new[] { "Silver", "Gold", "Blue", "Green" } },
+                { "Lacobel", new[] { "White", "Black", "Grey", "Red", "Blue", "Brown", "Green" } },
+                { "Sunlux", new[] { "Silver", "Gold", "Blue", "Green", "Clear" } },
+                { "Reflite", new[] { "Silver", "Gold", "Blue", "Green", "Clear" } },
+                { "Stopsol", new[] { "Clear", "Silver" } },
+                { "Guardian", new[] { "Clear", "Silver" } },
+                { "Low-E", new[] { "Clear", "Neutral", "Silver" } },
+                                { "Tinted", new[] { "Bronze", "Grey", "Green", "Blue", "Black" } },
+                { "Ultra Clear", new[] { "Ultra Clear", "Clear" } }
+            };
+
+            foreach (var kvp in categoryColors)
+            {
+                if (Category.Contains(kvp.Key, StringComparison.OrdinalIgnoreCase))
+                {
+                    foreach (var color in kvp.Value)
+                    {
+                        if (AllColors.Contains(color) && !ColorOptions.Contains(color))
+                            ColorOptions.Add(color);
+                    }
+                }
+            }
+
+            if (ColorOptions.Count == 0)
+            {
+                foreach (var c in commonColors)
+                    ColorOptions.Add(c);
             }
 
             if (ColorOptions.Count > 0)
@@ -324,15 +501,22 @@ namespace ProGlassAutomation.Views.SGU
         {
             try
             {
-                if (string.IsNullOrEmpty(Category) || string.IsNullOrEmpty(Thickness) || string.IsNullOrEmpty(ColorName))
+                // Skip if user manually entered sheet price
+                if (_isManualSheetPrice)
                 {
-                    _cachedSheetPrice = 0;
-                    SheetPrice = 0;
                     Calculate();
                     return;
                 }
 
-                // FIXED: Prevent concurrent cache rebuilds
+                if (string.IsNullOrEmpty(Category) || string.IsNullOrEmpty(Thickness) || string.IsNullOrEmpty(ColorName))
+                {
+                    _cachedSheetPrice = 0;
+                    _sh = 0;
+                    OnPropertyChanged(nameof(SheetPrice));
+                    Calculate();
+                    return;
+                }
+
                 bool needsRebuild;
                 lock (_cacheLock)
                 {
@@ -346,65 +530,153 @@ namespace ProGlassAutomation.Views.SGU
 
                     var sheets = Services.SheetStoreService.Instance.GetAllActive().ToList();
 
-                    var newSpecIdx = new Dictionary<string, double>();
-                    var newThickIdx = new Dictionary<string, double>();
-                    var newCatIdx = new Dictionary<string, double>();
+                    System.Diagnostics.Debug.WriteLine($"[SGU DEBUG] Loading {sheets.Count} sheets from SheetStore");
+
+                    var newSpecIdx = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+                    var newThickIdx = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+                    var newCatIdx = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
 
                     foreach (var s in sheets)
                     {
-                        string sKey = $"{s.Category}|{s.Thickness}|{s.Color}";
-                        string tKey = $"{s.Category}|{s.Thickness}";
+                        string cat = s.Category ?? "";
+                        string thick = s.Thickness ?? "";
+                        string color = s.Color ?? "";
+                        double sheetPrice = (double)s.PurchasePrice;
+
+                        string sKey = $"{cat}|{thick}|{color}";
+                        string tKey = $"{cat}|{thick}";
 
                         if (!newSpecIdx.ContainsKey(sKey))
-                            newSpecIdx[sKey] = (double)s.PurchasePrice;
+                            newSpecIdx[sKey] = sheetPrice;
                         if (!newThickIdx.ContainsKey(tKey))
-                            newThickIdx[tKey] = (double)s.PurchasePrice;
-                        if (!newCatIdx.ContainsKey(s.Category))
-                            newCatIdx[s.Category] = (double)s.PurchasePrice;
+                            newThickIdx[tKey] = sheetPrice;
+                        if (!newCatIdx.ContainsKey(cat))
+                            newCatIdx[cat] = sheetPrice;
+
+                        System.Diagnostics.Debug.WriteLine($"[SGU DEBUG] Loaded: {sKey} = {sheetPrice}");
                     }
+
+                    System.Diagnostics.Debug.WriteLine($"[SGU DEBUG] Total - Spec:{newSpecIdx.Count}, Thickness:{newThickIdx.Count}, Category:{newCatIdx.Count}");
 
                     SetCache(new SheetCacheSnapshot(newSpecIdx, newThickIdx, newCatIdx));
                 }
 
+                // Try exact match: Category + Thickness + Color
                 string lookupSpecKey = $"{Category}|{Thickness}|{ColorName}";
-                if (_priceBySpecIndex.TryGetValue(lookupSpecKey, out double price))
+                System.Diagnostics.Debug.WriteLine($"[SGU DEBUG] Looking for EXACT: '{lookupSpecKey}'");
+
+                double price = 0;
+                if (_priceBySpecIndex.TryGetValue(lookupSpecKey, out price))
                 {
+                    System.Diagnostics.Debug.WriteLine($"[SGU DEBUG] Found EXACT match: {price}");
                     _cachedSheetPrice = price;
-                    SheetPrice = price;
+                    _sh = price;
+                    OnPropertyChanged(nameof(SheetPrice));
                     Calculate();
                     return;
                 }
 
+                // Try partial match: Category + Thickness (ignore Color)
                 string lookupThickKey = $"{Category}|{Thickness}";
+                System.Diagnostics.Debug.WriteLine($"[SGU DEBUG] Looking for THICK: '{lookupThickKey}'");
+
                 if (_priceByThicknessIndex.TryGetValue(lookupThickKey, out price))
                 {
+                    System.Diagnostics.Debug.WriteLine($"[SGU DEBUG] Found THICK match: {price}");
                     _cachedSheetPrice = price;
-                    SheetPrice = price;
+                    _sh = price;
+                    OnPropertyChanged(nameof(SheetPrice));
                     Calculate();
                     return;
                 }
+
+                // Try category only
+                System.Diagnostics.Debug.WriteLine($"[SGU DEBUG] Looking for CAT: '{Category}'");
 
                 if (_priceByCategoryIndex.TryGetValue(Category, out price))
                 {
+                    System.Diagnostics.Debug.WriteLine($"[SGU DEBUG] Found CAT match: {price}");
                     _cachedSheetPrice = price;
-                    SheetPrice = price;
+                    _sh = price;
+                    OnPropertyChanged(nameof(SheetPrice));
                     Calculate();
                     return;
                 }
 
+                // Try fuzzy match (partial category name)
+                price = FindBestMatch(Category, Thickness, ColorName);
+                if (price > 0)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[SGU DEBUG] Found FUZZY match: {price}");
+                    _cachedSheetPrice = price;
+                    _sh = price;
+                    OnPropertyChanged(nameof(SheetPrice));
+                    Calculate();
+                    return;
+                }
+
+                System.Diagnostics.Debug.WriteLine("[SGU DEBUG] NO MATCH FOUND - Setting 0");
                 _cachedSheetPrice = 0;
-                SheetPrice = 0;
+                _sh = 0;
+                OnPropertyChanged(nameof(SheetPrice));
             }
-            catch
+            catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"[SGU ERROR] LoadPriceFromSheetStore: {ex.Message}");
                 _cachedSheetPrice = 0;
-                SheetPrice = 0;
+                _sh = 0;
+                OnPropertyChanged(nameof(SheetPrice));
             }
+        }
+
+        private double FindBestMatch(string category, string thickness, string color)
+        {
+            System.Diagnostics.Debug.WriteLine($"[SGU FUZZY] Searching for: {category}|{thickness}|{color}");
+
+            // Try to find category that contains our search term
+            foreach (var catKvp in _priceByCategoryIndex)
+            {
+                if (catKvp.Key.Contains(category, StringComparison.OrdinalIgnoreCase) ||
+                    category.Contains(catKvp.Key, StringComparison.OrdinalIgnoreCase))
+                {
+                    System.Diagnostics.Debug.WriteLine($"[SGU FUZZY] Category match: {catKvp.Key}");
+
+                    // Find thickness match under this category
+                    foreach (var thickKvp in _priceByThicknessIndex)
+                    {
+                        if (thickKvp.Key.StartsWith(catKvp.Key + "|", StringComparison.OrdinalIgnoreCase) &&
+                            thickKvp.Key.EndsWith("|" + thickness, StringComparison.OrdinalIgnoreCase))
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[SGU FUZZY] Thickness match: {thickKvp.Key}");
+                            return thickKvp.Value;
+                        }
+                    }
+
+                    // Return category price if no thickness match
+                    return catKvp.Value;
+                }
+            }
+
+            // Try just thickness match
+            foreach (var thickKvp in _priceByThicknessIndex)
+            {
+                if (thickKvp.Key.EndsWith("|" + thickness, StringComparison.OrdinalIgnoreCase))
+                {
+                    System.Diagnostics.Debug.WriteLine($"[SGU FUZZY] Partial thickness: {thickKvp.Key}");
+                    return thickKvp.Value;
+                }
+            }
+
+            return 0;
         }
 
         public void Calculate()
         {
-            Result = ((_cachedSheetPrice / 0.85) + _cachedCutting + _cachedTempering) * _cachedProfitFactor;
+            // Formula: ((SheetPrice / 0.85) + Cutting + Tempering) * ProfitFactor
+            double baseCost = _cachedSheetPrice / CostRecoveryFactor;
+            double processingCost = _cachedCutting + _cachedTempering;
+            double subtotal = baseCost + processingCost;
+            Result = subtotal * _cachedProfitFactor;
         }
 
         public void ExportPdf()
@@ -450,12 +722,17 @@ namespace ProGlassAutomation.Views.SGU
             specBox.Child = new TextBlock { Text = $"Specification: {Category} | {Spec}", FontSize = 12, FontWeight = FontWeights.Bold, Foreground = orange };
             content.Children.Add(specBox);
 
+            // Price Breakdown
             content.Children.Add(new TextBlock { Text = "PRICE BREAKUP", FontSize = 14, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 10) });
             content.Children.Add(CreateDetailRow("Category:", Category));
-            content.Children.Add(CreateDetailRow("Sheet Price:", $"{SheetPrice:F2} AED"));
+            content.Children.Add(CreateDetailRow("Sheet Price:", $"{_cachedSheetPrice:F2} AED"));
+            content.Children.Add(CreateDetailRow("Base Cost (÷0.85):", $"{BaseCost:F2} AED"));
             content.Children.Add(CreateDetailRow("Cutting Charge:", $"{_cachedCutting:F2} AED"));
             content.Children.Add(CreateDetailRow("Tempering Charge:", $"{_cachedTempering:F2} AED"));
+            content.Children.Add(CreateDetailRow("Processing Cost:", $"{ProcessingCost:F2} AED"));
+            content.Children.Add(CreateDetailRow("Subtotal:", $"{Subtotal:F2} AED"));
             content.Children.Add(CreateDetailRow("Profit Margin:", Profit));
+            content.Children.Add(CreateDetailRow("Profit Factor:", $"{PF:F2}x"));
 
             var finalBox = new Border { Background = green, Padding = new Thickness(15), Margin = new Thickness(0, 20, 0, 20) };
             var finalStack = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center };
@@ -481,6 +758,10 @@ namespace ProGlassAutomation.Views.SGU
         }
     }
 
+    // ============================================
+    // SUPPORT CLASSES
+    // ============================================
+
     public class SheetCacheSnapshot
     {
         public Dictionary<string, double> SpecIndex { get; }
@@ -499,13 +780,20 @@ namespace ProGlassAutomation.Views.SGU
         public bool IsStale => (DateTime.UtcNow - CreatedAt).TotalMinutes > 5;
     }
 
-    public class RecordModel { public string DisplayText { get; set; } }
+    public class RecordModel
+    {
+        public string DisplayText { get; set; }
+    }
 
     public class RelayCommand : ICommand
     {
         private readonly Action<object> _execute;
         public RelayCommand(Action<object> execute) => _execute = execute;
-        public event EventHandler CanExecuteChanged { add => CommandManager.RequerySuggested += value; remove => CommandManager.RequerySuggested -= value; }
+        public event EventHandler CanExecuteChanged
+        {
+            add => CommandManager.RequerySuggested += value;
+            remove => CommandManager.RequerySuggested -= value;
+        }
         public bool CanExecute(object p) => true;
         public void Execute(object p) => _execute(p);
     }

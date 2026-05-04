@@ -8,8 +8,8 @@ namespace ProGlassAutomation.Views.SheetStore
     public partial class SheetDialog : Window
     {
         public Sheet NewSheet { get; private set; }
-        public bool IsEditMode { get; set; }
-        public int EditId { get; set; }
+        public bool IsEditMode { get; private set; }
+        public int EditId { get; private set; }
 
         public SheetDialog()
         {
@@ -25,46 +25,93 @@ namespace ProGlassAutomation.Views.SheetStore
 
         private void LoadPredefinedData()
         {
-            // Categories (150+)
-            foreach (string c in Sheet.Categories)
-                CategoryComboBox.Items.Add(c);
-            CategoryComboBox.SelectedIndex = 0;
-
-            // Thicknesses (10)
-            foreach (string t in Sheet.Thicknesses)
-                ThicknessComboBox.Items.Add(t);
-            ThicknessComboBox.SelectedIndex = 2; // 4mm
-
-            // Colors (18)
-            ColorComboBox.ItemsSource = Sheet.ColorItems;
-
-            // Sizes (100+)
-            foreach (var size in Sheet.StandardSizes)
+            // Categories
+            var categories = Sheet.Categories;
+            if (categories != null && categories.Any())
             {
-                if (!WidthComboBox.Items.Contains(size.Width.ToString()))
-                    WidthComboBox.Items.Add(size.Width.ToString());
-                if (!HeightComboBox.Items.Contains(size.Height.ToString()))
-                    HeightComboBox.Items.Add(size.Height.ToString());
+                CategoryComboBox.Items.Clear();
+                foreach (string c in categories)
+                    CategoryComboBox.Items.Add(c);
+                CategoryComboBox.SelectedIndex = 0;
             }
-            WidthComboBox.SelectedIndex = 0;
-            HeightComboBox.SelectedIndex = 0;
+
+            // Thicknesses
+            var thicknesses = Sheet.Thicknesses;
+            if (thicknesses != null && thicknesses.Any())
+            {
+                ThicknessComboBox.Items.Clear();
+                foreach (string t in thicknesses)
+                    ThicknessComboBox.Items.Add(t);
+                ThicknessComboBox.SelectedIndex = 2;
+            }
+
+            // Colors
+            var colorItems = Sheet.ColorItems;
+            if (colorItems != null && colorItems.Any())
+            {
+                ColorComboBox.ItemsSource = null;
+                ColorComboBox.ItemsSource = colorItems;
+                ColorComboBox.SelectedIndex = 0;
+            }
+
+            // Sizes
+            var sizes = Sheet.StandardSizes;
+            if (sizes != null && sizes.Any())
+            {
+                WidthComboBox.Items.Clear();
+                HeightComboBox.Items.Clear();
+
+                foreach (var size in sizes)
+                {
+                    string widthStr = size.Width.ToString();
+                    string heightStr = size.Height.ToString();
+
+                    if (!WidthComboBox.Items.Contains(widthStr))
+                        WidthComboBox.Items.Add(widthStr);
+
+                    if (!HeightComboBox.Items.Contains(heightStr))
+                        HeightComboBox.Items.Add(heightStr);
+                }
+
+                WidthComboBox.SelectedIndex = 0;
+                HeightComboBox.SelectedIndex = 0;
+            }
         }
 
         private void SetupDefaults()
         {
             DatePicker.SelectedDate = DateTime.Now;
             TimeText.Text = DateTime.Now.ToString("HH:mm:ss");
-            ColorComboBox.SelectedIndex = 0;
 
-            TotalStockText.TextChanged += delegate { UpdateBalance(); };
-            UsedSheetsText.TextChanged += delegate { UpdateBalance(); };
-            WidthComboBox.SelectionChanged += delegate { UpdateSqm(); };
-            HeightComboBox.SelectionChanged += delegate { UpdateSqm(); };
+            TotalStockText.TextChanged += OnStockChanged;
+            UsedSheetsText.TextChanged += OnStockChanged;
+            WidthComboBox.SelectionChanged += OnDimensionChanged;
+            HeightComboBox.SelectionChanged += OnDimensionChanged;
+
+            UpdateBalance();
+            UpdateSqm();
+        }
+
+        private void OnStockChanged(object sender, TextChangedEventArgs e)
+        {
+            UpdateBalance();
+        }
+
+        private void OnDimensionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (e.AddedItems.Count > 0)
+                UpdateSqm();
         }
 
         private void LoadSheet(Sheet sheet)
         {
-            if (sheet == null) return;
+            if (sheet == null)
+            {
+                HeaderText.Text = "ADD NEW SHEET";
+                IsEditMode = false;
+                EditId = 0;
+                return;
+            }
 
             IsEditMode = true;
             EditId = sheet.Id;
@@ -73,7 +120,7 @@ namespace ProGlassAutomation.Views.SheetStore
             // Category
             for (int i = 0; i < CategoryComboBox.Items.Count; i++)
             {
-                if (CategoryComboBox.Items[i].ToString() == sheet.Category)
+                if (CategoryComboBox.Items[i]?.ToString() == sheet.Category)
                 {
                     CategoryComboBox.SelectedIndex = i;
                     break;
@@ -83,7 +130,7 @@ namespace ProGlassAutomation.Views.SheetStore
             // Thickness
             for (int i = 0; i < ThicknessComboBox.Items.Count; i++)
             {
-                if (ThicknessComboBox.Items[i].ToString() == sheet.Thickness)
+                if (ThicknessComboBox.Items[i]?.ToString() == sheet.Thickness)
                 {
                     ThicknessComboBox.SelectedIndex = i;
                     break;
@@ -91,19 +138,23 @@ namespace ProGlassAutomation.Views.SheetStore
             }
 
             // Color
-            for (int i = 0; i < Sheet.ColorItems.Count; i++)
+            var colorItems = Sheet.ColorItems;
+            if (colorItems != null)
             {
-                if (Sheet.ColorItems[i].Name == sheet.Color)
+                for (int i = 0; i < colorItems.Count; i++)
                 {
-                    ColorComboBox.SelectedIndex = i;
-                    break;
+                    if (colorItems[i].Name == sheet.Color)
+                    {
+                        ColorComboBox.SelectedIndex = i;
+                        break;
+                    }
                 }
             }
 
             // Width
             for (int i = 0; i < WidthComboBox.Items.Count; i++)
             {
-                if (WidthComboBox.Items[i].ToString() == sheet.Width.ToString())
+                if (WidthComboBox.Items[i]?.ToString() == sheet.Width.ToString())
                 {
                     WidthComboBox.SelectedIndex = i;
                     break;
@@ -113,7 +164,7 @@ namespace ProGlassAutomation.Views.SheetStore
             // Height
             for (int i = 0; i < HeightComboBox.Items.Count; i++)
             {
-                if (HeightComboBox.Items[i].ToString() == sheet.Height.ToString())
+                if (HeightComboBox.Items[i]?.ToString() == sheet.Height.ToString())
                 {
                     HeightComboBox.SelectedIndex = i;
                     break;
@@ -127,8 +178,12 @@ namespace ProGlassAutomation.Views.SheetStore
             UsedSheetsText.Text = sheet.UsedSheets.ToString();
             SupplierText.Text = sheet.Supplier ?? "";
             DescriptionText.Text = sheet.Description ?? "";
-            DatePicker.SelectedDate = sheet.CreatedDate;
-            TimeText.Text = sheet.CreatedDate.ToString("HH:mm:ss");
+
+            if (sheet.CreatedDate != DateTime.MinValue)
+            {
+                DatePicker.SelectedDate = sheet.CreatedDate;
+                TimeText.Text = sheet.CreatedDate.ToString("HH:mm:ss");
+            }
 
             UpdateBalance();
             UpdateSqm();
@@ -136,11 +191,20 @@ namespace ProGlassAutomation.Views.SheetStore
 
         private void UpdateSqm()
         {
+            if (WidthComboBox.SelectedItem == null || HeightComboBox.SelectedItem == null)
+            {
+                SqmText.Text = "0";
+                return;
+            }
+
             int w = 0, h = 0;
-            int.TryParse(WidthComboBox.SelectedItem?.ToString(), out w);
-            int.TryParse(HeightComboBox.SelectedItem?.ToString(), out h);
+            int.TryParse(WidthComboBox.SelectedItem.ToString(), out w);
+            int.TryParse(HeightComboBox.SelectedItem.ToString(), out h);
+
             if (w > 0 && h > 0)
                 SqmText.Text = Math.Round(w * h / 1000000.0, 2).ToString("N2");
+            else
+                SqmText.Text = "0";
         }
 
         private void UpdateBalance()
@@ -155,9 +219,10 @@ namespace ProGlassAutomation.Views.SheetStore
         {
             try
             {
+                // Validation
                 if (string.IsNullOrWhiteSpace(ThicknessComboBox.Text))
                 {
-                    MessageBox.Show("Thickness is required!");
+                    MessageBox.Show("Thickness is required!", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
@@ -172,8 +237,10 @@ namespace ProGlassAutomation.Views.SheetStore
 
                 // Get dimensions
                 int width = 0, height = 0;
-                int.TryParse(WidthComboBox.SelectedItem?.ToString(), out width);
-                int.TryParse(HeightComboBox.SelectedItem?.ToString(), out height);
+                if (WidthComboBox.SelectedItem != null)
+                    int.TryParse(WidthComboBox.SelectedItem.ToString(), out width);
+                if (HeightComboBox.SelectedItem != null)
+                    int.TryParse(HeightComboBox.SelectedItem.ToString(), out height);
 
                 // Parse values
                 int stock = 0, used = 0;
@@ -191,12 +258,17 @@ namespace ProGlassAutomation.Views.SheetStore
                 if (TimeSpan.TryParse(TimeText.Text, out TimeSpan time))
                     date = date.Date + time;
 
+                // Get selected values
+                string category = CategoryComboBox.SelectedItem?.ToString() ?? "HD Clear";
+                string thickness = ThicknessComboBox.SelectedItem?.ToString() ?? "4mm";
+
+                // Create new Sheet
                 NewSheet = new Sheet
                 {
                     Id = IsEditMode ? EditId : 0,
                     SrNo = 0,
-                    Category = CategoryComboBox.SelectedItem?.ToString() ?? "HD Clear",
-                    Thickness = ThicknessComboBox.SelectedItem?.ToString() ?? "4mm",
+                    Category = category,
+                    Thickness = thickness,
                     Color = colorName,
                     ColorHex = colorHex,
                     Width = width,
@@ -208,9 +280,9 @@ namespace ProGlassAutomation.Views.SheetStore
                     UsedSheets = used,
                     BalanceSheets = stock - used,
                     IsActive = true,
-                    Supplier = SupplierText.Text,
-                    SupplierName = SupplierText.Text,
-                    Description = DescriptionText.Text,
+                    Supplier = SupplierText.Text ?? "",
+                    SupplierName = SupplierText.Text ?? "",
+                    Description = DescriptionText.Text ?? "",
                     CreatedDate = date,
                     LatestPurchaseDate = date
                 };
@@ -220,7 +292,7 @@ namespace ProGlassAutomation.Views.SheetStore
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error: " + ex.Message);
+                MessageBox.Show("Error saving sheet: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

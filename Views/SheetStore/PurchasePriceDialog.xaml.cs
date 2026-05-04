@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using ProGlassAutomation.Models;
@@ -16,7 +14,7 @@ namespace ProGlassAutomation.Views.SheetStore
         private string _selectedCategory = "All Categories";
 
         // ═══════════════════════════════════════════════════════
-        // FIX #5 & #10: Cache parsed numeric values
+        // CACHE PARSED NUMERIC VALUES
         // ═══════════════════════════════════════════════════════
         private decimal _cachedPrice;
         private int _cachedPercent;
@@ -35,9 +33,6 @@ namespace ProGlassAutomation.Views.SheetStore
             CategoryFilterCombo.Items.Clear();
             CategoryFilterCombo.Items.Add(new ComboBoxItem { Content = "All Categories", IsSelected = true });
 
-            // ═══════════════════════════════════════════════════════
-            // FIX #4: Use prebuilt category index from cache
-            // ═══════════════════════════════════════════════════════
             var categories = SheetStoreService.Instance.GetCategories();
             foreach (string cat in categories)
                 CategoryFilterCombo.Items.Add(new ComboBoxItem { Content = cat });
@@ -46,7 +41,7 @@ namespace ProGlassAutomation.Views.SheetStore
         }
 
         // ═══════════════════════════════════════════════════════
-        // FIX #4: O(1) category lookup instead of LINQ
+        // GET FILTERED COUNT
         // ═══════════════════════════════════════════════════════
         private int GetFilteredCount()
         {
@@ -59,7 +54,7 @@ namespace ProGlassAutomation.Views.SheetStore
         }
 
         // ═══════════════════════════════════════════════════════
-        // FIX #5 & #10: Parse once, cache result
+        // UPDATE PREVIEW
         // ═══════════════════════════════════════════════════════
         private void UpdatePreview()
         {
@@ -117,9 +112,6 @@ namespace ProGlassAutomation.Views.SheetStore
         {
             if (_cachedPercent == 0) return;
 
-            // ═══════════════════════════════════════════════════════
-            // FIX #4: Use prebuilt category lookup
-            // ═══════════════════════════════════════════════════════
             var sheets = _selectedCategory == "All Categories"
                 ? SheetStoreService.Instance.GetAllActive()
                 : SheetStoreService.Instance.GetByCategory(_selectedCategory);
@@ -132,6 +124,9 @@ namespace ProGlassAutomation.Views.SheetStore
             UpdatePreview();
         }
 
+        // ═══════════════════════════════════════════════════════
+        // FIX: Use UpdateSheet for each sheet individually
+        // ═══════════════════════════════════════════════════════
         private void Apply_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -149,9 +144,6 @@ namespace ProGlassAutomation.Views.SheetStore
                     return;
                 }
 
-                // ═══════════════════════════════════════════════════════
-                // FIX #4: Use prebuilt category lookup
-                // ═══════════════════════════════════════════════════════
                 var sheetsToUpdate = _selectedCategory == "All Categories"
                     ? SheetStoreService.Instance.GetAllActive()
                     : SheetStoreService.Instance.GetByCategory(_selectedCategory);
@@ -165,8 +157,6 @@ namespace ProGlassAutomation.Views.SheetStore
                 string unit = (PriceUnitCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Sheet";
                 int updated = 0;
 
-                var updatedSheets = new List<Sheet>();
-
                 foreach (var sheet in sheetsToUpdate)
                 {
                     decimal finalPrice = _cachedPrice;
@@ -177,11 +167,13 @@ namespace ProGlassAutomation.Views.SheetStore
                         finalPrice = _cachedPrice * (decimal)(sheet.SquareMeter * 10.764);
 
                     sheet.PurchasePrice = Math.Round(finalPrice, 2);
-                    updatedSheets.Add(sheet);
+
+                    // ═══════════════════════════════════════════════════════
+                    // FIX: Update each sheet individually instead of BulkUpdatePrices
+                    // ═══════════════════════════════════════════════════════
+                    SheetStoreService.Instance.UpdateSheet(sheet);
                     updated++;
                 }
-
-                SheetStoreService.Instance.BulkUpdatePrices(updatedSheets);
 
                 MessageBox.Show($"Successfully updated {updated} sheets!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 DialogResult = true;
