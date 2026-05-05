@@ -1,5 +1,6 @@
-﻿using ProGlassAutomation;
+﻿using System;
 using System.Windows;
+using System.Windows.Media;
 
 namespace ProGlassAutomation
 {
@@ -7,9 +8,22 @@ namespace ProGlassAutomation
     {
         protected override void OnStartup(StartupEventArgs e)
         {
+            // Enable hardware acceleration
+            RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.Default;
+
+            // Check render capability tier
+            int tier = (RenderCapability.Tier >> 16);
+            if (tier >= 2)
+            {
+                // Tier 2 = Hardware acceleration enabled
+                Console.WriteLine($"Hardware acceleration enabled (Tier {tier})");
+            }
+            else
+            {
+                Console.WriteLine($"Software rendering mode (Tier {tier})");
+            }
+
             base.OnStartup(e);
-            MainWindow mainWindow = new MainWindow();
-            mainWindow.Show();
         }
     }
 }

@@ -1,9 +1,15 @@
 ﻿<Application x:Class="ProGlassAutomation.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             StartupUri="MainWindow.xaml">
     <Application.Resources>
         <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- Add merged dictionaries here if needed -->
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- Global Styles can be added here -->
+
         </ResourceDictionary>
     </Application.Resources>
 </Application>

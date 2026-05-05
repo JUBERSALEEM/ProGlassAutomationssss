@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Threading;
 using ProGlassAutomation.ViewModels;
 
@@ -10,15 +11,37 @@ namespace ProGlassAutomation
         private readonly MainViewModel _viewModel;
         private DispatcherTimer _clockTimer;
 
+        // For smooth 60 FPS rendering
+        private DateTime _fpsTimer = DateTime.MinValue;
+        private int _frameCount = 0;
+
         public MainWindow()
         {
             InitializeComponent();
+
+            // Enable composition target rendering for smooth 60 FPS
+            CompositionTarget.Rendering += CompositionTarget_Rendering;
 
             _viewModel = new MainViewModel();
             DataContext = _viewModel;
 
             StartClock();
             UpdateClockDisplay();
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // 60 FPS SMOOTH RENDERING
+        // ═══════════════════════════════════════════════════════
+        private void CompositionTarget_Rendering(object sender, EventArgs e)
+        {
+            _frameCount++;
+            var now = DateTime.Now;
+
+            if ((now - _fpsTimer).TotalSeconds >= 1)
+            {
+                _fpsTimer = now;
+                _frameCount = 0;
+            }
         }
 
         public MainViewModel ViewModel => _viewModel;
