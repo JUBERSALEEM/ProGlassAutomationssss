@@ -25,11 +25,7 @@ namespace ProGlassAutomation.ViewModels
             {
                 _allSheets = value;
                 OnPropertyChanged();
-                OnPropertyChanged(nameof(TotalSheets));
-                OnPropertyChanged(nameof(TotalStock));
-                OnPropertyChanged(nameof(TotalUsed));
-                OnPropertyChanged(nameof(BalanceSheets));
-                OnPropertyChanged(nameof(TotalAll));
+                UpdateAllStats();
             }
         }
 
@@ -42,6 +38,7 @@ namespace ProGlassAutomation.ViewModels
                 _filteredSheets = value;
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(FilteredCount));
+                UpdateSelectedStats();
             }
         }
 
@@ -49,7 +46,13 @@ namespace ProGlassAutomation.ViewModels
         public Sheet? SelectedSheet
         {
             get => _selectedSheet;
-            set { _selectedSheet = value; OnPropertyChanged(); }
+            set
+            {
+                _selectedSheet = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(HasSelection));
+                UpdateSelectedStats();
+            }
         }
 
         // ═══════════════════════════════════════════════════════
@@ -57,11 +60,56 @@ namespace ProGlassAutomation.ViewModels
         // ═══════════════════════════════════════════════════════
         public ObservableCollection<string> Categories { get; } = new();
 
-        private string _selectedCategory = "";
+        private string _selectedCategory = "ALL";
         public string SelectedCategory
         {
             get => _selectedCategory;
-            set { _selectedCategory = value; OnPropertyChanged(); ApplyFilters(); }
+            set
+            {
+                _selectedCategory = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(CategoryName));
+                ApplyFilters();
+                UpdateAllStats();
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // THICKNESS
+        // ═══════════════════════════════════════════════════════
+        public ObservableCollection<string> Thicknesses { get; } = new();
+
+        private string _selectedThickness = "ALL";
+        public string SelectedThickness
+        {
+            get => _selectedThickness;
+            set
+            {
+                _selectedThickness = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(ThicknessName));
+                ApplyFilters();
+                UpdateAllStats();
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // COLORS
+        // ═══════════════════════════════════════════════════════
+        public ObservableCollection<string> Colors { get; } = new();
+
+        private string _selectedColor = "ALL";
+        public string SelectedColor
+        {
+            get => _selectedColor;
+            set
+            {
+                _selectedColor = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(ColorName));
+                ApplyFilters();
+                UpdateAllStats();
+            }
         }
 
         // ═══════════════════════════════════════════════════════
@@ -75,16 +123,54 @@ namespace ProGlassAutomation.ViewModels
         }
 
         // ═══════════════════════════════════════════════════════
-        // STATS PROPERTIES
+        // SORT OPTIONS
+        // ═══════════════════════════════════════════════════════
+        public ObservableCollection<string> SortOptions { get; } = new()
+        {
+            "Category → Color → Thickness",
+            "Color → Category → Thickness",
+            "Thickness → Color → Category",
+            "Category → Thickness → Color",
+            "Name (A-Z)",
+            "Last Update (Newest First)"
+        };
+
+        private string _selectedSortOption = "Category → Color → Thickness";
+        public string SelectedSortOption
+        {
+            get => _selectedSortOption;
+            set
+            {
+                _selectedSortOption = value;
+                OnPropertyChanged();
+                ApplyFilters();
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // MAIN STATS
+        // ═══════════════════════════════════════════════════════
+        public string CategoryName => string.IsNullOrEmpty(SelectedCategory) || SelectedCategory == "ALL" ? "ALL" : SelectedCategory;
+        public string ThicknessName => string.IsNullOrEmpty(SelectedThickness) || SelectedThickness == "ALL" ? "ALL" : SelectedThickness;
+        public string ColorName => string.IsNullOrEmpty(SelectedColor) || SelectedColor == "ALL" ? "ALL" : SelectedColor;
+
+        public int MainStock { get; private set; }
+        public int MainUsed { get; private set; }
+        public int MainBalance { get; private set; }
+        public string MainLastPurchase { get; private set; } = "-";
+        public string MainLastUpdate { get; private set; } = "-";
+        public decimal MainTotalValue { get; private set; }
+
+        // ═══════════════════════════════════════════════════════
+        // OVERALL STATS
         // ═══════════════════════════════════════════════════════
         public int TotalSheets => AllSheets?.Count ?? 0;
         public int TotalStock => AllSheets?.Sum(s => s.TotalStock) ?? 0;
         public int TotalUsed => AllSheets?.Sum(s => s.UsedSheets) ?? 0;
         public int BalanceSheets => TotalStock - TotalUsed;
         public decimal TotalAll => AllSheets?.Sum(s => s.TotalStock * s.SellPrice) ?? 0;
-        public string LastPurchase => GetLastPurchase();
-        public string LastUpdate => GetLastUpdate();
         public int FilteredCount => FilteredSheets?.Count ?? 0;
+        public bool HasSelection => SelectedSheet != null;
 
         // ═══════════════════════════════════════════════════════
         // COMMANDS
@@ -94,7 +180,6 @@ namespace ProGlassAutomation.ViewModels
         public ICommand DeleteSheetCommand { get; }
         public ICommand BuySheetCommand { get; }
         public ICommand UseSheetsCommand { get; }
-        public ICommand SaveCommand { get; }
         public ICommand ExportExcelCommand { get; }
         public ICommand ImportExcelCommand { get; }
         public ICommand UpdatePurchasePriceCommand { get; }
@@ -113,7 +198,6 @@ namespace ProGlassAutomation.ViewModels
             DeleteSheetCommand = new RelayCommand(DeleteSheet, CanEditOrDelete);
             BuySheetCommand = new RelayCommand(BuySheet, CanEditOrDelete);
             UseSheetsCommand = new RelayCommand(UseSheets, CanEditOrDelete);
-            SaveCommand = new RelayCommand(Save);
             ExportExcelCommand = new RelayCommand(ExportExcel);
             ImportExcelCommand = new RelayCommand(ImportExcel);
             UpdatePurchasePriceCommand = new RelayCommand(UpdatePurchasePrice);
@@ -123,17 +207,11 @@ namespace ProGlassAutomation.ViewModels
             LoadData();
         }
 
-        // ═══════════════════════════════════════════════════════
-        // CLEANUP
-        // ═══════════════════════════════════════════════════════
         public void Cleanup()
         {
             SheetStoreService.Instance.DataChanged -= OnServiceDataChanged;
         }
 
-        // ═══════════════════════════════════════════════════════
-        // EVENT HANDLER
-        // ═══════════════════════════════════════════════════════
         private void OnServiceDataChanged(object sender, EventArgs e)
         {
             if (Application.Current?.Dispatcher?.CheckAccess() == true)
@@ -142,9 +220,6 @@ namespace ProGlassAutomation.ViewModels
                 Application.Current?.Dispatcher?.BeginInvoke(new Action(LoadData));
         }
 
-        // ═══════════════════════════════════════════════════════
-        // LOAD DATA
-        // ═══════════════════════════════════════════════════════
         private void LoadData()
         {
             try
@@ -152,12 +227,28 @@ namespace ProGlassAutomation.ViewModels
                 var sheets = SheetStoreService.Instance.GetAllActive();
                 AllSheets = new ObservableCollection<Sheet>(sheets);
 
+                // Load Categories
                 Categories.Clear();
-                foreach (var c in SheetStoreService.Instance.GetCategories())
+                Categories.Add("ALL");
+                foreach (var c in SheetStoreService.Instance.GetCategories().OrderBy(x => x))
                     Categories.Add(c);
 
+                // Load Thicknesses
+                Thicknesses.Clear();
+                Thicknesses.Add("ALL");
+                var thicknesses = sheets.Select(s => s.Thickness).Distinct().OrderBy(t => t);
+                foreach (var t in thicknesses)
+                    Thicknesses.Add(t);
+
+                // Load Colors
+                Colors.Clear();
+                Colors.Add("ALL");
+                var colors = sheets.Select(s => s.Color).Distinct().OrderBy(c => c);
+                foreach (var c in colors)
+                    Colors.Add(c);
+
                 ApplyFilters();
-                UpdateStats();
+                UpdateAllStats();
             }
             catch (Exception ex)
             {
@@ -165,9 +256,6 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // ═══════════════════════════════════════════════════════
-        // APPLY FILTERS
-        // ═══════════════════════════════════════════════════════
         private void ApplyFilters()
         {
             if (AllSheets == null)
@@ -178,9 +266,19 @@ namespace ProGlassAutomation.ViewModels
 
             var filtered = AllSheets.AsEnumerable();
 
-            if (!string.IsNullOrEmpty(SelectedCategory))
+            // Filter by Category
+            if (!string.IsNullOrEmpty(SelectedCategory) && SelectedCategory != "ALL")
                 filtered = filtered.Where(s => s.Category == SelectedCategory);
 
+            // Filter by Thickness
+            if (!string.IsNullOrEmpty(SelectedThickness) && SelectedThickness != "ALL")
+                filtered = filtered.Where(s => s.Thickness == SelectedThickness);
+
+            // Filter by Color
+            if (!string.IsNullOrEmpty(SelectedColor) && SelectedColor != "ALL")
+                filtered = filtered.Where(s => s.Color == SelectedColor);
+
+            // Filter by Search
             if (!string.IsNullOrEmpty(SearchText))
             {
                 var search = SearchText.ToLower();
@@ -191,36 +289,101 @@ namespace ProGlassAutomation.ViewModels
                     (s.Supplier?.ToLower().Contains(search) ?? false));
             }
 
-            FilteredSheets = new ObservableCollection<Sheet>(filtered);
+            // Apply Sorting
+            filtered = ApplySorting(filtered);
+
+            // Convert to list and assign SrNo
+            var sortedList = filtered.ToList();
+            for (int i = 0; i < sortedList.Count; i++)
+            {
+                sortedList[i].SrNo = i + 1;
+            }
+
+            FilteredSheets = new ObservableCollection<Sheet>(sortedList);
+        }
+
+        private IEnumerable<Sheet> ApplySorting(IEnumerable<Sheet> sheets)
+        {
+            switch (SelectedSortOption)
+            {
+                case "Category → Color → Thickness":
+                    return sheets.OrderBy(s => s.Category)
+                                 .ThenBy(s => s.Color)
+                                 .ThenBy(s => s.Thickness);
+
+                case "Color → Category → Thickness":
+                    return sheets.OrderBy(s => s.Color)
+                                 .ThenBy(s => s.Category)
+                                 .ThenBy(s => s.Thickness);
+
+                case "Thickness → Color → Category":
+                    return sheets.OrderBy(s => s.Thickness)
+                                 .ThenBy(s => s.Color)
+                                 .ThenBy(s => s.Category);
+
+                case "Category → Thickness → Color":
+                    return sheets.OrderBy(s => s.Category)
+                                 .ThenBy(s => s.Thickness)
+                                 .ThenBy(s => s.Color);
+
+                case "Name (A-Z)":
+                    return sheets.OrderBy(s => s.Category)
+                                 .ThenBy(s => s.Color);
+
+                case "Last Update (Newest First)":
+                    return sheets.OrderByDescending(s => s.CreatedDate);
+
+                default:
+                    return sheets.OrderBy(s => s.Category)
+                                 .ThenBy(s => s.Color)
+                                 .ThenBy(s => s.Thickness);
+            }
         }
 
         // ═══════════════════════════════════════════════════════
-        // UPDATE STATS
+        // UPDATE ALL STATS
         // ═══════════════════════════════════════════════════════
-        private void UpdateStats()
+        private void UpdateAllStats()
         {
             OnPropertyChanged(nameof(TotalSheets));
             OnPropertyChanged(nameof(TotalStock));
             OnPropertyChanged(nameof(TotalUsed));
             OnPropertyChanged(nameof(BalanceSheets));
             OnPropertyChanged(nameof(TotalAll));
-            OnPropertyChanged(nameof(LastPurchase));
-            OnPropertyChanged(nameof(LastUpdate));
-            OnPropertyChanged(nameof(FilteredCount));
+            UpdateSelectedStats();
         }
 
-        private string GetLastPurchase()
+        // ═══════════════════════════════════════════════════════
+        // UPDATE MAIN STATS
+        // ═══════════════════════════════════════════════════════
+        private void UpdateSelectedStats()
         {
-            var sheet = AllSheets?.Where(s => s.LatestPurchaseDate.HasValue)
-                                   .OrderByDescending(s => s.LatestPurchaseDate)
-                                   .FirstOrDefault();
-            return sheet != null ? $"{sheet.Thickness} {sheet.Color}" : "-";
-        }
+            var sheets = FilteredSheets?.ToList();
 
-        private string GetLastUpdate()
-        {
-            var sheet = AllSheets?.OrderByDescending(s => s.CreatedDate).FirstOrDefault();
-            return sheet?.DisplayDateTime ?? "-";
+            MainStock = sheets?.Sum(s => s.TotalStock) ?? 0;
+            MainUsed = sheets?.Sum(s => s.UsedSheets) ?? 0;
+            MainBalance = MainStock - MainUsed;
+            MainTotalValue = sheets?.Sum(s => s.TotalStock * s.SellPrice) ?? 0;
+
+            // Last Purchase
+            var lastPurchaseSheet = sheets?.Where(s => s.LatestPurchaseDate.HasValue)
+                                            .OrderByDescending(s => s.LatestPurchaseDate)
+                                            .FirstOrDefault();
+            MainLastPurchase = lastPurchaseSheet != null ? $"{lastPurchaseSheet.Thickness} {lastPurchaseSheet.Color}" : "-";
+
+            // Last Update
+            var lastUpdateSheet = sheets?.OrderByDescending(s => s.CreatedDate).FirstOrDefault();
+            MainLastUpdate = lastUpdateSheet?.DisplayDateTime ?? "-";
+
+            OnPropertyChanged(nameof(CategoryName));
+            OnPropertyChanged(nameof(ThicknessName));
+            OnPropertyChanged(nameof(ColorName));
+            OnPropertyChanged(nameof(MainStock));
+            OnPropertyChanged(nameof(MainUsed));
+            OnPropertyChanged(nameof(MainBalance));
+            OnPropertyChanged(nameof(MainLastPurchase));
+            OnPropertyChanged(nameof(MainLastUpdate));
+            OnPropertyChanged(nameof(MainTotalValue));
         }
 
         // ═══════════════════════════════════════════════════════
@@ -279,17 +442,11 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // ═══════════════════════════════════════════════════════
-        // BUY SHEETS
-        // ═══════════════════════════════════════════════════════
         public void BuySheet(object parameter = null)
         {
             try
             {
-                Sheet? sheet = parameter as Sheet;
-                if (sheet == null)
-                    sheet = SelectedSheet;
-
+                Sheet? sheet = parameter as Sheet ?? SelectedSheet;
                 if (sheet == null)
                 {
                     MessageBox.Show("Please select a sheet first!", "No Selection");
@@ -310,7 +467,6 @@ namespace ProGlassAutomation.ViewModels
                     };
 
                     SheetStoreService.Instance.AddPurchaseRecord(record);
-
                     MessageBox.Show($"Purchased {record.Quantity} sheets at {record.UnitPrice} AED each!", "Success");
                 }
             }
@@ -320,17 +476,11 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // ═══════════════════════════════════════════════════════
-        // USE / DEDUCT SHEETS
-        // ═══════════════════════════════════════════════════════
         public void UseSheets(object parameter = null)
         {
             try
             {
-                Sheet? sheet = parameter as Sheet;
-                if (sheet == null)
-                    sheet = SelectedSheet;
-
+                Sheet? sheet = parameter as Sheet ?? SelectedSheet;
                 if (sheet == null)
                 {
                     MessageBox.Show("Please select a sheet first!", "No Selection");
@@ -344,7 +494,6 @@ namespace ProGlassAutomation.ViewModels
                     return;
                 }
 
-                // ✅ Pass balance to dialog
                 var dialog = new Views.SheetStore.UseSheetsDialog(balance);
                 if (dialog.ShowDialog() == true)
                 {
@@ -358,7 +507,6 @@ namespace ProGlassAutomation.ViewModels
                     };
 
                     SheetStoreService.Instance.AddUsageRecord(record);
-
                     MessageBox.Show($"Used {record.Quantity} sheets!", "Success");
                 }
             }
@@ -374,17 +522,6 @@ namespace ProGlassAutomation.ViewModels
             return SelectedSheet != null;
         }
 
-        // ═══════════════════════════════════════════════════════
-        // SAVE
-        // ═══════════════════════════════════════════════════════
-        public void Save()
-        {
-            UpdateStats();
-        }
-
-        // ═══════════════════════════════════════════════════════
-        // EXPORT / IMPORT
-        // ═══════════════════════════════════════════════════════
         public void ExportExcel()
         {
             try
@@ -424,18 +561,12 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // ═══════════════════════════════════════════════════════
-        // UPDATE PRICES
-        // ═══════════════════════════════════════════════════════
         public void UpdatePurchasePrice()
         {
             try
             {
                 var dialog = new Views.SheetStore.PurchasePriceDialog();
-                if (dialog.ShowDialog() == true)
-                {
-                    // DataChanged event will trigger LoadData()
-                }
+                dialog.ShowDialog();
             }
             catch (Exception ex)
             {
@@ -443,18 +574,15 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // ═══════════════════════════════════════════════════════
-        // FILTER
-        // ═══════════════════════════════════════════════════════
         public void ClearFilter()
         {
-            SelectedCategory = "";
+            SelectedCategory = "ALL";
+            SelectedThickness = "ALL";
+            SelectedColor = "ALL";
             SearchText = "";
+            SelectedSheet = null;
         }
 
-        // ═══════════════════════════════════════════════════════
-        // HISTORY
-        // ═══════════════════════════════════════════════════════
         public void ViewHistory()
         {
             try
@@ -468,9 +596,6 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // ═══════════════════════════════════════════════════════
-        // PROPERTY NOTIFICATION
-        // ═══════════════════════════════════════════════════════
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
