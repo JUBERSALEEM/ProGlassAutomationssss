@@ -1,8 +1,7 @@
 ﻿<UserControl x:Class="ProGlassAutomation.Views.SGU.SguView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="clr-namespace:ProGlassAutomation.Views.SGU"
-             Background="#E8F4FC">
+             xmlns:vm="clr-namespace:ProGlassAutomation.Views.SGU">
 
     <UserControl.DataContext>
         <vm:SguViewModel/>
@@ -10,416 +9,721 @@
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <FontFamily x:Key="PrimaryFont">Segoe UI, Inter, sans-serif</FontFamily>
 
-        <!-- Colors -->
-        <SolidColorBrush x:Key="PrimaryBrush" Color="#1E3A5F"/>
-        <SolidColorBrush x:Key="AccentBrush" Color="#0891B2"/>
-        <SolidColorBrush x:Key="CardBgBrush" Color="#F0F9FF"/>
-        <SolidColorBrush x:Key="BorderBrush" Color="#CBD5E1"/>
-        <SolidColorBrush x:Key="TextMutedBrush" Color="#64748B"/>
-
-        <!-- Base TextBox Style -->
-        <Style TargetType="TextBox" x:Key="BaseTextBox">
-            <Setter Property="Height" Value="28"/>
-            <Setter Property="Padding" Value="8,4"/>
-            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <!-- Glass Card Style -->
+        <Style x:Key="GlassCard" TargetType="Border">
+            <Setter Property="Background" Value="#F8FAFC"/>
+            <Setter Property="BorderBrush" Value="#E2E8F0"/>
             <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="16"/>
+            <Setter Property="Padding" Value="16"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="#000000" BlurRadius="15" ShadowDepth="2" Opacity="0.08"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Glass Card Blue -->
+        <Style x:Key="GlassCardBlue" TargetType="Border" BasedOn="{StaticResource GlassCard}">
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#EFF6FF" Offset="0"/>
+                        <GradientStop Color="#DBEAFE" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="BorderBrush" Value="#93C5FD"/>
+        </Style>
+
+        <!-- Glass Card Green -->
+        <Style x:Key="GlassCardGreen" TargetType="Border" BasedOn="{StaticResource GlassCard}">
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#F0FDF4" Offset="0"/>
+                        <GradientStop Color="#DCFCE7" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="BorderBrush" Value="#86EFAC"/>
+        </Style>
+
+        <!-- Glass Card Orange -->
+        <Style x:Key="GlassCardOrange" TargetType="Border" BasedOn="{StaticResource GlassCard}">
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#FFFBEB" Offset="0"/>
+                        <GradientStop Color="#FEF3C7" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="BorderBrush" Value="#FCD34D"/>
+        </Style>
+
+        <!-- Glass Card Red -->
+        <Style x:Key="GlassCardRed" TargetType="Border" BasedOn="{StaticResource GlassCard}">
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#FEF2F2" Offset="0"/>
+                        <GradientStop Color="#FEE2E2" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="BorderBrush" Value="#FCA5A5"/>
+        </Style>
+
+        <!-- Glass Card Purple -->
+        <Style x:Key="GlassCardPurple" TargetType="Border" BasedOn="{StaticResource GlassCard}">
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#FAF5FF" Offset="0"/>
+                        <GradientStop Color="#F3E8FF" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="BorderBrush" Value="#C4B5FD"/>
+        </Style>
+
+        <!-- Glass Card Teal -->
+        <Style x:Key="GlassCardTeal" TargetType="Border" BasedOn="{StaticResource GlassCard}">
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#F0FDFA" Offset="0"/>
+                        <GradientStop Color="#CCFBF1" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="BorderBrush" Value="#5EEAD4"/>
+        </Style>
+
+        <!-- Modern TextBox -->
+        <Style x:Key="ModernTextBox" TargetType="TextBox">
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
             <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#E2E8F0"/>
+            <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
 
-        <!-- Select All TextBox Style -->
-        <Style TargetType="TextBox" x:Key="SelectAllTextBox" BasedOn="{StaticResource BaseTextBox}">
-            <EventSetter Event="GotFocus" Handler="TextBox_GotFocus"/>
-            <EventSetter Event="PreviewMouseLeftButtonDown" Handler="TextBox_PreviewMouseLeftButtonDown"/>
-        </Style>
-
+        <!-- Modern ComboBox -->
         <Style TargetType="ComboBox">
-            <Setter Property="Height" Value="28"/>
-            <Setter Property="Padding" Value="8,4"/>
-            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
             <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#E2E8F0"/>
+            <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="IsEditable" Value="True"/>
             <Setter Property="IsReadOnly" Value="False"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="MaxDropDownHeight" Value="200"/>
         </Style>
 
-        <Style TargetType="Label">
+        <!-- Primary Button -->
+        <Style x:Key="BtnPrimary" TargetType="Button">
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" CornerRadius="10" Padding="{TemplateBinding Padding}">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#3B82F6" Offset="0"/>
+                                    <GradientStop Color="#2563EB" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background">
+                                    <Setter.Value>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Color="#2563EB" Offset="0"/>
+                                            <GradientStop Color="#1D4ED8" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Success Button -->
+        <Style x:Key="BtnSuccess" TargetType="Button" BasedOn="{StaticResource BtnPrimary}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" CornerRadius="10" Padding="{TemplateBinding Padding}">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#10B981" Offset="0"/>
+                                    <GradientStop Color="#059669" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background">
+                                    <Setter.Value>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Color="#059669" Offset="0"/>
+                                            <GradientStop Color="#047857" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Danger Button -->
+        <Style x:Key="BtnDanger" TargetType="Button" BasedOn="{StaticResource BtnPrimary}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" CornerRadius="10" Padding="{TemplateBinding Padding}">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#EF4444" Offset="0"/>
+                                    <GradientStop Color="#DC2626" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background">
+                                    <Setter.Value>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Color="#DC2626" Offset="0"/>
+                                            <GradientStop Color="#B91C1C" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Toggle Button -->
+        <Style TargetType="ToggleButton">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="border" CornerRadius="10" Padding="16,12">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#14B8A6" Offset="0"/>
+                                    <GradientStop Color="#0D9488" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <ContentPresenter HorizontalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="border" Property="Background">
+                                    <Setter.Value>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Color="#0D9488" Offset="0"/>
+                                            <GradientStop Color="#0F766E" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+
+        <!-- Field Label -->
+        <Style x:Key="FieldLabel" TargetType="TextBlock">
             <Setter Property="FontSize" Value="11"/>
-            <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
-            <Setter Property="Margin" Value="0,6,0,2"/>
-        </Style>
-
-        <!-- Card Style -->
-        <Style x:Key="CardBorder" TargetType="Border">
-            <Setter Property="CornerRadius" Value="10"/>
-            <Setter Property="Padding" Value="12"/>
-            <Setter Property="Background" Value="{StaticResource CardBgBrush}"/>
-            <Setter Property="BorderBrush" Value="#BAE6FD"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="Foreground" Value="#64748B"/>
+            <Setter Property="Margin" Value="0,0,0,6"/>
+            <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
         </Style>
 
         <!-- Section Title -->
         <Style x:Key="SectionTitle" TargetType="TextBlock">
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
             <Setter Property="Margin" Value="0,0,0,8"/>
         </Style>
 
-        <!-- Primary Button -->
-        <Style x:Key="PrimaryBtn" TargetType="Button">
-            <Setter Property="Background" Value="#1E40AF"/>
-            <Setter Property="Foreground" Value="White"/>
+        <!-- Small Button for Delete -->
+        <Style x:Key="BtnSmallDelete" TargetType="Button">
+            <Setter Property="Background" Value="#FEE2E2"/>
+            <Setter Property="Foreground" Value="#DC2626"/>
+            <Setter Property="FontSize" Value="10"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="Height" Value="40"/>
+            <Setter Property="Padding" Value="8,4"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" CornerRadius="6" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#FECACA"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </UserControl.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0">
-        <Grid Margin="10">
+    <!-- Main Background -->
+    <Border Background="#F1F5F9">
+        <Grid Margin="16">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
+            <!-- ============================================ -->
             <!-- HEADER -->
-            <Border Grid.Row="0" CornerRadius="12" Padding="15,12" Margin="0,0,0,10"
-                    Background="{StaticResource PrimaryBrush}">
+            <!-- ============================================ -->
+            <Border Grid.Row="0" Style="{StaticResource GlassCard}" Margin="0,0,0,12">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <TextBlock Text="SGU CALCULATOR" Foreground="White"
-                               FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
+                    <!-- Title -->
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="SGU Calculator" FontSize="24" FontWeight="Bold" FontFamily="{StaticResource PrimaryFont}" Foreground="#1E293B"/>
+                        <TextBlock Text="Single Glazed Unit Price Calculator" FontSize="13" Foreground="#64748B" Margin="0,4,0,0"/>
+                    </StackPanel>
 
-                    <Border Grid.Column="1" Background="White" CornerRadius="8" Padding="12,8">
+                    <!-- Result Display -->
+                    <Border Grid.Column="1" CornerRadius="16" Padding="20,12">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#0891B2" Offset="0"/>
+                                <GradientStop Color="#06B6D4" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="RESULT: " FontWeight="Bold" FontSize="14"
-                                       Foreground="{StaticResource PrimaryBrush}" VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding Result, StringFormat={}{0:N2}}" FontSize="18" FontWeight="Bold"
-                                       Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" MinWidth="80"/>
-                            <TextBlock Text=" AED" FontSize="12" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="UNIT PRICE" FontSize="11" FontWeight="Medium" Foreground="#E0F2FE" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                            <TextBlock Text="{Binding Result, StringFormat={}{0:F2}}" FontSize="28" FontWeight="Bold" Foreground="White" FontFamily="{StaticResource PrimaryFont}"/>
+                            <TextBlock Text="AED" FontSize="13" Foreground="#E0F2FE" VerticalAlignment="Bottom" Margin="8,0,0,4"/>
                         </StackPanel>
                     </Border>
                 </Grid>
             </Border>
 
+            <!-- ============================================ -->
             <!-- MAIN CONTENT -->
-            <Border Grid.Row="1" Background="White" CornerRadius="16" Padding="16"
-                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
+            <!-- ============================================ -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
-                    <!-- LEFT: Glass Options -->
-                    <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                <!-- ============================================ -->
+                <!-- LEFT: GLASS SELECTION -->
+                <!-- ============================================ -->
+                <StackPanel Grid.Column="0" Margin="0,0,8,0">
 
-                        <!-- Glass Selection -->
-                        <Border Style="{StaticResource CardBorder}">
-                            <StackPanel>
-                                <TextBlock Text="GLASS SELECTION" Style="{StaticResource SectionTitle}"/>
-                                <Label Content="Category"/>
-                                <ComboBox ItemsSource="{Binding CategoryOptions}" 
-                                          SelectedItem="{Binding Category, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          Text="{Binding Category, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                                <Label Content="Thickness (mm)"/>
-                                <ComboBox ItemsSource="{Binding ThicknessOptions}" 
-                                          SelectedItem="{Binding Thickness, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          Text="{Binding Thickness, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                                <Label Content="Color"/>
-                                <ComboBox ItemsSource="{Binding ColorOptions}" 
-                                          SelectedItem="{Binding ColorName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          Text="{Binding ColorName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            </StackPanel>
-                        </Border>
+                    <!-- Glass Selection -->
+                    <Border Style="{StaticResource GlassCardBlue}" Margin="0,0,0,12">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Width="10" Height="10" CornerRadius="5" Background="#3B82F6" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="Glass Selection" Foreground="#1E40AF" Style="{StaticResource SectionTitle}" Margin="10,0,0,0"/>
+                            </Grid>
 
-                        <!-- Wastage Consider -->
-                        <Border Style="{StaticResource CardBorder}" Background="#FEF3C7" BorderBrush="#FCD34D">
-                            <StackPanel>
-                                <TextBlock Text="WASTAGE CONSIDER" Style="{StaticResource SectionTitle}"/>
-                                <ComboBox ItemsSource="{Binding WastageOptions}" 
-                                          Text="{Binding WastageConsider, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          IsEditable="True" IsReadOnly="False"/>
-                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                    <TextBlock Text="Factor: " FontSize="10" Foreground="#92400E"/>
-                                    <TextBlock Text="{Binding WastageFactorDisplay, Mode=OneWay}" FontSize="10" FontWeight="Bold" Foreground="#92400E"/>
-                                    <TextBlock Text="  |  Wastage: " FontSize="10" Foreground="#92400E"/>
-                                    <TextBlock Text="{Binding WastageConsiderDisplay, Mode=OneWay}" FontSize="10" FontWeight="Bold" Foreground="#92400E"/>
+                            <TextBlock Text="Category" Style="{StaticResource FieldLabel}"/>
+                            <ComboBox ItemsSource="{Binding CategoryOptions}" SelectedValue="{Binding Category}" DisplayMemberPath="" SelectedValuePath=""/>
+
+                            <TextBlock Text="Thickness (mm)" Style="{StaticResource FieldLabel}" Margin="0,8,0,0"/>
+                            <ComboBox ItemsSource="{Binding ThicknessOptions}" SelectedValue="{Binding Thickness}" DisplayMemberPath="" SelectedValuePath=""/>
+
+                            <TextBlock Text="Color" Style="{StaticResource FieldLabel}" Margin="0,8,0,0"/>
+                            <ComboBox ItemsSource="{Binding ColorOptions}" SelectedValue="{Binding ColorName}" DisplayMemberPath="" SelectedValuePath=""/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Wastage Consider -->
+                    <Border Style="{StaticResource GlassCardOrange}" Margin="0,0,0,12">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Width="10" Height="10" CornerRadius="5" Background="#F59E0B" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="Wastage Consider" Foreground="#B45309" Style="{StaticResource SectionTitle}" Margin="10,0,0,0"/>
+                            </Grid>
+
+                            <TextBlock Text="Wastage %" Style="{StaticResource FieldLabel}"/>
+                            <ComboBox ItemsSource="{Binding WastageOptions}" SelectedValue="{Binding WastageConsider}" DisplayMemberPath="" SelectedValuePath=""/>
+
+                            <Border Background="White" CornerRadius="10" Padding="12" Margin="0,12,0,0" BorderBrush="#FCD34D" BorderThickness="1">
+                                <StackPanel>
+                                    <TextBlock Text="Wastage Factor" FontSize="10" Foreground="#B45309"/>
+                                    <TextBlock Text="{Binding WastageFactorDisplay}" FontSize="22" FontWeight="Bold" Foreground="#F59E0B" FontFamily="{StaticResource PrimaryFont}"/>
+                                    <TextBlock FontSize="9" Foreground="#D97706" Margin="0,4,0,0">
+                                        <Run Text="(Divide by "/><Run Text="{Binding WastageFactorDisplay, Mode=OneWay}"/><Run Text=")"/>
+                                    </TextBlock>
                                 </StackPanel>
-                            </StackPanel>
-                        </Border>
+                            </Border>
+                        </StackPanel>
+                    </Border>
 
-                        <!-- Profit Margin -->
-                        <Border Style="{StaticResource CardBorder}" Background="#DCFCE7" BorderBrush="#86EFAC">
-                            <StackPanel>
-                                <TextBlock Text="PROFIT MARGIN" Style="{StaticResource SectionTitle}"/>
-                                <ComboBox ItemsSource="{Binding ProfitMarginOptions}" 
-                                          Text="{Binding ProfitMargin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          IsEditable="True" IsReadOnly="False"/>
-                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                    <TextBlock Text="Margin: " FontSize="10" Foreground="#166534"/>
-                                    <TextBlock Text="{Binding ProfitMarginDisplay, Mode=OneWay}" FontSize="10" FontWeight="Bold" Foreground="#166534"/>
+                    <!-- Profit Margin -->
+                    <Border Style="{StaticResource GlassCardGreen}">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Width="10" Height="10" CornerRadius="5" Background="#22C55E" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="Profit Margin" Foreground="#166534" Style="{StaticResource SectionTitle}" Margin="10,0,0,0"/>
+                            </Grid>
+
+                            <TextBlock Text="Select Profit %" Style="{StaticResource FieldLabel}"/>
+                            <ComboBox ItemsSource="{Binding ProfitMarginOptions}" SelectedValue="{Binding ProfitMargin}" DisplayMemberPath="" SelectedValuePath=""/>
+
+                            <Border Background="White" CornerRadius="10" Padding="12" Margin="0,12,0,0" BorderBrush="#86EFAC" BorderThickness="1">
+                                <StackPanel>
+                                    <TextBlock Text="Profit Added" FontSize="10" Foreground="#166534"/>
+                                    <TextBlock Text="{Binding ProfitMarginDisplay}" FontSize="22" FontWeight="Bold" Foreground="#22C55E" FontFamily="{StaticResource PrimaryFont}"/>
                                 </StackPanel>
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
 
-                    <!-- MIDDLE: Price Section -->
-                    <StackPanel Grid.Column="1" Margin="8,0">
+                <!-- ============================================ -->
+                <!-- MIDDLE: PRICE SECTION -->
+                <!-- ============================================ -->
+                <StackPanel Grid.Column="1" Margin="8,0">
 
-                        <!-- Sheet Price -->
-                        <Border Style="{StaticResource CardBorder}" Background="#EFF6FF" BorderBrush="#93C5FD">
-                            <StackPanel>
-                                <TextBlock Text="PRICE SECTION" Style="{StaticResource SectionTitle}"/>
-                                <Label Content="Sheet Price (AED)"/>
-                                <TextBox Text="{Binding SheetPrice, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Style="{StaticResource SelectAllTextBox}"/>
-                                <Label Content="Cutting Charge (AED)"/>
-                                <TextBox Text="{Binding Cutting, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Style="{StaticResource SelectAllTextBox}"/>
-                                <Label Content="Tempering Charge (AED)"/>
-                                <TextBox Text="{Binding Tempering, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Style="{StaticResource SelectAllTextBox}"/>
-                            </StackPanel>
-                        </Border>
+                    <!-- Sheet Price -->
+                    <Border Style="{StaticResource GlassCardBlue}" Margin="0,0,0,12">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Width="10" Height="10" CornerRadius="5" Background="#3B82F6" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="Price Section" Foreground="#1E40AF" Style="{StaticResource SectionTitle}" Margin="10,0,0,0"/>
+                            </Grid>
 
-                        <!-- Calculation Preview -->
-                        <Border Style="{StaticResource CardBorder}" Background="#F8FAFC" BorderBrush="#E2E8F0">
-                            <StackPanel>
-                                <TextBlock Text="CALCULATION PREVIEW" Style="{StaticResource SectionTitle}" Foreground="#1E40AF"/>
+                            <TextBlock Text="Sheet Price (AED)" Style="{StaticResource FieldLabel}"/>
+                            <TextBox Text="{Binding SheetPrice, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernTextBox}"/>
 
-                                <!-- INPUT VALUES -->
-                                <Border Background="#F0FDF4" CornerRadius="6" Padding="8" Margin="0,0,0,8" BorderBrush="#86EFAC" BorderThickness="1">
-                                    <StackPanel>
-                                        <TextBlock Text="INPUT VALUES" FontWeight="Bold" FontSize="10" Foreground="#166534" Margin="0,0,0,6"/>
+                            <TextBlock Text="Cutting Charge (AED)" Style="{StaticResource FieldLabel}" Margin="0,8,0,0"/>
+                            <TextBox Text="{Binding Cutting, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernTextBox}"/>
 
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                            </Grid.RowDefinitions>
+                            <TextBlock Text="Tempering Charge (AED)" Style="{StaticResource FieldLabel}" Margin="0,8,0,0"/>
+                            <TextBox Text="{Binding Tempering, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernTextBox}"/>
+                        </StackPanel>
+                    </Border>
 
-                                            <TextBlock Grid.Row="0" Text="Sheet Price:" FontSize="10" Foreground="#64748B"/>
-                                            <TextBlock Grid.Row="0" Grid.Column="1" FontSize="10" FontWeight="Bold" Foreground="#1E40AF">
-                                                <Run Text="{Binding SheetPrice, Mode=OneWay, StringFormat={}{0:N2}}"/><Run Text=" AED"/>
-                                            </TextBlock>
+                    <!-- Calculation Preview -->
+                    <Border Style="{StaticResource GlassCard}">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Width="10" Height="10" CornerRadius="5" Background="#64748B" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="Calculation Preview" Foreground="#334155" Style="{StaticResource SectionTitle}" Margin="10,0,0,0"/>
+                            </Grid>
 
-                                            <TextBlock Grid.Row="1" Text="Wastage Factor:" FontSize="10" Foreground="#64748B" Margin="0,2,0,0"/>
-                                            <TextBlock Grid.Row="1" Grid.Column="1" FontSize="10" FontWeight="Bold" Foreground="#92400E" Margin="0,2,0,0">
-                                                <Run Text="{Binding WastageFactorDisplay, Mode=OneWay}"/>
-                                            </TextBlock>
+                            <!-- Input Values -->
+                            <Border Background="#F0FDF4" CornerRadius="10" Padding="12" Margin="0,0,0,8" BorderBrush="#86EFAC" BorderThickness="1">
+                                <StackPanel>
+                                    <TextBlock Text="INPUT VALUES" FontWeight="Bold" FontSize="10" Foreground="#166534" Margin="0,0,0,8"/>
 
-                                            <TextBlock Grid.Row="2" Text="Cutting:" FontSize="10" Foreground="#64748B" Margin="0,2,0,0"/>
-                                            <TextBlock Grid.Row="2" Grid.Column="1" FontSize="10" FontWeight="Bold" Foreground="#1E40AF" Margin="0,2,0,0">
-                                                <Run Text="{Binding Cutting, Mode=OneWay, StringFormat={}{0:N2}}"/><Run Text=" AED"/>
-                                            </TextBlock>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
 
-                                            <TextBlock Grid.Row="3" Text="Tempering:" FontSize="10" Foreground="#64748B" Margin="0,2,0,0"/>
-                                            <TextBlock Grid.Row="3" Grid.Column="1" FontSize="10" FontWeight="Bold" Foreground="#1E40AF" Margin="0,2,0,0">
-                                                <Run Text="{Binding Tempering, Mode=OneWay, StringFormat={}{0:N2}}"/><Run Text=" AED"/>
-                                            </TextBlock>
+                                        <TextBlock Grid.Row="0" Text="Sheet Price:" FontSize="11" Foreground="#64748B"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="1" FontSize="11" FontWeight="SemiBold" Foreground="#1E40AF">
+                                            <Run Text="{Binding SheetPrice, Mode=OneWay, StringFormat={}{0:N2}}"/><Run Text=" AED"/>
+                                        </TextBlock>
 
-                                            <TextBlock Grid.Row="4" Text="Profit Margin:" FontSize="10" Foreground="#64748B" Margin="0,2,0,0"/>
-                                            <TextBlock Grid.Row="4" Grid.Column="1" FontSize="10" FontWeight="Bold" Foreground="#166534" Margin="0,2,0,0">
-                                                <Run Text="{Binding ProfitMarginDisplay, Mode=OneWay}"/>
-                                            </TextBlock>
-                                        </Grid>
-                                    </StackPanel>
-                                </Border>
+                                        <TextBlock Grid.Row="1" Text="Wastage Factor:" FontSize="11" Foreground="#64748B" Margin="0,4,0,0"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="1" FontSize="11" FontWeight="SemiBold" Foreground="#F59E0B" Margin="0,4,0,0">
+                                            <Run Text="{Binding WastageFactorDisplay, Mode=OneWay}"/>
+                                        </TextBlock>
 
-                                <!-- CALCULATION STEPS -->
-                                <Border Background="#ECFDF5" CornerRadius="6" Padding="8" BorderBrush="#6EE7B7" BorderThickness="1">
-                                    <StackPanel>
-                                        <TextBlock Text="CALCULATION STEPS" FontWeight="Bold" FontSize="10" Foreground="#047857" Margin="0,0,0,6"/>
+                                        <TextBlock Grid.Row="2" Text="Cutting:" FontSize="11" Foreground="#64748B" Margin="0,4,0,0"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="1" FontSize="11" FontWeight="SemiBold" Foreground="#1E40AF" Margin="0,4,0,0">
+                                            <Run Text="{Binding Cutting, Mode=OneWay, StringFormat={}{0:N2}}"/><Run Text=" AED"/>
+                                        </TextBlock>
 
-                                        <!-- Step 1 -->
-                                        <Grid Margin="0,2,0,0">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="55"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="Step 1:" FontWeight="Bold" FontSize="10" Foreground="#047857"/>
-                                            <TextBlock Grid.Column="1" FontSize="10" Foreground="#047857">
-                                                <Run Text="SheetPrice / WastageFactor = "/>
-                                                <Run Text="{Binding BaseCost, Mode=OneWay, StringFormat={}{0:N2}}" FontWeight="Bold"/>
-                                                <Run Text=" AED"/>
-                                            </TextBlock>
-                                        </Grid>
+                                        <TextBlock Grid.Row="3" Text="Tempering:" FontSize="11" Foreground="#64748B" Margin="0,4,0,0"/>
+                                        <TextBlock Grid.Row="3" Grid.Column="1" FontSize="11" FontWeight="SemiBold" Foreground="#1E40AF" Margin="0,4,0,0">
+                                            <Run Text="{Binding Tempering, Mode=OneWay, StringFormat={}{0:N2}}"/><Run Text=" AED"/>
+                                        </TextBlock>
 
-                                        <!-- Step 2 -->
-                                        <Grid Margin="0,2,0,0">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="55"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="Step 2:" FontWeight="Bold" FontSize="10" Foreground="#047857"/>
-                                            <TextBlock Grid.Column="1" FontSize="10" Foreground="#047857">
-                                                <Run Text="{Binding BaseCost, Mode=OneWay, StringFormat={}{0:N2}}" FontWeight="Bold"/>
-                                                <Run Text=" + "/>
-                                                <Run Text="{Binding ProcessingCost, Mode=OneWay, StringFormat={}{0:N2}}" FontWeight="Bold"/>
-                                                <Run Text=" = "/>
-                                                <Run Text="{Binding Subtotal, Mode=OneWay, StringFormat={}{0:N2}}" FontWeight="Bold"/>
-                                                <Run Text=" AED"/>
-                                            </TextBlock>
-                                        </Grid>
-
-                                        <!-- Step 3 -->
-                                        <Grid Margin="0,2,0,0">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="55"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="Step 3:" FontWeight="Bold" FontSize="10" Foreground="#047857"/>
-                                            <TextBlock Grid.Column="1" FontSize="10" Foreground="#047857">
-                                                <Run Text="{Binding Subtotal, Mode=OneWay, StringFormat={}{0:N2}}" FontWeight="Bold"/>
-                                                <Run Text=" + ProfitMargin("/>
-                                                <Run Text="{Binding ProfitMarginDisplay, Mode=OneWay}" FontWeight="Bold" Foreground="#166534"/>
-                                                <Run Text=") = "/>
-                                                <Run Text="{Binding Result, Mode=OneWay, StringFormat={}{0:N2}}" FontWeight="Bold" Foreground="#059669"/>
-                                                <Run Text=" AED"/>
-                                            </TextBlock>
-                                        </Grid>
-                                    </StackPanel>
-                                </Border>
-
-                                <!-- Final Result -->
-                                <Border Background="#FEE2E2" CornerRadius="6" Padding="10" Margin="0,8,0,0" BorderBrush="#FECACA" BorderThickness="2">
-                                    <StackPanel HorizontalAlignment="Center">
-                                        <TextBlock Text="FINAL RESULT" FontWeight="Bold" FontSize="10" Foreground="#DC2626" HorizontalAlignment="Center"/>
-                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0">
-                                            <TextBlock Text="{Binding Result, Mode=OneWay, StringFormat={}{0:N2}}" FontSize="20" FontWeight="Bold" Foreground="#DC2626"/>
-                                            <TextBlock Text=" AED" FontSize="14" FontWeight="Bold" Foreground="#DC2626" VerticalAlignment="Bottom" Margin="4,0,0,2"/>
-                                        </StackPanel>
-                                    </StackPanel>
-                                </Border>
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
-
-                    <!-- RIGHT: Actions & Info -->
-                    <StackPanel Grid.Column="2" Margin="8,0,0,0">
-
-                        <!-- Quick Spec -->
-                        <Border Style="{StaticResource CardBorder}" Background="#FEF3C7" BorderBrush="#FCD34D">
-                            <StackPanel>
-                                <TextBlock Text="SPECIFICATION" Style="{StaticResource SectionTitle}"/>
-                                <TextBlock Text="{Binding Spec}" FontSize="12" FontWeight="Bold" Foreground="#92400E"/>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Actions -->
-                        <Border Style="{StaticResource CardBorder}">
-                            <StackPanel>
-                                <TextBlock Text="ACTIONS" Style="{StaticResource SectionTitle}"/>
-                                <Button Content="SAVE" Style="{StaticResource PrimaryBtn}" Command="{Binding SaveCommand}"/>
-                                <Button Content="EXPORT PDF" Style="{StaticResource PrimaryBtn}" Command="{Binding ExportPdfCommand}" Margin="0,8,0,0"/>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Data Status -->
-                        <Border Style="{StaticResource CardBorder}" Background="#F8FAFC">
-                            <StackPanel>
-                                <TextBlock Text="DATA STATUS" FontWeight="Bold" FontSize="12"
-                                           Foreground="{StaticResource PrimaryBrush}" HorizontalAlignment="Center" Margin="0,0,0,8"/>
-                                <Grid>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <TextBlock Grid.Row="0" Text="Categories:" FontSize="10" Foreground="#64748B"/>
-                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding CategoryOptions.Count, Mode=OneWay}" FontSize="10" FontWeight="Bold" Foreground="#1E40AF" HorizontalAlignment="Right"/>
-
-                                    <TextBlock Grid.Row="1" Text="Thickness:" FontSize="10" Foreground="#64748B" Margin="0,2,0,0"/>
-                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ThicknessOptions.Count, Mode=OneWay}" FontSize="10" FontWeight="Bold" Foreground="#1E40AF" HorizontalAlignment="Right" Margin="0,2,0,0"/>
-
-                                    <TextBlock Grid.Row="2" Text="Colors:" FontSize="10" Foreground="#64748B" Margin="0,2,0,0"/>
-                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding ColorOptions.Count, Mode=OneWay}" FontSize="10" FontWeight="Bold" Foreground="#1E40AF" HorizontalAlignment="Right" Margin="0,2,0,0"/>
-                                </Grid>
-                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0" HorizontalAlignment="Center">
-                                    <Ellipse Width="10" Height="10" Fill="#22C55E" Margin="0,0,6,0"/>
-                                    <TextBlock Text="Cache Active" FontSize="10" Foreground="#16A34A"/>
+                                        <TextBlock Grid.Row="4" Text="Profit Margin:" FontSize="11" Foreground="#64748B" Margin="0,4,0,0"/>
+                                        <TextBlock Grid.Row="4" Grid.Column="1" FontSize="11" FontWeight="SemiBold" Foreground="#22C55E" Margin="0,4,0,0">
+                                            <Run Text="{Binding ProfitMarginDisplay, Mode=OneWay}"/>
+                                        </TextBlock>
+                                    </Grid>
                                 </StackPanel>
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
-                </Grid>
-            </Border>
+                            </Border>
 
+                            <!-- Calculation Steps -->
+                            <Border Background="#ECFDF5" CornerRadius="10" Padding="12" BorderBrush="#6EE7B7" BorderThickness="1">
+                                <StackPanel>
+                                    <TextBlock Text="CALCULATION STEPS" FontWeight="Bold" FontSize="10" Foreground="#047857" Margin="0,0,0,8"/>
+
+                                    <Grid Margin="0,4,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="60"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Step 1:" FontWeight="Bold" FontSize="11" Foreground="#047857"/>
+                                        <TextBlock Grid.Column="1" FontSize="11" Foreground="#047857">
+                                            <Run Text="SheetPrice / WastageFactor = "/>
+                                            <Run Text="{Binding BaseCost, Mode=OneWay, StringFormat={}{0:N2}}" FontWeight="Bold"/>
+                                            <Run Text=" AED"/>
+                                        </TextBlock>
+                                    </Grid>
+
+                                    <Grid Margin="0,4,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="60"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Step 2:" FontWeight="Bold" FontSize="11" Foreground="#047857"/>
+                                        <TextBlock Grid.Column="1" FontSize="11" Foreground="#047857">
+                                            <Run Text="{Binding BaseCost, Mode=OneWay, StringFormat={}{0:N2}}" FontWeight="Bold"/>
+                                            <Run Text=" + "/>
+                                            <Run Text="{Binding ProcessingCost, Mode=OneWay, StringFormat={}{0:N2}}" FontWeight="Bold"/>
+                                            <Run Text=" = "/>
+                                            <Run Text="{Binding Subtotal, Mode=OneWay, StringFormat={}{0:N2}}" FontWeight="Bold"/>
+                                            <Run Text=" AED"/>
+                                        </TextBlock>
+                                    </Grid>
+
+                                    <Grid Margin="0,4,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="60"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Step 3:" FontWeight="Bold" FontSize="11" Foreground="#047857"/>
+                                        <TextBlock Grid.Column="1" FontSize="11" Foreground="#047857">
+                                            <Run Text="{Binding Subtotal, Mode=OneWay, StringFormat={}{0:N2}}" FontWeight="Bold"/>
+                                            <Run Text=" + ProfitMargin("/>
+                                            <Run Text="{Binding ProfitMarginDisplay, Mode=OneWay}" FontWeight="Bold" Foreground="#22C55E"/>
+                                            <Run Text=") = "/>
+                                            <Run Text="{Binding Result, Mode=OneWay, StringFormat={}{0:N2}}" FontWeight="Bold" Foreground="#059669"/>
+                                            <Run Text=" AED"/>
+                                        </TextBlock>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Final Result -->
+                            <Border Background="#FEE2E2" CornerRadius="10" Padding="12" Margin="0,8,0,0" BorderBrush="#FCA5A5" BorderThickness="2">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="FINAL RESULT" FontWeight="Bold" FontSize="11" Foreground="#DC2626" HorizontalAlignment="Center"/>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,0">
+                                        <TextBlock Text="{Binding Result, Mode=OneWay, StringFormat={}{0:N2}}" FontSize="24" FontWeight="Bold" Foreground="#DC2626"/>
+                                        <TextBlock Text=" AED" FontSize="14" FontWeight="Bold" Foreground="#DC2626" VerticalAlignment="Bottom" Margin="6,0,0,3"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- ============================================ -->
+                <!-- RIGHT: ACTIONS & INFO -->
+                <!-- ============================================ -->
+                <StackPanel Grid.Column="2" Margin="8,0,0,0">
+
+                    <!-- Quick Spec -->
+                    <Border Style="{StaticResource GlassCardOrange}" Margin="0,0,0,12">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Width="10" Height="10" CornerRadius="5" Background="#F59E0B" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="Specification" Foreground="#B45309" Style="{StaticResource SectionTitle}" Margin="10,0,0,0"/>
+                            </Grid>
+                            <TextBlock Text="{Binding Spec}" FontSize="13" FontWeight="SemiBold" Foreground="#92400E" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Actions -->
+                    <Border Style="{StaticResource GlassCard}" Margin="0,0,0,12">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Width="10" Height="10" CornerRadius="5" Background="#64748B" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="Actions" Foreground="#334155" Style="{StaticResource SectionTitle}" Margin="10,0,0,0"/>
+                            </Grid>
+
+                            <Button Content="💾 Save SGU" Command="{Binding SaveCommand}" Style="{StaticResource BtnPrimary}" Margin="0,0,0,8"/>
+                            <Button Content="📄 Export PDF" Command="{Binding ExportPdfCommand}" Style="{StaticResource BtnSuccess}" Margin="0,0,0,8"/>
+                            <Button Content="🗑️ Clear" Command="{Binding ClearCommand}" Style="{StaticResource BtnDanger}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Data Status -->
+                    <Border Style="{StaticResource GlassCard}">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Width="10" Height="10" CornerRadius="5" Background="#10B981" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="Data Status" Foreground="#065F46" Style="{StaticResource SectionTitle}" Margin="10,0,0,0"/>
+                            </Grid>
+
+                            <Grid Margin="0,8,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Text="Categories:" FontSize="11" Foreground="#64748B"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding CategoryOptions.Count, Mode=OneWay}" FontSize="11" FontWeight="SemiBold" Foreground="#1E40AF" HorizontalAlignment="Right"/>
+
+                                <TextBlock Grid.Row="1" Text="Thickness:" FontSize="11" Foreground="#64748B" Margin="0,6,0,0"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ThicknessOptions.Count, Mode=OneWay}" FontSize="11" FontWeight="SemiBold" Foreground="#1E40AF" HorizontalAlignment="Right" Margin="0,6,0,0"/>
+
+                                <TextBlock Grid.Row="2" Text="Colors:" FontSize="11" Foreground="#64748B" Margin="0,6,0,0"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding ColorOptions.Count, Mode=OneWay}" FontSize="11" FontWeight="SemiBold" Foreground="#1E40AF" HorizontalAlignment="Right" Margin="0,6,0,0"/>
+                            </Grid>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,12,0,0" HorizontalAlignment="Center">
+                                <Ellipse Width="10" Height="10" Fill="#22C55E" Margin="0,0,8,0"/>
+                                <TextBlock Text="Cache Active" FontSize="11" Foreground="#16A34A" FontWeight="Medium"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+
+            <!-- ============================================ -->
             <!-- HISTORY SECTION -->
-            <StackPanel Grid.Row="2" Margin="0,10,0,0">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <Button Content="HISTORY" Background="#14B8A6" Foreground="White" FontWeight="Bold" 
-                            Padding="12,8" HorizontalAlignment="Left"
-                            Command="{Binding ClearCommand}"/>
-                    <Button Grid.Column="1" Content="CLEAR" Background="#DC2626" Foreground="White" FontWeight="Bold" 
-                            Padding="12,8" Margin="8,0,0,0"
-                            Command="{Binding ClearCommand}"/>
-                    <Button Grid.Column="2" Content="CLEAR ALL" Background="#DC2626" Foreground="White" FontWeight="Bold" 
-                            Padding="12,8" Margin="8,0,0,0"
-                            Command="{Binding ClearAllCommand}"/>
-                </Grid>
+            <!-- ============================================ -->
+            <Border Grid.Row="2" Style="{StaticResource GlassCard}" Margin="0,12,0,0">
+                <StackPanel>
+                    <ToggleButton Content="📜 Calculation History" IsChecked="{Binding IsHistoryVisible}" HorizontalAlignment="Stretch"/>
 
-                <Border Background="#F0F9FF" CornerRadius="10" Padding="12" Margin="0,8,0,0"
-                        MinHeight="100" MaxHeight="200" BorderBrush="#BAE6FD" BorderThickness="1"
-                        Visibility="{Binding IsHistoryVisible, Mode=OneWay, Converter={StaticResource BoolToVis}}">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                        <ItemsControl ItemsSource="{Binding Records, Mode=OneWay}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <WrapPanel Orientation="Horizontal"/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Background="White" CornerRadius="8" Padding="10" Margin="4"
-                                            BorderBrush="#E2E8F0" BorderThickness="1" MinWidth="260" MaxWidth="320">
-                                        <Grid>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                            </Grid.RowDefinitions>
+                    <Border Visibility="{Binding IsHistoryVisible, Converter={StaticResource BoolToVis}}" Margin="0,12,0,0">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="250">
+                            <ItemsControl ItemsSource="{Binding Records}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="White" CornerRadius="12" Padding="14" Margin="4" MinWidth="240"
+                                                BorderBrush="#E2E8F0" BorderThickness="1">
+                                            <Border.Effect>
+                                                <DropShadowEffect Color="#000000" BlurRadius="8" ShadowDepth="1" Opacity="0.05"/>
+                                            </Border.Effect>
+                                            <StackPanel>
+                                                <Grid Margin="0,0,0,8">
+                                                    <Border Background="#F1F5F9" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left">
+                                                        <TextBlock Text="{Binding CreatedAt}" FontSize="10" Foreground="#64748B"/>
+                                                    </Border>
+                                                    <Button Content="✕" 
+                                                            Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" 
+                                                            CommandParameter="{Binding}" 
+                                                            Style="{StaticResource BtnSmallDelete}"
+                                                            HorizontalAlignment="Right"/>
+                                                </Grid>
 
-                                            <TextBlock Grid.Row="0" Text="{Binding DisplayText, Mode=OneWay}" FontSize="11" Foreground="#334155" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                                                <TextBlock Text="{Binding DisplayText, Mode=OneWay}" FontSize="11" Foreground="#334155" Margin="0,0,0,4" TextWrapping="Wrap"/>
 
-                                            <StackPanel Grid.Row="1" Orientation="Horizontal">
-                                                <TextBlock Text="{Binding Wastage, Mode=OneWay}" FontSize="9" Foreground="#92400E" Margin="0,0,8,0"/>
-                                                <TextBlock Text="{Binding ProfitMargin, Mode=OneWay}" FontSize="9" Foreground="#166534"/>
+                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                                    <TextBlock Text="{Binding Wastage, Mode=OneWay}" FontSize="9" Foreground="#92400E" Margin="0,0,8,0"/>
+                                                    <TextBlock Text="{Binding ProfitMargin, Mode=OneWay}" FontSize="9" Foreground="#166534"/>
+                                                </StackPanel>
+
+                                                <TextBlock FontSize="16" FontWeight="Bold" Foreground="#10B981">
+                                                    <Run Text="{Binding Result, StringFormat={}{0:F2}}"/><Run Text=" AED"/>
+                                                </TextBlock>
                                             </StackPanel>
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
-                </Border>
-            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
+                </StackPanel>
+            </Border>
         </Grid>
-    </ScrollViewer>
+    </Border>
 </UserControl>
