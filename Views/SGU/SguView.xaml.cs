@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace ProGlassAutomation.Views.SGU
 {
@@ -10,11 +11,20 @@ namespace ProGlassAutomation.Views.SGU
             InitializeComponent();
         }
 
-        private void SelectAllText_GotFocus(object sender, RoutedEventArgs e)
+        private void TextBox_GotFocus(object sender, RoutedEventArgs e)
         {
-            if (sender is TextBox textBox)
+            if (sender is TextBox tb)
             {
-                textBox.SelectAll();
+                tb.SelectAll();
+            }
+        }
+
+        private void TextBox_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is TextBox tb && !tb.IsKeyboardFocusWithin)
+            {
+                e.Handled = true;
+                tb.Focus();
             }
         }
     }

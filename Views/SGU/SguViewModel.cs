@@ -39,136 +39,88 @@ namespace ProGlassAutomation.Views.SGU
         private double _cachedSheetPrice = 0;
         private double _cachedCutting = 5;
         private double _cachedTempering = 10;
-        private double _cachedProfitFactor = 1.15;
 
-        private const double CostRecoveryFactor = 0.85;
+        // [UPDATED] Wastage Factor
+        private double _cachedWastageFactor = 0.85;
+        private string _wastageConsider = "15";
 
-        // CATEGORIES - Match Sheet.cs Categories exactly
+        // [UPDATED] Profit Margin (WITH % SIGN)
+        private double _cachedProfitMargin = 0.15;
+        private string _profitMargin = "15%";
+
+        // CATEGORIES
         private static readonly string[] AllCategories = new string[]
         {
-            // CLEAR
             "Clear Float", "Ultra Clear", "Crystal Clear", "Optifloat Clear",
-            
-            // HD SERIES
             "HD Clear", "HD Bronze", "HD Grey", "HD Green", "HD Blue", "HD Black",
-            
-            // BELGIUM / PLANIBEL
             "Belgium Clear", "Belgium Bronze", "Belgium Grey", "Belgium Green",
             "Planibel Clear", "Planibel A", "Planibel Top N+",
             "Planibel Grey", "Planibel Bronze", "Planibel Green",
-            
-            // PNA
             "PNA Clear", "PNA Bronze", "PNA Grey", "PNA Green", "PNA Blue",
             "PNA Reflective Silver", "PNA Reflective Gold",
-            
-            // RAMLY
             "Ramly Clear", "Ramly Bronze", "Ramly Grey", "Ramly Green", "Ramly Blue",
-            
-            // SUNLUX / REFLITE
             "Sunlux Silver", "Sunlux Gold", "Sunlux Blue", "Sunlux Green", "Sunlux Bronze",
             "Reflite Silver", "Reflite Gold", "Reflite Blue", "Reflite Green", "Reflite Bronze",
-            
-            // STOPSOL (AGC)
             "Stopsol Classic Clear", "Stopsol Classic Bronze", "Stopsol Classic Grey",
             "Stopsol Classic Green", "Stopsol Classic Blue",
             "Stopsol Superburn Clear", "Stopsol Superburn Bronze", "Stopsol Superburn Grey",
             "Stopsol Superburn Green", "Stopsol Superburn Blue",
             "Stopsol Silver Lite", "Stopsol Silver Dark",
-            
-            // STOPRAY (AGC)
             "Stopray Classic Clear", "Stopray Classic Bronze", "Stopray Classic Grey",
             "Stopray Classic Green", "Stopray Classic Blue",
             "Stopray Silver", "Stopray Gold", "Stopray Vision",
-            
-            // CHROMAFLOAT (AGC)
             "Chromafloat Silver", "Chromafloat Gold", "Chromafloat Blue", "Chromafloat Green",
-            
-            // SUNERGY (AGC)
             "Sunergy Clear", "Sunergy Bronze", "Sunergy Grey", "Sunergy Green", "Sunergy Plus",
-            
-            // TINTED
             "Tinted Bronze", "Tinted Grey", "Tinted Green", "Tinted Blue", "Tinted Black",
-            
-            // GUARDIAN
             "Guardian Clear", "Guardian Ultra Clear",
             "SunGuard Clear", "SunGuard Blue", "SunGuard Green", "SunGuard Bronze", "SunGuard Grey",
             "SunGuard Neutral 63", "SunGuard Neutral 70",
             "Solarban 60", "Solarban 70", "Solarban 70XL", "Solarban 90",
             "Guardian Reflective Silver", "Guardian Reflective Gold",
-            
-            // AGC
             "AGC Clear", "AGC Ultra Clear", "AGC Low Iron",
             "AGC Tinted Bronze", "AGC Tinted Grey", "AGC Tinted Green", "AGC Tinted Blue",
-            
-            // ŞIŞECAM / TRAKYA (Turkey)
             "Şişecam Clear", "Şişecam Ultra Clear",
             "Şişecam Stopray Bronze", "Şişecam Stopray Grey", "Şişecam Stopray Green",
             "Şişecam Tinted Bronze", "Şişecam Tinted Grey", "Şişecam Tinted Green",
             "Şişecam Reflective Silver", "Şişecam Reflective Gold",
             "Trakya Clear", "Trakya Tinted", "Trakya Stopray",
-            
-            // SGG (Saint Gobain)
             "SGG Clear", "SGG Ultra Clear",
             "SGG Planitherm One", "SGG Planitherm Total", "SGG Planitherm Ultra N",
             "SGG Reflective Silver", "SGG Reflective Gold", "SGG Reflective Blue",
             "SGG Tinted Bronze", "SGG Tinted Grey", "SGG Tinted Green",
             "SGG Climalit", "SGG Antelio",
-            
-            // PILKINGTON
             "Pilkington Optifloat Clear", "Pilkington Optifloat Tinted",
             "Pilkington K Glass", "Pilkington Low-E",
             "Pilkington Sunshade", "Pilkington Arctic Blue",
-            
-            // PGI (South Africa)
             "PGI Clear", "PGI Tinted Bronze", "PGI Tinted Grey", "PGI Tinted Green",
             "PGI Reflective Silver", "PGI Reflective Blue",
-            
-            // TAIWAN GLASS
             "Taiwan Clear", "Taiwan Tinted Bronze", "Taiwan Tinted Grey", "Taiwan Tinted Green",
             "Taiwan Reflective Silver", "Taiwan Reflective Blue",
-            
-            // XINYI (China)
             "Xinyi Clear", "Xinyi Tinted", "Xinyi Low-E",
-            
-            // LOW-E
             "Low-E Clear", "Low-E Neutral", "Low-E Silver",
             "iPlus 1.0", "iPlus 1.1", "iPlus 1.2",
             "Comfort Plus", "Energy Advantage",
-            
-            // ANTELIO / MIRALITE / SPECTRAN
             "Antelio Silver", "Antelio Gold", "Antelio Blue", "Antelio Green",
             "Miralite Silver", "Miralite Gold", "Miralite Bronze",
             "Spectran Silver", "Spectran Blue",
-            
-            // SUNFILM / COMFILM
             "Sunfilm Clear", "Sunfilm Ceramic", "Sunfilm Privacy",
             "Comfilm Safety", "Comfilm UV",
-            
-            // PRIVACY / DECORATIVE
             "Matelux Clear", "Matelux Bronze", "Matelux Grey", "Matelux Green",
             "Decormatt", "Mastercote", "Satinato", "Masterglass",
-            
-            // LACOBEL (Painted)
             "Lacobel White", "Lacobel Black", "Lacobel Grey", "Lacobel Red",
             "Lacobel Blue", "Lacobel Brown", "Lacobel Green",
             "Lacobel Extra White", "Lacobel Extra Black", "Lacobel Easy Clean",
-            
-            // PYROGLASS (Fire Rated)
             "Pyrobel Clear", "Pyrobel Bronze",
             "Pyrostop 30", "Pyrostop 60", "Pyrostop 90",
             "Pyrodur", "Pyroguard",
-            
-            // CUSTOM
             "Custom", "Other"
         };
 
-        // THICKNESS - Match Sheet.cs Thicknesses exactly
         private static readonly string[] AllThicknesses = new string[]
         {
             "2mm", "2.5mm", "3mm", "4mm", "5mm", "6mm", "8mm", "10mm", "12mm", "15mm", "19mm"
         };
 
-        // COLORS - Match Sheet.cs ColorItems exactly
         private static readonly string[] AllColors = new string[]
         {
             "Clear", "Ultra Clear", "Bronze", "Grey", "Green", "Blue", "Black",
@@ -182,7 +134,20 @@ namespace ProGlassAutomation.Views.SGU
         public ObservableCollection<string> CategoryOptions { get; } = new();
         public ObservableCollection<string> ThicknessOptions { get; } = new();
         public ObservableCollection<string> ColorOptions { get; } = new();
-        public ObservableCollection<string> ProfitOptions { get; } = new() { "5%", "10%", "15%", "20%", "25%", "30%", "35%", "40%" };
+
+        // [NEW] Wastage Options (5% to 50%)
+        public ObservableCollection<string> WastageOptions { get; } = new()
+        {
+            "5", "10", "15", "20", "25", "30", "35", "40", "45", "50"
+        };
+
+        // [UPDATED] Profit Margin Options (WITH % SIGN)
+        public ObservableCollection<string> ProfitMarginOptions { get; } = new()
+        {
+            "1%", "5%", "10%", "15%", "20%", "25%", "30%", "35%", "40%", "45%",
+            "50%", "60%", "70%", "80%", "90%", "100%"
+        };
+
         public ObservableCollection<RecordModel> Records { get; } = new();
 
         private string _cat;
@@ -206,14 +171,48 @@ namespace ProGlassAutomation.Views.SGU
             set { _c = value; _isManualSheetPrice = false; OnPropertyChanged(); SchedulePriceLoad(); ScheduleCalculate(); }
         }
 
-        private string _p = "15%";
-        public string Profit
+        // [UPDATED] Wastage Consider Property
+        public string WastageConsider
         {
-            get => _p;
-            set { _p = value; UpdateProfitFactor(); Notify("PF"); ScheduleCalculate(); }
+            get => _wastageConsider;
+            set
+            {
+                if (_wastageConsider == value) return;
+                _wastageConsider = value;
+                UpdateWastageFactor();
+                Notify(nameof(WastageConsider), nameof(WastageConsiderDisplay), nameof(WastageFactor), nameof(WastageFactorDisplay));
+                Calculate(); // IMMEDIATE calculate
+            }
         }
 
-        public double PF => _cachedProfitFactor;
+        public string WastageConsiderDisplay => $"{_wastageConsider}%";
+        public double WastageFactor => _cachedWastageFactor;
+        public string WastageFactorDisplay => _cachedWastageFactor.ToString("0.00");
+
+        // [UPDATED] Profit Margin Property (WITH % SIGN)
+        public string ProfitMargin
+        {
+            get => _profitMargin;
+            set
+            {
+                if (_profitMargin == value) return;
+                _profitMargin = value;
+                UpdateProfitMargin();
+                Notify(nameof(ProfitMargin), nameof(ProfitMarginDisplay), nameof(ProfitMarginDisplayText), nameof(ProfitMarginFactor));
+                Calculate(); // IMMEDIATE calculate
+            }
+        }
+
+        // [NEW] ProfitMarginDisplayText for UI showing "15%"
+        public string ProfitMarginDisplay => _profitMargin;
+
+        // [NEW] Display text showing percentage value
+        public string ProfitMarginDisplayText => $"{_cachedProfitMargin * 100:0}%";
+
+        // [NEW] Factor display showing "1.15"
+        public string ProfitMarginFactorDisplay => ProfitMarginFactor.ToString("0.00");
+        public double ProfitMarginFactor => 1 + _cachedProfitMargin;
+
         public string Spec => $"{Thickness} {ColorName}";
 
         private double _result;
@@ -224,10 +223,10 @@ namespace ProGlassAutomation.Views.SGU
         }
 
         // Formula breakdown properties
-        public double BaseCost => _cachedSheetPrice / CostRecoveryFactor;
+        public double BaseCost => _cachedSheetPrice / _cachedWastageFactor;
         public double ProcessingCost => _cachedCutting + _cachedTempering;
         public double Subtotal => BaseCost + ProcessingCost;
-        public double FinalPrice => Subtotal * _cachedProfitFactor;
+        public double FinalPrice => Subtotal * ProfitMarginFactor;
 
         private double _sh;
         public double SheetPrice
@@ -242,7 +241,6 @@ namespace ProGlassAutomation.Views.SGU
                 OnPropertyChanged(nameof(BaseCost));
                 OnPropertyChanged(nameof(Subtotal));
                 OnPropertyChanged(nameof(FinalPrice));
-                OnPropertyChanged(nameof(Result));
                 Calculate();
             }
         }
@@ -259,7 +257,6 @@ namespace ProGlassAutomation.Views.SGU
                 OnPropertyChanged(nameof(ProcessingCost));
                 OnPropertyChanged(nameof(Subtotal));
                 OnPropertyChanged(nameof(FinalPrice));
-                OnPropertyChanged(nameof(Result));
                 Calculate();
             }
         }
@@ -276,7 +273,6 @@ namespace ProGlassAutomation.Views.SGU
                 OnPropertyChanged(nameof(ProcessingCost));
                 OnPropertyChanged(nameof(Subtotal));
                 OnPropertyChanged(nameof(FinalPrice));
-                OnPropertyChanged(nameof(Result));
                 Calculate();
             }
         }
@@ -302,11 +298,6 @@ namespace ProGlassAutomation.Views.SGU
                 var service = Services.SheetStoreService.Instance;
                 var sheets = service.GetAllActive().ToList();
                 System.Diagnostics.Debug.WriteLine($"[SGU INIT] SheetStore has {sheets.Count} sheets");
-
-                foreach (var s in sheets.Take(5))
-                {
-                    System.Diagnostics.Debug.WriteLine($"[SGU INIT] {s.Category} | {s.Thickness} | {s.Color} | {s.PurchasePrice}");
-                }
             }
             catch (Exception ex)
             {
@@ -326,11 +317,17 @@ namespace ProGlassAutomation.Views.SGU
             LoadOptions();
             LoadPriceFromSheetStore();
 
+            // Initialize Wastage Factor and Profit Margin
+            UpdateWastageFactor();
+            UpdateProfitMargin();
+
             SaveCommand = new RelayCommand(o =>
             {
                 Records.Insert(0, new RecordModel
                 {
-                    DisplayText = $"{Category} | {Thickness} {ColorName} | {Result:F2} AED | {DateTime.Now:HH:mm}"
+                    DisplayText = $"{Category} | {Thickness} {ColorName} | {Result:F2} AED | {DateTime.Now:HH:mm}",
+                    Wastage = $"{WastageConsider}% (Factor: {_cachedWastageFactor:F2})",
+                    ProfitMargin = ProfitMarginDisplay
                 });
                 MessageBox.Show("Saved!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             });
@@ -343,14 +340,21 @@ namespace ProGlassAutomation.Views.SGU
                 SheetPrice = 0;
                 _cachedCutting = 5;
                 _cachedTempering = 10;
-                _cachedProfitFactor = 1.15;
+                _wastageConsider = "15";
+                _profitMargin = "15%";
+                _cachedWastageFactor = 0.85;
+                _cachedProfitMargin = 0.15;
                 _th = "6mm";
                 _c = "Clear";
                 _cutting = 5;
                 _tempering = 10;
+
                 OnPropertyChanged(nameof(Cutting));
                 OnPropertyChanged(nameof(Tempering));
-                Notify("PF", "Thickness", "ColorName", "BaseCost", "ProcessingCost", "Subtotal", "FinalPrice", "Result");
+                Notify("Thickness", "ColorName", "BaseCost", "ProcessingCost", "Subtotal", "FinalPrice", "Result",
+                       "WastageConsider", "WastageConsiderDisplay", "WastageFactor", "WastageFactorDisplay",
+                       "ProfitMargin", "ProfitMarginDisplay", "ProfitMarginDisplayText", "ProfitMarginFactor", "ProfitMarginFactorDisplay");
+
                 if (CategoryOptions.Count > 0)
                     Category = CategoryOptions[0];
                 Calculate();
@@ -365,6 +369,57 @@ namespace ProGlassAutomation.Views.SGU
             });
 
             Calculate();
+        }
+
+        // Update Wastage Factor Method
+        private void UpdateWastageFactor()
+        {
+            double wastage = ParsePercentage(_wastageConsider);
+            _cachedWastageFactor = 1 - (wastage / 100.0);
+            OnPropertyChanged(nameof(WastageFactor));
+            OnPropertyChanged(nameof(WastageFactorDisplay));
+            OnPropertyChanged(nameof(BaseCost));
+            OnPropertyChanged(nameof(Subtotal));
+            OnPropertyChanged(nameof(FinalPrice));
+        }
+
+        // Update Profit Margin Method
+        private void UpdateProfitMargin()
+        {
+            _cachedProfitMargin = _profitMargin switch
+            {
+                "1%" => 0.01,
+                "5%" => 0.05,
+                "10%" => 0.10,
+                "15%" => 0.15,
+                "20%" => 0.20,
+                "25%" => 0.25,
+                "30%" => 0.30,
+                "35%" => 0.35,
+                "40%" => 0.40,
+                "45%" => 0.45,
+                "50%" => 0.50,
+                "60%" => 0.60,
+                "70%" => 0.70,
+                "80%" => 0.80,
+                "90%" => 0.90,
+                "100%" => 1.00,
+                _ => 0.15
+            };
+            OnPropertyChanged(nameof(ProfitMarginDisplayText));
+            OnPropertyChanged(nameof(ProfitMarginFactor));
+            OnPropertyChanged(nameof(ProfitMarginFactorDisplay));
+            OnPropertyChanged(nameof(FinalPrice));
+        }
+
+        // Parse Percentage Helper
+        private double ParsePercentage(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return 15.0;
+            string clean = value.Replace("%", "").Trim();
+            if (double.TryParse(clean, out double result))
+                return result;
+            return 15.0;
         }
 
         private void ScheduleDebounced(Action action, int ms = DebounceMs)
@@ -389,22 +444,6 @@ namespace ProGlassAutomation.Views.SGU
 
         private void SchedulePriceLoad() => ScheduleDebounced(LoadPriceFromSheetStore);
         private void ScheduleCalculate() => ScheduleDebounced(Calculate, 50);
-
-        private void UpdateProfitFactor()
-        {
-            _cachedProfitFactor = Profit switch
-            {
-                "5%" => 1.05,
-                "10%" => 1.10,
-                "15%" => 1.15,
-                "20%" => 1.20,
-                "25%" => 1.25,
-                "30%" => 1.30,
-                "35%" => 1.35,
-                "40%" => 1.40,
-                _ => 1.15
-            };
-        }
 
         private void LoadOptions()
         {
@@ -447,7 +486,7 @@ namespace ProGlassAutomation.Views.SGU
                 { "Stopsol", new[] { "Clear", "Silver" } },
                 { "Guardian", new[] { "Clear", "Silver" } },
                 { "Low-E", new[] { "Clear", "Neutral", "Silver" } },
-                                { "Tinted", new[] { "Bronze", "Grey", "Green", "Blue", "Black" } },
+                { "Tinted", new[] { "Bronze", "Grey", "Green", "Blue", "Black" } },
                 { "Ultra Clear", new[] { "Ultra Clear", "Clear" } }
             };
 
@@ -501,7 +540,6 @@ namespace ProGlassAutomation.Views.SGU
         {
             try
             {
-                // Skip if user manually entered sheet price
                 if (_isManualSheetPrice)
                 {
                     Calculate();
@@ -530,8 +568,6 @@ namespace ProGlassAutomation.Views.SGU
 
                     var sheets = Services.SheetStoreService.Instance.GetAllActive().ToList();
 
-                    System.Diagnostics.Debug.WriteLine($"[SGU DEBUG] Loading {sheets.Count} sheets from SheetStore");
-
                     var newSpecIdx = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
                     var newThickIdx = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
                     var newCatIdx = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
@@ -552,23 +588,19 @@ namespace ProGlassAutomation.Views.SGU
                             newThickIdx[tKey] = sheetPrice;
                         if (!newCatIdx.ContainsKey(cat))
                             newCatIdx[cat] = sheetPrice;
-
-                        System.Diagnostics.Debug.WriteLine($"[SGU DEBUG] Loaded: {sKey} = {sheetPrice}");
                     }
-
-                    System.Diagnostics.Debug.WriteLine($"[SGU DEBUG] Total - Spec:{newSpecIdx.Count}, Thickness:{newThickIdx.Count}, Category:{newCatIdx.Count}");
 
                     SetCache(new SheetCacheSnapshot(newSpecIdx, newThickIdx, newCatIdx));
                 }
 
-                // Try exact match: Category + Thickness + Color
+                // Try exact match
                 string lookupSpecKey = $"{Category}|{Thickness}|{ColorName}";
-                System.Diagnostics.Debug.WriteLine($"[SGU DEBUG] Looking for EXACT: '{lookupSpecKey}'");
-
                 double price = 0;
-                if (_priceBySpecIndex.TryGetValue(lookupSpecKey, out price))
+
+                if (_priceBySpecIndex.TryGetValue(lookupSpecKey, out price) ||
+                    _priceBySpecIndex.TryGetValue($"{Category}|{Thickness}|Clear", out price) ||
+                    _priceBySpecIndex.TryGetValue($"{Category}|{Thickness}|Ultra Clear", out price))
                 {
-                    System.Diagnostics.Debug.WriteLine($"[SGU DEBUG] Found EXACT match: {price}");
                     _cachedSheetPrice = price;
                     _sh = price;
                     OnPropertyChanged(nameof(SheetPrice));
@@ -576,26 +608,19 @@ namespace ProGlassAutomation.Views.SGU
                     return;
                 }
 
-                // Try partial match: Category + Thickness (ignore Color)
+                // Try partial match
                 string lookupThickKey = $"{Category}|{Thickness}";
-                System.Diagnostics.Debug.WriteLine($"[SGU DEBUG] Looking for THICK: '{lookupThickKey}'");
-
                 if (_priceByThicknessIndex.TryGetValue(lookupThickKey, out price))
                 {
-                    System.Diagnostics.Debug.WriteLine($"[SGU DEBUG] Found THICK match: {price}");
                     _cachedSheetPrice = price;
                     _sh = price;
                     OnPropertyChanged(nameof(SheetPrice));
                     Calculate();
                     return;
                 }
-
-                // Try category only
-                System.Diagnostics.Debug.WriteLine($"[SGU DEBUG] Looking for CAT: '{Category}'");
 
                 if (_priceByCategoryIndex.TryGetValue(Category, out price))
                 {
-                    System.Diagnostics.Debug.WriteLine($"[SGU DEBUG] Found CAT match: {price}");
                     _cachedSheetPrice = price;
                     _sh = price;
                     OnPropertyChanged(nameof(SheetPrice));
@@ -603,80 +628,25 @@ namespace ProGlassAutomation.Views.SGU
                     return;
                 }
 
-                // Try fuzzy match (partial category name)
-                price = FindBestMatch(Category, Thickness, ColorName);
-                if (price > 0)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[SGU DEBUG] Found FUZZY match: {price}");
-                    _cachedSheetPrice = price;
-                    _sh = price;
-                    OnPropertyChanged(nameof(SheetPrice));
-                    Calculate();
-                    return;
-                }
-
-                System.Diagnostics.Debug.WriteLine("[SGU DEBUG] NO MATCH FOUND - Setting 0");
                 _cachedSheetPrice = 0;
                 _sh = 0;
                 OnPropertyChanged(nameof(SheetPrice));
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[SGU ERROR] LoadPriceFromSheetStore: {ex.Message}");
                 _cachedSheetPrice = 0;
                 _sh = 0;
                 OnPropertyChanged(nameof(SheetPrice));
             }
         }
 
-        private double FindBestMatch(string category, string thickness, string color)
-        {
-            System.Diagnostics.Debug.WriteLine($"[SGU FUZZY] Searching for: {category}|{thickness}|{color}");
-
-            // Try to find category that contains our search term
-            foreach (var catKvp in _priceByCategoryIndex)
-            {
-                if (catKvp.Key.Contains(category, StringComparison.OrdinalIgnoreCase) ||
-                    category.Contains(catKvp.Key, StringComparison.OrdinalIgnoreCase))
-                {
-                    System.Diagnostics.Debug.WriteLine($"[SGU FUZZY] Category match: {catKvp.Key}");
-
-                    // Find thickness match under this category
-                    foreach (var thickKvp in _priceByThicknessIndex)
-                    {
-                        if (thickKvp.Key.StartsWith(catKvp.Key + "|", StringComparison.OrdinalIgnoreCase) &&
-                            thickKvp.Key.EndsWith("|" + thickness, StringComparison.OrdinalIgnoreCase))
-                        {
-                            System.Diagnostics.Debug.WriteLine($"[SGU FUZZY] Thickness match: {thickKvp.Key}");
-                            return thickKvp.Value;
-                        }
-                    }
-
-                    // Return category price if no thickness match
-                    return catKvp.Value;
-                }
-            }
-
-            // Try just thickness match
-            foreach (var thickKvp in _priceByThicknessIndex)
-            {
-                if (thickKvp.Key.EndsWith("|" + thickness, StringComparison.OrdinalIgnoreCase))
-                {
-                    System.Diagnostics.Debug.WriteLine($"[SGU FUZZY] Partial thickness: {thickKvp.Key}");
-                    return thickKvp.Value;
-                }
-            }
-
-            return 0;
-        }
-
         public void Calculate()
         {
-            // Formula: ((SheetPrice / 0.85) + Cutting + Tempering) * ProfitFactor
-            double baseCost = _cachedSheetPrice / CostRecoveryFactor;
+            // Formula: (SheetPrice / WastageFactor) + ProcessingCost) * ProfitFactor
+            double baseCost = _cachedSheetPrice / _cachedWastageFactor;
             double processingCost = _cachedCutting + _cachedTempering;
             double subtotal = baseCost + processingCost;
-            Result = subtotal * _cachedProfitFactor;
+            Result = subtotal * ProfitMarginFactor;
         }
 
         public void ExportPdf()
@@ -726,13 +696,14 @@ namespace ProGlassAutomation.Views.SGU
             content.Children.Add(new TextBlock { Text = "PRICE BREAKUP", FontSize = 14, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 10) });
             content.Children.Add(CreateDetailRow("Category:", Category));
             content.Children.Add(CreateDetailRow("Sheet Price:", $"{_cachedSheetPrice:F2} AED"));
-            content.Children.Add(CreateDetailRow("Base Cost (÷0.85):", $"{BaseCost:F2} AED"));
+            content.Children.Add(CreateDetailRow("Wastage Factor:", $"{_cachedWastageFactor:F2} ({WastageConsider}%)"));
+            content.Children.Add(CreateDetailRow("Base Cost (÷Wastage):", $"{BaseCost:F2} AED"));
             content.Children.Add(CreateDetailRow("Cutting Charge:", $"{_cachedCutting:F2} AED"));
             content.Children.Add(CreateDetailRow("Tempering Charge:", $"{_cachedTempering:F2} AED"));
             content.Children.Add(CreateDetailRow("Processing Cost:", $"{ProcessingCost:F2} AED"));
             content.Children.Add(CreateDetailRow("Subtotal:", $"{Subtotal:F2} AED"));
-            content.Children.Add(CreateDetailRow("Profit Margin:", Profit));
-            content.Children.Add(CreateDetailRow("Profit Factor:", $"{PF:F2}x"));
+            content.Children.Add(CreateDetailRow("Profit Margin:", ProfitMarginDisplay));
+            content.Children.Add(CreateDetailRow("Profit Factor:", $"{ProfitMarginFactor:F2}x"));
 
             var finalBox = new Border { Background = green, Padding = new Thickness(15), Margin = new Thickness(0, 20, 0, 20) };
             var finalStack = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center };
@@ -783,6 +754,8 @@ namespace ProGlassAutomation.Views.SGU
     public class RecordModel
     {
         public string DisplayText { get; set; }
+        public string Wastage { get; set; }
+        public string ProfitMargin { get; set; }
     }
 
     public class RelayCommand : ICommand
