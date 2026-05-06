@@ -83,18 +83,7 @@ namespace ProGlassAutomation.Views.DGU
             ["Bronze"] = 4
         };
 
-        private static readonly Dictionary<string, double> ProfitFactors = new()
-        {
-            ["5%"] = 0.95,
-            ["10%"] = 0.90,
-            ["15%"] = 0.85,
-            ["20%"] = 0.80,
-            ["25%"] = 0.75,
-            ["30%"] = 0.70,
-            ["35%"] = 0.65,
-            ["40%"] = 0.60
-        };
-
+        // [UPDATED] Profit Margins - used in calculation (Step 4)
         private static readonly Dictionary<string, double> ProfitMargins = new()
         {
             ["5%"] = 0.05,
@@ -104,7 +93,27 @@ namespace ProGlassAutomation.Views.DGU
             ["25%"] = 0.25,
             ["30%"] = 0.30,
             ["35%"] = 0.35,
-            ["40%"] = 0.40
+            ["40%"] = 0.40,
+            ["45%"] = 0.45,
+            ["50%"] = 0.50,
+            ["60%"] = 0.60,
+            ["70%"] = 0.70,
+            ["80%"] = 0.80,
+            ["90%"] = 0.90,
+            ["100%"] = 1.00
+        };
+
+        // [NEW] Wastage Options (5% to 50%)
+        public ObservableCollection<string> WastageOptions { get; } = new()
+        {
+            "5", "10", "15", "20", "25", "30", "35", "40", "45", "50"
+        };
+
+        // [NEW] Profit Margin Options (1% to 100%)
+        public ObservableCollection<string> ProfitMarginOptions { get; } = new()
+        {
+            "1", "5", "10", "15", "20", "25", "30", "35", "40", "45",
+            "50", "60", "70", "80", "90", "100"
         };
 
         private readonly struct SheetKey
@@ -202,7 +211,6 @@ namespace ProGlassAutomation.Views.DGU
             return 0;
         }
 
-        // FIX: Lambda with explicit parameters
         static DguViewModel()
         {
             SheetStoreService.Instance.DataChanged += (object sender, EventArgs e) => InvalidateCache();
@@ -268,6 +276,10 @@ namespace ProGlassAutomation.Views.DGU
         private string _result = "0.00", _totalSqm = "0.00", _totalPrice = "0.00", _vatAmount = "0.00", _grossTotal = "0.00";
         private readonly Dictionary<string, object> _fields = new();
 
+        // [NEW] Wastage Factor Fields
+        private double _cachedWastageFactor = 0.85;
+        private string _wastageConsider = "15";
+
         public string Category1 { get => _cat1; set { if (_cat1 == value) return; _cat1 = value; Notify(nameof(Category1)); SafeUpdate(() => { LoadTh1(); LoadClr1(); LoadPrice1(); LoadSizes(); ScheduleCalc(); }); } }
         public string Thickness1 { get => _th1; set { if (_th1 == value) return; _th1 = value; Notify(nameof(Thickness1)); SafeUpdate(() => { LoadClr1(); LoadPrice1(); LoadSizes(); ScheduleCalc(); }); } }
         public string Color1 { get => _clr1; set { if (_clr1 == value) return; _clr1 = value; Notify(nameof(Color1)); SafeUpdate(() => { LoadPrice1(); LoadSizes(); ScheduleCalc(); }); } }
@@ -278,10 +290,46 @@ namespace ProGlassAutomation.Views.DGU
         public double Sheet2 { get => _sh2; set { if (Math.Abs(_sh2 - value) < 0.001) return; _sh2 = value; _manual2 = true; Notify(nameof(Sheet2)); ScheduleCalc(); } }
         public string SpacerSize { get => _spSize; set { if (_spSize == value) return; _spSize = value; Notify(nameof(SpacerSize)); ScheduleCalc(); } }
         public string SpacerColor { get => _spClr; set { if (_spClr == value) return; _spClr = value; Notify(nameof(SpacerColor)); ScheduleCalc(); } }
-        public string Profit { get => _profit; set { if (_profit == value) return; _profit = value; Notify(nameof(Profit)); ScheduleCalc(); } }
+
+        // [UPDATED] Profit - notifies multiple properties
+        public string Profit
+        {
+            get => _profit;
+            set
+            {
+                if (_profit == value) return;
+                _profit = value;
+                Notify(nameof(Profit), nameof(ProfitDisplay), nameof(ProfitFactorDisplay), nameof(ProfitMarginDisplay));
+                ScheduleCalc();
+            }
+        }
+
+        // [NEW] Wastage Consider Property
+        public string WastageConsider
+        {
+            get => _wastageConsider;
+            set
+            {
+                if (_wastageConsider == value) return;
+                _wastageConsider = value;
+                Notify(nameof(WastageConsider), nameof(WastageConsiderDisplay), nameof(WastageFactor), nameof(WastageFactorDisplay));
+                UpdateWastageFactor();
+                ScheduleCalc();
+            }
+        }
+
+        public string WastageConsiderDisplay => $"{_wastageConsider}%";
+        public double WastageFactor => _cachedWastageFactor;
+        public string WastageFactorDisplay => _cachedWastageFactor.ToString("0.00");
+
         public string Width { get => _w; set { if (_w == value) return; _w = value; Notify(nameof(Width)); ScheduleCalc(); } }
         public string Height { get => _h; set { if (_h == value) return; _h = value; Notify(nameof(Height)); ScheduleCalc(); } }
         public string Qty { get => _qty; set { if (_qty == value) return; _qty = value; Notify(nameof(Qty)); ScheduleCalc(); } }
+
+        // [UPDATED] Display Properties
+        public string ProfitDisplay => _profit;
+        public string ProfitFactorDisplay => (1.0 - (ParsePercentage(_profit) / 100.0)).ToString("0.00");
+        public string ProfitMarginDisplay => $"{_profit}";
 
         public string Result { get => _result; set => Set(ref _result, value, nameof(Result)); }
         public string TotalSqm { get => _totalSqm; set => Set(ref _totalSqm, value, nameof(TotalSqm)); }
@@ -324,6 +372,9 @@ namespace ProGlassAutomation.Views.DGU
             _cat1 = Cats[0];
             _cat2 = Cats.Length > 1 ? Cats[1] : Cats[0];
 
+            // [NEW] Initialize Wastage Factor
+            UpdateWastageFactor();
+
             SaveCommand = new RelayCommand(o => Save());
             ExportPdfCommand = new RelayCommand(o => ExportPdf());
             DeleteCommand = new RelayCommand(o => { if (o is DguRecord r) Records.Remove(r); });
@@ -331,6 +382,24 @@ namespace ProGlassAutomation.Views.DGU
 
             LoadSizes();
             CalcInternal();
+        }
+
+        // [NEW] Update Wastage Factor Method
+        private void UpdateWastageFactor()
+        {
+            double wastage = ParsePercentage(_wastageConsider);
+            _cachedWastageFactor = 1 - (wastage / 100.0);
+            Notify(nameof(WastageFactor), nameof(WastageFactorDisplay));
+        }
+
+        // [NEW] Parse Percentage Helper
+        private double ParsePercentage(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return 15.0;
+            string clean = value.Replace("%", "").Trim();
+            if (double.TryParse(clean, out double result))
+                return result;
+            return 15.0;
         }
 
         private T Get<T>([CallerMemberName] string name = null) => _fields.TryGetValue(name, out var v) ? (T)v : default;
@@ -452,18 +521,26 @@ namespace ProGlassAutomation.Views.DGU
             }
         }
 
+        // [UPDATED] CalcInternal - USES WastageFactor!
         private void CalcInternal()
         {
             if (_isUpdating) return;
             UpdateCachedInputs();
 
+            // Step 1: Glass Total
             double glassTotal = Sheet1 + Sheet2;
-            double profitFactor = ProfitFactors.GetValueOrDefault(Profit, 0.85);
-            double step2 = glassTotal / profitFactor;
+
+            // Step 2: Divide by WastageFactor (NEW!)
+            double step2 = glassTotal / _cachedWastageFactor;
+
+            // Step 3: Add Spacer costs
             double step3 = step2 + SpacerPrices.GetValueOrDefault(SpacerSize, 15) + SpacerColorPrices.GetValueOrDefault(SpacerColor, 0);
-            double profitMargin = ProfitMargins.GetValueOrDefault(Profit, 0.15);
+
+            // Step 4: Apply Profit Margin
+            double profitMargin = ProfitMargins.GetValueOrDefault(_profit, 0.15);
             double final = step3 * (1 + profitMargin);
 
+            // Calculate totals
             double sqm = (_cachedW / 1000) * (_cachedH / 1000) * _cachedQ;
             double total = final * sqm;
             double vat = total * 0.05;
@@ -492,6 +569,8 @@ namespace ProGlassAutomation.Views.DGU
             _spSize = "12mm Air";
             _spClr = "Silver";
             _profit = "15%";
+            _wastageConsider = "15";
+            _cachedWastageFactor = 0.85;
             _sh1 = 0;
             _sh2 = 0;
             _w = "1000";
@@ -500,7 +579,9 @@ namespace ProGlassAutomation.Views.DGU
 
             Notify(nameof(Category1), nameof(Category2), nameof(Thickness1), nameof(Thickness2),
                    nameof(Color1), nameof(Color2), nameof(SpacerSize), nameof(SpacerColor),
-                   nameof(Profit), nameof(Sheet1), nameof(Sheet2), nameof(Width), nameof(Height), nameof(Qty));
+                   nameof(Profit), nameof(ProfitDisplay), nameof(ProfitFactorDisplay), nameof(ProfitMarginDisplay),
+                   nameof(WastageConsider), nameof(WastageConsiderDisplay), nameof(WastageFactor), nameof(WastageFactorDisplay),
+                   nameof(Sheet1), nameof(Sheet2), nameof(Width), nameof(Height), nameof(Qty));
 
             LoadSizes();
             ScheduleCalc();
@@ -516,6 +597,8 @@ namespace ProGlassAutomation.Views.DGU
                 Thickness2 = Thickness2,
                 Color2 = Color2,
                 Spacer = $"{SpacerSize} {SpacerColor}",
+                Wastage = $"{WastageConsider}% (Factor: {_cachedWastageFactor:F2})",
+                Profit = _profit,
                 Result = double.TryParse(Result, out var r) ? r : 0,
                 CreatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm")
             });
@@ -535,6 +618,19 @@ namespace ProGlassAutomation.Views.DGU
                 MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+    }
+
+    public class DguRecord
+    {
+        public string Thickness1 { get; set; }
+        public string Color1 { get; set; }
+        public string Thickness2 { get; set; }
+        public string Color2 { get; set; }
+        public string Spacer { get; set; }
+        public string Wastage { get; set; }
+        public string Profit { get; set; }
+        public double Result { get; set; }
+        public string CreatedAt { get; set; }
     }
 
     public class RelayCommand : ICommand

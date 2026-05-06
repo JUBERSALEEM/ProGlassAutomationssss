@@ -1,35 +1,71 @@
 ﻿<UserControl x:Class="ProGlassAutomation.Views.DGU.DguView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ProGlassAutomation.Views.DGU"
+             Background="#E8F4FC">
+
+    <UserControl.DataContext>
+        <vm:DguViewModel/>
+    </UserControl.DataContext>
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
 
-        <!-- ToggleButton Style -->
-        <Style TargetType="ToggleButton">
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ToggleButton">
-                        <Border x:Name="bd" Background="#14B8A6" CornerRadius="6" Padding="12">
-                            <ContentPresenter HorizontalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="bd" Property="Background" Value="#0D9488"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+        <!-- Colors -->
+        <SolidColorBrush x:Key="PrimaryBrush" Color="#1E3A5F"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="#0891B2"/>
+        <SolidColorBrush x:Key="CardBgBrush" Color="#F0F9FF"/>
+        <SolidColorBrush x:Key="BorderBrush" Color="#CBD5E1"/>
+        <SolidColorBrush x:Key="TextMutedBrush" Color="#64748B"/>
+
+        <!-- Base Controls -->
+        <Style TargetType="TextBox">
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style TargetType="Label">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
+            <Setter Property="Margin" Value="0,6,0,2"/>
+        </Style>
+
+        <!-- Card Style -->
+        <Style x:Key="CardBorder" TargetType="Border">
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="12"/>
+            <Setter Property="Background" Value="{StaticResource CardBgBrush}"/>
+            <Setter Property="BorderBrush" Value="#BAE6FD"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+        </Style>
+
+        <!-- Section Title -->
+        <Style x:Key="SectionTitle" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+        </Style>
+
+        <!-- Primary Button -->
+        <Style x:Key="PrimaryBtn" TargetType="Button">
+            <Setter Property="Background" Value="#1E40AF"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontSize" Value="13"/>
             <Setter Property="Height" Value="40"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="16,10"/>
         </Style>
     </UserControl.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <Grid Background="#E8F4FC" Margin="10">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0">
+        <Grid Margin="10">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -37,26 +73,32 @@
             </Grid.RowDefinitions>
 
             <!-- HEADER -->
-            <Border Grid.Row="0" CornerRadius="12" Padding="12" Margin="0,0,0,10">
-                <Border.Background>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#1E3A5F" Offset="0"/>
-                        <GradientStop Color="#2563EB" Offset="1"/>
-                    </LinearGradientBrush>
-                </Border.Background>
+            <Border Grid.Row="0" CornerRadius="12" Padding="15,12" Margin="0,0,0,10"
+                    Background="{StaticResource PrimaryBrush}">
                 <Grid>
-                    <TextBlock Text="DGU CALCULATOR" Foreground="White" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
-                    <Border Background="White" CornerRadius="8" Padding="10" HorizontalAlignment="Right">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Text="DGU CALCULATOR" Foreground="White"
+                               FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
+
+                    <Border Grid.Column="1" Background="White" CornerRadius="8" Padding="12,8">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="RESULT: " FontWeight="Bold" FontSize="14" Foreground="#1E3A5F" VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding Result}" FontSize="18" FontWeight="Bold" Foreground="#0891B2"/>
+                            <TextBlock Text="UNIT PRICE: " FontWeight="Bold" FontSize="14"
+                                       Foreground="{StaticResource PrimaryBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding Result, StringFormat={}{0:N2}}" FontSize="18" FontWeight="Bold"
+                                       Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" MinWidth="80"/>
+                            <TextBlock Text=" AED" FontSize="12" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Border>
                 </Grid>
             </Border>
 
             <!-- MAIN CONTENT -->
-            <Border Grid.Row="1" Background="White" CornerRadius="16" Padding="16">
+            <Border Grid.Row="1" Background="White" CornerRadius="16" Padding="16"
+                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -64,107 +106,143 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- LEFT: GLASS CONFIG -->
+                    <!-- LEFT: Glass Options -->
                     <StackPanel Grid.Column="0" Margin="0,0,8,0">
+
                         <!-- Glass 1 -->
-                        <Border Background="#F0F9FF" CornerRadius="10" Padding="12" Margin="0,0,0,8" BorderBrush="#BAE6FD" BorderThickness="1">
+                        <Border Style="{StaticResource CardBorder}">
                             <StackPanel>
-                                <TextBlock Text="GLASS 1" FontWeight="SemiBold" FontSize="12" Foreground="#1E3A5F" Margin="0,0,0,8"/>
-                                <TextBlock Text="Category" FontSize="11" Foreground="#64748B" Margin="0,0,0,2"/>
-                                <ComboBox ItemsSource="{Binding CategoryOptions}" SelectedItem="{Binding Category1, Mode=TwoWay}" IsEditable="True" Height="28"/>
-                                <TextBlock Text="Thickness" FontSize="11" Foreground="#64748B" Margin="0,6,0,2"/>
-                                <ComboBox ItemsSource="{Binding ThicknessOptions1}" SelectedItem="{Binding Thickness1, Mode=TwoWay}" IsEditable="True" Height="28"/>
-                                <TextBlock Text="Color" FontSize="11" Foreground="#64748B" Margin="0,6,0,2"/>
-                                <ComboBox ItemsSource="{Binding ColorOptions1}" SelectedItem="{Binding Color1, Mode=TwoWay}" IsEditable="True" Height="28"/>
-                                <TextBlock Text="Sheet Price" FontSize="11" Foreground="#64748B" Margin="0,6,0,2"/>
-                                <TextBox Text="{Binding Sheet1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="28"/>
+                                <TextBlock Text="GLASS 1 (OUTER)" Style="{StaticResource SectionTitle}"/>
+                                <Label Content="Category"/>
+                                <ComboBox Height="28" IsEditable="True" IsReadOnly="False"
+                                          ItemsSource="{Binding CategoryOptions}" 
+                                          SelectedItem="{Binding Category1, UpdateSourceTrigger=PropertyChanged}"
+                                          Text="{Binding Category1, UpdateSourceTrigger=PropertyChanged}"/>
+                                <Label Content="Thickness"/>
+                                <ComboBox Height="28" ItemsSource="{Binding ThicknessOptions1}" 
+                                          SelectedItem="{Binding Thickness1, UpdateSourceTrigger=PropertyChanged}"
+                                          Text="{Binding Thickness1, UpdateSourceTrigger=PropertyChanged}"/>
+                                <Label Content="Color"/>
+                                <ComboBox Height="28" IsEditable="True" IsReadOnly="False"
+                                          ItemsSource="{Binding ColorOptions1}" 
+                                          SelectedItem="{Binding Color1, UpdateSourceTrigger=PropertyChanged}"
+                                          Text="{Binding Color1, UpdateSourceTrigger=PropertyChanged}"/>
                             </StackPanel>
                         </Border>
+
                         <!-- Glass 2 -->
-                        <Border Background="#F0FDF4" CornerRadius="10" Padding="12" BorderBrush="#BBF7D0" BorderThickness="1">
+                        <Border Style="{StaticResource CardBorder}">
                             <StackPanel>
-                                <TextBlock Text="GLASS 2" FontWeight="SemiBold" FontSize="12" Foreground="#1E3A5F" Margin="0,0,0,8"/>
-                                <TextBlock Text="Category" FontSize="11" Foreground="#64748B" Margin="0,0,0,2"/>
-                                <ComboBox ItemsSource="{Binding CategoryOptions}" SelectedItem="{Binding Category2, Mode=TwoWay}" IsEditable="True" Height="28"/>
-                                <TextBlock Text="Thickness" FontSize="11" Foreground="#64748B" Margin="0,6,0,2"/>
-                                <ComboBox ItemsSource="{Binding ThicknessOptions2}" SelectedItem="{Binding Thickness2, Mode=TwoWay}" IsEditable="True" Height="28"/>
-                                <TextBlock Text="Color" FontSize="11" Foreground="#64748B" Margin="0,6,0,2"/>
-                                <ComboBox ItemsSource="{Binding ColorOptions2}" SelectedItem="{Binding Color2, Mode=TwoWay}" IsEditable="True" Height="28"/>
-                                <TextBlock Text="Sheet Price" FontSize="11" Foreground="#64748B" Margin="0,6,0,2"/>
-                                <TextBox Text="{Binding Sheet2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="28"/>
+                                <TextBlock Text="GLASS 2 (INNER)" Style="{StaticResource SectionTitle}"/>
+                                <Label Content="Category"/>
+                                <ComboBox Height="28" IsEditable="True" IsReadOnly="False"
+                                          ItemsSource="{Binding CategoryOptions}" 
+                                          SelectedItem="{Binding Category2, UpdateSourceTrigger=PropertyChanged}"
+                                          Text="{Binding Category2, UpdateSourceTrigger=PropertyChanged}"/>
+                                <Label Content="Thickness"/>
+                                <ComboBox Height="28" ItemsSource="{Binding ThicknessOptions2}" 
+                                          SelectedItem="{Binding Thickness2, UpdateSourceTrigger=PropertyChanged}"
+                                          Text="{Binding Thickness2, UpdateSourceTrigger=PropertyChanged}"/>
+                                <Label Content="Color"/>
+                                <ComboBox Height="28" IsEditable="True" IsReadOnly="False"
+                                          ItemsSource="{Binding ColorOptions2}" 
+                                          SelectedItem="{Binding Color2, UpdateSourceTrigger=PropertyChanged}"
+                                          Text="{Binding Color2, UpdateSourceTrigger=PropertyChanged}"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- [NEW] Wastage Consider -->
+                        <Border Style="{StaticResource CardBorder}" Background="#FEF3C7" BorderBrush="#FCD34D">
+                            <StackPanel>
+                                <TextBlock Text="WASTAGE CONSIDER" Style="{StaticResource SectionTitle}"/>
+                                <ComboBox Height="28" IsEditable="True" IsReadOnly="False"
+                                          ItemsSource="{Binding WastageOptions}" 
+                                          Text="{Binding WastageConsider, UpdateSourceTrigger=PropertyChanged}"
+                                          Margin="0,0,0,8"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Factor: " FontSize="10" Foreground="#92400E"/>
+                                    <TextBlock Text="{Binding WastageFactorDisplay}" FontSize="10" FontWeight="Bold" Foreground="#92400E"/>
+                                    <TextBlock Text="  |  Wastage: " FontSize="10" Foreground="#92400E"/>
+                                    <TextBlock Text="{Binding WastageConsiderDisplay}" FontSize="10" FontWeight="Bold" Foreground="#92400E"/>
+                                </StackPanel>
                             </StackPanel>
                         </Border>
                     </StackPanel>
 
-                    <!-- MIDDLE: ASP & PRICING -->
+                    <!-- MIDDLE: Size & Price -->
                     <StackPanel Grid.Column="1" Margin="8,0">
-                        <!-- Spacer Config -->
-                        <Border Background="#FEF3C7" CornerRadius="10" Padding="12" Margin="0,0,0,8" BorderBrush="#FCD34D" BorderThickness="1">
-                            <StackPanel>
-                                <TextBlock Text="AIR SPACER (ASP)" FontWeight="SemiBold" FontSize="12" Foreground="#92400E" Margin="0,0,0,8"/>
-                                <TextBlock Text="Spacer Thickness" FontSize="11" Foreground="#B45309" Margin="0,0,0,2"/>
-                                <ComboBox ItemsSource="{Binding SpacerSizeOptions}" SelectedItem="{Binding SpacerSize, Mode=TwoWay}" IsEditable="True" Height="32" Margin="0,0,0,8"/>
-                                <TextBlock Text="Spacer Color" FontSize="11" Foreground="#B45309" Margin="0,0,0,2"/>
-                                <ComboBox ItemsSource="{Binding SpacerColorOptions}" SelectedItem="{Binding SpacerColor, Mode=TwoWay}" IsEditable="True" Height="32"/>
-                            </StackPanel>
-                        </Border>
-                        <!-- Profit -->
-                        <Border Background="#F5F3FF" CornerRadius="10" Padding="12" Margin="0,0,0,8" BorderBrush="#C4B5FD" BorderThickness="1">
-                            <StackPanel>
-                                <TextBlock Text="PROFIT MARGIN" FontWeight="SemiBold" FontSize="12" Foreground="#5B21B6" Margin="0,0,0,8"/>
-                                <ComboBox ItemsSource="{Binding ProfitList}" SelectedItem="{Binding Profit, Mode=TwoWay}" Height="32"/>
-                            </StackPanel>
-                        </Border>
-                        <!-- Dimensions -->
-                        <Border Background="#F8FAFC" CornerRadius="10" Padding="12" BorderBrush="#CBD5E1" BorderThickness="1">
-                            <StackPanel>
-                                <TextBlock Text="DIMENSIONS" FontWeight="SemiBold" FontSize="12" Foreground="#1E3A5F" Margin="0,0,0,8"/>
 
-                                <!-- Standard Size Dropdown -->
-                                <TextBlock Text="Standard Size" FontSize="11" Foreground="#64748B" Margin="0,0,0,2"/>
-                                <ComboBox ItemsSource="{Binding AvailableSizes}" SelectedItem="{Binding SelectedSize, Mode=TwoWay}" IsEditable="True" Height="32" Margin="0,0,0,8"/>
-
-                                <!-- Custom Size -->
-                                <TextBlock Text="OR Custom Size (mm)" FontSize="10" Foreground="#94A3B8" Margin="0,0,0,4"/>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0">
-                                        <TextBlock Text="Width" FontSize="11" Foreground="#64748B"/>
-                                        <TextBox Text="{Binding Width, Mode=TwoWay}" Height="28"/>
-                                    </StackPanel>
-                                    <TextBlock Grid.Column="1" Text="x" FontSize="14" FontWeight="Bold" VerticalAlignment="Bottom" Margin="6,0,6,4"/>
-                                    <StackPanel Grid.Column="2">
-                                        <TextBlock Text="Height" FontSize="11" Foreground="#64748B"/>
-                                        <TextBox Text="{Binding Height, Mode=TwoWay}" Height="28"/>
-                                    </StackPanel>
-                                </Grid>
-                                <TextBlock Text="Quantity" FontSize="11" Foreground="#64748B" Margin="0,6,0,2"/>
-                                <TextBox Text="{Binding Qty, Mode=TwoWay}" Height="28"/>
+                        <!-- Size Options -->
+                        <Border Style="{StaticResource CardBorder}">
+                            <StackPanel>
+                                <TextBlock Text="SIZE OPTIONS" Style="{StaticResource SectionTitle}"/>
+                                <Label Content="Quick Sizes"/>
+                                <ComboBox Height="28" ItemsSource="{Binding AvailableSizes}" 
+                                          SelectedItem="{Binding SelectedSize, Mode=TwoWay}"/>
+                                <Label Content="Width (mm)"/>
+                                <TextBox Text="{Binding Width, UpdateSourceTrigger=PropertyChanged}"/>
+                                <Label Content="Height (mm)"/>
+                                <TextBox Text="{Binding Height, UpdateSourceTrigger=PropertyChanged}"/>
+                                <Label Content="Quantity"/>
+                                <TextBox Text="{Binding Qty, UpdateSourceTrigger=PropertyChanged}"/>
 
                                 <!-- Size Warning -->
-                                <Border Background="#FEF3C7" CornerRadius="6" Padding="8" Margin="0,8,0,0" 
-                                        Visibility="{Binding SizeWarning, Converter={StaticResource BoolToVis}}">
+                                <Border Visibility="{Binding SizeWarning, Converter={StaticResource BoolToVis}}" 
+                                        Background="#FEF3C7" CornerRadius="4" Padding="8" Margin="0,8,0,0">
                                     <TextBlock Text="{Binding SizeWarningMessage}" FontSize="10" Foreground="#92400E" TextWrapping="Wrap"/>
                                 </Border>
                             </StackPanel>
                         </Border>
+
+                        <!-- Spacer Options -->
+                        <Border Style="{StaticResource CardBorder}">
+                            <StackPanel>
+                                <TextBlock Text="SPACER OPTIONS" Style="{StaticResource SectionTitle}"/>
+                                <Label Content="Spacer Size"/>
+                                <ComboBox Height="28" ItemsSource="{Binding SpacerSizeOptions}" 
+                                          SelectedItem="{Binding SpacerSize, UpdateSourceTrigger=PropertyChanged}"/>
+                                <Label Content="Spacer Color"/>
+                                <ComboBox Height="28" ItemsSource="{Binding SpacerColorOptions}" 
+                                          SelectedItem="{Binding SpacerColor, UpdateSourceTrigger=PropertyChanged}"/>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
 
-                    <!-- RIGHT: ACTIONS & TOTALS -->
+                    <!-- RIGHT: Price Section -->
                     <StackPanel Grid.Column="2" Margin="8,0,0,0">
-                        <!-- Actions -->
-                        <Button Content="SAVE DGU" Command="{Binding SaveCommand}" Background="#1E40AF" Foreground="White" FontWeight="Bold" Height="38" Margin="0,0,0,6"/>
-                        <Button Content="EXPORT PDF" Command="{Binding ExportPdfCommand}" Background="#059669" Foreground="White" FontWeight="Bold" Height="38" Margin="0,0,0,6"/>
-                        <Button Content="CLEAR" Command="{Binding ClearCommand}" Background="#DC2626" Foreground="White" FontWeight="Bold" Height="38" Margin="0,0,0,8"/>
 
-                        <!-- Totals -->
-                        <Border Background="#ECFDF5" CornerRadius="10" Padding="12" Margin="0,0,0,8" BorderBrush="#6EE7B7" BorderThickness="1">
+                        <!-- Sheet Prices -->
+                        <Border Style="{StaticResource CardBorder}" Background="#EFF6FF" BorderBrush="#93C5FD">
                             <StackPanel>
-                                <TextBlock Text="PRICE SUMMARY" FontWeight="SemiBold" FontSize="12" Foreground="#065F46" Margin="0,0,0,8"/>
+                                <TextBlock Text="SHEET PRICES (AED/sqm)" Style="{StaticResource SectionTitle}"/>
+                                <Label Content="Glass 1 Price"/>
+                                <TextBox Text="{Binding Sheet1, UpdateSourceTrigger=PropertyChanged}"/>
+                                <Label Content="Glass 2 Price"/>
+                                <TextBox Text="{Binding Sheet2, UpdateSourceTrigger=PropertyChanged}"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- [NEW] Profit Margin -->
+                        <Border Style="{StaticResource CardBorder}" Background="#DCFCE7" BorderBrush="#86EFAC">
+                            <StackPanel>
+                                <TextBlock Text="PROFIT MARGIN" Style="{StaticResource SectionTitle}"/>
+                                <ComboBox Height="28" IsEditable="True" IsReadOnly="False"
+                                          ItemsSource="{Binding ProfitMarginOptions}" 
+                                          Text="{Binding Profit, UpdateSourceTrigger=PropertyChanged}"
+                                          Margin="0,0,0,8"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Profit: " FontSize="10" Foreground="#166534"/>
+                                    <TextBlock Text="{Binding ProfitDisplay}" FontSize="10" FontWeight="Bold" Foreground="#166534"/>
+                                    <TextBlock Text="  |  Factor: " FontSize="10" Foreground="#166534"/>
+                                    <TextBlock Text="{Binding ProfitFactorDisplay}" FontSize="10" FontWeight="Bold" Foreground="#166534"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Total Summary -->
+                        <Border Style="{StaticResource CardBorder}" Background="#FEE2E2" BorderBrush="#FECACA">
+                            <StackPanel>
+                                <TextBlock Text="PRICE SUMMARY" Style="{StaticResource SectionTitle}"/>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -175,80 +253,86 @@
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
-                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Total SQM:" Foreground="#047857" FontSize="11"/>
-                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding TotalSqm}" Foreground="#059669" FontWeight="Bold" FontSize="11" TextAlignment="Right"/>
-                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Sub Total:" Foreground="#047857" FontSize="11" Margin="0,4,0,0"/>
-                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding TotalPrice, StringFormat={}{0:F2} AED}" Foreground="#059669" FontWeight="Bold" FontSize="11" TextAlignment="Right" Margin="0,4,0,0"/>
-                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="5% VAT:" Foreground="#047857" FontSize="11" Margin="0,4,0,0"/>
-                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding VatAmount, StringFormat={}{0:F2} AED}" Foreground="#059669" FontWeight="Bold" FontSize="11" TextAlignment="Right" Margin="0,4,0,0"/>
-                                    <Rectangle Grid.Row="3" Grid.ColumnSpan="2" Height="1" Fill="#A7F3D0" Margin="0,8,0,8"/>
-                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="GROSS TOTAL:" Foreground="#065F46" FontWeight="Bold" FontSize="12"/>
-                                    <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding GrossTotal, StringFormat={}{0:F2} AED}" Foreground="#10B981" FontWeight="Bold" FontSize="14" TextAlignment="Right"/>
+
+                                    <TextBlock Grid.Row="0" Text="Total SQM:" FontSize="11" Foreground="#64748B"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding TotalSqm, StringFormat={}{0:N2}}" FontSize="11" FontWeight="Bold" Foreground="#1E40AF" HorizontalAlignment="Right"/>
+
+                                    <TextBlock Grid.Row="1" Text="Total Price:" FontSize="11" Foreground="#64748B" Margin="0,4,0,0"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding TotalPrice, StringFormat={}{0:N2}}" FontSize="11" FontWeight="Bold" Foreground="#1E40AF" HorizontalAlignment="Right" Margin="0,4,0,0"/>
+
+                                    <TextBlock Grid.Row="2" Text="VAT (5%):" FontSize="11" Foreground="#64748B" Margin="0,4,0,0"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding VatAmount, StringFormat={}{0:N2}}" FontSize="11" FontWeight="Bold" Foreground="#1E40AF" HorizontalAlignment="Right" Margin="0,4,0,0"/>
+
+                                    <TextBlock Grid.Row="3" Text="Gross Total:" FontSize="12" FontWeight="Bold" Foreground="#DC2626" Margin="0,8,0,0"/>
+                                    <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding GrossTotal, StringFormat={}{0:N2}}" FontSize="12" FontWeight="Bold" Foreground="#DC2626" HorizontalAlignment="Right" Margin="0,8,0,0"/>
                                 </Grid>
                             </StackPanel>
                         </Border>
 
-                        <!-- Spec Summary -->
-                        <Border Background="#FFF7ED" CornerRadius="10" Padding="12" BorderBrush="#FED7AA" BorderThickness="1">
-                            <StackPanel>
-                                <TextBlock Text="SPECIFICATION" FontWeight="SemiBold" FontSize="11" Foreground="#9A3412" Margin="0,0,0,6"/>
-                                <TextBlock Text="{Binding SpecificationSummary}" TextWrapping="Wrap" FontSize="10" Foreground="#C2410C" FontStyle="Italic"/>
-                            </StackPanel>
-                        </Border>
+                        <!-- Save Button -->
+                        <Button Content="SAVE" Style="{StaticResource PrimaryBtn}" Command="{Binding SaveCommand}"/>
                     </StackPanel>
                 </Grid>
             </Border>
 
-            <!-- HISTORY -->
-            <Border Grid.Row="2" Margin="0,10,0,0">
-                <StackPanel>
-                    <ToggleButton Content="HISTORY" IsChecked="{Binding IsHistoryVisible}" HorizontalAlignment="Stretch"/>
-                    <Border Background="#F8FAFC" CornerRadius="10" Padding="12" Margin="0,8,0,0" MinHeight="180" MaxHeight="300"
-                            BorderBrush="#CBD5E1" BorderThickness="1" 
-                            Visibility="{Binding IsHistoryVisible, Converter={StaticResource BoolToVis}}">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                            <ItemsControl ItemsSource="{Binding Records}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <WrapPanel/>
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border Background="White" CornerRadius="8" Padding="10" Margin="4" 
-                                                BorderBrush="#E2E8F0" BorderThickness="1" MinWidth="280" MaxWidth="320">
-                                            <StackPanel>
-                                                <Grid Margin="0,0,0,4">
-                                                    <Border Background="#2563EB" CornerRadius="4" Padding="6,2" HorizontalAlignment="Left">
-                                                        <TextBlock Text="{Binding CreatedAt}" FontSize="9" Foreground="White"/>
-                                                    </Border>
-                                                    <Button Content="X" Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" 
-                                                            CommandParameter="{Binding}" Background="#FEE2E2" Foreground="#DC2626" 
-                                                            FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" Padding="4,2"/>
-                                                </Grid>
-                                                <TextBlock FontSize="10" Foreground="#334155">
-                                                    <Run Text="G1: "/><Run Text="{Binding Thickness1}" FontWeight="SemiBold"/><Run Text=" "/><Run Text="{Binding Color1}"/>
-                                                </TextBlock>
-                                                <TextBlock FontSize="10" Foreground="#334155">
-                                                    <Run Text="G2: "/><Run Text="{Binding Thickness2}" FontWeight="SemiBold"/><Run Text=" "/><Run Text="{Binding Color2}"/>
-                                                </TextBlock>
-                                                <TextBlock FontSize="10" Foreground="#334155">
-                                                    <Run Text="Spacer: "/><Run Text="{Binding Spacer}" FontWeight="SemiBold" Foreground="#D97706"/>
-                                                </TextBlock>
-                                                <TextBlock FontSize="12" Foreground="#059669" FontWeight="Bold" Margin="0,4,0,0">
-                                                    <Run Text="{Binding Result, StringFormat={}{0:F2}}"/><Run Text=" AED"/>
+            <!-- HISTORY SECTION -->
+            <StackPanel Grid.Row="2" Margin="0,10,0,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Button Content="HISTORY" Background="#14B8A6" Foreground="White" FontWeight="Bold" 
+                            Padding="12,8" HorizontalAlignment="Left"
+                            Command="{Binding ClearCommand}"/>
+                    <Button Grid.Column="1" Content="CLEAR" Background="#DC2626" Foreground="White" FontWeight="Bold" 
+                            Padding="12,8" Margin="8,0,0,0"
+                            Command="{Binding ClearCommand}"/>
+                </Grid>
+
+                <Border Background="#F0F9FF" CornerRadius="10" Padding="12" Margin="0,8,0,0"
+                        MinHeight="80" MaxHeight="200" BorderBrush="#BAE6FD" BorderThickness="1">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding Records}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="White" CornerRadius="8" Padding="10" Margin="4"
+                                            BorderBrush="#E2E8F0" BorderThickness="1" MinWidth="250">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+
+                                            <TextBlock Grid.Row="0" Text="{Binding CreatedAt}" FontSize="9" Foreground="#64748B"/>
+
+                                            <StackPanel Grid.Row="1" Margin="0,4,0,0">
+                                                <TextBlock Text="{Binding Thickness1}" FontSize="11" Foreground="#334155"/>
+                                                <TextBlock Text="{Binding Spacer}" FontSize="10" Foreground="#64748B"/>
+                                                <TextBlock FontSize="10" Foreground="#64748B">
+                                                    <Run Text="Wastage: "/><Run Text="{Binding Wastage}" FontWeight="Bold"/>
+                                                    <Run Text=" | Profit: "/><Run Text="{Binding Profit}" FontWeight="Bold"/>
                                                 </TextBlock>
                                             </StackPanel>
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </ScrollViewer>
-                    </Border>
-                </StackPanel>
-            </Border>
+
+                                            <TextBlock Grid.Row="2" FontSize="14" FontWeight="Bold" Foreground="#059669" Margin="0,4,0,0">
+                                                <Run Text="{Binding Result, StringFormat={}{0:N2}}"/><Run Text=" AED"/>
+                                            </TextBlock>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Border>
+            </StackPanel>
         </Grid>
     </ScrollViewer>
 </UserControl>
