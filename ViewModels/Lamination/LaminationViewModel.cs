@@ -19,17 +19,16 @@ namespace ProGlassAutomation.Views.Lamination
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
-        protected void Notify(params string[] props)
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
-            foreach (var p in props)
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(p));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        protected bool Set<T>(ref T field, T value, params string[] props)
+        protected bool Set<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
         {
             if (EqualityComparer<T>.Default.Equals(field, value)) return false;
             field = value;
-            Notify(props);
+            OnPropertyChanged(propertyName);
             return true;
         }
 
@@ -59,20 +58,18 @@ namespace ProGlassAutomation.Views.Lamination
         private double _cachedSheet1 = 0, _cachedSheet2 = 0;
         private double _cachedCutting = 0, _cachedTempering = 0;
         private double _cachedPVBPrice = 110;
-        private double _cachedProfitFactor = 0.85;
 
-        // ================= LOOKUPS - FIXED =================
+        // ================= [NEW] WASTAGE FACTOR =================
+        // Wastage Factor = 1 - (Wastage% / 100)
+        // Example: 15% wastage → 0.85, 20% wastage → 0.80
+        private double _cachedWastageFactor = 0.85;
+
+        // ================= LOOKUPS =================
         private static readonly Dictionary<string, double> PVBPrices = new()
         {
             { "Standard Clear", 110 }, { "Standard White", 115 }, { "Standard Black", 120 },
             { "Premium Clear", 125 }, { "Premium White", 130 }, { "Premium Black", 135 },
             { "Architectural Clear", 140 }, { "Architectural White", 145 }, { "Architectural Black", 150 }
-        };
-
-        private static readonly Dictionary<string, double> ProfitFactors = new()
-        {
-            { "5%", 0.95 }, { "10%", 0.90 }, { "15%", 0.85 }, { "20%", 0.80 },
-            { "25%", 0.75 }, { "30%", 0.70 }, { "35%", 0.65 }, { "40%", 0.60 }
         };
 
         // ================= COLLECTIONS =================
@@ -88,8 +85,19 @@ namespace ProGlassAutomation.Views.Lamination
             "Premium Clear", "Premium White", "Premium Black",
             "Architectural Clear", "Architectural White", "Architectural Black"
         };
-        public ObservableCollection<string> ProfitOptions { get; } = new()
-            { "5%", "10%", "15%", "20%", "25%", "30%", "35%", "40%" };
+
+        // [NEW] Wastage Options (5% to 50%)
+        public ObservableCollection<string> WastageOptions { get; } = new()
+        {
+            "5", "10", "15", "20", "25", "30", "35", "40", "45", "50"
+        };
+
+        // [NEW] Profit Margin Options (1% to 100%)
+        public ObservableCollection<string> ProfitMarginOptions { get; } = new()
+        {
+            "1", "5", "10", "15", "20", "25", "30", "35", "40", "45", "50", "60", "70", "80", "90", "100"
+        };
+
         public ObservableCollection<LaminationRecord> Records { get; } = new();
 
         // ================= SHEET 1 PROPERTIES =================
@@ -97,112 +105,64 @@ namespace ProGlassAutomation.Views.Lamination
         public string Category1
         {
             get => _cat1;
-            set
-            {
-                if (_cat1 == value) return;
-                _cat1 = value;
-                Notify(nameof(Category1));
-                LoadThicknessOptions1ByCategory();
-                LoadColorOptions1ByCategory();
-                LoadPrice1FromCache();
-                ScheduleCalc();
-            }
+            set { if (Set(ref _cat1, value)) { LoadThicknessOptions1ByCategory(); LoadColorOptions1ByCategory(); LoadPrice1FromCache(); ScheduleCalc(); } }
         }
 
         private string _th1 = "";
         public string Thickness1
         {
             get => _th1;
-            set
-            {
-                if (_th1 == value) return;
-                _th1 = value;
-                Notify(nameof(Thickness1));
-                LoadColorOptions1ByThickness();
-                LoadPrice1FromCache();
-                ScheduleCalc();
-            }
+            set { if (Set(ref _th1, value)) { LoadColorOptions1ByThickness(); LoadPrice1FromCache(); ScheduleCalc(); } }
         }
 
         private string _color1 = "";
         public string Color1
         {
             get => _color1;
-            set
-            {
-                if (_color1 == value) return;
-                _color1 = value;
-                Notify(nameof(Color1));
-                LoadPrice1FromCache();
-                ScheduleCalc();
-            }
+            set { if (Set(ref _color1, value)) { LoadPrice1FromCache(); ScheduleCalc(); } }
         }
 
         private double _sheet1;
-        public double Sheet1 { get => _sheet1; set => Set(ref _sheet1, value, nameof(Sheet1)); }
+        public double Sheet1 { get => _sheet1; set => Set(ref _sheet1, value); }
 
         // ================= SHEET 2 PROPERTIES =================
         private string _cat2 = "";
         public string Category2
         {
             get => _cat2;
-            set
-            {
-                if (_cat2 == value) return;
-                _cat2 = value;
-                Notify(nameof(Category2));
-                LoadThicknessOptions2ByCategory();
-                LoadColorOptions2ByCategory();
-                LoadPrice2FromCache();
-                ScheduleCalc();
-            }
+            set { if (Set(ref _cat2, value)) { LoadThicknessOptions2ByCategory(); LoadColorOptions2ByCategory(); LoadPrice2FromCache(); ScheduleCalc(); } }
         }
 
         private string _th2 = "";
         public string Thickness2
         {
             get => _th2;
-            set
-            {
-                if (_th2 == value) return;
-                _th2 = value;
-                Notify(nameof(Thickness2));
-                LoadColorOptions2ByThickness();
-                LoadPrice2FromCache();
-                ScheduleCalc();
-            }
+            set { if (Set(ref _th2, value)) { LoadColorOptions2ByThickness(); LoadPrice2FromCache(); ScheduleCalc(); } }
         }
 
         private string _color2 = "";
         public string Color2
         {
             get => _color2;
-            set
-            {
-                if (_color2 == value) return;
-                _color2 = value;
-                Notify(nameof(Color2));
-                LoadPrice2FromCache();
-                ScheduleCalc();
-            }
+            set { if (Set(ref _color2, value)) { LoadPrice2FromCache(); ScheduleCalc(); } }
         }
 
         private double _sheet2;
-        public double Sheet2 { get => _sheet2; set => Set(ref _sheet2, value, nameof(Sheet2)); }
+        public double Sheet2 { get => _sheet2; set => Set(ref _sheet2, value); }
 
         // ================= OTHER PROPERTIES =================
         private double _cutting;
         public double Cutting
         {
             get => _cutting;
-            set { if (_cutting == value) return; _cutting = value; _cachedCutting = value; Notify(nameof(Cutting)); ScheduleCalc(); }
+            set { if (Set(ref _cutting, value)) { _cachedCutting = value; ScheduleCalc(); } }
         }
 
         private double _tempering;
         public double Tempering
         {
             get => _tempering;
-            set { if (_tempering == value) return; _tempering = value; _cachedTempering = value; Notify(nameof(Tempering)); ScheduleCalc(); }
+            set { if (Set(ref _tempering, value)) { _cachedTempering = value; ScheduleCalc(); } }
         }
 
         private string _pvbType = "Standard Clear";
@@ -211,58 +171,79 @@ namespace ProGlassAutomation.Views.Lamination
             get => _pvbType;
             set
             {
-                if (_pvbType == value) return;
-                _pvbType = value;
-                Notify(nameof(PVBType));
-
-                // FIXED: Use TryGetValue instead of GetValueOrDefault
-                if (PVBPrices.TryGetValue(value, out double pvbPrice))
-                    _cachedPVBPrice = pvbPrice;
-                else
-                    _cachedPVBPrice = 110;
-
-                PVBPrice = _cachedPVBPrice;
-                Notify(nameof(PVBPrice));
-                ScheduleCalc();
+                if (Set(ref _pvbType, value))
+                {
+                    if (PVBPrices.TryGetValue(value, out double pvbPrice))
+                        _cachedPVBPrice = pvbPrice;
+                    else
+                        _cachedPVBPrice = 110;
+                    PVBPrice = _cachedPVBPrice;
+                    ScheduleCalc();
+                }
             }
         }
 
         private double _pvbPrice = 110;
-        public double PVBPrice { get => _pvbPrice; set => Set(ref _pvbPrice, value, nameof(PVBPrice)); }
+        public double PVBPrice { get => _pvbPrice; set => Set(ref _pvbPrice, value); }
 
-        private string _profit = "15%";
-        public string Profit
+        // ================= [NEW] WASTAGE CONSIDER =================
+        // Wastage Factor = 1 - (Wastage% / 100)
+        // This is SEPARATE from Profit Margin
+        private string _wastageConsider = "15";
+        public string WastageConsider
         {
-            get => _profit;
+            get => _wastageConsider;
             set
             {
-                if (_profit == value) return;
-                _profit = value;
-                Notify(nameof(Profit));
-
-                // FIXED: Use TryGetValue instead of GetValueOrDefault
-                if (ProfitFactors.TryGetValue(value, out double factor))
-                    _cachedProfitFactor = factor;
-                else
-                    _cachedProfitFactor = 0.85;
-
-                Notify(nameof(ProfitFactor));
-                ScheduleCalc();
+                if (Set(ref _wastageConsider, value))
+                {
+                    UpdateWastageFactor();
+                    CalcInternal();
+                }
             }
         }
 
-        public double ProfitFactor => _cachedProfitFactor;
+        public string WastageConsiderDisplay => $"{_wastageConsider}%";
+        public double WastageFactor => _cachedWastageFactor;
+        public string WastageFactorDisplay => _cachedWastageFactor.ToString("0.00");
 
-        // ================= RESULTS =================
-        private double _result1, _result2, _result3, _result4, _result;
-        public double Result1 { get => _result1; set => Set(ref _result1, value, nameof(Result1)); }
-        public double Result2 { get => _result2; set => Set(ref _result2, value, nameof(Result2)); }
-        public double Result3 { get => _result3; set => Set(ref _result3, value, nameof(Result3)); }
-        public double Result4 { get => _result4; set => Set(ref _result4, value, nameof(Result4)); }
-        public double Result { get => _result; set => Set(ref _result, value, nameof(Result)); }
+        // ================= [NEW] PROFIT MARGIN =================
+        // Profit Margin is ADDED at the end (multiplier)
+        // This is SEPARATE from Wastage Factor
+        private string _profitMargin = "15";
+        public string ProfitMargin
+        {
+            get => _profitMargin;
+            set
+            {
+                if (Set(ref _profitMargin, value))
+                {
+                    UpdateProfitMarginDisplay();
+                    CalcInternal();
+                }
+            }
+        }
+
+        public string ProfitMarginDisplay => $"{_profitMargin}%";
+
+        // ================= RESULT PROPERTIES =================
+        private string _result1 = "0.00";
+        public string Result1 { get => _result1; set => Set(ref _result1, value); }
+
+        private string _result2 = "0.00";
+        public string Result2 { get => _result2; set => Set(ref _result2, value); }
+
+        private string _result3 = "0.00";
+        public string Result3 { get => _result3; set => Set(ref _result3, value); }
+
+        private string _result4 = "0.00";
+        public string Result4 { get => _result4; set => Set(ref _result4, value); }
+
+        private string _result = "0.00";
+        public string Result { get => _result; set => Set(ref _result, value); }
 
         private bool _isHistoryVisible = true;
-        public bool IsHistoryVisible { get => _isHistoryVisible; set => Set(ref _isHistoryVisible, value, nameof(IsHistoryVisible)); }
+        public bool IsHistoryVisible { get => _isHistoryVisible; set => Set(ref _isHistoryVisible, value); }
 
         // ================= COMMANDS =================
         public ICommand SaveCommand { get; }
@@ -285,6 +266,9 @@ namespace ProGlassAutomation.Views.Lamination
             if (CategoryOptions2.Count > 0) Category2 = CategoryOptions2.Count > 1 ? CategoryOptions2[1] : CategoryOptions2[0];
             if (ThicknessOptions2.Count > 0) Thickness2 = ThicknessOptions2[0];
             if (ColorOptions2.Count > 0) Color2 = ColorOptions2[0];
+
+            UpdateWastageFactor();
+            UpdateProfitMarginDisplay();
 
             SaveCommand = new RelayCommand(o => Save());
             ClearCommand = new RelayCommand(o => Clear());
@@ -396,7 +380,6 @@ namespace ProGlassAutomation.Views.Lamination
                 CategoryOptions2.Add(c);
             }
 
-            // FIXED: Sort thicknesses properly
             var sortedThs = cache.Thicknesses.OrderBy(t => ParseThickness(t)).ToList();
 
             foreach (var t in sortedThs)
@@ -439,7 +422,31 @@ namespace ProGlassAutomation.Views.Lamination
             RefreshSelections();
         }
 
-        // FIXED: Helper method for thickness sorting
+        // ================= [NEW] UPDATE WASTAGE FACTOR =================
+        private void UpdateWastageFactor()
+        {
+            double wastage = ParsePercentage(_wastageConsider);
+            _cachedWastageFactor = 1 - (wastage / 100.0);
+
+            OnPropertyChanged(nameof(WastageFactor));
+            OnPropertyChanged(nameof(WastageFactorDisplay));
+        }
+
+        // ================= [NEW] UPDATE PROFIT MARGIN DISPLAY =================
+        private void UpdateProfitMarginDisplay()
+        {
+            OnPropertyChanged(nameof(ProfitMarginDisplay));
+        }
+
+        private double ParsePercentage(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return 0;
+            string clean = value.Replace("%", "").Trim();
+            if (double.TryParse(clean, out double result))
+                return result;
+            return 0;
+        }
+
         private double ParseThickness(string t)
         {
             if (string.IsNullOrEmpty(t)) return 0;
@@ -466,7 +473,7 @@ namespace ProGlassAutomation.Views.Lamination
                 Color2 = ColorOptions2[0];
         }
 
-        // ================= SHEET 1 THICKNESS/COLOR LOADERS =================
+        // ================= SHEET 1 LOADERS =================
         private void LoadThicknessOptions1ByCategory()
         {
             if (string.IsNullOrEmpty(Category1)) return;
@@ -556,7 +563,7 @@ namespace ProGlassAutomation.Views.Lamination
             }
         }
 
-        // ================= SHEET 2 THICKNESS/COLOR LOADERS =================
+        // ================= SHEET 2 LOADERS =================
         private void LoadThicknessOptions2ByCategory()
         {
             if (string.IsNullOrEmpty(Category2)) return;
@@ -646,7 +653,7 @@ namespace ProGlassAutomation.Views.Lamination
             }
         }
 
-        // ================= LOAD PRICES FROM CACHE =================
+        // ================= LOAD PRICES =================
         private void LoadPrice1FromCache()
         {
             EnsureCache();
@@ -723,60 +730,119 @@ namespace ProGlassAutomation.Views.Lamination
             Sheet2 = 0;
         }
 
-        // ================= CALCULATE =================
+        // ================= [NEW] CALCULATE =================
+        // Step 1: Sheet1 + Sheet2 = Result1
+        // Step 2: Result1 / WastageFactor = Result2
+        // Step 3: Result2 + PVB + Cutting + Tempering = Result3
+        // Step 4: Result3 + ProfitMargin% = Result4 (Final)
         private void CalcInternal()
         {
-            double sheet1PerSqm = _cachedSheet1;
-            double sheet2PerSqm = _cachedSheet2;
+            try
+            {
+                double sheet1PerSqm = _cachedSheet1;
+                double sheet2PerSqm = _cachedSheet2;
 
-            // Step 1: Sheet 1 + Sheet 2
-            double result1 = sheet1PerSqm + sheet2PerSqm;
+                // Step 1: Sheet1 + Sheet2 = Result1
+                double glassTotal = sheet1PerSqm + sheet2PerSqm;
+                Result1 = glassTotal.ToString("0.00");
 
-            // Step 2: Result 1 / 0.85 (profit margin 15%)
-            double answer2 = result1 / _cachedProfitFactor;
+                // Step 2: Result1 / WastageFactor = Result2
+                // Example: 100 / 0.85 = 117.65 (15% wastage)
+                // Example: 100 / 0.80 = 125.00 (20% wastage)
+                double step1 = glassTotal / _cachedWastageFactor;
+                Result2 = step1.ToString("0.00");
 
-            // Step 3: Answer 2 + PVB + Cutting + Tempering
-            double answer3 = answer2 + _cachedPVBPrice + _cachedCutting + _cachedTempering;
+                // Step 3: Result2 + PVB + Cutting + Tempering = Result3
+                double charges = _cachedPVBPrice + _cachedCutting + _cachedTempering;
+                double step2 = step1 + charges;
+                Result3 = step2.ToString("0.00");
 
-            // Step 4: Answer 3 * 1.15 (add 15% profit)
-            double answer4 = answer3 * 1.15;
-
-            // Assign results
-            Result1 = result1;
-            Result2 = answer2;
-            Result3 = answer3;
-            Result4 = answer4;
-            Result = answer4;
+                // Step 4: Result3 + ProfitMargin% = Result4 (Final)
+                double profitMultiplier = 1 + (ParsePercentage(_profitMargin) / 100.0);
+                double final = step2 * profitMultiplier;
+                Result4 = final.ToString("0.00");
+                Result = final.ToString("0.00");
+            }
+            catch
+            {
+                Result1 = "0.00";
+                Result2 = "0.00";
+                Result3 = "0.00";
+                Result4 = "0.00";
+                Result = "0.00";
+            }
         }
 
-        // ================= ACTIONS =================
+        // ================= SAVE =================
         private void Save()
         {
-            Records.Insert(0, new LaminationRecord
+            try
             {
-                DisplayText = $"S1: {Category1}|{Thickness1}|{Color1} | S2: {Category2}|{Thickness2}|{Color2} | PVB: {PVBType} | Result: {Result:F2} AED | {DateTime.Now:HH:mm}"
-            });
-            MessageBox.Show("Saved!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                DateTime now = DateTime.Now;
+                string timestamp = now.ToString("yyyy-MM-dd HH:mm");
+                double final = ParseDouble(Result);
+
+                string spec = $"{Category1}|{Thickness1}|{Color1} Outer + " +
+                             $"{Category2}|{Thickness2}|{Color2} Inner";
+
+                string detail = $"PVB: {PVBType} | PVB: {_cachedPVBPrice:F2} AED | " +
+                               $"Cut: {_cachedCutting:F2} AED | Temp: {_cachedTempering:F2} AED | " +
+                               $"Wastage: {_wastageConsider}% (Factor: {_cachedWastageFactor:F2}) | " +
+                               $"Margin: {_profitMargin}%";
+
+                Records.Insert(0, new LaminationRecord
+                {
+                    DisplayText = $"{spec} - {final:F2} AED - {timestamp}",
+                    DetailText = detail,
+                    Timestamp = now,
+                    Result = final
+                });
+
+                while (Records.Count > 50)
+                    Records.RemoveAt(Records.Count - 1);
+
+                MessageBox.Show("Saved!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch { }
         }
 
+        // ================= CLEAR =================
         private void Clear()
         {
             _cachedCutting = 0;
             _cachedTempering = 0;
-            _cachedProfitFactor = 0.85;
             _cachedPVBPrice = 110;
             _cutting = 0;
             _tempering = 0;
-            _profit = "15%";
             _pvbType = "Standard Clear";
             _pvbPrice = 110;
+            _wastageConsider = "15";
+            _profitMargin = "15";
+            _cachedWastageFactor = 0.85;
 
-            Notify("Cutting", "Tempering", "Profit", "ProfitFactor", "PVBType", "PVBPrice");
+            OnPropertyChanged("Cutting");
+            OnPropertyChanged("Tempering");
+            OnPropertyChanged("PVBType");
+            OnPropertyChanged("PVBPrice");
+            OnPropertyChanged("WastageConsider");
+            OnPropertyChanged("WastageConsiderDisplay");
+            OnPropertyChanged("WastageFactor");
+            OnPropertyChanged("WastageFactorDisplay");
+            OnPropertyChanged("ProfitMargin");
+            OnPropertyChanged("ProfitMarginDisplay");
 
             if (CategoryOptions1.Count > 0) Category1 = CategoryOptions1[0];
             if (CategoryOptions2.Count > 0) Category2 = CategoryOptions2[0];
 
             CalcInternal();
+        }
+
+        private double ParseDouble(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return 0;
+            string clean = value.Replace(" ", "").Trim();
+            if (double.TryParse(clean, out double result)) return result;
+            return 0;
         }
 
         public void ExportPdf()
@@ -813,22 +879,29 @@ namespace ProGlassAutomation.Views.Lamination
             var content = new StackPanel { Margin = new Thickness(20) };
             content.Children.Add(new TextBlock { Text = "LAMINATION QUOTATION", FontSize = 18, FontWeight = FontWeights.Bold, Foreground = blue, TextAlignment = TextAlignment.Center, Margin = new Thickness(0, 20, 0, 20) });
 
+            // Calculation breakdown
+            content.Children.Add(CreateSectionHeader("CALCULATION BREAKDOWN"));
+            content.Children.Add(CreateDetailRow("Step 1 (Sheet1 + Sheet2):", $"{Result1} AED"));
+            content.Children.Add(CreateDetailRow($"Step 2 (÷ Wastage Factor {_cachedWastageFactor:F2}):", $"{Result2} AED"));
+            content.Children.Add(CreateDetailRow("Step 3 (+ Charges):", $"{Result3} AED"));
+            content.Children.Add(CreateDetailRow($"Step 4 (+ Margin {_profitMargin}%):", $"{Result4} AED"));
+
+            content.Children.Add(new TextBlock { Text = "", Margin = new Thickness(0, 10, 0, 10) });
             content.Children.Add(CreateDetailRow("SHEET 1:", $"{Category1} | {Thickness1} | {Color1}"));
             content.Children.Add(CreateDetailRow("Sheet 1 Price:", $"{Sheet1:F2} AED"));
-            content.Children.Add(new TextBlock { Text = "", Margin = new Thickness(0, 10, 0, 10) });
             content.Children.Add(CreateDetailRow("SHEET 2:", $"{Category2} | {Thickness2} | {Color2}"));
             content.Children.Add(CreateDetailRow("Sheet 2 Price:", $"{Sheet2:F2} AED"));
-            content.Children.Add(new TextBlock { Text = "", Margin = new Thickness(0, 10, 0, 10) });
             content.Children.Add(CreateDetailRow("PVB Type:", PVBType));
             content.Children.Add(CreateDetailRow("PVB Price:", $"{PVBPrice:F2} AED"));
             content.Children.Add(CreateDetailRow("Cutting:", $"{_cachedCutting:F2} AED"));
             content.Children.Add(CreateDetailRow("Tempering:", $"{_cachedTempering:F2} AED"));
-            content.Children.Add(CreateDetailRow("Profit:", Profit));
+            content.Children.Add(CreateDetailRow("Wastage Consider:", $"{_wastageConsider}% (Factor: {_cachedWastageFactor:F2})"));
+            content.Children.Add(CreateDetailRow("Profit Margin:", $"{_profitMargin}%"));
 
             var finalBox = new Border { Background = green, Padding = new Thickness(15), Margin = new Thickness(0, 20, 0, 20) };
             var finalStack = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center };
             finalStack.Children.Add(new TextBlock { Text = "FINAL UNIT PRICE", FontSize = 10, Foreground = Brushes.White, TextAlignment = TextAlignment.Center });
-            finalStack.Children.Add(new TextBlock { Text = $"{Result:F2} AED", FontSize = 24, FontWeight = FontWeights.Bold, Foreground = Brushes.White, TextAlignment = TextAlignment.Center });
+            finalStack.Children.Add(new TextBlock { Text = $"{Result} AED", FontSize = 24, FontWeight = FontWeights.Bold, Foreground = Brushes.White, TextAlignment = TextAlignment.Center });
             finalBox.Child = finalStack;
             content.Children.Add(finalBox);
 
@@ -840,10 +913,16 @@ namespace ProGlassAutomation.Views.Lamination
             return grid;
         }
 
+        private TextBlock CreateSectionHeader(string text)
+        {
+            var blue = new SolidColorBrush(Color.FromRgb(37, 99, 235));
+            return new TextBlock { Text = text, FontSize = 12, FontWeight = FontWeights.Bold, Foreground = blue, Margin = new Thickness(0, 15, 0, 10) };
+        }
+
         private StackPanel CreateDetailRow(string label, string value)
         {
             var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 2, 0, 2) };
-            row.Children.Add(new TextBlock { Text = label, Width = 120, Foreground = Brushes.Gray });
+            row.Children.Add(new TextBlock { Text = label, Width = 180, Foreground = Brushes.Gray });
             row.Children.Add(new TextBlock { Text = value, FontWeight = FontWeights.Bold });
             return row;
         }
@@ -852,7 +931,10 @@ namespace ProGlassAutomation.Views.Lamination
     // ================= RECORD MODEL =================
     public class LaminationRecord
     {
-        public string DisplayText { get; set; }
+        public string DisplayText { get; set; } = "";
+        public string DetailText { get; set; } = "";
+        public DateTime Timestamp { get; set; }
+        public double Result { get; set; }
     }
 
     // ================= RELAY COMMAND =================

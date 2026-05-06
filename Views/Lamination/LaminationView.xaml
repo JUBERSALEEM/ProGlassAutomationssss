@@ -177,17 +177,17 @@
                                 <TextBlock Text="OUTER GLASS" Style="{StaticResource SectionTitle}"/>
                                 <Label Content="Category"/>
                                 <ComboBox Style="{StaticResource EditableComboBox}"
-                                          ItemsSource="{Binding CategoryOptions}" 
+                                          ItemsSource="{Binding CategoryOptions1}" 
                                           SelectedItem="{Binding Category1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           Text="{Binding Category1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                 <Label Content="Thickness (mm)"/>
                                 <ComboBox Style="{StaticResource EditableComboBox}"
-                                          ItemsSource="{Binding ThicknessOptions}" 
+                                          ItemsSource="{Binding ThicknessOptions1}" 
                                           SelectedItem="{Binding Thickness1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           Text="{Binding Thickness1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                 <Label Content="Color"/>
                                 <ComboBox Style="{StaticResource EditableComboBox}"
-                                          ItemsSource="{Binding ColorOptions}" 
+                                          ItemsSource="{Binding ColorOptions1}" 
                                           SelectedItem="{Binding Color1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           Text="{Binding Color1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                             </StackPanel>
@@ -199,36 +199,50 @@
                                 <TextBlock Text="INNER GLASS" Style="{StaticResource SectionTitle}"/>
                                 <Label Content="Category"/>
                                 <ComboBox Style="{StaticResource EditableComboBox}"
-                                          ItemsSource="{Binding CategoryOptions}" 
+                                          ItemsSource="{Binding CategoryOptions2}" 
                                           SelectedItem="{Binding Category2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           Text="{Binding Category2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                 <Label Content="Thickness (mm)"/>
                                 <ComboBox Style="{StaticResource EditableComboBox}"
-                                          ItemsSource="{Binding ThicknessOptions}" 
+                                          ItemsSource="{Binding ThicknessOptions2}" 
                                           SelectedItem="{Binding Thickness2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           Text="{Binding Thickness2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                 <Label Content="Color"/>
                                 <ComboBox Style="{StaticResource EditableComboBox}"
-                                          ItemsSource="{Binding ColorOptions}" 
+                                          ItemsSource="{Binding ColorOptions2}" 
                                           SelectedItem="{Binding Color2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           Text="{Binding Color2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                             </StackPanel>
                         </Border>
 
-                        <!-- Profit Margin -->
-                        <Border Style="{StaticResource CardBorder}" Background="#FEF3C7" BorderBrush="#FCD34D">
+                        <!-- [NEW] Wastage Consider -->
+                        <Border Style="{StaticResource CardBorder}" Background="#FEF3C7" BorderBrush="#FCD34D" Margin="0,0,0,8">
+                            <StackPanel>
+                                <TextBlock Text="WASTAGE CONSIDER" Style="{StaticResource SectionTitle}"/>
+                                <ComboBox Style="{StaticResource EditableComboBox}"
+                                          ItemsSource="{Binding WastageOptions}" 
+                                          IsEditable="True"
+                                          Text="{Binding WastageConsider, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <TextBlock Text="Factor: " FontSize="10" Foreground="#92400E"/>
+                                    <TextBlock Text="{Binding WastageFactorDisplay, Mode=OneWay}" FontSize="10" FontWeight="Bold" Foreground="#92400E"/>
+                                    <TextBlock Text="  |  Wastage: " FontSize="10" Foreground="#92400E"/>
+                                    <TextBlock Text="{Binding WastageConsiderDisplay, Mode=OneWay}" FontSize="10" FontWeight="Bold" Foreground="#92400E"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- [NEW] Profit Margin -->
+                        <Border Style="{StaticResource CardBorder}" Background="#DCFCE7" BorderBrush="#86EFAC">
                             <StackPanel>
                                 <TextBlock Text="PROFIT MARGIN" Style="{StaticResource SectionTitle}"/>
                                 <ComboBox Style="{StaticResource EditableComboBox}"
-                                          ItemsSource="{Binding ProfitOptions}" 
-                                          SelectedItem="{Binding Profit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          Text="{Binding Profit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          Margin="0,24,0,0"/>
+                                          ItemsSource="{Binding ProfitMarginOptions}" 
+                                          IsEditable="True"
+                                          Text="{Binding ProfitMargin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                 <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                    <TextBlock Text="Factor: " FontSize="10" Foreground="#92400E"/>
-                                    <TextBlock Text="{Binding ProfitFactor, Mode=OneWay, StringFormat={}{0:N2}}" FontSize="10" FontWeight="Bold" Foreground="#92400E"/>
-                                    <TextBlock Text="  |  Margin: " FontSize="10" Foreground="#92400E"/>
-                                    <TextBlock Text="{Binding ProfitMargin, Mode=OneWay, StringFormat={}{0:N2}}" FontSize="10" FontWeight="Bold" Foreground="#92400E"/>
+                                    <TextBlock Text="Margin: " FontSize="10" Foreground="#166534"/>
+                                    <TextBlock Text="{Binding ProfitMarginDisplay, Mode=OneWay}" FontSize="10" FontWeight="Bold" Foreground="#166534"/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
@@ -278,6 +292,8 @@
                                                         <RowDefinition Height="Auto"/>
                                                         <RowDefinition Height="Auto"/>
                                                         <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
                                                     </Grid.RowDefinitions>
 
                                                     <!-- Row 1: Sheet1 -->
@@ -294,10 +310,10 @@
                                                         <Run Text=" AED"/>
                                                     </TextBlock>
 
-                                                    <!-- Row 3: Profit Factor -->
-                                                    <TextBlock Grid.Row="2" Text="Profit Factor:" FontSize="10" Foreground="#64748B" Margin="0,2,0,0"/>
-                                                    <TextBlock Grid.Row="2" Grid.Column="1" FontSize="10" FontWeight="Bold" Foreground="#7C3AED" HorizontalAlignment="Right" Margin="0,2,0,0">
-                                                        <Run Text="{Binding ProfitFactor, Mode=OneWay, StringFormat={}{0:N2}}" FontWeight="Bold"/>
+                                                    <!-- Row 3: Wastage Factor -->
+                                                    <TextBlock Grid.Row="2" Text="Wastage Factor:" FontSize="10" Foreground="#64748B" Margin="0,2,0,0"/>
+                                                    <TextBlock Grid.Row="2" Grid.Column="1" FontSize="10" FontWeight="Bold" Foreground="#92400E" HorizontalAlignment="Right" Margin="0,2,0,0">
+                                                        <Run Text="{Binding WastageFactorDisplay, Mode=OneWay}" FontWeight="Bold"/>
                                                     </TextBlock>
 
                                                     <!-- Row 4: PVB Price -->
@@ -321,10 +337,16 @@
                                                         <Run Text=" AED"/>
                                                     </TextBlock>
 
-                                                    <!-- Row 7: Profit Margin -->
-                                                    <TextBlock Grid.Row="6" Text="Profit Margin:" FontSize="10" Foreground="#64748B" Margin="0,2,0,0"/>
-                                                    <TextBlock Grid.Row="6" Grid.Column="1" FontSize="10" FontWeight="Bold" Foreground="#059669" HorizontalAlignment="Right" Margin="0,2,0,0">
-                                                        <Run Text="{Binding Profit, Mode=OneWay}" FontWeight="Bold"/>
+                                                    <!-- Row 7: Wastage Consider -->
+                                                    <TextBlock Grid.Row="6" Text="Wastage Consider:" FontSize="10" Foreground="#64748B" Margin="0,2,0,0"/>
+                                                    <TextBlock Grid.Row="6" Grid.Column="1" FontSize="10" FontWeight="Bold" Foreground="#92400E" HorizontalAlignment="Right" Margin="0,2,0,0">
+                                                        <Run Text="{Binding WastageConsiderDisplay, Mode=OneWay}" FontWeight="Bold"/>
+                                                    </TextBlock>
+
+                                                    <!-- Row 8: Profit Margin -->
+                                                    <TextBlock Grid.Row="7" Text="Profit Margin:" FontSize="10" Foreground="#64748B" Margin="0,2,0,0"/>
+                                                    <TextBlock Grid.Row="7" Grid.Column="1" FontSize="10" FontWeight="Bold" Foreground="#166534" HorizontalAlignment="Right" Margin="0,2,0,0">
+                                                        <Run Text="{Binding ProfitMarginDisplay, Mode=OneWay}" FontWeight="Bold"/>
                                                     </TextBlock>
                                                 </Grid>
                                             </StackPanel>
@@ -359,7 +381,7 @@
                                                     <TextBlock Grid.Column="1" FontSize="10" Foreground="#166534" TextWrapping="Wrap">
                                                         <Run Text="{Binding Result1, Mode=OneWay, StringFormat={}{0:N2}}" FontWeight="Bold"/>
                                                         <Run Text=" / "/>
-                                                        <Run Text="{Binding ProfitFactor, Mode=OneWay, StringFormat={}{0:N2}}" FontWeight="Bold" Foreground="#7C3AED"/>
+                                                        <Run Text="{Binding WastageFactorDisplay, Mode=OneWay}" FontWeight="Bold" Foreground="#92400E"/>
                                                         <Run Text=" = "/>
                                                         <Run Text="{Binding Result2, Mode=OneWay, StringFormat={}{0:N2}}" FontWeight="Bold"/>
                                                         <Run Text=" AED"/>
@@ -397,7 +419,7 @@
                                                     <TextBlock Grid.Column="1" FontSize="10" Foreground="#166534" TextWrapping="Wrap">
                                                         <Run Text="{Binding Result3, Mode=OneWay, StringFormat={}{0:N2}}" FontWeight="Bold"/>
                                                         <Run Text=" x "/>
-                                                        <Run Text="{Binding ProfitMargin, Mode=OneWay, StringFormat={}{0:N2}}" FontWeight="Bold" Foreground="#059669"/>
+                                                        <Run Text="{Binding ProfitMarginDisplay, Mode=OneWay}" FontWeight="Bold" Foreground="#166534"/>
                                                         <Run Text=" = "/>
                                                         <Run Text="{Binding Result4, Mode=OneWay, StringFormat={}{0:N2}}" FontWeight="Bold" Foreground="#059669"/>
                                                         <Run Text=" AED"/>
@@ -448,9 +470,9 @@
                                 <TextBlock Text="HOW TO USE" FontWeight="Bold" FontSize="12" Foreground="#047857" Margin="0,0,0,6"/>
                                 <TextBlock Text="1. Select outer &amp; inner glass category" FontSize="10" Foreground="#374151"/>
                                 <TextBlock Text="2. Choose thickness and colors" FontSize="10" Foreground="#374151" Margin="0,2,0,0"/>
-                                <TextBlock Text="3. Enter PVB layer price &amp; type" FontSize="10" Foreground="#374151" Margin="0,2,0,0"/>
-                                <TextBlock Text="4. Add sheet prices in price section" FontSize="10" Foreground="#374151" Margin="0,2,0,0"/>
-                                <TextBlock Text="5. Set profit margin percentage" FontSize="10" Foreground="#374151" Margin="0,2,0,0"/>
+                                <TextBlock Text="3. Set wastage factor (default 15%)" FontSize="10" Foreground="#374151" Margin="0,2,0,0"/>
+                                <TextBlock Text="4. Set profit margin (default 15%)" FontSize="10" Foreground="#374151" Margin="0,2,0,0"/>
+                                <TextBlock Text="5. Enter PVB layer price &amp; type" FontSize="10" Foreground="#374151" Margin="0,2,0,0"/>
                                 <TextBlock Text="6. Click SAVE to store calculation" FontSize="10" Foreground="#374151" Margin="0,2,0,0"/>
                             </StackPanel>
                         </Border>
@@ -472,13 +494,13 @@
                                     </Grid.ColumnDefinitions>
 
                                     <TextBlock Grid.Row="0" Text="Categories:" FontSize="10" Foreground="#64748B"/>
-                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding CacheStats.Categories, Mode=OneWay}" FontSize="10" FontWeight="Bold" Foreground="#1E40AF" HorizontalAlignment="Right"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding CategoryOptions1.Count, Mode=OneWay}" FontSize="10" FontWeight="Bold" Foreground="#1E40AF" HorizontalAlignment="Right"/>
 
                                     <TextBlock Grid.Row="1" Text="Thicknesses:" FontSize="10" Foreground="#64748B" Margin="0,2,0,0"/>
-                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding CacheStats.Thicknesses, Mode=OneWay}" FontSize="10" FontWeight="Bold" Foreground="#1E40AF" HorizontalAlignment="Right" Margin="0,2,0,0"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ThicknessOptions1.Count, Mode=OneWay}" FontSize="10" FontWeight="Bold" Foreground="#1E40AF" HorizontalAlignment="Right" Margin="0,2,0,0"/>
 
                                     <TextBlock Grid.Row="2" Text="Colors:" FontSize="10" Foreground="#64748B" Margin="0,2,0,0"/>
-                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding CacheStats.Colors, Mode=OneWay}" FontSize="10" FontWeight="Bold" Foreground="#1E40AF" HorizontalAlignment="Right" Margin="0,2,0,0"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding ColorOptions1.Count, Mode=OneWay}" FontSize="10" FontWeight="Bold" Foreground="#1E40AF" HorizontalAlignment="Right" Margin="0,2,0,0"/>
                                 </Grid>
                                 <StackPanel Orientation="Horizontal" Margin="0,8,0,0" HorizontalAlignment="Center">
                                     <Ellipse Width="10" Height="10" Fill="#22C55E" Margin="0,0,6,0"/>
