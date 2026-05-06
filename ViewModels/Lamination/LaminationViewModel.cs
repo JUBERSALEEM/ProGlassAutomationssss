@@ -729,20 +729,24 @@ namespace ProGlassAutomation.Views.Lamination
             double sheet1PerSqm = _cachedSheet1;
             double sheet2PerSqm = _cachedSheet2;
 
-            // Result 1: Sheet 1 only
-            Result1 = (sheet1PerSqm / _cachedProfitFactor);
+            // Step 1: Sheet 1 + Sheet 2
+            double result1 = sheet1PerSqm + sheet2PerSqm;
 
-            // Result 2: Sheet 2 only
-            Result2 = (sheet2PerSqm / _cachedProfitFactor);
+            // Step 2: Result 1 / 0.85 (profit margin 15%)
+            double answer2 = result1 / _cachedProfitFactor;
 
-            // Result 3: Sheet 1 + PVB
-            Result3 = ((sheet1PerSqm + _cachedPVBPrice) / _cachedProfitFactor);
+            // Step 3: Answer 2 + PVB + Cutting + Tempering
+            double answer3 = answer2 + _cachedPVBPrice + _cachedCutting + _cachedTempering;
 
-            // Result 4: Sheet 1 + Sheet 2 + PVB
-            Result4 = ((sheet1PerSqm + sheet2PerSqm + _cachedPVBPrice) / _cachedProfitFactor);
+            // Step 4: Answer 3 * 1.15 (add 15% profit)
+            double answer4 = answer3 * 1.15;
 
-            // Final Result: Full calculation with all charges
-            Result = (((sheet1PerSqm + sheet2PerSqm + _cachedPVBPrice + _cachedCutting + _cachedTempering) / _cachedProfitFactor));
+            // Assign results
+            Result1 = result1;
+            Result2 = answer2;
+            Result3 = answer3;
+            Result4 = answer4;
+            Result = answer4;
         }
 
         // ================= ACTIONS =================
