@@ -164,77 +164,108 @@ namespace ProGlassAutomation
         }
 
         // ═══════════════════════════════════════════════════════
-        // SCREENSHOT - Capture Full Application (4K Ultra HD)
+        // SCREENSHOT - Fixed & Reliable
         // ═══════════════════════════════════════════════════════
         private void ScreenshotBtn_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                // Capture the entire window
-                Window window = this;
+                // Hide button temporarily to exclude it from screenshot
+                var screenshotBtn = GetScreenshotButton();
+                if (screenshotBtn != null)
+                {
+                    screenshotBtn.Visibility = Visibility.Collapsed;
+                }
 
-                double actualWidth = window.ActualWidth;
-                double actualHeight = window.ActualHeight;
+                // Force UI update
+                Dispatcher.Invoke(() => { }, DispatcherPriority.Render);
 
-                if (actualWidth <= 0 || actualHeight <= 0)
+                // Small delay to ensure UI is ready
+                System.Threading.Thread.Sleep(100);
+
+                // Get window size
+                int width = (int)(this.ActualWidth * 2);
+                int height = (int)(this.ActualHeight * 2);
+
+                if (width <= 0 || height <= 0)
                 {
                     MessageBox.Show("Please wait for the page to fully load.", "Error");
+                    if (screenshotBtn != null)
+                        screenshotBtn.Visibility = Visibility.Visible;
                     return;
                 }
 
-                // 4K Quality Settings (384 DPI = 4x standard 96 DPI)
-                int scaleFactor = 4;
-                int dpi = 96 * scaleFactor;
-                int renderWidth = (int)(actualWidth * scaleFactor);
-                int renderHeight = (int)(actualHeight * scaleFactor);
-
-                // Force layout update
-                window.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-                window.Arrange(new Rect(window.DesiredSize));
-
-                // Create high-quality render bitmap (4K)
-                var renderBitmap = new RenderTargetBitmap(
-                    renderWidth,
-                    renderHeight,
-                    dpi,
-                    dpi,
+                // Create render bitmap at 2x resolution
+                RenderTargetBitmap renderBitmap = new RenderTargetBitmap(
+                    width,
+                    height,
+                    192, // 2x DPI
+                    192,
                     PixelFormats.Pbgra32);
 
-                // Scale and render
-                var scaledVisual = new ScaleTransform(scaleFactor, scaleFactor);
-                window.LayoutTransform = scaledVisual;
+                // Render window to bitmap
+                renderBitmap.Render(this);
 
-                // Render
-                renderBitmap.Render(window);
-
-                // Reset layout transform
-                window.LayoutTransform = null;
+                // Show button again
+                if (screenshotBtn != null)
+                {
+                    screenshotBtn.Visibility = Visibility.Visible;
+                }
 
                 // Save dialog
                 var dialog = new Microsoft.Win32.SaveFileDialog
                 {
                     Filter = "PNG Image|*.png",
-                    FileName = $"ScreenCapture_4K_{DateTime.Now:yyyyMMdd_HHmmss}"
+                    FileName = $"ScreenCapture_{DateTime.Now:yyyyMMdd_HHmmss}"
                 };
 
                 if (dialog.ShowDialog() == true)
                 {
-                    // Encode to PNG (lossless)
-                    var encoder = new PngBitmapEncoder();
+                    // Encode to PNG
+                    PngBitmapEncoder encoder = new PngBitmapEncoder();
                     encoder.Frames.Add(BitmapFrame.Create(renderBitmap));
 
-                    // Save
+                    // Save file
                     using (var stream = new System.IO.FileStream(dialog.FileName, System.IO.FileMode.Create))
                     {
                         encoder.Save(stream);
                     }
 
-                    MessageBox.Show($"4K Screenshot saved!\n\n📁 {dialog.FileName}\n\nResolution: {renderWidth} × {renderHeight} pixels", "Success");
+                    MessageBox.Show($"Screenshot saved!\n\n📁 {dialog.FileName}\n\nResolution: {width} × {height}", "Success");
                 }
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error: {ex.Message}", "Error");
+            }
+        }
+
+        private Button GetScreenshotButton()
+        {
+            // Find screenshot button by name or type
+            if (FindName("ScreenshotBtn") is Button btn)
+                return btn;
+
+            // Try finding by content
+            foreach (var child in GetAllChildren(this))
+            {
+                if (child is Button button && button.Content?.ToString()?.Contains("Screenshot") == true)
+                    return button;
+            }
+
+            return null;
+        }
+
+        private System.Collections.Generic.IEnumerable<DependencyObject> GetAllChildren(DependencyObject parent)
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                yield return child;
+                foreach (var descendant in GetAllChildren(child))
+                {
+                    yield return descendant;
+                }
             }
         }
     }
