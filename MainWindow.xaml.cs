@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using ProGlassAutomation.ViewModels;
 
@@ -71,6 +75,95 @@ namespace ProGlassAutomation
         }
 
         // ═══════════════════════════════════════════════════════
+        // DASHBOARD BOUNCY EFFECT
+        // ═══════════════════════════════════════════════════════
+        private void BtnDashboard_MouseEnter(object sender, MouseEventArgs e)
+        {
+            DoubleAnimation animation = new DoubleAnimation(1.05, TimeSpan.FromMilliseconds(100));
+            DashScale.BeginAnimation(ScaleTransform.ScaleXProperty, animation);
+            DashScale.BeginAnimation(ScaleTransform.ScaleYProperty, animation);
+        }
+
+        private void BtnDashboard_MouseLeave(object sender, MouseEventArgs e)
+        {
+            DoubleAnimation animation = new DoubleAnimation(1, TimeSpan.FromMilliseconds(100));
+            DashScale.BeginAnimation(ScaleTransform.ScaleXProperty, animation);
+            DashScale.BeginAnimation(ScaleTransform.ScaleYProperty, animation);
+        }
+
+        private void BtnSubscription_MouseEnter(object sender, MouseEventArgs e)
+        {
+            DoubleAnimation animation = new DoubleAnimation(1.05, TimeSpan.FromMilliseconds(100));
+            SubScale.BeginAnimation(ScaleTransform.ScaleXProperty, animation);
+            SubScale.BeginAnimation(ScaleTransform.ScaleYProperty, animation);
+        }
+
+        private void BtnSubscription_MouseLeave(object sender, MouseEventArgs e)
+        {
+            DoubleAnimation animation = new DoubleAnimation(1, TimeSpan.FromMilliseconds(100));
+            SubScale.BeginAnimation(ScaleTransform.ScaleXProperty, animation);
+            SubScale.BeginAnimation(ScaleTransform.ScaleYProperty, animation);
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // CALCULATOR BOUNCY EFFECT
+        // ═══════════════════════════════════════════════════════
+        private void CalcBtn_MouseEnter(object sender, MouseEventArgs e)
+        {
+            if (sender == BtnSGU)
+            {
+                AnimateScale(ScaleSGU, 1.05);
+            }
+            else if (sender == BtnDGU)
+            {
+                AnimateScale(ScaleDGU, 1.05);
+            }
+            else if (sender == BtnLam)
+            {
+                AnimateScale(ScaleLam, 1.05);
+            }
+            else if (sender == BtnDguLam)
+            {
+                AnimateScale(ScaleDguLam, 1.05);
+            }
+            else if (sender == BtnOpt)
+            {
+                AnimateScale(ScaleOpt, 1.05);
+            }
+        }
+
+        private void CalcBtn_MouseLeave(object sender, MouseEventArgs e)
+        {
+            if (sender == BtnSGU)
+            {
+                AnimateScale(ScaleSGU, 1);
+            }
+            else if (sender == BtnDGU)
+            {
+                AnimateScale(ScaleDGU, 1);
+            }
+            else if (sender == BtnLam)
+            {
+                AnimateScale(ScaleLam, 1);
+            }
+            else if (sender == BtnDguLam)
+            {
+                AnimateScale(ScaleDguLam, 1);
+            }
+            else if (sender == BtnOpt)
+            {
+                AnimateScale(ScaleOpt, 1);
+            }
+        }
+
+        private void AnimateScale(ScaleTransform scale, double targetValue)
+        {
+            DoubleAnimation animation = new DoubleAnimation(targetValue, TimeSpan.FromMilliseconds(100));
+            scale.BeginAnimation(ScaleTransform.ScaleXProperty, animation);
+            scale.BeginAnimation(ScaleTransform.ScaleYProperty, animation);
+        }
+
+        // ═══════════════════════════════════════════════════════
         // SCREENSHOT - Capture Full Application (4K Ultra HD)
         // ═══════════════════════════════════════════════════════
         private void ScreenshotBtn_Click(object sender, RoutedEventArgs e)
@@ -96,19 +189,19 @@ namespace ProGlassAutomation
                 int renderHeight = (int)(actualHeight * scaleFactor);
 
                 // Force layout update
-                window.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
+                window.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
                 window.Arrange(new Rect(window.DesiredSize));
 
                 // Create high-quality render bitmap (4K)
-                var renderBitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(
+                var renderBitmap = new RenderTargetBitmap(
                     renderWidth,
                     renderHeight,
                     dpi,
                     dpi,
-                    System.Windows.Media.PixelFormats.Pbgra32);
+                    PixelFormats.Pbgra32);
 
                 // Scale and render
-                var scaledVisual = new System.Windows.Media.ScaleTransform(scaleFactor, scaleFactor);
+                var scaledVisual = new ScaleTransform(scaleFactor, scaleFactor);
                 window.LayoutTransform = scaledVisual;
 
                 // Render
@@ -127,8 +220,8 @@ namespace ProGlassAutomation
                 if (dialog.ShowDialog() == true)
                 {
                     // Encode to PNG (lossless)
-                    var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
-                    encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(renderBitmap));
+                    var encoder = new PngBitmapEncoder();
+                    encoder.Frames.Add(BitmapFrame.Create(renderBitmap));
 
                     // Save
                     using (var stream = new System.IO.FileStream(dialog.FileName, System.IO.FileMode.Create))
