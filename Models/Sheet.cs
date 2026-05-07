@@ -1244,6 +1244,43 @@ namespace ProGlassAutomation.Models
         };
 
         // ═══════════════════════════════════════════════════════════════
+        // SUPPLIER METHODS
+        // ═══════════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Add a new supplier to the list (keeps sorted, prevents duplicates)
+        /// </summary>
+        public static void AddSupplier(string supplierName)
+        {
+            if (string.IsNullOrWhiteSpace(supplierName)) return;
+
+            string trimmed = supplierName.Trim();
+            if (!Suppliers.Contains(trimmed, StringComparer.OrdinalIgnoreCase))
+            {
+                Suppliers.Add(trimmed);
+                Suppliers.Sort(StringComparer.OrdinalIgnoreCase);
+            }
+        }
+
+        /// <summary>
+        /// Remove a supplier from the list
+        /// </summary>
+        public static void RemoveSupplier(string supplierName)
+        {
+            if (string.IsNullOrWhiteSpace(supplierName)) return;
+            Suppliers.RemoveAll(s => string.Equals(s, supplierName.Trim(), StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// <summary>
+        /// Check if supplier exists
+        /// </summary>
+        public static bool SupplierExists(string supplierName)
+        {
+            return !string.IsNullOrWhiteSpace(supplierName) &&
+                   Suppliers.Any(s => string.Equals(s, supplierName.Trim(), StringComparison.OrdinalIgnoreCase));
+        }
+
+        // ═══════════════════════════════════════════════════════════════
         // UNIT OPTIONS
         // ═══════════════════════════════════════════════════════════════
         public static List<string> UnitOptions { get; } = new List<string>

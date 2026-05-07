@@ -56,9 +56,19 @@ namespace ProGlassAutomation.ViewModels
         }
 
         // ═══════════════════════════════════════════════════════
-        // CATEGORIES
+        // INVENTORY STATS FROM SHEET.CS
         // ═══════════════════════════════════════════════════════
-        public ObservableCollection<string> Categories { get; } = new();
+
+        public int CategoryTotal => Sheet.Categories.Count;
+        public int ThicknessTotal => Sheet.Thicknesses.Length;
+        public int ColorTotal => Sheet.ColorItems.Count;
+        public int SupplierTotal => Sheet.Suppliers.Count;
+
+        // ═══════════════════════════════════════════════════════
+        // CATEGORIES FROM SHEET.CS
+        // ═══════════════════════════════════════════════════════
+        public ObservableCollection<string> Categories { get; }
+            = new(Sheet.Categories);
 
         private string _selectedCategory = "ALL";
         public string SelectedCategory
@@ -75,9 +85,10 @@ namespace ProGlassAutomation.ViewModels
         }
 
         // ═══════════════════════════════════════════════════════
-        // THICKNESS
+        // THICKNESS FROM SHEET.CS
         // ═══════════════════════════════════════════════════════
-        public ObservableCollection<string> Thicknesses { get; } = new();
+        public ObservableCollection<string> Thicknesses { get; }
+            = new(Sheet.Thicknesses);
 
         private string _selectedThickness = "ALL";
         public string SelectedThickness
@@ -94,9 +105,10 @@ namespace ProGlassAutomation.ViewModels
         }
 
         // ═══════════════════════════════════════════════════════
-        // COLORS
+        // COLORS FROM SHEET.CS
         // ═══════════════════════════════════════════════════════
-        public ObservableCollection<string> Colors { get; } = new();
+        public ObservableCollection<string> Colors { get; }
+            = new(Sheet.ColorItems.Select(c => c.Name));
 
         private string _selectedColor = "ALL";
         public string SelectedColor
@@ -111,6 +123,27 @@ namespace ProGlassAutomation.ViewModels
                 UpdateAllStats();
             }
         }
+
+        // ═══════════════════════════════════════════════════════
+        // SUPPLIERS FROM SHEET.CS
+        // ═══════════════════════════════════════════════════════
+        public ObservableCollection<string> Suppliers { get; }
+            = new(Sheet.Suppliers);
+
+        private string _selectedSupplier = "ALL";
+        public string SelectedSupplier
+        {
+            get => _selectedSupplier;
+            set
+            {
+                _selectedSupplier = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(SupplierName));
+                ApplyFilters();
+            }
+        }
+
+        public string SupplierName => string.IsNullOrEmpty(SelectedSupplier) || SelectedSupplier == "ALL" ? "ALL" : SelectedSupplier;
 
         // ═══════════════════════════════════════════════════════
         // SEARCH
@@ -185,6 +218,7 @@ namespace ProGlassAutomation.ViewModels
         public ICommand UpdatePurchasePriceCommand { get; }
         public ICommand ClearFilterCommand { get; }
         public ICommand ViewHistoryCommand { get; }
+        public ICommand AddSupplierCommand { get; }
 
         // ═══════════════════════════════════════════════════════
         // CONSTRUCTOR
@@ -203,6 +237,7 @@ namespace ProGlassAutomation.ViewModels
             UpdatePurchasePriceCommand = new RelayCommand(UpdatePurchasePrice);
             ClearFilterCommand = new RelayCommand(ClearFilter);
             ViewHistoryCommand = new RelayCommand(ViewHistory);
+            AddSupplierCommand = new RelayCommand(AddNewSupplier);
 
             LoadData();
         }
@@ -227,25 +262,29 @@ namespace ProGlassAutomation.ViewModels
                 var sheets = SheetStoreService.Instance.GetAllActive();
                 AllSheets = new ObservableCollection<Sheet>(sheets);
 
-                // Load Categories
+                // Load Categories from Sheet.cs + ALL option
                 Categories.Clear();
                 Categories.Add("ALL");
-                foreach (var c in SheetStoreService.Instance.GetCategories().OrderBy(x => x))
+                foreach (var c in Sheet.Categories)
                     Categories.Add(c);
 
-                // Load Thicknesses
+                // Load Thicknesses from Sheet.cs + ALL option
                 Thicknesses.Clear();
                 Thicknesses.Add("ALL");
-                var thicknesses = sheets.Select(s => s.Thickness).Distinct().OrderBy(t => t);
-                foreach (var t in thicknesses)
+                foreach (var t in Sheet.Thicknesses)
                     Thicknesses.Add(t);
 
-                // Load Colors
+                // Load Colors from Sheet.cs + ALL option
                 Colors.Clear();
                 Colors.Add("ALL");
-                var colors = sheets.Select(s => s.Color).Distinct().OrderBy(c => c);
-                foreach (var c in colors)
-                    Colors.Add(c);
+                foreach (var c in Sheet.ColorItems)
+                    Colors.Add(c.Name);
+
+                // Load Suppliers from Sheet.cs + ALL option
+                Suppliers.Clear();
+                Suppliers.Add("ALL");
+                foreach (var s in Sheet.Suppliers)
+                    Suppliers.Add(s);
 
                 ApplyFilters();
                 UpdateAllStats();
@@ -277,6 +316,10 @@ namespace ProGlassAutomation.ViewModels
             // Filter by Color
             if (!string.IsNullOrEmpty(SelectedColor) && SelectedColor != "ALL")
                 filtered = filtered.Where(s => s.Color == SelectedColor);
+
+            // Filter by Supplier
+            if (!string.IsNullOrEmpty(SelectedSupplier) && SelectedSupplier != "ALL")
+                filtered = filtered.Where(s => s.Supplier == SelectedSupplier);
 
             // Filter by Search
             if (!string.IsNullOrEmpty(SearchText))
@@ -378,6 +421,7 @@ namespace ProGlassAutomation.ViewModels
             OnPropertyChanged(nameof(CategoryName));
             OnPropertyChanged(nameof(ThicknessName));
             OnPropertyChanged(nameof(ColorName));
+            OnPropertyChanged(nameof(SupplierName));
             OnPropertyChanged(nameof(MainStock));
             OnPropertyChanged(nameof(MainUsed));
             OnPropertyChanged(nameof(MainBalance));
@@ -579,8 +623,47 @@ namespace ProGlassAutomation.ViewModels
             SelectedCategory = "ALL";
             SelectedThickness = "ALL";
             SelectedColor = "ALL";
+            SelectedSupplier = "ALL";
             SearchText = "";
             SelectedSheet = null;
+        }
+
+        public void AddNewSupplier()
+        {
+            try
+            {
+                // Show input dialog
+                var inputDialog = new Views.SheetStore.AddSupplierDialog();
+                if (inputDialog.ShowDialog() == true && !string.IsNullOrWhiteSpace(inputDialog.SupplierName))
+                {
+                    string newSupplier = inputDialog.SupplierName.Trim();
+
+                    // Check if already exists (case-insensitive)
+                    if (Sheet.Suppliers.Any(s => s.Equals(newSupplier, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        MessageBox.Show($"Supplier '{newSupplier}' already exists!", "Duplicate", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+
+                    // Add to Sheet.cs and reload
+                    Sheet.AddSupplier(newSupplier);
+
+                    // Refresh Suppliers list
+                    Suppliers.Clear();
+                    Suppliers.Add("ALL");
+                    foreach (var s in Sheet.Suppliers)
+                        Suppliers.Add(s);
+
+                    // Select the new supplier
+                    SelectedSupplier = newSupplier;
+
+                    MessageBox.Show($"Supplier '{newSupplier}' added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error adding supplier: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         public void ViewHistory()
