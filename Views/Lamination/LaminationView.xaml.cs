@@ -10,7 +10,7 @@ namespace ProGlassAutomation.Views.Lamination
             InitializeComponent();
         }
 
-        private void SelectAllText_GotFocus(object sender, RoutedEventArgs e)
+        private void TextBox_GotFocus(object sender, RoutedEventArgs e)
         {
             if (sender is TextBox textBox)
             {
