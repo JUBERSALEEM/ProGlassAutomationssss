@@ -80,12 +80,20 @@ namespace ProGlassAutomation.ViewModels
         // ═══════════════════════════════════════════════════════════
         // INVENTORY SUMMARY
         // ═══════════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════════════════
+        // INVENTORY SUMMARY
+        // ═══════════════════════════════════════════════════════════
         public int CategoryTotal => Sheet.Categories.Count;
         public int ThicknessTotal => Sheet.Thicknesses.Length;
         public int ColorTotal => Sheet.ColorItems.Count;
         public int SpacerTotal => Sheet.Spacers.Count;
         public int GasTypeTotal => Sheet.GasTypes.Count;
         public int SealantTotal => Sheet.SealantTypes.Count;
+        public int AirspaceTotal => Sheet.AirspaceOptions.Count;
+        public int EdgeWorkTotal => Sheet.EdgeWorkTypes.Count;
+        public int TemperingTotal => Sheet.TemperingOptions.Count;
+        public int CoatingTotal => Sheet.CoatingTypes.Count;
+        public int DrillingTotal => Sheet.DrillingOptions.Count;
 
         // ═══════════════════════════════════════════════════════════
         // OUTER GLASS PROPERTIES

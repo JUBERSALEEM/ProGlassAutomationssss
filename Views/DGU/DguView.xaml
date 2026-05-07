@@ -313,6 +313,68 @@
                     </Border>
                 </Grid>
 
+                <!-- INVENTORY STATS -->
+                <Border Style="{StaticResource CardGray}" Margin="0,0,0,10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Categories -->
+                        <Border Grid.Column="0" Style="{StaticResource CardBlue}" Margin="0,0,4,0">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding CategoryTotal}" FontSize="22" FontWeight="Bold" Foreground="#2563EB" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Categories" FontSize="9" Foreground="#60A5FA" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Thicknesses -->
+                        <Border Grid.Column="1" Style="{StaticResource CardGreen}" Margin="4,0">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding ThicknessTotal}" FontSize="22" FontWeight="Bold" Foreground="#16A34A" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Thicknesses" FontSize="9" Foreground="#22C55E" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Colors -->
+                        <Border Grid.Column="2" Style="{StaticResource CardOrange}" Margin="4,0">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding ColorTotal}" FontSize="22" FontWeight="Bold" Foreground="#D97706" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Colors" FontSize="9" Foreground="#F59E0B" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Spacers -->
+                        <Border Grid.Column="3" Style="{StaticResource CardAmber}" Margin="4,0">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding SpacerTotal}" FontSize="22" FontWeight="Bold" Foreground="#B45309" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Spacers" FontSize="9" Foreground="#FDE68A" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Gas Types -->
+                        <Border Grid.Column="4" Style="{StaticResource CardTeal}" Margin="4,0">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding GasTypeTotal}" FontSize="22" FontWeight="Bold" Foreground="#0F766E" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Gas Types" FontSize="9" Foreground="#5EEAD4" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Records -->
+                        <Border Grid.Column="5" Style="{StaticResource CardIndigo}" Margin="4,0,0,0">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding Records.Count}" FontSize="22" FontWeight="Bold" Foreground="#4F46E5" HorizontalAlignment="Center"/>
+                                <TextBlock Text="History" FontSize="9" Foreground="#818CF8" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Border>
+
                 <!-- MAIN CONTENT -->
                 <Grid Margin="0,0,0,10">
                     <Grid.ColumnDefinitions>
