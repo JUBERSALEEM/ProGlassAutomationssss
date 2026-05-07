@@ -13,18 +13,9 @@ namespace ProGlassAutomation.Views.SGU
 
         private void TextBox_GotFocus(object sender, RoutedEventArgs e)
         {
-            if (sender is TextBox tb)
+            if (sender is TextBox textBox)
             {
-                tb.SelectAll();
-            }
-        }
-
-        private void TextBox_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            if (sender is TextBox tb && !tb.IsKeyboardFocusWithin)
-            {
-                e.Handled = true;
-                tb.Focus();
+                textBox.SelectAll();
             }
         }
     }
