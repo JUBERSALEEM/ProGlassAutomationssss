@@ -15,6 +15,14 @@ namespace ProGlassAutomation.ViewModels
         protected void OnPropertyChanged([CallerMemberName] string n = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
 
+        protected bool Set<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
+        {
+            if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+            field = value;
+            OnPropertyChanged(propertyName);
+            return true;
+        }
+
         // ═══════════════════════════════════════════════════════════
         // LOAD DATA FROM SHEET.CS (Static Properties)
         // ═══════════════════════════════════════════════════════════
@@ -34,19 +42,50 @@ namespace ProGlassAutomation.ViewModels
         public ObservableCollection<string> ProfitMarginOptions { get; }
             = new(Sheet.ProfitMarginOptions);
 
+        // ═══════════════════════════════════════════════════════════
+        // SGU ADVANCED OPTIONS FROM SHEET.CS
+        // ═══════════════════════════════════════════════════════════
+
+        public ObservableCollection<string> EdgeWorkTypes { get; }
+            = new(Sheet.EdgeWorkTypes);
+
+        public ObservableCollection<string> DrillingOptions { get; }
+            = new(Sheet.DrillingOptions);
+
+        public ObservableCollection<string> TemperingOptions { get; }
+            = new(Sheet.TemperingOptions);
+
+        public ObservableCollection<string> CoatingTypes { get; }
+            = new(Sheet.CoatingTypes);
+
+        public ObservableCollection<string> SurfaceTreatments { get; }
+            = new(Sheet.SurfaceTreatments);
+
+        public ObservableCollection<string> CutoutOptions { get; }
+            = new(Sheet.CutoutOptions);
+
+        public ObservableCollection<string> UnitOptions { get; }
+            = new(Sheet.UnitOptions);
+
         public ObservableCollection<SguRecord> Records { get; } = new();
 
         // ═══════════════════════════════════════════════════════════
         // INVENTORY TOTALS FROM SHEET.CS
         // ═══════════════════════════════════════════════════════════
 
-        public int CategoryTotalQty => Sheet.Categories.Count;
-        public int ThicknessTotalQty => Sheet.Thicknesses.Length;
-        public int ColorTotalQty => Sheet.ColorItems.Count;
+        public int CategoryTotal => Sheet.Categories.Count;
+        public int ThicknessTotal => Sheet.Thicknesses.Length;
+        public int ColorTotal => Sheet.ColorItems.Count;
+        public int TemperingTotal => Sheet.TemperingOptions.Count;
+        public int EdgeWorkTotal => Sheet.EdgeWorkTypes.Count;
+        public int CoatingTotal => Sheet.CoatingTypes.Count;
+        public int DrillingTotal => Sheet.DrillingOptions.Count;
+        public int SurfaceTreatmentTotal => Sheet.SurfaceTreatments.Count;
 
         // ═══════════════════════════════════════════════════════════
-        // PROPERTIES - NO DEFAULT VALUES
+        // PROPERTIES - GLASS SELECTION
         // ═══════════════════════════════════════════════════════════
+
         private string _category;
         public string Category
         {
@@ -68,8 +107,44 @@ namespace ProGlassAutomation.ViewModels
             set { _colorName = value; OnPropertyChanged(); Calculate(); }
         }
 
+        private double? _sheetPrice;
+        public double? SheetPrice
+        {
+            get => _sheetPrice;
+            set { _sheetPrice = value; OnPropertyChanged(); Calculate(); }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // PROPERTIES - PROCESSING CHARGES
+        // ═══════════════════════════════════════════════════════════
+
+        private double? _cutting;
+        public double? Cutting
+        {
+            get => _cutting;
+            set { _cutting = value; OnPropertyChanged(); Calculate(); }
+        }
+
+        private double? _temperingCharge;
+        public double? TemperingCharge
+        {
+            get => _temperingCharge;
+            set { _temperingCharge = value; OnPropertyChanged(); Calculate(); }
+        }
+
+        private double? _otherCharges;
+        public double? OtherCharges
+        {
+            get => _otherCharges;
+            set { _otherCharges = value; OnPropertyChanged(); Calculate(); }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // PROPERTIES - WASTAGE & PROFIT
+        // ═══════════════════════════════════════════════════════════
+
         private string _wastage = "15";
-        public string WastageConsider
+        public string Wastage
         {
             get => _wastage;
             set { _wastage = value; OnPropertyChanged(); Calculate(); }
@@ -82,35 +157,136 @@ namespace ProGlassAutomation.ViewModels
             set { _profitMargin = value; OnPropertyChanged(); Calculate(); }
         }
 
-        // NO DEFAULT VALUE - Start empty
-        private double? _sheetPrice;
-        public double? SheetPrice
+        // ═══════════════════════════════════════════════════════════
+        // PROPERTIES - ADVANCED OPTIONS
+        // ═══════════════════════════════════════════════════════════
+
+        private string _edgeWork = "Clean Cut";
+        public string EdgeWork
         {
-            get => _sheetPrice;
-            set { _sheetPrice = value; OnPropertyChanged(); OnPropertyChanged(nameof(SheetPriceDisplay)); Calculate(); }
+            get => _edgeWork;
+            set { _edgeWork = value; OnPropertyChanged(); }
         }
 
-        public string SheetPriceDisplay => _sheetPrice?.ToString() ?? "";
-
-        // NO DEFAULT VALUE - Start empty
-        private double? _cutting;
-        public double? Cutting
+        private string _drilling = "No Hole";
+        public string Drilling
         {
-            get => _cutting;
-            set { _cutting = value; OnPropertyChanged(); OnPropertyChanged(nameof(CuttingDisplay)); Calculate(); }
+            get => _drilling;
+            set { _drilling = value; OnPropertyChanged(); }
         }
 
-        public string CuttingDisplay => _cutting?.ToString() ?? "";
-
-        // NO DEFAULT VALUE - Start empty
-        private double? _tempering;
-        public double? Tempering
+        private string _tempering = "Annealed (Plain)";
+        public string Tempering
         {
             get => _tempering;
-            set { _tempering = value; OnPropertyChanged(); OnPropertyChanged(nameof(TemperingDisplay)); Calculate(); }
+            set { _tempering = value; OnPropertyChanged(); }
         }
 
-        public string TemperingDisplay => _tempering?.ToString() ?? "";
+        private string _coating = "None";
+        public string Coating
+        {
+            get => _coating;
+            set { _coating = value; OnPropertyChanged(); }
+        }
+
+        private string _surfaceTreatment = "None";
+        public string SurfaceTreatment
+        {
+            get => _surfaceTreatment;
+            set { _surfaceTreatment = value; OnPropertyChanged(); }
+        }
+
+        private string _cutout = "No Cutout";
+        public string Cutout
+        {
+            get => _cutout;
+            set { _cutout = value; OnPropertyChanged(); }
+        }
+
+        private string _customNotes = "";
+        public string CustomNotes
+        {
+            get => _customNotes;
+            set { _customNotes = value; OnPropertyChanged(); }
+        }
+
+        private string _unit = "AED";
+        public string Unit
+        {
+            get => _unit;
+            set { _unit = value; OnPropertyChanged(); }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // PROPERTIES - DIMENSIONS
+        // ═══════════════════════════════════════════════════════════
+
+        private int _width;
+        public int Width
+        {
+            get => _width;
+            set { _width = value; OnPropertyChanged(); CalculateDimensions(); }
+        }
+
+        private int _height;
+        public int Height
+        {
+            get => _height;
+            set { _height = value; OnPropertyChanged(); CalculateDimensions(); }
+        }
+
+        private int _quantity = 1;
+        public int Quantity
+        {
+            get => _quantity;
+            set { _quantity = value; OnPropertyChanged(); CalculateDimensions(); }
+        }
+
+        private double _totalArea;
+        public double TotalArea
+        {
+            get => _totalArea;
+            set { _totalArea = value; OnPropertyChanged(); }
+        }
+
+        private double _totalPrice;
+        public double TotalPrice
+        {
+            get => _totalPrice;
+            set { _totalPrice = value; OnPropertyChanged(); }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // CALCULATION RESULTS
+        // ═══════════════════════════════════════════════════════════
+
+        private double _glassCost;
+        public double GlassCost
+        {
+            get => _glassCost;
+            set { _glassCost = value; OnPropertyChanged(); }
+        }
+
+        private double _processingCost;
+        public double ProcessingCost
+        {
+            get => _processingCost;
+            set { _processingCost = value; OnPropertyChanged(); }
+        }
+
+        private double _baseCost;
+        public double BaseCost
+        {
+            get => _baseCost;
+            set { _baseCost = value; OnPropertyChanged(); }
+        }
+
+        private double _subtotal;
+        public double Subtotal
+        {
+            get => _subtotal;
+            set { _subtotal = value; OnPropertyChanged(); }
+        }
 
         private double _result;
         public double Result
@@ -119,14 +295,23 @@ namespace ProGlassAutomation.ViewModels
             set { _result = value; OnPropertyChanged(); }
         }
 
-        // Computed values
-        private double _wastageFactor = 0.85;
-        private double _profitFactor = 1.15;
+        private double _vatAmount;
+        public double VatAmount
+        {
+            get => _vatAmount;
+            set { _vatAmount = value; OnPropertyChanged(); }
+        }
 
-        public double BaseCost => _wastageFactor > 0 && _sheetPrice.HasValue ? _sheetPrice.Value / _wastageFactor : 0;
-        public double ProcessingCost => (_cutting ?? 0) + (_tempering ?? 0);
-        public double Subtotal => BaseCost + ProcessingCost;
-        public double FinalPrice => Subtotal * _profitFactor;
+        private double _grossTotal;
+        public double GrossTotal
+        {
+            get => _grossTotal;
+            set { _grossTotal = value; OnPropertyChanged(); }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // HISTORY
+        // ═══════════════════════════════════════════════════════════
 
         public bool IsHistoryVisible => Records.Count > 0;
         public bool IsHistoryEmpty => Records.Count == 0;
@@ -134,6 +319,7 @@ namespace ProGlassAutomation.ViewModels
         // ═══════════════════════════════════════════════════════════
         // COMMANDS
         // ═══════════════════════════════════════════════════════════
+
         public ICommand SaveCommand { get; }
         public ICommand ExportPdfCommand { get; }
         public ICommand ClearCommand { get; }
@@ -143,19 +329,22 @@ namespace ProGlassAutomation.ViewModels
         // ═══════════════════════════════════════════════════════════
         // CONSTRUCTOR
         // ═══════════════════════════════════════════════════════════
+
         public SguViewModel()
         {
-            // Set dropdown defaults (not text fields)
+            // Set dropdown defaults
             if (CategoryOptions.Count > 0) _category = CategoryOptions[0];
-            if (ThicknessOptions.Count > 5) _thickness = ThicknessOptions[5];
+            if (ThicknessOptions.Count > 0) _thickness = ThicknessOptions[0];
             if (ColorOptions.Count > 0) _colorName = ColorOptions[0].Name;
-            if (WastageOptions.Count > 2) _wastage = WastageOptions[2];
-            if (ProfitMarginOptions.Count > 2) _profitMargin = ProfitMarginOptions[2];
-
-            // Text fields start empty (no default values)
-            _sheetPrice = null;
-            _cutting = null;
-            _tempering = null;
+            if (WastageOptions.Count > 1) _wastage = WastageOptions[1];
+            if (ProfitMarginOptions.Count > 1) _profitMargin = ProfitMarginOptions[1];
+            if (EdgeWorkTypes.Count > 0) _edgeWork = EdgeWorkTypes[0];
+            if (DrillingOptions.Count > 0) _drilling = DrillingOptions[0];
+            if (TemperingOptions.Count > 0) _tempering = TemperingOptions[0];
+            if (CoatingTypes.Count > 0) _coating = CoatingTypes[0];
+            if (SurfaceTreatments.Count > 0) _surfaceTreatment = SurfaceTreatments[0];
+            if (CutoutOptions.Count > 0) _cutout = CutoutOptions[0];
+            if (UnitOptions.Count > 0) _unit = UnitOptions[0];
 
             SaveCommand = new RelayCommand(o =>
             {
@@ -168,17 +357,29 @@ namespace ProGlassAutomation.ViewModels
                 Records.Insert(0, new SguRecord
                 {
                     DisplayText = $"{Category} | {Thickness} | {ColorName}",
-                    SheetPrice = _sheetPrice ?? 0,
-                    Cutting = _cutting ?? 0,
-                    Tempering = _tempering ?? 0,
+                    GlassDetails = $"{Category} | {Thickness} | {ColorName} | {SheetPrice:F2}",
+                    ProcessingDetails = $"{EdgeWork} | {Drilling} | {Tempering}",
+                    TreatmentDetails = $"{Coating} | {SurfaceTreatment} | {Cutout}",
+                    SheetPrice = SheetPrice ?? 0,
+                    Cutting = Cutting ?? 0,
+                    TemperingCharge = TemperingCharge ?? 0,
+                    OtherCharges = OtherCharges ?? 0,
                     Wastage = $"{_wastage}%",
                     ProfitMargin = _profitMargin,
-                    CreatedAt = DateTime.Now.ToString("HH:mm"),
-                    Result = Result
+                    CreatedAt = DateTime.Now.ToString("dd/MM HH:mm"),
+                    Result = Result,
+                    Unit = Unit,
+                    Width = Width,
+                    Height = Height,
+                    Quantity = Quantity,
+                    TotalArea = TotalArea,
+                    TotalPrice = TotalPrice,
+                    CustomNotes = CustomNotes
                 });
+
                 OnPropertyChanged(nameof(IsHistoryVisible));
                 OnPropertyChanged(nameof(IsHistoryEmpty));
-                MessageBox.Show("SGU saved!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show($"SGU saved!\n\nUnit Price: {Result:F2} {Unit}\nTotal: {TotalPrice:F2} {Unit}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             });
 
             ExportPdfCommand = new RelayCommand(o =>
@@ -190,8 +391,12 @@ namespace ProGlassAutomation.ViewModels
             {
                 SheetPrice = null;
                 Cutting = null;
-                Tempering = null;
-                Result = 0;
+                TemperingCharge = null;
+                OtherCharges = null;
+                Width = 0;
+                Height = 0;
+                Quantity = 1;
+                CustomNotes = "";
             });
 
             ClearAllCommand = new RelayCommand(o =>
@@ -208,49 +413,106 @@ namespace ProGlassAutomation.ViewModels
                 OnPropertyChanged(nameof(IsHistoryEmpty));
             });
 
-            // Initialize with default wastage/profit
             Calculate();
         }
 
+        // ═══════════════════════════════════════════════════════════
+        // CALCULATE DIMENSIONS
+        // ═══════════════════════════════════════════════════════════
+
+        private void CalculateDimensions()
+        {
+            if (Width > 0 && Height > 0)
+            {
+                _totalArea = (Width * Height * Quantity) / 1000000.0;
+                _totalPrice = Result * Quantity;
+            }
+            else
+            {
+                _totalArea = 0;
+                _totalPrice = Result * Quantity;
+            }
+            OnPropertyChanged(nameof(TotalArea));
+            OnPropertyChanged(nameof(TotalPrice));
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // CALCULATE (SAME FORMULA AS ORIGINAL)
+        // ═══════════════════════════════════════════════════════════
+
         public void Calculate()
         {
-            // Parse wastage
-            if (double.TryParse(_wastage, out double w))
-            {
-                _wastageFactor = 1 - (w / 100.0);
-            }
+            // STEP 1: Glass Cost
+            _glassCost = SheetPrice ?? 0;
 
-            // Parse profit margin
-            if (!string.IsNullOrEmpty(_profitMargin))
-            {
-                var marginValue = _profitMargin.Replace("%", "").Trim();
-                if (double.TryParse(marginValue, out double m))
-                {
-                    _profitFactor = 1 + (m / 100.0);
-                }
-            }
+            // STEP 2: Base Cost = Glass Cost ÷ Wastage Factor
+            double wastageFactor = 1 - (double.Parse(_wastage) / 100.0);
+            _baseCost = wastageFactor > 0 ? _glassCost / wastageFactor : _glassCost;
 
-            // Calculate
-            double baseCost = _wastageFactor > 0 && _sheetPrice.HasValue ? _sheetPrice.Value / _wastageFactor : 0;
-            double processing = (_cutting ?? 0) + (_tempering ?? 0);
-            Result = (baseCost + processing) * _profitFactor;
+            // STEP 3: Processing Cost = Cutting + Tempering + Other
+            double cutting = Cutting ?? 0;
+            double tempering = TemperingCharge ?? 0;
+            double other = OtherCharges ?? 0;
+            _processingCost = cutting + tempering + other;
 
-            OnPropertyChanged(nameof(BaseCost));
+            // STEP 4: Unit Price = (Base Cost + Processing Cost) × Profit Factor
+            double profitFactor = 1 + (double.Parse(_profitMargin.Replace("%", "")) / 100.0);
+            _subtotal = _baseCost + _processingCost;
+            _result = _subtotal * profitFactor;
+
+            // STEP 5: VAT (5%) and Gross Total
+            _vatAmount = _result * 0.05;
+            _grossTotal = _result + _vatAmount;
+
+            // Update dimension calculations
+            CalculateDimensions();
+
+            // Notify all changes
+            OnPropertyChanged(nameof(GlassCost));
             OnPropertyChanged(nameof(ProcessingCost));
+            OnPropertyChanged(nameof(BaseCost));
             OnPropertyChanged(nameof(Subtotal));
-            OnPropertyChanged(nameof(FinalPrice));
+            OnPropertyChanged(nameof(Result));
+            OnPropertyChanged(nameof(VatAmount));
+            OnPropertyChanged(nameof(GrossTotal));
         }
     }
 
-    public class SguRecord
+        // ═══════════════════════════════════════════════════════════
+        // RECORD CLASS
+        // ═══════════════════════════════════════════════════════════
+
+        public class SguRecord : INotifyPropertyChanged
     {
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string n = null)
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
+
         public string DisplayText { get; set; }
+        public string GlassDetails { get; set; }
+        public string ProcessingDetails { get; set; }
+        public string TreatmentDetails { get; set; }
         public double SheetPrice { get; set; }
         public double Cutting { get; set; }
-        public double Tempering { get; set; }
+        public double TemperingCharge { get; set; }
+        public double OtherCharges { get; set; }
         public string Wastage { get; set; }
         public string ProfitMargin { get; set; }
         public string CreatedAt { get; set; }
         public double Result { get; set; }
+        public string Unit { get; set; }
+        public int Width { get; set; }
+        public int Height { get; set; }
+        public int Quantity { get; set; }
+        public double TotalArea { get; set; }
+        public double TotalPrice { get; set; }
+        public string CustomNotes { get; set; }
+
+        private bool _isSelected;
+        public bool IsSelected
+        {
+            get => _isSelected;
+            set { _isSelected = value; OnPropertyChanged(); }
+        }
     }
 }

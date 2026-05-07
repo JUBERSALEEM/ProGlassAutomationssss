@@ -843,6 +843,39 @@ namespace ProGlassAutomation.Models
         };
 
         // ═══════════════════════════════════════════════════════════════
+        // CUTOUT OPTIONS (SGU)
+        // ═══════════════════════════════════════════════════════════════
+        public static List<string> CutoutOptions { get; } = new List<string>
+        {
+            "No Cutout",
+            "Rectangular Cutout",
+            "Circular Cutout",
+            "Oval Cutout",
+            "Arch Cutout",
+            "Triangle Cutout",
+            "Trapezoid Cutout",
+            "Custom Shape Cutout",
+            "Door Hole",
+            "Vent Hole",
+            "Handle Hole",
+            "Lock Hole",
+            "Hinge Hole",
+            "Sensor Hole",
+            "Wire Entry Hole",
+            "Drain Hole",
+            "Top Hinge Cutout",
+            "Bottom Hinge Cutout",
+            "Multiple Cutouts",
+            "Corner Notch",
+            "Edge Notch",
+            "Center Notch",
+            "Slot Cutout",
+            "Keyhole Cutout",
+            "CNC Custom Cutout",
+            "Waterjet Custom Cutout"
+        };
+
+        // ═══════════════════════════════════════════════════════════════
         // WASTAGE OPTIONS (%)
         // ═══════════════════════════════════════════════════════════════
         public static List<string> WastageOptions { get; } = new List<string>
