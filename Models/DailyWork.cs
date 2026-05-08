@@ -10,18 +10,18 @@ namespace ProGlassAutomation.Models
         private int _id;
         private DateTime _date;
         private DateTime _updateDate;
-        private string _company;
-        private string _piNumber;
-        private string _customerReference;
-        private string _typeOfWork;
-        private string _productionStatus;
-        private string _dailyReportStatus;
+        private string _company = "";
+        private string _piNumber = "";
+        private string _customerReference = "";
+        private string _typeOfWork = "";
+        private string _productionStatus = "";
+        private string _dailyReportStatus = "";
         private int _qty;
         private double _sqm;
-        private string _status;
-        private string _salesman;
-        private string _color;
-        private string _notes;
+        private string _status = "";
+        private string _salesman = "";
+        private string _color = "";
+        private string _notes = "";
 
         public int Id
         {
@@ -44,44 +44,38 @@ namespace ProGlassAutomation.Models
         public string Company
         {
             get => _company;
-            set { _company = value; OnPropertyChanged(); }
+            set { _company = value ?? ""; OnPropertyChanged(); }
         }
 
         public string PINumber
         {
             get => _piNumber;
-            set { _piNumber = value; OnPropertyChanged(); }
+            set { _piNumber = value ?? ""; OnPropertyChanged(); }
         }
 
         public string CustomerReference
         {
             get => _customerReference;
-            set { _customerReference = value; OnPropertyChanged(); }
+            set { _customerReference = value ?? ""; OnPropertyChanged(); }
         }
 
         public string TypeOfWork
         {
             get => _typeOfWork;
-            set { _typeOfWork = value; OnPropertyChanged(); OnPropertyChanged(nameof(TypeOfWorkDisplay)); }
+            set { _typeOfWork = value ?? ""; OnPropertyChanged(); }
         }
-
-        public string TypeOfWorkDisplay => TypeOfWork;
 
         public string ProductionStatus
         {
             get => _productionStatus;
-            set { _productionStatus = value; OnPropertyChanged(); OnPropertyChanged(nameof(ProductionStatusDisplay)); }
+            set { _productionStatus = value ?? ""; OnPropertyChanged(); }
         }
-
-        public string ProductionStatusDisplay => ProductionStatus;
 
         public string DailyReportStatus
         {
             get => _dailyReportStatus;
-            set { _dailyReportStatus = value; OnPropertyChanged(); OnPropertyChanged(nameof(DailyReportStatusDisplay)); }
+            set { _dailyReportStatus = value ?? ""; OnPropertyChanged(); }
         }
-
-        public string DailyReportStatusDisplay => DailyReportStatus;
 
         public int Qty
         {
@@ -98,11 +92,28 @@ namespace ProGlassAutomation.Models
         public string Status
         {
             get => _status;
-            set { _status = value; OnPropertyChanged(); OnPropertyChanged(nameof(StatusDisplay)); OnPropertyChanged(nameof(StatusColor)); }
+            set { _status = value ?? ""; OnPropertyChanged(); }
         }
 
-        public string StatusDisplay => Status;
+        public string Salesman
+        {
+            get => _salesman;
+            set { _salesman = value ?? ""; OnPropertyChanged(); }
+        }
 
+        public string Color
+        {
+            get => _color;
+            set { _color = value ?? ""; OnPropertyChanged(); }
+        }
+
+        public string Notes
+        {
+            get => _notes;
+            set { _notes = value ?? ""; OnPropertyChanged(); }
+        }
+
+        // Computed Properties for Display
         public string StatusColor
         {
             get
@@ -117,42 +128,54 @@ namespace ProGlassAutomation.Models
             }
         }
 
-        public string Salesman
-        {
-            get => _salesman;
-            set { _salesman = value; OnPropertyChanged(); }
-        }
-
-        public string Color
-        {
-            get => _color;
-            set { _color = value; OnPropertyChanged(); OnPropertyChanged(nameof(ColorDisplay)); }
-        }
-
-        public string ColorDisplay => Color;
-
-        public string Notes
-        {
-            get => _notes;
-            set { _notes = value; OnPropertyChanged(); }
-        }
-
-        // Computed Properties
-        public string CombinedTypeDisplay
+        public string ProductionStatusColor
         {
             get
             {
-                if (string.IsNullOrEmpty(TypeOfWork)) return "-";
-                return TypeOfWork;
+                return ProductionStatus switch
+                {
+                    "Completed" => "#10B981",
+                    "In Production" => "#3B82F6",
+                    "Quality Check" => "#8B5CF6",
+                    "Pending" => "#F59E0B",
+                    "Sent" => "#06B6D4",
+                    "Confirmed" => "#6366F1",
+                    "Prepared" => "#14B8A6",
+                    _ => "#64748B"
+                };
             }
         }
 
+        public string DailyReportStatusColor
+        {
+            get
+            {
+                return DailyReportStatus switch
+                {
+                    "Completed" => "#10B981",
+                    "In Progress" => "#3B82F6",
+                    "On Hold" => "#F59E0B",
+                    "Issue Found" => "#EF4444",
+                    "Re-work Required" => "#F97316",
+                    _ => "#64748B"
+                };
+            }
+        }
+
+        public string FormattedDate => Date.ToString("yyyy-MM-dd");
+        public string FormattedUpdateDate => UpdateDate.ToString("yyyy-MM-dd");
+        public string FormattedSQM => SQM.ToString("N2");
+        public string FormattedQty => Qty.ToString();
+
+        // Event
         public event PropertyChangedEventHandler PropertyChanged;
+
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
+        // Clone Method
         public DailyWork Clone()
         {
             return new DailyWork

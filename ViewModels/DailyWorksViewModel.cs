@@ -1,5 +1,4 @@
-﻿// ViewModels/DailyWorksViewModel.cs
-using System;
+﻿using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
@@ -15,25 +14,38 @@ namespace ProGlassAutomation.ViewModels
         private ObservableCollection<DailyWork> _dailyWorks;
         private DailyWork _selectedWork;
         private DataView _filteredDataView;
-        private string _searchText;
-        private string _sortColumn;
+        private string _searchText = "";
+        private string _sortColumn = "";
         private ListSortDirection _sortDirection = ListSortDirection.Ascending;
-        private string _filterStatus;
-        private string _filterProductionStatus;
-        private string _filterTypeOfWork;
-        private string _filterSalesman;
-        private string _filterCompany;
+        private string _filterStatus = "";
+        private string _filterProductionStatus = "";
+        private string _filterTypeOfWork = "";
+        private string _filterSalesman = "";
+        private string _filterCompany = "";
+        private string _filterColor = "";
         private DateTime? _filterStartDate;
         private DateTime? _filterEndDate;
         private bool _isEditing;
         private DailyWork _editingWork;
         private bool _isNewRecord;
 
+        // Options collections
+        public ObservableCollection<string> TypeOfWorkOptions { get; private set; }
+        public ObservableCollection<string> ProductionStatusOptions { get; private set; }
+        public ObservableCollection<string> DailyReportStatusOptions { get; private set; }
+        public ObservableCollection<string> StatusOptions { get; private set; }
+        public ObservableCollection<string> ColorOptions { get; private set; }
+        public ObservableCollection<string> SalesmanOptions { get; private set; }
+        public ObservableCollection<string> CompanyOptions { get; private set; }
+
         public DailyWorksViewModel()
         {
             DailyWorks = new ObservableCollection<DailyWork>();
-            LoadSampleData();
 
+            // Initialize options FIRST before anything else
+            InitializeOptions();
+
+            // Initialize commands
             AddNewCommand = new RelayCommand(ExecuteAddNew);
             EditCommand = new RelayCommand(ExecuteEdit, CanExecuteEdit);
             DeleteCommand = new RelayCommand(ExecuteDelete, CanExecuteDelete);
@@ -46,7 +58,10 @@ namespace ProGlassAutomation.ViewModels
             CopyRowCommand = new RelayCommand(ExecuteCopyRow, CanExecuteCopyRow);
             DuplicateRowCommand = new RelayCommand(ExecuteDuplicateRow, CanExecuteDuplicateRow);
 
-            InitializeOptions();
+            // Load sample data
+            LoadSampleData();
+
+            // Create data view
             CreateDataView();
         }
 
@@ -67,55 +82,103 @@ namespace ProGlassAutomation.ViewModels
         public DailyWork SelectedWork
         {
             get => _selectedWork;
-            set => SetProperty(ref _selectedWork, value);
+            set
+            {
+                if (SetProperty(ref _selectedWork, value))
+                {
+                    CommandManager.InvalidateRequerySuggested();
+                }
+            }
         }
 
         public string SearchText
         {
             get => _searchText;
-            set { if (SetProperty(ref _searchText, value)) ApplyFilters(); }
+            set
+            {
+                if (SetProperty(ref _searchText, value))
+                    ApplyFilters();
+            }
         }
 
         public string FilterStatus
         {
             get => _filterStatus;
-            set { if (SetProperty(ref _filterStatus, value)) ApplyFilters(); }
+            set
+            {
+                if (SetProperty(ref _filterStatus, value))
+                    ApplyFilters();
+            }
         }
 
         public string FilterProductionStatus
         {
             get => _filterProductionStatus;
-            set { if (SetProperty(ref _filterProductionStatus, value)) ApplyFilters(); }
+            set
+            {
+                if (SetProperty(ref _filterProductionStatus, value))
+                    ApplyFilters();
+            }
         }
 
         public string FilterTypeOfWork
         {
             get => _filterTypeOfWork;
-            set { if (SetProperty(ref _filterTypeOfWork, value)) ApplyFilters(); }
+            set
+            {
+                if (SetProperty(ref _filterTypeOfWork, value))
+                    ApplyFilters();
+            }
         }
 
         public string FilterSalesman
         {
             get => _filterSalesman;
-            set { if (SetProperty(ref _filterSalesman, value)) ApplyFilters(); }
+            set
+            {
+                if (SetProperty(ref _filterSalesman, value))
+                    ApplyFilters();
+            }
         }
 
         public string FilterCompany
         {
             get => _filterCompany;
-            set { if (SetProperty(ref _filterCompany, value)) ApplyFilters(); }
+            set
+            {
+                if (SetProperty(ref _filterCompany, value))
+                    ApplyFilters();
+            }
+        }
+
+        public string FilterColor
+        {
+            get => _filterColor;
+            set
+            {
+                if (SetProperty(ref _filterColor, value))
+                    ApplyFilters();
+            }
         }
 
         public DateTime? FilterStartDate
         {
             get => _filterStartDate;
-            set { if (SetProperty(ref _filterStartDate, value)) ApplyFilters(); }
+            set
+            {
+                if (SetProperty(ref _filterStartDate, value))
+                    ApplyFilters();
+            }
         }
 
         public DateTime? FilterEndDate
         {
             get => _filterEndDate;
-            set { if (SetProperty(ref _filterEndDate, value)) ApplyFilters(); }
+            set
+            {
+                if (SetProperty(ref _filterEndDate, value))
+                    ApplyFilters();
+            }
         }
 
         public bool IsEditing
@@ -142,18 +205,11 @@ namespace ProGlassAutomation.ViewModels
             set => SetProperty(ref _sortDirection, value);
         }
 
-        public ObservableCollection<string> TypeOfWorkOptions { get; private set; }
-        public ObservableCollection<string> ProductionStatusOptions { get; private set; }
-        public ObservableCollection<string> DailyReportStatusOptions { get; private set; }
-        public ObservableCollection<string> StatusOptions { get; private set; }
-        public ObservableCollection<string> ColorOptions { get; private set; }
-        public ObservableCollection<string> SalesmanOptions { get; private set; }
-        public ObservableCollection<string> CompanyOptions { get; private set; }
-
-        public int TotalRecords => DailyWorks.Count;
+        // Statistics
+        public int TotalRecords => DailyWorks?.Count ?? 0;
         public int FilteredRecords => FilteredDataView?.Count ?? 0;
-        public double TotalSQM => DailyWorks.Sum(w => w.SQM);
-        public int TotalQty => DailyWorks.Sum(w => w.Qty);
+        public double TotalSQM => DailyWorks?.Sum(w => w.SQM) ?? 0;
+        public int TotalQty => DailyWorks?.Sum(w => w.Qty) ?? 0;
         public double FilteredSQM => FilteredDataView?.Cast<DataRowView>().Sum(r => Convert.ToDouble(r["SQM"])) ?? 0;
         public int FilteredQty => FilteredDataView?.Cast<DataRowView>().Sum(r => Convert.ToInt32(r["Qty"])) ?? 0;
 
@@ -215,25 +271,50 @@ namespace ProGlassAutomation.ViewModels
                 "Re-work Required"
             };
 
-            StatusOptions = new ObservableCollection<string> { "Release", "Hold", "Cancel" };
+            StatusOptions = new ObservableCollection<string>
+            {
+                "Release",
+                "Hold",
+                "Cancel"
+            };
 
             ColorOptions = new ObservableCollection<string>
             {
-                "Clear", "Green", "Blue", "Grey", "Bronze", "Reflective Blue",
-                "Reflective Green", "Reflective Grey", "Low-E Clear", "Low-E Blue",
-                "Frosted", "Tinted", "Other"
+                "Clear",
+                "Green",
+                "Blue",
+                "Grey",
+                "Bronze",
+                "Reflective Blue",
+                "Reflective Green",
+                "Reflective Grey",
+                "Low-E Clear",
+                "Low-E Blue",
+                "Frosted",
+                "Tinted",
+                "Other"
             };
 
             SalesmanOptions = new ObservableCollection<string>
             {
-                "Ahmed Khan", "Muhammad Ali", "Hassan Ahmed", "Usman Malik",
-                "Bilal Shah", "Ali Raza", "Faisal Mahmood", "Imran Hussain"
+                "Ahmed Khan",
+                "Muhammad Ali",
+                "Hassan Ahmed",
+                "Usman Malik",
+                "Bilal Shah",
+                "Ali Raza",
+                "Faisal Mahmood",
+                "Imran Hussain"
             };
 
             CompanyOptions = new ObservableCollection<string>
             {
-                "ABC Construction", "XYZ Windows", "Secure Buildings Ltd",
-                "Modern Glass Works", "Elite Glazing Co", "Premium Windows Inc"
+                "ABC Construction",
+                "XYZ Windows",
+                "Secure Buildings Ltd",
+                "Modern Glass Works",
+                "Elite Glazing Co",
+                "Premium Windows Inc"
             };
         }
 
@@ -290,8 +371,11 @@ namespace ProGlassAutomation.ViewModels
 
             CreateDataView();
 
-            FilteredDataView.Sort = currentSort;
-            FilteredDataView.RowFilter = currentFilter;
+            if (!string.IsNullOrEmpty(currentSort))
+                FilteredDataView.Sort = currentSort;
+
+            if (!string.IsNullOrEmpty(currentFilter))
+                FilteredDataView.RowFilter = currentFilter;
         }
 
         #endregion
@@ -333,9 +417,7 @@ namespace ProGlassAutomation.ViewModels
                 });
             }
 
-            OnPropertyChanged(nameof(TotalRecords));
-            OnPropertyChanged(nameof(TotalSQM));
-            OnPropertyChanged(nameof(TotalQty));
+            UpdateStatistics();
         }
 
         #endregion
@@ -348,44 +430,52 @@ namespace ProGlassAutomation.ViewModels
 
             var filterExpressions = new System.Collections.Generic.List<string>();
 
+            // Search filter
             if (!string.IsNullOrWhiteSpace(SearchText))
             {
-                var searchLower = SearchText.Replace("'", "''").ToLower();
-                filterExpressions.Add($@"(Company.ToString().ToLower().Contains('{searchLower}') OR 
-                                         PINumber.ToString().ToLower().Contains('{searchLower}') OR 
-                                         CustomerReference.ToString().ToLower().Contains('{searchLower}') OR 
-                                         Salesman.ToString().ToLower().Contains('{searchLower}'))");
+                var searchLower = SearchText.Replace("'", "''");
+                filterExpressions.Add($"(Company LIKE '%{searchLower}%' OR PINumber LIKE '%{searchLower}%' OR CustomerReference LIKE '%{searchLower}%' OR Salesman LIKE '%{searchLower}%' OR Notes LIKE '%{searchLower}%')");
             }
 
-            if (!string.IsNullOrWhiteSpace(FilterStatus) && FilterStatus != "All")
+            // Status filter
+            if (!string.IsNullOrWhiteSpace(FilterStatus))
                 filterExpressions.Add($"Status = '{FilterStatus}'");
 
-            if (!string.IsNullOrWhiteSpace(FilterProductionStatus) && FilterProductionStatus != "All")
+            // Production Status filter
+            if (!string.IsNullOrWhiteSpace(FilterProductionStatus))
                 filterExpressions.Add($"ProductionStatus = '{FilterProductionStatus}'");
 
-            if (!string.IsNullOrWhiteSpace(FilterTypeOfWork) && FilterTypeOfWork != "All")
+            // Type of Work filter
+            if (!string.IsNullOrWhiteSpace(FilterTypeOfWork))
                 filterExpressions.Add($"TypeOfWork = '{FilterTypeOfWork}'");
 
-            if (!string.IsNullOrWhiteSpace(FilterSalesman) && FilterSalesman != "All")
+            // Salesman filter
+            if (!string.IsNullOrWhiteSpace(FilterSalesman))
                 filterExpressions.Add($"Salesman = '{FilterSalesman}'");
 
-            if (!string.IsNullOrWhiteSpace(FilterCompany) && FilterCompany != "All")
+            // Company filter
+            if (!string.IsNullOrWhiteSpace(FilterCompany))
                 filterExpressions.Add($"Company = '{FilterCompany}'");
 
+            // Color filter
+            if (!string.IsNullOrWhiteSpace(FilterColor))
+                filterExpressions.Add($"Color = '{FilterColor}'");
+
+            // Date range filters
             if (FilterStartDate.HasValue)
                 filterExpressions.Add($"Date >= #{FilterStartDate.Value:yyyy-MM-dd}#");
 
             if (FilterEndDate.HasValue)
                 filterExpressions.Add($"Date <= #{FilterEndDate.Value:yyyy-MM-dd}#");
 
+            // Apply combined filter
             FilteredDataView.RowFilter = filterExpressions.Count > 0 ? string.Join(" AND ", filterExpressions) : "";
 
+            // Apply sort
             if (!string.IsNullOrEmpty(SortColumn))
                 FilteredDataView.Sort = $"{SortColumn} {(SortDirection == ListSortDirection.Ascending ? "ASC" : "DESC")}";
 
-            OnPropertyChanged(nameof(FilteredRecords));
-            OnPropertyChanged(nameof(FilteredSQM));
-            OnPropertyChanged(nameof(FilteredQty));
+            UpdateStatistics();
         }
 
         #endregion
@@ -413,34 +503,85 @@ namespace ProGlassAutomation.ViewModels
 
         private void ExecuteEdit(object parameter)
         {
+            DailyWork workToEdit = null;
+
             if (SelectedWork != null)
             {
+                workToEdit = SelectedWork;
+            }
+            else if (parameter is DataRowView dataRow)
+            {
+                workToEdit = new DailyWork
+                {
+                    Id = Convert.ToInt32(dataRow["Id"]),
+                    Date = Convert.ToDateTime(dataRow["Date"]),
+                    UpdateDate = Convert.ToDateTime(dataRow["UpdateDate"]),
+                    Company = dataRow["Company"].ToString(),
+                    PINumber = dataRow["PINumber"].ToString(),
+                    CustomerReference = dataRow["CustomerReference"].ToString(),
+                    TypeOfWork = dataRow["TypeOfWork"].ToString(),
+                    ProductionStatus = dataRow["ProductionStatus"].ToString(),
+                    DailyReportStatus = dataRow["DailyReportStatus"].ToString(),
+                    Qty = Convert.ToInt32(dataRow["Qty"]),
+                    SQM = Convert.ToDouble(dataRow["SQM"]),
+                    Status = dataRow["Status"].ToString(),
+                    Salesman = dataRow["Salesman"].ToString(),
+                    Color = dataRow["Color"].ToString(),
+                    Notes = dataRow["Notes"].ToString()
+                };
+            }
+
+            if (workToEdit != null)
+            {
                 _isNewRecord = false;
-                EditingWork = SelectedWork.Clone();
+                EditingWork = workToEdit.Clone();
                 IsEditing = true;
             }
         }
 
-        private bool CanExecuteEdit(object parameter) => SelectedWork != null;
+        private bool CanExecuteEdit(object parameter)
+        {
+            if (SelectedWork != null) return true;
+            if (parameter is DataRowView) return true;
+            return false;
+        }
 
         private void ExecuteDelete(object parameter)
         {
+            DailyWork workToDelete = null;
+
             if (SelectedWork != null)
             {
+                workToDelete = SelectedWork;
+            }
+            else if (parameter is DataRowView dataRow)
+            {
+                int id = Convert.ToInt32(dataRow["Id"]);
+                workToDelete = DailyWorks.FirstOrDefault(w => w.Id == id);
+            }
+
+            if (workToDelete != null)
+            {
                 var result = MessageBox.Show(
-                    $"Delete record for {SelectedWork.Company}?\nPI: {SelectedWork.PINumber}",
+                    $"Delete record for {workToDelete.Company}?\nPI: {workToDelete.PINumber}",
                     "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
 
                 if (result == MessageBoxResult.Yes)
                 {
-                    DailyWorks.Remove(SelectedWork);
+                    DailyWorks.Remove(workToDelete);
                     RefreshDataView();
                     UpdateStatistics();
+                    SelectedWork = null;
                 }
             }
         }
 
-        private bool CanExecuteDelete(object parameter) => SelectedWork != null;
+        private bool CanExecuteDelete(object parameter)
+        {
+            if (SelectedWork != null) return true;
+            if (parameter is DataRowView) return true;
+            return false;
+        }
 
         private void ExecuteSave(object parameter)
         {
@@ -545,9 +686,11 @@ namespace ProGlassAutomation.ViewModels
             FilterTypeOfWork = "";
             FilterSalesman = "";
             FilterCompany = "";
+            FilterColor = "";
             FilterStartDate = null;
             FilterEndDate = null;
             SortColumn = "";
+            SortDirection = ListSortDirection.Ascending;
             ApplyFilters();
         }
 
@@ -572,9 +715,21 @@ namespace ProGlassAutomation.ViewModels
 
         private void ExecuteCopyRow(object parameter)
         {
+            DailyWork sourceWork = null;
+
             if (SelectedWork != null)
             {
-                var copy = SelectedWork.Clone();
+                sourceWork = SelectedWork;
+            }
+            else if (parameter is DataRowView dataRow)
+            {
+                int id = Convert.ToInt32(dataRow["Id"]);
+                sourceWork = DailyWorks.FirstOrDefault(w => w.Id == id);
+            }
+
+            if (sourceWork != null)
+            {
+                var copy = sourceWork.Clone();
                 copy.Id = 0;
                 copy.PINumber = $"COPY_{copy.PINumber}";
                 copy.Date = DateTime.Today;
@@ -585,14 +740,31 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        private bool CanExecuteCopyRow(object parameter) => SelectedWork != null;
+        private bool CanExecuteCopyRow(object parameter)
+        {
+            if (SelectedWork != null) return true;
+            if (parameter is DataRowView) return true;
+            return false;
+        }
 
         private void ExecuteDuplicateRow(object parameter)
         {
+            DailyWork sourceWork = null;
+
             if (SelectedWork != null)
             {
-                var duplicate = SelectedWork.Clone();
-                duplicate.Id = DailyWorks.Max(w => w.Id) + 1;
+                sourceWork = SelectedWork;
+            }
+            else if (parameter is DataRowView dataRow)
+            {
+                int id = Convert.ToInt32(dataRow["Id"]);
+                sourceWork = DailyWorks.FirstOrDefault(w => w.Id == id);
+            }
+
+            if (sourceWork != null)
+            {
+                var duplicate = sourceWork.Clone();
+                duplicate.Id = DailyWorks.Count > 0 ? DailyWorks.Max(w => w.Id) + 1 : 1;
                 duplicate.PINumber = $"DUP_{duplicate.PINumber}";
                 duplicate.Date = DateTime.Today;
                 duplicate.UpdateDate = DateTime.Today;
@@ -602,7 +774,12 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        private bool CanExecuteDuplicateRow(object parameter) => SelectedWork != null;
+        private bool CanExecuteDuplicateRow(object parameter)
+        {
+            if (SelectedWork != null) return true;
+            if (parameter is DataRowView) return true;
+            return false;
+        }
 
         private void UpdateStatistics()
         {
