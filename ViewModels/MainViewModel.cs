@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using ProGlassAutomation.Views;
 
 namespace ProGlassAutomation.ViewModels
 {
@@ -49,6 +50,7 @@ namespace ProGlassAutomation.ViewModels
                 "Subscription" => new Views.Subscription.SubscriptionPlanView(),
                 "AluminumStore" => CreatePlaceholder("Aluminum Store - Coming Soon!"),
                 "SpacerStore" => CreatePlaceholder("Spacer Store - Coming Soon!"),
+                "DailyWorks" => new Views.DailyWorksView(),
                 _ => null
             };
 
@@ -287,6 +289,12 @@ namespace ProGlassAutomation.ViewModels
             Navigate("SheetStore");
         }
 
+        public void ShowDailyWorks()
+        {
+            _viewCache.Clear();
+            Navigate("DailyWorks");
+        }
+
         // Private navigation methods (called from click handlers)
         private void ShowSGUCalculator() => Navigate("SGU");
         private void ShowDGUCalculator() => Navigate("DGU");
@@ -332,6 +340,7 @@ namespace ProGlassAutomation.ViewModels
         public ICommand DashboardCommand => new RelayCommand(o => ShowDashboard());
         public ICommand SubscriptionPlanCommand => new RelayCommand(o => ShowSubscriptionPlan());
         public ICommand LogoCommand => new RelayCommand(o => ShowDashboard());
+        public ICommand DailyWorksCommand => new RelayCommand(o => ShowDailyWorks());
     }
 
     // ═══════════════════════════════════════════════════════

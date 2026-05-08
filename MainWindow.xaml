@@ -522,6 +522,22 @@
                                         </StackPanel>
                                     </Border>
                                 </Button>
+                                <Button Style="{StaticResource MenuButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="DailyWorks" Margin="0,8,0,0">
+                                    <Border CornerRadius="10" Padding="14" Background="#EC4899" Cursor="Hand">
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
+                                        </Border.Effect>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border Background="#FFFFFF30" CornerRadius="8" Padding="10,8">
+                                                <TextBlock Text="📋" FontSize="18"/>
+                                            </Border>
+                                            <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                                                <TextBlock Text="Daily Works" FontWeight="Bold" FontSize="13" Foreground="White"/>
+                                                <TextBlock Text="Production tracking" FontSize="10" Foreground="#FCE7F3"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </Button>
                             </StackPanel>
                         </StackPanel>
                     </Border>

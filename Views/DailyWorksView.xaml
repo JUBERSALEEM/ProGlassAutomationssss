@@ -1,0 +1,346 @@
+﻿<!-- Views/DailyWorksView.xaml -->
+<UserControl x:Class="ProGlassAutomation.Views.DailyWorksView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="Transparent">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <DropShadowEffect x:Key="CardShadow" BlurRadius="15" ShadowDepth="2" Opacity="0.1"/>
+
+        <Style x:Key="ModernDataGrid" TargetType="DataGrid">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#E2E8F0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#F1F5F9"/>
+            <Setter Property="RowBackground" Value="White"/>
+            <Setter Property="AlternatingRowBackground" Value="#F8FAFC"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="HeadersVisibility" Value="Column"/>
+            <Setter Property="SelectionMode" Value="Single"/>
+            <Setter Property="SelectionUnit" Value="FullRow"/>
+            <Setter Property="CanUserAddRows" Value="False"/>
+            <Setter Property="CanUserDeleteRows" Value="False"/>
+            <Setter Property="AutoGenerateColumns" Value="False"/>
+            <Setter Property="IsReadOnly" Value="True"/>
+        </Style>
+
+        <Style x:Key="ColumnHeaderStyle" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#1E40AF"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="BorderThickness" Value="0,0,1,0"/>
+            <Setter Property="BorderBrush" Value="#3B82F6"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="ModernCell" TargetType="DataGridCell">
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#DBEAFE"/>
+                    <Setter Property="Foreground" Value="#1E40AF"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="#3B82F6"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#2563EB"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SuccessButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+            <Setter Property="Background" Value="#10B981"/>
+        </Style>
+
+        <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+            <Setter Property="Background" Value="#EF4444"/>
+        </Style>
+
+        <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+            <Setter Property="Background" Value="#64748B"/>
+        </Style>
+
+        <Style x:Key="ModernComboBox" TargetType="ComboBox">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#E2E8F0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+
+        <Style x:Key="ModernTextBox" TargetType="TextBox">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#E2E8F0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" CornerRadius="12" Padding="20" Margin="0,0,0,16" Effect="{StaticResource CardShadow}">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#3B82F6" Offset="0"/>
+                    <GradientStop Color="#1E40AF" Offset="1"/>
+                </LinearGradientBrush>
+            </Border.Background>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="DAILY WORKS" FontSize="22" FontWeight="Bold" Foreground="White"/>
+                    <TextBlock Text="Track production orders, daily reports, and work status" FontSize="12" Foreground="#BFDBFE" Margin="0,4,0,0"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Content="Add New" Style="{StaticResource SuccessButton}" Command="{Binding AddNewCommand}" Margin="0,0,10,0"/>
+                    <Button Content="Export CSV" Style="{StaticResource PrimaryButton}" Command="{Binding ExportCommand}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Filters -->
+        <Border Grid.Row="1" CornerRadius="12" Padding="16" Margin="0,0,0,16" Effect="{StaticResource CardShadow}">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#FFFFFF" Offset="0"/>
+                    <GradientStop Color="#F8FAFC" Offset="1"/>
+                </LinearGradientBrush>
+            </Border.Background>
+            <StackPanel>
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0" CornerRadius="8" BorderBrush="#E2E8F0" BorderThickness="1" Margin="0,0,10,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Search:" FontSize="12" VerticalAlignment="Center" Margin="10,0,5,0" Foreground="#94A3B8"/>
+                            <TextBox Grid.Column="1" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" VerticalAlignment="Center" Padding="5,10" FontSize="12" Background="Transparent"/>
+                        </Grid>
+                    </Border>
+                    <ComboBox Grid.Column="1" Style="{StaticResource ModernComboBox}" Margin="0,0,10,0" ItemsSource="{Binding StatusOptions}" SelectedItem="{Binding FilterStatus}"/>
+                    <ComboBox Grid.Column="2" Style="{StaticResource ModernComboBox}" Margin="0,0,10,0" ItemsSource="{Binding ProductionStatusOptions}" SelectedItem="{Binding FilterProductionStatus}"/>
+                    <ComboBox Grid.Column="3" Style="{StaticResource ModernComboBox}" Margin="0,0,10,0" ItemsSource="{Binding TypeOfWorkOptions}" SelectedItem="{Binding FilterTypeOfWork}"/>
+                    <Button Grid.Column="4" Content="Clear" Style="{StaticResource SecondaryButton}" Command="{Binding ClearFiltersCommand}"/>
+                </Grid>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <ComboBox Grid.Column="0" Style="{StaticResource ModernComboBox}" Margin="0,0,10,0" ItemsSource="{Binding SalesmanOptions}" SelectedItem="{Binding FilterSalesman}"/>
+                    <ComboBox Grid.Column="1" Style="{StaticResource ModernComboBox}" Margin="0,0,10,0" ItemsSource="{Binding CompanyOptions}" SelectedItem="{Binding FilterCompany}"/>
+                    <DatePicker Grid.Column="2" SelectedDate="{Binding FilterStartDate}" Margin="0,0,10,0" Padding="8" FontSize="12"/>
+                    <DatePicker Grid.Column="3" SelectedDate="{Binding FilterEndDate}" Margin="0,0,10,0" Padding="8" FontSize="12"/>
+                    <Button Grid.Column="4" Content="Refresh" Style="{StaticResource PrimaryButton}" Command="{Binding RefreshCommand}"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <!-- Data Grid -->
+        <Border Grid.Row="2" CornerRadius="12" Effect="{StaticResource CardShadow}">
+            <DataGrid ItemsSource="{Binding FilteredDataView}" SelectedItem="{Binding SelectedWork}" Style="{StaticResource ModernDataGrid}" ColumnHeaderStyle="{StaticResource ColumnHeaderStyle}" CellStyle="{StaticResource ModernCell}">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="DATE" Binding="{Binding Date, StringFormat=yyyy-MM-dd}" Width="100"/>
+                    <DataGridTextColumn Header="UPDATE DATE" Binding="{Binding UpdateDate, StringFormat=yyyy-MM-dd}" Width="110"/>
+                    <DataGridTextColumn Header="COMPANY" Binding="{Binding Company}" Width="150"/>
+                    <DataGridTextColumn Header="PI NUMBER" Binding="{Binding PINumber}" Width="130"/>
+                    <DataGridTextColumn Header="CUSTOMER REF" Binding="{Binding CustomerReference}" Width="120"/>
+                    <DataGridTextColumn Header="TYPE OF WORK" Binding="{Binding TypeOfWork}" Width="150"/>
+                    <DataGridTextColumn Header="PRODUCTION STATUS" Binding="{Binding ProductionStatus}" Width="140"/>
+                    <DataGridTextColumn Header="DAILY REPORT" Binding="{Binding DailyReportStatus}" Width="130"/>
+                    <DataGridTextColumn Header="QTY" Binding="{Binding Qty}" Width="70"/>
+                    <DataGridTextColumn Header="SQM" Binding="{Binding SQM, StringFormat=N2}" Width="80"/>
+                    <DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="90"/>
+                    <DataGridTextColumn Header="SALESMAN" Binding="{Binding Salesman}" Width="120"/>
+                    <DataGridTextColumn Header="COLOR" Binding="{Binding Color}" Width="100"/>
+                    <DataGridTextColumn Header="NOTES" Binding="{Binding Notes}" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <!-- Footer Stats -->
+        <Border Grid.Row="3" CornerRadius="12" Padding="16" Margin="0,16,0,0" Effect="{StaticResource CardShadow}">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                    <GradientStop Color="#1E40AF" Offset="0"/>
+                    <GradientStop Color="#3B82F6" Offset="1"/>
+                </LinearGradientBrush>
+            </Border.Background>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                    <TextBlock Text="TOTAL RECORDS" Foreground="#BFDBFE" FontSize="10" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding TotalRecords}" Foreground="White" FontSize="20" FontWeight="Bold"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                    <TextBlock Text="FILTERED" Foreground="#BFDBFE" FontSize="10" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding FilteredRecords}" Foreground="White" FontSize="20" FontWeight="Bold"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                    <TextBlock Text="TOTAL QTY" Foreground="#BFDBFE" FontSize="10" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding TotalQty}" Foreground="White" FontSize="20" FontWeight="Bold"/>
+                </StackPanel>
+                <StackPanel Grid.Column="3" HorizontalAlignment="Center">
+                    <TextBlock Text="TOTAL SQM" Foreground="#BFDBFE" FontSize="10" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding TotalSQM, StringFormat=N2}" Foreground="White" FontSize="20" FontWeight="Bold"/>
+                </StackPanel>
+                <StackPanel Grid.Column="4" HorizontalAlignment="Center">
+                    <TextBlock Text="FILTERED SQM" Foreground="#BFDBFE" FontSize="10" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding FilteredSQM, StringFormat=N2}" Foreground="White" FontSize="20" FontWeight="Bold"/>
+                </StackPanel>
+                <StackPanel Grid.Column="5" Orientation="Horizontal">
+                    <Button Content="Edit" Style="{StaticResource PrimaryButton}" Command="{Binding EditCommand}" Margin="0,0,8,0"/>
+                    <Button Content="Delete" Style="{StaticResource DangerButton}" Command="{Binding DeleteCommand}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Edit Popup -->
+        <Border Grid.Row="0" Grid.RowSpan="4" Background="#80000000" Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Border CornerRadius="16" Padding="24" Margin="80,40" Background="White" VerticalAlignment="Center" HorizontalAlignment="Center" MinWidth="600" Effect="{StaticResource CardShadow}">
+                <StackPanel>
+                    <TextBlock Text="EDIT / ADD RECORD" FontSize="18" FontWeight="Bold" Foreground="#1E40AF" Margin="0,0,0,20"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,10,12">
+                            <TextBlock Text="DATE" FontSize="11" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,4"/>
+                            <DatePicker SelectedDate="{Binding EditingWork.Date}" Padding="10,8"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,10,12">
+                            <TextBlock Text="COMPANY *" FontSize="11" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding EditingWork.Company}" Padding="10,8" Style="{StaticResource ModernTextBox}"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,12">
+                            <TextBlock Text="PI NUMBER" FontSize="11" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding EditingWork.PINumber}" Padding="10,8" Style="{StaticResource ModernTextBox}"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,12">
+                            <TextBlock Text="CUSTOMER REF" FontSize="11" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding EditingWork.CustomerReference}" Padding="10,8" Style="{StaticResource ModernTextBox}"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,10,12">
+                            <TextBlock Text="TYPE OF WORK" FontSize="11" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,4"/>
+                            <ComboBox ItemsSource="{Binding TypeOfWorkOptions}" SelectedItem="{Binding EditingWork.TypeOfWork}" Padding="10,8" Style="{StaticResource ModernComboBox}"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,12">
+                            <TextBlock Text="PRODUCTION STATUS" FontSize="11" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,4"/>
+                            <ComboBox ItemsSource="{Binding ProductionStatusOptions}" SelectedItem="{Binding EditingWork.ProductionStatus}" Padding="10,8" Style="{StaticResource ModernComboBox}"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,10,12">
+                            <TextBlock Text="DAILY REPORT STATUS" FontSize="11" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,4"/>
+                            <ComboBox ItemsSource="{Binding DailyReportStatusOptions}" SelectedItem="{Binding EditingWork.DailyReportStatus}" Padding="10,8" Style="{StaticResource ModernComboBox}"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,10,12">
+                            <TextBlock Text="QTY" FontSize="11" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding EditingWork.Qty}" Padding="10,8" Style="{StaticResource ModernTextBox}"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="2" Grid.Column="2" Margin="0,0,0,12">
+                            <TextBlock Text="SQM" FontSize="11" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding EditingWork.SQM}" Padding="10,8" Style="{StaticResource ModernTextBox}"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="3" Grid.Column="0" Margin="0,0,10,12">
+                            <TextBlock Text="STATUS" FontSize="11" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,4"/>
+                            <ComboBox ItemsSource="{Binding StatusOptions}" SelectedItem="{Binding EditingWork.Status}" Padding="10,8" Style="{StaticResource ModernComboBox}"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="3" Grid.Column="1" Margin="0,0,10,12">
+                            <TextBlock Text="SALESMAN" FontSize="11" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,4"/>
+                            <ComboBox ItemsSource="{Binding SalesmanOptions}" SelectedItem="{Binding EditingWork.Salesman}" Padding="10,8" Style="{StaticResource ModernComboBox}"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="3" Grid.Column="2" Margin="0,0,0,12">
+                            <TextBlock Text="COLOR" FontSize="11" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,4"/>
+                            <ComboBox ItemsSource="{Binding ColorOptions}" SelectedItem="{Binding EditingWork.Color}" Padding="10,8" Style="{StaticResource ModernComboBox}"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="4" Grid.ColumnSpan="3">
+                            <TextBlock Text="NOTES" FontSize="11" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding EditingWork.Notes}" Padding="10,8" Style="{StaticResource ModernTextBox}" TextWrapping="Wrap" AcceptsReturn="True" Height="60"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,24,0,0">
+                        <Button Content="Cancel" Style="{StaticResource SecondaryButton}" Command="{Binding CancelCommand}" Margin="0,0,12,0" Padding="20,10"/>
+                        <Button Content="Save" Style="{StaticResource SuccessButton}" Command="{Binding SaveCommand}" Padding="20,10"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Border>
+    </Grid>
+</UserControl>

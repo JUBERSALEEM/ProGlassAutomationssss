@@ -1,0 +1,619 @@
+﻿// ViewModels/DailyWorksViewModel.cs
+using System;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Data;
+using System.Linq;
+using System.Windows;
+using System.Windows.Input;
+using ProGlassAutomation.Models;
+
+namespace ProGlassAutomation.ViewModels
+{
+    public class DailyWorksViewModel : ViewModelBase
+    {
+        private ObservableCollection<DailyWork> _dailyWorks;
+        private DailyWork _selectedWork;
+        private DataView _filteredDataView;
+        private string _searchText;
+        private string _sortColumn;
+        private ListSortDirection _sortDirection = ListSortDirection.Ascending;
+        private string _filterStatus;
+        private string _filterProductionStatus;
+        private string _filterTypeOfWork;
+        private string _filterSalesman;
+        private string _filterCompany;
+        private DateTime? _filterStartDate;
+        private DateTime? _filterEndDate;
+        private bool _isEditing;
+        private DailyWork _editingWork;
+        private bool _isNewRecord;
+
+        public DailyWorksViewModel()
+        {
+            DailyWorks = new ObservableCollection<DailyWork>();
+            LoadSampleData();
+
+            AddNewCommand = new RelayCommand(ExecuteAddNew);
+            EditCommand = new RelayCommand(ExecuteEdit, CanExecuteEdit);
+            DeleteCommand = new RelayCommand(ExecuteDelete, CanExecuteDelete);
+            SaveCommand = new RelayCommand(ExecuteSave, CanExecuteSave);
+            CancelCommand = new RelayCommand(ExecuteCancel);
+            RefreshCommand = new RelayCommand(ExecuteRefresh);
+            ExportCommand = new RelayCommand(ExecuteExport);
+            ClearFiltersCommand = new RelayCommand(ExecuteClearFilters);
+            SortCommand = new RelayCommand(ExecuteSort);
+            CopyRowCommand = new RelayCommand(ExecuteCopyRow, CanExecuteCopyRow);
+            DuplicateRowCommand = new RelayCommand(ExecuteDuplicateRow, CanExecuteDuplicateRow);
+
+            InitializeOptions();
+            CreateDataView();
+        }
+
+        #region Properties
+
+        public ObservableCollection<DailyWork> DailyWorks
+        {
+            get => _dailyWorks;
+            set => SetProperty(ref _dailyWorks, value);
+        }
+
+        public DataView FilteredDataView
+        {
+            get => _filteredDataView;
+            private set => SetProperty(ref _filteredDataView, value);
+        }
+
+        public DailyWork SelectedWork
+        {
+            get => _selectedWork;
+            set => SetProperty(ref _selectedWork, value);
+        }
+
+        public string SearchText
+        {
+            get => _searchText;
+            set { if (SetProperty(ref _searchText, value)) ApplyFilters(); }
+        }
+
+        public string FilterStatus
+        {
+            get => _filterStatus;
+            set { if (SetProperty(ref _filterStatus, value)) ApplyFilters(); }
+        }
+
+        public string FilterProductionStatus
+        {
+            get => _filterProductionStatus;
+            set { if (SetProperty(ref _filterProductionStatus, value)) ApplyFilters(); }
+        }
+
+        public string FilterTypeOfWork
+        {
+            get => _filterTypeOfWork;
+            set { if (SetProperty(ref _filterTypeOfWork, value)) ApplyFilters(); }
+        }
+
+        public string FilterSalesman
+        {
+            get => _filterSalesman;
+            set { if (SetProperty(ref _filterSalesman, value)) ApplyFilters(); }
+        }
+
+        public string FilterCompany
+        {
+            get => _filterCompany;
+            set { if (SetProperty(ref _filterCompany, value)) ApplyFilters(); }
+        }
+
+        public DateTime? FilterStartDate
+        {
+            get => _filterStartDate;
+            set { if (SetProperty(ref _filterStartDate, value)) ApplyFilters(); }
+        }
+
+        public DateTime? FilterEndDate
+        {
+            get => _filterEndDate;
+            set { if (SetProperty(ref _filterEndDate, value)) ApplyFilters(); }
+        }
+
+        public bool IsEditing
+        {
+            get => _isEditing;
+            set => SetProperty(ref _isEditing, value);
+        }
+
+        public DailyWork EditingWork
+        {
+            get => _editingWork;
+            set => SetProperty(ref _editingWork, value);
+        }
+
+        public string SortColumn
+        {
+            get => _sortColumn;
+            set => SetProperty(ref _sortColumn, value);
+        }
+
+        public ListSortDirection SortDirection
+        {
+            get => _sortDirection;
+            set => SetProperty(ref _sortDirection, value);
+        }
+
+        public ObservableCollection<string> TypeOfWorkOptions { get; private set; }
+        public ObservableCollection<string> ProductionStatusOptions { get; private set; }
+        public ObservableCollection<string> DailyReportStatusOptions { get; private set; }
+        public ObservableCollection<string> StatusOptions { get; private set; }
+        public ObservableCollection<string> ColorOptions { get; private set; }
+        public ObservableCollection<string> SalesmanOptions { get; private set; }
+        public ObservableCollection<string> CompanyOptions { get; private set; }
+
+        public int TotalRecords => DailyWorks.Count;
+        public int FilteredRecords => FilteredDataView?.Count ?? 0;
+        public double TotalSQM => DailyWorks.Sum(w => w.SQM);
+        public int TotalQty => DailyWorks.Sum(w => w.Qty);
+        public double FilteredSQM => FilteredDataView?.Cast<DataRowView>().Sum(r => Convert.ToDouble(r["SQM"])) ?? 0;
+        public int FilteredQty => FilteredDataView?.Cast<DataRowView>().Sum(r => Convert.ToInt32(r["Qty"])) ?? 0;
+
+        #endregion
+
+        #region Commands
+
+        public ICommand AddNewCommand { get; }
+        public ICommand EditCommand { get; }
+        public ICommand DeleteCommand { get; }
+        public ICommand SaveCommand { get; }
+        public ICommand CancelCommand { get; }
+        public ICommand RefreshCommand { get; }
+        public ICommand ExportCommand { get; }
+        public ICommand ClearFiltersCommand { get; }
+        public ICommand SortCommand { get; }
+        public ICommand CopyRowCommand { get; }
+        public ICommand DuplicateRowCommand { get; }
+
+        #endregion
+
+        #region Initialization
+
+        private void InitializeOptions()
+        {
+            TypeOfWorkOptions = new ObservableCollection<string>
+            {
+                "Single Unit (SGU)",
+                "Double Unit (DGU)",
+                "Lamination Unit",
+                "Single + Double Unit",
+                "SGU + DGU",
+                "SGU + Lamination",
+                "DGU + Lamination",
+                "SGU + DGU + Lamination",
+                "Tempered",
+                "Tempered + Lamination",
+                "Other"
+            };
+
+            ProductionStatusOptions = new ObservableCollection<string>
+            {
+                "Sent",
+                "Confirmed",
+                "Prepared",
+                "In Production",
+                "Quality Check",
+                "Completed",
+                "Pending"
+            };
+
+            DailyReportStatusOptions = new ObservableCollection<string>
+            {
+                "Not Started",
+                "In Progress",
+                "On Hold",
+                "Completed",
+                "Issue Found",
+                "Re-work Required"
+            };
+
+            StatusOptions = new ObservableCollection<string> { "Release", "Hold", "Cancel" };
+
+            ColorOptions = new ObservableCollection<string>
+            {
+                "Clear", "Green", "Blue", "Grey", "Bronze", "Reflective Blue",
+                "Reflective Green", "Reflective Grey", "Low-E Clear", "Low-E Blue",
+                "Frosted", "Tinted", "Other"
+            };
+
+            SalesmanOptions = new ObservableCollection<string>
+            {
+                "Ahmed Khan", "Muhammad Ali", "Hassan Ahmed", "Usman Malik",
+                "Bilal Shah", "Ali Raza", "Faisal Mahmood", "Imran Hussain"
+            };
+
+            CompanyOptions = new ObservableCollection<string>
+            {
+                "ABC Construction", "XYZ Windows", "Secure Buildings Ltd",
+                "Modern Glass Works", "Elite Glazing Co", "Premium Windows Inc"
+            };
+        }
+
+        private void CreateDataView()
+        {
+            var dataTable = new DataTable("DailyWorks");
+
+            dataTable.Columns.Add("Id", typeof(int));
+            dataTable.Columns.Add("Date", typeof(DateTime));
+            dataTable.Columns.Add("UpdateDate", typeof(DateTime));
+            dataTable.Columns.Add("Company", typeof(string));
+            dataTable.Columns.Add("PINumber", typeof(string));
+            dataTable.Columns.Add("CustomerReference", typeof(string));
+            dataTable.Columns.Add("TypeOfWork", typeof(string));
+            dataTable.Columns.Add("ProductionStatus", typeof(string));
+            dataTable.Columns.Add("DailyReportStatus", typeof(string));
+            dataTable.Columns.Add("Qty", typeof(int));
+            dataTable.Columns.Add("SQM", typeof(double));
+            dataTable.Columns.Add("Status", typeof(string));
+            dataTable.Columns.Add("Salesman", typeof(string));
+            dataTable.Columns.Add("Color", typeof(string));
+            dataTable.Columns.Add("Notes", typeof(string));
+
+            foreach (var work in DailyWorks)
+            {
+                var row = dataTable.NewRow();
+                row["Id"] = work.Id;
+                row["Date"] = work.Date;
+                row["UpdateDate"] = work.UpdateDate;
+                row["Company"] = work.Company ?? "";
+                row["PINumber"] = work.PINumber ?? "";
+                row["CustomerReference"] = work.CustomerReference ?? "";
+                row["TypeOfWork"] = work.TypeOfWork ?? "";
+                row["ProductionStatus"] = work.ProductionStatus ?? "";
+                row["DailyReportStatus"] = work.DailyReportStatus ?? "";
+                row["Qty"] = work.Qty;
+                row["SQM"] = work.SQM;
+                row["Status"] = work.Status ?? "";
+                row["Salesman"] = work.Salesman ?? "";
+                row["Color"] = work.Color ?? "";
+                row["Notes"] = work.Notes ?? "";
+                dataTable.Rows.Add(row);
+            }
+
+            FilteredDataView = dataTable.DefaultView;
+        }
+
+        private void RefreshDataView()
+        {
+            if (FilteredDataView == null) return;
+
+            var currentSort = FilteredDataView.Sort;
+            var currentFilter = FilteredDataView.RowFilter;
+
+            CreateDataView();
+
+            FilteredDataView.Sort = currentSort;
+            FilteredDataView.RowFilter = currentFilter;
+        }
+
+        #endregion
+
+        #region Load Sample Data
+
+        private void LoadSampleData()
+        {
+            var random = new Random();
+            var companies = new[] { "ABC Construction", "XYZ Windows", "Secure Buildings Ltd", "Modern Glass Works", "Elite Glazing Co" };
+            var workTypes = new[] { "Single Unit (SGU)", "Double Unit (DGU)", "Lamination Unit", "Single + Double Unit", "SGU + DGU", "SGU + Lamination" };
+            var productionStatuses = new[] { "Sent", "Confirmed", "Prepared", "In Production", "Quality Check", "Completed" };
+            var dailyStatuses = new[] { "Not Started", "In Progress", "On Hold", "Completed", "Issue Found" };
+            var statuses = new[] { "Release", "Release", "Release", "Hold", "Cancel" };
+            var salesmen = new[] { "Ahmed Khan", "Muhammad Ali", "Hassan Ahmed", "Usman Malik", "Bilal Shah" };
+            var colors = new[] { "Clear", "Green", "Blue", "Grey", "Bronze", "Reflective Blue" };
+            var customerRefs = new[] { "CUST-001", "CUST-002", "CUST-003", "CUST-004", "CUST-005" };
+
+            for (int i = 1; i <= 25; i++)
+            {
+                var date = DateTime.Today.AddDays(-random.Next(0, 30));
+                DailyWorks.Add(new DailyWork
+                {
+                    Id = i,
+                    Date = date,
+                    UpdateDate = date.AddDays(random.Next(0, 3)),
+                    Company = companies[random.Next(companies.Length)],
+                    PINumber = $"PI-{DateTime.Now.Year}-{1000 + i}",
+                    CustomerReference = customerRefs[random.Next(customerRefs.Length)],
+                    TypeOfWork = workTypes[random.Next(workTypes.Length)],
+                    ProductionStatus = productionStatuses[random.Next(productionStatuses.Length)],
+                    DailyReportStatus = dailyStatuses[random.Next(dailyStatuses.Length)],
+                    Qty = random.Next(1, 50) * 5,
+                    SQM = Math.Round(random.Next(10, 500) * 0.1, 2),
+                    Status = statuses[random.Next(statuses.Length)],
+                    Salesman = salesmen[random.Next(salesmen.Length)],
+                    Color = colors[random.Next(colors.Length)],
+                    Notes = i % 3 == 0 ? $"Work order {i} notes" : ""
+                });
+            }
+
+            OnPropertyChanged(nameof(TotalRecords));
+            OnPropertyChanged(nameof(TotalSQM));
+            OnPropertyChanged(nameof(TotalQty));
+        }
+
+        #endregion
+
+        #region Filter Implementation
+
+        private void ApplyFilters()
+        {
+            if (FilteredDataView == null) return;
+
+            var filterExpressions = new System.Collections.Generic.List<string>();
+
+            if (!string.IsNullOrWhiteSpace(SearchText))
+            {
+                var searchLower = SearchText.Replace("'", "''").ToLower();
+                filterExpressions.Add($@"(Company.ToString().ToLower().Contains('{searchLower}') OR 
+                                         PINumber.ToString().ToLower().Contains('{searchLower}') OR 
+                                         CustomerReference.ToString().ToLower().Contains('{searchLower}') OR 
+                                         Salesman.ToString().ToLower().Contains('{searchLower}'))");
+            }
+
+            if (!string.IsNullOrWhiteSpace(FilterStatus) && FilterStatus != "All")
+                filterExpressions.Add($"Status = '{FilterStatus}'");
+
+            if (!string.IsNullOrWhiteSpace(FilterProductionStatus) && FilterProductionStatus != "All")
+                filterExpressions.Add($"ProductionStatus = '{FilterProductionStatus}'");
+
+            if (!string.IsNullOrWhiteSpace(FilterTypeOfWork) && FilterTypeOfWork != "All")
+                filterExpressions.Add($"TypeOfWork = '{FilterTypeOfWork}'");
+
+            if (!string.IsNullOrWhiteSpace(FilterSalesman) && FilterSalesman != "All")
+                filterExpressions.Add($"Salesman = '{FilterSalesman}'");
+
+            if (!string.IsNullOrWhiteSpace(FilterCompany) && FilterCompany != "All")
+                filterExpressions.Add($"Company = '{FilterCompany}'");
+
+            if (FilterStartDate.HasValue)
+                filterExpressions.Add($"Date >= #{FilterStartDate.Value:yyyy-MM-dd}#");
+
+            if (FilterEndDate.HasValue)
+                filterExpressions.Add($"Date <= #{FilterEndDate.Value:yyyy-MM-dd}#");
+
+            FilteredDataView.RowFilter = filterExpressions.Count > 0 ? string.Join(" AND ", filterExpressions) : "";
+
+            if (!string.IsNullOrEmpty(SortColumn))
+                FilteredDataView.Sort = $"{SortColumn} {(SortDirection == ListSortDirection.Ascending ? "ASC" : "DESC")}";
+
+            OnPropertyChanged(nameof(FilteredRecords));
+            OnPropertyChanged(nameof(FilteredSQM));
+            OnPropertyChanged(nameof(FilteredQty));
+        }
+
+        #endregion
+
+        #region Command Implementations
+
+        private void ExecuteAddNew(object parameter)
+        {
+            _isNewRecord = true;
+            EditingWork = new DailyWork
+            {
+                Id = 0,
+                Date = DateTime.Today,
+                UpdateDate = DateTime.Today,
+                Status = "Release",
+                ProductionStatus = "Sent",
+                DailyReportStatus = "Not Started",
+                TypeOfWork = "Single Unit (SGU)",
+                Color = "Clear",
+                Qty = 0,
+                SQM = 0
+            };
+            IsEditing = true;
+        }
+
+        private void ExecuteEdit(object parameter)
+        {
+            if (SelectedWork != null)
+            {
+                _isNewRecord = false;
+                EditingWork = SelectedWork.Clone();
+                IsEditing = true;
+            }
+        }
+
+        private bool CanExecuteEdit(object parameter) => SelectedWork != null;
+
+        private void ExecuteDelete(object parameter)
+        {
+            if (SelectedWork != null)
+            {
+                var result = MessageBox.Show(
+                    $"Delete record for {SelectedWork.Company}?\nPI: {SelectedWork.PINumber}",
+                    "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    DailyWorks.Remove(SelectedWork);
+                    RefreshDataView();
+                    UpdateStatistics();
+                }
+            }
+        }
+
+        private bool CanExecuteDelete(object parameter) => SelectedWork != null;
+
+        private void ExecuteSave(object parameter)
+        {
+            if (EditingWork == null) return;
+
+            if (string.IsNullOrWhiteSpace(EditingWork.Company))
+            {
+                MessageBox.Show("Company name is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (_isNewRecord)
+            {
+                EditingWork.Id = DailyWorks.Count > 0 ? DailyWorks.Max(w => w.Id) + 1 : 1;
+                DailyWorks.Add(EditingWork);
+            }
+            else
+            {
+                var existing = DailyWorks.FirstOrDefault(w => w.Id == EditingWork.Id);
+                if (existing != null)
+                {
+                    existing.Date = EditingWork.Date;
+                    existing.UpdateDate = DateTime.Today;
+                    existing.Company = EditingWork.Company;
+                    existing.PINumber = EditingWork.PINumber;
+                    existing.CustomerReference = EditingWork.CustomerReference;
+                    existing.TypeOfWork = EditingWork.TypeOfWork;
+                    existing.ProductionStatus = EditingWork.ProductionStatus;
+                    existing.DailyReportStatus = EditingWork.DailyReportStatus;
+                    existing.Qty = EditingWork.Qty;
+                    existing.SQM = EditingWork.SQM;
+                    existing.Status = EditingWork.Status;
+                    existing.Salesman = EditingWork.Salesman;
+                    existing.Color = EditingWork.Color;
+                    existing.Notes = EditingWork.Notes;
+                }
+            }
+
+            IsEditing = false;
+            EditingWork = null;
+            RefreshDataView();
+            UpdateStatistics();
+        }
+
+        private bool CanExecuteSave(object parameter) => EditingWork != null;
+
+        private void ExecuteCancel(object parameter)
+        {
+            IsEditing = false;
+            EditingWork = null;
+        }
+
+        private void ExecuteRefresh(object parameter)
+        {
+            RefreshDataView();
+            UpdateStatistics();
+        }
+
+        private void ExecuteExport(object parameter)
+        {
+            try
+            {
+                var dialog = new Microsoft.Win32.SaveFileDialog
+                {
+                    Filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*",
+                    DefaultExt = ".csv",
+                    FileName = $"DailyWorks_Export_{DateTime.Now:yyyyMMdd_HHmmss}"
+                };
+
+                if (dialog.ShowDialog() == true)
+                {
+                    ExportToCSV(dialog.FileName);
+                    MessageBox.Show($"Export completed!\n{dialog.FileName}", "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Export failed: {ex.Message}", "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void ExportToCSV(string filePath)
+        {
+            var sb = new System.Text.StringBuilder();
+            var headers = new[] { "Date", "Update Date", "Company", "PI Number", "Customer Ref", "Type of Work", "Production Status", "Daily Report Status", "Qty", "SQM", "Status", "Salesman", "Color", "Notes" };
+            sb.AppendLine(string.Join(",", headers));
+
+            foreach (DataRowView rowView in FilteredDataView)
+            {
+                var fields = rowView.Row.ItemArray.Select(f => $"\"{f?.ToString()?.Replace("\"", "\"\"")}\"");
+                sb.AppendLine(string.Join(",", fields));
+            }
+
+            System.IO.File.WriteAllText(filePath, sb.ToString(), System.Text.Encoding.UTF8);
+        }
+
+        private void ExecuteClearFilters(object parameter)
+        {
+            SearchText = "";
+            FilterStatus = "";
+            FilterProductionStatus = "";
+            FilterTypeOfWork = "";
+            FilterSalesman = "";
+            FilterCompany = "";
+            FilterStartDate = null;
+            FilterEndDate = null;
+            SortColumn = "";
+            ApplyFilters();
+        }
+
+        private void ExecuteSort(object parameter)
+        {
+            if (parameter is string columnName)
+            {
+                if (SortColumn == columnName)
+                {
+                    SortDirection = SortDirection == ListSortDirection.Ascending
+                        ? ListSortDirection.Descending
+                        : ListSortDirection.Ascending;
+                }
+                else
+                {
+                    SortColumn = columnName;
+                    SortDirection = ListSortDirection.Ascending;
+                }
+                ApplyFilters();
+            }
+        }
+
+        private void ExecuteCopyRow(object parameter)
+        {
+            if (SelectedWork != null)
+            {
+                var copy = SelectedWork.Clone();
+                copy.Id = 0;
+                copy.PINumber = $"COPY_{copy.PINumber}";
+                copy.Date = DateTime.Today;
+                copy.UpdateDate = DateTime.Today;
+                DailyWorks.Add(copy);
+                RefreshDataView();
+                UpdateStatistics();
+            }
+        }
+
+        private bool CanExecuteCopyRow(object parameter) => SelectedWork != null;
+
+        private void ExecuteDuplicateRow(object parameter)
+        {
+            if (SelectedWork != null)
+            {
+                var duplicate = SelectedWork.Clone();
+                duplicate.Id = DailyWorks.Max(w => w.Id) + 1;
+                duplicate.PINumber = $"DUP_{duplicate.PINumber}";
+                duplicate.Date = DateTime.Today;
+                duplicate.UpdateDate = DateTime.Today;
+                DailyWorks.Add(duplicate);
+                RefreshDataView();
+                UpdateStatistics();
+            }
+        }
+
+        private bool CanExecuteDuplicateRow(object parameter) => SelectedWork != null;
+
+        private void UpdateStatistics()
+        {
+            OnPropertyChanged(nameof(TotalRecords));
+            OnPropertyChanged(nameof(FilteredRecords));
+            OnPropertyChanged(nameof(TotalSQM));
+            OnPropertyChanged(nameof(TotalQty));
+            OnPropertyChanged(nameof(FilteredSQM));
+            OnPropertyChanged(nameof(FilteredQty));
+        }
+
+        #endregion
+    }
+}

@@ -13,53 +13,45 @@ namespace ProGlassAutomation.Views.GlassOptimization
     public class GlassOptimizationViewModel : INotifyPropertyChanged
     {
         // ═══════════════════════════════════════════════════════
-        // CACHE SYSTEM - Atomic single assignment only
+        // CACHE SYSTEM
         // ═══════════════════════════════════════════════════════
 
         private List<SheetItem> _sheetCache = new();
         private readonly object _cacheLock = new();
 
-        // Pre-built dictionary indexes for O(1) lookup - NEVER use FirstOrDefault in hot paths
         private Dictionary<string, double> _purchasePriceLookup = new();
         private Dictionary<string, double> _sellPriceLookup = new();
-        private Dictionary<string, decimal> _categoryMultiplierLookup = new();
 
         // ═══════════════════════════════════════════════════════
-        // DEBOUNCE SYSTEM - Replaces DispatcherTimer
+        // DEBOUNCE SYSTEM
         // ═══════════════════════════════════════════════════════
 
         private CancellationTokenSource _debounceTokenSource;
         private const int DebounceDelayMs = 300;
 
         // ═══════════════════════════════════════════════════════
-        // CACHED NUMERIC VALUES - Prevent string parsing in loops
+        // CACHED NUMERIC VALUES
         // ═══════════════════════════════════════════════════════
 
-        private double _cachedEditWidth;
-        private double _cachedEditHeight;
-        private int _cachedEditQty;
-        private double _cachedEditUtil;
         private double _cachedEditPrice;
-        private double _cachedProfitMargin;
+        private double _cachedEditOptimization;
+        private double _cachedEditChargeableSqm;
 
         // ═══════════════════════════════════════════════════════
-        // COLLECTIONS
+        // COLLECTIONS - From SheetOptions
         // ═══════════════════════════════════════════════════════
 
         public ObservableCollection<SheetItem> Sheets { get; } = new();
 
-        public ObservableCollection<string> Colors { get; } = new()
-        {
-            "Clear", "Green", "Bronze", "Grey", "Blue", "Black"
-        };
-
-        public ObservableCollection<double> ProfitOptions { get; } = new()
-        {
-            1.0, 1.1, 1.2, 1.3, 1.4, 1.5
-        };
+        public ObservableCollection<string> Colors => SheetOptions.Colors;
+        public ObservableCollection<string> Categories => SheetOptions.Categories;
+        public ObservableCollection<string> ThicknessOptions => SheetOptions.ThicknessOptions;
+        public ObservableCollection<string> ColorTypes => SheetOptions.ColorTypes;
+        public ObservableCollection<double> OptimizationOptions => SheetOptions.OptimizationOptions;
+        public ObservableCollection<double> ChargeableSqmOptions => SheetOptions.ChargeableSqmOptions;
 
         // ═══════════════════════════════════════════════════════
-        // EDIT PROPERTIES with Cached Numeric Values
+        // EDIT PROPERTIES
         // ═══════════════════════════════════════════════════════
 
         private string _editName = string.Empty;
@@ -83,68 +75,18 @@ namespace ProGlassAutomation.Views.GlassOptimization
             set => SetProperty(ref _editColor, value);
         }
 
-        private string _editWidth = string.Empty;
-        public string EditWidth
+        private string _editCategory = string.Empty;
+        public string EditCategory
         {
-            get => _editWidth;
-            set
-            {
-                if (SetProperty(ref _editWidth, value))
-                {
-                    if (double.TryParse(value, out var parsed))
-                        _cachedEditWidth = parsed;
-                    else
-                        _cachedEditWidth = 0;
-                }
-            }
+            get => _editCategory;
+            set => SetProperty(ref _editCategory, value);
         }
 
-        private string _editHeight = string.Empty;
-        public string EditHeight
+        private string _editColorType = string.Empty;
+        public string EditColorType
         {
-            get => _editHeight;
-            set
-            {
-                if (SetProperty(ref _editHeight, value))
-                {
-                    if (double.TryParse(value, out var parsed))
-                        _cachedEditHeight = parsed;
-                    else
-                        _cachedEditHeight = 0;
-                }
-            }
-        }
-
-        private string _editQty = string.Empty;
-        public string EditQty
-        {
-            get => _editQty;
-            set
-            {
-                if (SetProperty(ref _editQty, value))
-                {
-                    if (int.TryParse(value, out var parsed))
-                        _cachedEditQty = parsed;
-                    else
-                        _cachedEditQty = 0;
-                }
-            }
-        }
-
-        private string _editUtil = string.Empty;
-        public string EditUtil
-        {
-            get => _editUtil;
-            set
-            {
-                if (SetProperty(ref _editUtil, value))
-                {
-                    if (double.TryParse(value, out var parsed))
-                        _cachedEditUtil = parsed;
-                    else
-                        _cachedEditUtil = 0;
-                }
-            }
+            get => _editColorType;
+            set => SetProperty(ref _editColorType, value);
         }
 
         private string _editPrice = string.Empty;
@@ -163,22 +105,58 @@ namespace ProGlassAutomation.Views.GlassOptimization
             }
         }
 
-        private double _profitMargin = 1.2;
-        public double ProfitMargin
+        private string _editOptimization = string.Empty;
+        public string EditOptimization
         {
-            get => _profitMargin;
+            get => _editOptimization;
             set
             {
-                if (SetProperty(ref _profitMargin, value))
+                if (SetProperty(ref _editOptimization, value))
                 {
-                    _cachedProfitMargin = value;
+                    if (double.TryParse(value, out var parsed))
+                        _cachedEditOptimization = parsed;
+                    else
+                        _cachedEditOptimization = 65.80;
+                }
+            }
+        }
+
+        private string _editChargeableSqm = "10.03";
+        public string EditChargeableSqm
+        {
+            get => _editChargeableSqm;
+            set
+            {
+                if (SetProperty(ref _editChargeableSqm, value))
+                {
+                    if (double.TryParse(value, out var parsed))
+                        _cachedEditChargeableSqm = parsed;
+                    else
+                        _cachedEditChargeableSqm = 10.03;
+                }
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // GLOBAL SETTINGS
+        // ═══════════════════════════════════════════════════════
+
+        private double _optimization = 65.80;
+        public double Optimization
+        {
+            get => _optimization;
+            set
+            {
+                if (SetProperty(ref _optimization, value))
+                {
+                    _cachedEditOptimization = value;
                     RecalculateAllAsync();
                 }
             }
         }
 
         // ═══════════════════════════════════════════════════════
-        // READONLY PROPERTIES with Batched Notify
+        // READONLY PROPERTIES
         // ═══════════════════════════════════════════════════════
 
         private string _totalSec1 = "0";
@@ -195,11 +173,18 @@ namespace ProGlassAutomation.Views.GlassOptimization
             private set => SetProperty(ref _totalSec2, value);
         }
 
-        private string _totalResult = "0";
-        public string TotalResult
+        private string _totalBaseResult = "0";
+        public string TotalBaseResult
         {
-            get => _totalResult;
-            private set => SetProperty(ref _totalResult, value);
+            get => _totalBaseResult;
+            private set => SetProperty(ref _totalBaseResult, value);
+        }
+
+        private string _totalFinalResult = "0";
+        public string TotalFinalResult
+        {
+            get => _totalFinalResult;
+            private set => SetProperty(ref _totalFinalResult, value);
         }
 
         private SheetItem? _selectedSheet;
@@ -235,22 +220,18 @@ namespace ProGlassAutomation.Views.GlassOptimization
             ClearAllCommand = new RelayCommand(_ => ClearAll());
             UpdateCommand = new RelayCommand(_ => UpdateSheet(), _ => SelectedSheet != null);
 
-            // Initialize cache from service
             RefreshCache();
         }
 
         // ═══════════════════════════════════════════════════════
-        // CACHE SYSTEM - Atomic single snapshot assignment
+        // CACHE SYSTEM
         // ═══════════════════════════════════════════════════════
 
         public void SetCache(List<SheetItem> newCache)
         {
             lock (_cacheLock)
             {
-                // ATOMIC: Single assignment only - never assign separately
                 _sheetCache = newCache;
-
-                // Build all indexes together under same lock
                 RebuildLookupIndexes(newCache);
             }
 
@@ -261,22 +242,18 @@ namespace ProGlassAutomation.Views.GlassOptimization
         {
             lock (_cacheLock)
             {
-                // ATOMIC: Clear ALL dictionaries together
                 _purchasePriceLookup.Clear();
                 _sellPriceLookup.Clear();
-                _categoryMultiplierLookup.Clear();
                 _sheetCache.Clear();
             }
 
-            NotifyProperties(nameof(TotalSec1), nameof(TotalSec2), nameof(TotalResult));
+            NotifyProperties(nameof(TotalSec1), nameof(TotalSec2), nameof(TotalBaseResult), nameof(TotalFinalResult));
         }
 
         private void RebuildLookupIndexes(List<SheetItem> items)
         {
-            // Pre-build dictionary indexes for O(1) lookup
             _purchasePriceLookup.Clear();
             _sellPriceLookup.Clear();
-            _categoryMultiplierLookup.Clear();
 
             foreach (var item in items)
             {
@@ -287,57 +264,35 @@ namespace ProGlassAutomation.Views.GlassOptimization
 
                 if (!_sellPriceLookup.ContainsKey(key))
                     _sellPriceLookup[key] = item.SellPrice;
-
-                if (!_categoryMultiplierLookup.ContainsKey(item.Category))
-                    _categoryMultiplierLookup[item.Category] = item.CategoryMultiplier;
             }
         }
 
-        // O(1) lookup - No FirstOrDefault in hot paths
         private bool TryGetPurchasePrice(string category, string thickness, out double price)
         {
             var key = $"{category}_{thickness}";
             return _purchasePriceLookup.TryGetValue(key, out price);
         }
 
-        private bool TryGetSellPrice(string category, string thickness, out double price)
-        {
-            var key = $"{category}_{thickness}";
-            return _sellPriceLookup.TryGetValue(key, out price);
-        }
-
-        private bool TryGetCategoryMultiplier(string category, out decimal multiplier)
-        {
-            return _categoryMultiplierLookup.TryGetValue(category, out multiplier);
-        }
-
         // ═══════════════════════════════════════════════════════
-        // DEBOUNCE SYSTEM - Replaces DispatcherTimer
+        // DEBOUNCE SYSTEM
         // ═══════════════════════════════════════════════════════
 
         private async void RecalculateAllAsync()
         {
-            // Cancel previous debounce
             _debounceTokenSource?.Cancel();
             _debounceTokenSource = new CancellationTokenSource();
 
             try
             {
-                // Wait for debounce delay
                 await Task.Delay(DebounceDelayMs, _debounceTokenSource.Token);
             }
             catch (OperationCanceledException)
             {
-                return; // Cancelled - new calculation pending
+                return;
             }
 
-            // Perform expensive calculation
             RecalculateTotals();
         }
-
-        // ═══════════════════════════════════════════════════════
-        // BATCH NOTIFY - Single call for multiple properties
-        // ═══════════════════════════════════════════════════════
 
         private void NotifyProperties(params string[] propertyNames)
         {
@@ -356,21 +311,23 @@ namespace ProGlassAutomation.Views.GlassOptimization
             var sheet = new SheetItem
             {
                 Id = Sheets.Count + 1,
-                Name = $"Sheet {Sheets.Count + 1}",
-                Color = Colors.FirstOrDefault() ?? "Clear",
-                Thickness = "6mm",
-                Width = 244,
-                Height = 183,
-                Qty = 1,
-                Util = 85,
-                Price = 150
+                Name = string.IsNullOrEmpty(EditName) ? $"Sheet {Sheets.Count + 1}" : EditName,
+                Category = string.IsNullOrEmpty(EditCategory) ? (Categories.FirstOrDefault() ?? "Clear") : EditCategory,
+                Thickness = string.IsNullOrEmpty(EditThickness) ? (ThicknessOptions.FirstOrDefault() ?? "6mm") : EditThickness,
+                Color = string.IsNullOrEmpty(EditColor) ? (Colors.FirstOrDefault() ?? "Clear") : EditColor,
+                ColorType = string.IsNullOrEmpty(EditColorType) ? (ColorTypes.FirstOrDefault() ?? "Standard") : EditColorType,
+                Price = _cachedEditPrice > 0 ? _cachedEditPrice : 47,
+                Optimization = _cachedEditOptimization > 0 ? _cachedEditOptimization : 65.80,
+                ChargeableSqm = _cachedEditChargeableSqm > 0 ? _cachedEditChargeableSqm : 10.03
             };
 
             Sheets.Add(sheet);
             SelectedSheet = sheet;
 
+            // Clear editor for next entry
+            ClearEditor();
+
             OnPropertyChanged(nameof(Sheets));
-            RecalculateTotals();
         }
 
         private void RemoveSheet(SheetItem? sheet)
@@ -398,20 +355,17 @@ namespace ProGlassAutomation.Views.GlassOptimization
         {
             if (SelectedSheet == null) return;
 
-            // Use cached numeric values for calculation
             SelectedSheet.Name = EditName;
-            SelectedSheet.Color = EditColor;
+            SelectedSheet.Category = EditCategory;
             SelectedSheet.Thickness = EditThickness;
-            SelectedSheet.Width = _cachedEditWidth;
-            SelectedSheet.Height = _cachedEditHeight;
-            SelectedSheet.Qty = _cachedEditQty;
-            SelectedSheet.Util = _cachedEditUtil;
+            SelectedSheet.Color = EditColor;
+            SelectedSheet.ColorType = EditColorType;
             SelectedSheet.Price = _cachedEditPrice;
+            SelectedSheet.Optimization = _cachedEditOptimization;
+            SelectedSheet.ChargeableSqm = _cachedEditChargeableSqm;
 
-            // Recalculate using cached values
             CalculateSheet(SelectedSheet);
 
-            // BATCH NOTIFY - Single call instead of multiple
             OnPropertyChanged(nameof(Sheets));
             RecalculateTotals();
         }
@@ -425,104 +379,90 @@ namespace ProGlassAutomation.Views.GlassOptimization
             }
 
             EditName = sheet.Name;
-            EditColor = sheet.Color;
+            EditCategory = sheet.Category;
             EditThickness = sheet.Thickness;
-            EditWidth = sheet.Width.ToString("0");
-            EditHeight = sheet.Height.ToString("0");
-            EditQty = sheet.Qty.ToString();
-            EditUtil = sheet.Util.ToString("0.0");
+            EditColor = sheet.Color;
+            EditColorType = sheet.ColorType;
             EditPrice = sheet.Price.ToString("0");
+            EditOptimization = sheet.Optimization.ToString("0.00");
+            EditChargeableSqm = sheet.ChargeableSqm.ToString("0.00");
 
-            // Update cached values
-            _cachedEditWidth = sheet.Width;
-            _cachedEditHeight = sheet.Height;
-            _cachedEditQty = sheet.Qty;
-            _cachedEditUtil = sheet.Util;
             _cachedEditPrice = sheet.Price;
+            _cachedEditOptimization = sheet.Optimization;
+            _cachedEditChargeableSqm = sheet.ChargeableSqm;
         }
 
         private void ClearEditor()
         {
             EditName = string.Empty;
-            EditColor = string.Empty;
+            EditCategory = string.Empty;
             EditThickness = string.Empty;
-            EditWidth = string.Empty;
-            EditHeight = string.Empty;
-            EditQty = string.Empty;
-            EditUtil = string.Empty;
+            EditColor = string.Empty;
+            EditColorType = string.Empty;
             EditPrice = string.Empty;
+            EditOptimization = string.Empty;
+            EditChargeableSqm = string.Empty;
 
-            _cachedEditWidth = 0;
-            _cachedEditHeight = 0;
-            _cachedEditQty = 0;
-            _cachedEditUtil = 0;
             _cachedEditPrice = 0;
+            _cachedEditOptimization = 65.80;
+            _cachedEditChargeableSqm = 10.03;
         }
 
         // ═══════════════════════════════════════════════════════
-        // CALCULATION ENGINE - Uses cached numeric values
+        // FORMULA
+        // ═══════════════════════════════════════════════════════
+        //
+        // SEC1 = Price ÷ (Optimization ÷ 100)
+        // SEC2 = Price ÷ 0.85
+        // BASE = SEC1 - SEC2
+        // FINAL = BASE × ChargeableSqm
         // ═══════════════════════════════════════════════════════
 
         private void RecalculateTotals()
         {
             double totalSec1 = 0;
             double totalSec2 = 0;
+            double totalBaseResult = 0;
+            double totalFinalResult = 0;
 
             foreach (var sheet in Sheets)
             {
-                CalculateSheet(sheet);
                 totalSec1 += sheet.Section1Value;
                 totalSec2 += sheet.Section2Value;
+                totalBaseResult += sheet.BaseResultValue;
+                totalFinalResult += sheet.FinalResultValue;
             }
 
-            // Use cached profit margin - no parsing
-            var result = (totalSec1 * _cachedProfitMargin) - totalSec2;
-
-            TotalSec1 = totalSec1.ToString("N0");
-            TotalSec2 = totalSec2.ToString("N0");
-            TotalResult = result.ToString("N0");
+            TotalSec1 = totalSec1.ToString("N2");
+            TotalSec2 = totalSec2.ToString("N2");
+            TotalBaseResult = totalBaseResult.ToString("N2");
+            TotalFinalResult = totalFinalResult.ToString("N2");
         }
 
         private void CalculateSheet(SheetItem sheet)
         {
-            // Use cached numeric values
-            var utilFactor = _cachedEditUtil > 0 ? _cachedEditUtil / 100.0 : 0.85;
-            var price = _cachedEditPrice > 0 ? _cachedEditPrice : sheet.Price;
+            var optimization = sheet.Optimization / 100.0;
+            var price = sheet.Price;
+            var chargeableSqm = sheet.ChargeableSqm;
 
-            // O(1) dictionary lookups - no FirstOrDefault
-            if (TryGetPurchasePrice(sheet.Category, sheet.Thickness, out var purchasePrice))
-            {
-                sheet.Section1Value = purchasePrice / utilFactor;
-            }
-            else
-            {
-                sheet.Section1Value = price / utilFactor;
-            }
+            sheet.Section1Value = price / optimization;
+            sheet.Section2Value = price / 0.85;
+            sheet.BaseResultValue = sheet.Section1Value - sheet.Section2Value;
+            sheet.FinalResultValue = sheet.BaseResultValue * chargeableSqm;
 
-            if (TryGetCategoryMultiplier(sheet.Category, out var multiplier))
-            {
-                var factor = (double)multiplier * 1.5;
-                sheet.Section2Value = price / factor;
-            }
-            else
-            {
-                sheet.Section2Value = price / 1.5;
-            }
-
-            // Update display text
-            sheet.Section1Text = sheet.Section1Value.ToString("N0");
-            sheet.Section2Text = sheet.Section2Value.ToString("N0");
-            sheet.ResultText = (sheet.Section1Value - sheet.Section2Value).ToString("N0");
+            sheet.Section1Text = sheet.Section1Value.ToString("N2");
+            sheet.Section2Text = sheet.Section2Value.ToString("N2");
+            sheet.BaseResultText = sheet.BaseResultValue.ToString("N2");
+            sheet.FinalResultText = sheet.FinalResultValue.ToString("N2");
         }
 
         private void RefreshCache()
         {
             // Refresh from service if available
-            // This triggers the service to emit Changed event
         }
 
         // ═══════════════════════════════════════════════════════
-        // INotifyPropertyChanged IMPLEMENTATION
+        // INotifyPropertyChanged
         // ═══════════════════════════════════════════════════════
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -544,11 +484,45 @@ namespace ProGlassAutomation.Views.GlassOptimization
     }
 
     // ═══════════════════════════════════════════════════════
-    // SHEET ITEM MODEL
+    // SHEET ITEM MODEL - With Live Calculation
     // ═══════════════════════════════════════════════════════
 
     public class SheetItem : INotifyPropertyChanged
     {
+        public SheetItem()
+        {
+            PropertyChanged += SheetItem_PropertyChanged;
+        }
+
+        private void SheetItem_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(Price) ||
+                e.PropertyName == nameof(Optimization) ||
+                e.PropertyName == nameof(ChargeableSqm))
+            {
+                RecalculateResults();
+            }
+        }
+
+        private void RecalculateResults()
+        {
+            var optimization = Optimization / 100.0;
+
+            if (optimization > 0)
+            {
+                Section1Value = Price / optimization;
+            }
+
+            Section2Value = Price / 0.85;
+            BaseResultValue = Section1Value - Section2Value;
+            FinalResultValue = BaseResultValue * ChargeableSqm;
+
+            Section1Text = Section1Value.ToString("N2");
+            Section2Text = Section2Value.ToString("N2");
+            BaseResultText = BaseResultValue.ToString("N2");
+            FinalResultText = FinalResultValue.ToString("N2");
+        }
+
         private int _id;
         public int Id
         {
@@ -584,39 +558,50 @@ namespace ProGlassAutomation.Views.GlassOptimization
             set => SetProperty(ref _thickness, value);
         }
 
-        private double _width;
-        public double Width
+        private string _colorType = "Standard";
+        public string ColorType
         {
-            get => _width;
-            set => SetProperty(ref _width, value);
-        }
-
-        private double _height;
-        public double Height
-        {
-            get => _height;
-            set => SetProperty(ref _height, value);
-        }
-
-        private int _qty;
-        public int Qty
-        {
-            get => _qty;
-            set => SetProperty(ref _qty, value);
-        }
-
-        private double _util = 85;
-        public double Util
-        {
-            get => _util;
-            set => SetProperty(ref _util, value);
+            get => _colorType;
+            set => SetProperty(ref _colorType, value);
         }
 
         private double _price;
         public double Price
         {
             get => _price;
-            set => SetProperty(ref _price, value);
+            set
+            {
+                if (SetProperty(ref _price, value))
+                {
+                    RecalculateResults();
+                }
+            }
+        }
+
+        private double _optimization = 65.80;
+        public double Optimization
+        {
+            get => _optimization;
+            set
+            {
+                if (SetProperty(ref _optimization, value))
+                {
+                    RecalculateResults();
+                }
+            }
+        }
+
+        private double _chargeableSqm = 10.03;
+        public double ChargeableSqm
+        {
+            get => _chargeableSqm;
+            set
+            {
+                if (SetProperty(ref _chargeableSqm, value))
+                {
+                    RecalculateResults();
+                }
+            }
         }
 
         private double _purchasePrice;
@@ -633,13 +618,7 @@ namespace ProGlassAutomation.Views.GlassOptimization
             set => SetProperty(ref _sellPrice, value);
         }
 
-        private decimal _categoryMultiplier = 1.0m;
-        public decimal CategoryMultiplier
-        {
-            get => _categoryMultiplier;
-            set => SetProperty(ref _categoryMultiplier, value);
-        }
-
+        // Calculation Results
         private double _section1Value;
         public double Section1Value
         {
@@ -652,6 +631,20 @@ namespace ProGlassAutomation.Views.GlassOptimization
         {
             get => _section2Value;
             set => SetProperty(ref _section2Value, value);
+        }
+
+        private double _baseResultValue;
+        public double BaseResultValue
+        {
+            get => _baseResultValue;
+            set => SetProperty(ref _baseResultValue, value);
+        }
+
+        private double _finalResultValue;
+        public double FinalResultValue
+        {
+            get => _finalResultValue;
+            set => SetProperty(ref _finalResultValue, value);
         }
 
         private string _section1Text = "0";
@@ -668,11 +661,18 @@ namespace ProGlassAutomation.Views.GlassOptimization
             set => SetProperty(ref _section2Text, value);
         }
 
-        private string _resultText = "0";
-        public string ResultText
+        private string _baseResultText = "0";
+        public string BaseResultText
         {
-            get => _resultText;
-            set => SetProperty(ref _resultText, value);
+            get => _baseResultText;
+            set => SetProperty(ref _baseResultText, value);
+        }
+
+        private string _finalResultText = "0";
+        public string FinalResultText
+        {
+            get => _finalResultText;
+            set => SetProperty(ref _finalResultText, value);
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -717,5 +717,42 @@ namespace ProGlassAutomation.Views.GlassOptimization
         public bool CanExecute(object? parameter) => _canExecute?.Invoke(parameter) ?? true;
 
         public void Execute(object? parameter) => _execute(parameter);
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // SHEET OPTIONS - Static collections
+    // ═══════════════════════════════════════════════════════
+
+    public static class SheetOptions
+    {
+        public static ObservableCollection<string> Colors { get; } = new()
+        {
+            "Clear", "Green", "Bronze", "Grey", "Blue", "Black"
+        };
+
+        public static ObservableCollection<string> Categories { get; } = new()
+        {
+            "Clear", "Tempered", "Laminated", "Insulated"
+        };
+
+        public static ObservableCollection<string> ThicknessOptions { get; } = new()
+        {
+            "4mm", "5mm", "6mm", "8mm", "10mm", "12mm"
+        };
+
+        public static ObservableCollection<string> ColorTypes { get; } = new()
+        {
+            "Standard", "Reflective", "Low-E", "Tinted"
+        };
+
+        public static ObservableCollection<double> OptimizationOptions { get; } = new()
+        {
+            50.0, 55.0, 60.0, 65.0, 65.80, 70.0, 75.0, 80.0, 85.0, 90.0
+        };
+
+        public static ObservableCollection<double> ChargeableSqmOptions { get; } = new()
+        {
+            0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 10.03
+        };
     }
 }
