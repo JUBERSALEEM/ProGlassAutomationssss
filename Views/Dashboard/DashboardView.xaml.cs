@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Shapes;
 using ProGlassAutomation.ViewModels;
 
 namespace ProGlassAutomation.Views.Dashboard
@@ -25,61 +26,106 @@ namespace ProGlassAutomation.Views.Dashboard
 
                 if (isActive)
                 {
+                    // ACTIVE STATE
                     StatusText.Text = "ACTIVE";
-                    StatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#059669"));
+                    StatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
+
                     DaysText.Text = Services.SubscriptionService.Instance.GetDaysRemaining().ToString();
-                    DaysText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#059669"));
+                    DaysText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
+
                     ActivateBtn.Visibility = Visibility.Collapsed;
-                    SubscriptionStatusCard.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#86EFAC"));
+
+                    StatusIndicator.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
+
+                    DaysCounterBg.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#D1FAE5"));
+
+                    SubscriptionCard.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
+
+                    SubscriptionStatusText.Text = "Active";
+                    SubscriptionStatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
+
+                    ModuleCountText.Text = "5/5 Active";
 
                     // Update all module status to ACTIVE
-                    UpdateModuleStatus(SguStatus, "ACTIVE", "#059669");
-                    UpdateModuleStatus(DguStatus, "ACTIVE", "#059669");
-                    UpdateModuleStatus(LamStatus, "ACTIVE", "#059669");
-                    UpdateModuleStatus(DguLamStatus, "ACTIVE", "#059669");
-                    UpdateModuleStatus(OptStatus, "ACTIVE", "#059669");
+                    UpdateModuleStatus(SguStatus, "ACTIVE", "#10B981", "#D1FAE5");
+                    UpdateModuleStatus(DguStatus, "ACTIVE", "#10B981", "#D1FAE5");
+                    UpdateModuleStatus(LamStatus, "ACTIVE", "#10B981", "#D1FAE5");
+                    UpdateModuleStatus(DguLamStatus, "ACTIVE", "#10B981", "#D1FAE5");
+                    UpdateModuleStatus(OptStatus, "ACTIVE", "#10B981", "#D1FAE5");
                 }
                 else
                 {
+                    // INACTIVE STATE
                     StatusText.Text = "INACTIVE";
-                    StatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#DC2626"));
+                    StatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EF4444"));
+
                     DaysText.Text = "0";
-                    DaysText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#6B7280"));
+                    DaysText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EF4444"));
+
                     ActivateBtn.Visibility = Visibility.Visible;
-                    SubscriptionStatusCard.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FCA5A5"));
+
+                    StatusIndicator.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EF4444"));
+
+                    DaysCounterBg.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FEF2F2"));
+
+                    SubscriptionCard.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E2E8F0"));
+
+                    SubscriptionStatusText.Text = "Inactive";
+                    SubscriptionStatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EF4444"));
+
+                    ModuleCountText.Text = "0/5 Active";
 
                     // Update all module status to LOCKED
-                    UpdateModuleStatus(SguStatus, "LOCKED", "#DC2626");
-                    UpdateModuleStatus(DguStatus, "LOCKED", "#DC2626");
-                    UpdateModuleStatus(LamStatus, "LOCKED", "#DC2626");
-                    UpdateModuleStatus(DguLamStatus, "LOCKED", "#DC2626");
-                    UpdateModuleStatus(OptStatus, "LOCKED", "#DC2626");
+                    UpdateModuleStatus(SguStatus, "LOCKED", "#EF4444", "#FEE2E2");
+                    UpdateModuleStatus(DguStatus, "LOCKED", "#EF4444", "#FEE2E2");
+                    UpdateModuleStatus(LamStatus, "LOCKED", "#EF4444", "#FEE2E2");
+                    UpdateModuleStatus(DguLamStatus, "LOCKED", "#EF4444", "#FEE2E2");
+                    UpdateModuleStatus(OptStatus, "LOCKED", "#EF4444", "#FEE2E2");
                 }
             }
             catch
             {
+                // ERROR STATE
                 StatusText.Text = "INACTIVE";
-                StatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#DC2626"));
+                StatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EF4444"));
                 DaysText.Text = "0";
-                DaysText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#6B7280"));
+                DaysText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EF4444"));
                 ActivateBtn.Visibility = Visibility.Visible;
+                StatusIndicator.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EF4444"));
+                DaysCounterBg.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FEF2F2"));
+                SubscriptionStatusText.Text = "Inactive";
+                SubscriptionStatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EF4444"));
+                ModuleCountText.Text = "0/5 Active";
 
-                UpdateModuleStatus(SguStatus, "LOCKED", "#DC2626");
-                UpdateModuleStatus(DguStatus, "LOCKED", "#DC2626");
-                UpdateModuleStatus(LamStatus, "LOCKED", "#DC2626");
-                UpdateModuleStatus(DguLamStatus, "LOCKED", "#DC2626");
-                UpdateModuleStatus(OptStatus, "LOCKED", "#DC2626");
+                UpdateModuleStatus(SguStatus, "LOCKED", "#EF4444", "#FEE2E2");
+                UpdateModuleStatus(DguStatus, "LOCKED", "#EF4444", "#FEE2E2");
+                UpdateModuleStatus(LamStatus, "LOCKED", "#EF4444", "#FEE2E2");
+                UpdateModuleStatus(DguLamStatus, "LOCKED", "#EF4444", "#FEE2E2");
+                UpdateModuleStatus(OptStatus, "LOCKED", "#EF4444", "#FEE2E2");
             }
         }
 
-        void UpdateModuleStatus(Border statusBorder, string text, string colorHex)
+        void UpdateModuleStatus(Border statusBorder, string text, string textColor, string bgColor)
         {
             if (statusBorder != null)
             {
-                statusBorder.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(colorHex));
-                if (statusBorder.Child is TextBlock tb)
+                statusBorder.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(bgColor));
+
+                var stackPanel = statusBorder.Child as StackPanel;
+                if (stackPanel != null)
                 {
-                    tb.Text = text;
+                    foreach (var child in stackPanel.Children)
+                    {
+                        if (child is TextBlock tb)
+                        {
+                            tb.Text = text;
+                            tb.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(textColor));
+                        }
+                        else if (child is Path path)
+                        {
+                            path.Fill = new SolidColorBrush((Color)ColorConverter.ConvertFromString(textColor));
+                        }
+                    }
                 }
             }
         }
@@ -88,7 +134,6 @@ namespace ProGlassAutomation.Views.Dashboard
         {
             try
             {
-                // Use MainViewModel instead of MainWindow
                 ViewModel?.ShowSubscriptionPlan();
             }
             catch (Exception ex)
