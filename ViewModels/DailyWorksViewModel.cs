@@ -1,11 +1,13 @@
-﻿using System;
+﻿using ProGlassAutomation.Models;
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
-using ProGlassAutomation.Models;
+using System.Windows.Media;
 
 namespace ProGlassAutomation.ViewModels
 {
@@ -55,6 +57,7 @@ namespace ProGlassAutomation.ViewModels
             SortCommand = new RelayCommand(ExecuteSort);
             CopyRowCommand = new RelayCommand(ExecuteCopyRow, CanExecuteCopyRow);
             DuplicateRowCommand = new RelayCommand(ExecuteDuplicateRow, CanExecuteDuplicateRow);
+            PrintCommand = new RelayCommand(ExecutePrint);
 
             LoadSampleData();
             CreateDataView();
@@ -231,6 +234,7 @@ namespace ProGlassAutomation.ViewModels
         public ICommand SortCommand { get; }
         public ICommand CopyRowCommand { get; }
         public ICommand DuplicateRowCommand { get; }
+        public ICommand PrintCommand { get; }
 
         #endregion
 
@@ -726,6 +730,87 @@ namespace ProGlassAutomation.ViewModels
             OnPropertyChanged(nameof(TotalQty));
             OnPropertyChanged(nameof(FilteredSQM));
             OnPropertyChanged(nameof(FilteredQty));
+        }
+
+        private void ExecutePrint(object parameter)
+        {
+            try
+            {
+                var printDialog = new PrintDialog();
+                if (printDialog.ShowDialog() == true)
+                {
+                    var printVisual = CreatePrintVisual();
+                    if (printVisual != null)
+                    {
+                        printDialog.PrintVisual(printVisual, "Daily Works Report");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Print failed: {ex.Message}", "Print Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private Grid CreatePrintVisual()
+        {
+            var grid = new Grid { Margin = new Thickness(20) };
+
+            // Header
+            var headerPanel = new StackPanel { Margin = new Thickness(0, 0, 0, 20) };
+            headerPanel.Children.Add(new TextBlock
+            {
+                Text = "DAILY WORKS REPORT",
+                FontSize = 20,
+                FontWeight = FontWeights.Bold,
+                HorizontalAlignment = HorizontalAlignment.Center
+            });
+            headerPanel.Children.Add(new TextBlock
+            {
+                Text = $"Generated: {DateTime.Now:dd-MM-yyyy HH:mm}",
+                FontSize = 10,
+                Foreground = Brushes.Gray,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 5, 0, 0)
+            });
+            headerPanel.Children.Add(new TextBlock
+            {
+                Text = $"Records: {FilteredRecords} | Total Qty: {FilteredQty} | Total SQM: {FilteredSQM:N2}",
+                FontSize = 12,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 5, 0, 0)
+            });
+            grid.Children.Add(headerPanel);
+
+            // DataGrid for printing
+            var dataGrid = new DataGrid
+            {
+                ItemsSource = FilteredDataView,
+                AutoGenerateColumns = false,
+                CanUserAddRows = false,
+                IsReadOnly = true,
+                FontSize = 10,
+                GridLinesVisibility = DataGridGridLinesVisibility.All,
+                HorizontalGridLinesBrush = Brushes.LightGray,
+                VerticalGridLinesBrush = Brushes.LightGray,
+                BorderThickness = new Thickness(1),
+                BorderBrush = Brushes.Black,
+                Margin = new Thickness(0, 10, 0, 0)
+            };
+
+            dataGrid.Columns.Add(new DataGridTextColumn { Header = "Date", Binding = new System.Windows.Data.Binding("Date") { StringFormat = "dd-MM-yyyy" }, Width = 80 });
+            dataGrid.Columns.Add(new DataGridTextColumn { Header = "Company", Binding = new System.Windows.Data.Binding("Company"), Width = 120 });
+            dataGrid.Columns.Add(new DataGridTextColumn { Header = "PI No", Binding = new System.Windows.Data.Binding("PINumber"), Width = 100 });
+            dataGrid.Columns.Add(new DataGridTextColumn { Header = "Type", Binding = new System.Windows.Data.Binding("TypeOfWork"), Width = 100 });
+            dataGrid.Columns.Add(new DataGridTextColumn { Header = "Production", Binding = new System.Windows.Data.Binding("ProductionStatus"), Width = 90 });
+            dataGrid.Columns.Add(new DataGridTextColumn { Header = "Qty", Binding = new System.Windows.Data.Binding("Qty"), Width = 50 });
+            dataGrid.Columns.Add(new DataGridTextColumn { Header = "SQM", Binding = new System.Windows.Data.Binding("SQM") { StringFormat = "N2" }, Width = 60 });
+            dataGrid.Columns.Add(new DataGridTextColumn { Header = "Status", Binding = new System.Windows.Data.Binding("Status"), Width = 70 });
+            dataGrid.Columns.Add(new DataGridTextColumn { Header = "Salesman", Binding = new System.Windows.Data.Binding("Salesman"), Width = 90 });
+
+            grid.Children.Add(dataGrid);
+
+            return grid;
         }
 
         #endregion
