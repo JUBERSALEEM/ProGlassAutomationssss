@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -14,7 +13,6 @@ namespace ProGlassAutomation.Views.GlassOptimization
             InitializeComponent();
         }
 
-        // Select all when field gets focus
         private void InputBox_GotFocus(object sender, RoutedEventArgs e)
         {
             if (sender is TextBox textBox)
@@ -26,7 +24,6 @@ namespace ProGlassAutomation.Views.GlassOptimization
             }
         }
 
-        // Select all on mouse click
         private void InputBox_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (sender is TextBox textBox)
@@ -43,142 +40,91 @@ namespace ProGlassAutomation.Views.GlassOptimization
             }
         }
 
-        // Handle Enter and Tab keys
         private void InputBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (sender is not TextBox textBox)
                 return;
 
+            var viewModel = DataContext as GlassOptimizationViewModel;
+            if (viewModel == null)
+                return;
+
             if (e.Key == Key.Enter)
             {
-                UpdateValue(textBox);
-                MoveToNextField(textBox);
+                MoveToNext(textBox);
                 e.Handled = true;
+                return;
             }
-            else if (e.Key == Key.Tab && !Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
-            {
-                UpdateValue(textBox);
 
-                if (IsLastField(textBox))
+            if (e.Key == Key.Tab && !Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+            {
+                int column = GetParentColumn(textBox);
+
+                if (column == 2)
                 {
-                    var viewModel = DataContext as GlassOptimizationViewModel;
-                    viewModel?.AddCommand.Execute(null);
+                    viewModel.AddCommand.Execute(null);
+                    e.Handled = true;
 
                     Dispatcher.BeginInvoke(new System.Action(() =>
                     {
                         FocusFirstFieldOfLastSheet();
                     }), System.Windows.Threading.DispatcherPriority.Loaded);
                 }
-                else
-                {
-                    MoveToNextField(textBox);
-                }
             }
         }
 
-        private void UpdateValue(TextBox textBox)
+        private int GetParentColumn(TextBox textBox)
         {
-            var binding = textBox.GetBindingExpression(TextBox.TextProperty);
-            binding?.UpdateSource();
-        }
-
-        private bool IsLastField(TextBox textBox)
-        {
-            var textBoxes = GetAllInputTextBoxesInSheet(textBox);
-            return textBoxes.Count > 0 && textBoxes[textBoxes.Count - 1] == textBox;
-        }
-
-        private List<TextBox> GetAllInputTextBoxesInSheet(TextBox currentBox)
-        {
-            var textBoxes = new List<TextBox>();
-
-            // Find the parent ItemsControl.Item
-            var itemContainer = FindParentContentPresenter(currentBox);
-            if (itemContainer == null)
-                return textBoxes;
-
-            // Find the inner Grid with the 4 columns
-            var innerGrid = FindInputGrid(itemContainer);
-            if (innerGrid == null)
-                return textBoxes;
-
-            // Get StackPanels and their TextBoxes in order
-            var columnTextBoxes = new Dictionary<int, TextBox>();
-
-            foreach (var child in innerGrid.Children)
+            var parent = VisualTreeHelper.GetParent(textBox);
+            while (parent != null)
             {
-                if (child is FrameworkElement fe)
+                if (parent is StackPanel sp)
+                    return Grid.GetColumn(sp);
+                parent = VisualTreeHelper.GetParent(parent);
+            }
+            return -1;
+        }
+
+        private void MoveToNext(TextBox currentBox)
+        {
+            var presenter = FindParent<ContentPresenter>(currentBox);
+            if (presenter == null)
+                return;
+
+            var grid = FindInputGrid(presenter);
+            if (grid == null)
+                return;
+
+            var textBoxes = GetTextBoxesInOrder(grid);
+            int idx = textBoxes.IndexOf(currentBox);
+
+            if (idx >= 0 && idx < textBoxes.Count - 1)
+            {
+                textBoxes[idx + 1].Focus();
+            }
+        }
+
+        private List<TextBox> GetTextBoxesInOrder(Grid grid)
+        {
+            var result = new List<TextBox>();
+
+            for (int col = 0; col <= 2; col++)
+            {
+                foreach (var child in grid.Children)
                 {
-                    var column = Grid.GetColumn(fe);
-                    if (column >= 0 && column <= 2) // Only input columns
+                    if (child is StackPanel sp && Grid.GetColumn(sp) == col)
                     {
-                        var textBox = FindTextBoxInChild(fe);
-                        if (textBox != null)
+                        var tb = GetTextBox(sp);
+                        if (tb != null)
                         {
-                            columnTextBoxes[column] = textBox;
+                            result.Add(tb);
+                            break;
                         }
                     }
                 }
             }
 
-            // Return in column order
-            textBoxes = columnTextBoxes.OrderBy(x => x.Key).Select(x => x.Value).ToList();
-            return textBoxes;
-        }
-
-        private ContentPresenter? FindParentContentPresenter(DependencyObject child)
-        {
-            var parent = VisualTreeHelper.GetParent(child);
-            while (parent != null)
-            {
-                if (parent is ContentPresenter cp)
-                    return cp;
-                parent = VisualTreeHelper.GetParent(parent);
-            }
-            return null;
-        }
-
-        private Grid? FindInputGrid(DependencyObject parent)
-        {
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
-            {
-                var child = VisualTreeHelper.GetChild(parent, i);
-
-                if (child is Grid grid && Grid.GetColumn(grid) == -1)
-                {
-                    // Check if this grid has 4 columns
-                    if (grid.ColumnDefinitions.Count == 4)
-                        return grid;
-                }
-
-                var found = FindInputGrid(child);
-                if (found != null)
-                    return found;
-            }
-            return null;
-        }
-
-        private TextBox? FindTextBoxInChild(DependencyObject parent)
-        {
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
-            {
-                var child = VisualTreeHelper.GetChild(parent, i);
-                if (child is TextBox tb)
-                    return tb;
-            }
-            return null;
-        }
-
-        private void MoveToNextField(TextBox currentBox)
-        {
-            var textBoxes = GetAllInputTextBoxesInSheet(currentBox);
-            var currentIndex = textBoxes.IndexOf(currentBox);
-
-            if (currentIndex >= 0 && currentIndex < textBoxes.Count - 1)
-            {
-                var nextBox = textBoxes[currentIndex + 1];
-                nextBox.Focus();
-            }
+            return result;
         }
 
         private void FocusFirstFieldOfLastSheet()
@@ -192,38 +138,62 @@ namespace ProGlassAutomation.Views.GlassOptimization
             if (container == null)
                 return;
 
-            var innerGrid = FindInputGrid(container);
-            if (innerGrid == null)
+            var grid = FindInputGrid(container);
+            if (grid == null)
                 return;
 
-            var columnTextBoxes = new Dictionary<int, TextBox>();
-
-            foreach (var child in innerGrid.Children)
+            foreach (var child in grid.Children)
             {
-                if (child is FrameworkElement fe)
+                if (child is StackPanel sp && Grid.GetColumn(sp) == 0)
                 {
-                    var column = Grid.GetColumn(fe);
-                    if (column >= 0 && column <= 2)
+                    var tb = GetTextBox(sp);
+                    if (tb != null)
                     {
-                        var textBox = FindTextBoxInChild(fe);
-                        if (textBox != null)
-                        {
-                            columnTextBoxes[column] = textBox;
-                        }
+                        tb.Focus();
+                        Dispatcher.BeginInvoke(new System.Action(() => tb.SelectAll()),
+                            System.Windows.Threading.DispatcherPriority.Input);
+                        return;
                     }
                 }
             }
+        }
 
-            var textBoxes = columnTextBoxes.OrderBy(x => x.Key).Select(x => x.Value).ToList();
-
-            if (textBoxes.Count > 0)
+        private TextBox? GetTextBox(DependencyObject parent)
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
             {
-                textBoxes[0].Focus();
-                Dispatcher.BeginInvoke(new System.Action(() =>
-                {
-                    textBoxes[0].SelectAll();
-                }), System.Windows.Threading.DispatcherPriority.Input);
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is TextBox tb)
+                    return tb;
             }
+            return null;
+        }
+
+        private T? FindParent<T>(DependencyObject child) where T : DependencyObject
+        {
+            var parent = VisualTreeHelper.GetParent(child);
+            while (parent != null)
+            {
+                if (parent is T result)
+                    return result;
+                parent = VisualTreeHelper.GetParent(parent);
+            }
+            return null;
+        }
+
+        private Grid? FindInputGrid(DependencyObject parent)
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is Grid g && g.ColumnDefinitions.Count == 4)
+                    return g;
+
+                var found = FindInputGrid(child);
+                if (found != null)
+                    return found;
+            }
+            return null;
         }
 
         private T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
@@ -231,7 +201,6 @@ namespace ProGlassAutomation.Views.GlassOptimization
             for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
             {
                 var child = VisualTreeHelper.GetChild(parent, i);
-
                 if (child is T result)
                     return result;
 

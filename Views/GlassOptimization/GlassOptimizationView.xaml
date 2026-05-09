@@ -8,10 +8,10 @@
     </UserControl.DataContext>
 
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <vm:CountToVisibilityConverter x:Key="CountToVis"/>
 
         <!-- ═══════════════════════════════════════════════════════
-             COLORFUL SCROLLBAR STYLES
+             SCROLLBAR STYLES
              ═══════════════════════════════════════════════════════ -->
 
         <Style x:Key="ColorfulScrollBar" TargetType="ScrollBar">
@@ -208,6 +208,7 @@
             <Setter Property="Foreground" Value="#4338CA"/>
             <Setter Property="CaretBrush" Value="#4338CA"/>
             <Setter Property="AcceptsReturn" Value="False"/>
+            <Setter Property="Language" Value="en-US"/>
         </Style>
 
         <Style x:Key="FieldLabel" TargetType="TextBlock">
@@ -280,9 +281,6 @@
                                             <Border Background="#E0E7FF" CornerRadius="6" Padding="8,4">
                                                 <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="Bold" Foreground="#3730A3"/>
                                             </Border>
-                                            <TextBlock VerticalAlignment="Center" Margin="8,0,0,0" FontSize="10" Foreground="#64748B">
-                                                <Run Text="{Binding Category}"/> • <Run Text="{Binding Thickness}"/> • <Run Text="{Binding Color}"/> • <Run Text="{Binding ColorType}"/>
-                                            </TextBlock>
                                         </StackPanel>
 
                                         <Button Grid.Column="1" Content="✕" 
@@ -305,7 +303,8 @@
                                             <StackPanel Grid.Column="0" Margin="0,0,6,0">
                                                 <TextBlock Text="PRICE (AED)" Style="{StaticResource FieldLabel}" Foreground="#818CF8"/>
                                                 <TextBox Style="{StaticResource InputBox}"
-                                                         Text="{Binding Price, UpdateSourceTrigger=LostFocus, StringFormat={}{0:G}}"
+                                                         Text="{Binding PriceText, UpdateSourceTrigger=PropertyChanged}"
+                                                         vm:DecimalInputBehavior.Enable="True"
                                                          GotFocus="InputBox_GotFocus"
                                                          PreviewMouseLeftButtonDown="InputBox_PreviewMouseLeftButtonDown"
                                                          PreviewKeyDown="InputBox_PreviewKeyDown"/>
@@ -315,7 +314,8 @@
                                             <StackPanel Grid.Column="1" Margin="3,0">
                                                 <TextBlock Text="OPTIMIZATION (%)" Style="{StaticResource FieldLabel}" Foreground="#818CF8"/>
                                                 <TextBox Style="{StaticResource InputBox}"
-                                                         Text="{Binding Optimization, UpdateSourceTrigger=LostFocus, StringFormat={}{0:G}}"
+                                                         Text="{Binding OptimizationText, UpdateSourceTrigger=PropertyChanged}"
+                                                         vm:DecimalInputBehavior.Enable="True"
                                                          GotFocus="InputBox_GotFocus"
                                                          PreviewMouseLeftButtonDown="InputBox_PreviewMouseLeftButtonDown"
                                                          PreviewKeyDown="InputBox_PreviewKeyDown"/>
@@ -325,7 +325,8 @@
                                             <StackPanel Grid.Column="2" Margin="3,0,0,0">
                                                 <TextBlock Text="CHARGEABLE SQM" Style="{StaticResource FieldLabel}" Foreground="#818CF8"/>
                                                 <TextBox Style="{StaticResource InputBox}"
-                                                         Text="{Binding ChargeableSqm, UpdateSourceTrigger=LostFocus, StringFormat={}{0:G}}"
+                                                         Text="{Binding ChargeableSqmText, UpdateSourceTrigger=PropertyChanged}"
+                                                         vm:DecimalInputBehavior.Enable="True"
                                                          GotFocus="InputBox_GotFocus"
                                                          PreviewMouseLeftButtonDown="InputBox_PreviewMouseLeftButtonDown"
                                                          PreviewKeyDown="InputBox_PreviewKeyDown"/>
@@ -351,11 +352,11 @@
 
                 <!-- Empty State -->
                 <Border Style="{StaticResource CardOrange}" Padding="40"
-                        Visibility="{Binding Sheets.Count, Converter={StaticResource BoolToVis}, ConverterParameter=Inverse}">
+                        Visibility="{Binding Sheets.Count, Converter={StaticResource CountToVis}}">
                     <StackPanel HorizontalAlignment="Center">
                         <TextBlock Text="🪟" FontSize="40" HorizontalAlignment="Center" Margin="0,0,0,10"/>
                         <TextBlock Text="No sheets added yet" FontSize="14" FontWeight="Bold" Foreground="#B45309" HorizontalAlignment="Center"/>
-                        <TextBlock Text="Click '+ Add' to start calculating" FontSize="11" Foreground="#D97706" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        <TextBlock Text="Click '+ Add' or press Tab on last field" FontSize="11" Foreground="#D97706" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Border>
 
