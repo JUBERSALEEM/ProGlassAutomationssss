@@ -64,6 +64,7 @@ namespace ProGlassAutomation.ViewModels
             SaveDeliveryCommand = new RelayCommand(ExecuteSaveDelivery);
             DeleteDeliveryItemCommand = new RelayCommand(ExecuteDeleteDeliveryItem, CanExecuteDeleteDeliveryItem);
             ViewDetailsCommand = new RelayCommand(ExecuteViewDetails, CanExecuteViewDetails);
+            DeleteSelectedCommand = new RelayCommand(ExecuteDeleteSelected, CanExecuteDeleteSelected);
 
             LoadSampleData();
             CreateDataView();
@@ -276,6 +277,7 @@ namespace ProGlassAutomation.ViewModels
         public ICommand SaveDeliveryCommand { get; }
         public ICommand DeleteDeliveryItemCommand { get; }
         public ICommand ViewDetailsCommand { get; }
+        public ICommand DeleteSelectedCommand { get; }
 
         #endregion
 

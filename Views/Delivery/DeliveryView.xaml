@@ -123,6 +123,34 @@
             </Setter>
         </Style>
 
+        <Style x:Key="DangerOutlineButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#EF4444"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Padding" Value="18,10"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="BorderBrush" Value="#EF4444"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="25" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#FEE2E2"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="SecondaryButton" TargetType="Button">
             <Setter Property="Background" Value="#6B7280"/>
             <Setter Property="Foreground" Value="White"/>
@@ -414,13 +442,32 @@
             <Border.Effect>
                 <DropShadowEffect BlurRadius="15" ShadowDepth="2" Opacity="0.1"/>
             </Border.Effect>
-            <DataGrid ItemsSource="{Binding FilteredDataView}" 
+            <DataGrid x:Name="MainDataGrid"
+                      ItemsSource="{Binding FilteredDataView}" 
                       SelectedItem="{Binding SelectedDataRowView}"
+                      SelectionMode="Extended"
+                      SelectionUnit="FullRow"
                       MouseDoubleClick="DataGrid_MouseDoubleClick"
                       Style="{StaticResource ModernDataGrid}" 
                       CellStyle="{StaticResource ModernCell}"
-                      RowStyle="{StaticResource ModernRowStyle}">
+                      RowStyle="{StaticResource ModernRowStyle}"
+                      SelectionChanged="MainDataGrid_SelectionChanged">
                 <DataGrid.Columns>
+                    <!-- SELECT CHECKBOX COLUMN -->
+                    <DataGridTemplateColumn Header="" Width="45">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <CheckBox HorizontalAlignment="Center" 
+                                          IsChecked="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected, Mode=OneWay}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                        <DataGridTemplateColumn.HeaderTemplate>
+                            <DataTemplate>
+                                <CheckBox x:Name="SelectAllCheckBox" Click="HeaderSelectAll_Click"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.HeaderTemplate>
+                    </DataGridTemplateColumn>
+
                     <DataGridTemplateColumn Header="DATE" Width="100" HeaderStyle="{StaticResource HeaderGreen}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
@@ -591,6 +638,7 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" HorizontalAlignment="Center">
@@ -628,7 +676,12 @@
                     <TextBlock Text="{Binding TotalOrderSQM, StringFormat=N2}" Foreground="White" FontSize="24" FontWeight="Bold"/>
                 </StackPanel>
 
-                <StackPanel Grid.Column="7" Orientation="Horizontal">
+                <StackPanel Grid.Column="7" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Text="Selected: " Foreground="#D1FAE5" FontSize="12" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                    <TextBlock Text="{Binding SelectedCount}" Foreground="#FCA5A5" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="8" Orientation="Horizontal">
                     <Button Content="📋 Details" Style="{StaticResource PrimaryButton}" 
                             Command="{Binding ViewDetailsCommand}" 
                             Margin="0,0,10,0"/>
@@ -641,7 +694,11 @@
                             Margin="0,0,10,0"/>
                     <Button Content="Delete" Style="{StaticResource DangerButton}" 
                             Command="{Binding DeleteCommand}" 
-                            CommandParameter="{Binding SelectedDataRowView}"/>
+                            CommandParameter="{Binding SelectedDataRowView}"
+                            Margin="0,0,10,0"/>
+                    <Button Content="Delete Selected" Style="{StaticResource DangerOutlineButton}" 
+                            Command="{Binding DeleteSelectedCommand}" 
+                            CommandParameter="{Binding ElementName=MainDataGrid}"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -660,14 +717,12 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Header -->
                     <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,20">
                         <TextBlock Text="DELIVERY DETAILS" FontSize="20" FontWeight="Bold" Foreground="#059669"/>
                         <TextBlock Text=" - " FontSize="20" Foreground="#64748B"/>
                         <TextBlock Text="{Binding SelectedOrder.PINumber}" FontSize="20" FontWeight="Bold" Foreground="#059669"/>
                     </StackPanel>
 
-                    <!-- Order Info -->
                     <Border Grid.Row="1" CornerRadius="12" Background="#F0FDF4" Padding="16" Margin="0,0,0,16">
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -711,7 +766,6 @@
                         </Grid>
                     </Border>
 
-                    <!-- Delivery Items Grid -->
                     <Border Grid.Row="2" CornerRadius="12" BorderBrush="#E5E7EB" BorderThickness="1" Margin="0,0,0,16">
                         <Grid>
                             <Grid.RowDefinitions>
@@ -773,7 +827,6 @@
                         </Grid>
                     </Border>
 
-                    <!-- Action Buttons -->
                     <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button Content="➕ Add Delivery" Style="{StaticResource SuccessButton}" 
                                 Command="{Binding AddDeliveryCommand}" 

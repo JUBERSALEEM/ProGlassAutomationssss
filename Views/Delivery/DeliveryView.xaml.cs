@@ -21,5 +21,28 @@ namespace ProGlassAutomation.Views.Delivery
                 vm.ViewDetailsCommand.Execute(null);
             }
         }
+
+        private void MainDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (DataContext is DeliveryViewModel vm)
+            {
+                vm.SetSelectedCount(MainDataGrid?.SelectedItems?.Count ?? 0);
+            }
+        }
+
+        private void HeaderSelectAll_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is CheckBox checkBox && MainDataGrid != null)
+            {
+                if (checkBox.IsChecked == true)
+                {
+                    MainDataGrid.SelectAll();
+                }
+                else
+                {
+                    MainDataGrid.UnselectAll();
+                }
+            }
+        }
     }
 }
