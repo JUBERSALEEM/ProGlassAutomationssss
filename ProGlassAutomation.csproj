@@ -26,11 +26,4 @@
 	<ItemGroup>
 		<None Include="assets\**\*" CopyToOutputDirectory="PreserveNewest" />
 	</ItemGroup>
-
-	<ItemGroup>
-		<Compile Remove="ProGlassAutomation\**" />
-		<EmbeddedResource Remove="ProGlassAutomation\**" />
-		<None Remove="ProGlassAutomation\**" />
-		<Page Remove="ProGlassAutomation\**" />
-	</ItemGroup>
 </Project>

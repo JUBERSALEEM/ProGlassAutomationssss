@@ -51,6 +51,8 @@ namespace ProGlassAutomation.ViewModels
                 "AluminumStore" => CreatePlaceholder("Aluminum Store - Coming Soon!"),
                 "SpacerStore" => CreatePlaceholder("Spacer Store - Coming Soon!"),
                 "DailyWorks" => new Views.DailyWorksView(),
+                "Profile" => new Views.Profile.ProfileView(),
+                "Users" => CreatePlaceholder("Users - Coming Soon!"),
                 _ => null
             };
 
@@ -221,41 +223,31 @@ namespace ProGlassAutomation.ViewModels
         // LICENSE CALLBACKS - Exact signature matching original
         // ═══════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Called when license is successfully activated (from SubscriptionPlanView, PaymentView, etc.)
-        /// </summary>
         public void OnLicenseActivated(string key)
         {
             _currentKey = key;
             _isLicensed = true;
             SaveKey(key);
 
-            // Notify UI state changes
             Notify(nameof(IsLicensed));
             Notify(nameof(CalculatorsEnabled));
             Notify(nameof(IsLocked));
 
-            // Reinitialize pages (clear cache) and show dashboard
             _viewCache.Clear();
             InitializePages();
             ShowDashboard();
         }
 
-        /// <summary>
-        /// Called when license is deactivated
-        /// </summary>
         public void OnLicenseDeactivated()
         {
             _currentKey = "";
             _isLicensed = false;
             DeleteKey();
 
-            // Notify UI state changes
             Notify(nameof(IsLicensed));
             Notify(nameof(CalculatorsEnabled));
             Notify(nameof(IsLocked));
 
-            // Reinitialize pages and show dashboard
             _viewCache.Clear();
             InitializePages();
             ShowDashboard();
@@ -263,39 +255,20 @@ namespace ProGlassAutomation.ViewModels
 
         private void InitializePages()
         {
-            // Clear all cached pages to force fresh instances
             _viewCache.Clear();
         }
 
         // ═══════════════════════════════════════════════════════
-        // NAVIGATION HELPERS - Matching original MainWindow signatures
+        // NAVIGATION HELPERS
         // ═══════════════════════════════════════════════════════
 
-        public void ShowDashboard()
-        {
-            _viewCache.Clear();
-            Navigate("Dashboard");
-        }
+        public void ShowDashboard() => Navigate("Dashboard");
+        public void ShowSubscriptionPlan() => Navigate("Subscription");
+        public void ShowSheetStore() => Navigate("SheetStore");
+        public void ShowDailyWorks() => Navigate("DailyWorks");
+        public void ShowProfile() => Navigate("Profile");
+        public void ShowUsers() => Navigate("Users");
 
-        public void ShowSubscriptionPlan()
-        {
-            _viewCache.Clear();
-            Navigate("Subscription");
-        }
-
-        public void ShowSheetStore()
-        {
-            _viewCache.Clear();
-            Navigate("SheetStore");
-        }
-
-        public void ShowDailyWorks()
-        {
-            _viewCache.Clear();
-            Navigate("DailyWorks");
-        }
-
-        // Private navigation methods (called from click handlers)
         private void ShowSGUCalculator() => Navigate("SGU");
         private void ShowDGUCalculator() => Navigate("DGU");
         private void ShowLaminationCalculator() => Navigate("Lamination");
@@ -303,7 +276,7 @@ namespace ProGlassAutomation.ViewModels
         private void ShowGlassOptimization() => Navigate("Optimization");
 
         // ═══════════════════════════════════════════════════════
-        // CLICK COMMANDS - Exposed for XAML binding
+        // CLICK COMMANDS
         // ═══════════════════════════════════════════════════════
 
         public ICommand SGUCommand => new RelayCommand(o =>
@@ -341,11 +314,10 @@ namespace ProGlassAutomation.ViewModels
         public ICommand SubscriptionPlanCommand => new RelayCommand(o => ShowSubscriptionPlan());
         public ICommand LogoCommand => new RelayCommand(o => ShowDashboard());
         public ICommand DailyWorksCommand => new RelayCommand(o => ShowDailyWorks());
+        public ICommand ProfileCommand => new RelayCommand(o => ShowProfile());
+        public ICommand UsersCommand => new RelayCommand(o => ShowUsers());
     }
 
-    // ═══════════════════════════════════════════════════════
-    // RELAY COMMAND - MVVM infrastructure
-    // ═══════════════════════════════════════════════════════
     public class RelayCommand : ICommand
     {
         private readonly Action<object> _exec;
