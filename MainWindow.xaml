@@ -12,19 +12,24 @@
         <DropShadowEffect x:Key="CardShadow" BlurRadius="20" ShadowDepth="3" Opacity="0.12"/>
         <DropShadowEffect x:Key="ButtonShadow" BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
 
-        <!-- Header Gradient -->
+        <!-- Unified Header Gradient -->
         <LinearGradientBrush x:Key="HeaderGradient" StartPoint="0,0" EndPoint="1,1">
             <GradientStop Color="#1E40AF" Offset="0"/>
-            <GradientStop Color="#3B82F6" Offset="0.4"/>
-            <GradientStop Color="#60A5FA" Offset="0.7"/>
+            <GradientStop Color="#3B82F6" Offset="0.5"/>
             <GradientStop Color="#2563EB" Offset="1"/>
         </LinearGradientBrush>
 
-        <!-- Sidebar Gradient -->
+        <!-- Unified Sidebar Background -->
         <LinearGradientBrush x:Key="SidebarGradient" StartPoint="0,0" EndPoint="0,1">
             <GradientStop Color="#FFFFFF" Offset="0"/>
             <GradientStop Color="#EFF6FF" Offset="0.5"/>
             <GradientStop Color="#DBEAFE" Offset="1"/>
+        </LinearGradientBrush>
+
+        <!-- Section Gradient -->
+        <LinearGradientBrush x:Key="SectionGradient" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#1E40AF" Offset="0"/>
+            <GradientStop Color="#3B82F6" Offset="1"/>
         </LinearGradientBrush>
 
         <!-- Content Gradient -->
@@ -97,50 +102,6 @@
             </Setter>
         </Style>
 
-        <!-- Calc Button Style -->
-        <Style x:Key="CalcButton" TargetType="Button">
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontSize" Value="11"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Padding" Value="12"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="btnBorder" CornerRadius="10" Padding="{TemplateBinding Padding}">
-                            <Border.Background>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                    <GradientStop Color="#2563EB" Offset="0"/>
-                                    <GradientStop Color="#1E40AF" Offset="1"/>
-                                </LinearGradientBrush>
-                            </Border.Background>
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.2"/>
-                            </Border.Effect>
-                            <Grid>
-                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                <Border x:Name="lockOverlay" Background="#000000" Opacity="0.45" CornerRadius="10" Visibility="Collapsed">
-                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                        <TextBlock Text="🔒" FontSize="14"/>
-                                        <TextBlock Text="LOCKED" Foreground="White" FontSize="8" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,3,0,0"/>
-                                    </StackPanel>
-                                </Border>
-                            </Grid>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="btnBorder" Property="Opacity" Value="0.95"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="lockOverlay" Property="Visibility" Value="Visible"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
         <!-- Nav Button Style -->
         <Style x:Key="NavButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
@@ -155,7 +116,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Opacity" Value="0.95"/>
+                                <Setter TargetName="border" Property="Opacity" Value="0.9"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -163,24 +124,16 @@
             </Setter>
         </Style>
 
-        <!-- Menu Button Style -->
-        <Style x:Key="MenuButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Padding" Value="0"/>
-            <Setter Property="Template">
+        <!-- Section Header Style -->
+        <Style x:Key="SectionHeaderStyle" TargetType="Border">
+            <Setter Property="CornerRadius" Value="12,12,0,0"/>
+            <Setter Property="Padding" Value="14,12"/>
+            <Setter Property="Background">
                 <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="bg" Background="{TemplateBinding Background}" CornerRadius="10" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="bg" Property="Opacity" Value="0.95"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#1E40AF" Offset="0"/>
+                        <GradientStop Color="#3B82F6" Offset="1"/>
+                    </LinearGradientBrush>
                 </Setter.Value>
             </Setter>
         </Style>
@@ -240,12 +193,12 @@
                         </Border.Background>
                         <StackPanel Orientation="Horizontal">
                             <StackPanel Margin="0,0,16,0">
-                                <TextBlock Text="DATE" Foreground="#60A5FA" FontWeight="SemiBold" FontSize="9"/>
+                                <TextBlock Text="📅 DATE" Foreground="#60A5FA" FontWeight="SemiBold" FontSize="9"/>
                                 <TextBlock x:Name="CurrentDateText" FontSize="14" FontWeight="Bold" Foreground="#1E40AF" Margin="0,4,0,0"/>
                             </StackPanel>
                             <Border Width="1" Background="#BFDBFE"/>
                             <StackPanel Margin="16,0,0,0">
-                                <TextBlock Text="TIME" Foreground="#60A5FA" FontWeight="SemiBold" FontSize="9"/>
+                                <TextBlock Text="🕐 TIME" Foreground="#60A5FA" FontWeight="SemiBold" FontSize="9"/>
                                 <TextBlock x:Name="ClockText" FontSize="14" FontWeight="Bold" Foreground="#1E40AF" Margin="0,4,0,0"/>
                             </StackPanel>
                         </StackPanel>
@@ -259,24 +212,24 @@
             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <StackPanel Margin="12">
 
-                    <!-- Dashboard Section -->
+                    <!-- SECTION 1: DASHBOARD -->
                     <Border CornerRadius="12" Margin="0,0,0,10" Effect="{StaticResource ButtonShadow}">
                         <Border.Background>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                <GradientStop Color="#10B981" Offset="0"/>
-                                <GradientStop Color="#059669" Offset="1"/>
+                                <GradientStop Color="#1E40AF" Offset="0"/>
+                                <GradientStop Color="#3B82F6" Offset="1"/>
                             </LinearGradientBrush>
                         </Border.Background>
                         <StackPanel>
-                            <Border CornerRadius="12,12,0,0" Padding="14,12">
+                            <Border Style="{StaticResource SectionHeaderStyle}">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="◉" FontSize="11" Foreground="#A7F3D0" VerticalAlignment="Center"/>
-                                    <TextBlock Text="DASHBOARD" FontSize="10" FontWeight="Bold" Foreground="#D1FAE5" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="📊" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                                    <TextBlock Text="DASHBOARD" FontSize="10" FontWeight="Bold" Foreground="#FFFFFF" Margin="8,0,0,0" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
                             <StackPanel Margin="10,10,10,14">
                                 <Button x:Name="BtnDashboard" Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="Dashboard" MouseEnter="BtnDashboard_MouseEnter" MouseLeave="BtnDashboard_MouseLeave">
-                                    <Border CornerRadius="10" Padding="14" Background="#34D399" Cursor="Hand" RenderTransformOrigin="0.5,0.5">
+                                    <Border CornerRadius="10" Padding="12" Background="#3B82F6" Cursor="Hand" RenderTransformOrigin="0.5,0.5">
                                         <Border.RenderTransform>
                                             <ScaleTransform x:Name="DashScale" ScaleX="1" ScaleY="1"/>
                                         </Border.RenderTransform>
@@ -284,13 +237,13 @@
                                             <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
                                         </Border.Effect>
                                         <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="📊" FontSize="16" VerticalAlignment="Center"/>
+                                            <TextBlock Text="📈" FontSize="18" Foreground="White" VerticalAlignment="Center"/>
                                             <TextBlock Text="Overview" FontSize="13" FontWeight="SemiBold" Foreground="White" Margin="10,0,0,0" VerticalAlignment="Center"/>
                                         </StackPanel>
                                     </Border>
                                 </Button>
                                 <Button x:Name="BtnSubscription" Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="Subscription" Margin="0,8,0,0" MouseEnter="BtnSubscription_MouseEnter" MouseLeave="BtnSubscription_MouseLeave">
-                                    <Border CornerRadius="10" Padding="14" Background="#FBBF24" Cursor="Hand" RenderTransformOrigin="0.5,0.5">
+                                    <Border CornerRadius="10" Padding="12" Background="#60A5FA" Cursor="Hand" RenderTransformOrigin="0.5,0.5">
                                         <Border.RenderTransform>
                                             <ScaleTransform x:Name="SubScale" ScaleX="1" ScaleY="1"/>
                                         </Border.RenderTransform>
@@ -298,7 +251,7 @@
                                             <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
                                         </Border.Effect>
                                         <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="⭐" FontSize="16" VerticalAlignment="Center"/>
+                                            <TextBlock Text="⭐" FontSize="18" Foreground="White" VerticalAlignment="Center"/>
                                             <TextBlock Text="Subscription Plans" FontSize="13" FontWeight="SemiBold" Foreground="White" Margin="10,0,0,0" VerticalAlignment="Center"/>
                                         </StackPanel>
                                     </Border>
@@ -307,29 +260,29 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Calculators Section -->
+                    <!-- SECTION 2: CALCULATORS -->
                     <Border CornerRadius="12" Margin="0,0,0,10" Effect="{StaticResource ButtonShadow}">
                         <Border.Background>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                <GradientStop Color="#3B82F6" Offset="0"/>
-                                <GradientStop Color="#2563EB" Offset="1"/>
+                                <GradientStop Color="#2563EB" Offset="0"/>
+                                <GradientStop Color="#1D4ED8" Offset="1"/>
                             </LinearGradientBrush>
                         </Border.Background>
                         <StackPanel>
-                            <Border CornerRadius="12,12,0,0" Padding="14,12">
+                            <Border Style="{StaticResource SectionHeaderStyle}">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="⚡" FontSize="12" Foreground="#BFDBFE" VerticalAlignment="Center"/>
-                                        <TextBlock Text="CALCULATORS" FontSize="10" FontWeight="Bold" Foreground="#DBEAFE" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="🧮" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                                        <TextBlock Text="CALCULATORS" FontSize="10" FontWeight="Bold" Foreground="#FFFFFF" Margin="8,0,0,0" VerticalAlignment="Center"/>
                                     </StackPanel>
                                     <Border Grid.Column="1" CornerRadius="6" Padding="8,4">
                                         <Border.Style>
                                             <Style TargetType="Border">
-                                                <Setter Property="Background" Value="#FEF3C7"/>
+                                                <Setter Property="Background" Value="#DBEAFE"/>
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding IsLicensed}" Value="True">
                                                         <Setter Property="Background" Value="#D1FAE5"/>
@@ -341,7 +294,7 @@
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="Text" Value="🔒 LOCKED"/>
-                                                    <Setter Property="Foreground" Value="#D97706"/>
+                                                    <Setter Property="Foreground" Value="#1E40AF"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding IsLicensed}" Value="True">
                                                             <Setter Property="Text" Value="✓ ACTIVE"/>
@@ -359,7 +312,7 @@
 
                                 <!-- SGU Calculator -->
                                 <Button x:Name="BtnSGU" Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="SGU" IsEnabled="{Binding IsLicensed}" MouseEnter="CalcBtn_MouseEnter" MouseLeave="CalcBtn_MouseLeave">
-                                    <Border x:Name="BorderSGU" CornerRadius="10" Padding="12" Background="#60A5FA" Cursor="Hand" RenderTransformOrigin="0.5,0.5">
+                                    <Border x:Name="BorderSGU" CornerRadius="10" Padding="12" Background="#3B82F6" Cursor="Hand" RenderTransformOrigin="0.5,0.5">
                                         <Border.RenderTransform>
                                             <ScaleTransform x:Name="ScaleSGU" ScaleX="1" ScaleY="1"/>
                                         </Border.RenderTransform>
@@ -367,15 +320,18 @@
                                             <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
                                         </Border.Effect>
                                         <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="⬜" FontSize="20" Foreground="White" VerticalAlignment="Center"/>
-                                            <TextBlock Text="SGU Calculator" FontSize="12" FontWeight="SemiBold" Foreground="White" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="🪟" FontSize="18" Foreground="White" VerticalAlignment="Center"/>
+                                            <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                                                <TextBlock Text="SGU Calculator" FontSize="12" FontWeight="SemiBold" Foreground="White"/>
+                                                <TextBlock Text="Single glass unit" FontSize="9" Foreground="#BFDBFE"/>
+                                            </StackPanel>
                                         </StackPanel>
                                     </Border>
                                 </Button>
 
                                 <!-- DGU Calculator -->
                                 <Button x:Name="BtnDGU" Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="DGU" IsEnabled="{Binding IsLicensed}" Margin="0,8,0,0" MouseEnter="CalcBtn_MouseEnter" MouseLeave="CalcBtn_MouseLeave">
-                                    <Border x:Name="BorderDGU" CornerRadius="10" Padding="12" Background="#3B82F6" Cursor="Hand" RenderTransformOrigin="0.5,0.5">
+                                    <Border x:Name="BorderDGU" CornerRadius="10" Padding="12" Background="#2563EB" Cursor="Hand" RenderTransformOrigin="0.5,0.5">
                                         <Border.RenderTransform>
                                             <ScaleTransform x:Name="ScaleDGU" ScaleX="1" ScaleY="1"/>
                                         </Border.RenderTransform>
@@ -383,18 +339,18 @@
                                             <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
                                         </Border.Effect>
                                         <StackPanel Orientation="Horizontal">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="⬜" FontSize="16" Foreground="White" VerticalAlignment="Center"/>
-                                                <TextBlock Text="⬜" FontSize="16" Foreground="White" Margin="2,0,0,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="🪟🪟" FontSize="14" Foreground="White" VerticalAlignment="Center"/>
+                                            <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                                                <TextBlock Text="DGU Calculator" FontSize="12" FontWeight="SemiBold" Foreground="White"/>
+                                                <TextBlock Text="Double glass unit" FontSize="9" Foreground="#BFDBFE"/>
                                             </StackPanel>
-                                            <TextBlock Text="DGU Calculator" FontSize="12" FontWeight="SemiBold" Foreground="White" Margin="10,0,0,0" VerticalAlignment="Center"/>
                                         </StackPanel>
                                     </Border>
                                 </Button>
 
                                 <!-- Lamination -->
                                 <Button x:Name="BtnLam" Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="Lamination" IsEnabled="{Binding IsLicensed}" Margin="0,8,0,0" MouseEnter="CalcBtn_MouseEnter" MouseLeave="CalcBtn_MouseLeave">
-                                    <Border x:Name="BorderLam" CornerRadius="10" Padding="12" Background="#2563EB" Cursor="Hand" RenderTransformOrigin="0.5,0.5">
+                                    <Border x:Name="BorderLam" CornerRadius="10" Padding="12" Background="#1D4ED8" Cursor="Hand" RenderTransformOrigin="0.5,0.5">
                                         <Border.RenderTransform>
                                             <ScaleTransform x:Name="ScaleLam" ScaleX="1" ScaleY="1"/>
                                         </Border.RenderTransform>
@@ -402,12 +358,11 @@
                                             <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
                                         </Border.Effect>
                                         <StackPanel Orientation="Horizontal">
-                                            <StackPanel>
-                                                <TextBlock Text="▬▬▬" FontSize="10" Foreground="White" HorizontalAlignment="Center"/>
-                                                <TextBlock Text="═════" FontSize="10" Foreground="White" HorizontalAlignment="Center"/>
-                                                <TextBlock Text="▬▬▬" FontSize="10" Foreground="White" HorizontalAlignment="Center"/>
+                                            <TextBlock Text="🔲" FontSize="18" Foreground="White" VerticalAlignment="Center"/>
+                                            <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                                                <TextBlock Text="Lamination" FontSize="12" FontWeight="SemiBold" Foreground="White"/>
+                                                <TextBlock Text="Laminated glass" FontSize="9" Foreground="#BFDBFE"/>
                                             </StackPanel>
-                                            <TextBlock Text="Lamination" FontSize="12" FontWeight="SemiBold" Foreground="White" Margin="10,0,0,0" VerticalAlignment="Center"/>
                                         </StackPanel>
                                     </Border>
                                 </Button>
@@ -422,25 +377,18 @@
                                             <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
                                         </Border.Effect>
                                         <StackPanel Orientation="Horizontal">
-                                            <StackPanel>
-                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                    <TextBlock Text="⬜" FontSize="12" Foreground="White"/>
-                                                    <TextBlock Text="⬜" FontSize="12" Foreground="White" Margin="2,0,0,0"/>
-                                                </StackPanel>
-                                                <TextBlock Text="═════" FontSize="8" Foreground="White" HorizontalAlignment="Center"/>
-                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                    <TextBlock Text="⬜" FontSize="12" Foreground="White"/>
-                                                    <TextBlock Text="⬜" FontSize="12" Foreground="White" Margin="2,0,0,0"/>
-                                                </StackPanel>
+                                            <TextBlock Text="🪟🔲🪟" FontSize="14" Foreground="White" VerticalAlignment="Center"/>
+                                            <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                                                <TextBlock Text="DGU + Lamination" FontSize="12" FontWeight="SemiBold" Foreground="White"/>
+                                                <TextBlock Text="Combined calculation" FontSize="9" Foreground="#BFDBFE"/>
                                             </StackPanel>
-                                            <TextBlock Text="DGU + Lamination" FontSize="12" FontWeight="SemiBold" Foreground="White" Margin="10,0,0,0" VerticalAlignment="Center"/>
                                         </StackPanel>
                                     </Border>
                                 </Button>
 
                                 <!-- Optimization -->
                                 <Button x:Name="BtnOpt" Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="Optimization" IsEnabled="{Binding IsLicensed}" Margin="0,8,0,0" MouseEnter="CalcBtn_MouseEnter" MouseLeave="CalcBtn_MouseLeave">
-                                    <Border x:Name="BorderOpt" CornerRadius="10" Padding="12" Background="#1D4ED8" Cursor="Hand" RenderTransformOrigin="0.5,0.5">
+                                    <Border x:Name="BorderOpt" CornerRadius="10" Padding="12" Background="#1E3A8A" Cursor="Hand" RenderTransformOrigin="0.5,0.5">
                                         <Border.RenderTransform>
                                             <ScaleTransform x:Name="ScaleOpt" ScaleX="1" ScaleY="1"/>
                                         </Border.RenderTransform>
@@ -448,8 +396,11 @@
                                             <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
                                         </Border.Effect>
                                         <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="✂" FontSize="20" Foreground="White" VerticalAlignment="Center"/>
-                                            <TextBlock Text="Optimization" FontSize="12" FontWeight="SemiBold" Foreground="White" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="✂️" FontSize="18" Foreground="White" VerticalAlignment="Center"/>
+                                            <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                                                <TextBlock Text="Optimization" FontSize="12" FontWeight="SemiBold" Foreground="White"/>
+                                                <TextBlock Text="Glass optimization" FontSize="9" Foreground="#BFDBFE"/>
+                                            </StackPanel>
                                         </StackPanel>
                                     </Border>
                                 </Button>
@@ -458,131 +409,197 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- MANAGEMENT SECTION -->
+                    <!-- SECTION 3: MANAGEMENT -->
                     <Border CornerRadius="12" Margin="0,0,0,10" Effect="{StaticResource ButtonShadow}">
                         <Border.Background>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                <GradientStop Color="#7C3AED" Offset="0"/>
-                                <GradientStop Color="#6D28D9" Offset="1"/>
+                                <GradientStop Color="#1E40AF" Offset="0"/>
+                                <GradientStop Color="#1E3A8A" Offset="1"/>
                             </LinearGradientBrush>
                         </Border.Background>
                         <StackPanel>
-                            <Border CornerRadius="12,12,0,0" Padding="14,12">
+                            <Border Style="{StaticResource SectionHeaderStyle}">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="⚙️" FontSize="12" Foreground="#DDD6FE" VerticalAlignment="Center"/>
-                                    <TextBlock Text="MANAGEMENT" FontSize="11" FontWeight="Bold" Foreground="#EDE9FE" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="⚙️" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                                    <TextBlock Text="MANAGEMENT" FontSize="10" FontWeight="Bold" Foreground="#FFFFFF" Margin="8,0,0,0" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
-                            <StackPanel Margin="10,10,10,14">
-                                <Button Style="{StaticResource MenuButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="SheetStore">
-                                    <Border CornerRadius="10" Padding="14" Background="#8B5CF6" Cursor="Hand">
+                            <StackPanel Margin="8,10,8,14">
+
+                                <!-- Sheet Store -->
+                                <Button Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="SheetStore">
+                                    <Border CornerRadius="10" Padding="12" Background="#3B82F6" Cursor="Hand">
                                         <Border.Effect>
                                             <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
                                         </Border.Effect>
                                         <StackPanel Orientation="Horizontal">
-                                            <Border Background="#FFFFFF30" CornerRadius="8" Padding="10,8">
-                                                <TextBlock Text="📦" FontSize="18"/>
-                                            </Border>
-                                            <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
-                                                <TextBlock Text="Sheet Store" FontWeight="Bold" FontSize="13" Foreground="White"/>
-                                                <TextBlock Text="Glass inventory" FontSize="10" Foreground="#DDD6FE"/>
+                                            <TextBlock Text="📦" FontSize="18" Foreground="White" VerticalAlignment="Center"/>
+                                            <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                                                <TextBlock Text="Sheet Store" FontWeight="Bold" FontSize="12" Foreground="White"/>
+                                                <TextBlock Text="Glass inventory" FontSize="9" Foreground="#BFDBFE"/>
                                             </StackPanel>
                                         </StackPanel>
                                     </Border>
                                 </Button>
-                                <Button Style="{StaticResource MenuButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="AluminumStore" Margin="0,8,0,0">
-                                    <Border CornerRadius="10" Padding="14" Background="#FBBF24" Cursor="Hand">
+
+                                <!-- Aluminum Store -->
+                                <Button Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="AluminumStore" Margin="0,8,0,0">
+                                    <Border CornerRadius="10" Padding="12" Background="#2563EB" Cursor="Hand">
                                         <Border.Effect>
                                             <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
                                         </Border.Effect>
                                         <StackPanel Orientation="Horizontal">
-                                            <Border Background="#FFFFFF30" CornerRadius="8" Padding="10,8">
-                                                <TextBlock Text="🔩" FontSize="18"/>
-                                            </Border>
-                                            <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
-                                                <TextBlock Text="Aluminum Store" FontWeight="Bold" FontSize="13" Foreground="White"/>
-                                                <TextBlock Text="Profiles and accessories" FontSize="10" Foreground="#FEF3C7"/>
+                                            <TextBlock Text="🔩" FontSize="18" Foreground="White" VerticalAlignment="Center"/>
+                                            <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                                                <TextBlock Text="Aluminum Store" FontWeight="Bold" FontSize="12" Foreground="White"/>
+                                                <TextBlock Text="Profiles &amp; accessories" FontSize="9" Foreground="#BFDBFE"/>
                                             </StackPanel>
                                         </StackPanel>
                                     </Border>
                                 </Button>
-                                <Button Style="{StaticResource MenuButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="SpacerStore" Margin="0,8,0,0">
-                                    <Border CornerRadius="10" Padding="14" Background="#34D399" Cursor="Hand">
+
+                                <!-- Spacer Store -->
+                                <Button Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="SpacerStore" Margin="0,8,0,0">
+                                    <Border CornerRadius="10" Padding="12" Background="#1D4ED8" Cursor="Hand">
                                         <Border.Effect>
                                             <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
                                         </Border.Effect>
                                         <StackPanel Orientation="Horizontal">
-                                            <Border Background="#FFFFFF30" CornerRadius="8" Padding="10,8">
-                                                <TextBlock Text="📏" FontSize="18"/>
-                                            </Border>
-                                            <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
-                                                <TextBlock Text="Spacer Store" FontWeight="Bold" FontSize="13" Foreground="White"/>
-                                                <TextBlock Text="Spacer bars" FontSize="10" Foreground="#D1FAE5"/>
+                                            <TextBlock Text="📏" FontSize="18" Foreground="White" VerticalAlignment="Center"/>
+                                            <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                                                <TextBlock Text="Spacer Store" FontWeight="Bold" FontSize="12" Foreground="White"/>
+                                                <TextBlock Text="Spacer bars" FontSize="9" Foreground="#BFDBFE"/>
                                             </StackPanel>
                                         </StackPanel>
                                     </Border>
                                 </Button>
-                                <Button Style="{StaticResource MenuButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="DailyWorks" Margin="0,8,0,0">
-                                    <Border CornerRadius="10" Padding="14" Background="#EC4899" Cursor="Hand">
+
+                                <!-- Daily Works -->
+                                <Button Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="DailyWorks" Margin="0,8,0,0">
+                                    <Border CornerRadius="10" Padding="12" Background="#1E40AF" Cursor="Hand">
                                         <Border.Effect>
                                             <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
                                         </Border.Effect>
                                         <StackPanel Orientation="Horizontal">
-                                            <Border Background="#FFFFFF30" CornerRadius="8" Padding="10,8">
-                                                <TextBlock Text="📋" FontSize="18"/>
-                                            </Border>
-                                            <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
-                                                <TextBlock Text="Daily Works" FontWeight="Bold" FontSize="13" Foreground="White"/>
-                                                <TextBlock Text="Production tracking" FontSize="10" Foreground="#FCE7F3"/>
+                                            <TextBlock Text="📋" FontSize="18" Foreground="White" VerticalAlignment="Center"/>
+                                            <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                                                <TextBlock Text="Daily Works" FontWeight="Bold" FontSize="12" Foreground="White"/>
+                                                <TextBlock Text="Production tracking" FontSize="9" Foreground="#BFDBFE"/>
                                             </StackPanel>
                                         </StackPanel>
                                     </Border>
                                 </Button>
+
                             </StackPanel>
                         </StackPanel>
                     </Border>
 
-                    <!-- Support Card -->
+                    <!-- SECTION 4: USERS -->
+                    <Border CornerRadius="12" Margin="0,0,0,10" Effect="{StaticResource ButtonShadow}">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#2563EB" Offset="0"/>
+                                <GradientStop Color="#1D4ED8" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <StackPanel>
+                            <Border Style="{StaticResource SectionHeaderStyle}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="👥" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                                    <TextBlock Text="USERS" FontSize="10" FontWeight="Bold" Foreground="#FFFFFF" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                            <StackPanel Margin="8,10,8,14">
+
+                                <!-- My Profile -->
+                                <Button Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="Profile">
+                                    <Border CornerRadius="10" Padding="12" Background="#3B82F6" Cursor="Hand">
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
+                                        </Border.Effect>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="👤" FontSize="18" Foreground="White" VerticalAlignment="Center"/>
+                                            <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                                                <TextBlock Text="My Profile" FontWeight="Bold" FontSize="12" Foreground="White"/>
+                                                <TextBlock Text="Account settings" FontSize="9" Foreground="#BFDBFE"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </Button>
+
+                                <!-- Users List -->
+                                <Button Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="Users" Margin="0,8,0,0">
+                                    <Border CornerRadius="10" Padding="12" Background="#2563EB" Cursor="Hand">
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
+                                        </Border.Effect>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="🗂️" FontSize="18" Foreground="White" VerticalAlignment="Center"/>
+                                            <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                                                <TextBlock Text="Users List" FontWeight="Bold" FontSize="12" Foreground="White"/>
+                                                <TextBlock Text="Manage users" FontSize="9" Foreground="#BFDBFE"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </Button>
+
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- SECTION 5: SUPPORT -->
                     <Border CornerRadius="12" Padding="16" Effect="{StaticResource ButtonShadow}">
                         <Border.Background>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
                                 <GradientStop Color="#FFFFFF" Offset="0"/>
-                                <GradientStop Color="#F8FAFC" Offset="1"/>
+                                <GradientStop Color="#EFF6FF" Offset="1"/>
                             </LinearGradientBrush>
                         </Border.Background>
                         <StackPanel>
-                            <Grid Margin="0,0,0,12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="🎫" FontSize="11" Foreground="#64748B" VerticalAlignment="Center"/>
-                                    <TextBlock Text="SUPPORT" FontSize="10" FontWeight="Bold" Foreground="#475569" Margin="6,0,0,0" VerticalAlignment="Center"/>
-                                </StackPanel>
-                                <Border Grid.Column="1" CornerRadius="6" Padding="8,4" Background="#D1FAE5">
-                                    <TextBlock Text="● ONLINE" FontSize="8" FontWeight="Bold" Foreground="#059669"/>
-                                </Border>
-                            </Grid>
+                            <Border Style="{StaticResource SectionHeaderStyle}" Margin="-16,-16,-16,12">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="🎫" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                                        <TextBlock Text="SUPPORT" FontSize="10" FontWeight="Bold" Foreground="#FFFFFF" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <Border Grid.Column="1" CornerRadius="6" Padding="8,4" Background="#DBEAFE">
+                                        <TextBlock Text="● ONLINE" FontSize="8" FontWeight="Bold" Foreground="#1E40AF"/>
+                                    </Border>
+                                </Grid>
+                            </Border>
+
                             <Border CornerRadius="10" Padding="14">
                                 <Border.Background>
                                     <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                        <GradientStop Color="#F1F5F9" Offset="0"/>
-                                        <GradientStop Color="#E2E8F0" Offset="1"/>
+                                        <GradientStop Color="#DBEAFE" Offset="0"/>
+                                        <GradientStop Color="#BFDBFE" Offset="1"/>
                                     </LinearGradientBrush>
                                 </Border.Background>
                                 <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                        <TextBlock Text="📧" FontSize="16" Foreground="#1E40AF" VerticalAlignment="Center"/>
+                                        <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                                            <TextBlock Text="Email" FontSize="9" Foreground="#64748B"/>
+                                            <TextBlock Text="Jubersaleem01@gmail.com" FontSize="10" FontWeight="SemiBold" Foreground="#1E40AF"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                        <TextBlock Text="🌐" FontSize="16" Foreground="#1E40AF" VerticalAlignment="Center"/>
+                                        <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                                            <TextBlock Text="Website" FontSize="9" Foreground="#64748B"/>
+                                            <TextBlock Text="www.proglass.com" FontSize="10" FontWeight="SemiBold" Foreground="#1E40AF"/>
+                                        </StackPanel>
+                                    </StackPanel>
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="📧" FontSize="12" Foreground="#64748B"/>
-                                        <TextBlock Text="Jubersaleem01@gmail.com" FontSize="10" Foreground="#2563EB" Margin="8,0,0,0"/>
-                                    </StackPanel>
-                                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                        <TextBlock Text="🌐" FontSize="12" Foreground="#64748B"/>
-                                        <TextBlock Text="www.proglass.com" FontSize="10" Foreground="#64748B" Margin="8,0,0,0"/>
-                                    </StackPanel>
-                                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                        <TextBlock Text="💬" FontSize="12" Foreground="#64748B"/>
-                                        <TextBlock Text="WhatsApp Support" FontSize="10" Foreground="#64748B" Margin="8,0,0,0"/>
+                                        <TextBlock Text="💬" FontSize="16" Foreground="#1E40AF" VerticalAlignment="Center"/>
+                                        <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                                            <TextBlock Text="WhatsApp" FontSize="9" Foreground="#64748B"/>
+                                            <TextBlock Text="WhatsApp Support" FontSize="10" FontWeight="SemiBold" Foreground="#1E40AF"/>
+                                        </StackPanel>
                                     </StackPanel>
                                 </StackPanel>
                             </Border>
@@ -626,14 +643,14 @@
                     <Border.Background>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                             <GradientStop Color="#FFFFFF" Offset="0"/>
-                            <GradientStop Color="#F0F9FF" Offset="1"/>
+                            <GradientStop Color="#EFF6FF" Offset="1"/>
                         </LinearGradientBrush>
                     </Border.Background>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <Border Width="12" Height="12" CornerRadius="6">
                             <Border.Style>
                                 <Style TargetType="Border">
-                                    <Setter Property="Background" Value="#EF4444"/>
+                                    <Setter Property="Background" Value="#1E40AF"/>
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsLicensed}" Value="True">
                                             <Setter Property="Background" Value="#10B981"/>
@@ -662,14 +679,14 @@
                     <Border.Background>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                             <GradientStop Color="#FFFFFF" Offset="0"/>
-                            <GradientStop Color="#F0F9FF" Offset="1"/>
+                            <GradientStop Color="#EFF6FF" Offset="1"/>
                         </LinearGradientBrush>
                     </Border.Background>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <Border Width="12" Height="12" CornerRadius="6">
                             <Border.Style>
                                 <Style TargetType="Border">
-                                    <Setter Property="Background" Value="#F59E0B"/>
+                                    <Setter Property="Background" Value="#2563EB"/>
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsLicensed}" Value="True">
                                             <Setter Property="Background" Value="#10B981"/>
@@ -698,14 +715,14 @@
                     <Border.Background>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                             <GradientStop Color="#FFFFFF" Offset="0"/>
-                            <GradientStop Color="#F0F9FF" Offset="1"/>
+                            <GradientStop Color="#EFF6FF" Offset="1"/>
                         </LinearGradientBrush>
                     </Border.Background>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <Border Width="12" Height="12" CornerRadius="6">
                             <Border.Style>
                                 <Style TargetType="Border">
-                                    <Setter Property="Background" Value="#EF4444"/>
+                                    <Setter Property="Background" Value="#1D4ED8"/>
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsLicensed}" Value="True">
                                             <Setter Property="Background" Value="#10B981"/>

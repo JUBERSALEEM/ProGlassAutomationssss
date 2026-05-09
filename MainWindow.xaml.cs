@@ -15,37 +15,15 @@ namespace ProGlassAutomation
         private readonly MainViewModel _viewModel;
         private DispatcherTimer _clockTimer;
 
-        // For smooth 60 FPS rendering
-        private DateTime _fpsTimer = DateTime.MinValue;
-        private int _frameCount = 0;
-
         public MainWindow()
         {
             InitializeComponent();
-
-            // Enable composition target rendering for smooth 60 FPS
-            CompositionTarget.Rendering += CompositionTarget_Rendering;
 
             _viewModel = new MainViewModel();
             DataContext = _viewModel;
 
             StartClock();
             UpdateClockDisplay();
-        }
-
-        // ═══════════════════════════════════════════════════════
-        // 60 FPS SMOOTH RENDERING
-        // ═══════════════════════════════════════════════════════
-        private void CompositionTarget_Rendering(object sender, EventArgs e)
-        {
-            _frameCount++;
-            var now = DateTime.Now;
-
-            if ((now - _fpsTimer).TotalSeconds >= 1)
-            {
-                _fpsTimer = now;
-                _frameCount = 0;
-            }
         }
 
         public MainViewModel ViewModel => _viewModel;
@@ -79,30 +57,56 @@ namespace ProGlassAutomation
         // ═══════════════════════════════════════════════════════
         private void BtnDashboard_MouseEnter(object sender, MouseEventArgs e)
         {
-            DoubleAnimation animation = new DoubleAnimation(1.05, TimeSpan.FromMilliseconds(100));
-            DashScale.BeginAnimation(ScaleTransform.ScaleXProperty, animation);
-            DashScale.BeginAnimation(ScaleTransform.ScaleYProperty, animation);
+            if (FindVisualChild<Border>(BtnDashboard) is Border border)
+            {
+                DoubleAnimation animation = new DoubleAnimation(1.02, TimeSpan.FromMilliseconds(100));
+                border.RenderTransformOrigin = new Point(0.5, 0.5);
+                if (border.RenderTransform == null || !(border.RenderTransform is ScaleTransform))
+                {
+                    border.RenderTransform = new ScaleTransform(1, 1);
+                }
+                var scale = (ScaleTransform)border.RenderTransform;
+                scale.BeginAnimation(ScaleTransform.ScaleXProperty, animation);
+                scale.BeginAnimation(ScaleTransform.ScaleYProperty, animation);
+            }
         }
 
         private void BtnDashboard_MouseLeave(object sender, MouseEventArgs e)
         {
-            DoubleAnimation animation = new DoubleAnimation(1, TimeSpan.FromMilliseconds(100));
-            DashScale.BeginAnimation(ScaleTransform.ScaleXProperty, animation);
-            DashScale.BeginAnimation(ScaleTransform.ScaleYProperty, animation);
+            if (FindVisualChild<Border>(BtnDashboard) is Border border)
+            {
+                DoubleAnimation animation = new DoubleAnimation(1, TimeSpan.FromMilliseconds(100));
+                var scale = (ScaleTransform)border.RenderTransform;
+                scale.BeginAnimation(ScaleTransform.ScaleXProperty, animation);
+                scale.BeginAnimation(ScaleTransform.ScaleYProperty, animation);
+            }
         }
 
         private void BtnSubscription_MouseEnter(object sender, MouseEventArgs e)
         {
-            DoubleAnimation animation = new DoubleAnimation(1.05, TimeSpan.FromMilliseconds(100));
-            SubScale.BeginAnimation(ScaleTransform.ScaleXProperty, animation);
-            SubScale.BeginAnimation(ScaleTransform.ScaleYProperty, animation);
+            if (FindVisualChild<Border>(BtnSubscription) is Border border)
+            {
+                DoubleAnimation animation = new DoubleAnimation(1.02, TimeSpan.FromMilliseconds(100));
+                border.RenderTransformOrigin = new Point(0.5, 0.5);
+                if (border.RenderTransform == null || !(border.RenderTransform is ScaleTransform))
+                {
+                    border.RenderTransform = new ScaleTransform(1, 1);
+                }
+                var scale = (ScaleTransform)border.RenderTransform;
+                scale.BeginAnimation(ScaleTransform.ScaleXProperty, animation);
+                scale.BeginAnimation(ScaleTransform.ScaleYProperty, animation);
+            }
         }
 
         private void BtnSubscription_MouseLeave(object sender, MouseEventArgs e)
         {
-            DoubleAnimation animation = new DoubleAnimation(1, TimeSpan.FromMilliseconds(100));
-            SubScale.BeginAnimation(ScaleTransform.ScaleXProperty, animation);
-            SubScale.BeginAnimation(ScaleTransform.ScaleYProperty, animation);
+            if (FindVisualChild<Border>(BtnSubscription) is Border border)
+            {
+                DoubleAnimation animation = new DoubleAnimation(1, TimeSpan.FromMilliseconds(100));
+                var scale = (ScaleTransform)border.RenderTransform;
+                scale.BeginAnimation(ScaleTransform.ScaleXProperty, animation);
+                scale.BeginAnimation(ScaleTransform.ScaleYProperty, animation);
+            }
         }
 
         // ═══════════════════════════════════════════════════════
@@ -110,54 +114,28 @@ namespace ProGlassAutomation
         // ═══════════════════════════════════════════════════════
         private void CalcBtn_MouseEnter(object sender, MouseEventArgs e)
         {
-            if (sender == BtnSGU)
+            if (sender is Button btn && FindVisualChild<Border>(btn) is Border border)
             {
-                AnimateScale(ScaleSGU, 1.05);
-            }
-            else if (sender == BtnDGU)
-            {
-                AnimateScale(ScaleDGU, 1.05);
-            }
-            else if (sender == BtnLam)
-            {
-                AnimateScale(ScaleLam, 1.05);
-            }
-            else if (sender == BtnDguLam)
-            {
-                AnimateScale(ScaleDguLam, 1.05);
-            }
-            else if (sender == BtnOpt)
-            {
-                AnimateScale(ScaleOpt, 1.05);
+                AnimateScale(border, 1.02);
             }
         }
 
         private void CalcBtn_MouseLeave(object sender, MouseEventArgs e)
         {
-            if (sender == BtnSGU)
+            if (sender is Button btn && FindVisualChild<Border>(btn) is Border border)
             {
-                AnimateScale(ScaleSGU, 1);
-            }
-            else if (sender == BtnDGU)
-            {
-                AnimateScale(ScaleDGU, 1);
-            }
-            else if (sender == BtnLam)
-            {
-                AnimateScale(ScaleLam, 1);
-            }
-            else if (sender == BtnDguLam)
-            {
-                AnimateScale(ScaleDguLam, 1);
-            }
-            else if (sender == BtnOpt)
-            {
-                AnimateScale(ScaleOpt, 1);
+                AnimateScale(border, 1);
             }
         }
 
-        private void AnimateScale(ScaleTransform scale, double targetValue)
+        private void AnimateScale(Border border, double targetValue)
         {
+            border.RenderTransformOrigin = new Point(0.5, 0.5);
+            if (border.RenderTransform == null || !(border.RenderTransform is ScaleTransform))
+            {
+                border.RenderTransform = new ScaleTransform(1, 1);
+            }
+            var scale = (ScaleTransform)border.RenderTransform;
             DoubleAnimation animation = new DoubleAnimation(targetValue, TimeSpan.FromMilliseconds(100));
             scale.BeginAnimation(ScaleTransform.ScaleXProperty, animation);
             scale.BeginAnimation(ScaleTransform.ScaleYProperty, animation);
@@ -170,7 +148,6 @@ namespace ProGlassAutomation
         {
             try
             {
-                // Get window size at 2x resolution
                 int width = (int)(this.ActualWidth * 2);
                 int height = (int)(this.ActualHeight * 2);
 
@@ -180,35 +157,29 @@ namespace ProGlassAutomation
                     return;
                 }
 
-                // Hide button temporarily
                 var screenshotBtn = GetScreenshotButton();
                 if (screenshotBtn != null)
                 {
                     screenshotBtn.Visibility = Visibility.Collapsed;
                 }
 
-                // Force visual refresh (faster than Thread.Sleep)
                 Dispatcher.Invoke(() => { }, DispatcherPriority.Render);
 
-                // Create render bitmap at 2x resolution for crisp quality
                 RenderTargetBitmap renderBitmap = new RenderTargetBitmap(
                     width,
                     height,
-                    192, // 2x DPI
+                    192,
                     192,
                     PixelFormats.Pbgra32);
 
-                // Render with bitmap scaling for better quality
                 RenderOptions.SetBitmapScalingMode(this, BitmapScalingMode.HighQuality);
                 renderBitmap.Render(this);
 
-                // Show button again immediately
                 if (screenshotBtn != null)
                 {
                     screenshotBtn.Visibility = Visibility.Visible;
                 }
 
-                // Save dialog - JPEG with maximum quality
                 var dialog = new Microsoft.Win32.SaveFileDialog
                 {
                     Filter = "JPEG Image|*.jpg",
@@ -217,14 +188,12 @@ namespace ProGlassAutomation
 
                 if (dialog.ShowDialog() == true)
                 {
-                    // JPEG ENCODER - MAXIMUM QUALITY (100)
                     JpegBitmapEncoder encoder = new JpegBitmapEncoder
                     {
-                        QualityLevel = 100  // Maximum quality - no compression artifacts
+                        QualityLevel = 100
                     };
                     encoder.Frames.Add(BitmapFrame.Create(renderBitmap));
 
-                    // Save file asynchronously for faster UI response
                     using (var stream = new System.IO.FileStream(dialog.FileName, System.IO.FileMode.Create))
                     {
                         encoder.Save(stream);
@@ -241,11 +210,9 @@ namespace ProGlassAutomation
 
         private Button GetScreenshotButton()
         {
-            // Find screenshot button by name
             if (FindName("ScreenshotBtn") is Button btn)
                 return btn;
 
-            // Try finding by content
             foreach (var child in GetAllChildren(this))
             {
                 if (child is Button button && button.Content?.ToString()?.Contains("Screenshot") == true)
@@ -266,6 +233,20 @@ namespace ProGlassAutomation
                     yield return descendant;
                 }
             }
+        }
+
+        private T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T result)
+                    return result;
+                var found = FindVisualChild<T>(child);
+                if (found != null)
+                    return found;
+            }
+            return null;
         }
     }
 }
