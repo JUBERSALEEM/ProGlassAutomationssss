@@ -21,7 +21,7 @@
             <Setter Property="AlternatingRowBackground" Value="#F9FAFB"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="HeadersVisibility" Value="Column"/>
-            <Setter Property="SelectionMode" Value="Single"/>
+            <Setter Property="SelectionMode" Value="Extended"/>
             <Setter Property="SelectionUnit" Value="FullRow"/>
             <Setter Property="CanUserAddRows" Value="False"/>
             <Setter Property="CanUserDeleteRows" Value="False"/>
@@ -116,6 +116,34 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Background" Value="#DC2626"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="DangerOutlineButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#EF4444"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Padding" Value="18,10"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="BorderBrush" Value="#EF4444"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="25" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#FEE2E2"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -281,6 +309,15 @@
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
         </Style>
+
+        <Style x:Key="HeaderRed" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#EF4444"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="10,12"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
     </UserControl.Resources>
 
     <Grid Margin="16">
@@ -313,7 +350,7 @@
 
                 <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,30,0">
                     <TextBlock Text="DAILY WORKS" FontSize="24" FontWeight="Bold" Foreground="White"/>
-                    <TextBlock Text="Double-click row to edit" FontSize="11" Foreground="#BFDBFE" Margin="0,4,0,0"/>
+                    <TextBlock Text="Double-click row to edit | Check rows to select multiple" FontSize="11" Foreground="#BFDBFE" Margin="0,4,0,0"/>
                 </StackPanel>
 
                 <Border Grid.Column="1" CornerRadius="25" Background="White" Margin="0,0,12,0" Padding="4">
@@ -436,13 +473,32 @@
             <Border.Effect>
                 <DropShadowEffect BlurRadius="15" ShadowDepth="2" Opacity="0.1"/>
             </Border.Effect>
-            <DataGrid ItemsSource="{Binding FilteredDataView}" 
-                      SelectedItem="{Binding SelectedDataRowView}"
-                      MouseDoubleClick="DataGrid_MouseDoubleClick"
-                      Style="{StaticResource ModernDataGrid}" 
-                      CellStyle="{StaticResource ModernCell}"
-                      RowStyle="{StaticResource ModernRowStyle}">
+            <DataGrid x:Name="MainDataGrid"
+          ItemsSource="{Binding FilteredDataView}" 
+          SelectedItem="{Binding SelectedDataRowView}"
+          SelectionMode="Extended"
+          SelectionUnit="FullRow"
+          MouseDoubleClick="DataGrid_MouseDoubleClick"
+          Style="{StaticResource ModernDataGrid}" 
+          CellStyle="{StaticResource ModernCell}"
+          RowStyle="{StaticResource ModernRowStyle}"
+          SelectionChanged="MainDataGrid_SelectionChanged">
                 <DataGrid.Columns>
+                    <!-- SELECT CHECKBOX COLUMN -->
+                    <DataGridTemplateColumn Header="" Width="45">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <CheckBox HorizontalAlignment="Center" 
+                      IsChecked="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected, Mode=OneWay}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                        <DataGridTemplateColumn.HeaderTemplate>
+                            <DataTemplate>
+                                <CheckBox x:Name="SelectAllCheckBox" Click="HeaderSelectAll_Click"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.HeaderTemplate>
+                    </DataGridTemplateColumn>
+
                     <DataGridTemplateColumn Header="DATE" Width="100" HeaderStyle="{StaticResource HeaderBlue}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
@@ -600,6 +656,7 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" HorizontalAlignment="Center">
                     <TextBlock Text="TOTAL" Foreground="#BFDBFE" FontSize="10" FontWeight="Bold"/>
@@ -621,11 +678,19 @@
                     <TextBlock Text="FILTER SQM" Foreground="#BFDBFE" FontSize="10" FontWeight="Bold"/>
                     <TextBlock Text="{Binding FilteredSQM, StringFormat=N2}" Foreground="White" FontSize="24" FontWeight="Bold"/>
                 </StackPanel>
-                <StackPanel Grid.Column="5" Orientation="Horizontal">
+                <StackPanel Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Text="Selected: " Foreground="#BFDBFE" FontSize="12" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                    <TextBlock Text="{Binding SelectedCount}" Foreground="#FCA5A5" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
+                </StackPanel>
+                <StackPanel Grid.Column="6" Orientation="Horizontal">
                     <Button Content="Edit" Style="{StaticResource PrimaryButton}" 
                             Command="{Binding EditCommand}" 
                             CommandParameter="{Binding SelectedDataRowView}" 
                             Margin="0,0,10,0"/>
+                    <Button Content="Delete Selected" Style="{StaticResource DangerOutlineButton}" 
+        Command="{Binding DeleteSelectedCommand}" 
+        CommandParameter="{Binding ElementName=MainDataGrid}"
+        Margin="0,0,10,0"/>
                     <Button Content="Delete" Style="{StaticResource DangerButton}" 
                             Command="{Binding DeleteCommand}" 
                             CommandParameter="{Binding SelectedDataRowView}"/>

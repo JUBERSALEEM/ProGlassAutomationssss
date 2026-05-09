@@ -57,6 +57,7 @@ namespace ProGlassAutomation.ViewModels
             SortCommand = new RelayCommand(ExecuteSort);
             CopyRowCommand = new RelayCommand(ExecuteCopyRow, CanExecuteCopyRow);
             DuplicateRowCommand = new RelayCommand(ExecuteDuplicateRow, CanExecuteDuplicateRow);
+            DeleteSelectedCommand = new RelayCommand(ExecuteDeleteSelected, CanExecuteDeleteSelected);
             PrintCommand = new RelayCommand(ExecutePrint);
 
             LoadSampleData();
@@ -85,6 +86,55 @@ namespace ProGlassAutomation.ViewModels
                 if (SetProperty(ref _selectedWork, value))
                     CommandManager.InvalidateRequerySuggested();
             }
+        }
+
+        // Multi-select tracking
+        public bool SelectAll
+        {
+            get => _selectAll;
+            set
+            {
+                if (SetProperty(ref _selectAll, value))
+                {
+                    // Toggle all selections
+                    if (FilteredDataView != null)
+                    {
+                        foreach (var row in FilteredDataView.Cast<DataRowView>())
+                        {
+                            if (row.Row.Table.Columns.Contains("IsSelected"))
+                            {
+                                row["IsSelected"] = value;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private bool _selectAll;
+
+        public int SelectedCount => _selectedCount;
+        private int _selectedCount;
+
+        public void SetSelectedCount(int count)
+        {
+            _selectedCount = count;
+            OnPropertyChanged(nameof(SelectedCount));
+        }
+
+        // Reference to DataGrid for selection count
+        private System.Windows.Controls.DataGrid _mainDataGrid;
+        public System.Windows.Controls.DataGrid MainDataGrid
+        {
+            get => _mainDataGrid;
+            set => SetProperty(ref _mainDataGrid, value);
+        }
+
+        private int GetSelectedCount()
+        {
+            return FilteredDataView?.Cast<DataRowView>()
+                .Count(r => r.Row.Table.Columns.Contains("IsSelected") &&
+                            r["IsSelected"] is bool b && b) ?? 0;
         }
 
         public DataRowView SelectedDataRowView
@@ -234,6 +284,7 @@ namespace ProGlassAutomation.ViewModels
         public ICommand SortCommand { get; }
         public ICommand CopyRowCommand { get; }
         public ICommand DuplicateRowCommand { get; }
+        public ICommand DeleteSelectedCommand { get; }
         public ICommand PrintCommand { get; }
 
         #endregion
@@ -734,6 +785,7 @@ namespace ProGlassAutomation.ViewModels
             OnPropertyChanged(nameof(TotalQty));
             OnPropertyChanged(nameof(FilteredSQM));
             OnPropertyChanged(nameof(FilteredQty));
+            OnPropertyChanged(nameof(SelectedCount));
         }
 
         private void ExecutePrint(object parameter)
@@ -815,6 +867,51 @@ namespace ProGlassAutomation.ViewModels
             grid.Children.Add(dataGrid);
 
             return grid;
+        }
+
+        private void ExecuteDeleteSelected(object parameter)
+        {
+            if (parameter is System.Windows.Controls.DataGrid dataGrid)
+            {
+                var selectedIds = new List<int>();
+
+                foreach (var item in dataGrid.SelectedItems)
+                {
+                    if (item is DataRowView rowView)
+                    {
+                        selectedIds.Add(Convert.ToInt32(rowView["Id"]));
+                    }
+                }
+
+                if (selectedIds.Count == 0)
+                {
+                    MessageBox.Show("Please select rows to delete.", "No Selection",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                var result = MessageBox.Show(
+                    $"Delete {selectedIds.Count} selected record(s)?\n\nThis action cannot be undone.",
+                    "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    var toDelete = DailyWorks.Where(w => selectedIds.Contains(w.Id)).ToList();
+                    foreach (var item in toDelete)
+                    {
+                        DailyWorks.Remove(item);
+                    }
+                    RefreshDataView();
+                    UpdateStatistics();
+                    SelectedWork = null;
+                    SelectedDataRowView = null;
+                }
+            }
+        }
+
+        private bool CanExecuteDeleteSelected(object parameter)
+        {
+            return _selectedCount > 0;
         }
 
         #endregion

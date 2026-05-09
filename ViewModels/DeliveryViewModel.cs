@@ -242,6 +242,21 @@ namespace ProGlassAutomation.ViewModels
         public int PendingCount => DeliveryOrders?.Count(w => w.Status == "Pending") ?? 0;
         public int PartialCount => DeliveryOrders?.Count(w => w.Status == "Partially Delivered") ?? 0;
         public int CompletedCount => DeliveryOrders?.Count(w => w.Status == "Completed") ?? 0;
+        public int SelectedCount => _selectedCount;
+        private int _selectedCount;
+
+        public void SetSelectedCount(int count)
+        {
+            _selectedCount = count;
+            OnPropertyChanged(nameof(SelectedCount));
+        }
+
+        private int GetSelectedCount()
+        {
+            return FilteredDataView?.Cast<DataRowView>()
+                .Count(r => r.Row.Table.Columns.Contains("IsSelected") &&
+                            r["IsSelected"] is bool b && b) ?? 0;
+        }
 
         #endregion
 
@@ -322,6 +337,7 @@ namespace ProGlassAutomation.ViewModels
             dataTable.Columns.Add("Salesman", typeof(string));
             dataTable.Columns.Add("Status", typeof(string));
             dataTable.Columns.Add("Notes", typeof(string));
+            dataTable.Columns.Add("IsSelected", typeof(bool));
 
             foreach (var order in DeliveryOrders)
             {
@@ -1002,6 +1018,52 @@ namespace ProGlassAutomation.ViewModels
             OnPropertyChanged(nameof(PendingCount));
             OnPropertyChanged(nameof(PartialCount));
             OnPropertyChanged(nameof(CompletedCount));
+            OnPropertyChanged(nameof(SelectedCount));
+        }
+
+        private void ExecuteDeleteSelected(object parameter)
+        {
+            if (parameter is System.Windows.Controls.DataGrid dataGrid)
+            {
+                var selectedIds = new List<int>();
+
+                foreach (var item in dataGrid.SelectedItems)
+                {
+                    if (item is DataRowView rowView)
+                    {
+                        selectedIds.Add(Convert.ToInt32(rowView["Id"]));
+                    }
+                }
+
+                if (selectedIds.Count == 0)
+                {
+                    MessageBox.Show("Please select rows to delete.", "No Selection",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                var result = MessageBox.Show(
+                    $"Delete {selectedIds.Count} selected record(s)?\n\nThis will also delete all delivery items.\nThis action cannot be undone.",
+                    "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    var toDelete = DeliveryOrders.Where(d => selectedIds.Contains(d.Id)).ToList();
+                    foreach (var item in toDelete)
+                    {
+                        DeliveryOrders.Remove(item);
+                    }
+                    RefreshDataView();
+                    UpdateStatistics();
+                    SelectedOrder = null;
+                    SelectedDataRowView = null;
+                }
+            }
+        }
+
+        private bool CanExecuteDeleteSelected(object parameter)
+        {
+            return _selectedCount > 0;
         }
 
         #endregion
