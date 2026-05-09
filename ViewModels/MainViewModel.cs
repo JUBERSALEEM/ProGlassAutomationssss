@@ -48,9 +48,8 @@ namespace ProGlassAutomation.ViewModels
                 "Optimization" => new Views.GlassOptimization.GlassOptimizationView(),
                 "Dashboard" => new Views.Dashboard.DashboardView(),
                 "Subscription" => new Views.Subscription.SubscriptionPlanView(),
-                "AluminumStore" => CreatePlaceholder("Aluminum Store - Coming Soon!"),
-                "SpacerStore" => CreatePlaceholder("Spacer Store - Coming Soon!"),
                 "DailyWorks" => new Views.DailyWorksView(),
+                "Deliveries" => new Views.Delivery.DeliveryView(),
                 "Profile" => new Views.Profile.ProfileView(),
                 "Users" => CreatePlaceholder("Users - Coming Soon!"),
                 _ => null
@@ -266,6 +265,7 @@ namespace ProGlassAutomation.ViewModels
         public void ShowSubscriptionPlan() => Navigate("Subscription");
         public void ShowSheetStore() => Navigate("SheetStore");
         public void ShowDailyWorks() => Navigate("DailyWorks");
+        public void ShowDeliveries() => Navigate("Deliveries");
         public void ShowProfile() => Navigate("Profile");
         public void ShowUsers() => Navigate("Users");
 
@@ -314,6 +314,7 @@ namespace ProGlassAutomation.ViewModels
         public ICommand SubscriptionPlanCommand => new RelayCommand(o => ShowSubscriptionPlan());
         public ICommand LogoCommand => new RelayCommand(o => ShowDashboard());
         public ICommand DailyWorksCommand => new RelayCommand(o => ShowDailyWorks());
+        public ICommand DeliveriesCommand => new RelayCommand(o => ShowDeliveries());
         public ICommand ProfileCommand => new RelayCommand(o => ShowProfile());
         public ICommand UsersCommand => new RelayCommand(o => ShowUsers());
     }

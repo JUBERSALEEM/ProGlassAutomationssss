@@ -1,5 +1,4 @@
-﻿// Models/DailyWork.cs
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
@@ -22,6 +21,7 @@ namespace ProGlassAutomation.Models
         private string _salesman = "";
         private string _color = "";
         private string _notes = "";
+        private DateTime _createdDate;
 
         public int Id
         {
@@ -113,6 +113,12 @@ namespace ProGlassAutomation.Models
             set { _notes = value ?? ""; OnPropertyChanged(); }
         }
 
+        public DateTime CreatedDate
+        {
+            get => _createdDate;
+            set { _createdDate = value; OnPropertyChanged(); }
+        }
+
         // Computed Properties for Display
         public string StatusColor
         {
@@ -123,6 +129,7 @@ namespace ProGlassAutomation.Models
                     "Release" => "#10B981",
                     "Hold" => "#F59E0B",
                     "Cancel" => "#EF4444",
+                    "Confirmed" => "#6366F1",
                     _ => "#64748B"
                 };
             }
@@ -141,6 +148,7 @@ namespace ProGlassAutomation.Models
                     "Sent" => "#06B6D4",
                     "Confirmed" => "#6366F1",
                     "Prepared" => "#14B8A6",
+                    "In Progress" => "#3B82F6",
                     _ => "#64748B"
                 };
             }
@@ -194,7 +202,8 @@ namespace ProGlassAutomation.Models
                 Status = this.Status,
                 Salesman = this.Salesman,
                 Color = this.Color,
-                Notes = this.Notes
+                Notes = this.Notes,
+                CreatedDate = this.CreatedDate
             };
         }
     }

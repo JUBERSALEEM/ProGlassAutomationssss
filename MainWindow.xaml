@@ -442,41 +442,9 @@
                                     </Border>
                                 </Button>
 
-                                <!-- Aluminum Store -->
-                                <Button Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="AluminumStore" Margin="0,8,0,0">
-                                    <Border CornerRadius="10" Padding="12" Background="#2563EB" Cursor="Hand">
-                                        <Border.Effect>
-                                            <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
-                                        </Border.Effect>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="🔩" FontSize="18" Foreground="White" VerticalAlignment="Center"/>
-                                            <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
-                                                <TextBlock Text="Aluminum Store" FontWeight="Bold" FontSize="12" Foreground="White"/>
-                                                <TextBlock Text="Profiles &amp; accessories" FontSize="9" Foreground="#BFDBFE"/>
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </Border>
-                                </Button>
-
-                                <!-- Spacer Store -->
-                                <Button Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="SpacerStore" Margin="0,8,0,0">
-                                    <Border CornerRadius="10" Padding="12" Background="#1D4ED8" Cursor="Hand">
-                                        <Border.Effect>
-                                            <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
-                                        </Border.Effect>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="📏" FontSize="18" Foreground="White" VerticalAlignment="Center"/>
-                                            <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
-                                                <TextBlock Text="Spacer Store" FontWeight="Bold" FontSize="12" Foreground="White"/>
-                                                <TextBlock Text="Spacer bars" FontSize="9" Foreground="#BFDBFE"/>
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </Border>
-                                </Button>
-
                                 <!-- Daily Works -->
                                 <Button Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="DailyWorks" Margin="0,8,0,0">
-                                    <Border CornerRadius="10" Padding="12" Background="#1E40AF" Cursor="Hand">
+                                    <Border CornerRadius="10" Padding="12" Background="#2563EB" Cursor="Hand">
                                         <Border.Effect>
                                             <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
                                         </Border.Effect>
@@ -485,6 +453,22 @@
                                             <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
                                                 <TextBlock Text="Daily Works" FontWeight="Bold" FontSize="12" Foreground="White"/>
                                                 <TextBlock Text="Production tracking" FontSize="9" Foreground="#BFDBFE"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </Button>
+
+                                <!-- Deliveries -->
+                                <Button Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="Deliveries" Margin="0,8,0,0">
+                                    <Border CornerRadius="10" Padding="12" Background="#059669" Cursor="Hand">
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
+                                        </Border.Effect>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="🚚" FontSize="18" Foreground="White" VerticalAlignment="Center"/>
+                                            <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                                                <TextBlock Text="Deliveries" FontWeight="Bold" FontSize="12" Foreground="White"/>
+                                                <TextBlock Text="Delivery tracking" FontSize="9" Foreground="#A7F3D0"/>
                                             </StackPanel>
                                         </StackPanel>
                                     </Border>

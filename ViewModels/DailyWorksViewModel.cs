@@ -262,7 +262,11 @@ namespace ProGlassAutomation.ViewModels
                 "Issue Found", "Re-work Required"
             };
 
-            StatusOptions = new ObservableCollection<string> { "Release", "Hold", "Cancel" };
+            StatusOptions = new ObservableCollection<string>
+{
+    "Pending", "In Progress", "Confirmed", "Cancelled",
+    "Release", "Hold", "Cancel"
+};
 
             ColorOptions = new ObservableCollection<string>
             {
@@ -345,35 +349,35 @@ namespace ProGlassAutomation.ViewModels
         {
             var random = new Random();
             var companies = new[] { "ABC Construction", "XYZ Windows", "Secure Buildings Ltd", "Modern Glass Works", "Elite Glazing Co" };
-            var workTypes = new[] { "Single Unit (SGU)", "Double Unit (DGU)", "Lamination Unit", "Single + Double Unit", "SGU + DGU", "SGU + Lamination" };
-            var productionStatuses = new[] { "Sent", "Confirmed", "Prepared", "In Production", "Quality Check", "Completed" };
-            var dailyStatuses = new[] { "Not Started", "In Progress", "On Hold", "Completed", "Issue Found" };
-            var statuses = new[] { "Release", "Release", "Release", "Hold", "Cancel" };
+            var workTypes = new[] { "Single Unit (SGU)", "Double Unit (DGU)", "Lamination Unit", "Single + Double Unit", "SGU + DGU" };
             var salesmen = new[] { "Ahmed Khan", "Muhammad Ali", "Hassan Ahmed", "Usman Malik", "Bilal Shah" };
-            var colors = new[] { "Clear", "Green", "Blue", "Grey", "Bronze", "Reflective Blue" };
             var customerRefs = new[] { "CUST-001", "CUST-002", "CUST-003", "CUST-004", "CUST-005" };
 
-            for (int i = 1; i <= 25; i++)
+            for (int i = 1; i <= 20; i++)
             {
-                var date = DateTime.Today.AddDays(-random.Next(0, 30));
-                DailyWorks.Add(new DailyWork
+                var qty = random.Next(20, 100) * 2;
+                var statuses = new[] { "Pending", "In Progress", "Confirmed", "Cancelled" };
+                var status = statuses[random.Next(statuses.Length)];
+                var productionStatus = status == "Confirmed" ? "Completed" : status == "In Progress" ? "In Progress" : "Pending";
+
+                var order = new DailyWork
                 {
                     Id = i,
-                    Date = date,
-                    UpdateDate = date.AddDays(random.Next(0, 3)),
+                    Date = DateTime.Today.AddDays(-random.Next(1, 15)),
                     Company = companies[random.Next(companies.Length)],
                     PINumber = $"PI-{DateTime.Now.Year}-{1000 + i}",
                     CustomerReference = customerRefs[random.Next(customerRefs.Length)],
                     TypeOfWork = workTypes[random.Next(workTypes.Length)],
-                    ProductionStatus = productionStatuses[random.Next(productionStatuses.Length)],
-                    DailyReportStatus = dailyStatuses[random.Next(dailyStatuses.Length)],
-                    Qty = random.Next(1, 50) * 5,
-                    SQM = Math.Round(random.Next(10, 500) * 0.1, 2),
-                    Status = statuses[random.Next(statuses.Length)],
+                    Qty = qty,
+                    SQM = Math.Round(random.Next(50, 500) * 0.1, 2),
                     Salesman = salesmen[random.Next(salesmen.Length)],
-                    Color = colors[random.Next(colors.Length)],
-                    Notes = i % 3 == 0 ? $"Work order {i} notes" : ""
-                });
+                    Status = status,
+                    ProductionStatus = productionStatus,
+                    Color = "",
+                    Notes = i % 4 == 0 ? $"Order {i} notes" : "",
+                    CreatedDate = DateTime.Today.AddDays(-random.Next(1, 15))
+                };
+                DailyWorks.Add(order);
             }
             UpdateStatistics();
         }
