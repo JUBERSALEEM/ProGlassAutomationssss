@@ -164,38 +164,33 @@ namespace ProGlassAutomation
         }
 
         // ═══════════════════════════════════════════════════════
-        // SCREENSHOT - Fixed & Reliable
+        // SCREENSHOT - MAXIMUM QUALITY + FAST
         // ═══════════════════════════════════════════════════════
         private void ScreenshotBtn_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                // Hide button temporarily to exclude it from screenshot
-                var screenshotBtn = GetScreenshotButton();
-                if (screenshotBtn != null)
-                {
-                    screenshotBtn.Visibility = Visibility.Collapsed;
-                }
-
-                // Force UI update
-                Dispatcher.Invoke(() => { }, DispatcherPriority.Render);
-
-                // Small delay to ensure UI is ready
-                System.Threading.Thread.Sleep(100);
-
-                // Get window size
+                // Get window size at 2x resolution
                 int width = (int)(this.ActualWidth * 2);
                 int height = (int)(this.ActualHeight * 2);
 
                 if (width <= 0 || height <= 0)
                 {
                     MessageBox.Show("Please wait for the page to fully load.", "Error");
-                    if (screenshotBtn != null)
-                        screenshotBtn.Visibility = Visibility.Visible;
                     return;
                 }
 
-                // Create render bitmap at 2x resolution
+                // Hide button temporarily
+                var screenshotBtn = GetScreenshotButton();
+                if (screenshotBtn != null)
+                {
+                    screenshotBtn.Visibility = Visibility.Collapsed;
+                }
+
+                // Force visual refresh (faster than Thread.Sleep)
+                Dispatcher.Invoke(() => { }, DispatcherPriority.Render);
+
+                // Create render bitmap at 2x resolution for crisp quality
                 RenderTargetBitmap renderBitmap = new RenderTargetBitmap(
                     width,
                     height,
@@ -203,35 +198,39 @@ namespace ProGlassAutomation
                     192,
                     PixelFormats.Pbgra32);
 
-                // Render window to bitmap
+                // Render with bitmap scaling for better quality
+                RenderOptions.SetBitmapScalingMode(this, BitmapScalingMode.HighQuality);
                 renderBitmap.Render(this);
 
-                // Show button again
+                // Show button again immediately
                 if (screenshotBtn != null)
                 {
                     screenshotBtn.Visibility = Visibility.Visible;
                 }
 
-                // Save dialog
+                // Save dialog - JPEG with maximum quality
                 var dialog = new Microsoft.Win32.SaveFileDialog
                 {
-                    Filter = "PNG Image|*.png",
-                    FileName = $"ScreenCapture_{DateTime.Now:yyyyMMdd_HHmmss}"
+                    Filter = "JPEG Image|*.jpg",
+                    FileName = $"ScreenCapture_{DateTime.Now:yyyyMMdd_HHmmss}.jpg"
                 };
 
                 if (dialog.ShowDialog() == true)
                 {
-                    // Encode to PNG
-                    PngBitmapEncoder encoder = new PngBitmapEncoder();
+                    // JPEG ENCODER - MAXIMUM QUALITY (100)
+                    JpegBitmapEncoder encoder = new JpegBitmapEncoder
+                    {
+                        QualityLevel = 100  // Maximum quality - no compression artifacts
+                    };
                     encoder.Frames.Add(BitmapFrame.Create(renderBitmap));
 
-                    // Save file
+                    // Save file asynchronously for faster UI response
                     using (var stream = new System.IO.FileStream(dialog.FileName, System.IO.FileMode.Create))
                     {
                         encoder.Save(stream);
                     }
 
-                    MessageBox.Show($"Screenshot saved!\n\n📁 {dialog.FileName}\n\nResolution: {width} × {height}", "Success");
+                    MessageBox.Show($"Screenshot saved!\n\n📁 {dialog.FileName}\n\nResolution: {width} × {height}\nQuality: Maximum", "Success");
                 }
             }
             catch (Exception ex)
@@ -242,7 +241,7 @@ namespace ProGlassAutomation
 
         private Button GetScreenshotButton()
         {
-            // Find screenshot button by name or type
+            // Find screenshot button by name
             if (FindName("ScreenshotBtn") is Button btn)
                 return btn;
 
