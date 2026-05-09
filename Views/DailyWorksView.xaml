@@ -14,12 +14,12 @@
 
         <Style x:Key="ModernDataGrid" TargetType="DataGrid">
             <Setter Property="Background" Value="White"/>
-            <Setter Property="BorderBrush" Value="#E2E8F0"/>
+            <Setter Property="BorderBrush" Value="#E5E7EB"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="GridLinesVisibility" Value="Horizontal"/>
-            <Setter Property="HorizontalGridLinesBrush" Value="#F1F5F9"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#F3F4F6"/>
             <Setter Property="RowBackground" Value="White"/>
-            <Setter Property="AlternatingRowBackground" Value="#F8FAFC"/>
+            <Setter Property="AlternatingRowBackground" Value="#F9FAFB"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="HeadersVisibility" Value="Column"/>
             <Setter Property="SelectionMode" Value="Single"/>
@@ -30,19 +30,8 @@
             <Setter Property="IsReadOnly" Value="True"/>
         </Style>
 
-        <Style x:Key="ColumnHeaderStyle" TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="#1E40AF"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="FontSize" Value="11"/>
-            <Setter Property="Padding" Value="12,10"/>
-            <Setter Property="BorderThickness" Value="0,0,1,0"/>
-            <Setter Property="BorderBrush" Value="#3B82F6"/>
-            <Setter Property="HorizontalContentAlignment" Value="Center"/>
-        </Style>
-
         <Style x:Key="ModernCell" TargetType="DataGridCell">
-            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="Padding" Value="8,6"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
@@ -63,18 +52,8 @@
             </Style.Triggers>
         </Style>
 
-        <!-- ═══════════════════════════════════════════════════════
-             PRIMARY BUTTON - Rounded Blue
-             ═══════════════════════════════════════════════════════ -->
         <Style x:Key="PrimaryButton" TargetType="Button">
-            <Setter Property="Background">
-                <Setter.Value>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#3B82F6" Offset="0"/>
-                        <GradientStop Color="#2563EB" Offset="1"/>
-                    </LinearGradientBrush>
-                </Setter.Value>
-            </Setter>
+            <Setter Property="Background" Value="#3B82F6"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="11"/>
@@ -84,22 +63,12 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="25" Padding="{TemplateBinding Padding}">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.3" Color="#3B82F6"/>
-                            </Border.Effect>
+                        <Border Background="{TemplateBinding Background}" CornerRadius="25" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background">
-                                    <Setter.Value>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                            <GradientStop Color="#2563EB" Offset="0"/>
-                                            <GradientStop Color="#1D4ED8" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Setter.Value>
-                                </Setter>
+                                <Setter Property="Background" Value="#2563EB"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -107,18 +76,8 @@
             </Setter>
         </Style>
 
-        <!-- ═══════════════════════════════════════════════════════
-             SUCCESS BUTTON - Rounded Green
-             ═══════════════════════════════════════════════════════ -->
         <Style x:Key="SuccessButton" TargetType="Button">
-            <Setter Property="Background">
-                <Setter.Value>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#10B981" Offset="0"/>
-                        <GradientStop Color="#059669" Offset="1"/>
-                    </LinearGradientBrush>
-                </Setter.Value>
-            </Setter>
+            <Setter Property="Background" Value="#10B981"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="11"/>
@@ -128,22 +87,12 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="25" Padding="{TemplateBinding Padding}">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.3" Color="#10B981"/>
-                            </Border.Effect>
+                        <Border Background="{TemplateBinding Background}" CornerRadius="25" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background">
-                                    <Setter.Value>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                            <GradientStop Color="#059669" Offset="0"/>
-                                            <GradientStop Color="#047857" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Setter.Value>
-                                </Setter>
+                                <Setter Property="Background" Value="#059669"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -151,18 +100,8 @@
             </Setter>
         </Style>
 
-        <!-- ═══════════════════════════════════════════════════════
-             DANGER BUTTON - Rounded Red
-             ═══════════════════════════════════════════════════════ -->
         <Style x:Key="DangerButton" TargetType="Button">
-            <Setter Property="Background">
-                <Setter.Value>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#EF4444" Offset="0"/>
-                        <GradientStop Color="#DC2626" Offset="1"/>
-                    </LinearGradientBrush>
-                </Setter.Value>
-            </Setter>
+            <Setter Property="Background" Value="#EF4444"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="11"/>
@@ -172,22 +111,12 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="25" Padding="{TemplateBinding Padding}">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.3" Color="#EF4444"/>
-                            </Border.Effect>
+                        <Border Background="{TemplateBinding Background}" CornerRadius="25" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background">
-                                    <Setter.Value>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                            <GradientStop Color="#DC2626" Offset="0"/>
-                                            <GradientStop Color="#B91C1C" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Setter.Value>
-                                </Setter>
+                                <Setter Property="Background" Value="#DC2626"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -195,18 +124,8 @@
             </Setter>
         </Style>
 
-        <!-- ═══════════════════════════════════════════════════════
-             SECONDARY BUTTON - Rounded Gray
-             ═══════════════════════════════════════════════════════ -->
         <Style x:Key="SecondaryButton" TargetType="Button">
-            <Setter Property="Background">
-                <Setter.Value>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#6B7280" Offset="0"/>
-                        <GradientStop Color="#4B5563" Offset="1"/>
-                    </LinearGradientBrush>
-                </Setter.Value>
-            </Setter>
+            <Setter Property="Background" Value="#6B7280"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="11"/>
@@ -216,22 +135,12 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="25" Padding="{TemplateBinding Padding}">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.2" Color="#6B7280"/>
-                            </Border.Effect>
+                        <Border Background="{TemplateBinding Background}" CornerRadius="25" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background">
-                                    <Setter.Value>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                            <GradientStop Color="#4B5563" Offset="0"/>
-                                            <GradientStop Color="#374151" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Setter.Value>
-                                </Setter>
+                                <Setter Property="Background" Value="#4B5563"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -239,153 +148,139 @@
             </Setter>
         </Style>
 
-        <!-- ═══════════════════════════════════════════════════════
-             MODERN COMBOBOX - Rounded with Shadow
-             ═══════════════════════════════════════════════════════ -->
         <Style x:Key="ModernComboBox" TargetType="ComboBox">
             <Setter Property="Background" Value="White"/>
             <Setter Property="Foreground" Value="#1E293B"/>
             <Setter Property="FontSize" Value="12"/>
-            <Setter Property="FontWeight" Value="Medium"/>
             <Setter Property="Padding" Value="12,10"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="BorderBrush" Value="#CBD5E1"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ComboBox">
-                        <Grid>
-                            <Border x:Name="border" 
-                                    Background="{TemplateBinding Background}"
-                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="{TemplateBinding BorderThickness}"
-                                    CornerRadius="10"
-                                    Padding="{TemplateBinding Padding}">
-                                <Border.Effect>
-                                    <DropShadowEffect BlurRadius="6" ShadowDepth="1" Opacity="0.15" Color="#000000"/>
-                                </Border.Effect>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <ContentPresenter Grid.Column="0" 
-                                                      Content="{TemplateBinding SelectionBoxItem}"
-                                                      ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                                                      VerticalAlignment="Center"/>
-                                    <ToggleButton Grid.Column="1" 
-                                                  x:Name="ToggleButton" 
-                                                  Focusable="False" 
-                                                  IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
-                                                  Background="Transparent" 
-                                                  BorderThickness="0"
-                                                  Cursor="Hand">
-                                        <TextBlock Text="▼" FontSize="10" Foreground="#64748B" Margin="8,0,0,0"/>
-                                    </ToggleButton>
-                                </Grid>
-                            </Border>
-                            <Popup x:Name="Popup" 
-                                   Placement="Bottom" 
-                                   IsOpen="{TemplateBinding IsDropDownOpen}" 
-                                   AllowsTransparency="True" 
-                                   Focusable="False"
-                                   PopupAnimation="Slide">
-                                <Border x:Name="DropDown" 
-                                        Background="White" 
-                                        CornerRadius="10" 
-                                        Margin="0,5,0,0"
-                                        MinWidth="{TemplateBinding ActualWidth}"
-                                        MaxHeight="300">
-                                    <Border.Effect>
-                                        <DropShadowEffect BlurRadius="15" ShadowDepth="3" Opacity="0.2" Color="#000000"/>
-                                    </Border.Effect>
-                                    <ScrollViewer Margin="5">
-                                        <StackPanel IsItemsHost="True"/>
-                                    </ScrollViewer>
-                                </Border>
-                            </Popup>
-                        </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="BorderBrush" Value="#3B82F6"/>
-                            </Trigger>
-                            <Trigger Property="IsDropDownOpen" Value="True">
-                                <Setter TargetName="border" Property="BorderBrush" Value="#3B82F6"/>
-                                <Setter TargetName="border" Property="Background" Value="#F8FAFC"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- ComboBox Item Style -->
-        <Style x:Key="ModernComboBoxItem" TargetType="ComboBoxItem">
-            <Setter Property="Padding" Value="12,10"/>
-            <Setter Property="Foreground" Value="#1E293B"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ComboBoxItem">
-                        <Border x:Name="border" Background="Transparent" Padding="{TemplateBinding Padding}" CornerRadius="6" Margin="2">
-                            <ContentPresenter/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#E0E7FF"/>
-                            </Trigger>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#3B82F6"/>
-                                <Setter Property="Foreground" Value="White"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+            <Setter Property="BorderBrush" Value="#D1D5DB"/>
         </Style>
 
         <Style x:Key="ModernTextBox" TargetType="TextBox">
             <Setter Property="Background" Value="White"/>
-            <Setter Property="BorderBrush" Value="#CBD5E1"/>
+            <Setter Property="BorderBrush" Value="#D1D5DB"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="12,10"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Foreground" Value="#1E293B"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="TextBox">
-                        <Border Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="10"
-                                Padding="{TemplateBinding Padding}">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="6" ShadowDepth="1" Opacity="0.1" Color="#000000"/>
-                            </Border.Effect>
-                            <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="BorderBrush" Value="#3B82F6"/>
-                            </Trigger>
-                            <Trigger Property="IsFocused" Value="True">
-                                <Setter Property="BorderBrush" Value="#3B82F6"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
 
         <Style x:Key="ModernDatePicker" TargetType="DatePicker">
             <Setter Property="Background" Value="White"/>
-            <Setter Property="BorderBrush" Value="#CBD5E1"/>
+            <Setter Property="BorderBrush" Value="#D1D5DB"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="12,10"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Foreground" Value="#1E293B"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+
+        <!-- Column Header Styles -->
+        <Style x:Key="HeaderBlue" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#3B82F6"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="10,12"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="HeaderPurple" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#7C3AED"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="10,12"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="HeaderIndigo" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#4F46E5"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="10,12"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="HeaderCyan" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#0891B2"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="10,12"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="HeaderTeal" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#0D9488"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="10,12"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="HeaderAmber" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#D97706"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="10,12"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="HeaderEmerald" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#059669"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="10,12"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="HeaderGreen" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#16A34A"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="10,12"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="HeaderRose" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#E11D48"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="10,12"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="HeaderOrange" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#EA580C"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="10,12"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="HeaderPink" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#DB2777"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="10,12"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="HeaderSlate" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#475569"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="10,12"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="11"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
         </Style>
     </UserControl.Resources>
@@ -398,7 +293,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Header with Search and Date -->
+        <!-- Header -->
         <Border Grid.Row="0" CornerRadius="16" Padding="20" Margin="0,0,0,16">
             <Border.Effect>
                 <DropShadowEffect BlurRadius="20" ShadowDepth="3" Opacity="0.15" Color="#3B82F6"/>
@@ -418,13 +313,11 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Title -->
                 <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,30,0">
                     <TextBlock Text="DAILY WORKS" FontSize="24" FontWeight="Bold" Foreground="White"/>
-                    <TextBlock Text="Click row to edit • Double-click to quick select" FontSize="11" Foreground="#BFDBFE" Margin="0,4,0,0"/>
+                    <TextBlock Text="Click row to edit" FontSize="11" Foreground="#BFDBFE" Margin="0,4,0,0"/>
                 </StackPanel>
 
-                <!-- Search -->
                 <Border Grid.Column="1" CornerRadius="25" Background="White" Margin="0,0,12,0" Padding="4">
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -432,45 +325,34 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <Border Background="#10B981" CornerRadius="20" Padding="10,8" Margin="2">
-                            <TextBlock Text="🔍" FontSize="14"/>
+                            <TextBlock Text="search" FontSize="14" Foreground="White"/>
                         </Border>
                         <TextBox Grid.Column="1" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" VerticalAlignment="Center" Padding="10,8" FontSize="12" Background="Transparent"/>
                     </Grid>
                 </Border>
 
-                <!-- Date From -->
                 <StackPanel Grid.Column="2" Margin="0,0,12,0" VerticalAlignment="Center">
-                    <TextBlock Text="📅 DATE FROM" FontSize="9" FontWeight="Bold" Foreground="#BFDBFE" Margin="0,0,0,4"/>
+                    <TextBlock Text="DATE FROM" FontSize="9" FontWeight="Bold" Foreground="#BFDBFE" Margin="0,0,0,4"/>
                     <Border CornerRadius="25" Background="White" Padding="12,8">
-                        <DatePicker SelectedDate="{Binding FilterStartDate}" 
-                                    BorderThickness="0" 
-                                    Background="Transparent" 
-                                    FontSize="12" 
-                                    Foreground="#1E293B"/>
+                        <DatePicker SelectedDate="{Binding FilterStartDate}" BorderThickness="0" Background="Transparent" FontSize="12" Foreground="#1E293B"/>
                     </Border>
                 </StackPanel>
 
-                <!-- Date To -->
                 <StackPanel Grid.Column="3" Margin="0,0,12,0" VerticalAlignment="Center">
-                    <TextBlock Text="📅 DATE TO" FontSize="9" FontWeight="Bold" Foreground="#BFDBFE" Margin="0,0,0,4"/>
+                    <TextBlock Text="DATE TO" FontSize="9" FontWeight="Bold" Foreground="#BFDBFE" Margin="0,0,0,4"/>
                     <Border CornerRadius="25" Background="White" Padding="12,8">
-                        <DatePicker SelectedDate="{Binding FilterEndDate}" 
-                                    BorderThickness="0" 
-                                    Background="Transparent" 
-                                    FontSize="12" 
-                                    Foreground="#1E293B"/>
+                        <DatePicker SelectedDate="{Binding FilterEndDate}" BorderThickness="0" Background="Transparent" FontSize="12" Foreground="#1E293B"/>
                     </Border>
                 </StackPanel>
 
-                <!-- Buttons -->
                 <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Content="➕ Add New" Style="{StaticResource SuccessButton}" Command="{Binding AddNewCommand}" Margin="0,0,10,0"/>
-                    <Button Content="📤 Export CSV" Style="{StaticResource PrimaryButton}" Command="{Binding ExportCommand}"/>
+                    <Button Content="Add New" Style="{StaticResource SuccessButton}" Command="{Binding AddNewCommand}" Margin="0,0,10,0"/>
+                    <Button Content="Export CSV" Style="{StaticResource PrimaryButton}" Command="{Binding ExportCommand}"/>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <!-- Filters - Match DataGrid Columns -->
+        <!-- Filters -->
         <Border Grid.Row="1" CornerRadius="16" Padding="16" Margin="0,0,0,16">
             <Border.Effect>
                 <DropShadowEffect BlurRadius="15" ShadowDepth="2" Opacity="0.1"/>
@@ -481,63 +363,46 @@
                     <GradientStop Color="#F8FAFC" Offset="1"/>
                 </LinearGradientBrush>
             </Border.Background>
-            <StackPanel>
-                <!-- Row 1: Main Filters -->
-                <Grid Margin="0,0,0,12">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
-                    <StackPanel Grid.Column="0" Margin="0,0,8,0">
-                        <TextBlock Text="🏢 COMPANY" FontSize="9" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                        <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding CompanyOptions}" SelectedItem="{Binding FilterCompany}"/>
-                    </StackPanel>
+                <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                    <TextBlock Text="COMPANY" FontSize="9" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
+                    <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding CompanyOptions}" SelectedItem="{Binding FilterCompany}"/>
+                </StackPanel>
 
-                    <StackPanel Grid.Column="1" Margin="0,0,8,0">
-                        <TextBlock Text="🔧 TYPE OF WORK" FontSize="9" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                        <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding TypeOfWorkOptions}" SelectedItem="{Binding FilterTypeOfWork}"/>
-                    </StackPanel>
+                <StackPanel Grid.Column="1" Margin="0,0,8,0">
+                    <TextBlock Text="TYPE OF WORK" FontSize="9" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
+                    <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding TypeOfWorkOptions}" SelectedItem="{Binding FilterTypeOfWork}"/>
+                </StackPanel>
 
-                    <StackPanel Grid.Column="2" Margin="0,0,8,0">
-                        <TextBlock Text="⚙️ PRODUCTION STATUS" FontSize="9" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                        <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding ProductionStatusOptions}" SelectedItem="{Binding FilterProductionStatus}"/>
-                    </StackPanel>
+                <StackPanel Grid.Column="2" Margin="0,0,8,0">
+                    <TextBlock Text="PRODUCTION STATUS" FontSize="9" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
+                    <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding ProductionStatusOptions}" SelectedItem="{Binding FilterProductionStatus}"/>
+                </StackPanel>
 
-                    <StackPanel Grid.Column="3" Margin="0,0,8,0">
-                        <TextBlock Text="📊 STATUS" FontSize="9" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                        <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding StatusOptions}" SelectedItem="{Binding FilterStatus}"/>
-                    </StackPanel>
+                <StackPanel Grid.Column="3" Margin="0,0,8,0">
+                    <TextBlock Text="STATUS" FontSize="9" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
+                    <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding StatusOptions}" SelectedItem="{Binding FilterStatus}"/>
+                </StackPanel>
 
-                    <StackPanel Grid.Column="4" Margin="0,0,8,0">
-                        <TextBlock Text="👤 SALESMAN" FontSize="9" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                        <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding SalesmanOptions}" SelectedItem="{Binding FilterSalesman}"/>
-                    </StackPanel>
+                <StackPanel Grid.Column="4" Margin="0,0,8,0">
+                    <TextBlock Text="SALESMAN" FontSize="9" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
+                    <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding SalesmanOptions}" SelectedItem="{Binding FilterSalesman}"/>
+                </StackPanel>
 
-                    <StackPanel Grid.Column="5" Margin="0,0,0,0">
-                        <TextBlock Text="🎨 COLOR" FontSize="9" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                        <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding ColorOptions}" SelectedItem="{Binding FilterColor}"/>
-                    </StackPanel>
-                </Grid>
-
-                <!-- Row 2: Action Buttons -->
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-
-                    <TextBlock Grid.Column="0" Text="💡 Filter by selecting any field above" FontSize="11" Foreground="#94A3B8" VerticalAlignment="Center" Margin="0,0,0,0"/>
-
-                    <Button Grid.Column="1" Content="🔄 Refresh" Style="{StaticResource PrimaryButton}" Command="{Binding RefreshCommand}" Margin="0,0,10,0"/>
-                    <Button Grid.Column="2" Content="🗑️ Clear Filters" Style="{StaticResource SecondaryButton}" Command="{Binding ClearFiltersCommand}"/>
-                </Grid>
-            </StackPanel>
+                <StackPanel Grid.Column="5" Margin="0,0,0,0">
+                    <TextBlock Text="COLOR" FontSize="9" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
+                    <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding ColorOptions}" SelectedItem="{Binding FilterColor}"/>
+                </StackPanel>
+            </Grid>
         </Border>
 
         <!-- Data Grid -->
@@ -548,22 +413,143 @@
             <DataGrid ItemsSource="{Binding FilteredDataView}" 
                       SelectedItem="{Binding SelectedDataRowView}" 
                       Style="{StaticResource ModernDataGrid}" 
-                      ColumnHeaderStyle="{StaticResource ColumnHeaderStyle}" 
                       CellStyle="{StaticResource ModernCell}"
                       RowStyle="{StaticResource ModernRowStyle}">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="DATE" Binding="{Binding Date, StringFormat=yyyy-MM-dd}" Width="100"/>
-                    <DataGridTextColumn Header="COMPANY" Binding="{Binding Company}" Width="150"/>
-                    <DataGridTextColumn Header="PI NUMBER" Binding="{Binding PINumber}" Width="130"/>
-                    <DataGridTextColumn Header="CUSTOMER REF" Binding="{Binding CustomerReference}" Width="120"/>
-                    <DataGridTextColumn Header="TYPE OF WORK" Binding="{Binding TypeOfWork}" Width="150"/>
-                    <DataGridTextColumn Header="PRODUCTION STATUS" Binding="{Binding ProductionStatus}" Width="140"/>
-                    <DataGridTextColumn Header="QTY" Binding="{Binding Qty}" Width="70"/>
-                    <DataGridTextColumn Header="SQM" Binding="{Binding SQM, StringFormat=N2}" Width="80"/>
-                    <DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="90"/>
-                    <DataGridTextColumn Header="SALESMAN" Binding="{Binding Salesman}" Width="120"/>
-                    <DataGridTextColumn Header="COLOR" Binding="{Binding Color}" Width="100"/>
-                    <DataGridTextColumn Header="NOTES" Binding="{Binding Notes}" Width="*"/>
+                    <DataGridTemplateColumn Header="DATE" Width="100" HeaderStyle="{StaticResource HeaderBlue}">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Border Background="#EFF6FF" CornerRadius="6" Padding="8,4">
+                                    <TextBlock Text="{Binding Date, StringFormat=dd-MM-yyyy}" FontSize="12" Foreground="#1D4ED8" FontWeight="Medium"/>
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <DataGridTemplateColumn Header="COMPANY" Width="150" HeaderStyle="{StaticResource HeaderPurple}">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Company}" FontSize="12" Foreground="#4C1D95" FontWeight="Medium"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <DataGridTemplateColumn Header="PI NUMBER" Width="130" HeaderStyle="{StaticResource HeaderIndigo}">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding PINumber}" FontSize="12" Foreground="#3730A3" FontWeight="Medium"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <DataGridTemplateColumn Header="CUST REF" Width="120" HeaderStyle="{StaticResource HeaderCyan}">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding CustomerReference}" FontSize="12" Foreground="#0E7490" FontWeight="Medium"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <DataGridTemplateColumn Header="TYPE OF WORK" Width="150" HeaderStyle="{StaticResource HeaderTeal}">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Border Background="#F0FDFA" CornerRadius="4" Padding="6,3">
+                                    <TextBlock Text="{Binding TypeOfWork}" FontSize="11" Foreground="#0F766E" FontWeight="Medium"/>
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <DataGridTemplateColumn Header="PRODUCTION" Width="140" HeaderStyle="{StaticResource HeaderAmber}">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding ProductionStatus}" FontSize="12" Foreground="#B45309" FontWeight="Medium"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <DataGridTemplateColumn Header="QTY" Width="70" HeaderStyle="{StaticResource HeaderEmerald}">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Qty}" FontSize="12" Foreground="#047857" FontWeight="Bold" HorizontalAlignment="Center"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <DataGridTemplateColumn Header="SQM" Width="80" HeaderStyle="{StaticResource HeaderGreen}">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding SQM, StringFormat=N2}" FontSize="12" Foreground="#15803D" FontWeight="Bold" HorizontalAlignment="Center"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <DataGridTemplateColumn Header="STATUS" Width="100" HeaderStyle="{StaticResource HeaderRose}">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Border CornerRadius="10" Padding="8,3">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="#F1F5F9"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Status}" Value="Completed">
+                                                    <Setter Property="Background" Value="#DCFCE7"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Status}" Value="In Progress">
+                                                    <Setter Property="Background" Value="#FEF3C7"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Status}" Value="Pending">
+                                                    <Setter Property="Background" Value="#FEE2E2"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <TextBlock Text="{Binding Status}" FontSize="11" FontWeight="SemiBold">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#64748B"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Completed">
+                                                        <Setter Property="Foreground" Value="#16A34A"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Status}" Value="In Progress">
+                                                        <Setter Property="Foreground" Value="#D97706"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Pending">
+                                                        <Setter Property="Foreground" Value="#DC2626"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <DataGridTemplateColumn Header="SALESMAN" Width="120" HeaderStyle="{StaticResource HeaderOrange}">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Salesman}" FontSize="12" Foreground="#C2410C" FontWeight="Medium"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <DataGridTemplateColumn Header="COLOR" Width="100" HeaderStyle="{StaticResource HeaderPink}">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Color}" FontSize="12" Foreground="#BE185D" FontWeight="Medium"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <DataGridTemplateColumn Header="NOTES" Width="*" HeaderStyle="{StaticResource HeaderSlate}">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Notes}" FontSize="11" Foreground="#64748B" TextTrimming="CharacterEllipsis" MaxWidth="200"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                 </DataGrid.Columns>
             </DataGrid>
         </Border>
@@ -589,28 +575,28 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" HorizontalAlignment="Center">
-                    <TextBlock Text="📋 TOTAL RECORDS" Foreground="#BFDBFE" FontSize="10" FontWeight="Bold"/>
+                    <TextBlock Text="TOTAL" Foreground="#BFDBFE" FontSize="10" FontWeight="Bold"/>
                     <TextBlock Text="{Binding TotalRecords}" Foreground="White" FontSize="24" FontWeight="Bold"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" HorizontalAlignment="Center">
-                    <TextBlock Text="🔍 FILTERED" Foreground="#BFDBFE" FontSize="10" FontWeight="Bold"/>
+                    <TextBlock Text="FILTERED" Foreground="#BFDBFE" FontSize="10" FontWeight="Bold"/>
                     <TextBlock Text="{Binding FilteredRecords}" Foreground="White" FontSize="24" FontWeight="Bold"/>
                 </StackPanel>
                 <StackPanel Grid.Column="2" HorizontalAlignment="Center">
-                    <TextBlock Text="📦 TOTAL QTY" Foreground="#BFDBFE" FontSize="10" FontWeight="Bold"/>
+                    <TextBlock Text="QTY" Foreground="#BFDBFE" FontSize="10" FontWeight="Bold"/>
                     <TextBlock Text="{Binding TotalQty}" Foreground="White" FontSize="24" FontWeight="Bold"/>
                 </StackPanel>
                 <StackPanel Grid.Column="3" HorizontalAlignment="Center">
-                    <TextBlock Text="📐 TOTAL SQM" Foreground="#BFDBFE" FontSize="10" FontWeight="Bold"/>
+                    <TextBlock Text="SQM" Foreground="#BFDBFE" FontSize="10" FontWeight="Bold"/>
                     <TextBlock Text="{Binding TotalSQM, StringFormat=N2}" Foreground="White" FontSize="24" FontWeight="Bold"/>
                 </StackPanel>
                 <StackPanel Grid.Column="4" HorizontalAlignment="Center">
-                    <TextBlock Text="📏 FILTERED SQM" Foreground="#BFDBFE" FontSize="10" FontWeight="Bold"/>
+                    <TextBlock Text="FILTER SQM" Foreground="#BFDBFE" FontSize="10" FontWeight="Bold"/>
                     <TextBlock Text="{Binding FilteredSQM, StringFormat=N2}" Foreground="White" FontSize="24" FontWeight="Bold"/>
                 </StackPanel>
                 <StackPanel Grid.Column="5" Orientation="Horizontal">
-                    <Button Content="✏️ Edit" Style="{StaticResource PrimaryButton}" Command="{Binding EditCommand}" Margin="0,0,10,0"/>
-                    <Button Content="🗑️ Delete" Style="{StaticResource DangerButton}" Command="{Binding DeleteCommand}"/>
+                    <Button Content="Edit" Style="{StaticResource PrimaryButton}" Command="{Binding EditCommand}" Margin="0,0,10,0"/>
+                    <Button Content="Delete" Style="{StaticResource DangerButton}" Command="{Binding DeleteCommand}"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -622,7 +608,7 @@
                     <DropShadowEffect BlurRadius="25" ShadowDepth="5" Opacity="0.25"/>
                 </Border.Effect>
                 <StackPanel>
-                    <TextBlock Text="✏️ EDIT / ADD RECORD" FontSize="20" FontWeight="Bold" Foreground="#1E40AF" Margin="0,0,0,20"/>
+                    <TextBlock Text="EDIT / ADD RECORD" FontSize="20" FontWeight="Bold" Foreground="#1E40AF" Margin="0,0,0,20"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -634,82 +620,77 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
                         <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,10,12">
-                            <TextBlock Text="📅 DATE" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
+                            <TextBlock Text="DATE" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <DatePicker Style="{StaticResource ModernDatePicker}" SelectedDate="{Binding EditingWork.Date}"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,10,12">
-                            <TextBlock Text="🏢 COMPANY *" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
+                            <TextBlock Text="COMPANY" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <TextBox Text="{Binding EditingWork.Company}" Style="{StaticResource ModernTextBox}"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,12">
-                            <TextBlock Text="📄 PI NUMBER" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
+                            <TextBlock Text="PI NUMBER" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <TextBox Text="{Binding EditingWork.PINumber}" Style="{StaticResource ModernTextBox}"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,12">
-                            <TextBlock Text="📋 CUSTOMER REF" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
+                            <TextBlock Text="CUST REF" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <TextBox Text="{Binding EditingWork.CustomerReference}" Style="{StaticResource ModernTextBox}"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,10,12">
-                            <TextBlock Text="🔧 TYPE OF WORK" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
+                            <TextBlock Text="TYPE OF WORK" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding TypeOfWorkOptions}" SelectedItem="{Binding EditingWork.TypeOfWork}"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,12">
-                            <TextBlock Text="⚙️ PRODUCTION STATUS" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
+                            <TextBlock Text="PRODUCTION" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding ProductionStatusOptions}" SelectedItem="{Binding EditingWork.ProductionStatus}"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,10,12">
-                            <TextBlock Text="📦 QTY" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
+                            <TextBlock Text="QTY" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <TextBox Text="{Binding EditingWork.Qty}" Style="{StaticResource ModernTextBox}"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,10,12">
-                            <TextBlock Text="📐 SQM" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
+                            <TextBlock Text="SQM" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <TextBox Text="{Binding EditingWork.SQM}" Style="{StaticResource ModernTextBox}"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.Column="2" Margin="0,0,0,12">
-                            <TextBlock Text="📊 STATUS" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
+                            <TextBlock Text="STATUS" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding StatusOptions}" SelectedItem="{Binding EditingWork.Status}"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="3" Grid.Column="0" Margin="0,0,10,12">
-                            <TextBlock Text="👤 SALESMAN" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
+                            <TextBlock Text="SALESMAN" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding SalesmanOptions}" SelectedItem="{Binding EditingWork.Salesman}"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="3" Grid.Column="1" Margin="0,0,10,12">
-                            <TextBlock Text="🎨 COLOR" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
+                            <TextBlock Text="COLOR" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding ColorOptions}" SelectedItem="{Binding EditingWork.Color}"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="3" Grid.Column="2" Margin="0,0,0,12">
-                            <TextBlock Text="📝 NOTES" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                            <Border Background="White" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="10" Padding="12,10" MinHeight="60">
-                                <TextBox Text="{Binding EditingWork.Notes, UpdateSourceTrigger=PropertyChanged}" 
-                 BorderThickness="0" 
-                 Background="Transparent"
-                 TextWrapping="Wrap" 
-                 AcceptsReturn="True" 
-                 VerticalScrollBarVisibility="Auto"
-                 FontSize="12"
-                 Foreground="#1E293B"/>
-                            </Border>
+                            <TextBlock Text="NOTES" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding EditingWork.Notes}" 
+                                     Style="{StaticResource ModernTextBox}"
+                                     TextWrapping="Wrap"
+                                     AcceptsReturn="True"
+                                     MinHeight="40"
+                                     VerticalScrollBarVisibility="Auto"/>
                         </StackPanel>
                     </Grid>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,24,0,0">
-                        <Button Content="❌ Cancel" Style="{StaticResource SecondaryButton}" Command="{Binding CancelCommand}" Margin="0,0,12,0" Padding="24,12"/>
-                        <Button Content="💾 Save" Style="{StaticResource SuccessButton}" Command="{Binding SaveCommand}" Padding="24,12"/>
+                        <Button Content="Cancel" Style="{StaticResource SecondaryButton}" Command="{Binding CancelCommand}" Margin="0,0,12,0" Padding="24,12"/>
+                        <Button Content="Save" Style="{StaticResource SuccessButton}" Command="{Binding SaveCommand}" Padding="24,12"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
