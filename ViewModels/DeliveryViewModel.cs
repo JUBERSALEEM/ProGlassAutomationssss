@@ -9,6 +9,7 @@ using System.Windows.Media;
 using System.Windows.Controls;
 using System.Windows.Data;
 using ProGlassAutomation.Models;
+using ProGlassAutomation.Data.Database;
 
 namespace ProGlassAutomation.ViewModels
 {
@@ -66,7 +67,7 @@ namespace ProGlassAutomation.ViewModels
             ViewDetailsCommand = new RelayCommand(ExecuteViewDetails, CanExecuteViewDetails);
             DeleteSelectedCommand = new RelayCommand(ExecuteDeleteSelected, CanExecuteDeleteSelected);
 
-            LoadSampleData();
+            LoadDataFromDatabase();
             CreateDataView();
         }
 
@@ -96,7 +97,11 @@ namespace ProGlassAutomation.ViewModels
             set
             {
                 if (SetProperty(ref _selectedOrder, value))
+                {
+                    if (value != null)
+                        LoadDeliveryItems(value);
                     CommandManager.InvalidateRequerySuggested();
+                }
             }
         }
 
@@ -252,13 +257,6 @@ namespace ProGlassAutomation.ViewModels
             OnPropertyChanged(nameof(SelectedCount));
         }
 
-        private int GetSelectedCount()
-        {
-            return FilteredDataView?.Cast<DataRowView>()
-                .Count(r => r.Row.Table.Columns.Contains("IsSelected") &&
-                            r["IsSelected"] is bool b && b) ?? 0;
-        }
-
         #endregion
 
         #region Commands
@@ -385,100 +383,51 @@ namespace ProGlassAutomation.ViewModels
 
         #endregion
 
-        #region Load Sample Data
+        #region Load From Database
 
-        private void LoadSampleData()
+        private void LoadDataFromDatabase()
         {
-            var random = new Random();
-            var companies = new[] { "ABC Construction", "XYZ Windows", "Secure Buildings Ltd", "Modern Glass Works", "Elite Glazing Co" };
-            var workTypes = new[] { "Single Unit (SGU)", "Double Unit (DGU)", "Lamination Unit", "Single + Double Unit", "SGU + DGU" };
-            var salesmen = new[] { "Ahmed Khan", "Muhammad Ali", "Hassan Ahmed", "Usman Malik", "Bilal Shah" };
-            var customerRefs = new[] { "CUST-001", "CUST-002", "CUST-003", "CUST-004", "CUST-005" };
-
-            // Load sample SourceOrders with Confirmed status (used for import)
-            for (int i = 1; i <= 25; i++)
+            try
             {
-                var qty = random.Next(20, 100) * 2;
-                var isConfirmed = random.Next(100) < 60; // 60% confirmed
+                // Load DailyWork (Source Orders) from database
+                var dbDailyWork = DbHelper.GetAllDailyWork();
+                SourceOrders = new ObservableCollection<DailyWork>(dbDailyWork);
 
-                var sourceOrder = new DailyWork
+                // Load Deliveries from database
+                var dbDeliveries = DbHelper.GetAllDeliveries();
+
+                DeliveryOrders.Clear();
+                foreach (var delivery in dbDeliveries)
                 {
-                    Id = i,
-                    Date = DateTime.Today.AddDays(-random.Next(1, 15)),
-                    Company = companies[random.Next(companies.Length)],
-                    PINumber = $"PI-{DateTime.Now.Year}-{1000 + i}",
-                    CustomerReference = customerRefs[random.Next(customerRefs.Length)],
-                    TypeOfWork = workTypes[random.Next(workTypes.Length)],
-                    Qty = qty,
-                    SQM = Math.Round(random.Next(50, 500) * 0.1, 2),
-                    Salesman = salesmen[random.Next(salesmen.Length)],
-                    Status = isConfirmed ? "Confirmed" : (random.Next(100) < 50 ? "Pending" : "In Progress"),
-                    ProductionStatus = isConfirmed ? "Completed" : "In Progress",
-                    Color = "",
-                    Notes = i % 4 == 0 ? $"Order {i} notes" : "",
-                    CreatedDate = DateTime.Today.AddDays(-random.Next(1, 15))
-                };
-                SourceOrders.Add(sourceOrder);
-            }
+                    // Load delivery items for each delivery
+                    var items = DbHelper.GetDeliveryItems(delivery.Id);
+                    delivery.DeliveryItems = new ObservableCollection<DeliveryItem>(items);
 
-            // Load sample Deliveries (already imported)
-            for (int i = 1; i <= 20; i++)
-            {
-                var orderQty = random.Next(20, 100) * 2;
-                var order = new Delivery
-                {
-                    Id = i,
-                    SourceId = i,
-                    Date = DateTime.Today.AddDays(-random.Next(1, 15)),
-                    Company = companies[random.Next(companies.Length)],
-                    PINumber = $"PI-{DateTime.Now.Year}-{1000 + i}",
-                    CustomerReference = customerRefs[random.Next(customerRefs.Length)],
-                    TypeOfWork = workTypes[random.Next(workTypes.Length)],
-                    OrderQty = orderQty,
-                    OrderSQM = Math.Round(random.Next(50, 500) * 0.1, 2),
-                    Salesman = salesmen[random.Next(salesmen.Length)],
-                    Status = "Pending",
-                    Notes = i % 4 == 0 ? $"Order {i} notes" : "",
-                    CreatedDate = DateTime.Today.AddDays(-random.Next(1, 15)),
-                    UpdatedDate = DateTime.Today,
-                    DeliveryItems = new ObservableCollection<DeliveryItem>()
-                };
+                    // Update status based on delivery items
+                    UpdateOrderStatus(delivery);
 
-                var numDeliveries = random.Next(1, 9);
-                var totalDelivered = 0;
-                var totalReturned = 0;
-
-                for (int d = 1; d <= numDeliveries; d++)
-                {
-                    var remaining = orderQty - totalDelivered + totalReturned;
-                    if (remaining <= 0) break;
-
-                    var delQty = Math.Min(random.Next(5, 26), remaining);
-                    var retQty = random.Next(100) < 30 && d > 1 ? random.Next(1, 6) : 0;
-
-                    order.DeliveryItems.Add(new DeliveryItem
-                    {
-                        Id = i * 100 + d,
-                        OrderId = i,
-                        DeliveryDate = order.Date.AddDays(random.Next(1, 15)),
-                        DeliveredQty = delQty,
-                        DeliveredSQM = Math.Round((double)delQty / orderQty * order.OrderSQM, 2),
-                        ReturnedQty = retQty,
-                        ReturnedSQM = Math.Round((double)retQty / orderQty * order.OrderSQM, 2),
-                        Driver = $"Driver {random.Next(1, 7)}",
-                        Vehicle = $"Van {(char)('A' + random.Next(0, 4))}{random.Next(1, 3)}",
-                        Notes = "",
-                        CreatedDate = DateTime.Today
-                    });
-
-                    totalDelivered += delQty;
-                    totalReturned += retQty;
+                    DeliveryOrders.Add(delivery);
                 }
-
-                UpdateOrderStatus(order);
-                DeliveryOrders.Add(order);
             }
-            UpdateStatistics();
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading data from database: {ex.Message}",
+                    "Database Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        private void LoadDeliveryItems(Delivery order)
+        {
+            try
+            {
+                var items = DbHelper.GetDeliveryItems(order.Id);
+                order.DeliveryItems = new ObservableCollection<DeliveryItem>(items);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading delivery items: {ex.Message}",
+                    "Database Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         }
 
         #endregion
@@ -489,7 +438,7 @@ namespace ProGlassAutomation.ViewModels
         {
             try
             {
-                // Get only CONFIRMED orders from SourceOrders
+                // Get only CONFIRMED orders from SourceOrders (from database)
                 var confirmedOrders = SourceOrders
                     .Where(w => w.Status == "Confirmed")
                     .ToList();
@@ -538,6 +487,9 @@ namespace ProGlassAutomation.ViewModels
                         UpdatedDate = DateTime.Now,
                         DeliveryItems = new ObservableCollection<DeliveryItem>()
                     };
+
+                    // SAVE TO DATABASE
+                    DbHelper.SaveDelivery(newDelivery);
 
                     DeliveryOrders.Add(newDelivery);
                     importedCount++;
@@ -670,6 +622,9 @@ namespace ProGlassAutomation.ViewModels
 
                 if (result == MessageBoxResult.Yes)
                 {
+                    // DELETE FROM DATABASE
+                    DbHelper.DeleteDelivery(orderToDelete.Id);
+
                     DeliveryOrders.Remove(orderToDelete);
                     RefreshDataView();
                     UpdateStatistics();
@@ -699,6 +654,10 @@ namespace ProGlassAutomation.ViewModels
                 EditingOrder.Id = DeliveryOrders.Count > 0 ? DeliveryOrders.Max(w => w.Id) + 1 : 1;
                 EditingOrder.CreatedDate = DateTime.Today;
                 EditingOrder.UpdatedDate = DateTime.Today;
+
+                // SAVE TO DATABASE
+                DbHelper.SaveDelivery(EditingOrder);
+
                 DeliveryOrders.Add(EditingOrder);
             }
             else
@@ -719,6 +678,9 @@ namespace ProGlassAutomation.ViewModels
                     existing.Status = EditingOrder.Status;
                     existing.Notes = EditingOrder.Notes;
                     UpdateOrderStatus(existing);
+
+                    // UPDATE IN DATABASE
+                    DbHelper.UpdateDelivery(existing);
                 }
             }
 
@@ -741,6 +703,7 @@ namespace ProGlassAutomation.ViewModels
 
         private void ExecuteRefresh(object parameter)
         {
+            LoadDataFromDatabase();
             RefreshDataView();
             UpdateStatistics();
         }
@@ -834,9 +797,15 @@ namespace ProGlassAutomation.ViewModels
             EditingDeliveryItem.ReturnedSQM = Math.Round((double)EditingDeliveryItem.ReturnedQty / SelectedOrder.OrderQty * SelectedOrder.OrderSQM, 2);
             EditingDeliveryItem.CreatedDate = DateTime.Today;
 
+            // SAVE TO DATABASE
+            DbHelper.SaveDeliveryItem(EditingDeliveryItem);
+
             SelectedOrder.DeliveryItems.Add(EditingDeliveryItem);
             SelectedOrder.UpdatedDate = DateTime.Today;
             UpdateOrderStatus(SelectedOrder);
+
+            // UPDATE DELIVERY STATUS IN DATABASE
+            DbHelper.UpdateDelivery(SelectedOrder);
 
             IsAddingDelivery = false;
             EditingDeliveryItem = null;
@@ -861,9 +830,16 @@ namespace ProGlassAutomation.ViewModels
 
             if (result == MessageBoxResult.Yes)
             {
+                // DELETE FROM DATABASE
+                DbHelper.DeleteDeliveryItem(SelectedDeliveryItem.Id);
+
                 SelectedOrder.DeliveryItems.Remove(SelectedDeliveryItem);
                 SelectedOrder.UpdatedDate = DateTime.Today;
                 UpdateOrderStatus(SelectedOrder);
+
+                // UPDATE DELIVERY STATUS IN DATABASE
+                DbHelper.UpdateDelivery(SelectedOrder);
+
                 SelectedDeliveryItem = null;
                 RefreshDataView();
                 UpdateStatistics();
@@ -1050,6 +1026,12 @@ namespace ProGlassAutomation.ViewModels
 
                 if (result == MessageBoxResult.Yes)
                 {
+                    // DELETE FROM DATABASE
+                    foreach (var id in selectedIds)
+                    {
+                        DbHelper.DeleteDelivery(id);
+                    }
+
                     var toDelete = DeliveryOrders.Where(d => selectedIds.Contains(d.Id)).ToList();
                     foreach (var item in toDelete)
                     {

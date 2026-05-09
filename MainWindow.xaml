@@ -1,11 +1,16 @@
 ﻿<Window x:Class="ProGlassAutomation.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:ProGlassAutomation.ViewModels"
         Title="ProGlass ERP System"
         Height="900" Width="1600"
         MinHeight="700" MinWidth="1200"
         WindowStartupLocation="CenterScreen"
         Background="#F0F7FF">
+
+    <Window.DataContext>
+        <vm:MainViewModel/>
+    </Window.DataContext>
 
     <Window.Resources>
         <!-- Drop Shadows -->
@@ -228,7 +233,7 @@
                                 </StackPanel>
                             </Border>
                             <StackPanel Margin="10,10,10,14">
-                                <Button x:Name="BtnDashboard" Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="Dashboard" MouseEnter="BtnDashboard_MouseEnter" MouseLeave="BtnDashboard_MouseLeave">
+                                <Button x:Name="BtnDashboard" Style="{StaticResource NavButtonStyle}" Click="BtnDashboard_Click">
                                     <Border CornerRadius="10" Padding="12" Background="#3B82F6" Cursor="Hand" RenderTransformOrigin="0.5,0.5">
                                         <Border.RenderTransform>
                                             <ScaleTransform x:Name="DashScale" ScaleX="1" ScaleY="1"/>
@@ -242,7 +247,7 @@
                                         </StackPanel>
                                     </Border>
                                 </Button>
-                                <Button x:Name="BtnSubscription" Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="Subscription" Margin="0,8,0,0" MouseEnter="BtnSubscription_MouseEnter" MouseLeave="BtnSubscription_MouseLeave">
+                                <Button x:Name="BtnSubscription" Style="{StaticResource NavButtonStyle}" Click="BtnSubscription_Click" Margin="0,8,0,0">
                                     <Border CornerRadius="10" Padding="12" Background="#60A5FA" Cursor="Hand" RenderTransformOrigin="0.5,0.5">
                                         <Border.RenderTransform>
                                             <ScaleTransform x:Name="SubScale" ScaleX="1" ScaleY="1"/>
@@ -311,7 +316,7 @@
                             <StackPanel Margin="8,8,8,12">
 
                                 <!-- SGU Calculator -->
-                                <Button x:Name="BtnSGU" Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="SGU" IsEnabled="{Binding IsLicensed}" MouseEnter="CalcBtn_MouseEnter" MouseLeave="CalcBtn_MouseLeave">
+                                <Button x:Name="BtnSGU" Style="{StaticResource NavButtonStyle}" Click="BtnSGU_Click">
                                     <Border x:Name="BorderSGU" CornerRadius="10" Padding="12" Background="#3B82F6" Cursor="Hand" RenderTransformOrigin="0.5,0.5">
                                         <Border.RenderTransform>
                                             <ScaleTransform x:Name="ScaleSGU" ScaleX="1" ScaleY="1"/>
@@ -330,7 +335,7 @@
                                 </Button>
 
                                 <!-- DGU Calculator -->
-                                <Button x:Name="BtnDGU" Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="DGU" IsEnabled="{Binding IsLicensed}" Margin="0,8,0,0" MouseEnter="CalcBtn_MouseEnter" MouseLeave="CalcBtn_MouseLeave">
+                                <Button x:Name="BtnDGU" Style="{StaticResource NavButtonStyle}" Click="BtnDGU_Click" Margin="0,8,0,0">
                                     <Border x:Name="BorderDGU" CornerRadius="10" Padding="12" Background="#2563EB" Cursor="Hand" RenderTransformOrigin="0.5,0.5">
                                         <Border.RenderTransform>
                                             <ScaleTransform x:Name="ScaleDGU" ScaleX="1" ScaleY="1"/>
@@ -349,7 +354,7 @@
                                 </Button>
 
                                 <!-- Lamination -->
-                                <Button x:Name="BtnLam" Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="Lamination" IsEnabled="{Binding IsLicensed}" Margin="0,8,0,0" MouseEnter="CalcBtn_MouseEnter" MouseLeave="CalcBtn_MouseLeave">
+                                <Button x:Name="BtnLam" Style="{StaticResource NavButtonStyle}" Click="BtnLamination_Click" Margin="0,8,0,0">
                                     <Border x:Name="BorderLam" CornerRadius="10" Padding="12" Background="#1D4ED8" Cursor="Hand" RenderTransformOrigin="0.5,0.5">
                                         <Border.RenderTransform>
                                             <ScaleTransform x:Name="ScaleLam" ScaleX="1" ScaleY="1"/>
@@ -368,7 +373,7 @@
                                 </Button>
 
                                 <!-- DGU + Lamination -->
-                                <Button x:Name="BtnDguLam" Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="DguLam" IsEnabled="{Binding IsLicensed}" Margin="0,8,0,0" MouseEnter="CalcBtn_MouseEnter" MouseLeave="CalcBtn_MouseLeave">
+                                <Button x:Name="BtnDguLam" Style="{StaticResource NavButtonStyle}" Click="BtnDguLam_Click" Margin="0,8,0,0">
                                     <Border x:Name="BorderDguLam" CornerRadius="10" Padding="12" Background="#1E40AF" Cursor="Hand" RenderTransformOrigin="0.5,0.5">
                                         <Border.RenderTransform>
                                             <ScaleTransform x:Name="ScaleDguLam" ScaleX="1" ScaleY="1"/>
@@ -387,7 +392,7 @@
                                 </Button>
 
                                 <!-- Optimization -->
-                                <Button x:Name="BtnOpt" Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="Optimization" IsEnabled="{Binding IsLicensed}" Margin="0,8,0,0" MouseEnter="CalcBtn_MouseEnter" MouseLeave="CalcBtn_MouseLeave">
+                                <Button x:Name="BtnOpt" Style="{StaticResource NavButtonStyle}" Click="BtnOptimization_Click" Margin="0,8,0,0">
                                     <Border x:Name="BorderOpt" CornerRadius="10" Padding="12" Background="#1E3A8A" Cursor="Hand" RenderTransformOrigin="0.5,0.5">
                                         <Border.RenderTransform>
                                             <ScaleTransform x:Name="ScaleOpt" ScaleX="1" ScaleY="1"/>
@@ -427,7 +432,7 @@
                             <StackPanel Margin="8,10,8,14">
 
                                 <!-- Sheet Store -->
-                                <Button Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="SheetStore">
+                                <Button x:Name="BtnSheetStore" Style="{StaticResource NavButtonStyle}" Click="BtnSheetStore_Click">
                                     <Border CornerRadius="10" Padding="12" Background="#3B82F6" Cursor="Hand">
                                         <Border.Effect>
                                             <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
@@ -443,7 +448,7 @@
                                 </Button>
 
                                 <!-- Daily Works -->
-                                <Button Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="DailyWorks" Margin="0,8,0,0">
+                                <Button x:Name="BtnDailyWorks" Style="{StaticResource NavButtonStyle}" Click="BtnDailyWorks_Click" Margin="0,8,0,0">
                                     <Border CornerRadius="10" Padding="12" Background="#2563EB" Cursor="Hand">
                                         <Border.Effect>
                                             <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
@@ -459,7 +464,7 @@
                                 </Button>
 
                                 <!-- Deliveries -->
-                                <Button Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="Deliveries" Margin="0,8,0,0">
+                                <Button x:Name="BtnDeliveries" Style="{StaticResource NavButtonStyle}" Click="BtnDeliveries_Click" Margin="0,8,0,0">
                                     <Border CornerRadius="10" Padding="12" Background="#059669" Cursor="Hand">
                                         <Border.Effect>
                                             <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
@@ -496,7 +501,7 @@
                             <StackPanel Margin="8,10,8,14">
 
                                 <!-- My Profile -->
-                                <Button Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="Profile">
+                                <Button x:Name="BtnProfile" Style="{StaticResource NavButtonStyle}" Click="BtnProfile_Click">
                                     <Border CornerRadius="10" Padding="12" Background="#3B82F6" Cursor="Hand">
                                         <Border.Effect>
                                             <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
@@ -512,7 +517,7 @@
                                 </Button>
 
                                 <!-- Users List -->
-                                <Button Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateCommand}" CommandParameter="Users" Margin="0,8,0,0">
+                                <Button x:Name="BtnUsers" Style="{StaticResource NavButtonStyle}" Click="BtnUsers_Click" Margin="0,8,0,0">
                                     <Border CornerRadius="10" Padding="12" Background="#2563EB" Cursor="Hand">
                                         <Border.Effect>
                                             <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>

@@ -53,92 +53,134 @@ namespace ProGlassAutomation
         }
 
         // ═══════════════════════════════════════════════════════
-        // DASHBOARD BOUNCY EFFECT
+        // NAVIGATION HANDLERS
         // ═══════════════════════════════════════════════════════
-        private void BtnDashboard_MouseEnter(object sender, MouseEventArgs e)
+        private void BtnDashboard_Click(object sender, RoutedEventArgs e)
         {
-            if (FindVisualChild<Border>(BtnDashboard) is Border border)
-            {
-                DoubleAnimation animation = new DoubleAnimation(1.02, TimeSpan.FromMilliseconds(100));
-                border.RenderTransformOrigin = new Point(0.5, 0.5);
-                if (border.RenderTransform == null || !(border.RenderTransform is ScaleTransform))
-                {
-                    border.RenderTransform = new ScaleTransform(1, 1);
-                }
-                var scale = (ScaleTransform)border.RenderTransform;
-                scale.BeginAnimation(ScaleTransform.ScaleXProperty, animation);
-                scale.BeginAnimation(ScaleTransform.ScaleYProperty, animation);
-            }
+            _viewModel.ShowDashboard();
+            AnimateButton(BtnDashboard, BorderSGU);
         }
 
-        private void BtnDashboard_MouseLeave(object sender, MouseEventArgs e)
+        private void BtnSubscription_Click(object sender, RoutedEventArgs e)
         {
-            if (FindVisualChild<Border>(BtnDashboard) is Border border)
-            {
-                DoubleAnimation animation = new DoubleAnimation(1, TimeSpan.FromMilliseconds(100));
-                var scale = (ScaleTransform)border.RenderTransform;
-                scale.BeginAnimation(ScaleTransform.ScaleXProperty, animation);
-                scale.BeginAnimation(ScaleTransform.ScaleYProperty, animation);
-            }
+            _viewModel.ShowSubscriptionPlan();
+            AnimateButton(BtnSubscription, BorderSGU);
         }
 
-        private void BtnSubscription_MouseEnter(object sender, MouseEventArgs e)
+        private void BtnSGU_Click(object sender, RoutedEventArgs e)
         {
-            if (FindVisualChild<Border>(BtnSubscription) is Border border)
+            if (!_viewModel.IsLicensed)
             {
-                DoubleAnimation animation = new DoubleAnimation(1.02, TimeSpan.FromMilliseconds(100));
-                border.RenderTransformOrigin = new Point(0.5, 0.5);
-                if (border.RenderTransform == null || !(border.RenderTransform is ScaleTransform))
-                {
-                    border.RenderTransform = new ScaleTransform(1, 1);
-                }
-                var scale = (ScaleTransform)border.RenderTransform;
-                scale.BeginAnimation(ScaleTransform.ScaleXProperty, animation);
-                scale.BeginAnimation(ScaleTransform.ScaleYProperty, animation);
+                MessageBox.Show("Please activate your license to access calculators",
+                    "License Required", MessageBoxButton.OK, MessageBoxImage.Warning);
+                _viewModel.ShowSubscriptionPlan();
+                return;
             }
+            _viewModel.ShowSGUCalculator();
+            AnimateButton(BtnSGU, BorderSGU);
         }
 
-        private void BtnSubscription_MouseLeave(object sender, MouseEventArgs e)
+        private void BtnDGU_Click(object sender, RoutedEventArgs e)
         {
-            if (FindVisualChild<Border>(BtnSubscription) is Border border)
+            if (!_viewModel.IsLicensed)
             {
-                DoubleAnimation animation = new DoubleAnimation(1, TimeSpan.FromMilliseconds(100));
-                var scale = (ScaleTransform)border.RenderTransform;
-                scale.BeginAnimation(ScaleTransform.ScaleXProperty, animation);
-                scale.BeginAnimation(ScaleTransform.ScaleYProperty, animation);
+                MessageBox.Show("Please activate your license to access calculators",
+                    "License Required", MessageBoxButton.OK, MessageBoxImage.Warning);
+                _viewModel.ShowSubscriptionPlan();
+                return;
             }
+            _viewModel.ShowDGUCalculator();
+            AnimateButton(BtnDGU, BorderDGU);
+        }
+
+        private void BtnLamination_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_viewModel.IsLicensed)
+            {
+                MessageBox.Show("Please activate your license to access calculators",
+                    "License Required", MessageBoxButton.OK, MessageBoxImage.Warning);
+                _viewModel.ShowSubscriptionPlan();
+                return;
+            }
+            _viewModel.ShowLaminationCalculator();
+            AnimateButton(BtnLam, BorderLam);
+        }
+
+        private void BtnDguLam_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_viewModel.IsLicensed)
+            {
+                MessageBox.Show("Please activate your license to access calculators",
+                    "License Required", MessageBoxButton.OK, MessageBoxImage.Warning);
+                _viewModel.ShowSubscriptionPlan();
+                return;
+            }
+            _viewModel.ShowDGULaminationCalculator();
+            AnimateButton(BtnDguLam, BorderDguLam);
+        }
+
+        private void BtnOptimization_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_viewModel.IsLicensed)
+            {
+                MessageBox.Show("Please activate your license to access calculators",
+                    "License Required", MessageBoxButton.OK, MessageBoxImage.Warning);
+                _viewModel.ShowSubscriptionPlan();
+                return;
+            }
+            _viewModel.ShowGlassOptimization();
+            AnimateButton(BtnOpt, BorderOpt);
+        }
+
+        private void BtnSheetStore_Click(object sender, RoutedEventArgs e)
+        {
+            _viewModel.ShowSheetStore();
+        }
+
+        private void BtnDailyWorks_Click(object sender, RoutedEventArgs e)
+        {
+            _viewModel.ShowDailyWorks();
+        }
+
+        private void BtnDeliveries_Click(object sender, RoutedEventArgs e)
+        {
+            _viewModel.ShowDeliveries();
+        }
+
+        private void BtnProfile_Click(object sender, RoutedEventArgs e)
+        {
+            _viewModel.ShowProfile();
+        }
+
+        private void BtnUsers_Click(object sender, RoutedEventArgs e)
+        {
+            _viewModel.ShowUsers();
         }
 
         // ═══════════════════════════════════════════════════════
-        // CALCULATOR BOUNCY EFFECT
+        // BUTTON ANIMATION
         // ═══════════════════════════════════════════════════════
-        private void CalcBtn_MouseEnter(object sender, MouseEventArgs e)
+        private void AnimateButton(Button btn, Border border)
         {
-            if (sender is Button btn && FindVisualChild<Border>(btn) is Border border)
-            {
-                AnimateScale(border, 1.02);
-            }
-        }
+            if (btn == null || border == null) return;
 
-        private void CalcBtn_MouseLeave(object sender, MouseEventArgs e)
-        {
-            if (sender is Button btn && FindVisualChild<Border>(btn) is Border border)
-            {
-                AnimateScale(border, 1);
-            }
-        }
-
-        private void AnimateScale(Border border, double targetValue)
-        {
+            DoubleAnimation animation = new DoubleAnimation(1.02, TimeSpan.FromMilliseconds(100));
             border.RenderTransformOrigin = new Point(0.5, 0.5);
             if (border.RenderTransform == null || !(border.RenderTransform is ScaleTransform))
             {
                 border.RenderTransform = new ScaleTransform(1, 1);
             }
             var scale = (ScaleTransform)border.RenderTransform;
-            DoubleAnimation animation = new DoubleAnimation(targetValue, TimeSpan.FromMilliseconds(100));
             scale.BeginAnimation(ScaleTransform.ScaleXProperty, animation);
             scale.BeginAnimation(ScaleTransform.ScaleYProperty, animation);
+
+            // Reset after delay
+            var resetAnimation = new DoubleAnimation(1, TimeSpan.FromMilliseconds(100))
+            {
+                BeginTime = TimeSpan.FromMilliseconds(150)
+            };
+            scale.BeginAnimation(ScaleTransform.ScaleXProperty, resetAnimation);
+            scale.BeginAnimation(ScaleTransform.ScaleYProperty, resetAnimation);
         }
 
         // ═══════════════════════════════════════════════════════
@@ -233,20 +275,6 @@ namespace ProGlassAutomation
                     yield return descendant;
                 }
             }
-        }
-
-        private T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
-        {
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
-            {
-                var child = VisualTreeHelper.GetChild(parent, i);
-                if (child is T result)
-                    return result;
-                var found = FindVisualChild<T>(child);
-                if (found != null)
-                    return found;
-            }
-            return null;
         }
     }
 }

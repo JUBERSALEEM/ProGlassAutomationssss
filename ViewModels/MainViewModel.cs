@@ -111,7 +111,7 @@ namespace ProGlassAutomation.ViewModels
                 return;
             }
 
-            // Clear cache for fresh instance (matching original behavior)
+            // Clear cache for fresh instance
             _viewCache.Clear();
 
             // Get cached view and inject
@@ -123,7 +123,7 @@ namespace ProGlassAutomation.ViewModels
             name is "SGU" or "DGU" or "Lamination" or "DguLam" or "Optimization";
 
         // ═══════════════════════════════════════════════════════
-        // LICENSE STATE - Matching original MainWindow pattern
+        // LICENSE STATE
         // ═══════════════════════════════════════════════════════
         private bool _isLicensed = false;
         private string _currentKey = "";
@@ -135,10 +135,6 @@ namespace ProGlassAutomation.ViewModels
         }
 
         public bool CalculatorsEnabled => _isLicensed;
-
-        // ═══════════════════════════════════════════════════════
-        // UI STATE BINDINGS - For XAML overlays and status
-        // ═══════════════════════════════════════════════════════
         public bool IsLocked => !_isLicensed;
 
         // ═══════════════════════════════════════════════════════
@@ -172,7 +168,9 @@ namespace ProGlassAutomation.ViewModels
                 {
                     _currentKey = storedKey;
                     _isLicensed = true;
+                    Notify(nameof(IsLicensed));
                     Notify(nameof(IsLocked));
+                    Notify(nameof(CalculatorsEnabled));
                 }
                 else
                 {
@@ -219,7 +217,7 @@ namespace ProGlassAutomation.ViewModels
         }
 
         // ═══════════════════════════════════════════════════════
-        // LICENSE CALLBACKS - Exact signature matching original
+        // LICENSE CALLBACKS
         // ═══════════════════════════════════════════════════════
 
         public void OnLicenseActivated(string key)
@@ -258,7 +256,7 @@ namespace ProGlassAutomation.ViewModels
         }
 
         // ═══════════════════════════════════════════════════════
-        // NAVIGATION HELPERS
+        // PUBLIC NAVIGATION HELPERS - ✅ Made Public
         // ═══════════════════════════════════════════════════════
 
         public void ShowDashboard() => Navigate("Dashboard");
@@ -269,11 +267,12 @@ namespace ProGlassAutomation.ViewModels
         public void ShowProfile() => Navigate("Profile");
         public void ShowUsers() => Navigate("Users");
 
-        private void ShowSGUCalculator() => Navigate("SGU");
-        private void ShowDGUCalculator() => Navigate("DGU");
-        private void ShowLaminationCalculator() => Navigate("Lamination");
-        private void ShowDGULaminationCalculator() => Navigate("DguLam");
-        private void ShowGlassOptimization() => Navigate("Optimization");
+        // ✅ Calculator methods - changed from private to public
+        public void ShowSGUCalculator() => Navigate("SGU");
+        public void ShowDGUCalculator() => Navigate("DGU");
+        public void ShowLaminationCalculator() => Navigate("Lamination");
+        public void ShowDGULaminationCalculator() => Navigate("DguLam");
+        public void ShowGlassOptimization() => Navigate("Optimization");
 
         // ═══════════════════════════════════════════════════════
         // CLICK COMMANDS
@@ -281,31 +280,31 @@ namespace ProGlassAutomation.ViewModels
 
         public ICommand SGUCommand => new RelayCommand(o =>
         {
-            if (!_isLicensed) { MessageBox.Show("Please activate your license to access calculators", "License Required", MessageBoxButton.OK, MessageBoxImage.Warning); ShowSubscriptionPlan(); return; }
+            if (!_isLicensed) { ShowSubscriptionPlan(); return; }
             ShowSGUCalculator();
         });
 
         public ICommand DGUCommand => new RelayCommand(o =>
         {
-            if (!_isLicensed) { MessageBox.Show("Please activate your license to access calculators", "License Required", MessageBoxButton.OK, MessageBoxImage.Warning); ShowSubscriptionPlan(); return; }
+            if (!_isLicensed) { ShowSubscriptionPlan(); return; }
             ShowDGUCalculator();
         });
 
         public ICommand LaminationCommand => new RelayCommand(o =>
         {
-            if (!_isLicensed) { MessageBox.Show("Please activate your license to access calculators", "License Required", MessageBoxButton.OK, MessageBoxImage.Warning); ShowSubscriptionPlan(); return; }
+            if (!_isLicensed) { ShowSubscriptionPlan(); return; }
             ShowLaminationCalculator();
         });
 
         public ICommand DguLamCommand => new RelayCommand(o =>
         {
-            if (!_isLicensed) { MessageBox.Show("Please activate your license to access calculators", "License Required", MessageBoxButton.OK, MessageBoxImage.Warning); ShowSubscriptionPlan(); return; }
+            if (!_isLicensed) { ShowSubscriptionPlan(); return; }
             ShowDGULaminationCalculator();
         });
 
         public ICommand GlassOptCommand => new RelayCommand(o =>
         {
-            if (!_isLicensed) { MessageBox.Show("Please activate your license to access calculators", "License Required", MessageBoxButton.OK, MessageBoxImage.Warning); ShowSubscriptionPlan(); return; }
+            if (!_isLicensed) { ShowSubscriptionPlan(); return; }
             ShowGlassOptimization();
         });
 

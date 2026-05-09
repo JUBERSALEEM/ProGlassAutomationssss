@@ -18,7 +18,7 @@ namespace ProGlassAutomation.Data.Database
         private static readonly string ConnStr =
             $"Data Source={DbPath};Cache=Shared";
 
-        private static readonly int LatestVersion = 3;
+        private static readonly int LatestVersion = 4;
 
         // ================= CONNECTION =================
         private static SqliteConnection CreateConnection()
@@ -124,7 +124,7 @@ namespace ProGlassAutomation.Data.Database
             cmd.ExecuteNonQuery();
         }
 
-        // ================= MIGRATION (UNCHANGED LOGIC) =================
+        // ================= MIGRATION =================
         private static void ApplyMigration(SqliteConnection conn, int version)
         {
             switch (version)
@@ -175,6 +175,65 @@ namespace ProGlassAutomation.Data.Database
                     break;
 
                 case 3:
+                    break;
+
+                case 4:
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"
+                        CREATE TABLE IF NOT EXISTS DailyWork (
+                            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            Date TEXT,
+                            UpdateDate TEXT,
+                            Company TEXT,
+                            PINumber TEXT,
+                            CustomerReference TEXT,
+                            TypeOfWork TEXT,
+                            ProductionStatus TEXT,
+                            DailyReportStatus TEXT,
+                            Qty INTEGER,
+                            SQM REAL,
+                            Status TEXT,
+                            Salesman TEXT,
+                            Color TEXT,
+                            Notes TEXT,
+                            CreatedDate TEXT
+                        );
+
+                        CREATE TABLE IF NOT EXISTS Deliveries (
+                            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            SourceId INTEGER,
+                            Date TEXT,
+                            Company TEXT,
+                            PINumber TEXT,
+                            CustomerReference TEXT,
+                            TypeOfWork TEXT,
+                            OrderQty INTEGER,
+                            OrderSQM REAL,
+                            Salesman TEXT,
+                            Status TEXT,
+                            Notes TEXT,
+                            CreatedDate TEXT,
+                            UpdatedDate TEXT
+                        );
+
+                        CREATE TABLE IF NOT EXISTS DeliveryItems (
+                            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            OrderId INTEGER,
+                            DeliveryDate TEXT,
+                            DeliveredQty INTEGER,
+                            DeliveredSQM REAL,
+                            ReturnedQty INTEGER,
+                            ReturnedSQM REAL,
+                            Driver TEXT,
+                            Vehicle TEXT,
+                            Notes TEXT,
+                            CreatedDate TEXT,
+                            FOREIGN KEY (OrderId) REFERENCES Deliveries(Id)
+                        );
+                        ";
+                        cmd.ExecuteNonQuery();
+                    }
                     break;
             }
         }
@@ -463,6 +522,283 @@ namespace ProGlassAutomation.Data.Database
             {
                 using var cmd = conn.CreateCommand();
                 cmd.CommandText = "DELETE FROM SGURecords WHERE Id = $id";
+                cmd.Parameters.AddWithValue("$id", id);
+                cmd.ExecuteNonQuery();
+            });
+        }
+
+        // ================= DAILY WORK =================
+        public static void SaveDailyWork(DailyWork w)
+        {
+            Execute(conn =>
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"
+                INSERT INTO DailyWork (Date, UpdateDate, Company, PINumber, CustomerReference, TypeOfWork, ProductionStatus, DailyReportStatus, Qty, SQM, Status, Salesman, Color, Notes, CreatedDate)
+                VALUES ($d, $ud, $c, $pi, $cr, $t, $ps, $drs, $q, $s, $st, $sm, $cl, $n, $cd);";
+
+                cmd.Parameters.AddWithValue("$d", w.Date.ToString("yyyy-MM-dd"));
+                cmd.Parameters.AddWithValue("$ud", w.UpdateDate.ToString("yyyy-MM-dd"));
+                cmd.Parameters.AddWithValue("$c", w.Company ?? "");
+                cmd.Parameters.AddWithValue("$pi", w.PINumber ?? "");
+                cmd.Parameters.AddWithValue("$cr", w.CustomerReference ?? "");
+                cmd.Parameters.AddWithValue("$t", w.TypeOfWork ?? "");
+                cmd.Parameters.AddWithValue("$ps", w.ProductionStatus ?? "");
+                cmd.Parameters.AddWithValue("$drs", w.DailyReportStatus ?? "");
+                cmd.Parameters.AddWithValue("$q", w.Qty);
+                cmd.Parameters.AddWithValue("$s", w.SQM);
+                cmd.Parameters.AddWithValue("$st", w.Status ?? "");
+                cmd.Parameters.AddWithValue("$sm", w.Salesman ?? "");
+                cmd.Parameters.AddWithValue("$cl", w.Color ?? "");
+                cmd.Parameters.AddWithValue("$n", w.Notes ?? "");
+                cmd.Parameters.AddWithValue("$cd", w.CreatedDate.ToString("yyyy-MM-dd HH:mm"));
+
+                cmd.ExecuteNonQuery();
+            });
+        }
+
+        public static void UpdateDailyWork(DailyWork w)
+        {
+            Execute(conn =>
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"
+                UPDATE DailyWork SET 
+                    Date = $d, UpdateDate = $ud, Company = $c, PINumber = $pi, 
+                    CustomerReference = $cr, TypeOfWork = $t, ProductionStatus = $ps, 
+                    DailyReportStatus = $drs, Qty = $q, SQM = $s, Status = $st, 
+                    Salesman = $sm, Color = $cl, Notes = $n
+                WHERE Id = $id;";
+
+                cmd.Parameters.AddWithValue("$id", w.Id);
+                cmd.Parameters.AddWithValue("$d", w.Date.ToString("yyyy-MM-dd"));
+                cmd.Parameters.AddWithValue("$ud", w.UpdateDate.ToString("yyyy-MM-dd"));
+                cmd.Parameters.AddWithValue("$c", w.Company ?? "");
+                cmd.Parameters.AddWithValue("$pi", w.PINumber ?? "");
+                cmd.Parameters.AddWithValue("$cr", w.CustomerReference ?? "");
+                cmd.Parameters.AddWithValue("$t", w.TypeOfWork ?? "");
+                cmd.Parameters.AddWithValue("$ps", w.ProductionStatus ?? "");
+                cmd.Parameters.AddWithValue("$drs", w.DailyReportStatus ?? "");
+                cmd.Parameters.AddWithValue("$q", w.Qty);
+                cmd.Parameters.AddWithValue("$s", w.SQM);
+                cmd.Parameters.AddWithValue("$st", w.Status ?? "");
+                cmd.Parameters.AddWithValue("$sm", w.Salesman ?? "");
+                cmd.Parameters.AddWithValue("$cl", w.Color ?? "");
+                cmd.Parameters.AddWithValue("$n", w.Notes ?? "");
+
+                cmd.ExecuteNonQuery();
+            });
+        }
+
+        public static List<DailyWork> GetAllDailyWork()
+        {
+            return Execute(conn =>
+            {
+                var list = new List<DailyWork>();
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT * FROM DailyWork ORDER BY Id DESC";
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                {
+                    list.Add(new DailyWork
+                    {
+                        Id = r.GetInt32(0),
+                        Date = DateTime.TryParse(r.GetString(1), out var d) ? d : DateTime.Today,
+                        UpdateDate = DateTime.TryParse(r.GetString(2), out var ud) ? ud : DateTime.Today,
+                        Company = r.GetString(3),
+                        PINumber = r.GetString(4),
+                        CustomerReference = r.GetString(5),
+                        TypeOfWork = r.GetString(6),
+                        ProductionStatus = r.GetString(7),
+                        DailyReportStatus = r.GetString(8),
+                        Qty = r.GetInt32(9),
+                        SQM = r.GetDouble(10),
+                        Status = r.GetString(11),
+                        Salesman = r.GetString(12),
+                        Color = r.GetString(13),
+                        Notes = r.GetString(14),
+                        CreatedDate = DateTime.TryParse(r.GetString(15), out var cd) ? cd : DateTime.Today
+                    });
+                }
+                return list;
+            });
+        }
+
+        public static void DeleteDailyWork(int id)
+        {
+            Execute(conn =>
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "DELETE FROM DailyWork WHERE Id = $id";
+                cmd.Parameters.AddWithValue("$id", id);
+                cmd.ExecuteNonQuery();
+            });
+        }
+
+        // ================= DELIVERY =================
+        public static void SaveDelivery(Delivery d)
+        {
+            Execute(conn =>
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"
+                INSERT INTO Deliveries (SourceId, Date, Company, PINumber, CustomerReference, TypeOfWork, OrderQty, OrderSQM, Salesman, Status, Notes, CreatedDate, UpdatedDate)
+                VALUES ($sid, $d, $c, $pi, $cr, $t, $q, $s, $sm, $st, $n, $cd, $ud);";
+
+                cmd.Parameters.AddWithValue("$sid", d.SourceId);
+                cmd.Parameters.AddWithValue("$d", d.Date.ToString("yyyy-MM-dd"));
+                cmd.Parameters.AddWithValue("$c", d.Company ?? "");
+                cmd.Parameters.AddWithValue("$pi", d.PINumber ?? "");
+                cmd.Parameters.AddWithValue("$cr", d.CustomerReference ?? "");
+                cmd.Parameters.AddWithValue("$t", d.TypeOfWork ?? "");
+                cmd.Parameters.AddWithValue("$q", d.OrderQty);
+                cmd.Parameters.AddWithValue("$s", d.OrderSQM);
+                cmd.Parameters.AddWithValue("$sm", d.Salesman ?? "");
+                cmd.Parameters.AddWithValue("$st", d.Status ?? "");
+                cmd.Parameters.AddWithValue("$n", d.Notes ?? "");
+                cmd.Parameters.AddWithValue("$cd", d.CreatedDate.ToString("yyyy-MM-dd HH:mm"));
+                cmd.Parameters.AddWithValue("$ud", d.UpdatedDate.ToString("yyyy-MM-dd HH:mm"));
+
+                cmd.ExecuteNonQuery();
+            });
+        }
+
+        public static void UpdateDelivery(Delivery d)
+        {
+            Execute(conn =>
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"
+                UPDATE Deliveries SET 
+                    Date = $d, Company = $c, PINumber = $pi, CustomerReference = $cr, 
+                    TypeOfWork = $t, OrderQty = $q, OrderSQM = $s, Salesman = $sm, 
+                    Status = $st, Notes = $n, UpdatedDate = $ud
+                WHERE Id = $id;";
+
+                cmd.Parameters.AddWithValue("$id", d.Id);
+                cmd.Parameters.AddWithValue("$d", d.Date.ToString("yyyy-MM-dd"));
+                cmd.Parameters.AddWithValue("$c", d.Company ?? "");
+                cmd.Parameters.AddWithValue("$pi", d.PINumber ?? "");
+                cmd.Parameters.AddWithValue("$cr", d.CustomerReference ?? "");
+                cmd.Parameters.AddWithValue("$t", d.TypeOfWork ?? "");
+                cmd.Parameters.AddWithValue("$q", d.OrderQty);
+                cmd.Parameters.AddWithValue("$s", d.OrderSQM);
+                cmd.Parameters.AddWithValue("$sm", d.Salesman ?? "");
+                cmd.Parameters.AddWithValue("$st", d.Status ?? "");
+                cmd.Parameters.AddWithValue("$n", d.Notes ?? "");
+                cmd.Parameters.AddWithValue("$ud", d.UpdatedDate.ToString("yyyy-MM-dd HH:mm"));
+
+                cmd.ExecuteNonQuery();
+            });
+        }
+
+        public static List<Delivery> GetAllDeliveries()
+        {
+            return Execute(conn =>
+            {
+                var list = new List<Delivery>();
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT * FROM Deliveries ORDER BY Id DESC";
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                {
+                    list.Add(new Delivery
+                    {
+                        Id = r.GetInt32(0),
+                        SourceId = r.IsDBNull(1) ? 0 : r.GetInt32(1),
+                        Date = DateTime.TryParse(r.GetString(2), out var d) ? d : DateTime.Today,
+                        Company = r.GetString(3),
+                        PINumber = r.GetString(4),
+                        CustomerReference = r.GetString(5),
+                        TypeOfWork = r.GetString(6),
+                        OrderQty = r.GetInt32(7),
+                        OrderSQM = r.GetDouble(8),
+                        Salesman = r.GetString(9),
+                        Status = r.GetString(10),
+                        Notes = r.GetString(11),
+                        CreatedDate = DateTime.TryParse(r.GetString(12), out var cd) ? cd : DateTime.Today,
+                        UpdatedDate = DateTime.TryParse(r.GetString(13), out var ud) ? ud : DateTime.Today
+                    });
+                }
+                return list;
+            });
+        }
+
+        public static void DeleteDelivery(int id)
+        {
+            Execute(conn =>
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "DELETE FROM DeliveryItems WHERE OrderId = $id";
+                cmd.Parameters.AddWithValue("$id", id);
+                cmd.ExecuteNonQuery();
+
+                cmd.CommandText = "DELETE FROM Deliveries WHERE Id = $id";
+                cmd.ExecuteNonQuery();
+            });
+        }
+
+        // ================= DELIVERY ITEMS =================
+        public static void SaveDeliveryItem(DeliveryItem item)
+        {
+            Execute(conn =>
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"
+                INSERT INTO DeliveryItems (OrderId, DeliveryDate, DeliveredQty, DeliveredSQM, ReturnedQty, ReturnedSQM, Driver, Vehicle, Notes, CreatedDate)
+                VALUES ($oid, $d, $dq, $ds, $rq, $rs, $dr, $v, $n, $cd);";
+
+                cmd.Parameters.AddWithValue("$oid", item.OrderId);
+                cmd.Parameters.AddWithValue("$d", item.DeliveryDate.ToString("yyyy-MM-dd"));
+                cmd.Parameters.AddWithValue("$dq", item.DeliveredQty);
+                cmd.Parameters.AddWithValue("$ds", item.DeliveredSQM);
+                cmd.Parameters.AddWithValue("$rq", item.ReturnedQty);
+                cmd.Parameters.AddWithValue("$rs", item.ReturnedSQM);
+                cmd.Parameters.AddWithValue("$dr", item.Driver ?? "");
+                cmd.Parameters.AddWithValue("$v", item.Vehicle ?? "");
+                cmd.Parameters.AddWithValue("$n", item.Notes ?? "");
+                cmd.Parameters.AddWithValue("$cd", item.CreatedDate.ToString("yyyy-MM-dd HH:mm"));
+
+                cmd.ExecuteNonQuery();
+            });
+        }
+
+        public static List<DeliveryItem> GetDeliveryItems(int orderId)
+        {
+            return Execute(conn =>
+            {
+                var list = new List<DeliveryItem>();
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT * FROM DeliveryItems WHERE OrderId = $oid ORDER BY Id DESC";
+                cmd.Parameters.AddWithValue("$oid", orderId);
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                {
+                    list.Add(new DeliveryItem
+                    {
+                        Id = r.GetInt32(0),
+                        OrderId = r.GetInt32(1),
+                        DeliveryDate = DateTime.TryParse(r.GetString(2), out var d) ? d : DateTime.Today,
+                        DeliveredQty = r.GetInt32(3),
+                        DeliveredSQM = r.GetDouble(4),
+                        ReturnedQty = r.GetInt32(5),
+                        ReturnedSQM = r.GetDouble(6),
+                        Driver = r.GetString(7),
+                        Vehicle = r.GetString(8),
+                        Notes = r.GetString(9),
+                        CreatedDate = DateTime.TryParse(r.GetString(10), out var cd) ? cd : DateTime.Today
+                    });
+                }
+                return list;
+            });
+        }
+
+        public static void DeleteDeliveryItem(int id)
+        {
+            Execute(conn =>
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "DELETE FROM DeliveryItems WHERE Id = $id";
                 cmd.Parameters.AddWithValue("$id", id);
                 cmd.ExecuteNonQuery();
             });
