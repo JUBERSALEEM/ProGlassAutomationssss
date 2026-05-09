@@ -10,7 +10,6 @@
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
-        <DropShadowEffect x:Key="CardShadow" BlurRadius="15" ShadowDepth="2" Opacity="0.1"/>
 
         <Style x:Key="ModernDataGrid" TargetType="DataGrid">
             <Setter Property="Background" Value="White"/>
@@ -175,7 +174,6 @@
             <Setter Property="Foreground" Value="#1E293B"/>
         </Style>
 
-        <!-- Column Header Styles -->
         <Style x:Key="HeaderBlue" TargetType="DataGridColumnHeader">
             <Setter Property="Background" Value="#3B82F6"/>
             <Setter Property="Foreground" Value="White"/>
@@ -293,7 +291,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Header -->
+        <!-- HEADER -->
         <Border Grid.Row="0" CornerRadius="16" Padding="20" Margin="0,0,0,16">
             <Border.Effect>
                 <DropShadowEffect BlurRadius="20" ShadowDepth="3" Opacity="0.15" Color="#3B82F6"/>
@@ -315,7 +313,7 @@
 
                 <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,30,0">
                     <TextBlock Text="DAILY WORKS" FontSize="24" FontWeight="Bold" Foreground="White"/>
-                    <TextBlock Text="Click row to edit" FontSize="11" Foreground="#BFDBFE" Margin="0,4,0,0"/>
+                    <TextBlock Text="Double-click row to edit" FontSize="11" Foreground="#BFDBFE" Margin="0,4,0,0"/>
                 </StackPanel>
 
                 <Border Grid.Column="1" CornerRadius="25" Background="White" Margin="0,0,12,0" Padding="4">
@@ -327,21 +325,35 @@
                         <Border Background="#10B981" CornerRadius="20" Padding="10,8" Margin="2">
                             <TextBlock Text="search" FontSize="14" Foreground="White"/>
                         </Border>
-                        <TextBox Grid.Column="1" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" VerticalAlignment="Center" Padding="10,8" FontSize="12" Background="Transparent"/>
+                        <TextBox Grid.Column="1" 
+                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
+                                 BorderThickness="0" 
+                                 VerticalAlignment="Center" 
+                                 Padding="10,8" 
+                                 FontSize="12" 
+                                 Background="Transparent"/>
                     </Grid>
                 </Border>
 
                 <StackPanel Grid.Column="2" Margin="0,0,12,0" VerticalAlignment="Center">
                     <TextBlock Text="DATE FROM" FontSize="9" FontWeight="Bold" Foreground="#BFDBFE" Margin="0,0,0,4"/>
-                    <Border CornerRadius="25" Background="White" Padding="12,8">
-                        <DatePicker SelectedDate="{Binding FilterStartDate}" BorderThickness="0" Background="Transparent" FontSize="12" Foreground="#1E293B"/>
+                    <Border CornerRadius="25" Background="White" Padding="10,8">
+                        <DatePicker SelectedDate="{Binding FilterStartDate, UpdateSourceTrigger=PropertyChanged}" 
+                                    BorderThickness="0" 
+                                    Background="Transparent" 
+                                    FontSize="12" 
+                                    Foreground="#1E293B"/>
                     </Border>
                 </StackPanel>
 
                 <StackPanel Grid.Column="3" Margin="0,0,12,0" VerticalAlignment="Center">
                     <TextBlock Text="DATE TO" FontSize="9" FontWeight="Bold" Foreground="#BFDBFE" Margin="0,0,0,4"/>
-                    <Border CornerRadius="25" Background="White" Padding="12,8">
-                        <DatePicker SelectedDate="{Binding FilterEndDate}" BorderThickness="0" Background="Transparent" FontSize="12" Foreground="#1E293B"/>
+                    <Border CornerRadius="25" Background="White" Padding="10,8">
+                        <DatePicker SelectedDate="{Binding FilterEndDate, UpdateSourceTrigger=PropertyChanged}" 
+                                    BorderThickness="0" 
+                                    Background="Transparent" 
+                                    FontSize="12" 
+                                    Foreground="#1E293B"/>
                     </Border>
                 </StackPanel>
 
@@ -352,7 +364,7 @@
             </Grid>
         </Border>
 
-        <!-- Filters -->
+        <!-- FILTERS -->
         <Border Grid.Row="1" CornerRadius="16" Padding="16" Margin="0,0,0,16">
             <Border.Effect>
                 <DropShadowEffect BlurRadius="15" ShadowDepth="2" Opacity="0.1"/>
@@ -375,43 +387,56 @@
 
                 <StackPanel Grid.Column="0" Margin="0,0,8,0">
                     <TextBlock Text="COMPANY" FontSize="9" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                    <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding CompanyOptions}" SelectedItem="{Binding FilterCompany}"/>
+                    <ComboBox Style="{StaticResource ModernComboBox}" 
+                              ItemsSource="{Binding CompanyOptions}" 
+                              SelectedItem="{Binding FilterCompany, UpdateSourceTrigger=PropertyChanged}"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Margin="0,0,8,0">
                     <TextBlock Text="TYPE OF WORK" FontSize="9" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                    <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding TypeOfWorkOptions}" SelectedItem="{Binding FilterTypeOfWork}"/>
+                    <ComboBox Style="{StaticResource ModernComboBox}" 
+                              ItemsSource="{Binding TypeOfWorkOptions}" 
+                              SelectedItem="{Binding FilterTypeOfWork, UpdateSourceTrigger=PropertyChanged}"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Margin="0,0,8,0">
                     <TextBlock Text="PRODUCTION STATUS" FontSize="9" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                    <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding ProductionStatusOptions}" SelectedItem="{Binding FilterProductionStatus}"/>
+                    <ComboBox Style="{StaticResource ModernComboBox}" 
+                              ItemsSource="{Binding ProductionStatusOptions}" 
+                              SelectedItem="{Binding FilterProductionStatus, UpdateSourceTrigger=PropertyChanged}"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="3" Margin="0,0,8,0">
                     <TextBlock Text="STATUS" FontSize="9" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                    <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding StatusOptions}" SelectedItem="{Binding FilterStatus}"/>
+                    <ComboBox Style="{StaticResource ModernComboBox}" 
+                              ItemsSource="{Binding StatusOptions}" 
+                              SelectedItem="{Binding FilterStatus, UpdateSourceTrigger=PropertyChanged}"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="4" Margin="0,0,8,0">
                     <TextBlock Text="SALESMAN" FontSize="9" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                    <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding SalesmanOptions}" SelectedItem="{Binding FilterSalesman}"/>
+                    <ComboBox Style="{StaticResource ModernComboBox}" 
+                              ItemsSource="{Binding SalesmanOptions}" 
+                              SelectedItem="{Binding FilterSalesman, UpdateSourceTrigger=PropertyChanged}"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="5" Margin="0,0,0,0">
                     <TextBlock Text="COLOR" FontSize="9" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                    <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding ColorOptions}" SelectedItem="{Binding FilterColor}"/>
+                    <ComboBox Style="{StaticResource ModernComboBox}" 
+                              ItemsSource="{Binding ColorOptions}" 
+                              SelectedItem="{Binding FilterColor, UpdateSourceTrigger=PropertyChanged}"/>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <!-- Data Grid -->
+        <!-- DATA GRID -->
         <Border Grid.Row="2" CornerRadius="16">
             <Border.Effect>
                 <DropShadowEffect BlurRadius="15" ShadowDepth="2" Opacity="0.1"/>
             </Border.Effect>
             <DataGrid ItemsSource="{Binding FilteredDataView}" 
-                      SelectedItem="{Binding SelectedDataRowView}" 
+                      SelectedItem="{Binding SelectedDataRowView}"
+                      MouseDoubleClick="DataGrid_MouseDoubleClick"
                       Style="{StaticResource ModernDataGrid}" 
                       CellStyle="{StaticResource ModernCell}"
                       RowStyle="{StaticResource ModernRowStyle}">
@@ -420,7 +445,7 @@
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Border Background="#EFF6FF" CornerRadius="6" Padding="8,4">
-                                    <TextBlock Text="{Binding Date, StringFormat=dd-MM-yyyy}" FontSize="12" Foreground="#1D4ED8" FontWeight="Medium"/>
+                                    <TextBlock Text="{Binding Date, StringFormat='{}{0:dd-MM-yyyy}'}" FontSize="12" Foreground="#1D4ED8" FontWeight="Medium"/>
                                 </Border>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
@@ -554,7 +579,7 @@
             </DataGrid>
         </Border>
 
-        <!-- Footer Stats -->
+        <!-- FOOTER STATS -->
         <Border Grid.Row="3" CornerRadius="16" Padding="20" Margin="0,16,0,0">
             <Border.Effect>
                 <DropShadowEffect BlurRadius="15" ShadowDepth="2" Opacity="0.1"/>
@@ -595,13 +620,18 @@
                     <TextBlock Text="{Binding FilteredSQM, StringFormat=N2}" Foreground="White" FontSize="24" FontWeight="Bold"/>
                 </StackPanel>
                 <StackPanel Grid.Column="5" Orientation="Horizontal">
-                    <Button Content="Edit" Style="{StaticResource PrimaryButton}" Command="{Binding EditCommand}" Margin="0,0,10,0"/>
-                    <Button Content="Delete" Style="{StaticResource DangerButton}" Command="{Binding DeleteCommand}"/>
+                    <Button Content="Edit" Style="{StaticResource PrimaryButton}" 
+                            Command="{Binding EditCommand}" 
+                            CommandParameter="{Binding SelectedDataRowView}" 
+                            Margin="0,0,10,0"/>
+                    <Button Content="Delete" Style="{StaticResource DangerButton}" 
+                            Command="{Binding DeleteCommand}" 
+                            CommandParameter="{Binding SelectedDataRowView}"/>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <!-- Edit Popup -->
+        <!-- EDIT POPUP -->
         <Border Grid.Row="0" Grid.RowSpan="4" Background="#80000000" Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibilityConverter}}">
             <Border CornerRadius="20" Padding="30" Margin="80,40" Background="White" VerticalAlignment="Center" HorizontalAlignment="Center" MinWidth="650">
                 <Border.Effect>
@@ -674,7 +704,9 @@
 
                         <StackPanel Grid.Row="3" Grid.Column="1" Margin="0,0,10,12">
                             <TextBlock Text="COLOR" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                            <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding ColorOptions}" SelectedItem="{Binding EditingWork.Color}"/>
+                            <ComboBox Style="{StaticResource ModernComboBox}" 
+                                      ItemsSource="{Binding ColorOptions}" 
+                                      SelectedItem="{Binding EditingWork.Color}"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="3" Grid.Column="2" Margin="0,0,0,12">

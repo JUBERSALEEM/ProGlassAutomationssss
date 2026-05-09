@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Globalization;
 using System.Windows;
-using System.Windows.Media;
 
 namespace ProGlassAutomation
 {
@@ -8,20 +8,12 @@ namespace ProGlassAutomation
     {
         protected override void OnStartup(StartupEventArgs e)
         {
-            // Enable hardware acceleration
-            RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.Default;
-
-            // Check render capability tier
-            int tier = (RenderCapability.Tier >> 16);
-            if (tier >= 2)
-            {
-                // Tier 2 = Hardware acceleration enabled
-                Console.WriteLine($"Hardware acceleration enabled (Tier {tier})");
-            }
-            else
-            {
-                Console.WriteLine($"Software rendering mode (Tier {tier})");
-            }
+            // Set date format to dd-MM-yyyy
+            CultureInfo culture = new CultureInfo("en-GB");
+            culture.DateTimeFormat.ShortDatePattern = "dd-MM-yyyy";
+            culture.DateTimeFormat.DateSeparator = "-";
+            System.Threading.Thread.CurrentThread.CurrentCulture = culture;
+            System.Threading.Thread.CurrentThread.CurrentUICulture = culture;
 
             base.OnStartup(e);
         }

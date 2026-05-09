@@ -8,7 +8,6 @@
         <vm:SheetStoreViewModel/>
     </UserControl.DataContext>
 
-    <!-- SCROLL VIEWER - Makes everything scrollable -->
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <Grid Margin="15">
             <Grid.RowDefinitions>
@@ -20,9 +19,7 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- ═══════════════════════════════════════════════════════
-                 HEADER
-                 ═══════════════════════════════════════════════════════ -->
+            <!-- HEADER -->
             <Border Grid.Row="0" Background="White" CornerRadius="12" Margin="0,0,0,12" BorderBrush="#E2E8F0" BorderThickness="1">
                 <Grid Margin="20,16">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -47,9 +44,7 @@
                 </Grid>
             </Border>
 
-            <!-- ═══════════════════════════════════════════════════════
-                 INVENTORY STATS FROM SHEET.CS
-                 ═══════════════════════════════════════════════════════ -->
+            <!-- INVENTORY STATS -->
             <Border Grid.Row="1" Background="White" CornerRadius="12" Margin="0,0,0,12" BorderBrush="#E2E8F0" BorderThickness="1">
                 <Grid Margin="16,12">
                     <Grid.ColumnDefinitions>
@@ -59,7 +54,6 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Categories -->
                     <Border Grid.Column="0" Background="#DBEAFE" CornerRadius="10" Padding="14" Margin="0,0,8,0" BorderBrush="#93C5FD" BorderThickness="1">
                         <StackPanel HorizontalAlignment="Center">
                             <TextBlock Text="📁 CATEGORIES" FontSize="10" Foreground="#1E40AF" FontWeight="SemiBold" HorizontalAlignment="Center"/>
@@ -68,7 +62,6 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Thicknesses -->
                     <Border Grid.Column="1" Background="#FEF3C7" CornerRadius="10" Padding="14" Margin="0,0,8,0" BorderBrush="#FCD34D" BorderThickness="1">
                         <StackPanel HorizontalAlignment="Center">
                             <TextBlock Text="📏 THICKNESS" FontSize="10" Foreground="#92400E" FontWeight="SemiBold" HorizontalAlignment="Center"/>
@@ -77,7 +70,6 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Colors -->
                     <Border Grid.Column="2" Background="#FCE7F3" CornerRadius="10" Padding="14" Margin="0,0,8,0" BorderBrush="#F9A8D4" BorderThickness="1">
                         <StackPanel HorizontalAlignment="Center">
                             <TextBlock Text="🎨 COLORS" FontSize="10" Foreground="#9D174D" FontWeight="SemiBold" HorizontalAlignment="Center"/>
@@ -86,7 +78,6 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Suppliers -->
                     <Border Grid.Column="3" Background="#ECFDF5" CornerRadius="10" Padding="14" BorderBrush="#6EE7B7" BorderThickness="1">
                         <StackPanel HorizontalAlignment="Center">
                             <TextBlock Text="🏭 SUPPLIERS" FontSize="10" Foreground="#065F46" FontWeight="SemiBold" HorizontalAlignment="Center"/>
@@ -97,9 +88,7 @@
                 </Grid>
             </Border>
 
-            <!-- ═══════════════════════════════════════════════════════
-                 SELECTION FILTERS (Category + Thickness + Color + Supplier)
-                 ═══════════════════════════════════════════════════════ -->
+            <!-- SELECTION FILTERS -->
             <Border Grid.Row="2" Background="White" CornerRadius="12" Margin="0,0,0,12" BorderBrush="#E2E8F0" BorderThickness="1">
                 <Grid Margin="16,14">
                     <Grid.ColumnDefinitions>
@@ -117,9 +106,9 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
-                            <TextBlock Grid.Row="0" Text="📁 Category" FontSize="10" Foreground="SaddleBrown" FontWeight="SemiBold" Margin="4,0,0,4"/>
+                            <TextBlock Grid.Row="0" Text="📁 Category" FontSize="10" Foreground="#64748B" FontWeight="SemiBold" Margin="4,0,0,4"/>
                             <ComboBox Grid.Row="1" ItemsSource="{Binding Categories}" 
-                                      SelectedItem="{Binding SelectedCategory}"
+                                      SelectedItem="{Binding SelectedCategory, UpdateSourceTrigger=PropertyChanged}"
                                       Padding="10,8" FontSize="13" Background="White"/>
                         </Grid>
                     </Border>
@@ -131,9 +120,9 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
-                            <TextBlock Grid.Row="0" Text="📏 Thickness" FontSize="10" Foreground="SaddleBrown" FontWeight="SemiBold" Margin="4,0,0,4"/>
+                            <TextBlock Grid.Row="0" Text="📏 Thickness" FontSize="10" Foreground="#64748B" FontWeight="SemiBold" Margin="4,0,0,4"/>
                             <ComboBox Grid.Row="1" ItemsSource="{Binding Thicknesses}" 
-                                      SelectedItem="{Binding SelectedThickness}"
+                                      SelectedItem="{Binding SelectedThickness, UpdateSourceTrigger=PropertyChanged}"
                                       Padding="10,8" FontSize="13" Background="White"/>
                         </Grid>
                     </Border>
@@ -147,8 +136,8 @@
                             </Grid.RowDefinitions>
                             <TextBlock Grid.Row="0" Text="🎨 Color" FontSize="10" Foreground="#64748B" FontWeight="SemiBold" Margin="4,0,0,4"/>
                             <ComboBox Grid.Row="1" ItemsSource="{Binding Colors}" 
-                                      SelectedItem="{Binding SelectedColor}"
-                                      Padding="10,8" FontSize="13" Background="SandyBrown"/>
+                                      SelectedItem="{Binding SelectedColor, UpdateSourceTrigger=PropertyChanged}"
+                                      Padding="10,8" FontSize="13" Background="White"/>
                         </Grid>
                     </Border>
 
@@ -165,7 +154,7 @@
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Row="0" Grid.Column="0" Text="🏭 Supplier" FontSize="10" Foreground="#64748B" FontWeight="SemiBold" Margin="4,0,0,4"/>
                             <ComboBox Grid.Row="1" Grid.Column="0" ItemsSource="{Binding Suppliers}" 
-                                      SelectedItem="{Binding SelectedSupplier}"
+                                      SelectedItem="{Binding SelectedSupplier, UpdateSourceTrigger=PropertyChanged}"
                                       Padding="10,8" FontSize="13" Background="White"/>
                             <Button Grid.Row="1" Grid.Column="1" Content="+" 
                                     Command="{Binding AddSupplierCommand}"
@@ -207,9 +196,7 @@
                 </Grid>
             </Border>
 
-            <!-- ═══════════════════════════════════════════════════════
-                 DYNAMIC MAIN STATS (Updates based on selection)
-                 ═══════════════════════════════════════════════════════ -->
+            <!-- DYNAMIC MAIN STATS -->
             <Border Grid.Row="3" Background="White" CornerRadius="12" Margin="0,0,0,12" BorderBrush="#E2E8F0" BorderThickness="1">
                 <Grid Margin="16,14">
                     <Grid.ColumnDefinitions>
@@ -222,7 +209,6 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Selection Label -->
                     <Border Grid.Column="0" Background="#1E293B" CornerRadius="10" Padding="14" Margin="0,0,8,0">
                         <StackPanel>
                             <TextBlock Text="FILTER" FontSize="10" Foreground="#94A3B8" FontWeight="SemiBold"/>
@@ -236,7 +222,6 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Stock -->
                     <Border Grid.Column="1" Background="#ECFDF5" CornerRadius="10" Padding="14" Margin="0,0,8,0" BorderBrush="#A7F3D0" BorderThickness="1">
                         <StackPanel>
                             <TextBlock Text="STOCK" FontSize="10" Foreground="#059669" FontWeight="SemiBold"/>
@@ -244,7 +229,6 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Used -->
                     <Border Grid.Column="2" Background="#FEF2F2" CornerRadius="10" Padding="14" Margin="0,0,8,0" BorderBrush="#FECACA" BorderThickness="1">
                         <StackPanel>
                             <TextBlock Text="USED" FontSize="10" Foreground="#DC2626" FontWeight="SemiBold"/>
@@ -252,7 +236,6 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Balance -->
                     <Border Grid.Column="3" Background="#FFFBEB" CornerRadius="10" Padding="14" Margin="0,0,8,0" BorderBrush="#FDE68A" BorderThickness="1">
                         <StackPanel>
                             <TextBlock Text="BALANCE" FontSize="10" Foreground="#D97706" FontWeight="SemiBold"/>
@@ -260,7 +243,6 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Last Purchase -->
                     <Border Grid.Column="4" Background="#F5F3FF" CornerRadius="10" Padding="14" Margin="0,0,8,0" BorderBrush="#DDD6FE" BorderThickness="1">
                         <StackPanel>
                             <TextBlock Text="LAST PURCHASE" FontSize="10" Foreground="#7C3AED" FontWeight="SemiBold"/>
@@ -268,7 +250,6 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Last Update -->
                     <Border Grid.Column="5" Background="#F0F9FF" CornerRadius="10" Padding="14" Margin="0,0,8,0" BorderBrush="#BAE6FD" BorderThickness="1">
                         <StackPanel>
                             <TextBlock Text="LAST UPDATE" FontSize="10" Foreground="#0284C7" FontWeight="SemiBold"/>
@@ -276,7 +257,6 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Total Value -->
                     <Border Grid.Column="6" Background="#1E293B" CornerRadius="10" Padding="14" BorderBrush="#334155" BorderThickness="1">
                         <StackPanel>
                             <TextBlock Text="TOTAL VALUE" FontSize="10" Foreground="#94A3B8" FontWeight="SemiBold"/>
@@ -287,9 +267,7 @@
                 </Grid>
             </Border>
 
-            <!-- ═══════════════════════════════════════════════════════
-                 MAIN CONTENT
-                 ═══════════════════════════════════════════════════════ -->
+            <!-- MAIN CONTENT -->
             <Grid Grid.Row="4">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="240"/>
@@ -367,7 +345,6 @@
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
 
-                                <!-- Left: Title -->
                                 <StackPanel Grid.Column="0" Orientation="Horizontal">
                                     <TextBlock Text="📋 Sheets Inventory" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center"/>
                                     <Border Background="#E0E7FF" CornerRadius="20" Padding="10,4" Margin="12,0,0,0">
@@ -378,15 +355,13 @@
                                     </Border>
                                 </StackPanel>
 
-                                <!-- Middle: Sort Dropdown -->
                                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center">
                                     <TextBlock Text="Sort:" FontSize="11" Foreground="#64748B" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                     <ComboBox ItemsSource="{Binding SortOptions}" 
-                                              SelectedItem="{Binding SelectedSortOption}"
+                                              SelectedItem="{Binding SelectedSortOption, UpdateSourceTrigger=PropertyChanged}"
                                               Width="200" Padding="10,8" FontSize="11"/>
                                 </StackPanel>
 
-                                <!-- Right: Search -->
                                 <TextBox Grid.Column="2" 
                                          Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, Delay=300}"
                                          Width="200" Padding="10,8"
@@ -551,9 +526,6 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
-                                <!-- ═══════════════════════════════════════════════════════
-                                     ACTIONS
-                                     ═══════════════════════════════════════════════════════ -->
                                 <DataGridTemplateColumn Header="ACTIONS" Width="190">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
@@ -671,9 +643,7 @@
                 </Border>
             </Grid>
 
-            <!-- ═══════════════════════════════════════════════════════
-                 FOOTER
-                 ═══════════════════════════════════════════════════════ -->
+            <!-- FOOTER -->
             <Border Grid.Row="5" Background="White" CornerRadius="12" Margin="0,12,0,0" BorderBrush="#E2E8F0" BorderThickness="1">
                 <Grid Margin="16,12">
                     <StackPanel Orientation="Horizontal">
