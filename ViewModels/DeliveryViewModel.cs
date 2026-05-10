@@ -643,13 +643,42 @@ namespace ProGlassAutomation.ViewModels
                 foreach (var sourceOrder in confirmedOrders)
                 {
                     // CHECK IF ALREADY IMPORTED (by PI Number)
-                    bool alreadyExists = DeliveryOrders.Any(d =>
+                    var existingDelivery = DeliveryOrders.FirstOrDefault(d =>
                         d.PINumber == sourceOrder.PINumber &&
                         !string.IsNullOrEmpty(sourceOrder.PINumber));
 
-                    if (alreadyExists)
+                    if (existingDelivery != null)
                     {
-                        skippedCount++;
+                        // ✅ CHECK IF SOURCE DATA HAS CHANGED
+                        bool hasChanges =
+                            existingDelivery.OrderQty != sourceOrder.Qty ||
+                            existingDelivery.OrderSQM != sourceOrder.SQM ||
+                            existingDelivery.Notes != sourceOrder.Notes ||
+                            existingDelivery.Company != sourceOrder.Company ||
+                            existingDelivery.TypeOfWork != sourceOrder.TypeOfWork ||
+                            existingDelivery.Salesman != sourceOrder.Salesman;
+
+                        if (hasChanges)
+                        {
+                            // ✅ UPDATE EXISTING DELIVERY WITH NEW VALUES
+                            existingDelivery.OrderQty = sourceOrder.Qty;
+                            existingDelivery.OrderSQM = sourceOrder.SQM;
+                            existingDelivery.Company = sourceOrder.Company ?? "";
+                            existingDelivery.TypeOfWork = sourceOrder.TypeOfWork ?? "";
+                            existingDelivery.Salesman = sourceOrder.Salesman ?? "";
+                            existingDelivery.Notes = sourceOrder.Notes ?? "";
+                            existingDelivery.UpdatedDate = DateTime.Today;
+                            UpdateOrderStatus(existingDelivery);
+
+                            // UPDATE IN DATABASE
+                            DbHelper.UpdateDelivery(existingDelivery);
+
+                            importedCount++;
+                        }
+                        else
+                        {
+                            skippedCount++;
+                        }
                         continue;
                     }
 
@@ -686,8 +715,8 @@ namespace ProGlassAutomation.ViewModels
                 UpdateStatistics();
 
                 string message = $"Import Complete!\n\n";
-                message += $"Imported: {importedCount} orders\n";
-                message += $"Skipped (already imported): {skippedCount} orders";
+                message += $"New: {importedCount} orders\n";
+                message += $"Skipped (no changes): {skippedCount} orders";
 
                 MessageBox.Show(message, "Import", MessageBoxButton.OK, MessageBoxImage.Information);
             }
