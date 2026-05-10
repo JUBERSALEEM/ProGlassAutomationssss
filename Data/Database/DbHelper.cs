@@ -851,6 +851,38 @@ namespace ProGlassAutomation.Data.Database
             });
         }
 
+        // ✅ NEW: UpdateDeliveryItem method
+        public static void UpdateDeliveryItem(DeliveryItem item)
+        {
+            Execute(conn =>
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"
+                    UPDATE DeliveryItems SET 
+                        DeliveryDate = $d, 
+                        DeliveredQty = $dq, 
+                        DeliveredSQM = $ds, 
+                        ReturnedQty = $rq, 
+                        ReturnedSQM = $rs, 
+                        Driver = $dr, 
+                        Vehicle = $v, 
+                        Notes = $n
+                    WHERE Id = $id;";
+
+                cmd.Parameters.AddWithValue("$id", item.Id);
+                cmd.Parameters.AddWithValue("$d", item.DeliveryDate.ToString("yyyy-MM-dd"));
+                cmd.Parameters.AddWithValue("$dq", item.DeliveredQty);
+                cmd.Parameters.AddWithValue("$ds", item.DeliveredSQM);
+                cmd.Parameters.AddWithValue("$rq", item.ReturnedQty);
+                cmd.Parameters.AddWithValue("$rs", item.ReturnedSQM);
+                cmd.Parameters.AddWithValue("$dr", item.Driver ?? "");
+                cmd.Parameters.AddWithValue("$v", item.Vehicle ?? "");
+                cmd.Parameters.AddWithValue("$n", item.Notes ?? "");
+
+                cmd.ExecuteNonQuery();
+            });
+        }
+
         public static List<DeliveryItem> GetDeliveryItems(int orderId)
         {
             return Execute(conn =>
@@ -931,8 +963,8 @@ namespace ProGlassAutomation.Data.Database
         {
             Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
-                cmd.CommandText = @"
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
                 UPDATE SheetStore SET 
                     Category = $cat, Thickness = $th, Color = $col, ColorHex = $hex,
                     Width = $w, Height = $h, SquareMeter = $sqm, PurchasePrice = $pp,
@@ -941,21 +973,20 @@ namespace ProGlassAutomation.Data.Database
                     LatestPurchaseDate = $lpd
                 WHERE Id = $id;";
 
-                cmd.Parameters.AddWithValue("$id", s.Id);
-                cmd.Parameters.AddWithValue("$cat", s.Category ?? "");
-                cmd.Parameters.AddWithValue("$th", s.Thickness ?? "");
-                cmd.Parameters.AddWithValue("$col", s.Color ?? "");
-                cmd.Parameters.AddWithValue("$hex", s.ColorHex ?? "");
-                cmd.Parameters.AddWithValue("$w", s.Width);
-                cmd.Parameters.AddWithValue("$h", s.Height);
-                cmd.Parameters.AddWithValue("$sqm", s.SquareMeter);
-                cmd.Parameters.AddWithValue("$pp", s.PurchasePrice);
-                cmd.Parameters.AddWithValue("$sp", s.SellPrice);
-                cmd.Parameters.AddWithValue("$ts", s.TotalStock);
-                cmd.Parameters.AddWithValue("$us", s.UsedSheets);
-                cmd.Parameters.AddWithValue("$bs", s.BalanceSheets);
-                cmd.Parameters.AddWithValue("$act", s.IsActive ? 1 : 0);
-                cmd.Parameters.AddWithValue("$sup", s.Supplier ?? "");
+            cmd.Parameters.AddWithValue("$id", s.Id);
+            cmd.Parameters.AddWithValue("$cat", s.Category ?? "");
+            cmd.Parameters.AddWithValue("$th", s.Thickness ?? "");
+            cmd.Parameters.AddWithValue("$col", s.Color ?? "");
+            cmd.Parameters.AddWithValue("$hex", s.ColorHex ?? "");
+            cmd.Parameters.AddWithValue("$w", s.Width);
+            cmd.Parameters.AddWithValue("$h", s.Height);
+            cmd.Parameters.AddWithValue("$sqm", s.SquareMeter);
+            cmd.Parameters.AddWithValue("$pp", s.PurchasePrice);
+            cmd.Parameters.AddWithValue("$sp", s.SellPrice);
+            cmd.Parameters.AddWithValue("$ts", s.TotalStock);
+            cmd.Parameters.AddWithValue("$us", s.UsedSheets);
+            cmd.Parameters.AddWithValue("$bs", s.BalanceSheets);
+            cmd.Parameters.AddWithValue("$act", s.IsActive ? 1 : 0);
                 cmd.Parameters.AddWithValue("$supn", s.SupplierName ?? "");
                 cmd.Parameters.AddWithValue("$desc", s.Description ?? "");
                 cmd.Parameters.AddWithValue("$lpd", s.LatestPurchaseDate?.ToString("yyyy-MM-dd HH:mm") ?? "");
@@ -968,34 +999,34 @@ namespace ProGlassAutomation.Data.Database
         {
             return Execute(conn =>
             {
-            var list = new List<Sheet>();
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = "SELECT * FROM SheetStore ORDER BY Id DESC";
-            using var r = cmd.ExecuteReader();
-            while (r.Read())
-            {
-                list.Add(new Sheet
+                var list = new List<Sheet>();
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT * FROM SheetStore ORDER BY Id DESC";
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
                 {
-                    Id = r.GetInt32(0),
-                    Category = r.IsDBNull(1) ? "" : r.GetString(1),
-                    Thickness = r.IsDBNull(2) ? "" : r.GetString(2),
-                    Color = r.IsDBNull(3) ? "" : r.GetString(3),
-                    ColorHex = r.IsDBNull(4) ? "" : r.GetString(4),
-                    Width = r.GetInt32(5),
-                    Height = r.GetInt32(6),
-                    SquareMeter = r.GetDouble(7),
-                    PurchasePrice = r.GetDecimal(8),
-                    SellPrice = r.GetDecimal(9),
-                    TotalStock = r.GetInt32(10),
-                    UsedSheets = r.GetInt32(11),
-                    BalanceSheets = r.GetInt32(12),
-                    IsActive = r.GetInt32(13) == 1,
-                    Supplier = r.IsDBNull(14) ? "" : r.GetString(14),
-                    SupplierName = r.IsDBNull(15) ? "" : r.GetString(15),
-                    Description = r.IsDBNull(16) ? "" : r.GetString(16),
-                    CreatedDate = DateTime.TryParse(r.GetString(17), out var cd) ? cd : DateTime.Now,
-                    LatestPurchaseDate = DateTime.TryParse(r.GetString(18), out var lpd) ? lpd : null
-                });
+                    list.Add(new Sheet
+                    {
+                        Id = r.GetInt32(0),
+                        Category = r.IsDBNull(1) ? "" : r.GetString(1),
+                        Thickness = r.IsDBNull(2) ? "" : r.GetString(2),
+                        Color = r.IsDBNull(3) ? "" : r.GetString(3),
+                        ColorHex = r.IsDBNull(4) ? "" : r.GetString(4),
+                        Width = r.GetInt32(5),
+                        Height = r.GetInt32(6),
+                        SquareMeter = r.GetDouble(7),
+                        PurchasePrice = r.GetDecimal(8),
+                        SellPrice = r.GetDecimal(9),
+                        TotalStock = r.GetInt32(10),
+                        UsedSheets = r.GetInt32(11),
+                        BalanceSheets = r.GetInt32(12),
+                        IsActive = r.GetInt32(13) == 1,
+                        Supplier = r.IsDBNull(14) ? "" : r.GetString(14),
+                        SupplierName = r.IsDBNull(15) ? "" : r.GetString(15),
+                        Description = r.IsDBNull(16) ? "" : r.GetString(16),
+                        CreatedDate = DateTime.TryParse(r.GetString(17), out var cd) ? cd : DateTime.Now,
+                        LatestPurchaseDate = DateTime.TryParse(r.GetString(18), out var lpd) ? lpd : null
+                    });
                 }
                 return list;
             });

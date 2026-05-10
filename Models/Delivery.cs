@@ -207,18 +207,122 @@ namespace ProGlassAutomation.Models
         }
     }
 
-    public class DeliveryItem
+    // ✅ Updated: Added INotifyPropertyChanged to DeliveryItem
+    public class DeliveryItem : INotifyPropertyChanged
     {
-        public int Id { get; set; }
-        public int OrderId { get; set; }
-        public DateTime DeliveryDate { get; set; }
-        public int DeliveredQty { get; set; }
-        public double DeliveredSQM { get; set; }
-        public int ReturnedQty { get; set; }
-        public double ReturnedSQM { get; set; }
-        public string Driver { get; set; }
-        public string Vehicle { get; set; }
-        public string Notes { get; set; }
-        public DateTime CreatedDate { get; set; }
+        private int _id;
+        private int _orderId;
+        private DateTime _deliveryDate;
+        private int _deliveredQty;
+        private double _deliveredSQM;
+        private int _returnedQty;
+        private double _returnedSQM;
+        private string _driver = "";
+        private string _vehicle = "";
+        private string _notes = "";
+        private DateTime _createdDate;
+
+        #region Properties
+
+        public int Id
+        {
+            get => _id;
+            set { _id = value; OnPropertyChanged(); }
+        }
+
+        public int OrderId
+        {
+            get => _orderId;
+            set { _orderId = value; OnPropertyChanged(); }
+        }
+
+        public DateTime DeliveryDate
+        {
+            get => _deliveryDate;
+            set { _deliveryDate = value; OnPropertyChanged(); }
+        }
+
+        public int DeliveredQty
+        {
+            get => _deliveredQty;
+            set { _deliveredQty = value; OnPropertyChanged(); }
+        }
+
+        public double DeliveredSQM
+        {
+            get => _deliveredSQM;
+            set { _deliveredSQM = value; OnPropertyChanged(); }
+        }
+
+        public int ReturnedQty
+        {
+            get => _returnedQty;
+            set { _returnedQty = value; OnPropertyChanged(); }
+        }
+
+        public double ReturnedSQM
+        {
+            get => _returnedSQM;
+            set { _returnedSQM = value; OnPropertyChanged(); }
+        }
+
+        public string Driver
+        {
+            get => _driver;
+            set { _driver = value ?? ""; OnPropertyChanged(); }
+        }
+
+        public string Vehicle
+        {
+            get => _vehicle;
+            set { _vehicle = value ?? ""; OnPropertyChanged(); }
+        }
+
+        public string Notes
+        {
+            get => _notes;
+            set { _notes = value ?? ""; OnPropertyChanged(); }
+        }
+
+        public DateTime CreatedDate
+        {
+            get => _createdDate;
+            set { _createdDate = value; OnPropertyChanged(); }
+        }
+
+        #endregion
+
+        #region INotifyPropertyChanged
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        #endregion
+
+        #region Methods
+
+        public DeliveryItem Clone()
+        {
+            return new DeliveryItem
+            {
+                Id = this.Id,
+                OrderId = this.OrderId,
+                DeliveryDate = this.DeliveryDate,
+                DeliveredQty = this.DeliveredQty,
+                DeliveredSQM = this.DeliveredSQM,
+                ReturnedQty = this.ReturnedQty,
+                ReturnedSQM = this.ReturnedSQM,
+                Driver = this.Driver,
+                Vehicle = this.Vehicle,
+                Notes = this.Notes,
+                CreatedDate = this.CreatedDate
+            };
+        }
+
+        #endregion
     }
 }

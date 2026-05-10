@@ -45,6 +45,10 @@ namespace ProGlassAutomation.ViewModels
         private bool _isDeletingDeliveryItem = false;
         private DeliveryItem _confirmDeleteItem;
 
+        // ✅ NEW: Edit Delivery Item
+        private bool _isEditingDeliveryItem = false;
+        private DeliveryItem _editingDeliveryItemFromDb;
+
         // Options collections
         public ObservableCollection<string> TypeOfWorkOptions { get; private set; }
         public ObservableCollection<string> StatusOptions { get; private set; }
@@ -80,11 +84,16 @@ namespace ProGlassAutomation.ViewModels
             ViewDetailsCommand = new RelayCommand(ExecuteViewDetails, CanExecuteViewDetails);
             DeleteSelectedCommand = new RelayCommand(ExecuteDeleteSelected, CanExecuteDeleteSelected);
 
-            // ✅ NEW Commands initialization
+            // ✅ NEW Commands for Notes View and Delete Confirmation
             ViewNotesCommand = new RelayCommand(ExecuteViewNotes);
             CloseNotesCommand = new RelayCommand(ExecuteCloseNotes);
             CancelDeleteDeliveryItemCommand = new RelayCommand(ExecuteCancelDeleteDeliveryItem);
             ConfirmDeleteDeliveryItemCommand = new RelayCommand(ExecuteConfirmDeleteDeliveryItem);
+
+            // ✅ NEW: Edit Delivery Item Commands
+            EditDeliveryItemCommand = new RelayCommand(ExecuteEditDeliveryItem, CanExecuteEditDeliveryItem);
+            SaveEditDeliveryItemCommand = new RelayCommand(ExecuteSaveEditDeliveryItem, CanExecuteSaveEditDeliveryItem);
+            CancelEditDeliveryItemCommand = new RelayCommand(ExecuteCancelEditDeliveryItem);
 
             LoadDataFromDatabase();
             CreateDataView();
@@ -296,6 +305,19 @@ namespace ProGlassAutomation.ViewModels
             set => SetProperty(ref _confirmDeleteItem, value);
         }
 
+        // ✅ NEW: Edit Delivery Item Properties
+        public bool IsEditingDeliveryItem
+        {
+            get => _isEditingDeliveryItem;
+            set => SetProperty(ref _isEditingDeliveryItem, value);
+        }
+
+        public DeliveryItem EditingDeliveryItemFromDb
+        {
+            get => _editingDeliveryItemFromDb;
+            set => SetProperty(ref _editingDeliveryItemFromDb, value);
+        }
+
         public string SortColumn
         {
             get => _sortColumn;
@@ -353,6 +375,11 @@ namespace ProGlassAutomation.ViewModels
         public ICommand CloseNotesCommand { get; }
         public ICommand CancelDeleteDeliveryItemCommand { get; }
         public ICommand ConfirmDeleteDeliveryItemCommand { get; }
+
+        // ✅ NEW Commands for Edit Delivery Item
+        public ICommand EditDeliveryItemCommand { get; }
+        public ICommand SaveEditDeliveryItemCommand { get; }
+        public ICommand CancelEditDeliveryItemCommand { get; }
 
         #endregion
 
@@ -859,8 +886,10 @@ namespace ProGlassAutomation.ViewModels
             IsViewingDetails = false;
             IsViewingNotes = false;
             IsDeletingDeliveryItem = false;
+            IsEditingDeliveryItem = false;  // ✅ NEW
             EditingOrder = null;
             EditingDeliveryItem = null;
+            EditingDeliveryItemFromDb = null;
             ViewNotesContent = "";
             ConfirmDeleteItem = null;
         }
@@ -913,8 +942,8 @@ namespace ProGlassAutomation.ViewModels
                     ReturnedQty = 0,
                     DeliveredSQM = 0,
                     ReturnedSQM = 0,
-                    Driver = "",      // ✅ Empty by default
-                    Vehicle = ""       // ✅ Empty by default
+                    Driver = "",
+                    Vehicle = ""
                 };
                 IsAddingDelivery = true;
             }
@@ -946,7 +975,6 @@ namespace ProGlassAutomation.ViewModels
                 if (!DriverOptions.Contains(driverTrimmed))
                 {
                     DriverOptions.Add(driverTrimmed);
-                    System.Diagnostics.Debug.WriteLine($"[Delivery] Added new Driver: {driverTrimmed}");
                 }
             }
 
@@ -957,7 +985,6 @@ namespace ProGlassAutomation.ViewModels
                 if (!VehicleOptions.Contains(vehicleTrimmed))
                 {
                     VehicleOptions.Add(vehicleTrimmed);
-                    System.Diagnostics.Debug.WriteLine($"[Delivery] Added new Vehicle: {vehicleTrimmed}");
                 }
             }
 
@@ -1022,6 +1049,167 @@ namespace ProGlassAutomation.ViewModels
             return parameter != null || SelectedDeliveryItem != null;
         }
 
+        // ✅ NEW: Edit Delivery Item Methods
+        private void ExecuteEditDeliveryItem(object parameter)
+        {
+            if (parameter is DeliveryItem item)
+            {
+                // Create a copy for editing
+                EditingDeliveryItemFromDb = new DeliveryItem
+                {
+                    Id = item.Id,
+                    OrderId = item.OrderId,
+                    DeliveryDate = item.DeliveryDate,
+                    DeliveredQty = item.DeliveredQty,
+                    ReturnedQty = item.ReturnedQty,
+                    DeliveredSQM = item.DeliveredSQM,
+                    ReturnedSQM = item.ReturnedSQM,
+                    Driver = item.Driver,
+                    Vehicle = item.Vehicle,
+                    Notes = item.Notes
+                };
+                IsEditingDeliveryItem = true;
+            }
+        }
+
+        private bool CanExecuteEditDeliveryItem(object parameter)
+        {
+            return parameter is DeliveryItem;
+        }
+
+        private bool CanExecuteSaveEditDeliveryItem(object parameter)
+        {
+            return EditingDeliveryItemFromDb != null;
+        }
+
+        private void ExecuteSaveEditDeliveryItem(object parameter)
+        {
+            if (EditingDeliveryItemFromDb == null || SelectedOrder == null) return;
+
+            if (EditingDeliveryItemFromDb.DeliveredQty < 0)
+            {
+                MessageBox.Show("Delivered quantity cannot be negative.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // Find the original item in the collection
+            var originalItem = SelectedOrder.DeliveryItems.FirstOrDefault(x => x.Id == EditingDeliveryItemFromDb.Id);
+            if (originalItem == null)
+            {
+                MessageBox.Show("Original delivery item not found.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            // ✅ Add new Driver to options if not exists
+            if (!string.IsNullOrWhiteSpace(EditingDeliveryItemFromDb.Driver))
+            {
+                var driverTrimmed = EditingDeliveryItemFromDb.Driver.Trim();
+                if (!DriverOptions.Contains(driverTrimmed))
+                {
+                    DriverOptions.Add(driverTrimmed);
+                }
+            }
+
+            // ✅ Add new Vehicle to options if not exists
+            if (!string.IsNullOrWhiteSpace(EditingDeliveryItemFromDb.Vehicle))
+            {
+                var vehicleTrimmed = EditingDeliveryItemFromDb.Vehicle.Trim();
+                if (!VehicleOptions.Contains(vehicleTrimmed))
+                {
+                    VehicleOptions.Add(vehicleTrimmed);
+                }
+            }
+
+            // Update the original item
+            originalItem.DeliveryDate = EditingDeliveryItemFromDb.DeliveryDate;
+            originalItem.DeliveredQty = EditingDeliveryItemFromDb.DeliveredQty;
+            originalItem.ReturnedQty = EditingDeliveryItemFromDb.ReturnedQty;
+            originalItem.Driver = EditingDeliveryItemFromDb.Driver;
+            originalItem.Vehicle = EditingDeliveryItemFromDb.Vehicle;
+            originalItem.Notes = EditingDeliveryItemFromDb.Notes;
+
+            // Recalculate SQM values
+            originalItem.DeliveredSQM = Math.Round((double)originalItem.DeliveredQty / SelectedOrder.OrderQty * SelectedOrder.OrderSQM, 2);
+            originalItem.ReturnedSQM = Math.Round((double)originalItem.ReturnedQty / SelectedOrder.OrderQty * SelectedOrder.OrderSQM, 2);
+
+            // UPDATE IN DATABASE
+            DbHelper.UpdateDeliveryItem(originalItem);
+
+            // Update order totals and status
+            SelectedOrder.UpdatedDate = DateTime.Today;
+            UpdateOrderStatus(SelectedOrder);
+
+            // UPDATE DELIVERY STATUS IN DATABASE
+            DbHelper.UpdateDelivery(SelectedOrder);
+
+            IsEditingDeliveryItem = false;
+            EditingDeliveryItemFromDb = null;
+            RefreshDataView();
+            UpdateStatistics();
+
+            MessageBox.Show("Delivery item updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void ExecuteCancelEditDeliveryItem(object parameter)
+        {
+            IsEditingDeliveryItem = false;
+            EditingDeliveryItemFromDb = null;
+        }
+
+        #endregion
+
+        #region Notes View
+
+        private void ExecuteViewNotes(object parameter)
+        {
+            if (parameter is string notes)
+            {
+                ViewNotesContent = string.IsNullOrWhiteSpace(notes) ? "No notes available." : notes;
+                IsViewingNotes = true;
+            }
+        }
+
+        private void ExecuteCloseNotes(object parameter)
+        {
+            IsViewingNotes = false;
+            ViewNotesContent = "";
+        }
+
+        #endregion
+
+        #region Delete Delivery Item with Confirmation
+
+        private void ExecuteCancelDeleteDeliveryItem(object parameter)
+        {
+            IsDeletingDeliveryItem = false;
+            ConfirmDeleteItem = null;
+        }
+
+        private void ExecuteConfirmDeleteDeliveryItem(object parameter)
+        {
+            if (ConfirmDeleteItem == null || SelectedOrder == null) return;
+
+            // DELETE FROM DATABASE
+            DbHelper.DeleteDeliveryItem(ConfirmDeleteItem.Id);
+
+            SelectedOrder.DeliveryItems.Remove(ConfirmDeleteItem);
+            SelectedOrder.UpdatedDate = DateTime.Today;
+            UpdateOrderStatus(SelectedOrder);
+
+            // UPDATE DELIVERY STATUS IN DATABASE
+            DbHelper.UpdateDelivery(SelectedOrder);
+
+            IsDeletingDeliveryItem = false;
+            ConfirmDeleteItem = null;
+            SelectedDeliveryItem = null;
+            RefreshDataView();
+            UpdateStatistics();
+        }
+
+        #endregion
+
+        #region Export
+
         private void ExecuteExport(object parameter)
         {
             try
@@ -1058,6 +1246,10 @@ namespace ProGlassAutomation.ViewModels
             System.IO.File.WriteAllText(filePath, sb.ToString(), System.Text.Encoding.UTF8);
         }
 
+        #endregion
+
+        #region Clear Filters
+
         private void ExecuteClearFilters(object parameter)
         {
             SearchText = "";
@@ -1071,6 +1263,10 @@ namespace ProGlassAutomation.ViewModels
             SortDirection = ListSortDirection.Ascending;
             ApplyFilters();
         }
+
+        #endregion
+
+        #region Print
 
         private void ExecutePrint(object parameter)
         {
@@ -1155,6 +1351,10 @@ namespace ProGlassAutomation.ViewModels
             return grid;
         }
 
+        #endregion
+
+        #region Delete Selected
+
         private void ExecuteDeleteSelected(object parameter)
         {
             if (parameter is System.Windows.Controls.DataGrid dataGrid)
@@ -1206,6 +1406,10 @@ namespace ProGlassAutomation.ViewModels
             return _selectedCount > 0;
         }
 
+        #endregion
+
+        #region Statistics
+
         private void UpdateStatistics()
         {
             OnPropertyChanged(nameof(TotalRecords));
@@ -1219,56 +1423,6 @@ namespace ProGlassAutomation.ViewModels
             OnPropertyChanged(nameof(PartialCount));
             OnPropertyChanged(nameof(CompletedCount));
             OnPropertyChanged(nameof(SelectedCount));
-        }
-
-        #endregion
-
-        #region Notes View
-
-        private void ExecuteViewNotes(object parameter)
-        {
-            if (parameter is string notes)
-            {
-                ViewNotesContent = string.IsNullOrWhiteSpace(notes) ? "No notes available." : notes;
-                IsViewingNotes = true;
-            }
-        }
-
-        private void ExecuteCloseNotes(object parameter)
-        {
-            IsViewingNotes = false;
-            ViewNotesContent = "";
-        }
-
-        #endregion
-
-        #region Delete Delivery Item with Confirmation
-
-        private void ExecuteCancelDeleteDeliveryItem(object parameter)
-        {
-            IsDeletingDeliveryItem = false;
-            ConfirmDeleteItem = null;
-        }
-
-        private void ExecuteConfirmDeleteDeliveryItem(object parameter)
-        {
-            if (ConfirmDeleteItem == null || SelectedOrder == null) return;
-
-            // DELETE FROM DATABASE
-            DbHelper.DeleteDeliveryItem(ConfirmDeleteItem.Id);
-
-            SelectedOrder.DeliveryItems.Remove(ConfirmDeleteItem);
-            SelectedOrder.UpdatedDate = DateTime.Today;
-            UpdateOrderStatus(SelectedOrder);
-
-            // UPDATE DELIVERY STATUS IN DATABASE
-            DbHelper.UpdateDelivery(SelectedOrder);
-
-            IsDeletingDeliveryItem = false;
-            ConfirmDeleteItem = null;
-            SelectedDeliveryItem = null;
-            RefreshDataView();
-            UpdateStatistics();
         }
 
         #endregion
