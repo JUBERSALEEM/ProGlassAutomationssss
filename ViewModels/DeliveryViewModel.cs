@@ -36,6 +36,7 @@ namespace ProGlassAutomation.ViewModels
         private Delivery _editingOrder;
         private DeliveryItem _editingDeliveryItem;
         private bool _isNewRecord;
+        private bool _isInitialized;
 
         // Options collections
         public ObservableCollection<string> TypeOfWorkOptions { get; private set; }
@@ -47,6 +48,9 @@ namespace ProGlassAutomation.ViewModels
 
         public DeliveryViewModel()
         {
+            // Initialize database FIRST
+            InitializeDatabase();
+
             DeliveryOrders = new ObservableCollection<Delivery>();
             SourceOrders = new ObservableCollection<DailyWork>();
             InitializeOptions();
@@ -70,6 +74,32 @@ namespace ProGlassAutomation.ViewModels
             LoadDataFromDatabase();
             CreateDataView();
         }
+
+        #region Database Initialization
+
+        private void InitializeDatabase()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("[DeliveryViewModel] Initializing database...");
+                DbHelper.Init();
+                System.Diagnostics.Debug.WriteLine("[DeliveryViewModel] Database initialized successfully!");
+                _isInitialized = true;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Database initialization failed: {ex.Message}");
+                MessageBox.Show(
+                    $"Database initialization failed:\n\n{ex.Message}\n\n" +
+                    $"Please check if the database file exists and is accessible.",
+                    "Database Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+                _isInitialized = false;
+            }
+        }
+
+        #endregion
 
         #region Properties
 
@@ -387,14 +417,32 @@ namespace ProGlassAutomation.ViewModels
 
         private void LoadDataFromDatabase()
         {
+            if (!_isInitialized)
+            {
+                System.Diagnostics.Debug.WriteLine("[DeliveryViewModel] Database not initialized, skipping load.");
+                return;
+            }
+
             try
             {
+                System.Diagnostics.Debug.WriteLine("[DeliveryViewModel] Loading data from database...");
+
+                // Test connection first
+                if (!DbHelper.TestConnection())
+                {
+                    MessageBox.Show("Cannot connect to database. Please restart the application.",
+                        "Connection Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
                 // Load DailyWork (Source Orders) from database
                 var dbDailyWork = DbHelper.GetAllDailyWork();
                 SourceOrders = new ObservableCollection<DailyWork>(dbDailyWork);
+                System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Loaded {dbDailyWork.Count} source orders");
 
                 // Load Deliveries from database
                 var dbDeliveries = DbHelper.GetAllDeliveries();
+                System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Loaded {dbDeliveries.Count} deliveries");
 
                 DeliveryOrders.Clear();
                 foreach (var delivery in dbDeliveries)
@@ -408,11 +456,14 @@ namespace ProGlassAutomation.ViewModels
 
                     DeliveryOrders.Add(delivery);
                 }
+
+                System.Diagnostics.Debug.WriteLine("[DeliveryViewModel] Data loading complete!");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading data from database: {ex.Message}",
-                    "Database Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Error loading data: {ex.Message}");
+                MessageBox.Show($"Error loading data from database:\n\n{ex.Message}\n\n{ex.StackTrace}",
+                    "Database Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

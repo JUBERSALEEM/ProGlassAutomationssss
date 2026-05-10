@@ -65,30 +65,66 @@ namespace ProGlassAutomation.Data.Database
         {
             try
             {
-                File.AppendAllText(
-                    Path.Combine(Path.GetDirectoryName(DbPath)!, "db_log.txt"),
-                    $"[{DateTime.Now}] {ex}\n\n"
-                );
+                string logPath = Path.Combine(Path.GetDirectoryName(DbPath)!, "db_log.txt");
+                File.AppendAllText(logPath, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {ex.Message}\n{ex.StackTrace}\n\n");
             }
             catch { }
+        }
+
+        // ================= TEST CONNECTION =================
+        public static bool TestConnection()
+        {
+            try
+            {
+                return Execute(conn =>
+                {
+                    using var cmd = conn.CreateCommand();
+                    cmd.CommandText = "SELECT name FROM sqlite_master WHERE type='table'";
+                    var reader = cmd.ExecuteReader();
+
+                    var tables = new List<string>();
+                    while (reader.Read())
+                    {
+                        tables.Add(reader.GetString(0));
+                    }
+
+                    System.Diagnostics.Debug.WriteLine($"[DbHelper] Tables found: {string.Join(", ", tables)}");
+                    return true;
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DbHelper] Connection Test Failed: {ex.Message}");
+                Log(ex);
+                return false;
+            }
         }
 
         // ================= INIT =================
         public static void Init()
         {
+            System.Diagnostics.Debug.WriteLine($"[DbHelper] Initializing database at: {DbPath}");
+
+            // Ensure directory exists
+            Directory.CreateDirectory(Path.GetDirectoryName(DbPath)!);
+
             Execute(conn =>
             {
                 CreateVersionTable(conn);
 
                 int current = GetVersion(conn);
+                System.Diagnostics.Debug.WriteLine($"[DbHelper] Current version: {current}, Target version: {LatestVersion}");
 
                 for (int v = current + 1; v <= LatestVersion; v++)
                 {
+                    System.Diagnostics.Debug.WriteLine($"[DbHelper] Applying migration v{v}...");
                     ApplyMigration(conn, v);
                     SetVersion(conn, v);
+                    System.Diagnostics.Debug.WriteLine($"[DbHelper] Migration v{v} completed.");
                 }
 
                 EnsureLaminationColumns(conn);
+                System.Diagnostics.Debug.WriteLine($"[DbHelper] Database initialization complete!");
             });
         }
 
@@ -605,18 +641,18 @@ namespace ProGlassAutomation.Data.Database
                         Id = r.GetInt32(0),
                         Date = DateTime.TryParse(r.GetString(1), out var d) ? d : DateTime.Today,
                         UpdateDate = DateTime.TryParse(r.GetString(2), out var ud) ? ud : DateTime.Today,
-                        Company = r.GetString(3),
-                        PINumber = r.GetString(4),
-                        CustomerReference = r.GetString(5),
-                        TypeOfWork = r.GetString(6),
-                        ProductionStatus = r.GetString(7),
-                        DailyReportStatus = r.GetString(8),
+                        Company = r.IsDBNull(3) ? "" : r.GetString(3),
+                        PINumber = r.IsDBNull(4) ? "" : r.GetString(4),
+                        CustomerReference = r.IsDBNull(5) ? "" : r.GetString(5),
+                        TypeOfWork = r.IsDBNull(6) ? "" : r.GetString(6),
+                        ProductionStatus = r.IsDBNull(7) ? "" : r.GetString(7),
+                        DailyReportStatus = r.IsDBNull(8) ? "" : r.GetString(8),
                         Qty = r.GetInt32(9),
                         SQM = r.GetDouble(10),
-                        Status = r.GetString(11),
-                        Salesman = r.GetString(12),
-                        Color = r.GetString(13),
-                        Notes = r.GetString(14),
+                        Status = r.IsDBNull(11) ? "" : r.GetString(11),
+                        Salesman = r.IsDBNull(12) ? "" : r.GetString(12),
+                        Color = r.IsDBNull(13) ? "" : r.GetString(13),
+                        Notes = r.IsDBNull(14) ? "" : r.GetString(14),
                         CreatedDate = DateTime.TryParse(r.GetString(15), out var cd) ? cd : DateTime.Today
                     });
                 }
@@ -707,15 +743,15 @@ namespace ProGlassAutomation.Data.Database
                         Id = r.GetInt32(0),
                         SourceId = r.IsDBNull(1) ? 0 : r.GetInt32(1),
                         Date = DateTime.TryParse(r.GetString(2), out var d) ? d : DateTime.Today,
-                        Company = r.GetString(3),
-                        PINumber = r.GetString(4),
-                        CustomerReference = r.GetString(5),
-                        TypeOfWork = r.GetString(6),
+                        Company = r.IsDBNull(3) ? "" : r.GetString(3),
+                        PINumber = r.IsDBNull(4) ? "" : r.GetString(4),
+                        CustomerReference = r.IsDBNull(5) ? "" : r.GetString(5),
+                        TypeOfWork = r.IsDBNull(6) ? "" : r.GetString(6),
                         OrderQty = r.GetInt32(7),
                         OrderSQM = r.GetDouble(8),
-                        Salesman = r.GetString(9),
-                        Status = r.GetString(10),
-                        Notes = r.GetString(11),
+                        Salesman = r.IsDBNull(9) ? "" : r.GetString(9),
+                        Status = r.IsDBNull(10) ? "" : r.GetString(10),
+                        Notes = r.IsDBNull(11) ? "" : r.GetString(11),
                         CreatedDate = DateTime.TryParse(r.GetString(12), out var cd) ? cd : DateTime.Today,
                         UpdatedDate = DateTime.TryParse(r.GetString(13), out var ud) ? ud : DateTime.Today
                     });
@@ -783,9 +819,9 @@ namespace ProGlassAutomation.Data.Database
                         DeliveredSQM = r.GetDouble(4),
                         ReturnedQty = r.GetInt32(5),
                         ReturnedSQM = r.GetDouble(6),
-                        Driver = r.GetString(7),
-                        Vehicle = r.GetString(8),
-                        Notes = r.GetString(9),
+                        Driver = r.IsDBNull(7) ? "" : r.GetString(7),
+                        Vehicle = r.IsDBNull(8) ? "" : r.GetString(8),
+                        Notes = r.IsDBNull(9) ? "" : r.GetString(9),
                         CreatedDate = DateTime.TryParse(r.GetString(10), out var cd) ? cd : DateTime.Today
                     });
                 }

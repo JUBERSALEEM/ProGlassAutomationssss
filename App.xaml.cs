@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using System.Windows;
+using ProGlassAutomation.Data.Database;
 
 namespace ProGlassAutomation
 {
@@ -16,6 +17,24 @@ namespace ProGlassAutomation
             System.Threading.Thread.CurrentThread.CurrentUICulture = culture;
 
             base.OnStartup(e);
+
+            // INITIALIZE DATABASE AT STARTUP
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("[App] Starting database initialization...");
+                DbHelper.Init();
+                System.Diagnostics.Debug.WriteLine("[App] Database initialization complete!");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[App] Database initialization failed: {ex.Message}");
+                MessageBox.Show(
+                    $"Failed to initialize database:\n\n{ex.Message}\n\nThe application will now close.",
+                    "Database Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+                Environment.Exit(1);
+            }
         }
     }
 }
