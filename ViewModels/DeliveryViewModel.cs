@@ -49,6 +49,11 @@ namespace ProGlassAutomation.ViewModels
         private bool _isEditingDeliveryItem = false;
         private DeliveryItem _editingDeliveryItemFromDb;
 
+        // ✅ UPDATED: Import Log - Complete History
+        private bool _isViewingImportLog = false;
+        private ObservableCollection<ImportSession> _importHistory = new ObservableCollection<ImportSession>();
+        private ImportSession _currentSession;
+
         // Options collections
         public ObservableCollection<string> TypeOfWorkOptions { get; private set; }
         public ObservableCollection<string> StatusOptions { get; private set; }
@@ -94,6 +99,10 @@ namespace ProGlassAutomation.ViewModels
             EditDeliveryItemCommand = new RelayCommand(ExecuteEditDeliveryItem, CanExecuteEditDeliveryItem);
             SaveEditDeliveryItemCommand = new RelayCommand(ExecuteSaveEditDeliveryItem, CanExecuteSaveEditDeliveryItem);
             CancelEditDeliveryItemCommand = new RelayCommand(ExecuteCancelEditDeliveryItem);
+
+            // ✅ UPDATED: Import Log Commands
+            ViewImportLogCommand = new RelayCommand(ExecuteViewImportLog, CanExecuteViewImportLog);
+            CloseImportLogCommand = new RelayCommand(ExecuteCloseImportLog);
 
             LoadDataFromDatabase();
             CreateDataView();
@@ -318,6 +327,25 @@ namespace ProGlassAutomation.ViewModels
             set => SetProperty(ref _editingDeliveryItemFromDb, value);
         }
 
+        // ✅ UPDATED: Import Log Properties - Complete History
+        public bool IsViewingImportLog
+        {
+            get => _isViewingImportLog;
+            set => SetProperty(ref _isViewingImportLog, value);
+        }
+
+        public ObservableCollection<ImportSession> ImportHistory
+        {
+            get => _importHistory;
+            set => SetProperty(ref _importHistory, value);
+        }
+
+        public ImportSession CurrentSession
+        {
+            get => _currentSession;
+            set => SetProperty(ref _currentSession, value);
+        }
+
         public string SortColumn
         {
             get => _sortColumn;
@@ -380,6 +408,10 @@ namespace ProGlassAutomation.ViewModels
         public ICommand EditDeliveryItemCommand { get; }
         public ICommand SaveEditDeliveryItemCommand { get; }
         public ICommand CancelEditDeliveryItemCommand { get; }
+
+        // ✅ UPDATED Commands for Import Log
+        public ICommand ViewImportLogCommand { get; }
+        public ICommand CloseImportLogCommand { get; }
 
         #endregion
 
@@ -638,7 +670,16 @@ namespace ProGlassAutomation.ViewModels
                 }
 
                 int importedCount = 0;
+                int updatedCount = 0;
                 int skippedCount = 0;
+
+                // ✅ UPDATED: Create import session (groups all changes from this import)
+                var session = new ImportSession
+                {
+                    SessionDateTime = DateTime.Now,
+                    Notes = "",
+                    Entries = new ObservableCollection<ImportLog>()
+                };
 
                 foreach (var sourceOrder in confirmedOrders)
                 {
@@ -660,6 +701,31 @@ namespace ProGlassAutomation.ViewModels
 
                         if (hasChanges)
                         {
+                            // ✅ Track changes for import log
+                            var changes = new ObservableCollection<ImportLogItem>();
+
+                            if (existingDelivery.OrderQty != sourceOrder.Qty)
+                                changes.Add(new ImportLogItem { FieldName = "Order Qty", OldValue = existingDelivery.OrderQty.ToString(), NewValue = sourceOrder.Qty.ToString() });
+                            if (existingDelivery.OrderSQM != sourceOrder.SQM)
+                                changes.Add(new ImportLogItem { FieldName = "Order SQM", OldValue = existingDelivery.OrderSQM.ToString("N2"), NewValue = sourceOrder.SQM.ToString("N2") });
+                            if (existingDelivery.Company != sourceOrder.Company)
+                                changes.Add(new ImportLogItem { FieldName = "Company", OldValue = existingDelivery.Company, NewValue = sourceOrder.Company ?? "" });
+                            if (existingDelivery.TypeOfWork != sourceOrder.TypeOfWork)
+                                changes.Add(new ImportLogItem { FieldName = "Type of Work", OldValue = existingDelivery.TypeOfWork, NewValue = sourceOrder.TypeOfWork ?? "" });
+                            if (existingDelivery.Salesman != sourceOrder.Salesman)
+                                changes.Add(new ImportLogItem { FieldName = "Salesman", OldValue = existingDelivery.Salesman, NewValue = sourceOrder.Salesman ?? "" });
+                            if (existingDelivery.Notes != sourceOrder.Notes)
+                                changes.Add(new ImportLogItem { FieldName = "Notes", OldValue = existingDelivery.Notes ?? "", NewValue = sourceOrder.Notes ?? "" });
+
+                            // ✅ ADD entry with import datetime
+                            session.Entries.Add(new ImportLog
+                            {
+                                ImportDateTime = DateTime.Now,
+                                PINumber = existingDelivery.PINumber,
+                                Company = existingDelivery.Company,
+                                Changes = changes
+                            });
+
                             // ✅ UPDATE EXISTING DELIVERY WITH NEW VALUES
                             existingDelivery.OrderQty = sourceOrder.Qty;
                             existingDelivery.OrderSQM = sourceOrder.SQM;
@@ -673,7 +739,7 @@ namespace ProGlassAutomation.ViewModels
                             // UPDATE IN DATABASE
                             DbHelper.UpdateDelivery(existingDelivery);
 
-                            importedCount++;
+                            updatedCount++;
                         }
                         else
                         {
@@ -711,14 +777,28 @@ namespace ProGlassAutomation.ViewModels
                     importedCount++;
                 }
 
+                // ✅ UPDATED: Store session in history (keep all previous logs)
+                if (session.Entries.Count > 0 || importedCount > 0)
+                {
+                    ImportHistory.Insert(0, session); // Add to top (newest first)
+                    CurrentSession = session;
+                }
+
                 RefreshDataView();
                 UpdateStatistics();
 
                 string message = $"Import Complete!\n\n";
                 message += $"New: {importedCount} orders\n";
+                message += $"Updated: {updatedCount} orders\n";
                 message += $"Skipped (no changes): {skippedCount} orders";
 
                 MessageBox.Show(message, "Import", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                // ✅ UPDATED: Auto-show import log if there were updates
+                if (updatedCount > 0)
+                {
+                    IsViewingImportLog = true;
+                }
             }
             catch (Exception ex)
             {
@@ -915,7 +995,8 @@ namespace ProGlassAutomation.ViewModels
             IsViewingDetails = false;
             IsViewingNotes = false;
             IsDeletingDeliveryItem = false;
-            IsEditingDeliveryItem = false;  // ✅ NEW
+            IsEditingDeliveryItem = false;
+            IsViewingImportLog = false;
             EditingOrder = null;
             EditingDeliveryItem = null;
             EditingDeliveryItemFromDb = null;
@@ -1189,6 +1270,29 @@ namespace ProGlassAutomation.ViewModels
         {
             IsEditingDeliveryItem = false;
             EditingDeliveryItemFromDb = null;
+        }
+
+        // ✅ UPDATED: Import Log Command Methods - Complete History
+        private void ExecuteViewImportLog(object parameter)
+        {
+            if (ImportHistory != null && ImportHistory.Count > 0)
+            {
+                IsViewingImportLog = true;
+            }
+            else
+            {
+                MessageBox.Show("No import history available.", "Import History", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        private bool CanExecuteViewImportLog(object parameter)
+        {
+            return ImportHistory != null && ImportHistory.Count > 0;
+        }
+
+        private void ExecuteCloseImportLog(object parameter)
+        {
+            IsViewingImportLog = false;
         }
 
         #endregion

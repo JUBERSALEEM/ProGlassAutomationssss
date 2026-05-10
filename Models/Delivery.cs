@@ -325,4 +325,124 @@ namespace ProGlassAutomation.Models
 
         #endregion
     }
+
+    // ✅ UPDATED: Import Log Models with Session & Notes
+
+    public class ImportLogItem : INotifyPropertyChanged
+    {
+        private string _fieldName = "";
+        private string _oldValue = "";
+        private string _newValue = "";
+
+        public string FieldName
+        {
+            get => _fieldName;
+            set { _fieldName = value; OnPropertyChanged(); }
+        }
+
+        public string OldValue
+        {
+            get => _oldValue;
+            set { _oldValue = value; OnPropertyChanged(); }
+        }
+
+        public string NewValue
+        {
+            get => _newValue;
+            set { _newValue = value; OnPropertyChanged(); }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+    }
+
+    public class ImportLog : INotifyPropertyChanged
+    {
+        private DateTime _importDateTime;
+        private string _piNumber = "";
+        private string _company = "";
+        private string _notes = "";
+        private ObservableCollection<ImportLogItem> _changes;
+
+        public DateTime ImportDateTime
+        {
+            get => _importDateTime;
+            set { _importDateTime = value; OnPropertyChanged(); }
+        }
+
+        public string PINumber
+        {
+            get => _piNumber;
+            set { _piNumber = value; OnPropertyChanged(); }
+        }
+
+        public string Company
+        {
+            get => _company;
+            set { _company = value; OnPropertyChanged(); }
+        }
+
+        public string Notes
+        {
+            get => _notes;
+            set { _notes = value; OnPropertyChanged(); }
+        }
+
+        public ObservableCollection<ImportLogItem> Changes
+        {
+            get => _changes;
+            set { _changes = value; OnPropertyChanged(); }
+        }
+
+        public int ChangeCount => Changes?.Count ?? 0;
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+    }
+
+    // ✅ NEW: Import Session - Groups all changes from one import action
+    public class ImportSession : INotifyPropertyChanged
+    {
+        private DateTime _sessionDateTime;
+        private string _notes = "";
+        private ObservableCollection<ImportLog> _entries;
+
+        public ImportSession()
+        {
+            _entries = new ObservableCollection<ImportLog>();
+        }
+
+        public DateTime SessionDateTime
+        {
+            get => _sessionDateTime;
+            set { _sessionDateTime = value; OnPropertyChanged(); }
+        }
+
+        public string Notes
+        {
+            get => _notes;
+            set { _notes = value; OnPropertyChanged(); }
+        }
+
+        public ObservableCollection<ImportLog> Entries
+        {
+            get => _entries;
+            set { _entries = value; OnPropertyChanged(); OnPropertyChanged(nameof(TotalChanges)); OnPropertyChanged(nameof(UpdatedOrders)); }
+        }
+
+        public int TotalChanges => Entries?.Sum(e => e.ChangeCount) ?? 0;
+        public int UpdatedOrders => Entries?.Count ?? 0;
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+    }
 }
