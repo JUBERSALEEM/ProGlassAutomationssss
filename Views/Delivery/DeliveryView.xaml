@@ -199,7 +199,6 @@
             </Setter>
         </Style>
 
-        <!-- ✅ Updated ModernComboBox - With Editable Support -->
         <Style x:Key="ModernComboBox" TargetType="ComboBox">
             <Setter Property="Background" Value="White"/>
             <Setter Property="Foreground" Value="#1E293B"/>
@@ -475,7 +474,7 @@
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Border Background="#D1FAE5" CornerRadius="6" Padding="8,4">
-                                    <TextBlock Text="{Binding Date, StringFormat='{}{0:dd-MM-yyyy}'}" FontSize="12" Foreground="#065F46" FontWeight="Medium"/>
+                                    <TextBlock Text="{Binding Date, StringFormat='{}{0:dd-MM-yyyy}'}" FontSize="12" Foreground="#065F46" FontWeight="Medium" HorizontalAlignment="Center"/>
                                 </Border>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
@@ -484,7 +483,7 @@
                     <DataGridTemplateColumn Header="COMPANY" Width="150" HeaderStyle="{StaticResource HeaderTeal}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Company}" FontSize="12" Foreground="#0F766E" FontWeight="Medium"/>
+                                <TextBlock Text="{Binding Company}" FontSize="12" Foreground="#0F766E" FontWeight="Medium" TextTrimming="CharacterEllipsis" ToolTip="{Binding Company}" HorizontalAlignment="Center"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
@@ -492,7 +491,7 @@
                     <DataGridTemplateColumn Header="PI NUMBER" Width="130" HeaderStyle="{StaticResource HeaderBlue}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding PINumber}" FontSize="12" Foreground="#1D4ED8" FontWeight="Medium"/>
+                                <TextBlock Text="{Binding PINumber}" FontSize="12" Foreground="#1D4ED8" FontWeight="Medium" HorizontalAlignment="Center"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
@@ -501,7 +500,7 @@
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Border Background="#F5F3FF" CornerRadius="4" Padding="6,3">
-                                    <TextBlock Text="{Binding TypeOfWork}" FontSize="10" Foreground="#5B21B6" FontWeight="Medium"/>
+                                    <TextBlock Text="{Binding TypeOfWork}" FontSize="10" Foreground="#5B21B6" FontWeight="Medium" HorizontalAlignment="Center"/>
                                 </Border>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
@@ -561,7 +560,7 @@
                     <DataGridTemplateColumn Header="SALESMAN" Width="120" HeaderStyle="{StaticResource HeaderBlue}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Salesman}" FontSize="11" Foreground="#1E40AF" FontWeight="Medium"/>
+                                <TextBlock Text="{Binding Salesman}" FontSize="11" Foreground="#1E40AF" FontWeight="Medium" HorizontalAlignment="Center"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
@@ -586,7 +585,7 @@
                                             </Style.Triggers>
                                         </Style>
                                     </Border.Style>
-                                    <TextBlock Text="{Binding Status}" FontSize="10" FontWeight="SemiBold">
+                                    <TextBlock Text="{Binding Status}" FontSize="10" FontWeight="SemiBold" HorizontalAlignment="Center">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="Foreground" Value="#64748B"/>
@@ -609,10 +608,18 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
+                    <!-- ✅ NOTES COLUMN - Click to view full details -->
                     <DataGridTemplateColumn Header="NOTES" Width="*" HeaderStyle="{StaticResource HeaderSlate}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Notes}" FontSize="11" Foreground="#64748B" TextTrimming="CharacterEllipsis" MaxWidth="150"/>
+                                <Button Style="{StaticResource SecondaryButton}" 
+                                        Content="📋 View" 
+                                        FontSize="10" 
+                                        Padding="8,4"
+                                        Command="{Binding DataContext.ViewNotesCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding Notes}"
+                                        Background="#F1F5F9"
+                                        Foreground="#475569"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
@@ -812,11 +819,11 @@
                                                         <ColumnDefinition Width="*"/>
                                                         <ColumnDefinition Width="Auto"/>
                                                     </Grid.ColumnDefinitions>
-                                                    <TextBlock Grid.Column="0" Text="{Binding DeliveryDate, StringFormat='{}{0:dd-MM-yyyy}'}" FontSize="12" VerticalAlignment="Center"/>
-                                                    <TextBlock Grid.Column="1" Text="{Binding DeliveredQty}" FontSize="12" FontWeight="Bold" Foreground="#059669" VerticalAlignment="Center"/>
-                                                    <TextBlock Grid.Column="2" Text="{Binding ReturnedQty}" FontSize="12" FontWeight="Bold" Foreground="#DC2626" VerticalAlignment="Center"/>
-                                                    <TextBlock Grid.Column="3" Text="{Binding Driver}" FontSize="12" VerticalAlignment="Center"/>
-                                                    <TextBlock Grid.Column="4" Text="{Binding Vehicle}" FontSize="12" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="0" Text="{Binding DeliveryDate, StringFormat='{}{0:dd-MM-yyyy}'}" FontSize="12" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding DeliveredQty}" FontSize="12" FontWeight="Bold" Foreground="#059669" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="2" Text="{Binding ReturnedQty}" FontSize="12" FontWeight="Bold" Foreground="#DC2626" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="3" Text="{Binding Driver}" FontSize="12" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="4" Text="{Binding Vehicle}" FontSize="12" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                                                     <TextBlock Grid.Column="5" Text="{Binding Notes}" FontSize="11" Foreground="#64748B" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
                                                     <Button Grid.Column="6" Content="🗑️" FontSize="14" Background="Transparent" BorderThickness="0" Cursor="Hand"
                                                             Command="{Binding DataContext.DeleteDeliveryItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
@@ -878,7 +885,7 @@
                             <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditingDeliveryItem.ReturnedQty}"/>
                         </StackPanel>
 
-                        <!-- ✅ UPDATED: Driver ComboBox - Editable with dynamic options -->
+                        <!-- ✅ Driver ComboBox - Editable with dynamic options -->
                         <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,0,12">
                             <TextBlock Text="DRIVER" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <ComboBox Style="{StaticResource ModernComboBox}" 
@@ -891,7 +898,7 @@
                                       BorderThickness="1"/>
                         </StackPanel>
 
-                        <!-- ✅ UPDATED: Vehicle ComboBox - Editable with dynamic options -->
+                        <!-- ✅ Vehicle ComboBox - Editable with dynamic options -->
                         <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,10,12">
                             <TextBlock Text="VEHICLE" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <ComboBox Style="{StaticResource ModernComboBox}" 
@@ -1008,6 +1015,81 @@
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,24,0,0">
                         <Button Content="Cancel" Style="{StaticResource SecondaryButton}" Command="{Binding CancelCommand}" Margin="0,0,12,0" Padding="24,12"/>
                         <Button Content="Save" Style="{StaticResource SuccessButton}" Command="{Binding SaveCommand}" Padding="24,12"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Border>
+
+        <!-- ✅ NEW: NOTES VIEW POPUP - Shows full notes when clicked -->
+        <Border Grid.Row="0" Grid.RowSpan="4" Background="#80000000" Visibility="{Binding IsViewingNotes, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Border CornerRadius="20" Padding="30" Background="White" VerticalAlignment="Center" HorizontalAlignment="Center" MinWidth="500" MaxWidth="700">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="25" ShadowDepth="5" Opacity="0.25"/>
+                </Border.Effect>
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
+                        <TextBlock Text="📋 ORDER NOTES" FontSize="20" FontWeight="Bold" Foreground="#059669"/>
+                        <TextBlock Text=" - " FontSize="20" Foreground="#64748B"/>
+                        <TextBlock Text="{Binding SelectedOrder.PINumber}" FontSize="20" FontWeight="Bold" Foreground="#059669"/>
+                    </StackPanel>
+
+                    <Border CornerRadius="12" BorderBrush="#E5E7EB" BorderThickness="1" Background="#F8FAFC" Padding="20" Margin="0,0,0,20">
+                        <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto">
+                            <TextBlock Text="{Binding ViewNotesContent}" 
+                                       FontSize="14" 
+                                       Foreground="#1E293B" 
+                                       TextWrapping="Wrap"
+                                       LineHeight="24"/>
+                        </ScrollViewer>
+                    </Border>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Content="Close" Style="{StaticResource SecondaryButton}" Command="{Binding CloseNotesCommand}" Padding="24,12"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Border>
+
+        <!-- ✅ NEW: DELIVERY ITEM DELETE CONFIRM POPUP -->
+        <Border Grid.Row="0" Grid.RowSpan="4" Background="#80000000" Visibility="{Binding IsDeletingDeliveryItem, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Border CornerRadius="20" Padding="30" Background="White" VerticalAlignment="Center" HorizontalAlignment="Center" MinWidth="400">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="25" ShadowDepth="5" Opacity="0.25"/>
+                </Border.Effect>
+                <StackPanel>
+                    <TextBlock Text="⚠️ CONFIRM DELETE" FontSize="20" FontWeight="Bold" Foreground="#DC2626" Margin="0,0,0,20"/>
+
+                    <Border CornerRadius="12" Background="#FEF2F2" Padding="16" Margin="0,0,0,20">
+                        <StackPanel>
+                            <TextBlock Text="Are you sure you want to delete this delivery record?" FontSize="14" Foreground="#991B1B" FontWeight="Medium" Margin="0,0,0,12"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Date:" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding ConfirmDeleteItem.DeliveryDate, StringFormat='{}{0:dd-MM-yyyy}'}" Foreground="#1E293B" Margin="0,0,0,4"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Delivered:" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ConfirmDeleteItem.DeliveredQty}" Foreground="#059669" FontWeight="Bold" Margin="0,0,0,4"/>
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Returned:" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,0"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding ConfirmDeleteItem.ReturnedQty}" Foreground="#DC2626" FontWeight="Bold" Margin="0,0,0,0"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Text="This action cannot be undone. The order balance will be updated accordingly." FontSize="12" Foreground="#64748B" Margin="0,0,0,20"/>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Content="Cancel" Style="{StaticResource SecondaryButton}" Command="{Binding CancelDeleteDeliveryItemCommand}" Margin="0,0,12,0" Padding="24,12"/>
+                        <Button Content="Delete" Style="{StaticResource DangerButton}" Command="{Binding ConfirmDeleteDeliveryItemCommand}" Padding="24,12"/>
                     </StackPanel>
                 </StackPanel>
             </Border>

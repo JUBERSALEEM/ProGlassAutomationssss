@@ -37,6 +37,14 @@ namespace ProGlassAutomation.ViewModels
         private bool _isNewRecord;
         private bool _isInitialized;
 
+        // ✅ NEW: Notes View Popup
+        private bool _isViewingNotes = false;
+        private string _viewNotesContent = "";
+
+        // ✅ NEW: Delete Delivery Item Confirmation
+        private bool _isDeletingDeliveryItem = false;
+        private DeliveryItem _confirmDeleteItem;
+
         // Options collections
         public ObservableCollection<string> TypeOfWorkOptions { get; private set; }
         public ObservableCollection<string> StatusOptions { get; private set; }
@@ -71,6 +79,12 @@ namespace ProGlassAutomation.ViewModels
             DeleteDeliveryItemCommand = new RelayCommand(ExecuteDeleteDeliveryItem, CanExecuteDeleteDeliveryItem);
             ViewDetailsCommand = new RelayCommand(ExecuteViewDetails, CanExecuteViewDetails);
             DeleteSelectedCommand = new RelayCommand(ExecuteDeleteSelected, CanExecuteDeleteSelected);
+
+            // ✅ NEW Commands initialization
+            ViewNotesCommand = new RelayCommand(ExecuteViewNotes);
+            CloseNotesCommand = new RelayCommand(ExecuteCloseNotes);
+            CancelDeleteDeliveryItemCommand = new RelayCommand(ExecuteCancelDeleteDeliveryItem);
+            ConfirmDeleteDeliveryItemCommand = new RelayCommand(ExecuteConfirmDeleteDeliveryItem);
 
             LoadDataFromDatabase();
             CreateDataView();
@@ -256,6 +270,32 @@ namespace ProGlassAutomation.ViewModels
             set => SetProperty(ref _editingDeliveryItem, value);
         }
 
+        // ✅ NEW: Notes View Popup Properties
+        public bool IsViewingNotes
+        {
+            get => _isViewingNotes;
+            set => SetProperty(ref _isViewingNotes, value);
+        }
+
+        public string ViewNotesContent
+        {
+            get => _viewNotesContent;
+            set => SetProperty(ref _viewNotesContent, value);
+        }
+
+        // ✅ NEW: Delete Delivery Item Confirmation Properties
+        public bool IsDeletingDeliveryItem
+        {
+            get => _isDeletingDeliveryItem;
+            set => SetProperty(ref _isDeletingDeliveryItem, value);
+        }
+
+        public DeliveryItem ConfirmDeleteItem
+        {
+            get => _confirmDeleteItem;
+            set => SetProperty(ref _confirmDeleteItem, value);
+        }
+
         public string SortColumn
         {
             get => _sortColumn;
@@ -307,6 +347,12 @@ namespace ProGlassAutomation.ViewModels
         public ICommand DeleteDeliveryItemCommand { get; }
         public ICommand ViewDetailsCommand { get; }
         public ICommand DeleteSelectedCommand { get; }
+
+        // ✅ NEW Commands for Notes View and Delete Confirmation
+        public ICommand ViewNotesCommand { get; }
+        public ICommand CloseNotesCommand { get; }
+        public ICommand CancelDeleteDeliveryItemCommand { get; }
+        public ICommand ConfirmDeleteDeliveryItemCommand { get; }
 
         #endregion
 
@@ -811,8 +857,12 @@ namespace ProGlassAutomation.ViewModels
             IsEditing = false;
             IsAddingDelivery = false;
             IsViewingDetails = false;
+            IsViewingNotes = false;
+            IsDeletingDeliveryItem = false;
             EditingOrder = null;
             EditingDeliveryItem = null;
+            ViewNotesContent = "";
+            ConfirmDeleteItem = null;
         }
 
         private void ExecuteRefresh(object parameter)
@@ -864,7 +914,7 @@ namespace ProGlassAutomation.ViewModels
                     DeliveredSQM = 0,
                     ReturnedSQM = 0,
                     Driver = "",      // ✅ Empty by default
-                    Vehicle = ""      // ✅ Empty by default
+                    Vehicle = ""       // ✅ Empty by default
                 };
                 IsAddingDelivery = true;
             }
@@ -955,38 +1005,21 @@ namespace ProGlassAutomation.ViewModels
 
         private void ExecuteDeleteDeliveryItem(object parameter)
         {
-            if (SelectedDeliveryItem == null || SelectedOrder == null) return;
-
-            var result = MessageBox.Show(
-                $"Delete this delivery record?\n\n" +
-                $"Delivered: {SelectedDeliveryItem.DeliveredQty} pcs\n" +
-                $"Returned: {SelectedDeliveryItem.ReturnedQty} pcs\n" +
-                $"Date: {SelectedDeliveryItem.DeliveryDate:dd-MM-yyyy}",
-                "Confirm Delete",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Warning);
-
-            if (result == MessageBoxResult.Yes)
+            if (parameter is DeliveryItem item)
             {
-                // DELETE FROM DATABASE
-                DbHelper.DeleteDeliveryItem(SelectedDeliveryItem.Id);
-
-                SelectedOrder.DeliveryItems.Remove(SelectedDeliveryItem);
-                SelectedOrder.UpdatedDate = DateTime.Today;
-                UpdateOrderStatus(SelectedOrder);
-
-                // UPDATE DELIVERY STATUS IN DATABASE
-                DbHelper.UpdateDelivery(SelectedOrder);
-
-                SelectedDeliveryItem = null;
-                RefreshDataView();
-                UpdateStatistics();
+                ConfirmDeleteItem = item;
+                IsDeletingDeliveryItem = true;
+            }
+            else if (SelectedDeliveryItem != null && SelectedOrder != null)
+            {
+                ConfirmDeleteItem = SelectedDeliveryItem;
+                IsDeletingDeliveryItem = true;
             }
         }
 
         private bool CanExecuteDeleteDeliveryItem(object parameter)
         {
-            return SelectedDeliveryItem != null;
+            return parameter != null || SelectedDeliveryItem != null;
         }
 
         private void ExecuteExport(object parameter)
@@ -1186,6 +1219,56 @@ namespace ProGlassAutomation.ViewModels
             OnPropertyChanged(nameof(PartialCount));
             OnPropertyChanged(nameof(CompletedCount));
             OnPropertyChanged(nameof(SelectedCount));
+        }
+
+        #endregion
+
+        #region Notes View
+
+        private void ExecuteViewNotes(object parameter)
+        {
+            if (parameter is string notes)
+            {
+                ViewNotesContent = string.IsNullOrWhiteSpace(notes) ? "No notes available." : notes;
+                IsViewingNotes = true;
+            }
+        }
+
+        private void ExecuteCloseNotes(object parameter)
+        {
+            IsViewingNotes = false;
+            ViewNotesContent = "";
+        }
+
+        #endregion
+
+        #region Delete Delivery Item with Confirmation
+
+        private void ExecuteCancelDeleteDeliveryItem(object parameter)
+        {
+            IsDeletingDeliveryItem = false;
+            ConfirmDeleteItem = null;
+        }
+
+        private void ExecuteConfirmDeleteDeliveryItem(object parameter)
+        {
+            if (ConfirmDeleteItem == null || SelectedOrder == null) return;
+
+            // DELETE FROM DATABASE
+            DbHelper.DeleteDeliveryItem(ConfirmDeleteItem.Id);
+
+            SelectedOrder.DeliveryItems.Remove(ConfirmDeleteItem);
+            SelectedOrder.UpdatedDate = DateTime.Today;
+            UpdateOrderStatus(SelectedOrder);
+
+            // UPDATE DELIVERY STATUS IN DATABASE
+            DbHelper.UpdateDelivery(SelectedOrder);
+
+            IsDeletingDeliveryItem = false;
+            ConfirmDeleteItem = null;
+            SelectedDeliveryItem = null;
+            RefreshDataView();
+            UpdateStatistics();
         }
 
         #endregion
