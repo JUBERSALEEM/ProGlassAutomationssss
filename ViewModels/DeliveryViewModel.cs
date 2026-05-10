@@ -1,15 +1,14 @@
-﻿using System;
+﻿using ProGlassAutomation.Models;
+using ProGlassAutomation.Data.Database;
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Controls;
-using System.Windows.Data;
-using ProGlassAutomation.Models;
-using ProGlassAutomation.Data.Database;
 
 namespace ProGlassAutomation.ViewModels
 {
@@ -43,8 +42,10 @@ namespace ProGlassAutomation.ViewModels
         public ObservableCollection<string> StatusOptions { get; private set; }
         public ObservableCollection<string> SalesmanOptions { get; private set; }
         public ObservableCollection<string> CompanyOptions { get; private set; }
-        public ObservableCollection<string> DriverOptions { get; private set; }
-        public ObservableCollection<string> VehicleOptions { get; private set; }
+
+        // ✅ Driver and Vehicle - Dynamic collections (empty by default)
+        public ObservableCollection<string> DriverOptions { get; set; }
+        public ObservableCollection<string> VehicleOptions { get; set; }
 
         public DeliveryViewModel()
         {
@@ -338,17 +339,11 @@ namespace ProGlassAutomation.ViewModels
                 "Modern Glass Works", "Elite Glazing Co", "Premium Windows Inc"
             };
 
-            DriverOptions = new ObservableCollection<string>
-            {
-                "Driver 1", "Driver 2", "Driver 3", "Driver 4",
-                "Driver 5", "Driver 6", "External 1", "External 2"
-            };
+            // ✅ Driver Options - Empty by default, user can add dynamically
+            DriverOptions = new ObservableCollection<string>();
 
-            VehicleOptions = new ObservableCollection<string>
-            {
-                "Van A1", "Van A2", "Van B1", "Van B2",
-                "Truck C1", "Truck C2", "Pickup 1", "Pickup 2"
-            };
+            // ✅ Vehicle Options - Empty by default, user can add dynamically
+            VehicleOptions = new ObservableCollection<string>();
         }
 
         private void CreateDataView()
@@ -367,7 +362,6 @@ namespace ProGlassAutomation.ViewModels
             dataTable.Columns.Add("Salesman", typeof(string));
             dataTable.Columns.Add("Status", typeof(string));
             dataTable.Columns.Add("Notes", typeof(string));
-            dataTable.Columns.Add("IsSelected", typeof(bool));
 
             foreach (var order in DeliveryOrders)
             {
@@ -447,9 +441,12 @@ namespace ProGlassAutomation.ViewModels
                 DeliveryOrders.Clear();
                 foreach (var delivery in dbDeliveries)
                 {
-                    // Load delivery items for each delivery
+                    // ✅ Load delivery items for each delivery
                     var items = DbHelper.GetDeliveryItems(delivery.Id);
-                    delivery.DeliveryItems = new ObservableCollection<DeliveryItem>(items);
+
+                    // ✅ Create new collection and add items (triggers notification)
+                    var itemCollection = new ObservableCollection<DeliveryItem>(items);
+                    delivery.DeliveryItems = itemCollection;
 
                     // Update status based on delivery items
                     UpdateOrderStatus(delivery);
@@ -457,7 +454,11 @@ namespace ProGlassAutomation.ViewModels
                     DeliveryOrders.Add(delivery);
                 }
 
+                // ✅ Load unique drivers and vehicles from existing delivery items
+                LoadUniqueDriversAndVehicles();
+
                 System.Diagnostics.Debug.WriteLine("[DeliveryViewModel] Data loading complete!");
+                UpdateStatistics();
             }
             catch (Exception ex)
             {
@@ -472,12 +473,74 @@ namespace ProGlassAutomation.ViewModels
             try
             {
                 var items = DbHelper.GetDeliveryItems(order.Id);
-                order.DeliveryItems = new ObservableCollection<DeliveryItem>(items);
+
+                // ✅ Clear and add items (triggers notification)
+                order.DeliveryItems.Clear();
+                foreach (var item in items)
+                {
+                    order.DeliveryItems.Add(item);
+                }
+
+                // Update status
+                UpdateOrderStatus(order);
+
+                System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Loaded {items.Count} delivery items for order {order.Id}");
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error loading delivery items: {ex.Message}",
                     "Database Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        private void LoadUniqueDriversAndVehicles()
+        {
+            try
+            {
+                // Get all delivery items from all orders
+                var allDeliveryItems = new List<DeliveryItem>();
+
+                foreach (var order in DeliveryOrders)
+                {
+                    foreach (var item in order.DeliveryItems)
+                    {
+                        allDeliveryItems.Add(item);
+                    }
+                }
+
+                // Add unique drivers
+                var uniqueDrivers = allDeliveryItems
+                    .Where(x => !string.IsNullOrWhiteSpace(x.Driver))
+                    .Select(x => x.Driver.Trim())
+                    .Distinct()
+                    .OrderBy(x => x)
+                    .ToList();
+
+                DriverOptions.Clear();
+                foreach (var driver in uniqueDrivers)
+                {
+                    DriverOptions.Add(driver);
+                }
+
+                // Add unique vehicles
+                var uniqueVehicles = allDeliveryItems
+                    .Where(x => !string.IsNullOrWhiteSpace(x.Vehicle))
+                    .Select(x => x.Vehicle.Trim())
+                    .Distinct()
+                    .OrderBy(x => x)
+                    .ToList();
+
+                VehicleOptions.Clear();
+                foreach (var vehicle in uniqueVehicles)
+                {
+                    VehicleOptions.Add(vehicle);
+                }
+
+                System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Loaded {DriverOptions.Count} drivers and {VehicleOptions.Count} vehicles");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Error loading drivers/vehicles: {ex.Message}");
             }
         }
 
@@ -799,7 +862,9 @@ namespace ProGlassAutomation.ViewModels
                     DeliveredQty = 0,
                     ReturnedQty = 0,
                     DeliveredSQM = 0,
-                    ReturnedSQM = 0
+                    ReturnedSQM = 0,
+                    Driver = "",      // ✅ Empty by default
+                    Vehicle = ""      // ✅ Empty by default
                 };
                 IsAddingDelivery = true;
             }
@@ -822,6 +887,28 @@ namespace ProGlassAutomation.ViewModels
             {
                 MessageBox.Show("Delivered quantity must be greater than 0.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
+            }
+
+            // ✅ Add new Driver to options if not exists
+            if (!string.IsNullOrWhiteSpace(EditingDeliveryItem.Driver))
+            {
+                var driverTrimmed = EditingDeliveryItem.Driver.Trim();
+                if (!DriverOptions.Contains(driverTrimmed))
+                {
+                    DriverOptions.Add(driverTrimmed);
+                    System.Diagnostics.Debug.WriteLine($"[Delivery] Added new Driver: {driverTrimmed}");
+                }
+            }
+
+            // ✅ Add new Vehicle to options if not exists
+            if (!string.IsNullOrWhiteSpace(EditingDeliveryItem.Vehicle))
+            {
+                var vehicleTrimmed = EditingDeliveryItem.Vehicle.Trim();
+                if (!VehicleOptions.Contains(vehicleTrimmed))
+                {
+                    VehicleOptions.Add(vehicleTrimmed);
+                    System.Diagnostics.Debug.WriteLine($"[Delivery] Added new Vehicle: {vehicleTrimmed}");
+                }
             }
 
             var totalAfterDelivery = SelectedOrder.TotalDelivered + EditingDeliveryItem.DeliveredQty - SelectedOrder.TotalReturned;
@@ -1025,29 +1112,14 @@ namespace ProGlassAutomation.ViewModels
             dataGrid.Columns.Add(new DataGridTextColumn { Header = "Order Qty", Binding = new System.Windows.Data.Binding("OrderQty"), Width = 70 });
             dataGrid.Columns.Add(new DataGridTextColumn { Header = "Delivered", Binding = new System.Windows.Data.Binding("TotalDelivered"), Width = 70 });
             dataGrid.Columns.Add(new DataGridTextColumn { Header = "Returned", Binding = new System.Windows.Data.Binding("TotalReturned"), Width = 70 });
-            dataGrid.Columns.Add(new DataGridTextColumn { Header = "Balance", Binding = new System.Windows.Data.Binding("Balance"), Width = 70 });
-            dataGrid.Columns.Add(new DataGridTextColumn { Header = "SQM", Binding = new System.Windows.Data.Binding("OrderSQM") { StringFormat = "N2" }, Width = 70 });
+            dataGrid.Columns.Add(new DataGridTextColumn { Header = "Balance", Binding = new System.Windows.Data.Binding("Balance"), Width = 60 });
+            dataGrid.Columns.Add(new DataGridTextColumn { Header = "SQM", Binding = new System.Windows.Data.Binding("OrderSQM") { StringFormat = "N2" }, Width = 60 });
             dataGrid.Columns.Add(new DataGridTextColumn { Header = "Salesman", Binding = new System.Windows.Data.Binding("Salesman"), Width = 90 });
             dataGrid.Columns.Add(new DataGridTextColumn { Header = "Status", Binding = new System.Windows.Data.Binding("Status"), Width = 80 });
 
             grid.Children.Add(dataGrid);
 
             return grid;
-        }
-
-        private void UpdateStatistics()
-        {
-            OnPropertyChanged(nameof(TotalRecords));
-            OnPropertyChanged(nameof(FilteredRecords));
-            OnPropertyChanged(nameof(TotalOrderQty));
-            OnPropertyChanged(nameof(TotalDelivered));
-            OnPropertyChanged(nameof(TotalReturned));
-            OnPropertyChanged(nameof(TotalBalance));
-            OnPropertyChanged(nameof(TotalOrderSQM));
-            OnPropertyChanged(nameof(PendingCount));
-            OnPropertyChanged(nameof(PartialCount));
-            OnPropertyChanged(nameof(CompletedCount));
-            OnPropertyChanged(nameof(SelectedCount));
         }
 
         private void ExecuteDeleteSelected(object parameter)
@@ -1072,22 +1144,22 @@ namespace ProGlassAutomation.ViewModels
                 }
 
                 var result = MessageBox.Show(
-                    $"Delete {selectedIds.Count} selected record(s)?\n\nThis will also delete all delivery items.\nThis action cannot be undone.",
+                    $"Delete {selectedIds.Count} selected order(s)?\n\nThis will also delete all delivery items.\n\nThis action cannot be undone.",
                     "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
 
                 if (result == MessageBoxResult.Yes)
                 {
-                    // DELETE FROM DATABASE
+                    // DELETE EACH FROM DATABASE
                     foreach (var id in selectedIds)
                     {
                         DbHelper.DeleteDelivery(id);
+                        var item = DeliveryOrders.FirstOrDefault(w => w.Id == id);
+                        if (item != null)
+                        {
+                            DeliveryOrders.Remove(item);
+                        }
                     }
 
-                    var toDelete = DeliveryOrders.Where(d => selectedIds.Contains(d.Id)).ToList();
-                    foreach (var item in toDelete)
-                    {
-                        DeliveryOrders.Remove(item);
-                    }
                     RefreshDataView();
                     UpdateStatistics();
                     SelectedOrder = null;
@@ -1099,6 +1171,21 @@ namespace ProGlassAutomation.ViewModels
         private bool CanExecuteDeleteSelected(object parameter)
         {
             return _selectedCount > 0;
+        }
+
+        private void UpdateStatistics()
+        {
+            OnPropertyChanged(nameof(TotalRecords));
+            OnPropertyChanged(nameof(FilteredRecords));
+            OnPropertyChanged(nameof(TotalOrderQty));
+            OnPropertyChanged(nameof(TotalDelivered));
+            OnPropertyChanged(nameof(TotalReturned));
+            OnPropertyChanged(nameof(TotalBalance));
+            OnPropertyChanged(nameof(TotalOrderSQM));
+            OnPropertyChanged(nameof(PendingCount));
+            OnPropertyChanged(nameof(PartialCount));
+            OnPropertyChanged(nameof(CompletedCount));
+            OnPropertyChanged(nameof(SelectedCount));
         }
 
         #endregion

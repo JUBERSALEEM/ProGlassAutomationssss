@@ -199,6 +199,7 @@
             </Setter>
         </Style>
 
+        <!-- ✅ Updated ModernComboBox - With Editable Support -->
         <Style x:Key="ModernComboBox" TargetType="ComboBox">
             <Setter Property="Background" Value="White"/>
             <Setter Property="Foreground" Value="#1E293B"/>
@@ -206,6 +207,8 @@
             <Setter Property="Padding" Value="12,10"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="BorderBrush" Value="#D1D5DB"/>
+            <Setter Property="IsEditable" Value="True"/>
+            <Setter Property="StaysOpenOnEdit" Value="True"/>
         </Style>
 
         <Style x:Key="ModernTextBox" TargetType="TextBox">
@@ -875,18 +878,30 @@
                             <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditingDeliveryItem.ReturnedQty}"/>
                         </StackPanel>
 
+                        <!-- ✅ UPDATED: Driver ComboBox - Editable with dynamic options -->
                         <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,0,12">
                             <TextBlock Text="DRIVER" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <ComboBox Style="{StaticResource ModernComboBox}" 
                                       ItemsSource="{Binding DriverOptions}" 
-                                      SelectedItem="{Binding EditingDeliveryItem.Driver}"/>
+                                      SelectedItem="{Binding EditingDeliveryItem.Driver}"
+                                      IsEditable="True"
+                                      Text="{Binding EditingDeliveryItem.Driver, UpdateSourceTrigger=PropertyChanged}"
+                                      Background="White"
+                                      BorderBrush="#D1D5DB"
+                                      BorderThickness="1"/>
                         </StackPanel>
 
+                        <!-- ✅ UPDATED: Vehicle ComboBox - Editable with dynamic options -->
                         <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,10,12">
                             <TextBlock Text="VEHICLE" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <ComboBox Style="{StaticResource ModernComboBox}" 
                                       ItemsSource="{Binding VehicleOptions}" 
-                                      SelectedItem="{Binding EditingDeliveryItem.Vehicle}"/>
+                                      SelectedItem="{Binding EditingDeliveryItem.Vehicle}"
+                                      IsEditable="True"
+                                      Text="{Binding EditingDeliveryItem.Vehicle, UpdateSourceTrigger=PropertyChanged}"
+                                      Background="White"
+                                      BorderBrush="#D1D5DB"
+                                      BorderThickness="1"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,0,12">
