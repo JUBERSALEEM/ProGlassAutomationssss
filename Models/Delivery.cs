@@ -178,7 +178,7 @@ namespace ProGlassAutomation.Models
         // ✅ INotifyPropertyChanged
         public event PropertyChangedEventHandler PropertyChanged;
 
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        public void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
@@ -207,7 +207,7 @@ namespace ProGlassAutomation.Models
         }
     }
 
-    // ✅ Updated: Added INotifyPropertyChanged to DeliveryItem
+    // ✅ UPDATED: Added INotifyPropertyChanged to DeliveryItem
     public class DeliveryItem : INotifyPropertyChanged
     {
         private int _id;

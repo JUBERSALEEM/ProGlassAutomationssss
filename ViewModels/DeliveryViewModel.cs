@@ -1120,7 +1120,7 @@ namespace ProGlassAutomation.ViewModels
                 }
             }
 
-            // Update the original item
+            // Update the original item (triggers PropertyChanged for each)
             originalItem.DeliveryDate = EditingDeliveryItemFromDb.DeliveryDate;
             originalItem.DeliveredQty = EditingDeliveryItemFromDb.DeliveredQty;
             originalItem.ReturnedQty = EditingDeliveryItemFromDb.ReturnedQty;
@@ -1134,6 +1134,12 @@ namespace ProGlassAutomation.ViewModels
 
             // UPDATE IN DATABASE
             DbHelper.UpdateDeliveryItem(originalItem);
+
+            // ✅ FIX: Notify Delivery that totals changed (important!)
+            SelectedOrder.OnPropertyChanged(nameof(SelectedOrder.TotalDelivered));
+            SelectedOrder.OnPropertyChanged(nameof(SelectedOrder.TotalReturned));
+            SelectedOrder.OnPropertyChanged(nameof(SelectedOrder.Balance));
+            SelectedOrder.OnPropertyChanged(nameof(SelectedOrder.BalanceSQM));
 
             // Update order totals and status
             SelectedOrder.UpdatedDate = DateTime.Today;
