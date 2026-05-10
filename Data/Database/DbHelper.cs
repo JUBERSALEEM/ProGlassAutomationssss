@@ -18,7 +18,7 @@ namespace ProGlassAutomation.Data.Database
         private static readonly string ConnStr =
             $"Data Source={DbPath};Cache=Shared";
 
-        private static readonly int LatestVersion = 4;
+        private static readonly int LatestVersion = 5;
 
         // ================= CONNECTION =================
         private static SqliteConnection CreateConnection()
@@ -266,6 +266,58 @@ namespace ProGlassAutomation.Data.Database
                             Notes TEXT,
                             CreatedDate TEXT,
                             FOREIGN KEY (OrderId) REFERENCES Deliveries(Id)
+                        );
+                        ";
+                        cmd.ExecuteNonQuery();
+                    }
+                    break;
+
+                case 5:
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"
+                        CREATE TABLE IF NOT EXISTS SheetStore (
+                            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            Category TEXT,
+                            Thickness TEXT,
+                            Color TEXT,
+                            ColorHex TEXT,
+                            Width INTEGER,
+                            Height INTEGER,
+                            SquareMeter REAL,
+                            PurchasePrice REAL,
+                            SellPrice REAL,
+                            TotalStock INTEGER,
+                            UsedSheets INTEGER,
+                            BalanceSheets INTEGER,
+                            IsActive INTEGER DEFAULT 1,
+                            Supplier TEXT,
+                            SupplierName TEXT,
+                            Description TEXT,
+                            CreatedDate TEXT,
+                            LatestPurchaseDate TEXT
+                        );
+
+                        CREATE TABLE IF NOT EXISTS SheetPurchases (
+                            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            SheetId INTEGER,
+                            Quantity INTEGER,
+                            UnitPrice REAL,
+                            Supplier TEXT,
+                            PurchasedOn TEXT,
+                            Notes TEXT,
+                            CreatedAt TEXT,
+                            FOREIGN KEY (SheetId) REFERENCES SheetStore(Id)
+                        );
+
+                        CREATE TABLE IF NOT EXISTS SheetUsages (
+                            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            SheetId INTEGER,
+                            Quantity INTEGER,
+                            Reason TEXT,
+                            UsedOn TEXT,
+                            CreatedAt TEXT,
+                            FOREIGN KEY (SheetId) REFERENCES SheetStore(Id)
                         );
                         ";
                         cmd.ExecuteNonQuery();
@@ -837,6 +889,280 @@ namespace ProGlassAutomation.Data.Database
                 cmd.CommandText = "DELETE FROM DeliveryItems WHERE Id = $id";
                 cmd.Parameters.AddWithValue("$id", id);
                 cmd.ExecuteNonQuery();
+            });
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // SHEET STORE - SHEETS
+        // ═══════════════════════════════════════════════════════════════
+        public static void SaveSheet(Sheet s)
+        {
+            Execute(conn =>
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"
+                INSERT INTO SheetStore (Category, Thickness, Color, ColorHex, Width, Height, SquareMeter, PurchasePrice, SellPrice, TotalStock, UsedSheets, BalanceSheets, IsActive, Supplier, SupplierName, Description, CreatedDate, LatestPurchaseDate)
+                VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup, $supn, $desc, $cd, $lpd);";
+
+                cmd.Parameters.AddWithValue("$cat", s.Category ?? "");
+                cmd.Parameters.AddWithValue("$th", s.Thickness ?? "");
+                cmd.Parameters.AddWithValue("$col", s.Color ?? "");
+                cmd.Parameters.AddWithValue("$hex", s.ColorHex ?? "");
+                cmd.Parameters.AddWithValue("$w", s.Width);
+                cmd.Parameters.AddWithValue("$h", s.Height);
+                cmd.Parameters.AddWithValue("$sqm", s.SquareMeter);
+                cmd.Parameters.AddWithValue("$pp", s.PurchasePrice);
+                cmd.Parameters.AddWithValue("$sp", s.SellPrice);
+                cmd.Parameters.AddWithValue("$ts", s.TotalStock);
+                cmd.Parameters.AddWithValue("$us", s.UsedSheets);
+                cmd.Parameters.AddWithValue("$bs", s.BalanceSheets);
+                cmd.Parameters.AddWithValue("$act", s.IsActive ? 1 : 0);
+                cmd.Parameters.AddWithValue("$sup", s.Supplier ?? "");
+                cmd.Parameters.AddWithValue("$supn", s.SupplierName ?? "");
+                cmd.Parameters.AddWithValue("$desc", s.Description ?? "");
+                cmd.Parameters.AddWithValue("$cd", s.CreatedDate.ToString("yyyy-MM-dd HH:mm"));
+                cmd.Parameters.AddWithValue("$lpd", s.LatestPurchaseDate?.ToString("yyyy-MM-dd HH:mm") ?? "");
+
+                cmd.ExecuteNonQuery();
+            });
+        }
+
+        public static void UpdateSheet(Sheet s)
+        {
+            Execute(conn =>
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"
+                UPDATE SheetStore SET 
+                    Category = $cat, Thickness = $th, Color = $col, ColorHex = $hex,
+                    Width = $w, Height = $h, SquareMeter = $sqm, PurchasePrice = $pp,
+                    SellPrice = $sp, TotalStock = $ts, UsedSheets = $us, BalanceSheets = $bs,
+                    IsActive = $act, Supplier = $sup, SupplierName = $supn, Description = $desc,
+                    LatestPurchaseDate = $lpd
+                WHERE Id = $id;";
+
+                cmd.Parameters.AddWithValue("$id", s.Id);
+                cmd.Parameters.AddWithValue("$cat", s.Category ?? "");
+                cmd.Parameters.AddWithValue("$th", s.Thickness ?? "");
+                cmd.Parameters.AddWithValue("$col", s.Color ?? "");
+                cmd.Parameters.AddWithValue("$hex", s.ColorHex ?? "");
+                cmd.Parameters.AddWithValue("$w", s.Width);
+                cmd.Parameters.AddWithValue("$h", s.Height);
+                cmd.Parameters.AddWithValue("$sqm", s.SquareMeter);
+                cmd.Parameters.AddWithValue("$pp", s.PurchasePrice);
+                cmd.Parameters.AddWithValue("$sp", s.SellPrice);
+                cmd.Parameters.AddWithValue("$ts", s.TotalStock);
+                cmd.Parameters.AddWithValue("$us", s.UsedSheets);
+                cmd.Parameters.AddWithValue("$bs", s.BalanceSheets);
+                cmd.Parameters.AddWithValue("$act", s.IsActive ? 1 : 0);
+                cmd.Parameters.AddWithValue("$sup", s.Supplier ?? "");
+                cmd.Parameters.AddWithValue("$supn", s.SupplierName ?? "");
+                cmd.Parameters.AddWithValue("$desc", s.Description ?? "");
+                cmd.Parameters.AddWithValue("$lpd", s.LatestPurchaseDate?.ToString("yyyy-MM-dd HH:mm") ?? "");
+
+                cmd.ExecuteNonQuery();
+            });
+        }
+
+        public static List<Sheet> GetAllSheets()
+        {
+            return Execute(conn =>
+            {
+            var list = new List<Sheet>();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT * FROM SheetStore ORDER BY Id DESC";
+            using var r = cmd.ExecuteReader();
+            while (r.Read())
+            {
+                list.Add(new Sheet
+                {
+                    Id = r.GetInt32(0),
+                    Category = r.IsDBNull(1) ? "" : r.GetString(1),
+                    Thickness = r.IsDBNull(2) ? "" : r.GetString(2),
+                    Color = r.IsDBNull(3) ? "" : r.GetString(3),
+                    ColorHex = r.IsDBNull(4) ? "" : r.GetString(4),
+                    Width = r.GetInt32(5),
+                    Height = r.GetInt32(6),
+                    SquareMeter = r.GetDouble(7),
+                    PurchasePrice = r.GetDecimal(8),
+                    SellPrice = r.GetDecimal(9),
+                    TotalStock = r.GetInt32(10),
+                    UsedSheets = r.GetInt32(11),
+                    BalanceSheets = r.GetInt32(12),
+                    IsActive = r.GetInt32(13) == 1,
+                    Supplier = r.IsDBNull(14) ? "" : r.GetString(14),
+                    SupplierName = r.IsDBNull(15) ? "" : r.GetString(15),
+                    Description = r.IsDBNull(16) ? "" : r.GetString(16),
+                    CreatedDate = DateTime.TryParse(r.GetString(17), out var cd) ? cd : DateTime.Now,
+                    LatestPurchaseDate = DateTime.TryParse(r.GetString(18), out var lpd) ? lpd : null
+                });
+                }
+                return list;
+            });
+        }
+
+        public static void DeleteSheet(int id)
+        {
+            Execute(conn =>
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "DELETE FROM SheetUsages WHERE SheetId = $id";
+                cmd.Parameters.AddWithValue("$id", id);
+                cmd.ExecuteNonQuery();
+
+                cmd.CommandText = "DELETE FROM SheetPurchases WHERE SheetId = $id";
+                cmd.ExecuteNonQuery();
+
+                cmd.CommandText = "DELETE FROM SheetStore WHERE Id = $id";
+                cmd.ExecuteNonQuery();
+            });
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // SHEET STORE - PURCHASES
+        // ═══════════════════════════════════════════════════════════════
+        public static void SaveSheetPurchase(SheetPurchase p)
+        {
+            Execute(conn =>
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"
+                INSERT INTO SheetPurchases (SheetId, Quantity, UnitPrice, Supplier, PurchasedOn, Notes, CreatedAt)
+                VALUES ($sid, $q, $up, $sup, $pd, $nt, $cd);";
+
+                cmd.Parameters.AddWithValue("$sid", p.SheetId);
+                cmd.Parameters.AddWithValue("$q", p.Quantity);
+                cmd.Parameters.AddWithValue("$up", p.UnitPrice);
+                cmd.Parameters.AddWithValue("$sup", p.Supplier ?? "");
+                cmd.Parameters.AddWithValue("$pd", p.PurchasedOn.ToString("yyyy-MM-dd"));
+                cmd.Parameters.AddWithValue("$nt", p.Notes ?? "");
+                cmd.Parameters.AddWithValue("$cd", p.CreatedAt.ToString("yyyy-MM-dd HH:mm"));
+
+                cmd.ExecuteNonQuery();
+            });
+        }
+
+        public static List<SheetPurchase> GetSheetPurchases(int sheetId)
+        {
+            return Execute(conn =>
+            {
+                var list = new List<SheetPurchase>();
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT * FROM SheetPurchases WHERE SheetId = $sid ORDER BY Id DESC";
+                cmd.Parameters.AddWithValue("$sid", sheetId);
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                {
+                    list.Add(new SheetPurchase
+                    {
+                        Id = r.GetInt32(0),
+                        SheetId = r.GetInt32(1),
+                        Quantity = r.GetInt32(2),
+                        UnitPrice = r.GetDecimal(3),
+                        Supplier = r.IsDBNull(4) ? "" : r.GetString(4),
+                        PurchasedOn = DateTime.TryParse(r.GetString(5), out var pd) ? pd : DateTime.Today,
+                        Notes = r.IsDBNull(6) ? "" : r.GetString(6),
+                        CreatedAt = DateTime.TryParse(r.GetString(7), out var cd) ? cd : DateTime.Now
+                    });
+                }
+                return list;
+            });
+        }
+
+        public static List<SheetPurchase> GetAllSheetPurchases()
+        {
+            return Execute(conn =>
+            {
+                var list = new List<SheetPurchase>();
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT * FROM SheetPurchases ORDER BY Id DESC";
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                {
+                    list.Add(new SheetPurchase
+                    {
+                        Id = r.GetInt32(0),
+                        SheetId = r.GetInt32(1),
+                        Quantity = r.GetInt32(2),
+                        UnitPrice = r.GetDecimal(3),
+                        Supplier = r.IsDBNull(4) ? "" : r.GetString(4),
+                        PurchasedOn = DateTime.TryParse(r.GetString(5), out var pd) ? pd : DateTime.Today,
+                        Notes = r.IsDBNull(6) ? "" : r.GetString(6),
+                        CreatedAt = DateTime.TryParse(r.GetString(7), out var cd) ? cd : DateTime.Now
+                    });
+                }
+                return list;
+            });
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // SHEET STORE - USAGES
+        // ═══════════════════════════════════════════════════════════════
+        public static void SaveSheetUsage(SheetUsage u)
+        {
+            Execute(conn =>
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"
+                INSERT INTO SheetUsages (SheetId, Quantity, Reason, UsedOn, CreatedAt)
+                VALUES ($sid, $q, $rs, $ud, $cd);";
+
+                cmd.Parameters.AddWithValue("$sid", u.SheetId);
+                cmd.Parameters.AddWithValue("$q", u.Quantity);
+                cmd.Parameters.AddWithValue("$rs", u.Reason ?? "");
+                cmd.Parameters.AddWithValue("$ud", u.UsedOn.ToString("yyyy-MM-dd"));
+                cmd.Parameters.AddWithValue("$cd", u.CreatedAt.ToString("yyyy-MM-dd HH:mm"));
+
+                cmd.ExecuteNonQuery();
+            });
+        }
+
+        public static List<SheetUsage> GetSheetUsages(int sheetId)
+        {
+            return Execute(conn =>
+            {
+                var list = new List<SheetUsage>();
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT * FROM SheetUsages WHERE SheetId = $sid ORDER BY Id DESC";
+                cmd.Parameters.AddWithValue("$sid", sheetId);
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                {
+                    list.Add(new SheetUsage
+                    {
+                        Id = r.GetInt32(0),
+                        SheetId = r.GetInt32(1),
+                        Quantity = r.GetInt32(2),
+                        Reason = r.IsDBNull(3) ? "" : r.GetString(3),
+                        UsedOn = DateTime.TryParse(r.GetString(4), out var ud) ? ud : DateTime.Today,
+                        CreatedAt = DateTime.TryParse(r.GetString(5), out var cd) ? cd : DateTime.Now
+                    });
+                }
+                return list;
+            });
+        }
+
+        public static List<SheetUsage> GetAllSheetUsages()
+        {
+            return Execute(conn =>
+            {
+                var list = new List<SheetUsage>();
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT * FROM SheetUsages ORDER BY Id DESC";
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                {
+                    list.Add(new SheetUsage
+                    {
+                        Id = r.GetInt32(0),
+                        SheetId = r.GetInt32(1),
+                        Quantity = r.GetInt32(2),
+                        Reason = r.IsDBNull(3) ? "" : r.GetString(3),
+                        UsedOn = DateTime.TryParse(r.GetString(4), out var ud) ? ud : DateTime.Today,
+                        CreatedAt = DateTime.TryParse(r.GetString(5), out var cd) ? cd : DateTime.Now
+                    });
+                }
+                return list;
             });
         }
     }
