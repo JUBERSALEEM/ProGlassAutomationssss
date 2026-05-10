@@ -15,6 +15,15 @@
 		<Product>ProGlass Automation ERP</Product>
 		<Description>ProGlass ERP Automation System with License Validation</Description>
 		<Copyright>Copyright © 2025 ProGlass ERP</Copyright>
+		
+		<!-- PUBLISH SETTINGS FOR STANDALONE EXE -->
+		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+		<SelfContained>true</SelfContained>
+		<PublishSingleFile>true</PublishSingleFile>
+		<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+		<PublishReadyToRun>true</PublishReadyToRun>
+		<EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+		<PublishTrimmed>false</PublishTrimmed>
 	</PropertyGroup>
 
 	<ItemGroup>

@@ -1,4 +1,5 @@
 ﻿using ProGlassAutomation.Models;
+using ProGlassAutomation.Data.Database;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -60,7 +61,8 @@ namespace ProGlassAutomation.ViewModels
             DeleteSelectedCommand = new RelayCommand(ExecuteDeleteSelected, CanExecuteDeleteSelected);
             PrintCommand = new RelayCommand(ExecutePrint);
 
-            LoadSampleData();
+            // ✅ Load from database only (empty initially)
+            LoadFromDatabase();
             CreateDataView();
         }
 
@@ -96,7 +98,6 @@ namespace ProGlassAutomation.ViewModels
             {
                 if (SetProperty(ref _selectAll, value))
                 {
-                    // Toggle all selections
                     if (FilteredDataView != null)
                     {
                         foreach (var row in FilteredDataView.Cast<DataRowView>())
@@ -122,7 +123,6 @@ namespace ProGlassAutomation.ViewModels
             OnPropertyChanged(nameof(SelectedCount));
         }
 
-        // Reference to DataGrid for selection count
         private System.Windows.Controls.DataGrid _mainDataGrid;
         public System.Windows.Controls.DataGrid MainDataGrid
         {
@@ -314,10 +314,10 @@ namespace ProGlassAutomation.ViewModels
             };
 
             StatusOptions = new ObservableCollection<string>
-{
-    "Pending", "In Progress", "Confirmed", "Cancelled",
-    "Release", "Hold", "Cancel"
-};
+            {
+                "Pending", "In Progress", "Confirmed", "Cancelled",
+                "Release", "Hold", "Cancel"
+            };
 
             ColorOptions = new ObservableCollection<string>
             {
@@ -394,43 +394,30 @@ namespace ProGlassAutomation.ViewModels
 
         #endregion
 
-        #region Load Sample Data
+        #region Load Data from Database
 
-        private void LoadSampleData()
+        // ✅ Load from database only (empty initially)
+        private void LoadFromDatabase()
         {
-            var random = new Random();
-            var companies = new[] { "ABC Construction", "XYZ Windows", "Secure Buildings Ltd", "Modern Glass Works", "Elite Glazing Co" };
-            var workTypes = new[] { "Single Unit (SGU)", "Double Unit (DGU)", "Lamination Unit", "Single + Double Unit", "SGU + DGU" };
-            var salesmen = new[] { "Ahmed Khan", "Muhammad Ali", "Hassan Ahmed", "Usman Malik", "Bilal Shah" };
-            var customerRefs = new[] { "CUST-001", "CUST-002", "CUST-003", "CUST-004", "CUST-005" };
-
-            for (int i = 1; i <= 20; i++)
+            try
             {
-                var qty = random.Next(20, 100) * 2;
-                var statuses = new[] { "Pending", "In Progress", "Confirmed", "Cancelled" };
-                var status = statuses[random.Next(statuses.Length)];
-                var productionStatus = status == "Confirmed" ? "Completed" : status == "In Progress" ? "In Progress" : "Pending";
+                System.Diagnostics.Debug.WriteLine("[DailyWork] Loading from database...");
 
-                var order = new DailyWork
+                var dbData = DbHelper.GetAllDailyWork();
+
+                DailyWorks.Clear();
+                foreach (var work in dbData)
                 {
-                    Id = i,
-                    Date = DateTime.Today.AddDays(-random.Next(1, 15)),
-                    Company = companies[random.Next(companies.Length)],
-                    PINumber = $"PI-{DateTime.Now.Year}-{1000 + i}",
-                    CustomerReference = customerRefs[random.Next(customerRefs.Length)],
-                    TypeOfWork = workTypes[random.Next(workTypes.Length)],
-                    Qty = qty,
-                    SQM = Math.Round(random.Next(50, 500) * 0.1, 2),
-                    Salesman = salesmen[random.Next(salesmen.Length)],
-                    Status = status,
-                    ProductionStatus = productionStatus,
-                    Color = "",
-                    Notes = i % 4 == 0 ? $"Order {i} notes" : "",
-                    CreatedDate = DateTime.Today.AddDays(-random.Next(1, 15))
-                };
-                DailyWorks.Add(order);
+                    DailyWorks.Add(work);
+                }
+
+                System.Diagnostics.Debug.WriteLine($"[DailyWork] Loaded {DailyWorks.Count} records");
+                UpdateStatistics();
             }
-            UpdateStatistics();
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DailyWork] Load error: {ex.Message}");
+            }
         }
 
         #endregion
@@ -547,6 +534,7 @@ namespace ProGlassAutomation.ViewModels
             return parameter != null || SelectedDataRowView != null || SelectedWork != null;
         }
 
+        // ✅ DELETE - Saves to database
         private void ExecuteDelete(object parameter)
         {
             DailyWork workToDelete = null;
@@ -569,6 +557,11 @@ namespace ProGlassAutomation.ViewModels
 
                 if (result == MessageBoxResult.Yes)
                 {
+                    // ✅ Delete from database
+                    DbHelper.DeleteDailyWork(workToDelete.Id);
+                    System.Diagnostics.Debug.WriteLine($"[DailyWork] Deleted ID: {workToDelete.Id}");
+
+                    // Remove from collection
                     DailyWorks.Remove(workToDelete);
                     RefreshDataView();
                     UpdateStatistics();
@@ -583,6 +576,7 @@ namespace ProGlassAutomation.ViewModels
             return parameter != null || SelectedDataRowView != null || SelectedWork != null;
         }
 
+        // ✅ SAVE - Saves to database
         private void ExecuteSave(object parameter)
         {
             if (EditingWork == null) return;
@@ -596,6 +590,12 @@ namespace ProGlassAutomation.ViewModels
             if (_isNewRecord)
             {
                 EditingWork.Id = DailyWorks.Count > 0 ? DailyWorks.Max(w => w.Id) + 1 : 1;
+                EditingWork.CreatedDate = DateTime.Now;
+
+                // ✅ Save to database
+                DbHelper.SaveDailyWork(EditingWork);
+                System.Diagnostics.Debug.WriteLine($"[DailyWork] Saved new ID: {EditingWork.Id}");
+
                 DailyWorks.Add(EditingWork);
             }
             else
@@ -617,6 +617,10 @@ namespace ProGlassAutomation.ViewModels
                     existing.Salesman = EditingWork.Salesman;
                     existing.Color = EditingWork.Color;
                     existing.Notes = EditingWork.Notes;
+
+                    // ✅ Update in database
+                    DbHelper.UpdateDailyWork(existing);
+                    System.Diagnostics.Debug.WriteLine($"[DailyWork] Updated ID: {existing.Id}");
                 }
             }
 
@@ -636,6 +640,7 @@ namespace ProGlassAutomation.ViewModels
 
         private void ExecuteRefresh(object parameter)
         {
+            LoadFromDatabase();
             RefreshDataView();
             UpdateStatistics();
         }
@@ -734,6 +739,11 @@ namespace ProGlassAutomation.ViewModels
                 copy.PINumber = $"COPY_{copy.PINumber}";
                 copy.Date = DateTime.Today;
                 copy.UpdateDate = DateTime.Today;
+                copy.CreatedDate = DateTime.Now;
+
+                // ✅ Save copy to database
+                DbHelper.SaveDailyWork(copy);
+
                 DailyWorks.Add(copy);
                 RefreshDataView();
                 UpdateStatistics();
@@ -766,6 +776,11 @@ namespace ProGlassAutomation.ViewModels
                 duplicate.PINumber = $"DUP_{duplicate.PINumber}";
                 duplicate.Date = DateTime.Today;
                 duplicate.UpdateDate = DateTime.Today;
+                duplicate.CreatedDate = DateTime.Now;
+
+                // ✅ Save duplicate to database
+                DbHelper.SaveDailyWork(duplicate);
+
                 DailyWorks.Add(duplicate);
                 RefreshDataView();
                 UpdateStatistics();
@@ -869,6 +884,7 @@ namespace ProGlassAutomation.ViewModels
             return grid;
         }
 
+        // ✅ DELETE SELECTED - Deletes multiple records from database
         private void ExecuteDeleteSelected(object parameter)
         {
             if (parameter is System.Windows.Controls.DataGrid dataGrid)
@@ -896,11 +912,19 @@ namespace ProGlassAutomation.ViewModels
 
                 if (result == MessageBoxResult.Yes)
                 {
-                    var toDelete = DailyWorks.Where(w => selectedIds.Contains(w.Id)).ToList();
-                    foreach (var item in toDelete)
+                    // ✅ Delete each from database
+                    foreach (var id in selectedIds)
                     {
-                        DailyWorks.Remove(item);
+                        DbHelper.DeleteDailyWork(id);
+                        var item = DailyWorks.FirstOrDefault(w => w.Id == id);
+                        if (item != null)
+                        {
+                            DailyWorks.Remove(item);
+                        }
                     }
+
+                    System.Diagnostics.Debug.WriteLine($"[DailyWork] Deleted {selectedIds.Count} records");
+
                     RefreshDataView();
                     UpdateStatistics();
                     SelectedWork = null;
