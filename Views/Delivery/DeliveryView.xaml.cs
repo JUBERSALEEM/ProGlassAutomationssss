@@ -44,5 +44,14 @@ namespace ProGlassAutomation.Views.Delivery
                 }
             }
         }
+
+        // ✅ NEW: Select all text when TextBox gets focus
+        private void TextBox_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.TextBox textBox)
+            {
+                textBox.SelectAll();
+            }
+        }
     }
 }

@@ -883,12 +883,12 @@
 
                         <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,0,12">
                             <TextBlock Text="DELIVERED QTY *" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditingDeliveryItem.DeliveredQty}"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditingDeliveryItem.DeliveredQty}" GotFocus="TextBox_GotFocus"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,12">
                             <TextBlock Text="RETURNED QTY" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditingDeliveryItem.ReturnedQty}"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditingDeliveryItem.ReturnedQty}" GotFocus="TextBox_GotFocus"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,0,12">
@@ -917,7 +917,7 @@
 
                         <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,0,12">
                             <TextBlock Text="NOTES" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditingDeliveryItem.Notes}"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditingDeliveryItem.Notes}" GotFocus="TextBox_GotFocus"/>
                         </StackPanel>
 
                         <Border Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" CornerRadius="8" Background="#FEF3C7" Padding="12" Margin="0,0,0,12">
@@ -967,12 +967,12 @@
 
                         <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,10,12">
                             <TextBlock Text="COMPANY" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditingOrder.Company}"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditingOrder.Company}" GotFocus="TextBox_GotFocus"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,12">
                             <TextBlock Text="PI NUMBER" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditingOrder.PINumber}"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditingOrder.PINumber}" GotFocus="TextBox_GotFocus"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,12">
@@ -984,12 +984,12 @@
 
                         <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,10,12">
                             <TextBlock Text="ORDER QTY" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditingOrder.OrderQty}"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditingOrder.OrderQty}" GotFocus="TextBox_GotFocus"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,12">
                             <TextBlock Text="ORDER SQM" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditingOrder.OrderSQM}"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditingOrder.OrderSQM}" GotFocus="TextBox_GotFocus"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,10,12">
@@ -1012,7 +1012,8 @@
                                      Text="{Binding EditingOrder.Notes}"
                                      TextWrapping="Wrap"
                                      AcceptsReturn="True"
-                                     MinHeight="40"/>
+                                     MinHeight="40"
+                                     GotFocus="TextBox_GotFocus"/>
                         </StackPanel>
                     </Grid>
 
@@ -1127,12 +1128,12 @@
 
                         <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,0,12">
                             <TextBlock Text="DELIVERED QTY *" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditingDeliveryItemFromDb.DeliveredQty}"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditingDeliveryItemFromDb.DeliveredQty}" GotFocus="TextBox_GotFocus"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,12">
                             <TextBlock Text="RETURNED QTY" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditingDeliveryItemFromDb.ReturnedQty}"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditingDeliveryItemFromDb.ReturnedQty}" GotFocus="TextBox_GotFocus"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,0,12">
@@ -1161,7 +1162,7 @@
 
                         <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,0,12">
                             <TextBlock Text="NOTES" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditingDeliveryItemFromDb.Notes}"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditingDeliveryItemFromDb.Notes}" GotFocus="TextBox_GotFocus"/>
                         </StackPanel>
 
                         <Border Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" CornerRadius="8" Background="#FEF3C7" Padding="12" Margin="0,0,0,12">
