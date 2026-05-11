@@ -2,143 +2,45 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:ProGlassAutomation.ViewModels"
-        Title="ProGlass ERP System"
-        Height="900" Width="1600"
-        MinHeight="700" MinWidth="1200"
-        WindowStartupLocation="CenterScreen"
-        Background="#F0F7FF">
+        Title="ProGlass ERP System" Height="950" Width="1650"
+        WindowStartupLocation="CenterScreen" Background="#F1F5F9"
+        UseLayoutRounding="True" SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display">
 
     <Window.DataContext>
         <vm:MainViewModel/>
     </Window.DataContext>
 
     <Window.Resources>
-        <!-- Drop Shadows -->
-        <DropShadowEffect x:Key="CardShadow" BlurRadius="20" ShadowDepth="3" Opacity="0.12"/>
-        <DropShadowEffect x:Key="ButtonShadow" BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
+        <!-- Sharp Professional Palette -->
+        <SolidColorBrush x:Key="DeepBlue" Color="#1E3A8A"/>
+        <SolidColorBrush x:Key="PrimaryBlue" Color="#2563EB"/>
+        <SolidColorBrush x:Key="TextDark" Color="#0F172A"/>
+        <SolidColorBrush x:Key="BorderSharp" Color="#CBD5E1"/>
 
-        <!-- Unified Header Gradient -->
-        <LinearGradientBrush x:Key="HeaderGradient" StartPoint="0,0" EndPoint="1,1">
-            <GradientStop Color="#1E40AF" Offset="0"/>
-            <GradientStop Color="#3B82F6" Offset="0.5"/>
-            <GradientStop Color="#2563EB" Offset="1"/>
-        </LinearGradientBrush>
+        <DropShadowEffect x:Key="CardShadow" BlurRadius="15" ShadowDepth="2" Opacity="0.1"/>
 
-        <!-- Unified Sidebar Background -->
-        <LinearGradientBrush x:Key="SidebarGradient" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#FFFFFF" Offset="0"/>
-            <GradientStop Color="#EFF6FF" Offset="0.5"/>
-            <GradientStop Color="#DBEAFE" Offset="1"/>
-        </LinearGradientBrush>
-
-        <!-- Section Gradient -->
-        <LinearGradientBrush x:Key="SectionGradient" StartPoint="0,0" EndPoint="1,1">
-            <GradientStop Color="#1E40AF" Offset="0"/>
-            <GradientStop Color="#3B82F6" Offset="1"/>
-        </LinearGradientBrush>
-
-        <!-- Content Gradient -->
-        <LinearGradientBrush x:Key="ContentGradient" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#FFFFFF" Offset="0"/>
-            <GradientStop Color="#F8FAFC" Offset="1"/>
-        </LinearGradientBrush>
-
-        <!-- Footer Gradient -->
-        <LinearGradientBrush x:Key="FooterGradient" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#1E40AF" Offset="0"/>
-            <GradientStop Color="#3B82F6" Offset="0.5"/>
-            <GradientStop Color="#2563EB" Offset="1"/>
-        </LinearGradientBrush>
-
-        <!-- Screenshot Button Style -->
-        <Style x:Key="ScreenshotButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Padding" Value="14,10"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="bg" Background="{TemplateBinding Background}" CornerRadius="10" Padding="{TemplateBinding Padding}" BorderBrush="#BFDBFE" BorderThickness="1">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.08"/>
-                            </Border.Effect>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="📷" FontSize="16" VerticalAlignment="Center"/>
-                                <TextBlock Text="Screenshot" FontSize="11" FontWeight="SemiBold" Foreground="#2563EB" Margin="8,0,0,0" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="bg" Property="Background" Value="#EFF6FF"/>
-                                <Setter TargetName="bg" Property="BorderBrush" Value="#3B82F6"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+        <!-- REFINED CARD STYLE -->
+        <Style x:Key="ModuleBorderStyle" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="18,15"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderSharp}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Effect" Value="{StaticResource CardShadow}"/>
         </Style>
 
-        <!-- About Button Style -->
-        <Style x:Key="AboutButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Padding" Value="14,10"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="bg" Background="{TemplateBinding Background}" CornerRadius="10" Padding="{TemplateBinding Padding}" BorderBrush="#BFDBFE" BorderThickness="1">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.08"/>
-                            </Border.Effect>
-                            <StackPanel Orientation="Horizontal">
-                                <Path Data="M12,2C6.48,2 2,6.48 2,12s4.48,10 10,10 10,-4.48 10,-10S17.52,2 12,2zM13,17h-2v-6h2v6zM13,9h-2V7h2v2z" 
-                                      Fill="#3B82F6" Width="18" Height="18" Stretch="Uniform"/>
-                                <TextBlock Text="About" FontSize="11" FontWeight="SemiBold" Foreground="#2563EB" Margin="8,0,0,0" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="bg" Property="Background" Value="#EFF6FF"/>
-                                <Setter TargetName="bg" Property="BorderBrush" Value="#3B82F6"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- Nav Button Style -->
         <Style x:Key="NavButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Padding" Value="0"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="10" Padding="{TemplateBinding Padding}">
+                        <Border Background="{TemplateBinding Background}">
                             <ContentPresenter/>
                         </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Opacity" Value="0.9"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
                     </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- Section Header Style -->
-        <Style x:Key="SectionHeaderStyle" TargetType="Border">
-            <Setter Property="CornerRadius" Value="12,12,0,0"/>
-            <Setter Property="Padding" Value="14,12"/>
-            <Setter Property="Background">
-                <Setter.Value>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#1E40AF" Offset="0"/>
-                        <GradientStop Color="#3B82F6" Offset="1"/>
-                    </LinearGradientBrush>
                 </Setter.Value>
             </Setter>
         </Style>
@@ -151,12 +53,12 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="280"/>
+            <ColumnDefinition Width="320"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- HEADER -->
-        <Border Grid.Row="0" Grid.ColumnSpan="2" Margin="12" CornerRadius="16" Background="{StaticResource HeaderGradient}" Effect="{StaticResource CardShadow}">
+        <!-- 1. HEADER -->
+        <Border Grid.ColumnSpan="2" Background="{StaticResource DeepBlue}" Padding="24,15">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -164,577 +66,168 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Logo -->
-                <Border Grid.Column="0" Margin="16,12" Width="80" Height="88" CornerRadius="14" Background="#FFFFFF">
-                    <Border.Effect>
-                        <DropShadowEffect BlurRadius="15" ShadowDepth="3" Opacity="0.2"/>
-                    </Border.Effect>
-                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                        <Border Background="#3B82F6" CornerRadius="6" Padding="6,3" Margin="0,0,0,5">
-                            <TextBlock Text="PROGLASS" FontSize="9" FontWeight="Bold" Foreground="White"/>
-                        </Border>
-                        <TextBlock Text="ERP" FontSize="26" FontWeight="Bold" Foreground="#1E40AF" HorizontalAlignment="Center"/>
-                        <Border Height="2" Background="#3B82F6" Margin="12,6,12,0"/>
-                        <TextBlock Text="SYSTEM" FontSize="9" FontWeight="Bold" Foreground="#3B82F6" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                <StackPanel Orientation="Horizontal">
+                    <Border Width="50" Height="50" CornerRadius="10" Background="White">
+                        <TextBlock Text="PG" Foreground="{StaticResource DeepBlue}" FontWeight="Black" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel Margin="18,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="PROGLASS ERP SYSTEM" FontSize="22" FontWeight="Black" Foreground="White"/>
+                        <TextBlock Text="PRODUCTION ENGINE v2.4" FontSize="10" Foreground="#93C5FD" FontWeight="Black"/>
                     </StackPanel>
-                </Border>
-
-                <!-- Title -->
-                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="20,0,0,0">
-                    <TextBlock Text="PROGLASS ERP SYSTEM" FontSize="28" FontWeight="Bold" Foreground="White"/>
-                    <TextBlock Text="Glass Processing Automation Platform" FontSize="13" Foreground="#BFDBFE" Margin="0,6,0,0"/>
                 </StackPanel>
 
-                <!-- Info Cards -->
-                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,20,0">
-                    <Button Style="{StaticResource ScreenshotButtonStyle}" Click="ScreenshotBtn_Click" Margin="6"/>
-                    <Button Style="{StaticResource AboutButtonStyle}" Click="About_Click" Margin="6"/>
-                    <Border CornerRadius="12" Padding="16" Margin="6" Effect="{StaticResource ButtonShadow}">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                <GradientStop Color="#FFFFFF" Offset="0"/>
-                                <GradientStop Color="#F0F9FF" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- SCREENSHOT BUTTON -->
+                    <Button x:Name="ScreenshotBtn" Click="ScreenshotBtn_Click" Style="{StaticResource NavButtonStyle}" Margin="0,0,12,0">
+                        <Border Background="#1D4ED8" CornerRadius="8" Padding="15,10">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="📷" Margin="0,0,10,0" Foreground="White"/>
+                                <TextBlock Text="SCREENSHOT" Foreground="White" FontWeight="Black" FontSize="11"/>
+                            </StackPanel>
+                        </Border>
+                    </Button>
+
+                    <!-- ABOUT BUTTON -->
+                    <Button x:Name="AboutBtn" Click="About_Click" Style="{StaticResource NavButtonStyle}" Margin="0,0,12,0">
+                        <Border Background="#1D4ED8" CornerRadius="8" Padding="15,10" BorderBrush="#3B82F6" BorderThickness="1">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="ℹ️" Margin="0,0,10,0" Foreground="White"/>
+                                <TextBlock Text="ABOUT" Foreground="White" FontWeight="Black" FontSize="11"/>
+                            </StackPanel>
+                        </Border>
+                    </Button>
+
+                    <Border Background="#111827" CornerRadius="10" Padding="18,10" BorderBrush="{StaticResource PrimaryBlue}" BorderThickness="1">
                         <StackPanel Orientation="Horizontal">
-                            <StackPanel Margin="0,0,16,0">
-                                <TextBlock Text="📅 DATE" Foreground="#60A5FA" FontWeight="SemiBold" FontSize="9"/>
-                                <TextBlock x:Name="CurrentDateText" FontSize="14" FontWeight="Bold" Foreground="#1E40AF" Margin="0,4,0,0"/>
-                            </StackPanel>
-                            <Border Width="1" Background="#BFDBFE"/>
-                            <StackPanel Margin="16,0,0,0">
-                                <TextBlock Text="🕐 TIME" Foreground="#60A5FA" FontWeight="SemiBold" FontSize="9"/>
-                                <TextBlock x:Name="ClockText" FontSize="14" FontWeight="Bold" Foreground="#1E40AF" Margin="0,4,0,0"/>
-                            </StackPanel>
+                            <TextBlock x:Name="ClockText" Text="00:00:00" FontSize="16" FontWeight="Bold" Foreground="White"/>
+                            <Border Width="1" Background="{StaticResource PrimaryBlue}" Margin="15,2"/>
+                            <TextBlock x:Name="CurrentDateText" Text="01-MAY-2026" FontSize="14" FontWeight="Bold" Foreground="#60A5FA"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <!-- SIDEBAR -->
-        <Border Grid.Row="1" Grid.Column="0" Background="{StaticResource SidebarGradient}" Margin="10" CornerRadius="14" Effect="{StaticResource CardShadow}">
-            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                <StackPanel Margin="12">
-
-                    <!-- SECTION 1: DASHBOARD -->
-                    <Border CornerRadius="12" Margin="0,0,0,10" Effect="{StaticResource ButtonShadow}">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                <GradientStop Color="#1E40AF" Offset="0"/>
-                                <GradientStop Color="#3B82F6" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
-                        <StackPanel>
-                            <Border Style="{StaticResource SectionHeaderStyle}">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="📊" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center"/>
-                                    <TextBlock Text="DASHBOARD" FontSize="10" FontWeight="Bold" Foreground="#FFFFFF" Margin="8,0,0,0" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </Border>
-                            <StackPanel Margin="10,10,10,14">
-                                <Button x:Name="BtnDashboard" Style="{StaticResource NavButtonStyle}" Click="BtnDashboard_Click">
-                                    <Border CornerRadius="10" Padding="12" Background="#3B82F6" Cursor="Hand" RenderTransformOrigin="0.5,0.5">
-                                        <Border.RenderTransform>
-                                            <ScaleTransform x:Name="DashScale" ScaleX="1" ScaleY="1"/>
-                                        </Border.RenderTransform>
-                                        <Border.Effect>
-                                            <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
-                                        </Border.Effect>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="📈" FontSize="18" Foreground="White" VerticalAlignment="Center"/>
-                                            <TextBlock Text="Overview" FontSize="13" FontWeight="SemiBold" Foreground="White" Margin="10,0,0,0" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Border>
-                                </Button>
-                                <Button x:Name="BtnSubscription" Style="{StaticResource NavButtonStyle}" Click="BtnSubscription_Click" Margin="0,8,0,0">
-                                    <Border CornerRadius="10" Padding="12" Background="#60A5FA" Cursor="Hand" RenderTransformOrigin="0.5,0.5">
-                                        <Border.RenderTransform>
-                                            <ScaleTransform x:Name="SubScale" ScaleX="1" ScaleY="1"/>
-                                        </Border.RenderTransform>
-                                        <Border.Effect>
-                                            <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
-                                        </Border.Effect>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="⭐" FontSize="18" Foreground="White" VerticalAlignment="Center"/>
-                                            <TextBlock Text="Subscription Plans" FontSize="13" FontWeight="SemiBold" Foreground="White" Margin="10,0,0,0" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Border>
-                                </Button>
+        <!-- 2. SIDEBAR -->
+        <Border Grid.Row="1" Background="White" BorderBrush="{StaticResource BorderSharp}" BorderThickness="0,0,1,0">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="16,25">
+                    <TextBlock Text="NAVIGATION" FontSize="10" FontWeight="Black" Foreground="{StaticResource DeepBlue}" Margin="12,0,0,12" Opacity="0.5"/>
+                    <Button x:Name="BtnDashboard" Style="{StaticResource NavButtonStyle}" Click="BtnDashboard_Click" Margin="0,0,0,8">
+                        <Border x:Name="BorderDash" Style="{StaticResource ModuleBorderStyle}" Background="{StaticResource PrimaryBlue}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="📊" FontSize="22" Margin="0,0,20,0"/>
+                                <TextBlock Text="DASHBOARD" Foreground="White" FontWeight="Black" FontSize="13"/>
                             </StackPanel>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- SECTION 2: CALCULATORS -->
-                    <Border CornerRadius="12" Margin="0,0,0,10" Effect="{StaticResource ButtonShadow}">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                <GradientStop Color="#2563EB" Offset="0"/>
-                                <GradientStop Color="#1D4ED8" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
-                        <StackPanel>
-                            <Border Style="{StaticResource SectionHeaderStyle}">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="🧮" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center"/>
-                                        <TextBlock Text="CALCULATORS" FontSize="10" FontWeight="Bold" Foreground="#FFFFFF" Margin="8,0,0,0" VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                    <Border Grid.Column="1" CornerRadius="6" Padding="8,4">
-                                        <Border.Style>
-                                            <Style TargetType="Border">
-                                                <Setter Property="Background" Value="#DBEAFE"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsLicensed}" Value="True">
-                                                        <Setter Property="Background" Value="#D1FAE5"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Border.Style>
-                                        <TextBlock FontSize="8" FontWeight="Bold">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="Text" Value="🔒 LOCKED"/>
-                                                    <Setter Property="Foreground" Value="#1E40AF"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsLicensed}" Value="True">
-                                                            <Setter Property="Text" Value="✓ ACTIVE"/>
-                                                            <Setter Property="Foreground" Value="#059669"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
-                                    </Border>
-                                </Grid>
-                            </Border>
-
-                            <StackPanel Margin="8,8,8,12">
-
-                                <!-- SGU Calculator -->
-                                <Button x:Name="BtnSGU" Style="{StaticResource NavButtonStyle}" Click="BtnSGU_Click">
-                                    <Border x:Name="BorderSGU" CornerRadius="10" Padding="12" Background="#3B82F6" Cursor="Hand" RenderTransformOrigin="0.5,0.5">
-                                        <Border.RenderTransform>
-                                            <ScaleTransform x:Name="ScaleSGU" ScaleX="1" ScaleY="1"/>
-                                        </Border.RenderTransform>
-                                        <Border.Effect>
-                                            <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
-                                        </Border.Effect>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="🪟" FontSize="18" Foreground="White" VerticalAlignment="Center"/>
-                                            <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
-                                                <TextBlock Text="SGU Calculator" FontSize="12" FontWeight="SemiBold" Foreground="White"/>
-                                                <TextBlock Text="Single glass unit" FontSize="9" Foreground="#BFDBFE"/>
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </Border>
-                                </Button>
-
-                                <!-- DGU Calculator -->
-                                <Button x:Name="BtnDGU" Style="{StaticResource NavButtonStyle}" Click="BtnDGU_Click" Margin="0,8,0,0">
-                                    <Border x:Name="BorderDGU" CornerRadius="10" Padding="12" Background="#2563EB" Cursor="Hand" RenderTransformOrigin="0.5,0.5">
-                                        <Border.RenderTransform>
-                                            <ScaleTransform x:Name="ScaleDGU" ScaleX="1" ScaleY="1"/>
-                                        </Border.RenderTransform>
-                                        <Border.Effect>
-                                            <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
-                                        </Border.Effect>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="🪟🪟" FontSize="14" Foreground="White" VerticalAlignment="Center"/>
-                                            <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
-                                                <TextBlock Text="DGU Calculator" FontSize="12" FontWeight="SemiBold" Foreground="White"/>
-                                                <TextBlock Text="Double glass unit" FontSize="9" Foreground="#BFDBFE"/>
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </Border>
-                                </Button>
-
-                                <!-- Lamination -->
-                                <Button x:Name="BtnLam" Style="{StaticResource NavButtonStyle}" Click="BtnLamination_Click" Margin="0,8,0,0">
-                                    <Border x:Name="BorderLam" CornerRadius="10" Padding="12" Background="#1D4ED8" Cursor="Hand" RenderTransformOrigin="0.5,0.5">
-                                        <Border.RenderTransform>
-                                            <ScaleTransform x:Name="ScaleLam" ScaleX="1" ScaleY="1"/>
-                                        </Border.RenderTransform>
-                                        <Border.Effect>
-                                            <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
-                                        </Border.Effect>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="🔲" FontSize="18" Foreground="White" VerticalAlignment="Center"/>
-                                            <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
-                                                <TextBlock Text="Lamination" FontSize="12" FontWeight="SemiBold" Foreground="White"/>
-                                                <TextBlock Text="Laminated glass" FontSize="9" Foreground="#BFDBFE"/>
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </Border>
-                                </Button>
-
-                                <!-- DGU + Lamination -->
-                                <Button x:Name="BtnDguLam" Style="{StaticResource NavButtonStyle}" Click="BtnDguLam_Click" Margin="0,8,0,0">
-                                    <Border x:Name="BorderDguLam" CornerRadius="10" Padding="12" Background="#1E40AF" Cursor="Hand" RenderTransformOrigin="0.5,0.5">
-                                        <Border.RenderTransform>
-                                            <ScaleTransform x:Name="ScaleDguLam" ScaleX="1" ScaleY="1"/>
-                                        </Border.RenderTransform>
-                                        <Border.Effect>
-                                            <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
-                                        </Border.Effect>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="🪟🔲🪟" FontSize="14" Foreground="White" VerticalAlignment="Center"/>
-                                            <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
-                                                <TextBlock Text="DGU + Lamination" FontSize="12" FontWeight="SemiBold" Foreground="White"/>
-                                                <TextBlock Text="Combined calculation" FontSize="9" Foreground="#BFDBFE"/>
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </Border>
-                                </Button>
-
-                                <!-- Optimization -->
-                                <Button x:Name="BtnOpt" Style="{StaticResource NavButtonStyle}" Click="BtnOptimization_Click" Margin="0,8,0,0">
-                                    <Border x:Name="BorderOpt" CornerRadius="10" Padding="12" Background="#1E3A8A" Cursor="Hand" RenderTransformOrigin="0.5,0.5">
-                                        <Border.RenderTransform>
-                                            <ScaleTransform x:Name="ScaleOpt" ScaleX="1" ScaleY="1"/>
-                                        </Border.RenderTransform>
-                                        <Border.Effect>
-                                            <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
-                                        </Border.Effect>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="✂️" FontSize="18" Foreground="White" VerticalAlignment="Center"/>
-                                            <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
-                                                <TextBlock Text="Optimization" FontSize="12" FontWeight="SemiBold" Foreground="White"/>
-                                                <TextBlock Text="Glass optimization" FontSize="9" Foreground="#BFDBFE"/>
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </Border>
-                                </Button>
-
+                        </Border>
+                    </Button>
+                    <Button x:Name="BtnSubscription" Style="{StaticResource NavButtonStyle}" Click="BtnSubscription_Click" Margin="0,0,0,30">
+                        <Border x:Name="BorderSub" Style="{StaticResource ModuleBorderStyle}" Background="#60A5FA">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="⭐" FontSize="22" Margin="0,0,20,0"/>
+                                <TextBlock Text="LICENSING" Foreground="White" FontWeight="Black" FontSize="13"/>
                             </StackPanel>
-                        </StackPanel>
-                    </Border>
+                        </Border>
+                    </Button>
 
-                    <!-- SECTION 3: MANAGEMENT -->
-                    <Border CornerRadius="12" Margin="0,0,0,10" Effect="{StaticResource ButtonShadow}">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                <GradientStop Color="#1E40AF" Offset="0"/>
-                                <GradientStop Color="#1E3A8A" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
-                        <StackPanel>
-                            <Border Style="{StaticResource SectionHeaderStyle}">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="⚙️" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center"/>
-                                    <TextBlock Text="MANAGEMENT" FontSize="10" FontWeight="Bold" Foreground="#FFFFFF" Margin="8,0,0,0" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </Border>
-                            <StackPanel Margin="8,10,8,14">
-
-                                <!-- Sheet Store -->
-                                <Button x:Name="BtnSheetStore" Style="{StaticResource NavButtonStyle}" Click="BtnSheetStore_Click">
-                                    <Border CornerRadius="10" Padding="12" Background="#3B82F6" Cursor="Hand">
-                                        <Border.Effect>
-                                            <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
-                                        </Border.Effect>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="📦" FontSize="18" Foreground="White" VerticalAlignment="Center"/>
-                                            <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
-                                                <TextBlock Text="Sheet Store" FontWeight="Bold" FontSize="12" Foreground="White"/>
-                                                <TextBlock Text="Glass inventory" FontSize="9" Foreground="#BFDBFE"/>
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </Border>
-                                </Button>
-
-                                <!-- Daily Works -->
-                                <Button x:Name="BtnDailyWorks" Style="{StaticResource NavButtonStyle}" Click="BtnDailyWorks_Click" Margin="0,8,0,0">
-                                    <Border CornerRadius="10" Padding="12" Background="#2563EB" Cursor="Hand">
-                                        <Border.Effect>
-                                            <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
-                                        </Border.Effect>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="📋" FontSize="18" Foreground="White" VerticalAlignment="Center"/>
-                                            <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
-                                                <TextBlock Text="Daily Works" FontWeight="Bold" FontSize="12" Foreground="White"/>
-                                                <TextBlock Text="Production tracking" FontSize="9" Foreground="#BFDBFE"/>
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </Border>
-                                </Button>
-
-                                <!-- Deliveries -->
-                                <Button x:Name="BtnDeliveries" Style="{StaticResource NavButtonStyle}" Click="BtnDeliveries_Click" Margin="0,8,0,0">
-                                    <Border CornerRadius="10" Padding="12" Background="#059669" Cursor="Hand">
-                                        <Border.Effect>
-                                            <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
-                                        </Border.Effect>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="🚚" FontSize="18" Foreground="White" VerticalAlignment="Center"/>
-                                            <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
-                                                <TextBlock Text="Deliveries" FontWeight="Bold" FontSize="12" Foreground="White"/>
-                                                <TextBlock Text="Delivery tracking" FontSize="9" Foreground="#A7F3D0"/>
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </Border>
-                                </Button>
-
+                    <TextBlock Text="CALCULATORS" FontSize="10" FontWeight="Black" Foreground="{StaticResource DeepBlue}" Margin="12,0,0,12" Opacity="0.5"/>
+                    <Button x:Name="BtnSGU" Style="{StaticResource NavButtonStyle}" Click="BtnSGU_Click" Margin="0,0,0,8">
+                        <Border x:Name="BorderSGU" Style="{StaticResource ModuleBorderStyle}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="🧮" FontSize="20" Margin="0,0,20,0" Foreground="{StaticResource PrimaryBlue}"/>
+                                <TextBlock Text="SGU CALC" FontWeight="Black" Foreground="{StaticResource TextDark}"/>
                             </StackPanel>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- SECTION 4: USERS -->
-                    <Border CornerRadius="12" Margin="0,0,0,10" Effect="{StaticResource ButtonShadow}">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                <GradientStop Color="#2563EB" Offset="0"/>
-                                <GradientStop Color="#1D4ED8" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
-                        <StackPanel>
-                            <Border Style="{StaticResource SectionHeaderStyle}">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="👥" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center"/>
-                                    <TextBlock Text="USERS" FontSize="10" FontWeight="Bold" Foreground="#FFFFFF" Margin="8,0,0,0" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </Border>
-                            <StackPanel Margin="8,10,8,14">
-
-                                <!-- My Profile -->
-                                <Button x:Name="BtnProfile" Style="{StaticResource NavButtonStyle}" Click="BtnProfile_Click">
-                                    <Border CornerRadius="10" Padding="12" Background="#3B82F6" Cursor="Hand">
-                                        <Border.Effect>
-                                            <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
-                                        </Border.Effect>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="👤" FontSize="18" Foreground="White" VerticalAlignment="Center"/>
-                                            <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
-                                                <TextBlock Text="My Profile" FontWeight="Bold" FontSize="12" Foreground="White"/>
-                                                <TextBlock Text="Account settings" FontSize="9" Foreground="#BFDBFE"/>
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </Border>
-                                </Button>
-
-                                <!-- Users List -->
-                                <Button x:Name="BtnUsers" Style="{StaticResource NavButtonStyle}" Click="BtnUsers_Click" Margin="0,8,0,0">
-                                    <Border CornerRadius="10" Padding="12" Background="#2563EB" Cursor="Hand">
-                                        <Border.Effect>
-                                            <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
-                                        </Border.Effect>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="🗂️" FontSize="18" Foreground="White" VerticalAlignment="Center"/>
-                                            <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
-                                                <TextBlock Text="Users List" FontWeight="Bold" FontSize="12" Foreground="White"/>
-                                                <TextBlock Text="Manage users" FontSize="9" Foreground="#BFDBFE"/>
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </Border>
-                                </Button>
-
+                        </Border>
+                    </Button>
+                    <Button x:Name="BtnDGU" Style="{StaticResource NavButtonStyle}" Click="BtnDGU_Click" Margin="0,0,0,8">
+                        <Border x:Name="BorderDGU" Style="{StaticResource ModuleBorderStyle}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="📑" FontSize="20" Margin="0,0,20,0" Foreground="{StaticResource PrimaryBlue}"/>
+                                <TextBlock Text="DGU CALC" FontWeight="Black" Foreground="{StaticResource TextDark}"/>
                             </StackPanel>
-                        </StackPanel>
-                    </Border>
+                        </Border>
+                    </Button>
+                    <Button x:Name="BtnLam" Style="{StaticResource NavButtonStyle}" Click="BtnLamination_Click" Margin="0,0,0,8">
+                        <Border x:Name="BorderLam" Style="{StaticResource ModuleBorderStyle}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="🔳" FontSize="20" Margin="0,0,20,0" Foreground="{StaticResource PrimaryBlue}"/>
+                                <TextBlock Text="LAMINATION" FontWeight="Black" Foreground="{StaticResource TextDark}"/>
+                            </StackPanel>
+                        </Border>
+                    </Button>
+                    <Button x:Name="BtnDguLam" Style="{StaticResource NavButtonStyle}" Click="BtnDguLam_Click" Margin="0,0,0,8">
+                        <Border x:Name="BorderDguLam" Style="{StaticResource ModuleBorderStyle}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="🪟" FontSize="20" Margin="0,0,20,0" Foreground="{StaticResource PrimaryBlue}"/>
+                                <TextBlock Text="DGU + LAM" FontWeight="Black" Foreground="{StaticResource TextDark}"/>
+                            </StackPanel>
+                        </Border>
+                    </Button>
+                    <Button x:Name="BtnOpt" Style="{StaticResource NavButtonStyle}" Click="BtnOptimization_Click" Margin="0,0,0,30">
+                        <Border x:Name="BorderOpt" Style="{StaticResource ModuleBorderStyle}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="✂️" FontSize="20" Margin="0,0,20,0" Foreground="{StaticResource PrimaryBlue}"/>
+                                <TextBlock Text="OPTIMIZER" FontWeight="Black" Foreground="{StaticResource TextDark}"/>
+                            </StackPanel>
+                        </Border>
+                    </Button>
 
-                    <!-- SECTION 5: SUPPORT -->
-                    <Border CornerRadius="12" Padding="16" Effect="{StaticResource ButtonShadow}">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                <GradientStop Color="#FFFFFF" Offset="0"/>
-                                <GradientStop Color="#EFF6FF" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
-                        <StackPanel>
-                            <Border Style="{StaticResource SectionHeaderStyle}" Margin="-16,-16,-16,12">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="🎫" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center"/>
-                                        <TextBlock Text="SUPPORT" FontSize="10" FontWeight="Bold" Foreground="#FFFFFF" Margin="8,0,0,0" VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                    <Border Grid.Column="1" CornerRadius="6" Padding="8,4" Background="#DBEAFE">
-                                        <TextBlock Text="● ONLINE" FontSize="8" FontWeight="Bold" Foreground="#1E40AF"/>
-                                    </Border>
-                                </Grid>
-                            </Border>
+                    <TextBlock Text="OPERATIONS" FontSize="10" FontWeight="Black" Foreground="{StaticResource DeepBlue}" Margin="12,0,0,12" Opacity="0.5"/>
+                    <Button x:Name="BtnSheetStore" Style="{StaticResource NavButtonStyle}" Click="BtnSheetStore_Click" Margin="0,0,0,8">
+                        <Border Style="{StaticResource ModuleBorderStyle}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="📦" FontSize="20" Margin="0,0,20,0"/>
+                                <TextBlock Text="SHEET STORE" FontWeight="Black" Foreground="{StaticResource TextDark}"/>
+                            </StackPanel>
+                        </Border>
+                    </Button>
+                    <Button x:Name="BtnDailyWorks" Style="{StaticResource NavButtonStyle}" Click="BtnDailyWorks_Click" Margin="0,0,0,8">
+                        <Border Style="{StaticResource ModuleBorderStyle}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="📋" FontSize="20" Margin="0,0,20,0"/>
+                                <TextBlock Text="DAILY WORKS" FontWeight="Black" Foreground="{StaticResource TextDark}"/>
+                            </StackPanel>
+                        </Border>
+                    </Button>
+                    <Button x:Name="BtnDeliveries" Style="{StaticResource NavButtonStyle}" Click="BtnDeliveries_Click" Margin="0,0,0,30">
+                        <Border Style="{StaticResource ModuleBorderStyle}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="🚚" FontSize="20" Margin="0,0,20,0"/>
+                                <TextBlock Text="DELIVERIES" FontWeight="Black" Foreground="{StaticResource TextDark}"/>
+                            </StackPanel>
+                        </Border>
+                    </Button>
 
-                            <Border CornerRadius="10" Padding="14">
-                                <Border.Background>
-                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                        <GradientStop Color="#DBEAFE" Offset="0"/>
-                                        <GradientStop Color="#BFDBFE" Offset="1"/>
-                                    </LinearGradientBrush>
-                                </Border.Background>
+                    <UniformGrid Columns="2">
+                        <Button x:Name="BtnProfile" Style="{StaticResource NavButtonStyle}" Click="BtnProfile_Click" Margin="0,0,5,0">
+                            <Border Background="#F8FAFC" CornerRadius="12" Padding="12">
                                 <StackPanel>
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                        <TextBlock Text="📧" FontSize="16" Foreground="#1E40AF" VerticalAlignment="Center"/>
-                                        <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
-                                            <TextBlock Text="Email" FontSize="9" Foreground="#64748B"/>
-                                            <TextBlock Text="Jubersaleem01@gmail.com" FontSize="10" FontWeight="SemiBold" Foreground="#1E40AF"/>
-                                        </StackPanel>
-                                    </StackPanel>
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                        <TextBlock Text="🌐" FontSize="16" Foreground="#1E40AF" VerticalAlignment="Center"/>
-                                        <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
-                                            <TextBlock Text="Website" FontSize="9" Foreground="#64748B"/>
-                                            <TextBlock Text="www.proglass.com" FontSize="10" FontWeight="SemiBold" Foreground="#1E40AF"/>
-                                        </StackPanel>
-                                    </StackPanel>
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="💬" FontSize="16" Foreground="#1E40AF" VerticalAlignment="Center"/>
-                                        <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
-                                            <TextBlock Text="WhatsApp" FontSize="9" Foreground="#64748B"/>
-                                            <TextBlock Text="WhatsApp Support" FontSize="10" FontWeight="SemiBold" Foreground="#1E40AF"/>
-                                        </StackPanel>
-                                    </StackPanel>
+                                    <TextBlock Text="👤" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="PROFILE" FontSize="9" FontWeight="Black" HorizontalAlignment="Center" Foreground="{StaticResource DeepBlue}"/>
                                 </StackPanel>
                             </Border>
-                        </StackPanel>
-                    </Border>
+                        </Button>
+                        <Button x:Name="BtnUsers" Style="{StaticResource NavButtonStyle}" Click="BtnUsers_Click">
+                            <Border Background="#F8FAFC" CornerRadius="12" Padding="12">
+                                <StackPanel>
+                                    <TextBlock Text="👥" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="USERS" FontSize="9" FontWeight="Black" HorizontalAlignment="Center" Foreground="{StaticResource DeepBlue}"/>
+                                </StackPanel>
+                            </Border>
+                        </Button>
+                    </UniformGrid>
                 </StackPanel>
             </ScrollViewer>
         </Border>
 
-        <!-- MAIN CONTENT -->
-        <Border x:Name="MainContentArea" Grid.Row="1" Grid.Column="1" Margin="10" CornerRadius="14" Effect="{StaticResource CardShadow}">
-            <Border.Background>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                    <GradientStop Color="#FFFFFF" Offset="0"/>
-                    <GradientStop Color="#F8FAFC" Offset="1"/>
-                </LinearGradientBrush>
-            </Border.Background>
-            <Grid>
-                <ContentControl Content="{Binding CurrentView}"/>
-            </Grid>
+        <!-- 3. CONTENT AREA -->
+        <Border Grid.Row="1" Grid.Column="1" Background="White" Margin="20" CornerRadius="20" Effect="{StaticResource CardShadow}">
+            <ContentControl Content="{Binding CurrentView}"/>
         </Border>
 
-        <!-- FOOTER -->
-        <Border Grid.Row="2" Grid.ColumnSpan="2" Margin="10" CornerRadius="14" Effect="{StaticResource CardShadow}">
-            <Border.Background>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                    <GradientStop Color="#1E40AF" Offset="0"/>
-                    <GradientStop Color="#3B82F6" Offset="0.5"/>
-                    <GradientStop Color="#2563EB" Offset="1"/>
-                </LinearGradientBrush>
-            </Border.Background>
-            <Grid Margin="8">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-
-                <!-- License Status -->
-                <Border CornerRadius="12" Padding="16" Margin="6" Effect="{StaticResource ButtonShadow}">
-                    <Border.Background>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                            <GradientStop Color="#FFFFFF" Offset="0"/>
-                            <GradientStop Color="#EFF6FF" Offset="1"/>
-                        </LinearGradientBrush>
-                    </Border.Background>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <Border Width="12" Height="12" CornerRadius="6">
-                            <Border.Style>
-                                <Style TargetType="Border">
-                                    <Setter Property="Background" Value="#1E40AF"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsLicensed}" Value="True">
-                                            <Setter Property="Background" Value="#10B981"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Border.Style>
-                        </Border>
-                        <TextBlock FontWeight="Bold" FontSize="11" Foreground="#1E40AF" Margin="10,0,0,0" VerticalAlignment="Center">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Text" Value="LICENSE INACTIVE"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsLicensed}" Value="True">
-                                            <Setter Property="Text" Value="LICENSE ACTIVE"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                    </StackPanel>
-                </Border>
-
-                <!-- Calculators Status -->
-                <Border Grid.Column="1" CornerRadius="12" Padding="16" Margin="6" Effect="{StaticResource ButtonShadow}">
-                    <Border.Background>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                            <GradientStop Color="#FFFFFF" Offset="0"/>
-                            <GradientStop Color="#EFF6FF" Offset="1"/>
-                        </LinearGradientBrush>
-                    </Border.Background>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <Border Width="12" Height="12" CornerRadius="6">
-                            <Border.Style>
-                                <Style TargetType="Border">
-                                    <Setter Property="Background" Value="#2563EB"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsLicensed}" Value="True">
-                                            <Setter Property="Background" Value="#10B981"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Border.Style>
-                        </Border>
-                        <TextBlock FontWeight="Bold" FontSize="11" Foreground="#1E40AF" Margin="10,0,0,0" VerticalAlignment="Center">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Text" Value="CALCULATORS LOCKED"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsLicensed}" Value="True">
-                                            <Setter Property="Text" Value="CALCULATORS UNLOCKED"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                    </StackPanel>
-                </Border>
-
-                <!-- Activation Status -->
-                <Border Grid.Column="2" CornerRadius="12" Padding="16" Margin="6" Effect="{StaticResource ButtonShadow}">
-                    <Border.Background>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                            <GradientStop Color="#FFFFFF" Offset="0"/>
-                            <GradientStop Color="#EFF6FF" Offset="1"/>
-                        </LinearGradientBrush>
-                    </Border.Background>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <Border Width="12" Height="12" CornerRadius="6">
-                            <Border.Style>
-                                <Style TargetType="Border">
-                                    <Setter Property="Background" Value="#1D4ED8"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsLicensed}" Value="True">
-                                            <Setter Property="Background" Value="#10B981"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Border.Style>
-                        </Border>
-                        <TextBlock FontWeight="Bold" FontSize="11" Foreground="#1E40AF" Margin="10,0,0,0" VerticalAlignment="Center">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Text" Value="ACTIVATION REQUIRED"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsLicensed}" Value="True">
-                                            <Setter Property="Text" Value="ACTIVATION COMPLETE"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                    </StackPanel>
-                </Border>
-            </Grid>
+        <!-- 4. FOOTER -->
+        <Border Grid.Row="2" Grid.ColumnSpan="2" Background="{StaticResource DeepBlue}" Padding="20,10">
+            <TextBlock Text="PROGLASS ENGINE: READY" Foreground="White" FontSize="10" FontWeight="Black"/>
         </Border>
     </Grid>
 </Window>
