@@ -154,34 +154,27 @@
             </Setter>
         </Style>
 
-        <!-- Nav Button Style -->
-        <Style x:Key="NavButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}">
-                            <ContentPresenter/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+        <!-- Stat Card -->
+        <Style x:Key="StatCard" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource BgLight}"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="12"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderSharp}"/>
+            <Setter Property="BorderThickness" Value="1"/>
         </Style>
     </UserControl.Resources>
 
-    <!-- Background matching MainWindow -->
     <Border Background="#F1F5F9">
         <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="25">
             <StackPanel>
 
-                <!-- HEADER - Matching MainWindow Header Style -->
+                <!-- HEADER - Matching MainWindow Style with Stats -->
                 <Border Background="{StaticResource DeepBlue}" CornerRadius="12" Padding="24,18" Margin="0,0,0,25">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
@@ -195,7 +188,36 @@
                             </StackPanel>
                         </StackPanel>
 
-                        <Border Grid.Column="2" Background="#111827" CornerRadius="12" Padding="22,14" BorderBrush="{StaticResource PrimaryBlue}" BorderThickness="1">
+                        <!-- Inventory Stats -->
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="0,0,20,0">
+                            <Border Style="{StaticResource StatCard}" Margin="0,0,8,0">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding CategoryTotal}" FontSize="20" FontWeight="Black" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="CATEGORIES" FontSize="8" FontWeight="Bold" Foreground="{StaticResource TextMuted}" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource StatCard}" Margin="0,0,8,0">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding ThicknessTotal}" FontSize="20" FontWeight="Black" Foreground="{StaticResource SuccessGreen}" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="THICKNESS" FontSize="8" FontWeight="Bold" Foreground="{StaticResource TextMuted}" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource StatCard}" Margin="0,0,8,0">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding ColorTotal}" FontSize="20" FontWeight="Black" Foreground="{StaticResource WarningOrange}" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="COLORS" FontSize="8" FontWeight="Bold" Foreground="{StaticResource TextMuted}" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource StatCard}">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding Records.Count}" FontSize="20" FontWeight="Black" Foreground="{StaticResource DeepBlue}" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="HISTORY" FontSize="8" FontWeight="Bold" Foreground="{StaticResource TextMuted}" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- Price Display -->
+                        <Border Grid.Column="3" Background="#111827" CornerRadius="12" Padding="22,14" BorderBrush="{StaticResource PrimaryBlue}" BorderThickness="1">
                             <StackPanel Orientation="Horizontal">
                                 <StackPanel VerticalAlignment="Center" Margin="0,0,18,0">
                                     <TextBlock Text="UNIT PRICE" FontSize="9" FontWeight="Bold" Foreground="#60A5FA"/>
@@ -308,8 +330,8 @@
                                                                 <Run Text="W: "/><Run Text="{Binding Wastage}"/>
                                                             </TextBlock>
                                                         </Border>
-                                                        <Border Background="#EEF2FF" CornerRadius="6" Padding="8,4">
-                                                            <TextBlock FontSize="9" Foreground="{StaticResource DeepBlue}">
+                                                        <Border Background="#F3E8FF" CornerRadius="6" Padding="8,4">
+                                                            <TextBlock FontSize="9" Foreground="#5B21B6">
                                                                 <Run Text="P: "/><Run Text="{Binding ProfitMargin}"/>
                                                             </TextBlock>
                                                         </Border>
@@ -335,7 +357,14 @@
                 <!-- ADVANCED OPTIONS -->
                 <Border Style="{StaticResource ModuleBorderStyle}" Margin="0,25,0,0">
                     <StackPanel>
-                        <TextBlock Text="ADVANCED OPTIONS" FontSize="14" FontWeight="Black" Foreground="{StaticResource TextDark}" Margin="0,0,0,18"/>
+                        <Grid Margin="0,0,0,18">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Width="12" Height="12" CornerRadius="6" Background="{StaticResource PrimaryBlue}"/>
+                            <TextBlock Grid.Column="1" Text="ADVANCED OPTIONS" FontSize="14" FontWeight="Black" Foreground="{StaticResource TextDark}" Margin="12,0,0,0"/>
+                        </Grid>
 
                         <Grid>
                             <Grid.ColumnDefinitions>

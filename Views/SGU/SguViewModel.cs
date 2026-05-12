@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
 using ProGlassAutomation.Models;
@@ -24,50 +25,39 @@ namespace ProGlassAutomation.ViewModels
         }
 
         // ═══════════════════════════════════════════════════════════
-        // LOAD DATA FROM SHEET.CS
+        // COLLECTIONS - Initialize empty, load in constructor
         // ═══════════════════════════════════════════════════════════
 
-        public ObservableCollection<string> CategoryOptions { get; }
-            = new(Sheet.Categories);
-
-        public ObservableCollection<string> ThicknessOptions { get; }
-            = new(Sheet.Thicknesses);
-
-        public ObservableCollection<GlassColorItem> ColorOptions { get; }
-            = new(Sheet.ColorItems);
-
-        public ObservableCollection<string> WastageOptions { get; }
-            = new(Sheet.WastageOptions);
-
-        public ObservableCollection<string> ProfitMarginOptions { get; }
-            = new(Sheet.ProfitMarginOptions);
-
-        // ═══════════════════════════════════════════════════════════
-        // SGU ADVANCED OPTIONS
-        // ═══════════════════════════════════════════════════════════
-
-        public ObservableCollection<string> EdgeWorkTypes { get; }
-            = new(Sheet.EdgeWorkTypes);
-
-        public ObservableCollection<string> DrillingOptions { get; }
-            = new(Sheet.DrillingOptions);
-
-        public ObservableCollection<string> TemperingOptions { get; }
-            = new(Sheet.TemperingOptions);
-
-        public ObservableCollection<string> CoatingTypes { get; }
-            = new(Sheet.CoatingTypes);
-
-        public ObservableCollection<string> SurfaceTreatments { get; }
-            = new(Sheet.SurfaceTreatments);
-
-        public ObservableCollection<string> CutoutOptions { get; }
-            = new(Sheet.CutoutOptions);
-
-        public ObservableCollection<string> UnitOptions { get; }
-            = new(Sheet.UnitOptions);
+        public ObservableCollection<string> CategoryOptions { get; } = new();
+        public ObservableCollection<string> ThicknessOptions { get; } = new();
+        public ObservableCollection<GlassColorItem> ColorOptions { get; } = new();
+        public ObservableCollection<string> WastageOptions { get; } = new();
+        public ObservableCollection<string> ProfitMarginOptions { get; } = new();
+        public ObservableCollection<string> EdgeWorkTypes { get; } = new();
+        public ObservableCollection<string> DrillingOptions { get; } = new();
+        public ObservableCollection<string> TemperingOptions { get; } = new();
+        public ObservableCollection<string> CoatingTypes { get; } = new();
+        public ObservableCollection<string> SurfaceTreatments { get; } = new();
+        public ObservableCollection<string> CutoutOptions { get; } = new();
+        public ObservableCollection<string> UnitOptions { get; } = new();
 
         public ObservableCollection<SguRecord> Records { get; } = new();
+
+        // ═══════════════════════════════════════════════════════════
+        // INVENTORY TOTALS
+        // ═══════════════════════════════════════════════════════════
+
+        public int CategoryTotal => CategoryOptions.Count;
+        public int ThicknessTotal => ThicknessOptions.Count;
+        public int ColorTotal => ColorOptions.Count;
+        public int TemperingTotal => TemperingOptions.Count;
+        public int EdgeWorkTotal => EdgeWorkTypes.Count;
+        public int CoatingTotal => CoatingTypes.Count;
+        public int DrillingTotal => DrillingOptions.Count;
+        public int SurfaceTreatmentTotal => SurfaceTreatments.Count;
+        public int CutoutTotal => CutoutOptions.Count;
+        public int WastageTotal => WastageOptions.Count;
+        public int ProfitTotal => ProfitMarginOptions.Count;
 
         // ═══════════════════════════════════════════════════════════
         // PROPERTIES - GLASS SELECTION
@@ -127,44 +117,14 @@ namespace ProGlassAutomation.ViewModels
         }
 
         // ═══════════════════════════════════════════════════════════
-        // PROPERTIES - WASTAGE & PROFIT (WITH INDEX)
+        // PROPERTIES - WASTAGE & PROFIT
         // ═══════════════════════════════════════════════════════════
-
-        private int _wastageIndex = 1;
-        public int WastageIndex
-        {
-            get => _wastageIndex;
-            set
-            {
-                _wastageIndex = value;
-                OnPropertyChanged();
-                if (value >= 0 && value < WastageOptions.Count)
-                {
-                    Wastage = WastageOptions[value];
-                }
-            }
-        }
 
         private string _wastage = "15";
         public string Wastage
         {
             get => _wastage;
             set { _wastage = value; OnPropertyChanged(); Calculate(); }
-        }
-
-        private int _profitIndex = 1;
-        public int ProfitIndex
-        {
-            get => _profitIndex;
-            set
-            {
-                _profitIndex = value;
-                OnPropertyChanged();
-                if (value >= 0 && value < ProfitMarginOptions.Count)
-                {
-                    ProfitMargin = ProfitMarginOptions[value];
-                }
-            }
         }
 
         private string _profitMargin = "15%";
@@ -349,12 +309,26 @@ namespace ProGlassAutomation.ViewModels
 
         public SguViewModel()
         {
+            // Load data from Sheet.cs
+            AddRange(CategoryOptions, Sheet.Categories);
+            AddRange(ThicknessOptions, Sheet.Thicknesses);
+            AddRange(ColorOptions, Sheet.ColorItems);
+            AddRange(WastageOptions, Sheet.WastageOptions);
+            AddRange(ProfitMarginOptions, Sheet.ProfitMarginOptions);
+            AddRange(EdgeWorkTypes, Sheet.EdgeWorkTypes);
+            AddRange(DrillingOptions, Sheet.DrillingOptions);
+            AddRange(TemperingOptions, Sheet.TemperingOptions);
+            AddRange(CoatingTypes, Sheet.CoatingTypes);
+            AddRange(SurfaceTreatments, Sheet.SurfaceTreatments);
+            AddRange(CutoutOptions, Sheet.CutoutOptions);
+            AddRange(UnitOptions, Sheet.UnitOptions);
+
             // Set dropdown defaults
             if (CategoryOptions.Count > 0) _category = CategoryOptions[0];
             if (ThicknessOptions.Count > 0) _thickness = ThicknessOptions[0];
             if (ColorOptions.Count > 0) _colorName = ColorOptions[0].Name;
-            if (WastageOptions.Count > 1) { _wastageIndex = 1; _wastage = WastageOptions[1]; }
-            if (ProfitMarginOptions.Count > 1) { _profitIndex = 1; _profitMargin = ProfitMarginOptions[1]; }
+            if (WastageOptions.Count > 1) _wastage = WastageOptions[1];
+            if (ProfitMarginOptions.Count > 1) _profitMargin = ProfitMarginOptions[1];
             if (EdgeWorkTypes.Count > 0) _edgeWork = EdgeWorkTypes[0];
             if (DrillingOptions.Count > 0) _drilling = DrillingOptions[0];
             if (TemperingOptions.Count > 0) _tempering = TemperingOptions[0];
@@ -434,6 +408,31 @@ namespace ProGlassAutomation.ViewModels
         }
 
         // ═══════════════════════════════════════════════════════════
+        // HELPER METHODS
+        // ═══════════════════════════════════════════════════════════
+
+        private void AddRange(ObservableCollection<string> collection, string[] array)
+        {
+            if (array == null) return;
+            foreach (var item in array)
+                collection.Add(item);
+        }
+
+        private void AddRange(ObservableCollection<string> collection, List<string> list)
+        {
+            if (list == null) return;
+            foreach (var item in list)
+                collection.Add(item);
+        }
+
+        private void AddRange(ObservableCollection<GlassColorItem> collection, List<GlassColorItem> list)
+        {
+            if (list == null) return;
+            foreach (var item in list)
+                collection.Add(item);
+        }
+
+        // ═══════════════════════════════════════════════════════════
         // CALCULATE DIMENSIONS
         // ═══════════════════════════════════════════════════════════
 
@@ -459,32 +458,24 @@ namespace ProGlassAutomation.ViewModels
 
         public void Calculate()
         {
-            // STEP 1: Glass Cost
             _glassCost = SheetPrice ?? 0;
-
-            // STEP 2: Base Cost = Glass Cost ÷ Wastage Factor
             double wastageFactor = 1 - (double.Parse(_wastage) / 100.0);
             _baseCost = wastageFactor > 0 ? _glassCost / wastageFactor : _glassCost;
 
-            // STEP 3: Processing Cost = Cutting + Tempering + Other
             double cutting = Cutting ?? 0;
             double tempering = TemperingCharge ?? 0;
             double other = OtherCharges ?? 0;
             _processingCost = cutting + tempering + other;
 
-            // STEP 4: Unit Price = (Base Cost + Processing Cost) × Profit Factor
             double profitFactor = 1 + (double.Parse(_profitMargin.Replace("%", "")) / 100.0);
             _subtotal = _baseCost + _processingCost;
             _result = _subtotal * profitFactor;
 
-            // STEP 5: VAT (5%) and Gross Total
             _vatAmount = _result * 0.05;
             _grossTotal = _result + _vatAmount;
 
-            // Update dimension calculations
             CalculateDimensions();
 
-            // Notify all changes
             OnPropertyChanged(nameof(GlassCost));
             OnPropertyChanged(nameof(ProcessingCost));
             OnPropertyChanged(nameof(BaseCost));
