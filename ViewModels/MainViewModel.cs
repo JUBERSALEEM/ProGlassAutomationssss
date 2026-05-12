@@ -266,6 +266,7 @@ namespace ProGlassAutomation.ViewModels
         public void ShowDeliveries() => Navigate("Deliveries");
         public void ShowProfile() => Navigate("Profile");
         public void ShowUsers() => Navigate("Users");
+        public void ShowBalanceReports() => Navigate("BalanceReports");
 
         // ✅ Calculator methods - changed from private to public
         public void ShowSGUCalculator() => Navigate("SGU");
