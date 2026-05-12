@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
 using ProGlassAutomation.Models;
+using ProGlassAutomation.ViewModels;
 
 namespace ProGlassAutomation.Views.Lamination
 {
@@ -483,7 +484,7 @@ namespace ProGlassAutomation.Views.Lamination
         {
             if (Width > 0 && Height > 0)
             {
-                _totalArea = (Width * Height * Quantity) / 1000000.0; // Convert mm² to m²
+                _totalArea = (Width * Height * Quantity) / 1000000.0;
                 _totalPrice = Result * Quantity;
             }
             else
@@ -496,7 +497,7 @@ namespace ProGlassAutomation.Views.Lamination
         }
 
         // ═══════════════════════════════════════════════════════════
-        // CALCULATE (KEEP FORMULA AS IS)
+        // CALCULATE
         // ═══════════════════════════════════════════════════════════
         public void Calculate()
         {
@@ -524,8 +525,8 @@ namespace ProGlassAutomation.Views.Lamination
             _vatAmount = _result * 0.05;
             _grossTotal = _result + _vatAmount;
 
-        // Notify all changes
-        OnPropertyChanged(nameof(GlassCost));
+            // Notify all changes
+            OnPropertyChanged(nameof(GlassCost));
             OnPropertyChanged(nameof(ProcessingCost));
             OnPropertyChanged(nameof(BaseCost));
             OnPropertyChanged(nameof(Result));
@@ -533,6 +534,7 @@ namespace ProGlassAutomation.Views.Lamination
             OnPropertyChanged(nameof(GrossTotal));
             OnPropertyChanged(nameof(WastageFactorDisplay));
             OnPropertyChanged(nameof(ProfitMarginDisplay));
+            OnPropertyChanged(nameof(TotalGlassCost));
         }
 
         // ═══════════════════════════════════════════════════════════
@@ -573,32 +575,6 @@ namespace ProGlassAutomation.Views.Lamination
         {
             get => _isSelected;
             set { _isSelected = value; OnPropertyChanged(); }
-        }
-    }
-
-    // ═══════════════════════════════════════════════════════════
-    // RELAY COMMAND
-    // ═══════════════════════════════════════════════════════════
-    public class RelayCommand : ICommand
-    {
-        private readonly Action<object> _execute;
-        private readonly Func<object, bool> _canExecute;
-
-        public RelayCommand(Action<object> execute, Func<object, bool> canExecute = null)
-        {
-            _execute = execute ?? throw new ArgumentNullException(nameof(execute));
-            _canExecute = canExecute;
-        }
-
-        public RelayCommand(Action execute, Func<bool> canExecute = null)
-            : this(_ => execute(), canExecute != null ? _ => canExecute() : null) { }
-
-        public bool CanExecute(object parameter) => _canExecute?.Invoke(parameter) ?? true;
-        public void Execute(object parameter) => _execute(parameter);
-        public event EventHandler CanExecuteChanged
-        {
-            add => CommandManager.RequerySuggested += value;
-            remove => CommandManager.RequerySuggested -= value;
         }
     }
 }
