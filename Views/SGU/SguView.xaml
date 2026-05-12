@@ -307,7 +307,7 @@
                             <Button Content="CLEAR ALL" Command="{Binding ClearAllCommand}" Style="{StaticResource BtnDanger}" Padding="14,8" HorizontalAlignment="Right"/>
                         </Grid>
 
-                        <Border Background="{StaticResource BgLight}" CornerRadius="12" MaxHeight="220" Visibility="{Binding IsHistoryVisible, Converter={StaticResource BoolToVis}}" BorderBrush="{StaticResource BorderSharp}" BorderThickness="1">
+                        <Border Background="{StaticResource BgLight}" CornerRadius="12" MaxHeight="220" Visibility="{Binding IsHistoryVisible, Mode=OneWay, Converter={StaticResource BoolToVis}}" BorderBrush="{StaticResource BorderSharp}" BorderThickness="1">
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <ItemsControl ItemsSource="{Binding Records}" Margin="10">
                                     <ItemsControl.ItemsPanel>
@@ -327,12 +327,12 @@
                                                     <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
                                                         <Border Background="#FEF3C7" CornerRadius="6" Padding="8,4" Margin="0,0,8,0">
                                                             <TextBlock FontSize="9" Foreground="{StaticResource WarningOrange}">
-                                                                <Run Text="W: "/><Run Text="{Binding Wastage}"/>
+                                                <Run Text="W: "/><Run Text="{Binding Wastage}"/>
                                                             </TextBlock>
                                                         </Border>
                                                         <Border Background="#F3E8FF" CornerRadius="6" Padding="8,4">
                                                             <TextBlock FontSize="9" Foreground="#5B21B6">
-                                                                <Run Text="P: "/><Run Text="{Binding ProfitMargin}"/>
+                                                <Run Text="P: "/><Run Text="{Binding ProfitMargin}"/>
                                                             </TextBlock>
                                                         </Border>
                                                     </StackPanel>
@@ -348,7 +348,7 @@
                             </ScrollViewer>
                         </Border>
 
-                        <Border Background="{StaticResource BgLight}" CornerRadius="12" Padding="50" Visibility="{Binding IsHistoryEmpty, Converter={StaticResource BoolToVis}}" BorderBrush="{StaticResource BorderSharp}" BorderThickness="1">
+                        <Border Background="{StaticResource BgLight}" CornerRadius="12" Padding="50" Visibility="{Binding IsHistoryEmpty, Mode=OneWay, Converter={StaticResource BoolToVis}}" BorderBrush="{StaticResource BorderSharp}" BorderThickness="1">
                             <TextBlock Text="No history yet" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextMuted}" HorizontalAlignment="Center"/>
                         </Border>
                     </StackPanel>
