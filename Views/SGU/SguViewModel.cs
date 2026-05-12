@@ -24,7 +24,7 @@ namespace ProGlassAutomation.ViewModels
         }
 
         // ═══════════════════════════════════════════════════════════
-        // LOAD DATA FROM SHEET.CS (Static Properties)
+        // LOAD DATA FROM SHEET.CS
         // ═══════════════════════════════════════════════════════════
 
         public ObservableCollection<string> CategoryOptions { get; }
@@ -43,7 +43,7 @@ namespace ProGlassAutomation.ViewModels
             = new(Sheet.ProfitMarginOptions);
 
         // ═══════════════════════════════════════════════════════════
-        // SGU ADVANCED OPTIONS FROM SHEET.CS
+        // SGU ADVANCED OPTIONS
         // ═══════════════════════════════════════════════════════════
 
         public ObservableCollection<string> EdgeWorkTypes { get; }
@@ -70,37 +70,24 @@ namespace ProGlassAutomation.ViewModels
         public ObservableCollection<SguRecord> Records { get; } = new();
 
         // ═══════════════════════════════════════════════════════════
-        // INVENTORY TOTALS FROM SHEET.CS
-        // ═══════════════════════════════════════════════════════════
-
-        public int CategoryTotal => Sheet.Categories.Count;
-        public int ThicknessTotal => Sheet.Thicknesses.Length;
-        public int ColorTotal => Sheet.ColorItems.Count;
-        public int TemperingTotal => Sheet.TemperingOptions.Count;
-        public int EdgeWorkTotal => Sheet.EdgeWorkTypes.Count;
-        public int CoatingTotal => Sheet.CoatingTypes.Count;
-        public int DrillingTotal => Sheet.DrillingOptions.Count;
-        public int SurfaceTreatmentTotal => Sheet.SurfaceTreatments.Count;
-
-        // ═══════════════════════════════════════════════════════════
         // PROPERTIES - GLASS SELECTION
         // ═══════════════════════════════════════════════════════════
 
-        private string _category;
+        private string _category = "";
         public string Category
         {
             get => _category;
             set { _category = value; OnPropertyChanged(); Calculate(); }
         }
 
-        private string _thickness;
+        private string _thickness = "";
         public string Thickness
         {
             get => _thickness;
             set { _thickness = value; OnPropertyChanged(); Calculate(); }
         }
 
-        private string _colorName;
+        private string _colorName = "";
         public string ColorName
         {
             get => _colorName;
@@ -140,14 +127,44 @@ namespace ProGlassAutomation.ViewModels
         }
 
         // ═══════════════════════════════════════════════════════════
-        // PROPERTIES - WASTAGE & PROFIT
+        // PROPERTIES - WASTAGE & PROFIT (WITH INDEX)
         // ═══════════════════════════════════════════════════════════
+
+        private int _wastageIndex = 1;
+        public int WastageIndex
+        {
+            get => _wastageIndex;
+            set
+            {
+                _wastageIndex = value;
+                OnPropertyChanged();
+                if (value >= 0 && value < WastageOptions.Count)
+                {
+                    Wastage = WastageOptions[value];
+                }
+            }
+        }
 
         private string _wastage = "15";
         public string Wastage
         {
             get => _wastage;
             set { _wastage = value; OnPropertyChanged(); Calculate(); }
+        }
+
+        private int _profitIndex = 1;
+        public int ProfitIndex
+        {
+            get => _profitIndex;
+            set
+            {
+                _profitIndex = value;
+                OnPropertyChanged();
+                if (value >= 0 && value < ProfitMarginOptions.Count)
+                {
+                    ProfitMargin = ProfitMarginOptions[value];
+                }
+            }
         }
 
         private string _profitMargin = "15%";
@@ -336,8 +353,8 @@ namespace ProGlassAutomation.ViewModels
             if (CategoryOptions.Count > 0) _category = CategoryOptions[0];
             if (ThicknessOptions.Count > 0) _thickness = ThicknessOptions[0];
             if (ColorOptions.Count > 0) _colorName = ColorOptions[0].Name;
-            if (WastageOptions.Count > 1) _wastage = WastageOptions[1];
-            if (ProfitMarginOptions.Count > 1) _profitMargin = ProfitMarginOptions[1];
+            if (WastageOptions.Count > 1) { _wastageIndex = 1; _wastage = WastageOptions[1]; }
+            if (ProfitMarginOptions.Count > 1) { _profitIndex = 1; _profitMargin = ProfitMarginOptions[1]; }
             if (EdgeWorkTypes.Count > 0) _edgeWork = EdgeWorkTypes[0];
             if (DrillingOptions.Count > 0) _drilling = DrillingOptions[0];
             if (TemperingOptions.Count > 0) _tempering = TemperingOptions[0];
@@ -437,7 +454,7 @@ namespace ProGlassAutomation.ViewModels
         }
 
         // ═══════════════════════════════════════════════════════════
-        // CALCULATE (SAME FORMULA AS ORIGINAL)
+        // CALCULATE
         // ═══════════════════════════════════════════════════════════
 
         public void Calculate()
@@ -478,11 +495,11 @@ namespace ProGlassAutomation.ViewModels
         }
     }
 
-        // ═══════════════════════════════════════════════════════════
-        // RECORD CLASS
-        // ═══════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════
+    // RECORD CLASS
+    // ═══════════════════════════════════════════════════════════
 
-        public class SguRecord : INotifyPropertyChanged
+    public class SguRecord : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string n = null)

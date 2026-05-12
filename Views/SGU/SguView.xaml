@@ -1,7 +1,6 @@
 ﻿<UserControl x:Class="ProGlassAutomation.Views.SGU.SguView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="clr-namespace:ProGlassAutomation.Views.SGU"
              xmlns:vmv="clr-namespace:ProGlassAutomation.ViewModels">
 
     <UserControl.DataContext>
@@ -10,258 +9,161 @@
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
-        <FontFamily x:Key="PrimaryFont">Segoe UI, Inter, sans-serif</FontFamily>
 
-        <!-- Base Card -->
-        <Style x:Key="Card" TargetType="Border">
+        <!-- Matching MainWindow Palette -->
+        <SolidColorBrush x:Key="DeepBlue" Color="#1E3A8A"/>
+        <SolidColorBrush x:Key="PrimaryBlue" Color="#2563EB"/>
+        <SolidColorBrush x:Key="SuccessGreen" Color="#059669"/>
+        <SolidColorBrush x:Key="WarningOrange" Color="#D97706"/>
+        <SolidColorBrush x:Key="TextDark" Color="#0F172A"/>
+        <SolidColorBrush x:Key="TextMuted" Color="#64748B"/>
+        <SolidColorBrush x:Key="BorderSharp" Color="#CBD5E1"/>
+        <SolidColorBrush x:Key="BgLight" Color="#F8FAFC"/>
+
+        <DropShadowEffect x:Key="CardShadow" BlurRadius="15" ShadowDepth="2" Opacity="0.1"/>
+
+        <!-- Matching ModuleBorderStyle -->
+        <Style x:Key="ModuleBorderStyle" TargetType="Border">
             <Setter Property="Background" Value="White"/>
-            <Setter Property="BorderBrush" Value="#E2E8F0"/>
-            <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="12"/>
-            <Setter Property="Padding" Value="12"/>
+            <Setter Property="Padding" Value="18,15"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderSharp}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Effect" Value="{StaticResource CardShadow}"/>
         </Style>
 
-        <Style x:Key="CardBlue" TargetType="Border" BasedOn="{StaticResource Card}">
-            <Setter Property="Background">
-                <Setter.Value>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#EFF6FF" Offset="0"/>
-                        <GradientStop Color="#DBEAFE" Offset="1"/>
-                    </LinearGradientBrush>
-                </Setter.Value>
-            </Setter>
-            <Setter Property="BorderBrush" Value="#BFDBFE"/>
-        </Style>
-
-        <Style x:Key="CardGreen" TargetType="Border" BasedOn="{StaticResource Card}">
-            <Setter Property="Background">
-                <Setter.Value>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#F0FDF4" Offset="0"/>
-                        <GradientStop Color="#DCFCE7" Offset="1"/>
-                    </LinearGradientBrush>
-                </Setter.Value>
-            </Setter>
-            <Setter Property="BorderBrush" Value="#BBF7D0"/>
-        </Style>
-
-        <Style x:Key="CardPurple" TargetType="Border" BasedOn="{StaticResource Card}">
-            <Setter Property="Background">
-                <Setter.Value>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#FAF5FF" Offset="0"/>
-                        <GradientStop Color="#F3E8FF" Offset="1"/>
-                    </LinearGradientBrush>
-                </Setter.Value>
-            </Setter>
-            <Setter Property="BorderBrush" Value="#DDD6FE"/>
-        </Style>
-
-        <Style x:Key="CardOrange" TargetType="Border" BasedOn="{StaticResource Card}">
-            <Setter Property="Background">
-                <Setter.Value>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#FFFBEB" Offset="0"/>
-                        <GradientStop Color="#FEF3C7" Offset="1"/>
-                    </LinearGradientBrush>
-                </Setter.Value>
-            </Setter>
-            <Setter Property="BorderBrush" Value="#FDE68A"/>
-        </Style>
-
-        <Style x:Key="CardRed" TargetType="Border" BasedOn="{StaticResource Card}">
-            <Setter Property="Background">
-                <Setter.Value>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#FEF2F2" Offset="0"/>
-                        <GradientStop Color="#FEE2E2" Offset="1"/>
-                    </LinearGradientBrush>
-                </Setter.Value>
-            </Setter>
-            <Setter Property="BorderBrush" Value="#FECACA"/>
-        </Style>
-
-        <Style x:Key="CardTeal" TargetType="Border" BasedOn="{StaticResource Card}">
-            <Setter Property="Background">
-                <Setter.Value>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#F0FDFA" Offset="0"/>
-                        <GradientStop Color="#CCFBF1" Offset="1"/>
-                    </LinearGradientBrush>
-                </Setter.Value>
-            </Setter>
-            <Setter Property="BorderBrush" Value="#99F6E4"/>
-        </Style>
-
-        <Style x:Key="CardCyan" TargetType="Border" BasedOn="{StaticResource Card}">
-            <Setter Property="Background">
-                <Setter.Value>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#ECFEFF" Offset="0"/>
-                        <GradientStop Color="#CFFAFE" Offset="1"/>
-                    </LinearGradientBrush>
-                </Setter.Value>
-            </Setter>
-            <Setter Property="BorderBrush" Value="#A5F3FC"/>
-        </Style>
-
-        <Style x:Key="CardIndigo" TargetType="Border" BasedOn="{StaticResource Card}">
-            <Setter Property="Background">
-                <Setter.Value>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#EEF2FF" Offset="0"/>
-                        <GradientStop Color="#E0E7FF" Offset="1"/>
-                    </LinearGradientBrush>
-                </Setter.Value>
-            </Setter>
-            <Setter Property="BorderBrush" Value="#C7D2FE"/>
-        </Style>
-
-        <Style x:Key="CardPink" TargetType="Border" BasedOn="{StaticResource Card}">
-            <Setter Property="Background">
-                <Setter.Value>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#FDF2F8" Offset="0"/>
-                        <GradientStop Color="#FCE7F3" Offset="1"/>
-                    </LinearGradientBrush>
-                </Setter.Value>
-            </Setter>
-            <Setter Property="BorderBrush" Value="#FBCFE8"/>
-        </Style>
-
-        <Style x:Key="CardGray" TargetType="Border" BasedOn="{StaticResource Card}">
-            <Setter Property="Background">
-                <Setter.Value>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#F9FAFB" Offset="0"/>
-                        <GradientStop Color="#F3F4F6" Offset="1"/>
-                    </LinearGradientBrush>
-                </Setter.Value>
-            </Setter>
-            <Setter Property="BorderBrush" Value="#E5E7EB"/>
-        </Style>
-
-        <!-- Modern TextBox -->
-        <Style x:Key="ModernTextBox" TargetType="TextBox">
-            <Setter Property="Height" Value="32"/>
-            <Setter Property="Padding" Value="8,6"/>
-            <Setter Property="FontSize" Value="12"/>
+        <!-- Sharp Input Style -->
+        <Style x:Key="SharpInput" TargetType="TextBox">
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Background" Value="White"/>
-            <Setter Property="BorderBrush" Value="#D1D5DB"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderSharp}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
-            <Setter Property="CaretBrush" Value="#374151"/>
+            <Setter Property="Foreground" Value="{StaticResource TextDark}"/>
         </Style>
 
-        <Style TargetType="ComboBox">
-            <Setter Property="Height" Value="32"/>
-            <Setter Property="Padding" Value="8,6"/>
-            <Setter Property="FontSize" Value="12"/>
+        <!-- ComboBox Style -->
+        <Style x:Key="SharpCombo" TargetType="ComboBox">
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="FontSize" Value="13"/>
             <Setter Property="Background" Value="White"/>
-            <Setter Property="BorderBrush" Value="#D1D5DB"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderSharp}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="IsEditable" Value="True"/>
-            <Setter Property="IsReadOnly" Value="False"/>
-            <Setter Property="MaxDropDownHeight" Value="150"/>
         </Style>
 
+        <!-- Field Label -->
         <Style x:Key="FieldLabel" TargetType="TextBlock">
             <Setter Property="FontSize" Value="10"/>
-            <Setter Property="FontWeight" Value="Medium"/>
-            <Setter Property="Foreground" Value="#6B7280"/>
-            <Setter Property="Margin" Value="0,0,0,4"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
         </Style>
 
+        <!-- Section Title -->
         <Style x:Key="SectionTitle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontWeight" Value="Black"/>
+            <Setter Property="Foreground" Value="{StaticResource DeepBlue}"/>
+            <Setter Property="Margin" Value="0,0,0,15"/>
+            <Setter Property="Opacity" Value="0.6"/>
         </Style>
 
+        <!-- Primary Button -->
         <Style x:Key="BtnPrimary" TargetType="Button">
-            <Setter Property="Height" Value="34"/>
-            <Setter Property="Padding" Value="14,6"/>
-            <Setter Property="FontSize" Value="11"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Background" Value="{StaticResource PrimaryBlue}"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border CornerRadius="8" Padding="{TemplateBinding Padding}">
-                            <Border.Background>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                    <GradientStop Color="#3B82F6" Offset="0"/>
-                                    <GradientStop Color="#2563EB" Offset="1"/>
-                                </LinearGradientBrush>
-                            </Border.Background>
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="BtnSuccess" TargetType="Button">
-            <Setter Property="Height" Value="34"/>
-            <Setter Property="Padding" Value="14,6"/>
+            <Setter Property="Padding" Value="16,10"/>
             <Setter Property="FontSize" Value="11"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border CornerRadius="8" Padding="{TemplateBinding Padding}">
-                            <Border.Background>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                    <GradientStop Color="#10B981" Offset="0"/>
-                                    <GradientStop Color="#059669" Offset="1"/>
-                                </LinearGradientBrush>
-                            </Border.Background>
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="BtnDanger" TargetType="Button">
-            <Setter Property="Height" Value="34"/>
-            <Setter Property="Padding" Value="14,6"/>
-            <Setter Property="FontSize" Value="11"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border CornerRadius="8" Padding="{TemplateBinding Padding}">
-                            <Border.Background>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                    <GradientStop Color="#EF4444" Offset="0"/>
-                                    <GradientStop Color="#DC2626" Offset="1"/>
-                                </LinearGradientBrush>
-                            </Border.Background>
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="BtnSmallDelete" TargetType="Button">
-            <Setter Property="Height" Value="22"/>
-            <Setter Property="Padding" Value="6,2"/>
-            <Setter Property="FontSize" Value="9"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Foreground" Value="#DC2626"/>
+            <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border CornerRadius="6" Background="#FEE2E2">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Success Button -->
+        <Style x:Key="BtnSuccess" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource SuccessGreen}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Danger Button -->
+        <Style x:Key="BtnDanger" TargetType="Button">
+            <Setter Property="Background" Value="#DC2626"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Delete Button -->
+        <Style x:Key="DeleteBtn" TargetType="Button">
+            <Setter Property="Width" Value="24"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="Background" Value="#FEE2E2"/>
+            <Setter Property="Foreground" Value="#DC2626"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="5">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Nav Button Style -->
+        <Style x:Key="NavButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}">
+                            <ContentPresenter/>
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
@@ -269,200 +171,123 @@
         </Style>
     </UserControl.Resources>
 
+    <!-- Background matching MainWindow -->
     <Border Background="#F1F5F9">
-        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="12">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="25">
             <StackPanel>
 
-                <!-- HEADER -->
-                <Grid Margin="0,0,0,10">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-
-                    <Border Style="{StaticResource CardCyan}">
-                        <StackPanel>
-                            <TextBlock Text="SGU Calculator" FontSize="20" FontWeight="Bold" Foreground="#0E7490"/>
-                            <TextBlock Text="Single Glass Unit" FontSize="11" Foreground="#0891B2" Margin="0,2,0,0"/>
-                        </StackPanel>
-                    </Border>
-
-                    <Border Grid.Column="1" Style="{StaticResource CardTeal}" Margin="10,0,0,0">
-                        <StackPanel Orientation="Horizontal">
-                            <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
-                                <TextBlock Text="UNIT PRICE" FontSize="9" FontWeight="Medium" Foreground="#0F766E"/>
-                                <TextBlock Text="{Binding Result, StringFormat={}{0:F2}}" FontSize="24" FontWeight="Bold" Foreground="#0D9488"/>
-                            </StackPanel>
-                            <TextBlock Text="AED" FontSize="12" FontWeight="Bold" Foreground="#14B8A6" VerticalAlignment="Bottom" Margin="0,0,0,4"/>
-                        </StackPanel>
-                    </Border>
-                </Grid>
-
-                <!-- INVENTORY STATS -->
-                <Border Style="{StaticResource CardGray}" Margin="0,0,0,10">
+                <!-- HEADER - Matching MainWindow Header Style -->
+                <Border Background="{StaticResource DeepBlue}" CornerRadius="12" Padding="24,18" Margin="0,0,0,25">
                     <Grid>
                         <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
-                        <!-- Categories -->
-                        <Border Grid.Column="0" Style="{StaticResource CardBlue}" Margin="0,0,4,0">
-                            <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="{Binding CategoryTotal}" FontSize="22" FontWeight="Bold" Foreground="#2563EB" HorizontalAlignment="Center"/>
-                                <TextBlock Text="Categories" FontSize="9" Foreground="#60A5FA" HorizontalAlignment="Center"/>
+                        <StackPanel Orientation="Horizontal">
+                            <Border Width="55" Height="55" CornerRadius="10" Background="White">
+                                <TextBlock Text="🪟" FontSize="26" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel Margin="20,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="SGU CALCULATOR" FontSize="22" FontWeight="Black" Foreground="White"/>
+                                <TextBlock Text="SINGLE GLASS UNIT PRICING" FontSize="10" Foreground="#93C5FD" FontWeight="Bold"/>
                             </StackPanel>
-                        </Border>
+                        </StackPanel>
 
-                        <!-- Thicknesses -->
-                        <Border Grid.Column="1" Style="{StaticResource CardGreen}" Margin="4,0">
-                            <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="{Binding ThicknessTotal}" FontSize="22" FontWeight="Bold" Foreground="#16A34A" HorizontalAlignment="Center"/>
-                                <TextBlock Text="Thicknesses" FontSize="9" Foreground="#22C55E" HorizontalAlignment="Center"/>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Colors -->
-                        <Border Grid.Column="2" Style="{StaticResource CardOrange}" Margin="4,0">
-                            <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="{Binding ColorTotal}" FontSize="22" FontWeight="Bold" Foreground="#D97706" HorizontalAlignment="Center"/>
-                                <TextBlock Text="Colors" FontSize="9" Foreground="#F59E0B" HorizontalAlignment="Center"/>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Tempering -->
-                        <Border Grid.Column="3" Style="{StaticResource CardRed}" Margin="4,0">
-                            <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="{Binding TemperingTotal}" FontSize="22" FontWeight="Bold" Foreground="#DC2626" HorizontalAlignment="Center"/>
-                                <TextBlock Text="Tempering" FontSize="9" Foreground="#FCA5A5" HorizontalAlignment="Center"/>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Edge Work -->
-                        <Border Grid.Column="4" Style="{StaticResource CardPurple}" Margin="4,0">
-                            <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="{Binding EdgeWorkTotal}" FontSize="22" FontWeight="Bold" Foreground="#7C3AED" HorizontalAlignment="Center"/>
-                                <TextBlock Text="Edge Work" FontSize="9" Foreground="#A78BFA" HorizontalAlignment="Center"/>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Records -->
-                        <Border Grid.Column="5" Style="{StaticResource CardIndigo}" Margin="4,0,0,0">
-                            <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="{Binding Records.Count}" FontSize="22" FontWeight="Bold" Foreground="#4F46E5" HorizontalAlignment="Center"/>
-                                <TextBlock Text="History" FontSize="9" Foreground="#818CF8" HorizontalAlignment="Center"/>
+                        <Border Grid.Column="2" Background="#111827" CornerRadius="12" Padding="22,14" BorderBrush="{StaticResource PrimaryBlue}" BorderThickness="1">
+                            <StackPanel Orientation="Horizontal">
+                                <StackPanel VerticalAlignment="Center" Margin="0,0,18,0">
+                                    <TextBlock Text="UNIT PRICE" FontSize="9" FontWeight="Bold" Foreground="#60A5FA"/>
+                                    <TextBlock Text="{Binding Result, StringFormat={}{0:F2}}" FontSize="30" FontWeight="Black" Foreground="White"/>
+                                </StackPanel>
+                                <Border Width="1" Background="{StaticResource PrimaryBlue}" Margin="0,5"/>
+                                <TextBlock Text="AED" FontSize="18" FontWeight="Black" Foreground="{StaticResource PrimaryBlue}" VerticalAlignment="Center" Margin="18,0,0,0"/>
                             </StackPanel>
                         </Border>
                     </Grid>
                 </Border>
 
-                <!-- MAIN CONTENT -->
-                <Grid Margin="0,0,0,10">
+                <!-- MAIN CONTENT - 3 Column Grid -->
+                <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Glass Selection -->
-                    <Border Grid.Column="0" Style="{StaticResource CardBlue}" Margin="0,0,6,0">
+                    <!-- GLASS SELECTION -->
+                    <Border Grid.Column="0" Style="{StaticResource ModuleBorderStyle}" Margin="0,0,12,0">
                         <StackPanel>
-                            <Grid Margin="0,0,0,8">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <Border Width="10" Height="10" CornerRadius="5" Background="#3B82F6"/>
-                                <TextBlock Grid.Column="1" Text="Glass Selection" Style="{StaticResource SectionTitle}" Foreground="#1D4ED8" Margin="8,0,0,0"/>
-                            </Grid>
+                            <TextBlock Text="GLASS SELECTION" Style="{StaticResource SectionTitle}"/>
 
                             <TextBlock Text="Category" Style="{StaticResource FieldLabel}"/>
-                            <ComboBox ItemsSource="{Binding CategoryOptions}" SelectedValue="{Binding Category}" IsEditable="True" Text="{Binding Category, Mode=TwoWay}"/>
+                            <ComboBox Style="{StaticResource SharpCombo}" ItemsSource="{Binding CategoryOptions}" SelectedValue="{Binding Category}" IsEditable="True"/>
 
-                            <TextBlock Text="Thickness" Style="{StaticResource FieldLabel}" Margin="0,6,0,0"/>
-                            <ComboBox ItemsSource="{Binding ThicknessOptions}" SelectedValue="{Binding Thickness}" IsEditable="True" Text="{Binding Thickness, Mode=TwoWay}"/>
+                            <TextBlock Text="Thickness" Style="{StaticResource FieldLabel}" Margin="0,14,0,0"/>
+                            <ComboBox Style="{StaticResource SharpCombo}" ItemsSource="{Binding ThicknessOptions}" SelectedValue="{Binding Thickness}" IsEditable="True"/>
 
-                            <TextBlock Text="Color" Style="{StaticResource FieldLabel}" Margin="0,6,0,0"/>
-                            <ComboBox ItemsSource="{Binding ColorOptions}" SelectedValue="{Binding ColorName}" DisplayMemberPath="Name" SelectedValuePath="Name" IsEditable="True" Text="{Binding ColorName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            <TextBlock Text="Color" Style="{StaticResource FieldLabel}" Margin="0,14,0,0"/>
+                            <ComboBox Style="{StaticResource SharpCombo}" ItemsSource="{Binding ColorOptions}" SelectedValue="{Binding ColorName}" DisplayMemberPath="Name" SelectedValuePath="Name" IsEditable="True"/>
 
-                                <TextBlock Text="Sheet Price (AED)" Style="{StaticResource FieldLabel}" Margin="0,10,0,0"/>
-                                <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding SheetPrice, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
+                            <TextBlock Text="Sheet Price (AED)" Style="{StaticResource FieldLabel}" Margin="0,14,0,0"/>
+                            <TextBox Style="{StaticResource SharpInput}" Text="{Binding SheetPrice, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
                         </StackPanel>
                     </Border>
 
-                    <!-- Price & Processing -->
-                    <Border Grid.Column="1" Style="{StaticResource CardGreen}" Margin="6,0">
+                    <!-- PROCESSING CHARGES -->
+                    <Border Grid.Column="1" Style="{StaticResource ModuleBorderStyle}" Margin="12,0">
                         <StackPanel>
-                            <Grid Margin="0,0,0,8">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <Border Width="10" Height="10" CornerRadius="5" Background="#22C55E"/>
-                                <TextBlock Grid.Column="1" Text="Processing Charges" Style="{StaticResource SectionTitle}" Foreground="#166534" Margin="8,0,0,0"/>
-                            </Grid>
+                            <TextBlock Text="PROCESSING CHARGES" Style="{StaticResource SectionTitle}"/>
 
                             <TextBlock Text="Cutting (AED)" Style="{StaticResource FieldLabel}"/>
-                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding Cutting, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
+                            <TextBox Style="{StaticResource SharpInput}" Text="{Binding Cutting, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
 
-                            <TextBlock Text="Tempering (AED)" Style="{StaticResource FieldLabel}" Margin="0,6,0,0"/>
-                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding TemperingCharge, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
+                            <TextBlock Text="Tempering (AED)" Style="{StaticResource FieldLabel}" Margin="0,14,0,0"/>
+                            <TextBox Style="{StaticResource SharpInput}" Text="{Binding TemperingCharge, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
 
-                            <TextBlock Text="Other Charges (AED)" Style="{StaticResource FieldLabel}" Margin="0,6,0,0"/>
-                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding OtherCharges, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
+                            <TextBlock Text="Other Charges (AED)" Style="{StaticResource FieldLabel}" Margin="0,14,0,0"/>
+                            <TextBox Style="{StaticResource SharpInput}" Text="{Binding OtherCharges, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
 
-                            <Border Background="White" CornerRadius="8" Padding="8" Margin="0,10,0,0" BorderBrush="#BBF7D0" BorderThickness="1">
+                            <Border Background="{StaticResource BgLight}" CornerRadius="10" Padding="14" Margin="0,18,0,0" BorderBrush="{StaticResource BorderSharp}" BorderThickness="1">
                                 <Grid>
-                                    <TextBlock Text="Subtotal" FontSize="10" Foreground="#166534" VerticalAlignment="Center"/>
-                                    <TextBlock Text="{Binding Subtotal, StringFormat={}{0:F2}}" FontSize="16" FontWeight="Bold" Foreground="#16A34A" HorizontalAlignment="Right"/>
+                                    <TextBlock Text="SUBTOTAL" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Subtotal, StringFormat={}{0:F2}}" FontSize="20" FontWeight="Black" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Right"/>
                                 </Grid>
                             </Border>
                         </StackPanel>
                     </Border>
 
-                    <!-- Settings & Actions -->
-                    <Border Grid.Column="2" Style="{StaticResource CardOrange}" Margin="6,0,0,0">
+                    <!-- SETTINGS -->
+                    <Border Grid.Column="2" Style="{StaticResource ModuleBorderStyle}" Margin="12,0,0,0">
                         <StackPanel>
-                            <Grid Margin="0,0,0,8">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <Border Width="10" Height="10" CornerRadius="5" Background="#F59E0B"/>
-                                <TextBlock Grid.Column="1" Text="Settings" Style="{StaticResource SectionTitle}" Foreground="#B45309" Margin="8,0,0,0"/>
-                            </Grid>
+                            <TextBlock Text="SETTINGS" Style="{StaticResource SectionTitle}"/>
 
                             <TextBlock Text="Wastage %" Style="{StaticResource FieldLabel}"/>
-                            <ComboBox ItemsSource="{Binding WastageOptions}" SelectedValue="{Binding Wastage}"/>
+                            <ComboBox Style="{StaticResource SharpCombo}" ItemsSource="{Binding WastageOptions}" SelectedIndex="{Binding WastageIndex, Mode=TwoWay}"/>
 
-                            <TextBlock Text="Profit Margin" Style="{StaticResource FieldLabel}" Margin="0,6,0,0"/>
-                            <ComboBox ItemsSource="{Binding ProfitMarginOptions}" SelectedValue="{Binding ProfitMargin}"/>
+                            <TextBlock Text="Profit Margin" Style="{StaticResource FieldLabel}" Margin="0,14,0,0"/>
+                            <ComboBox Style="{StaticResource SharpCombo}" ItemsSource="{Binding ProfitMarginOptions}" SelectedIndex="{Binding ProfitIndex, Mode=TwoWay}"/>
 
-                            <TextBlock Text="Actions" Style="{StaticResource SectionTitle}" Margin="0,10,0,0"/>
-                            <Button Content="Save" Command="{Binding SaveCommand}" Style="{StaticResource BtnPrimary}" Margin="0,0,0,4"/>
-                            <Button Content="Export PDF" Command="{Binding ExportPdfCommand}" Style="{StaticResource BtnSuccess}" Margin="0,0,0,4"/>
-                            <Button Content="Clear" Command="{Binding ClearCommand}" Style="{StaticResource BtnDanger}"/>
+                            <TextBlock Text="ACTIONS" Style="{StaticResource SectionTitle}" Margin="0,30,0,12"/>
+                            <Button Content="💾 SAVE" Command="{Binding SaveCommand}" Style="{StaticResource BtnSuccess}" Margin="0,0,0,10"/>
+                            <Button Content="📄 EXPORT PDF" Command="{Binding ExportPdfCommand}" Style="{StaticResource BtnPrimary}" Margin="0,0,0,10"/>
+                            <Button Content="🗑️ CLEAR" Command="{Binding ClearCommand}" Style="{StaticResource BtnDanger}"/>
                         </StackPanel>
                     </Border>
                 </Grid>
 
                 <!-- HISTORY -->
-                <Border Style="{StaticResource CardIndigo}">
+                <Border Style="{StaticResource ModuleBorderStyle}" Margin="0,25,0,0">
                     <StackPanel>
-                        <Grid Margin="0,0,0,6">
-                            <TextBlock Text="History" FontSize="12" FontWeight="Bold"/>
-                            <Button Content="Clear All" Command="{Binding ClearAllCommand}" Style="{StaticResource BtnDanger}" Padding="8,4" HorizontalAlignment="Right"/>
+                        <Grid Margin="0,0,0,14">
+                            <TextBlock Text="HISTORY" FontSize="14" FontWeight="Black" Foreground="{StaticResource TextDark}"/>
+                            <Button Content="CLEAR ALL" Command="{Binding ClearAllCommand}" Style="{StaticResource BtnDanger}" Padding="14,8" HorizontalAlignment="Right"/>
                         </Grid>
 
-                        <Border Background="#EEF2FF" CornerRadius="8" MaxHeight="150"
-                                Visibility="{Binding IsHistoryVisible, Converter={StaticResource BoolToVis}}"
-                                BorderBrush="#C7D2FE" BorderThickness="1">
+                        <Border Background="{StaticResource BgLight}" CornerRadius="12" MaxHeight="220" Visibility="{Binding IsHistoryVisible, Converter={StaticResource BoolToVis}}" BorderBrush="{StaticResource BorderSharp}" BorderThickness="1">
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                <ItemsControl ItemsSource="{Binding Records}" Margin="4">
+                                <ItemsControl ItemsSource="{Binding Records}" Margin="10">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate>
                                             <WrapPanel/>
@@ -470,33 +295,28 @@
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Border Background="White" CornerRadius="8" Padding="8" Margin="4" Width="180"
-                                                    BorderBrush="#C7D2FE" BorderThickness="1">
+                                            <Border Background="White" CornerRadius="12" Padding="14" Margin="6" Width="190" BorderBrush="{StaticResource BorderSharp}" BorderThickness="1">
                                                 <StackPanel>
-                                                    <Grid Margin="0,0,0,4">
-                                                        <TextBlock Text="{Binding CreatedAt}" FontSize="9" Foreground="#6366F1"/>
-                                                        <Button Content="X" 
-                                                                Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" 
-                                                                CommandParameter="{Binding}" 
-                                                                Style="{StaticResource BtnSmallDelete}"
-                                                                HorizontalAlignment="Right"/>
+                                                    <Grid Margin="0,0,0,8">
+                                                        <TextBlock Text="{Binding CreatedAt}" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                                        <Button Content="✕" Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" Style="{StaticResource DeleteBtn}" HorizontalAlignment="Right"/>
                                                     </Grid>
-                                                    <TextBlock Text="{Binding DisplayText}" FontSize="10" Foreground="#4338CA" TextWrapping="Wrap"/>
-                                                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                                                        <Border Background="#FEF3C7" CornerRadius="4" Padding="4,2" Margin="0,0,4,0">
-                                                            <TextBlock FontSize="9" Foreground="#B45309">
+                                                    <TextBlock Text="{Binding DisplayText}" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextDark}" TextWrapping="Wrap"/>
+                                                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                                        <Border Background="#FEF3C7" CornerRadius="6" Padding="8,4" Margin="0,0,8,0">
+                                                            <TextBlock FontSize="9" Foreground="{StaticResource WarningOrange}">
                                                                 <Run Text="W: "/><Run Text="{Binding Wastage}"/>
                                                             </TextBlock>
                                                         </Border>
-                                                        <Border Background="#F3E8FF" CornerRadius="4" Padding="4,2">
-                                                            <TextBlock FontSize="9" Foreground="#5B21B6">
+                                                        <Border Background="#EEF2FF" CornerRadius="6" Padding="8,4">
+                                                            <TextBlock FontSize="9" Foreground="{StaticResource DeepBlue}">
                                                                 <Run Text="P: "/><Run Text="{Binding ProfitMargin}"/>
                                                             </TextBlock>
                                                         </Border>
                                                     </StackPanel>
-                                                    <Grid Margin="0,4,0,0">
-                                                        <TextBlock Text="{Binding Result, StringFormat={}{0:F2}}" FontSize="14" FontWeight="Bold" Foreground="#10B981"/>
-                                                        <TextBlock Text="AED" FontSize="10" Foreground="#10B981" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,0,1"/>
+                                                    <Grid Margin="0,10,0,0">
+                                                        <TextBlock Text="{Binding Result, StringFormat={}{0:F2}}" FontSize="20" FontWeight="Black" Foreground="{StaticResource SuccessGreen}"/>
+                                                        <TextBlock Text="AED" FontSize="10" Foreground="{StaticResource SuccessGreen}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,0,3"/>
                                                     </Grid>
                                                 </StackPanel>
                                             </Border>
@@ -506,31 +326,17 @@
                             </ScrollViewer>
                         </Border>
 
-                        <Border Background="#EEF2FF" CornerRadius="8" Padding="20"
-                                Visibility="{Binding IsHistoryEmpty, Converter={StaticResource BoolToVis}}"
-                                BorderBrush="#C7D2FE" BorderThickness="1">
-                            <TextBlock Text="No history yet" FontSize="11" Foreground="#6366F1" HorizontalAlignment="Center"/>
+                        <Border Background="{StaticResource BgLight}" CornerRadius="12" Padding="50" Visibility="{Binding IsHistoryEmpty, Converter={StaticResource BoolToVis}}" BorderBrush="{StaticResource BorderSharp}" BorderThickness="1">
+                            <TextBlock Text="No history yet" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextMuted}" HorizontalAlignment="Center"/>
                         </Border>
                     </StackPanel>
                 </Border>
 
-                <!-- ═══════════════════════════════════════════════════════════════ -->
-                <!-- SGU ADVANCED OPTIONS -->
-                <!-- ═══════════════════════════════════════════════════════════════ -->
-                <Border Style="{StaticResource CardBlue}" Margin="0,10,0,0">
+                <!-- ADVANCED OPTIONS -->
+                <Border Style="{StaticResource ModuleBorderStyle}" Margin="0,25,0,0">
                     <StackPanel>
-                        <Grid Margin="0,0,0,8">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <Border Width="12" Height="12" CornerRadius="6" Background="#3B82F6"/>
-                            <TextBlock Grid.Column="1" Text="SGU Advanced Options" Style="{StaticResource SectionTitle}" Foreground="#1D4ED8" Margin="10,0,0,0"/>
-                            <TextBlock Grid.Column="2" Text="Optional: Edge Work, Tempering, Coating, Cutouts, Holes" FontSize="10" Foreground="#60A5FA" VerticalAlignment="Center"/>
-                        </Grid>
+                        <TextBlock Text="ADVANCED OPTIONS" FontSize="14" FontWeight="Black" Foreground="{StaticResource TextDark}" Margin="0,0,0,18"/>
 
-                        <!-- Row 1: Edge Work, Drilling, Tempering, Coating -->
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -539,53 +345,28 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
 
-                            <!-- Edge Work -->
-                            <StackPanel Grid.Column="0" Margin="0,0,6,0">
-                                <Border Style="{StaticResource CardPurple}" Margin="0">
-                                    <StackPanel>
-                                        <TextBlock Text="Edge Work" FontWeight="Bold" FontSize="11" Foreground="#5B21B6" Margin="0,0,0,6"/>
-                                        <ComboBox ItemsSource="{Binding EdgeWorkTypes}" SelectedValue="{Binding EdgeWork}" IsEditable="True"/>
-                                        <TextBlock Text="Polish, Bevel, CNC, etc." FontSize="9" Foreground="#C4B5FD" Margin="0,4,0,0"/>
-                                    </StackPanel>
-                                </Border>
+                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                <TextBlock Text="Edge Work" Style="{StaticResource FieldLabel}"/>
+                                <ComboBox Style="{StaticResource SharpCombo}" ItemsSource="{Binding EdgeWorkTypes}" SelectedValue="{Binding EdgeWork}" IsEditable="True"/>
                             </StackPanel>
 
-                            <!-- Drilling / Holes -->
-                            <StackPanel Grid.Column="1" Margin="6,0">
-                                <Border Style="{StaticResource CardTeal}" Margin="0">
-                                    <StackPanel>
-                                        <TextBlock Text="Drilling / Holes" FontWeight="Bold" FontSize="11" Foreground="#0F766E" Margin="0,0,0,6"/>
-                                        <ComboBox ItemsSource="{Binding DrillingOptions}" SelectedValue="{Binding Drilling}" IsEditable="True"/>
-                                        <TextBlock Text="No Hole, 1-8 Holes, Notches" FontSize="9" Foreground="#5EEAD4" Margin="0,4,0,0"/>
-                                    </StackPanel>
-                                </Border>
+                            <StackPanel Grid.Column="1" Margin="10,0">
+                                <TextBlock Text="Drilling / Holes" Style="{StaticResource FieldLabel}"/>
+                                <ComboBox Style="{StaticResource SharpCombo}" ItemsSource="{Binding DrillingOptions}" SelectedValue="{Binding Drilling}" IsEditable="True"/>
                             </StackPanel>
 
-                            <!-- Tempering -->
-                            <StackPanel Grid.Column="2" Margin="6,0">
-                                <Border Style="{StaticResource CardGreen}" Margin="0">
-                                    <StackPanel>
-                                        <TextBlock Text="Heat Treatment" FontWeight="Bold" FontSize="11" Foreground="#166534" Margin="0,0,0,6"/>
-                                        <ComboBox ItemsSource="{Binding TemperingOptions}" SelectedValue="{Binding Tempering}" IsEditable="True"/>
-                                        <TextBlock Text="Annealed, Tempered, HS" FontSize="9" Foreground="#86EFAC" Margin="0,4,0,0"/>
-                                    </StackPanel>
-                                </Border>
+                            <StackPanel Grid.Column="2" Margin="10,0">
+                                <TextBlock Text="Heat Treatment" Style="{StaticResource FieldLabel}"/>
+                                <ComboBox Style="{StaticResource SharpCombo}" ItemsSource="{Binding TemperingOptions}" SelectedValue="{Binding Tempering}" IsEditable="True"/>
                             </StackPanel>
 
-                            <!-- Coating -->
-                            <StackPanel Grid.Column="3" Margin="6,0,0,0">
-                                <Border Style="{StaticResource CardIndigo}" Margin="0">
-                                    <StackPanel>
-                                        <TextBlock Text="Coating" FontWeight="Bold" FontSize="11" Foreground="#4338CA" Margin="0,0,0,6"/>
-                                        <ComboBox ItemsSource="{Binding CoatingTypes}" SelectedValue="{Binding Coating}" IsEditable="True"/>
-                                        <TextBlock Text="Low-E, Solar, AR, etc." FontSize="9" Foreground="#A5B4FC" Margin="0,4,0,0"/>
-                                    </StackPanel>
-                                </Border>
+                            <StackPanel Grid.Column="3" Margin="10,0,0,0">
+                                <TextBlock Text="Coating" Style="{StaticResource FieldLabel}"/>
+                                <ComboBox Style="{StaticResource SharpCombo}" ItemsSource="{Binding CoatingTypes}" SelectedValue="{Binding Coating}" IsEditable="True"/>
                             </StackPanel>
                         </Grid>
 
-                        <!-- Row 2: Cutouts, Surface Treatment, Unit, Dimensions -->
-                        <Grid Margin="0,10,0,0">
+                        <Grid Margin="0,18,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="*"/>
@@ -593,279 +374,165 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
 
-                            <!-- Cutouts -->
-                            <StackPanel Grid.Column="0" Margin="0,0,6,0">
-                                <Border Style="{StaticResource CardOrange}" Margin="0">
-                                    <StackPanel>
-                                        <TextBlock Text="Cutouts" FontWeight="Bold" FontSize="11" Foreground="#B45309" Margin="0,0,0,6"/>
-                                        <ComboBox ItemsSource="{Binding CutoutOptions}" SelectedValue="{Binding Cutout}" IsEditable="True"/>
-                                        <TextBlock Text="No Cutout, Rect, Circle, Custom" FontSize="9" Foreground="#FDE68A" Margin="0,4,0,0"/>
-                                    </StackPanel>
-                                </Border>
+                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                <TextBlock Text="Cutouts" Style="{StaticResource FieldLabel}"/>
+                                <ComboBox Style="{StaticResource SharpCombo}" ItemsSource="{Binding CutoutOptions}" SelectedValue="{Binding Cutout}" IsEditable="True"/>
                             </StackPanel>
 
-                            <!-- Surface Treatment -->
-                            <StackPanel Grid.Column="1" Margin="6,0">
-                                <Border Style="{StaticResource CardRed}" Margin="0">
-                                    <StackPanel>
-                                        <TextBlock Text="Surface Treatment" FontWeight="Bold" FontSize="11" Foreground="#DC2626" Margin="0,0,0,6"/>
-                                        <ComboBox ItemsSource="{Binding SurfaceTreatments}" SelectedValue="{Binding SurfaceTreatment}" IsEditable="True"/>
-                                        <TextBlock Text="Sandblast, Acid Etch, etc." FontSize="9" Foreground="#FCA5A5" Margin="0,4,0,0"/>
-                                    </StackPanel>
-                                </Border>
+                            <StackPanel Grid.Column="1" Margin="10,0">
+                                <TextBlock Text="Surface Treatment" Style="{StaticResource FieldLabel}"/>
+                                <ComboBox Style="{StaticResource SharpCombo}" ItemsSource="{Binding SurfaceTreatments}" SelectedValue="{Binding SurfaceTreatment}" IsEditable="True"/>
                             </StackPanel>
 
-                            <!-- Unit -->
-                            <StackPanel Grid.Column="2" Margin="6,0">
-                                <Border Style="{StaticResource CardGray}" Margin="0">
-                                    <StackPanel>
-                                        <TextBlock Text="Unit" FontWeight="Bold" FontSize="11" Foreground="#374151" Margin="0,0,0,6"/>
-                                        <ComboBox ItemsSource="{Binding UnitOptions}" SelectedValue="{Binding Unit}"/>
-                                        <TextBlock Text="AED, USD, EUR, etc." FontSize="9" Foreground="#9CA3AF" Margin="0,4,0,0"/>
-                                    </StackPanel>
-                                </Border>
+                            <StackPanel Grid.Column="2" Margin="10,0">
+                                <TextBlock Text="Unit" Style="{StaticResource FieldLabel}"/>
+                                <ComboBox Style="{StaticResource SharpCombo}" ItemsSource="{Binding UnitOptions}" SelectedValue="{Binding Unit}"/>
                             </StackPanel>
 
-                            <!-- Dimensions -->
-                            <StackPanel Grid.Column="3" Margin="6,0,0,0">
-                                <Border Style="{StaticResource CardCyan}" Margin="0">
-                                    <StackPanel>
-                                        <TextBlock Text="Dimensions" FontWeight="Bold" FontSize="11" Foreground="#0891B2" Margin="0,0,0,6"/>
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <StackPanel Grid.Column="0" Margin="0,0,4,0">
-                                                <TextBlock Text="W (mm)" FontSize="9" Foreground="#0891B2"/>
-                                                <TextBox Text="{Binding Width, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernTextBox}" Height="26"/>
-                                            </StackPanel>
-                                            <StackPanel Grid.Column="1" Margin="4,0,0,0">
-                                                <TextBlock Text="H (mm)" FontSize="9" Foreground="#0891B2"/>
-                                                <TextBox Text="{Binding Height, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernTextBox}" Height="26"/>
-                                            </StackPanel>
-                                        </Grid>
-                                    </StackPanel>
-                                </Border>
+                            <StackPanel Grid.Column="3" Margin="10,0,0,0">
+                                <TextBlock Text="Dimensions (mm)" Style="{StaticResource FieldLabel}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0" Style="{StaticResource SharpInput}" Height="38" Text="{Binding Width, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBlock Grid.Column="1" Text="×" FontSize="16" FontWeight="Bold" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="10,0"/>
+                                    <TextBox Grid.Column="2" Style="{StaticResource SharpInput}" Height="38" Text="{Binding Height, UpdateSourceTrigger=PropertyChanged}"/>
+                                </Grid>
                             </StackPanel>
                         </Grid>
+                    </StackPanel>
+                </Border>
 
-                        <!-- Row 3: Custom Notes, Quantity -->
-                        <Grid Margin="0,10,0,0">
+                <!-- QUANTITY & NOTES -->
+                <Grid Margin="0,25,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Style="{StaticResource ModuleBorderStyle}" Margin="0,0,12,0">
+                        <StackPanel>
+                            <TextBlock Text="QUANTITY &amp; TOTAL" Style="{StaticResource SectionTitle}"/>
+
+                            <TextBlock Text="Quantity" Style="{StaticResource FieldLabel}"/>
+                            <TextBox Style="{StaticResource SharpInput}" Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <Grid Margin="0,18,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="TOTAL AREA" FontSize="9" FontWeight="Bold" Foreground="{StaticResource TextMuted}"/>
+                                    <TextBlock Text="{Binding TotalArea, StringFormat={}{0:F2} m²}" FontSize="18" FontWeight="Black" Foreground="{StaticResource TextDark}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="TOTAL PRICE" FontSize="9" FontWeight="Bold" Foreground="{StaticResource TextMuted}"/>
+                                    <TextBlock Text="{Binding TotalPrice, StringFormat={}{0:F2}}" FontSize="18" FontWeight="Black" Foreground="{StaticResource TextDark}"/>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="1" Style="{StaticResource ModuleBorderStyle}" Margin="12,0,0,0">
+                        <StackPanel>
+                            <TextBlock Text="CUSTOM NOTES" Style="{StaticResource SectionTitle}"/>
+                            <TextBox Style="{StaticResource SharpInput}" Height="90" TextWrapping="Wrap" AcceptsReturn="True" VerticalContentAlignment="Top" Text="{Binding CustomNotes, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- COST BREAKDOWN -->
+                <Border Style="{StaticResource ModuleBorderStyle}" Margin="0,25,0,0">
+                    <StackPanel>
+                        <TextBlock Text="COST BREAKDOWN" FontSize="14" FontWeight="Black" Foreground="{StaticResource TextDark}" Margin="0,0,0,18"/>
+
+                        <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
 
-                            <!-- Custom Notes -->
-                            <StackPanel Grid.Column="0" Margin="0,0,6,0">
-                                <Border Style="{StaticResource Card}" Margin="0">
-                                    <StackPanel>
-                                        <TextBlock Text="Custom Notes" FontWeight="Bold" FontSize="11" Foreground="#374151" Margin="0,0,0,6"/>
-                                        <TextBox Text="{Binding CustomNotes, UpdateSourceTrigger=PropertyChanged}" 
-                                                 Style="{StaticResource ModernTextBox}" 
-                                                 Height="60" 
-                                                 TextWrapping="Wrap" 
-                                                 AcceptsReturn="True" 
-                                                 VerticalContentAlignment="Top"
-                                                 Padding="8,6"/>
-                                    </StackPanel>
-                                </Border>
+                            <StackPanel Grid.Column="0">
+                                <Grid Margin="0,0,0,12">
+                                    <TextBlock Text="1. Glass Cost" FontSize="12" Foreground="{StaticResource TextMuted}"/>
+                                    <TextBlock Text="{Binding GlassCost, StringFormat={}{0:F2} AED}" FontSize="12" FontWeight="Bold" Foreground="{StaticResource TextDark}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <Grid Margin="0,0,0,12">
+                                    <TextBlock Text="2. Processing Cost" FontSize="12" Foreground="{StaticResource TextMuted}"/>
+                                    <TextBlock Text="{Binding ProcessingCost, StringFormat={}{0:F2} AED}" FontSize="12" FontWeight="Bold" Foreground="{StaticResource TextDark}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <Grid Margin="0,0,0,12">
+                                    <TextBlock Text="3. Base Cost" FontSize="12" Foreground="{StaticResource TextMuted}"/>
+                                    <TextBlock Text="{Binding BaseCost, StringFormat={}{0:F2} AED}" FontSize="12" FontWeight="Bold" Foreground="{StaticResource TextDark}" HorizontalAlignment="Right"/>
+                                </Grid>
                             </StackPanel>
 
-                            <!-- Quantity & Total -->
-                            <StackPanel Grid.Column="1" Margin="6,0,0,0">
-                                <Border Style="{StaticResource CardPink}" Margin="0">
-                                    <StackPanel>
-                                        <TextBlock Text="Quantity &amp; Total" FontWeight="Bold" FontSize="11" Foreground="#BE185D" Margin="0,0,0,6"/>
-                                        <TextBlock Text="Quantity" Style="{StaticResource FieldLabel}"/>
-                                        <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernTextBox}"/>
-                                        <Grid Margin="0,8,0,0">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <StackPanel>
-                                                <TextBlock Text="Total Area" FontSize="9" Foreground="#F472B6"/>
-                                                <TextBlock Text="{Binding TotalArea, StringFormat={}{0:F2} m²}" FontSize="12" FontWeight="Bold" Foreground="#BE185D"/>
-                                            </StackPanel>
-                                            <StackPanel Grid.Column="1">
-                                                <TextBlock Text="Total Price" FontSize="9" Foreground="#F472B6"/>
-                                                <TextBlock Text="{Binding TotalPrice, StringFormat={}{0:F2}}" FontSize="12" FontWeight="Bold" Foreground="#BE185D"/>
-                                            </StackPanel>
-                                        </Grid>
-                                    </StackPanel>
-                                </Border>
-                            </StackPanel>
-                        </Grid>
-
-                        <!-- Calculation Details Toggle -->
-                        <Border Background="#EFF6FF" CornerRadius="8" Margin="0,10,0,0" Padding="10" BorderBrush="#BFDBFE" BorderThickness="1">
-                            <Expander Header="View Calculation Breakdown" IsExpanded="False" Foreground="#1D4ED8">
-                                <StackPanel Margin="0,8,0,0">
+                            <StackPanel Grid.Column="1">
+                                <Grid Margin="0,0,0,12">
+                                    <TextBlock Text="4. Profit Margin" FontSize="12" Foreground="{StaticResource TextMuted}"/>
+                                    <TextBlock Text="{Binding ProfitMargin}" FontSize="12" FontWeight="Bold" Foreground="{StaticResource TextDark}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <Grid Margin="0,0,0,12">
+                                    <TextBlock Text="5. Unit Price" FontSize="12" Foreground="{StaticResource TextMuted}"/>
+                                    <TextBlock Text="{Binding Result, StringFormat={}{0:F2} AED}" FontSize="12" FontWeight="Bold" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <Grid Margin="0,0,0,12">
+                                    <TextBlock Text="6. VAT (5%)" FontSize="12" Foreground="{StaticResource TextMuted}"/>
+                                    <TextBlock Text="{Binding VatAmount, StringFormat={}{0:F2} AED}" FontSize="12" FontWeight="Bold" Foreground="{StaticResource TextDark}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <Border Background="{StaticResource DeepBlue}" CornerRadius="12" Padding="16,12">
                                     <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-
-                                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                                            <TextBlock Text="Glass Details" FontWeight="SemiBold" FontSize="11" Foreground="#1D4ED8" Margin="0,0,0,6"/>
-                                            <Grid Margin="0,2,0,0">
-                                                <TextBlock Text="Category:" FontSize="10" Foreground="#60A5FA"/>
-                                                <TextBlock Text="{Binding Category}" FontSize="10" Foreground="#1D4ED8" HorizontalAlignment="Right"/>
-                                            </Grid>
-                                            <Grid Margin="0,2,0,0">
-                                                <TextBlock Text="Thickness:" FontSize="10" Foreground="#60A5FA"/>
-                                                <TextBlock Text="{Binding Thickness}" FontSize="10" Foreground="#1D4ED8" HorizontalAlignment="Right"/>
-                                            </Grid>
-                                            <Grid Margin="0,2,0,0">
-                                                <TextBlock Text="Color:" FontSize="10" Foreground="#60A5FA"/>
-                                                <TextBlock Text="{Binding ColorName}" FontSize="10" Foreground="#1D4ED8" HorizontalAlignment="Right"/>
-                                            </Grid>
-                                            <Grid Margin="0,2,0,0">
-                                                <TextBlock Text="Sheet Price:" FontSize="10" Foreground="#60A5FA"/>
-                                                <TextBlock Text="{Binding SheetPrice, StringFormat={}{0:F2} AED}" FontSize="10" Foreground="#1D4ED8" HorizontalAlignment="Right"/>
-                                            </Grid>
-                                        </StackPanel>
-
-                                        <StackPanel Grid.Column="1">
-                                            <TextBlock Text="Processing Details" FontWeight="SemiBold" FontSize="11" Foreground="#166534" Margin="0,0,0,6"/>
-                                            <Grid Margin="0,2,0,0">
-                                                <TextBlock Text="Edge Work:" FontSize="10" Foreground="#22C55E"/>
-                                                <TextBlock Text="{Binding EdgeWork}" FontSize="10" Foreground="#166534" HorizontalAlignment="Right"/>
-                                            </Grid>
-                                            <Grid Margin="0,2,0,0">
-                                                <TextBlock Text="Drilling:" FontSize="10" Foreground="#22C55E"/>
-                                                <TextBlock Text="{Binding Drilling}" FontSize="10" Foreground="#166534" HorizontalAlignment="Right"/>
-                                            </Grid>
-                                            <Grid Margin="0,2,0,0">
-                                                <TextBlock Text="Tempering:" FontSize="10" Foreground="#22C55E"/>
-                                                <TextBlock Text="{Binding Tempering}" FontSize="10" Foreground="#166534" HorizontalAlignment="Right"/>
-                                            </Grid>
-                                            <Grid Margin="0,2,0,0">
-                                                <TextBlock Text="Coating:" FontSize="10" Foreground="#22C55E"/>
-                                                <TextBlock Text="{Binding Coating}" FontSize="10" Foreground="#166534" HorizontalAlignment="Right"/>
-                                            </Grid>
-                                        </StackPanel>
+                                        <TextBlock Text="7. GRAND TOTAL" FontSize="14" FontWeight="Black" Foreground="White"/>
+                                        <TextBlock Text="{Binding GrossTotal, StringFormat={}{0:F2} AED}" FontSize="16" FontWeight="Black" Foreground="#93C5FD" HorizontalAlignment="Right"/>
                                     </Grid>
-
-                                    <Border Background="White" CornerRadius="6" Padding="8" Margin="0,10,0,0" BorderBrush="#BFDBFE" BorderThickness="1">
-                                        <StackPanel>
-                                            <TextBlock Text="Cost Breakdown" FontWeight="SemiBold" FontSize="11" Foreground="#1D4ED8" Margin="0,0,0,6"/>
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Text="1. Glass Cost" FontSize="10" Foreground="#60A5FA"/>
-                                                <TextBlock Grid.Column="1" Text="{Binding GlassCost, StringFormat={}{0:F2}}" FontSize="10" Foreground="#2563EB" FontWeight="Bold"/>
-                                            </Grid>
-                                            <Grid Margin="0,4,0,0">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
-                                                <StackPanel>
-                                                    <TextBlock Text="2. Processing Cost" FontSize="10" Foreground="#60A5FA"/>
-                                                    <TextBlock Text="   (Cutting + Tempering + Other)" FontSize="9" Foreground="#93C5FD"/>
-                                                </StackPanel>
-                                                <TextBlock Grid.Column="1" Text="{Binding ProcessingCost, StringFormat={}{0:F2}}" FontSize="10" Foreground="#2563EB" FontWeight="Bold"/>
-                                            </Grid>
-                                            <Grid Margin="0,4,0,0">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
-                                                <StackPanel>
-                                                    <TextBlock Text="3. Base Cost" FontSize="10" Foreground="#60A5FA"/>
-                                                    <TextBlock Text="   (Glass + Processing) ÷ Wastage" FontSize="9" Foreground="#93C5FD"/>
-                                                </StackPanel>
-                                                <TextBlock Grid.Column="1" Text="{Binding BaseCost, StringFormat={}{0:F2}}" FontSize="10" Foreground="#2563EB" FontWeight="Bold"/>
-                                            </Grid>
-                                            <Grid Margin="0,4,0,0">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
-                                                <StackPanel>
-                                                    <TextBlock Text="4. Unit Price" FontSize="10" Foreground="#60A5FA"/>
-                                                    <TextBlock Text="   Base Cost × Profit Factor" FontSize="9" Foreground="#93C5FD"/>
-                                                </StackPanel>
-                                                <TextBlock Grid.Column="1" Text="{Binding Result, StringFormat={}{0:F2}}" FontSize="12" Foreground="#1D4ED8" FontWeight="Bold"/>
-                                            </Grid>
-                                            <Border Background="#F0FDF4" CornerRadius="4" Padding="6" Margin="0,6,0,0" BorderBrush="#BBF7D0" BorderThickness="1">
-                                                <Grid>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                    </Grid.ColumnDefinitions>
-                                                    <StackPanel>
-                                                        <TextBlock Text="5. VAT (5%)" FontSize="10" Foreground="#16A34A"/>
-                                                        <TextBlock Text="6. Grand Total" FontSize="11" FontWeight="Bold" Foreground="#166534"/>
-                                                    </StackPanel>
-                                                    <StackPanel Grid.Column="1" HorizontalAlignment="Right">
-                                                        <TextBlock Text="{Binding VatAmount, StringFormat={}{0:F2}}" FontSize="10" Foreground="#16A34A"/>
-                                                        <TextBlock Text="{Binding GrossTotal, StringFormat={}{0:F2}}" FontSize="11" FontWeight="Bold" Foreground="#16A34A"/>
-                                                    </StackPanel>
-                                                </Grid>
-                                            </Border>
-                                        </StackPanel>
-                                    </Border>
-                                </StackPanel>
-                            </Expander>
-                        </Border>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
                     </StackPanel>
                 </Border>
 
-                <!-- Quick Reference Section -->
-                <Border Style="{StaticResource CardGray}" Margin="0,10,0,0">
+                <!-- QUICK REFERENCE -->
+                <Border Style="{StaticResource ModuleBorderStyle}" Margin="0,25,0,0">
                     <StackPanel>
-                        <TextBlock Text="SGU Quick Reference" FontWeight="Bold" FontSize="12" Foreground="#374151" Margin="0,0,0,8"/>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
+                        <TextBlock Text="QUICK REFERENCE" FontSize="14" FontWeight="Black" Foreground="{StaticResource TextDark}" Margin="0,0,0,18"/>
 
-                            <!-- Tempering Reference -->
-                            <Border Grid.Column="0" Style="{StaticResource CardGreen}" Margin="0,0,6,0">
+                        <UniformGrid Columns="4">
+                            <Border Background="{StaticResource BgLight}" CornerRadius="12" Padding="16" Margin="0,0,10,0">
                                 <StackPanel>
-                                    <TextBlock Text="Heat Treatment" FontWeight="SemiBold" FontSize="10" Foreground="#166534" Margin="0,0,0,4"/>
-                                    <TextBlock Text="Annealed, Tempered" FontSize="9" Foreground="#22C55E"/>
-                                    <TextBlock Text="Heat Strengthened" FontSize="9" Foreground="#86EFAC"/>
+                                    <TextBlock Text="🔥 HEAT TREATMENT" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextDark}"/>
+                                    <TextBlock Text="Annealed, Tempered" FontSize="10" Foreground="{StaticResource TextMuted}" Margin="0,8,0,0"/>
+                                    <TextBlock Text="Heat Strengthened" FontSize="10" Foreground="{StaticResource TextMuted}"/>
                                 </StackPanel>
                             </Border>
 
-                            <!-- Edge Work Reference -->
-                            <Border Grid.Column="1" Style="{StaticResource CardPurple}" Margin="6,0">
+                            <Border Background="{StaticResource BgLight}" CornerRadius="12" Padding="16" Margin="10,0">
                                 <StackPanel>
-                                    <TextBlock Text="Edge Work" FontWeight="SemiBold" FontSize="10" Foreground="#5B21B6" Margin="0,0,0,4"/>
-                                    <TextBlock Text="Clean Cut, Polish" FontSize="9" Foreground="#A78BFA"/>
-                                    <TextBlock Text="Bevel, CNC" FontSize="9" Foreground="#C4B5FD"/>
+                                    <TextBlock Text="✂️ EDGE WORK" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextDark}"/>
+                                    <TextBlock Text="Clean Cut, Polish" FontSize="10" Foreground="{StaticResource TextMuted}" Margin="0,8,0,0"/>
+                                    <TextBlock Text="Bevel, CNC" FontSize="10" Foreground="{StaticResource TextMuted}"/>
                                 </StackPanel>
                             </Border>
 
-                            <!-- Drilling Reference -->
-                            <Border Grid.Column="2" Style="{StaticResource CardTeal}" Margin="6,0">
+                            <Border Background="{StaticResource BgLight}" CornerRadius="12" Padding="16" Margin="10,0">
                                 <StackPanel>
-                                    <TextBlock Text="Holes &amp; Cutouts" FontWeight="SemiBold" FontSize="10" Foreground="#0F766E" Margin="0,0,0,4"/>
-                                    <TextBlock Text="No Hole to 8+ Holes" FontSize="9" Foreground="#5EEAD4"/>
-                                    <TextBlock Text="Rect, Circle, Custom" FontSize="9" Foreground="#99F6E4"/>
+                                    <TextBlock Text="🔘 HOLES &amp; CUTOUTS" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextDark}"/>
+                                    <TextBlock Text="No Hole to 8+ Holes" FontSize="10" Foreground="{StaticResource TextMuted}" Margin="0,8,0,0"/>
+                                    <TextBlock Text="Rect, Circle, Custom" FontSize="10" Foreground="{StaticResource TextMuted}"/>
                                 </StackPanel>
                             </Border>
 
-                            <!-- Coating Reference -->
-                            <Border Grid.Column="3" Style="{StaticResource CardIndigo}" Margin="6,0,0,0">
+                            <Border Background="{StaticResource BgLight}" CornerRadius="12" Padding="16" Margin="10,0,0,0">
                                 <StackPanel>
-                                    <TextBlock Text="Coating" FontWeight="SemiBold" FontSize="10" Foreground="#4338CA" Margin="0,0,0,4"/>
-                                    <TextBlock Text="Low-E, Solar, AR" FontSize="9" Foreground="#A5B4FC"/>
-                                    <TextBlock Text="Tinted, Reflective" FontSize="9" Foreground="#C7D2FE"/>
+                                    <TextBlock Text="✨ COATING" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextDark}"/>
+                                    <TextBlock Text="Low-E, Solar, AR" FontSize="10" Foreground="{StaticResource TextMuted}" Margin="0,8,0,0"/>
+                                    <TextBlock Text="Tinted, Reflective" FontSize="10" Foreground="{StaticResource TextMuted}"/>
                                 </StackPanel>
                             </Border>
-                        </Grid>
+                        </UniformGrid>
                     </StackPanel>
                 </Border>
 
