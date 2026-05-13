@@ -2,6 +2,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:ProGlassAutomation.ViewModels"
+             xmlns:converters="clr-namespace:ProGlassAutomation.Converters"
              Background="Transparent">
 
     <UserControl.DataContext>
@@ -10,6 +11,7 @@
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <converters:NullToBoolConverter x:Key="NullToBoolConverter"/>
 
         <Style x:Key="ModernDataGrid" TargetType="DataGrid">
             <Setter Property="Background" Value="White"/>
@@ -21,7 +23,6 @@
             <Setter Property="AlternatingRowBackground" Value="#F9FAFB"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="HeadersVisibility" Value="Column"/>
-            <Setter Property="SelectionMode" Value="Single"/>
             <Setter Property="SelectionUnit" Value="FullRow"/>
             <Setter Property="CanUserAddRows" Value="False"/>
             <Setter Property="CanUserDeleteRows" Value="False"/>
@@ -446,22 +447,24 @@
                 <DropShadowEffect BlurRadius="15" ShadowDepth="2" Opacity="0.1"/>
             </Border.Effect>
             <DataGrid x:Name="MainDataGrid"
-                      ItemsSource="{Binding FilteredDataView}" 
-                      SelectedItem="{Binding SelectedDataRowView}"
-                      SelectionMode="Extended"
-                      SelectionUnit="FullRow"
-                      MouseDoubleClick="DataGrid_MouseDoubleClick"
-                      Style="{StaticResource ModernDataGrid}" 
-                      CellStyle="{StaticResource ModernCell}"
-                      RowStyle="{StaticResource ModernRowStyle}"
-                      SelectionChanged="MainDataGrid_SelectionChanged">
+          ItemsSource="{Binding FilteredDataView}" 
+          SelectedItem="{Binding SelectedDataRowView}"
+          SelectionMode="Extended"
+          SelectionUnit="FullRow"
+          MouseDoubleClick="DataGrid_MouseDoubleClick"
+          PreviewMouseLeftButtonDown="DataGrid_PreviewMouseLeftButtonDown"
+          Style="{StaticResource ModernDataGrid}" 
+          CellStyle="{StaticResource ModernCell}"
+          RowStyle="{StaticResource ModernRowStyle}"
+          SelectionChanged="MainDataGrid_SelectionChanged">
                 <DataGrid.Columns>
                     <!-- SELECT CHECKBOX COLUMN -->
                     <DataGridTemplateColumn Header="" Width="45">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <CheckBox HorizontalAlignment="Center" 
-                                          IsChecked="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected, Mode=OneWay}"/>
+                      IsChecked="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected, Mode=OneWay}"
+                      PreviewMouseDown="CheckBox_PreviewMouseDown"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                         <DataGridTemplateColumn.HeaderTemplate>
@@ -663,27 +666,27 @@
 
                 <StackPanel Grid.Column="2" HorizontalAlignment="Center">
                     <TextBlock Text="ORDER QTY" Foreground="#D1FAE5" FontSize="10" FontWeight="Bold"/>
-                    <TextBlock Text="{Binding TotalOrderQty}" Foreground="White" FontSize="24" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding SelectedOrderQty}" Foreground="White" FontSize="24" FontWeight="Bold"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="3" HorizontalAlignment="Center">
                     <TextBlock Text="DELIVERED" Foreground="#D1FAE5" FontSize="10" FontWeight="Bold"/>
-                    <TextBlock Text="{Binding TotalDelivered}" Foreground="White" FontSize="24" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding SelectedDelivered}" Foreground="White" FontSize="24" FontWeight="Bold"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="4" HorizontalAlignment="Center">
                     <TextBlock Text="RETURNED" Foreground="#D1FAE5" FontSize="10" FontWeight="Bold"/>
-                    <TextBlock Text="{Binding TotalReturned}" Foreground="White" FontSize="24" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding SelectedReturned}" Foreground="White" FontSize="24" FontWeight="Bold"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="5" HorizontalAlignment="Center">
                     <TextBlock Text="BALANCE" Foreground="#D1FAE5" FontSize="10" FontWeight="Bold"/>
-                    <TextBlock Text="{Binding TotalBalance}" Foreground="White" FontSize="24" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding SelectedBalance}" Foreground="White" FontSize="24" FontWeight="Bold"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="6" HorizontalAlignment="Center">
                     <TextBlock Text="SQM" Foreground="#D1FAE5" FontSize="10" FontWeight="Bold"/>
-                    <TextBlock Text="{Binding TotalOrderSQM, StringFormat=N2}" Foreground="White" FontSize="24" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding SelectedOrderSQM, StringFormat=N2}" Foreground="White" FontSize="24" FontWeight="Bold"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="7" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
@@ -697,6 +700,7 @@
                             Margin="0,0,10,0"/>
                     <Button Content="➕ Add Delivery" Style="{StaticResource SuccessButton}" 
                             Command="{Binding AddDeliveryCommand}" 
+                            IsEnabled="{Binding SelectedOrder, Converter={StaticResource NullToBoolConverter}}" 
                             Margin="0,0,10,0"/>
                     <Button Content="Edit" Style="{StaticResource SecondaryButton}" 
                             Command="{Binding EditCommand}" 
@@ -827,13 +831,13 @@
                                                     <TextBlock Grid.Column="5" Text="{Binding Notes}" FontSize="11" Foreground="#64748B" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
                                                     <StackPanel Grid.Column="6" Orientation="Horizontal" HorizontalAlignment="Center">
                                                         <Button Content="✏️" FontSize="12" Background="Transparent" BorderThickness="0" Cursor="Hand" Margin="0,0,4,0"
-                                                        Command="{Binding DataContext.EditDeliveryItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                        CommandParameter="{Binding}"
-                                                        ToolTip="Edit"/>
+                                                                Command="{Binding DataContext.EditDeliveryItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                CommandParameter="{Binding}"
+                                                                ToolTip="Edit"/>
                                                         <Button Content="🗑️" FontSize="12" Background="Transparent" BorderThickness="0" Cursor="Hand"
-                                                        Command="{Binding DataContext.DeleteDeliveryItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                        CommandParameter="{Binding}"
-                                                        ToolTip="Delete"/>
+                                                                Command="{Binding DataContext.DeleteDeliveryItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                CommandParameter="{Binding}"
+                                                                ToolTip="Delete"/>
                                                     </StackPanel>
                                                 </Grid>
                                             </Border>
@@ -846,11 +850,11 @@
 
                     <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button Content="➕ Add Delivery" Style="{StaticResource SuccessButton}" 
-                        Command="{Binding AddDeliveryCommand}" 
-                        Margin="0,0,12,0" Padding="24,12"/>
+                                Command="{Binding AddDeliveryCommand}" 
+                                Margin="0,0,12,0" Padding="24,12"/>
                         <Button Content="Close" Style="{StaticResource SecondaryButton}" 
-                        Command="{Binding CancelCommand}" 
-                        Padding="24,12"/>
+                                Command="{Binding CancelCommand}" 
+                                Padding="24,12"/>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -895,25 +899,25 @@
                         <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,0,12">
                             <TextBlock Text="DRIVER" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <ComboBox Style="{StaticResource ModernComboBox}" 
-                              ItemsSource="{Binding DriverOptions}" 
-                              SelectedItem="{Binding EditingDeliveryItem.Driver}"
-                              IsEditable="True"
-                              Text="{Binding EditingDeliveryItem.Driver, UpdateSourceTrigger=PropertyChanged}"
-                              Background="White"
-                              BorderBrush="#D1D5DB"
-                              BorderThickness="1"/>
+                                      ItemsSource="{Binding DriverOptions}" 
+                                      SelectedItem="{Binding EditingDeliveryItem.Driver}"
+                                      IsEditable="True"
+                                      Text="{Binding EditingDeliveryItem.Driver, UpdateSourceTrigger=PropertyChanged}"
+                                      Background="White"
+                                      BorderBrush="#D1D5DB"
+                                      BorderThickness="1"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,10,12">
                             <TextBlock Text="VEHICLE" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <ComboBox Style="{StaticResource ModernComboBox}" 
-                              ItemsSource="{Binding VehicleOptions}" 
-                              SelectedItem="{Binding EditingDeliveryItem.Vehicle}"
-                              IsEditable="True"
-                              Text="{Binding EditingDeliveryItem.Vehicle, UpdateSourceTrigger=PropertyChanged}"
-                              Background="White"
-                              BorderBrush="#D1D5DB"
-                              BorderThickness="1"/>
+                                      ItemsSource="{Binding VehicleOptions}" 
+                                      SelectedItem="{Binding EditingDeliveryItem.Vehicle}"
+                                      IsEditable="True"
+                                      Text="{Binding EditingDeliveryItem.Vehicle, UpdateSourceTrigger=PropertyChanged}"
+                                      Background="White"
+                                      BorderBrush="#D1D5DB"
+                                      BorderThickness="1"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,0,12">
@@ -925,8 +929,8 @@
                             <StackPanel>
                                 <TextBlock Text="💡 Info: Current Balance" FontSize="11" FontWeight="Bold" Foreground="#92400E"/>
                                 <TextBlock FontSize="18" FontWeight="Bold" Foreground="#D97706">
-                            <Run Text="{Binding SelectedOrder.Balance, Mode=OneWay}"/>
-                            <Run Text=" pcs remaining"/>
+                                    <Run Text="{Binding SelectedOrder.Balance, Mode=OneWay}"/>
+                                    <Run Text=" pcs remaining"/>
                                 </TextBlock>
                             </StackPanel>
                         </Border>
@@ -979,8 +983,8 @@
                         <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,12">
                             <TextBlock Text="TYPE OF WORK" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <ComboBox Style="{StaticResource ModernComboBox}" 
-                              ItemsSource="{Binding TypeOfWorkOptions}" 
-                              SelectedItem="{Binding EditingOrder.TypeOfWork}"/>
+                                      ItemsSource="{Binding TypeOfWorkOptions}" 
+                                      SelectedItem="{Binding EditingOrder.TypeOfWork}"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,10,12">
@@ -996,25 +1000,25 @@
                         <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,10,12">
                             <TextBlock Text="SALESMAN" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <ComboBox Style="{StaticResource ModernComboBox}" 
-                              ItemsSource="{Binding SalesmanOptions}" 
-                              SelectedItem="{Binding EditingOrder.Salesman}"/>
+                                      ItemsSource="{Binding SalesmanOptions}" 
+                                      SelectedItem="{Binding EditingOrder.Salesman}"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,10,12">
                             <TextBlock Text="STATUS" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <ComboBox Style="{StaticResource ModernComboBox}" 
-                              ItemsSource="{Binding StatusOptions}" 
-                              SelectedItem="{Binding EditingOrder.Status}"/>
+                                      ItemsSource="{Binding StatusOptions}" 
+                                      SelectedItem="{Binding EditingOrder.Status}"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.Column="2" Margin="0,0,0,12">
                             <TextBlock Text="NOTES" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <TextBox Style="{StaticResource ModernTextBox}" 
-                             Text="{Binding EditingOrder.Notes}"
-                             TextWrapping="Wrap"
-                             AcceptsReturn="True"
-                             MinHeight="40"
-                             GotFocus="TextBox_GotFocus"/>
+                                    Text="{Binding EditingOrder.Notes}"
+                                    TextWrapping="Wrap"
+                                    AcceptsReturn="True"
+                                    MinHeight="40"
+                                    GotFocus="TextBox_GotFocus"/>
                         </StackPanel>
                     </Grid>
 
@@ -1042,10 +1046,10 @@
                     <Border CornerRadius="12" BorderBrush="#E5E7EB" BorderThickness="1" Background="#F8FAFC" Padding="20" Margin="0,0,0,20">
                         <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto">
                             <TextBlock Text="{Binding ViewNotesContent}" 
-                               FontSize="14" 
-                               Foreground="#1E293B" 
-                               TextWrapping="Wrap"
-                               LineHeight="24"/>
+                                       FontSize="14" 
+                                       Foreground="#1E293B" 
+                                       TextWrapping="Wrap"
+                                       LineHeight="24"/>
                         </ScrollViewer>
                     </Border>
 
@@ -1140,25 +1144,25 @@
                         <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,0,12">
                             <TextBlock Text="DRIVER" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <ComboBox Style="{StaticResource ModernComboBox}" 
-                              ItemsSource="{Binding DriverOptions}" 
-                              SelectedItem="{Binding EditingDeliveryItemFromDb.Driver}"
-                              IsEditable="True"
-                              Text="{Binding EditingDeliveryItemFromDb.Driver, UpdateSourceTrigger=PropertyChanged}"
-                              Background="White"
-                              BorderBrush="#D1D5DB"
-                              BorderThickness="1"/>
+                                      ItemsSource="{Binding DriverOptions}" 
+                                      SelectedItem="{Binding EditingDeliveryItemFromDb.Driver}"
+                                      IsEditable="True"
+                                      Text="{Binding EditingDeliveryItemFromDb.Driver, UpdateSourceTrigger=PropertyChanged}"
+                                      Background="White"
+                                      BorderBrush="#D1D5DB"
+                                      BorderThickness="1"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,10,12">
                             <TextBlock Text="VEHICLE" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <ComboBox Style="{StaticResource ModernComboBox}" 
-                              ItemsSource="{Binding VehicleOptions}" 
-                              SelectedItem="{Binding EditingDeliveryItemFromDb.Vehicle}"
-                              IsEditable="True"
-                              Text="{Binding EditingDeliveryItemFromDb.Vehicle, UpdateSourceTrigger=PropertyChanged}"
-                              Background="White"
-                              BorderBrush="#D1D5DB"
-                              BorderThickness="1"/>
+                                      ItemsSource="{Binding VehicleOptions}" 
+                                      SelectedItem="{Binding EditingDeliveryItemFromDb.Vehicle}"
+                                      IsEditable="True"
+                                      Text="{Binding EditingDeliveryItemFromDb.Vehicle, UpdateSourceTrigger=PropertyChanged}"
+                                      Background="White"
+                                      BorderBrush="#D1D5DB"
+                                      BorderThickness="1"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,0,12">
@@ -1170,8 +1174,8 @@
                             <StackPanel>
                                 <TextBlock Text="💡 Info: Order Balance" FontSize="11" FontWeight="Bold" Foreground="#92400E"/>
                                 <TextBlock FontSize="18" FontWeight="Bold" Foreground="#D97706">
-                            <Run Text="{Binding SelectedOrder.Balance, Mode=OneWay}"/>
-                            <Run Text=" pcs remaining"/>
+                                    <Run Text="{Binding SelectedOrder.Balance, Mode=OneWay}"/>
+                                    <Run Text=" pcs remaining"/>
                                 </TextBlock>
                             </StackPanel>
                         </Border>
@@ -1185,7 +1189,7 @@
             </Border>
         </Border>
 
-        <!-- ✅ UPDATED: IMPORT LOG POPUP - COMPLETE HISTORY -->
+        <!-- IMPORT LOG POPUP -->
         <Border Grid.Row="0" Grid.RowSpan="4" Background="#80000000" Visibility="{Binding IsViewingImportLog, Converter={StaticResource BoolToVisibilityConverter}}">
             <Border CornerRadius="20" Padding="30" Margin="40,20" Background="White" VerticalAlignment="Stretch">
                 <Border.Effect>
@@ -1198,7 +1202,6 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- HEADER -->
                     <StackPanel Grid.Row="0" Margin="0,0,0,20">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="📋 IMPORT HISTORY" FontSize="22" FontWeight="Bold" Foreground="#059669"/>
@@ -1208,7 +1211,6 @@
                         <TextBlock Text="Complete history of all import changes" FontSize="12" Foreground="#64748B" Margin="0,4,0,0"/>
                     </StackPanel>
 
-                    <!-- SESSIONS LIST -->
                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                         <ItemsControl ItemsSource="{Binding ImportHistory}">
                             <ItemsControl.ItemTemplate>
@@ -1220,7 +1222,6 @@
                                                 <RowDefinition Height="*"/>
                                             </Grid.RowDefinitions>
 
-                                            <!-- SESSION HEADER -->
                                             <Border Grid.Row="0" Background="#059669" CornerRadius="16,16,0,0" Padding="20,16">
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
@@ -1230,37 +1231,35 @@
 
                                                     <StackPanel Grid.Column="0">
                                                         <TextBlock Text="{Binding SessionDateTime, StringFormat='{}{0:dd-MM-yyyy HH:mm:ss}'}" 
-                                                           FontSize="16" FontWeight="Bold" Foreground="White"/>
+                                                                   FontSize="16" FontWeight="Bold" Foreground="White"/>
                                                         <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                                                             <Border Background="White" CornerRadius="12" Padding="10,4" Margin="0,0,10,0">
                                                                 <TextBlock Foreground="#059669" FontSize="11" FontWeight="Bold">
-                                                            <Run Text="{Binding UpdatedOrders, Mode=OneWay}"/>
-                                                            <Run Text=" orders updated"/>
+                                                                    <Run Text="{Binding UpdatedOrders, Mode=OneWay}"/>
+                                                                    <Run Text=" orders updated"/>
                                                                 </TextBlock>
                                                             </Border>
                                                             <Border Background="#10B981" CornerRadius="12" Padding="10,4">
                                                                 <TextBlock Foreground="White" FontSize="11" FontWeight="Bold">
-                                                            <Run Text="{Binding TotalChanges, Mode=OneWay}"/>
-                                                            <Run Text=" changes"/>
+                                                                    <Run Text="{Binding TotalChanges, Mode=OneWay}"/>
+                                                                    <Run Text=" changes"/>
                                                                 </TextBlock>
                                                             </Border>
                                                         </StackPanel>
                                                     </StackPanel>
 
-                                                    <!-- SESSION NOTES -->
                                                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" MaxWidth="300">
                                                         <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" 
-                                                         Width="250" 
-                                                         Padding="12,10" 
-                                                         FontSize="12"
-                                                         BorderThickness="0"
-                                                         Background="#D1FAE5"
-                                                         BorderBrush="#059669"/>
+                                                                 Width="250" 
+                                                                 Padding="12,10" 
+                                                                 FontSize="12"
+                                                                 BorderThickness="0"
+                                                                 Background="#D1FAE5"
+                                                                 BorderBrush="#059669"/>
                                                     </StackPanel>
                                                 </Grid>
                                             </Border>
 
-                                            <!-- ENTRIES LIST -->
                                             <ItemsControl Grid.Row="1" ItemsSource="{Binding Entries}" Margin="0">
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>
@@ -1271,7 +1270,6 @@
                                                                     <RowDefinition Height="Auto"/>
                                                                 </Grid.RowDefinitions>
 
-                                                                <!-- ORDER INFO -->
                                                                 <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
                                                                     <Border Background="#FEF3C7" CornerRadius="6" Padding="10,6" Margin="0,0,12,0">
                                                                         <TextBlock Text="{Binding PINumber}" FontSize="13" FontWeight="Bold" Foreground="#92400E"/>
@@ -1279,10 +1277,9 @@
                                                                     <TextBlock Text="{Binding Company}" FontSize="13" Foreground="#64748B" VerticalAlignment="Center"/>
                                                                     <TextBlock Text=" | " FontSize="13" Foreground="#CBD5E1" VerticalAlignment="Center"/>
                                                                     <TextBlock Text="{Binding ImportDateTime, StringFormat='{}{0:HH:mm:ss}'}" 
-                                                                       FontSize="12" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                                                               FontSize="12" Foreground="#94A3B8" VerticalAlignment="Center"/>
                                                                 </StackPanel>
 
-                                                                <!-- CHANGES LIST -->
                                                                 <ItemsControl Grid.Row="1" ItemsSource="{Binding Changes}">
                                                                     <ItemsControl.ItemTemplate>
                                                                         <DataTemplate>
@@ -1296,29 +1293,26 @@
                                                                                     </Grid.ColumnDefinitions>
 
                                                                                     <TextBlock Grid.Column="0" Text="{Binding FieldName}" 
-                                                                                       FontWeight="Bold" Foreground="#475569" 
-                                                                                       VerticalAlignment="Center"/>
+                                                                                               FontWeight="Bold" Foreground="#475569" 
+                                                                                               VerticalAlignment="Center"/>
 
-                                                                                    <!-- OLD VALUE (Red strikethrough) -->
                                                                                     <TextBlock Grid.Column="1" 
-                                                                                       Text="{Binding OldValue}" 
-                                                                                       Foreground="#DC2626" 
-                                                                                       TextDecorations="Strikethrough"
-                                                                                       VerticalAlignment="Center"
-                                                                                       Margin="10,0"/>
+                                                                                               Text="{Binding OldValue}" 
+                                                                                               Foreground="#DC2626" 
+                                                                                               TextDecorations="Strikethrough"
+                                                                                               VerticalAlignment="Center"
+                                                                                               Margin="10,0"/>
 
-                                                                                    <!-- ARROW -->
                                                                                     <TextBlock Grid.Column="2" Text="→" 
-                                                                                       FontSize="14" FontWeight="Bold" 
-                                                                                       Foreground="#64748B" 
-                                                                                       VerticalAlignment="Center" 
-                                                                                       Margin="10,0"/>
+                                                                                               FontSize="14" FontWeight="Bold" 
+                                                                                               Foreground="#64748B" 
+                                                                                               VerticalAlignment="Center" 
+                                                                                               Margin="10,0"/>
 
-                                                                                    <!-- NEW VALUE (Green) -->
                                                                                     <TextBlock Grid.Column="3" 
-                                                                                       Text="{Binding NewValue}" 
-                                                                                       FontWeight="Bold" Foreground="#059669" 
-                                                                                       VerticalAlignment="Center"/>
+                                                                                               Text="{Binding NewValue}" 
+                                                                                               FontWeight="Bold" Foreground="#059669" 
+                                                                                               VerticalAlignment="Center"/>
                                                                                 </Grid>
                                                                             </Border>
                                                                         </DataTemplate>
@@ -1336,21 +1330,19 @@
                         </ItemsControl>
                     </ScrollViewer>
 
-                    <!-- FOOTER -->
                     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
                         <Border Background="#F0FDF4" CornerRadius="25" Padding="16,12" Margin="0,0,16,0">
                             <TextBlock FontSize="12" Foreground="#059669">
-                        <Run Text="Total: "/>
-                        <Run Text="{Binding ImportHistory.Count, Mode=OneWay}" FontWeight="Bold"/>
-                        <Run Text=" import sessions"/>
+                                <Run Text="Total: "/>
+                                <Run Text="{Binding ImportHistory.Count, Mode=OneWay}" FontWeight="Bold"/>
+                                <Run Text=" import sessions"/>
                             </TextBlock>
                         </Border>
                         <Button Content="Close" Style="{StaticResource SecondaryButton}" 
-                        Command="{Binding CloseImportLogCommand}" Padding="24,12"/>
+                                Command="{Binding CloseImportLogCommand}" Padding="24,12"/>
                     </StackPanel>
                 </Grid>
             </Border>
         </Border>
-
     </Grid>
 </UserControl>

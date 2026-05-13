@@ -1,6 +1,9 @@
-﻿using System.Windows;
+﻿using System;
+using System.Collections.Generic;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Data;
 using ProGlassAutomation.ViewModels;
 
 namespace ProGlassAutomation.Views
@@ -38,7 +41,7 @@ namespace ProGlassAutomation.Views
                 }
 
                 _isSelectingAll = false;
-                UpdateSelectedCount();
+                UpdateSelectedIds();
             }
         }
 
@@ -46,15 +49,23 @@ namespace ProGlassAutomation.Views
         {
             if (!_isSelectingAll)
             {
-                UpdateSelectedCount();
+                UpdateSelectedIds();
             }
         }
 
-        private void UpdateSelectedCount()
+        private void UpdateSelectedIds()
         {
-            if (DataContext is DailyWorksViewModel vm)
+            if (DataContext is DailyWorksViewModel vm && MainDataGrid != null)
             {
-                vm.SetSelectedCount(MainDataGrid?.SelectedItems?.Count ?? 0);
+                var selectedIds = new List<int>();
+                foreach (var item in MainDataGrid.SelectedItems)
+                {
+                    if (item is DataRowView rowView)
+                    {
+                        selectedIds.Add(Convert.ToInt32(rowView["Id"]));
+                    }
+                }
+                vm.UpdateSelectedIds(selectedIds);
             }
         }
 

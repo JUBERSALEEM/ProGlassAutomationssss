@@ -521,7 +521,7 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <DataGridTemplateColumn Header="COMPANY" Width="200" HeaderStyle="{StaticResource HeaderPurple}">
+                    <DataGridTemplateColumn Header="COMPANY" Width="150" HeaderStyle="{StaticResource HeaderPurple}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding Company}" FontSize="12" Foreground="#4C1D95" FontWeight="Medium" HorizontalAlignment="Center"/>
@@ -670,7 +670,7 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <DataGridTemplateColumn Header="NOTES" Width="2*" HeaderStyle="{StaticResource HeaderSlate}">
+                    <DataGridTemplateColumn Header="NOTES" Width="*" HeaderStyle="{StaticResource HeaderSlate}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding Notes}" FontSize="11" Foreground="#64748B" TextTrimming="CharacterEllipsis" MaxWidth="200" HorizontalAlignment="Center"/>

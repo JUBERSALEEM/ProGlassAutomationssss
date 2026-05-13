@@ -401,6 +401,9 @@ namespace ProGlassAutomation.ViewModels
         {
             _selectedCount = count;
             OnPropertyChanged(nameof(SelectedCount));
+            OnPropertyChanged(nameof(SelectedRecords));
+            OnPropertyChanged(nameof(SelectedQty));
+            OnPropertyChanged(nameof(SelectedSQM));
         }
 
         private DataGrid _mainDataGrid;
@@ -408,6 +411,20 @@ namespace ProGlassAutomation.ViewModels
         {
             get => _mainDataGrid;
             set => SetProperty(ref _mainDataGrid, value);
+        }
+
+        // ✅ Selected IDs tracking
+        private List<int> _selectedIds = new List<int>();
+        public List<DailyWork> SelectedRecordsData => DailyWorks?.Where(w => _selectedIds.Contains(w.Id)).ToList() ?? new List<DailyWork>();
+
+        public void UpdateSelectedIds(List<int> ids)
+        {
+            _selectedIds = ids;
+            _selectedCount = ids.Count;
+            OnPropertyChanged(nameof(SelectedCount));
+            OnPropertyChanged(nameof(SelectedRecords));
+            OnPropertyChanged(nameof(SelectedQty));
+            OnPropertyChanged(nameof(SelectedSQM));
         }
 
         private int GetSelectedCount()
@@ -548,6 +565,23 @@ namespace ProGlassAutomation.ViewModels
         public int TotalQty => DailyWorks?.Sum(w => w.Qty) ?? 0;
         public double FilteredSQM => FilteredDataView?.Cast<DataRowView>().Sum(r => Convert.ToDouble(r["SQM"])) ?? 0;
         public int FilteredQty => FilteredDataView?.Cast<DataRowView>().Sum(r => Convert.ToInt32(r["Qty"])) ?? 0;
+
+        // ✅ Selected stats (for footer display)
+        public int SelectedRecords => _selectedCount;
+        public double SelectedSQM => GetSelectedSQM();
+        public int SelectedQty => GetSelectedQty();
+
+        private double GetSelectedSQM()
+        {
+            if (_selectedCount == 0) return TotalSQM;
+            return DailyWorks?.Where(w => _selectedIds.Contains(w.Id)).Sum(w => w.SQM) ?? 0;
+        }
+
+        private int GetSelectedQty()
+        {
+            if (_selectedCount == 0) return TotalQty;
+            return DailyWorks?.Where(w => _selectedIds.Contains(w.Id)).Sum(w => w.Qty) ?? 0;
+        }
 
         #endregion
 
@@ -1112,6 +1146,9 @@ namespace ProGlassAutomation.ViewModels
             OnPropertyChanged(nameof(FilteredSQM));
             OnPropertyChanged(nameof(FilteredQty));
             OnPropertyChanged(nameof(SelectedCount));
+            OnPropertyChanged(nameof(SelectedRecords));
+            OnPropertyChanged(nameof(SelectedQty));
+            OnPropertyChanged(nameof(SelectedSQM));
         }
 
         private void ExecutePrint(object parameter)
@@ -1156,7 +1193,7 @@ namespace ProGlassAutomation.ViewModels
             });
             headerPanel.Children.Add(new TextBlock
             {
-                Text = $"Records: {FilteredRecords} | Total Qty: {FilteredQty} | Total SQM: {FilteredSQM:N2}",
+                Text = $"Records: {FilteredRecords} | Total Qty: {TotalQty} | Total SQM: {TotalSQM:N2}",
                 FontSize = 12,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 Margin = new Thickness(0, 5, 0, 0)
@@ -1231,6 +1268,10 @@ namespace ProGlassAutomation.ViewModels
                     }
 
                     System.Diagnostics.Debug.WriteLine($"[DailyWork] Deleted {selectedIds.Count} records");
+
+                    // ✅ Clear selection after delete
+                    _selectedIds.Clear();
+                    _selectedCount = 0;
 
                     RefreshDataView();
                     UpdateStatistics();

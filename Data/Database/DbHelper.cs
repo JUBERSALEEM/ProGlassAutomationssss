@@ -2244,52 +2244,287 @@ namespace ProGlassAutomation.Data.Database
                 return $"Error getting stats: {ex.Message}";
             }
         }
-    }
 
-    // ═══════════════════════════════════════════════════════════════
-    // ✅ HELPER CLASSES FOR LIVE DASHBOARD
-    // ═══════════════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════════════════════
+        // ✅ OPTIONS FOR DELIVERY DROPDOWNS
+        // ═══════════════════════════════════════════════════════════════
 
-    public class DashboardStats
-    {
-        public double TotalProduction { get; set; }
-        public int TotalOrders { get; set; }
-        public int CompletedOrders { get; set; }
-        public double Efficiency { get; set; }
-        public double AverageUptime { get; set; }
-        public int SguCalculations { get; set; }
-        public int DguCalculations { get; set; }
-        public int LaminationCalculations { get; set; }
-        public int PendingDeliveries { get; set; }
-    }
+        public static List<string> GetAllTypeOfWorkOptions()
+        {
+            try
+            {
+                return Execute(conn =>
+                {
+                    var list = new List<string>();
 
-    public class ImportSessionInfo
-    {
-        public int Id { get; set; }
-        public DateTime SessionDateTime { get; set; }
-        public int ImportedCount { get; set; }
-        public int UpdatedCount { get; set; }
-        public int SkippedCount { get; set; }
-        public string Notes { get; set; }
-    }
+                    // Get from Deliveries table
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = "SELECT DISTINCT TypeOfWork FROM Deliveries WHERE TypeOfWork IS NOT NULL AND TypeOfWork != '' ORDER BY TypeOfWork";
+                        using var r = cmd.ExecuteReader();
+                        while (r.Read())
+                        {
+                            var val = r.GetString(0);
+                            if (!string.IsNullOrWhiteSpace(val) && !list.Contains(val))
+                                list.Add(val);
+                        }
+                    }
 
-    public class ImportLogInfo
-    {
-        public int Id { get; set; }
-        public DateTime ImportDateTime { get; set; }
-        public string PINumber { get; set; }
-        public string Company { get; set; }
-        public string ChangesJson { get; set; }
-    }
+                    // Get from DailyWork table
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = "SELECT DISTINCT TypeOfWork FROM DailyWork WHERE TypeOfWork IS NOT NULL AND TypeOfWork != '' ORDER BY TypeOfWork";
+                        using var r = cmd.ExecuteReader();
+                        while (r.Read())
+                        {
+                            var val = r.GetString(0);
+                            if (!string.IsNullOrWhiteSpace(val) && !list.Contains(val))
+                                list.Add(val);
+                        }
+                    }
 
-    // ═══════════════════════════════════════════════════════════════
-    // ✅ CUSTOMER REFERENCE HELPER CLASS
-    // ═══════════════════════════════════════════════════════════════
+                    return list;
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DbHelper] GetAllTypeOfWorkOptions error: {ex.Message}");
+                return new List<string>();
+            }
+        }
 
-    public class CustomerRefItem
-    {
-        public int Id { get; set; }
-        public string CustomerReference { get; set; }
-        public string Company { get; set; }
+        public static List<string> GetAllDeliveryStatusOptions()
+        {
+            try
+            {
+                return Execute(conn =>
+                {
+                    var list = new List<string>();
+
+                    // Get from Deliveries table
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = "SELECT DISTINCT Status FROM Deliveries WHERE Status IS NOT NULL AND Status != '' ORDER BY Status";
+                        using var r = cmd.ExecuteReader();
+                        while (r.Read())
+                        {
+                            var val = r.GetString(0);
+                            if (!string.IsNullOrWhiteSpace(val) && !list.Contains(val))
+                                list.Add(val);
+                        }
+                    }
+
+                    // Add default statuses if not present
+                    var defaultStatuses = new[] { "Pending", "Partially Delivered", "Completed", "Cancelled" };
+                    foreach (var status in defaultStatuses)
+                    {
+                        if (!list.Contains(status))
+                            list.Add(status);
+                    }
+
+                    return list;
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DbHelper] GetAllDeliveryStatusOptions error: {ex.Message}");
+                return new List<string> { "Pending", "Partially Delivered", "Completed", "Cancelled" };
+            }
+        }
+
+        public static List<string> GetAllSalesmanOptions()
+        {
+            try
+            {
+                return Execute(conn =>
+                {
+                    var list = new List<string>();
+
+                    // Get from Deliveries table
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = "SELECT DISTINCT Salesman FROM Deliveries WHERE Salesman IS NOT NULL AND Salesman != '' ORDER BY Salesman";
+                        using var r = cmd.ExecuteReader();
+                        while (r.Read())
+                        {
+                            var val = r.GetString(0);
+                            if (!string.IsNullOrWhiteSpace(val) && !list.Contains(val))
+                                list.Add(val);
+                        }
+                    }
+
+                    // Get from DailyWork table
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = "SELECT DISTINCT Salesman FROM DailyWork WHERE Salesman IS NOT NULL AND Salesman != '' ORDER BY Salesman";
+                        using var r = cmd.ExecuteReader();
+                        while (r.Read())
+                        {
+                            var val = r.GetString(0);
+                            if (!string.IsNullOrWhiteSpace(val) && !list.Contains(val))
+                                list.Add(val);
+                        }
+                    }
+
+                    return list;
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DbHelper] GetAllSalesmanOptions error: {ex.Message}");
+                return new List<string>();
+            }
+        }
+
+        public static List<string> GetAllCompanyOptions()
+        {
+            try
+            {
+                return Execute(conn =>
+                {
+                    var list = new List<string>();
+
+                    // Get from Deliveries table
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = "SELECT DISTINCT Company FROM Deliveries WHERE Company IS NOT NULL AND Company != '' ORDER BY Company";
+                        using var r = cmd.ExecuteReader();
+                        while (r.Read())
+                        {
+                            var val = r.GetString(0);
+                            if (!string.IsNullOrWhiteSpace(val) && !list.Contains(val))
+                                list.Add(val);
+                        }
+                    }
+
+                    // Get from DailyWork table
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = "SELECT DISTINCT Company FROM DailyWork WHERE Company IS NOT NULL AND Company != '' ORDER BY Company";
+                        using var r = cmd.ExecuteReader();
+                        while (r.Read())
+                        {
+                            var val = r.GetString(0);
+                            if (!string.IsNullOrWhiteSpace(val) && !list.Contains(val))
+                                list.Add(val);
+                        }
+                    }
+
+                    return list;
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DbHelper] GetAllCompanyOptions error: {ex.Message}");
+                return new List<string>();
+            }
+        }
+
+        public static List<string> GetAllDriverOptions()
+        {
+            try
+            {
+                return Execute(conn =>
+                {
+                    var list = new List<string>();
+
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = "SELECT DISTINCT Driver FROM DeliveryItems WHERE Driver IS NOT NULL AND Driver != '' ORDER BY Driver";
+                        using var r = cmd.ExecuteReader();
+                        while (r.Read())
+                        {
+                            var val = r.GetString(0);
+                            if (!string.IsNullOrWhiteSpace(val) && !list.Contains(val))
+                                list.Add(val);
+                        }
+                    }
+
+                    return list;
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DbHelper] GetAllDriverOptions error: {ex.Message}");
+                return new List<string>();
+            }
+        }
+
+        public static List<string> GetAllVehicleOptions()
+        {
+            try
+            {
+                return Execute(conn =>
+                {
+                    var list = new List<string>();
+
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = "SELECT DISTINCT Vehicle FROM DeliveryItems WHERE Vehicle IS NOT NULL AND Vehicle != '' ORDER BY Vehicle";
+                        using var r = cmd.ExecuteReader();
+                        while (r.Read())
+                        {
+                            var val = r.GetString(0);
+                            if (!string.IsNullOrWhiteSpace(val) && !list.Contains(val))
+                                list.Add(val);
+                        }
+                    }
+
+                    return list;
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DbHelper] GetAllVehicleOptions error: {ex.Message}");
+                return new List<string>();
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // ✅ HELPER CLASSES FOR LIVE DASHBOARD
+        // ═══════════════════════════════════════════════════════════════
+
+        public class DashboardStats
+        {
+            public double TotalProduction { get; set; }
+            public int TotalOrders { get; set; }
+            public int CompletedOrders { get; set; }
+            public double Efficiency { get; set; }
+            public double AverageUptime { get; set; }
+            public int SguCalculations { get; set; }
+            public int DguCalculations { get; set; }
+            public int LaminationCalculations { get; set; }
+            public int PendingDeliveries { get; set; }
+        }
+
+        public class ImportSessionInfo
+        {
+            public int Id { get; set; }
+            public DateTime SessionDateTime { get; set; }
+            public int ImportedCount { get; set; }
+            public int UpdatedCount { get; set; }
+            public int SkippedCount { get; set; }
+            public string Notes { get; set; }
+        }
+
+        public class ImportLogInfo
+        {
+            public int Id { get; set; }
+            public DateTime ImportDateTime { get; set; }
+            public string PINumber { get; set; }
+            public string Company { get; set; }
+            public string ChangesJson { get; set; }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // ✅ CUSTOMER REFERENCE HELPER CLASS
+        // ═══════════════════════════════════════════════════════════════
+
+        public class CustomerRefItem
+        {
+            public int Id { get; set; }
+            public string CustomerReference { get; set; }
+            public string Company { get; set; }
+        }
     }
 }

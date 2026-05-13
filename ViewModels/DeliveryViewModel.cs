@@ -4,6 +4,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
+using System.Globalization;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -54,13 +55,16 @@ namespace ProGlassAutomation.ViewModels
         private ObservableCollection<ImportSession> _importHistory = new ObservableCollection<ImportSession>();
         private ImportSession _currentSession;
 
-        // Options collections
+        // ✅ Selected IDs tracking
+        private List<int> _selectedIds = new List<int>();
+
+        // Options collections - Loaded from database
         public ObservableCollection<string> TypeOfWorkOptions { get; private set; }
         public ObservableCollection<string> StatusOptions { get; private set; }
         public ObservableCollection<string> SalesmanOptions { get; private set; }
         public ObservableCollection<string> CompanyOptions { get; private set; }
 
-        // ✅ Driver and Vehicle - Dynamic collections (empty by default)
+        // ✅ Driver and Vehicle - Dynamic collections (loaded from database)
         public ObservableCollection<string> DriverOptions { get; set; }
         public ObservableCollection<string> VehicleOptions { get; set; }
 
@@ -71,7 +75,12 @@ namespace ProGlassAutomation.ViewModels
 
             DeliveryOrders = new ObservableCollection<Delivery>();
             SourceOrders = new ObservableCollection<DailyWork>();
-            InitializeOptions();
+            TypeOfWorkOptions = new ObservableCollection<string>();
+            StatusOptions = new ObservableCollection<string>();
+            SalesmanOptions = new ObservableCollection<string>();
+            CompanyOptions = new ObservableCollection<string>();
+            DriverOptions = new ObservableCollection<string>();
+            VehicleOptions = new ObservableCollection<string>();
 
             AddNewCommand = new RelayCommand(ExecuteAddNew);
             EditCommand = new RelayCommand(ExecuteEdit, CanExecuteEdit);
@@ -105,6 +114,7 @@ namespace ProGlassAutomation.ViewModels
             CloseImportLogCommand = new RelayCommand(ExecuteCloseImportLog);
 
             LoadDataFromDatabase();
+            LoadOptionsFromDatabase();
             CreateDataView();
         }
 
@@ -184,7 +194,26 @@ namespace ProGlassAutomation.ViewModels
             set
             {
                 if (SetProperty(ref _selectedDataRowView, value))
+                {
+                    // ✅ Load selected order when row is selected
+                    if (value != null)
+                    {
+                        int id = Convert.ToInt32(value["Id"]);
+                        var order = DeliveryOrders.FirstOrDefault(w => w.Id == id);
+                        if (order != null)
+                        {
+                            // ✅ Use internal setter to avoid triggering LoadDeliveryItems twice
+                            _selectedOrder = order;
+                            OnPropertyChanged(nameof(SelectedOrder));
+
+                            // Load delivery items for the selected order
+                            LoadDeliveryItems(order);
+
+                            System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Row selected: Id={id}, Company={order.Company}, Balance={order.Balance}");
+                        }
+                    }
                     CommandManager.InvalidateRequerySuggested();
+                }
             }
         }
 
@@ -358,24 +387,95 @@ namespace ProGlassAutomation.ViewModels
             set => SetProperty(ref _sortDirection, value);
         }
 
-        // Statistics
+        // ═══════════════════════════════════════════════════════════
+        // STATISTICS - Shows TOTAL by default, SELECTED when rows selected
+        // ═══════════════════════════════════════════════════════════
+
+        // ✅ Private field FIRST (before property that uses it)
+        private int _selectedCount;
+
+        // Total Stats (Full data)
         public int TotalRecords => DeliveryOrders?.Count ?? 0;
-        public int FilteredRecords => FilteredDataView?.Count ?? 0;
         public int TotalOrderQty => DeliveryOrders?.Sum(w => w.OrderQty) ?? 0;
         public int TotalDelivered => DeliveryOrders?.Sum(w => w.TotalDelivered) ?? 0;
         public int TotalReturned => DeliveryOrders?.Sum(w => w.TotalReturned) ?? 0;
         public int TotalBalance => DeliveryOrders?.Sum(w => w.Balance) ?? 0;
         public double TotalOrderSQM => DeliveryOrders?.Sum(w => w.OrderSQM) ?? 0;
-        public int PendingCount => DeliveryOrders?.Count(w => w.Status == "Pending") ?? 0;
-        public int PartialCount => DeliveryOrders?.Count(w => w.Status == "Partially Delivered") ?? 0;
-        public int CompletedCount => DeliveryOrders?.Count(w => w.Status == "Completed") ?? 0;
-        public int SelectedCount => _selectedCount;
-        private int _selectedCount;
+
+        // Filtered Stats
+        public int FilteredRecords => FilteredDataView?.Count ?? 0;
+
+        // Selection Stats - Using backing field with property
+        public int SelectedCount
+        {
+            get => _selectedCount;
+            private set
+            {
+                if (_selectedCount != value)
+                {
+                    _selectedCount = value;
+                    OnPropertyChanged(nameof(SelectedCount));
+                }
+            }
+        }
+
+        // ✅ Selected stats - recalculates based on _selectedIds
+        public int SelectedRecords => _selectedCount == 0 ? TotalRecords : _selectedCount;
+        public int SelectedOrderQty => _selectedCount == 0 ? TotalOrderQty : GetSelectedSum(w => w.OrderQty);
+        public int SelectedDelivered => _selectedCount == 0 ? TotalDelivered : GetSelectedSum(w => w.TotalDelivered);
+        public int SelectedReturned => _selectedCount == 0 ? TotalReturned : GetSelectedSum(w => w.TotalReturned);
+        public int SelectedBalance => _selectedCount == 0 ? TotalBalance : GetSelectedSum(w => w.Balance);
+        public double SelectedOrderSQM => _selectedCount == 0 ? TotalOrderSQM : GetSelectedDoubleSum(w => w.OrderSQM);
+
+        // Helper methods for calculating selected totals
+        private int GetSelectedSum(Func<Delivery, int> selector)
+        {
+            if (_selectedCount == 0) return TotalOrderQty;
+            return DeliveryOrders?.Where(w => _selectedIds.Contains(w.Id)).Sum(selector) ?? 0;
+        }
+
+        private double GetSelectedDoubleSum(Func<Delivery, double> selector)
+        {
+            if (_selectedCount == 0) return TotalOrderSQM;
+            return DeliveryOrders?.Where(w => _selectedIds.Contains(w.Id)).Sum(selector) ?? 0;
+        }
 
         public void SetSelectedCount(int count)
         {
-            _selectedCount = count;
+            SelectedCount = count;
+            RefreshSelectedStats();
+        }
+
+        public void UpdateSelectedIds(List<int> ids)
+        {
+            _selectedIds = ids;
+            SelectedCount = ids.Count;
+            RefreshSelectedStats();
+        }
+
+        // ✅ Single method to refresh all selected stats
+        private void RefreshSelectedStats()
+        {
             OnPropertyChanged(nameof(SelectedCount));
+            OnPropertyChanged(nameof(SelectedRecords));
+            OnPropertyChanged(nameof(SelectedOrderQty));
+            OnPropertyChanged(nameof(SelectedDelivered));
+            OnPropertyChanged(nameof(SelectedReturned));
+            OnPropertyChanged(nameof(SelectedBalance));
+            OnPropertyChanged(nameof(SelectedOrderSQM));
+            OnPropertyChanged(nameof(TotalRecords));
+            OnPropertyChanged(nameof(TotalOrderQty));
+            OnPropertyChanged(nameof(TotalDelivered));
+            OnPropertyChanged(nameof(TotalReturned));
+            OnPropertyChanged(nameof(TotalBalance));
+            OnPropertyChanged(nameof(TotalOrderSQM));
+            OnPropertyChanged(nameof(FilteredRecords));
+        }
+
+        // ✅ Alias for compatibility
+        private void UpdateAllStats()
+        {
+            RefreshSelectedStats();
         }
 
         #endregion
@@ -415,104 +515,79 @@ namespace ProGlassAutomation.ViewModels
 
         #endregion
 
-        #region Initialization
+        #region Load Options From Database
 
-        private void InitializeOptions()
+        private void LoadOptionsFromDatabase()
         {
-            TypeOfWorkOptions = new ObservableCollection<string>
+            try
             {
-                "Single Unit (SGU)", "Double Unit (DGU)", "Lamination Unit",
-                "Single + Double Unit", "SGU + DGU", "SGU + Lamination",
-                "DGU + Lamination", "SGU + DGU + Lamination", "Tempered",
-                "Tempered + Lamination", "Other"
-            };
+                // Clear existing options
+                TypeOfWorkOptions.Clear();
+                StatusOptions.Clear();
+                SalesmanOptions.Clear();
+                CompanyOptions.Clear();
+                DriverOptions.Clear();
+                VehicleOptions.Clear();
 
-            StatusOptions = new ObservableCollection<string>
-            {
-                "Pending", "Partially Delivered", "Completed", "Cancelled"
-            };
+                // Load Type of Work options from database
+                var typeOfWorkOptions = DbHelper.GetAllTypeOfWorkOptions();
+                foreach (var option in typeOfWorkOptions)
+                {
+                    if (!string.IsNullOrWhiteSpace(option))
+                        TypeOfWorkOptions.Add(option);
+                }
 
-            SalesmanOptions = new ObservableCollection<string>
-            {
-                "Ahmed Khan", "Muhammad Ali", "Hassan Ahmed", "Usman Malik",
-                "Bilal Shah", "Ali Raza", "Faisal Mahmood", "Imran Hussain"
-            };
+                // Load Status options from database
+                var statusOptions = DbHelper.GetAllDeliveryStatusOptions();
+                foreach (var option in statusOptions)
+                {
+                    if (!string.IsNullOrWhiteSpace(option))
+                        StatusOptions.Add(option);
+                }
 
-            CompanyOptions = new ObservableCollection<string>
-            {
-                "ABC Construction", "XYZ Windows", "Secure Buildings Ltd",
-                "Modern Glass Works", "Elite Glazing Co", "Premium Windows Inc"
-            };
+                // Load Salesman options from database
+                var salesmanOptions = DbHelper.GetAllSalesmanOptions();
+                foreach (var option in salesmanOptions)
+                {
+                    if (!string.IsNullOrWhiteSpace(option))
+                        SalesmanOptions.Add(option);
+                }
 
-            // ✅ Driver Options - Empty by default, user can add dynamically
-            DriverOptions = new ObservableCollection<string>();
+                // Load Company options from database
+                var companyOptions = DbHelper.GetAllCompanyOptions();
+                foreach (var option in companyOptions)
+                {
+                    if (!string.IsNullOrWhiteSpace(option))
+                        CompanyOptions.Add(option);
+                }
 
-            // ✅ Vehicle Options - Empty by default, user can add dynamically
-            VehicleOptions = new ObservableCollection<string>();
-        }
+                // Load Driver options from database
+                var driverOptions = DbHelper.GetAllDriverOptions();
+                foreach (var option in driverOptions)
+                {
+                    if (!string.IsNullOrWhiteSpace(option))
+                        DriverOptions.Add(option);
+                }
 
-        private void CreateDataView()
-        {
-            var dataTable = new DataTable("Deliveries");
-            dataTable.Columns.Add("Id", typeof(int));
-            dataTable.Columns.Add("Date", typeof(DateTime));
-            dataTable.Columns.Add("Company", typeof(string));
-            dataTable.Columns.Add("PINumber", typeof(string));
-            dataTable.Columns.Add("TypeOfWork", typeof(string));
-            dataTable.Columns.Add("OrderQty", typeof(int));
-            dataTable.Columns.Add("TotalDelivered", typeof(int));
-            dataTable.Columns.Add("TotalReturned", typeof(int));
-            dataTable.Columns.Add("Balance", typeof(int));
-            dataTable.Columns.Add("OrderSQM", typeof(double));
-            dataTable.Columns.Add("Salesman", typeof(string));
-            dataTable.Columns.Add("Status", typeof(string));
-            dataTable.Columns.Add("Notes", typeof(string));
+                // Load Vehicle options from database
+                var vehicleOptions = DbHelper.GetAllVehicleOptions();
+                foreach (var option in vehicleOptions)
+                {
+                    if (!string.IsNullOrWhiteSpace(option))
+                        VehicleOptions.Add(option);
+                }
 
-            foreach (var order in DeliveryOrders)
-            {
-                var row = dataTable.NewRow();
-                row["Id"] = order.Id;
-                row["Date"] = order.Date;
-                row["Company"] = order.Company ?? "";
-                row["PINumber"] = order.PINumber ?? "";
-                row["TypeOfWork"] = order.TypeOfWork ?? "";
-                row["OrderQty"] = order.OrderQty;
-                row["TotalDelivered"] = order.TotalDelivered;
-                row["TotalReturned"] = order.TotalReturned;
-                row["Balance"] = order.Balance;
-                row["OrderSQM"] = order.OrderSQM;
-                row["Salesman"] = order.Salesman ?? "";
-                row["Status"] = order.Status ?? "";
-                row["Notes"] = order.Notes ?? "";
-                dataTable.Rows.Add(row);
+                System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Loaded options: TypeOfWork={TypeOfWorkOptions.Count}, Status={StatusOptions.Count}, Salesman={SalesmanOptions.Count}, Company={CompanyOptions.Count}, Driver={DriverOptions.Count}, Vehicle={VehicleOptions.Count}");
             }
-
-            FilteredDataView = dataTable.DefaultView;
-        }
-
-        private void RefreshDataView()
-        {
-            if (FilteredDataView == null) return;
-            var currentSort = FilteredDataView.Sort;
-            var currentFilter = FilteredDataView.RowFilter;
-            CreateDataView();
-            if (!string.IsNullOrEmpty(currentSort)) FilteredDataView.Sort = currentSort;
-            if (!string.IsNullOrEmpty(currentFilter)) FilteredDataView.RowFilter = currentFilter;
-        }
-
-        private void UpdateOrderStatus(Delivery order)
-        {
-            if (order.Balance <= 0)
-                order.Status = "Completed";
-            else if (order.TotalDelivered > 0)
-                order.Status = "Partially Delivered";
-            else
-                order.Status = "Pending";
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Load options error: {ex.Message}");
+            }
         }
 
         #endregion
 
-        #region Load From Database
+        #region Load Data From Database
 
         private void LoadDataFromDatabase()
         {
@@ -563,7 +638,7 @@ namespace ProGlassAutomation.ViewModels
                 LoadUniqueDriversAndVehicles();
 
                 System.Diagnostics.Debug.WriteLine("[DeliveryViewModel] Data loading complete!");
-                UpdateStatistics();
+                UpdateAllStats();
             }
             catch (Exception ex)
             {
@@ -621,10 +696,10 @@ namespace ProGlassAutomation.ViewModels
                     .OrderBy(x => x)
                     .ToList();
 
-                DriverOptions.Clear();
                 foreach (var driver in uniqueDrivers)
                 {
-                    DriverOptions.Add(driver);
+                    if (!DriverOptions.Contains(driver))
+                        DriverOptions.Add(driver);
                 }
 
                 // Add unique vehicles
@@ -635,10 +710,10 @@ namespace ProGlassAutomation.ViewModels
                     .OrderBy(x => x)
                     .ToList();
 
-                VehicleOptions.Clear();
                 foreach (var vehicle in uniqueVehicles)
                 {
-                    VehicleOptions.Add(vehicle);
+                    if (!VehicleOptions.Contains(vehicle))
+                        VehicleOptions.Add(vehicle);
                 }
 
                 System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Loaded {DriverOptions.Count} drivers and {VehicleOptions.Count} vehicles");
@@ -785,7 +860,7 @@ namespace ProGlassAutomation.ViewModels
                 }
 
                 RefreshDataView();
-                UpdateStatistics();
+                UpdateAllStats();
 
                 string message = $"Import Complete!\n\n";
                 message += $"New: {importedCount} orders\n";
@@ -845,7 +920,70 @@ namespace ProGlassAutomation.ViewModels
             if (!string.IsNullOrEmpty(SortColumn))
                 FilteredDataView.Sort = $"{SortColumn} {(SortDirection == ListSortDirection.Ascending ? "ASC" : "DESC")}";
 
-            UpdateStatistics();
+            UpdateAllStats();
+        }
+
+        #endregion
+
+        #region DataView
+
+        private void CreateDataView()
+        {
+            var dataTable = new DataTable("Deliveries");
+            dataTable.Columns.Add("Id", typeof(int));
+            dataTable.Columns.Add("Date", typeof(DateTime));
+            dataTable.Columns.Add("Company", typeof(string));
+            dataTable.Columns.Add("PINumber", typeof(string));
+            dataTable.Columns.Add("TypeOfWork", typeof(string));
+            dataTable.Columns.Add("OrderQty", typeof(int));
+            dataTable.Columns.Add("TotalDelivered", typeof(int));
+            dataTable.Columns.Add("TotalReturned", typeof(int));
+            dataTable.Columns.Add("Balance", typeof(int));
+            dataTable.Columns.Add("OrderSQM", typeof(double));
+            dataTable.Columns.Add("Salesman", typeof(string));
+            dataTable.Columns.Add("Status", typeof(string));
+            dataTable.Columns.Add("Notes", typeof(string));
+
+            foreach (var order in DeliveryOrders)
+            {
+                var row = dataTable.NewRow();
+                row["Id"] = order.Id;
+                row["Date"] = order.Date;
+                row["Company"] = order.Company ?? "";
+                row["PINumber"] = order.PINumber ?? "";
+                row["TypeOfWork"] = order.TypeOfWork ?? "";
+                row["OrderQty"] = order.OrderQty;
+                row["TotalDelivered"] = order.TotalDelivered;
+                row["TotalReturned"] = order.TotalReturned;
+                row["Balance"] = order.Balance;
+                row["OrderSQM"] = order.OrderSQM;
+                row["Salesman"] = order.Salesman ?? "";
+                row["Status"] = order.Status ?? "";
+                row["Notes"] = order.Notes ?? "";
+                dataTable.Rows.Add(row);
+            }
+
+            FilteredDataView = dataTable.DefaultView;
+        }
+
+        private void RefreshDataView()
+        {
+            if (FilteredDataView == null) return;
+            var currentSort = FilteredDataView.Sort;
+            var currentFilter = FilteredDataView.RowFilter;
+            CreateDataView();
+            if (!string.IsNullOrEmpty(currentSort)) FilteredDataView.Sort = currentSort;
+            if (!string.IsNullOrEmpty(currentFilter)) FilteredDataView.RowFilter = currentFilter;
+        }
+
+        private void UpdateOrderStatus(Delivery order)
+        {
+            if (order.Balance <= 0)
+                order.Status = "Completed";
+            else if (order.TotalDelivered > 0)
+                order.Status = "Partially Delivered";
+            else
+                order.Status = "Pending";
         }
 
         #endregion
@@ -923,7 +1061,7 @@ namespace ProGlassAutomation.ViewModels
 
                     DeliveryOrders.Remove(orderToDelete);
                     RefreshDataView();
-                    UpdateStatistics();
+                    UpdateAllStats();
                     SelectedOrder = null;
                     SelectedDataRowView = null;
                 }
@@ -945,6 +1083,7 @@ namespace ProGlassAutomation.ViewModels
                 return;
             }
 
+            // Handle Add New
             if (_isNewRecord)
             {
                 EditingOrder.Id = DeliveryOrders.Count > 0 ? DeliveryOrders.Max(w => w.Id) + 1 : 1;
@@ -954,15 +1093,19 @@ namespace ProGlassAutomation.ViewModels
                 // SAVE TO DATABASE
                 DbHelper.SaveDelivery(EditingOrder);
 
-                DeliveryOrders.Add(EditingOrder);
+                // ✅ Add new values to dropdown options
+                AddToOptionsIfNew(TypeOfWorkOptions, EditingOrder.TypeOfWork);
+                AddToOptionsIfNew(StatusOptions, EditingOrder.Status);
+                AddToOptionsIfNew(SalesmanOptions, EditingOrder.Salesman);
+                AddToOptionsIfNew(CompanyOptions, EditingOrder.Company);
             }
-            else
+
+            // Handle Update (existing record)
+            if (!_isNewRecord && EditingOrder != null)
             {
                 var existing = DeliveryOrders.FirstOrDefault(w => w.Id == EditingOrder.Id);
                 if (existing != null)
                 {
-                    existing.Date = EditingOrder.Date;
-                    existing.UpdatedDate = DateTime.Today;
                     existing.Company = EditingOrder.Company;
                     existing.PINumber = EditingOrder.PINumber;
                     existing.CustomerReference = EditingOrder.CustomerReference;
@@ -973,17 +1116,24 @@ namespace ProGlassAutomation.ViewModels
                     existing.Color = EditingOrder.Color;
                     existing.Status = EditingOrder.Status;
                     existing.Notes = EditingOrder.Notes;
+                    existing.UpdatedDate = DateTime.Today;
                     UpdateOrderStatus(existing);
 
                     // UPDATE IN DATABASE
                     DbHelper.UpdateDelivery(existing);
+
+                    // ✅ Add new values to dropdown options
+                    AddToOptionsIfNew(TypeOfWorkOptions, EditingOrder.TypeOfWork);
+                    AddToOptionsIfNew(StatusOptions, EditingOrder.Status);
+                    AddToOptionsIfNew(SalesmanOptions, EditingOrder.Salesman);
+                    AddToOptionsIfNew(CompanyOptions, EditingOrder.Company);
                 }
             }
 
             IsEditing = false;
             EditingOrder = null;
             RefreshDataView();
-            UpdateStatistics();
+            UpdateAllStats();
         }
 
         private bool CanExecuteSave(object parameter) => EditingOrder != null;
@@ -1007,8 +1157,9 @@ namespace ProGlassAutomation.ViewModels
         private void ExecuteRefresh(object parameter)
         {
             LoadDataFromDatabase();
+            LoadOptionsFromDatabase();
             RefreshDataView();
-            UpdateStatistics();
+            UpdateAllStats();
         }
 
         private void ExecuteViewDetails(object parameter)
@@ -1135,7 +1286,7 @@ namespace ProGlassAutomation.ViewModels
             IsAddingDelivery = false;
             EditingDeliveryItem = null;
             RefreshDataView();
-            UpdateStatistics();
+            UpdateAllStats();
 
             MessageBox.Show("Delivery recorded successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
         }
@@ -1261,7 +1412,7 @@ namespace ProGlassAutomation.ViewModels
             IsEditingDeliveryItem = false;
             EditingDeliveryItemFromDb = null;
             RefreshDataView();
-            UpdateStatistics();
+            UpdateAllStats();
 
             MessageBox.Show("Delivery item updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
         }
@@ -1342,7 +1493,7 @@ namespace ProGlassAutomation.ViewModels
             ConfirmDeleteItem = null;
             SelectedDeliveryItem = null;
             RefreshDataView();
-            UpdateStatistics();
+            UpdateAllStats();
         }
 
         #endregion
@@ -1450,7 +1601,7 @@ namespace ProGlassAutomation.ViewModels
             });
             headerPanel.Children.Add(new TextBlock
             {
-                Text = $"Total Orders: {FilteredRecords} | Order Qty: {TotalOrderQty} | Delivered: {TotalDelivered} | Balance: {TotalBalance}",
+                Text = $"Total Orders: {TotalRecords} | Order Qty: {TotalOrderQty} | Delivered: {TotalDelivered} | Balance: {TotalBalance}",
                 FontSize = 12,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 Margin = new Thickness(0, 5, 0, 0)
@@ -1532,8 +1683,12 @@ namespace ProGlassAutomation.ViewModels
                         }
                     }
 
+                    // ✅ Clear selection after delete
+                    _selectedIds.Clear();
+                    _selectedCount = 0;
+
                     RefreshDataView();
-                    UpdateStatistics();
+                    UpdateAllStats();
                     SelectedOrder = null;
                     SelectedDataRowView = null;
                 }
@@ -1547,21 +1702,51 @@ namespace ProGlassAutomation.ViewModels
 
         #endregion
 
-        #region Statistics
+        #region Helper Methods
 
-        private void UpdateStatistics()
+        private void AddToOptionsIfNew(ObservableCollection<string> collection, string value)
         {
-            OnPropertyChanged(nameof(TotalRecords));
-            OnPropertyChanged(nameof(FilteredRecords));
-            OnPropertyChanged(nameof(TotalOrderQty));
-            OnPropertyChanged(nameof(TotalDelivered));
-            OnPropertyChanged(nameof(TotalReturned));
-            OnPropertyChanged(nameof(TotalBalance));
-            OnPropertyChanged(nameof(TotalOrderSQM));
-            OnPropertyChanged(nameof(PendingCount));
-            OnPropertyChanged(nameof(PartialCount));
-            OnPropertyChanged(nameof(CompletedCount));
-            OnPropertyChanged(nameof(SelectedCount));
+            if (string.IsNullOrWhiteSpace(value)) return;
+            if (!collection.Contains(value))
+            {
+                collection.Add(value);
+            }
+        }
+
+        #endregion
+
+        #region Row Selection Handler
+
+        public void OnDataGridSelectionChanged(DataRowView rowView)
+        {
+            SelectedDataRowView = rowView;
+        }
+
+        public void OnDataGridSelectionChanged(int selectedCount, List<int> selectedIds)
+        {
+            SetSelectedCount(selectedCount);
+            UpdateSelectedIds(selectedIds);
+        }
+
+        #endregion
+
+        #region Selection Tracking
+
+        private void TrackDataGridSelection(System.Windows.Controls.DataGrid dataGrid)
+        {
+            if (dataGrid == null) return;
+
+            var selectedIds = new List<int>();
+            foreach (var item in dataGrid.SelectedItems)
+            {
+                if (item is DataRowView rowView)
+                {
+                    selectedIds.Add(Convert.ToInt32(rowView["Id"]));
+                }
+            }
+
+            SetSelectedCount(selectedIds.Count);
+            UpdateSelectedIds(selectedIds);
         }
 
         #endregion
