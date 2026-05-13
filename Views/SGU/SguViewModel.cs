@@ -25,14 +25,35 @@ namespace ProGlassAutomation.ViewModels
         }
 
         // ═══════════════════════════════════════════════════════════
-        // COLLECTIONS - Initialize empty, load in constructor
+        // COLLECTIONS
         // ═══════════════════════════════════════════════════════════
 
         public ObservableCollection<string> CategoryOptions { get; } = new();
         public ObservableCollection<string> ThicknessOptions { get; } = new();
         public ObservableCollection<GlassColorItem> ColorOptions { get; } = new();
-        public ObservableCollection<string> WastageOptions { get; } = new();
-        public ObservableCollection<string> ProfitMarginOptions { get; } = new();
+
+        // Wastage options WITH % symbol
+        public ObservableCollection<string> WastageOptions { get; } = new()
+        {
+            "5%",
+            "10%",
+            "15%",
+            "20%",
+            "25%",
+            "30%"
+        };
+
+        // Profit margin options WITH % symbol
+        public ObservableCollection<string> ProfitMarginOptions { get; } = new()
+        {
+            "5%",
+            "10%",
+            "15%",
+            "20%",
+            "25%",
+            "30%"
+        };
+
         public ObservableCollection<string> EdgeWorkTypes { get; } = new();
         public ObservableCollection<string> DrillingOptions { get; } = new();
         public ObservableCollection<string> TemperingOptions { get; } = new();
@@ -67,28 +88,28 @@ namespace ProGlassAutomation.ViewModels
         public string Category
         {
             get => _category;
-            set { _category = value; OnPropertyChanged(); Calculate(); }
+            set { _category = value; OnPropertyChanged(); RecalculateAll(); }
         }
 
         private string _thickness = "";
         public string Thickness
         {
             get => _thickness;
-            set { _thickness = value; OnPropertyChanged(); Calculate(); }
+            set { _thickness = value; OnPropertyChanged(); RecalculateAll(); }
         }
 
         private string _colorName = "";
         public string ColorName
         {
             get => _colorName;
-            set { _colorName = value; OnPropertyChanged(); Calculate(); }
+            set { _colorName = value; OnPropertyChanged(); RecalculateAll(); }
         }
 
         private double? _sheetPrice;
         public double? SheetPrice
         {
             get => _sheetPrice;
-            set { _sheetPrice = value; OnPropertyChanged(); Calculate(); }
+            set { _sheetPrice = value; OnPropertyChanged(); RecalculateAll(); }
         }
 
         // ═══════════════════════════════════════════════════════════
@@ -99,39 +120,87 @@ namespace ProGlassAutomation.ViewModels
         public double? Cutting
         {
             get => _cutting;
-            set { _cutting = value; OnPropertyChanged(); Calculate(); }
+            set { _cutting = value; OnPropertyChanged(); RecalculateAll(); }
         }
 
         private double? _temperingCharge;
         public double? TemperingCharge
         {
             get => _temperingCharge;
-            set { _temperingCharge = value; OnPropertyChanged(); Calculate(); }
+            set { _temperingCharge = value; OnPropertyChanged(); RecalculateAll(); }
         }
 
         private double? _otherCharges;
         public double? OtherCharges
         {
             get => _otherCharges;
-            set { _otherCharges = value; OnPropertyChanged(); Calculate(); }
+            set { _otherCharges = value; OnPropertyChanged(); RecalculateAll(); }
         }
 
         // ═══════════════════════════════════════════════════════════
-        // PROPERTIES - WASTAGE & PROFIT
+        // PROPERTIES - WASTAGE (Index-based for XAML binding)
         // ═══════════════════════════════════════════════════════════
 
-        private string _wastage = "15";
-        public string Wastage
+        private int _wastageIndex = 2; // Default to "15%" (index 2)
+        public int WastageIndex
+        {
+            get => _wastageIndex;
+            set
+            {
+                if (Set(ref _wastageIndex, value) && value >= 0 && value < WastageOptions.Count)
+                {
+                    _wastage = ParsePercentage(WastageOptions[value]);
+                    OnPropertyChanged(nameof(Wastage));
+                    RecalculateAll();
+                }
+            }
+        }
+
+        // Double property for calculation
+        private double _wastage = 15.0;
+        public double Wastage
         {
             get => _wastage;
-            set { _wastage = value; OnPropertyChanged(); Calculate(); }
+            set
+            {
+                if (Set(ref _wastage, value))
+                {
+                    RecalculateAll();
+                }
+            }
         }
 
-        private string _profitMargin = "15%";
-        public string ProfitMargin
+        // ═══════════════════════════════════════════════════════════
+        // PROPERTIES - PROFIT MARGIN (Index-based for XAML binding)
+        // ═══════════════════════════════════════════════════════════
+
+        private int _profitIndex = 2; // Default to "15%" (index 2)
+        public int ProfitIndex
+        {
+            get => _profitIndex;
+            set
+            {
+                if (Set(ref _profitIndex, value) && value >= 0 && value < ProfitMarginOptions.Count)
+                {
+                    _profitMargin = ParsePercentage(ProfitMarginOptions[value]);
+                    OnPropertyChanged(nameof(ProfitMargin));
+                    RecalculateAll();
+                }
+            }
+        }
+
+        // Double property for calculation
+        private double _profitMargin = 15.0;
+        public double ProfitMargin
         {
             get => _profitMargin;
-            set { _profitMargin = value; OnPropertyChanged(); Calculate(); }
+            set
+            {
+                if (Set(ref _profitMargin, value))
+                {
+                    RecalculateAll();
+                }
+            }
         }
 
         // ═══════════════════════════════════════════════════════════
@@ -202,21 +271,21 @@ namespace ProGlassAutomation.ViewModels
         public int Width
         {
             get => _width;
-            set { _width = value; OnPropertyChanged(); CalculateDimensions(); }
+            set { _width = value; OnPropertyChanged(); RecalculateAll(); }
         }
 
         private int _height;
         public int Height
         {
             get => _height;
-            set { _height = value; OnPropertyChanged(); CalculateDimensions(); }
+            set { _height = value; OnPropertyChanged(); RecalculateAll(); }
         }
 
         private int _quantity = 1;
         public int Quantity
         {
             get => _quantity;
-            set { _quantity = value; OnPropertyChanged(); CalculateDimensions(); }
+            set { _quantity = value; OnPropertyChanged(); RecalculateAll(); }
         }
 
         private double _totalArea;
@@ -313,8 +382,6 @@ namespace ProGlassAutomation.ViewModels
             AddRange(CategoryOptions, Sheet.Categories);
             AddRange(ThicknessOptions, Sheet.Thicknesses);
             AddRange(ColorOptions, Sheet.ColorItems);
-            AddRange(WastageOptions, Sheet.WastageOptions);
-            AddRange(ProfitMarginOptions, Sheet.ProfitMarginOptions);
             AddRange(EdgeWorkTypes, Sheet.EdgeWorkTypes);
             AddRange(DrillingOptions, Sheet.DrillingOptions);
             AddRange(TemperingOptions, Sheet.TemperingOptions);
@@ -327,8 +394,6 @@ namespace ProGlassAutomation.ViewModels
             if (CategoryOptions.Count > 0) _category = CategoryOptions[0];
             if (ThicknessOptions.Count > 0) _thickness = ThicknessOptions[0];
             if (ColorOptions.Count > 0) _colorName = ColorOptions[0].Name;
-            if (WastageOptions.Count > 1) _wastage = WastageOptions[1];
-            if (ProfitMarginOptions.Count > 1) _profitMargin = ProfitMarginOptions[1];
             if (EdgeWorkTypes.Count > 0) _edgeWork = EdgeWorkTypes[0];
             if (DrillingOptions.Count > 0) _drilling = DrillingOptions[0];
             if (TemperingOptions.Count > 0) _tempering = TemperingOptions[0];
@@ -336,6 +401,14 @@ namespace ProGlassAutomation.ViewModels
             if (SurfaceTreatments.Count > 0) _surfaceTreatment = SurfaceTreatments[0];
             if (CutoutOptions.Count > 0) _cutout = CutoutOptions[0];
             if (UnitOptions.Count > 0) _unit = UnitOptions[0];
+
+            // Initialize wastage index (default = 15% = index 2)
+            _wastageIndex = 2;
+            _wastage = 15.0;
+
+            // Initialize profit margin index (default = 15% = index 2)
+            _profitIndex = 2;
+            _profitMargin = 15.0;
 
             SaveCommand = new RelayCommand(o =>
             {
@@ -355,8 +428,8 @@ namespace ProGlassAutomation.ViewModels
                     Cutting = Cutting ?? 0,
                     TemperingCharge = TemperingCharge ?? 0,
                     OtherCharges = OtherCharges ?? 0,
-                    Wastage = $"{_wastage}%",
-                    ProfitMargin = _profitMargin,
+                    Wastage = WastageOptions[_wastageIndex],
+                    ProfitMargin = ProfitMarginOptions[_profitIndex],
                     CreatedAt = DateTime.Now.ToString("dd/MM HH:mm"),
                     Result = Result,
                     Unit = Unit,
@@ -383,7 +456,7 @@ namespace ProGlassAutomation.ViewModels
                 SheetPrice = null;
                 Cutting = null;
                 TemperingCharge = null;
-                OtherCharges = null;
+                OtherCharges = 0;
                 Width = 0;
                 Height = 0;
                 Quantity = 1;
@@ -404,7 +477,7 @@ namespace ProGlassAutomation.ViewModels
                 OnPropertyChanged(nameof(IsHistoryEmpty));
             });
 
-            Calculate();
+            RecalculateAll();
         }
 
         // ═══════════════════════════════════════════════════════════
@@ -432,6 +505,69 @@ namespace ProGlassAutomation.ViewModels
                 collection.Add(item);
         }
 
+        /// <summary>
+        /// Parse percentage string to double value (removes % symbol)
+        /// </summary>
+        private double ParsePercentage(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return 0;
+
+            string cleaned = value.Replace("%", "").Trim();
+
+            if (double.TryParse(cleaned, out double result))
+                return result;
+
+            return 0;
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // CALCULATE ALL
+        // ═══════════════════════════════════════════════════════════
+
+        private void RecalculateAll()
+        {
+            // Glass Cost
+            _glassCost = SheetPrice ?? 0;
+
+            // Wastage calculation
+            // Formula: Base Cost = Glass Cost / (1 - wastage%)
+            double wastageFactor = 1.0 - (_wastage / 100.0);
+            _baseCost = wastageFactor > 0 ? _glassCost / wastageFactor : _glassCost;
+
+            // Processing costs
+            double cutting = Cutting ?? 0;
+            double tempering = TemperingCharge ?? 0;
+            double other = OtherCharges ?? 0;
+            _processingCost = cutting + tempering + other;
+
+            // Subtotal (base cost + processing)
+            _subtotal = _baseCost + _processingCost;
+
+            // Profit margin calculation
+            // Formula: Result = Subtotal * (1 + profit%)
+            double profitFactor = 1.0 + (_profitMargin / 100.0);
+            _result = _subtotal * profitFactor;
+
+            // VAT (5%)
+            _vatAmount = _result * 0.05;
+
+            // Gross Total
+            _grossTotal = _result + _vatAmount;
+
+            // Update dimension calculations
+            CalculateDimensions();
+
+            // Notify all calculation result properties changed
+            OnPropertyChanged(nameof(GlassCost));
+            OnPropertyChanged(nameof(BaseCost));
+            OnPropertyChanged(nameof(ProcessingCost));
+            OnPropertyChanged(nameof(Subtotal));
+            OnPropertyChanged(nameof(Result));
+            OnPropertyChanged(nameof(VatAmount));
+            OnPropertyChanged(nameof(GrossTotal));
+        }
+
         // ═══════════════════════════════════════════════════════════
         // CALCULATE DIMENSIONS
         // ═══════════════════════════════════════════════════════════
@@ -440,49 +576,19 @@ namespace ProGlassAutomation.ViewModels
         {
             if (Width > 0 && Height > 0)
             {
+                // Area in square meters (dimensions in mm)
                 _totalArea = (Width * Height * Quantity) / 1000000.0;
-                _totalPrice = Result * Quantity;
             }
             else
             {
                 _totalArea = 0;
-                _totalPrice = Result * Quantity;
             }
+
+            // Total price = unit price * quantity
+            _totalPrice = _result * Quantity;
+
             OnPropertyChanged(nameof(TotalArea));
             OnPropertyChanged(nameof(TotalPrice));
-        }
-
-        // ═══════════════════════════════════════════════════════════
-        // CALCULATE
-        // ═══════════════════════════════════════════════════════════
-
-        public void Calculate()
-        {
-            _glassCost = SheetPrice ?? 0;
-            double wastageFactor = 1 - (double.Parse(_wastage) / 100.0);
-            _baseCost = wastageFactor > 0 ? _glassCost / wastageFactor : _glassCost;
-
-            double cutting = Cutting ?? 0;
-            double tempering = TemperingCharge ?? 0;
-            double other = OtherCharges ?? 0;
-            _processingCost = cutting + tempering + other;
-
-            double profitFactor = 1 + (double.Parse(_profitMargin.Replace("%", "")) / 100.0);
-            _subtotal = _baseCost + _processingCost;
-            _result = _subtotal * profitFactor;
-
-            _vatAmount = _result * 0.05;
-            _grossTotal = _result + _vatAmount;
-
-            CalculateDimensions();
-
-            OnPropertyChanged(nameof(GlassCost));
-            OnPropertyChanged(nameof(ProcessingCost));
-            OnPropertyChanged(nameof(BaseCost));
-            OnPropertyChanged(nameof(Subtotal));
-            OnPropertyChanged(nameof(Result));
-            OnPropertyChanged(nameof(VatAmount));
-            OnPropertyChanged(nameof(GrossTotal));
         }
     }
 
