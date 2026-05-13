@@ -23,6 +23,10 @@ namespace ProGlassAutomation.Models
         private string _notes = "";
         private DateTime _createdDate;
 
+        // ═══════════════════════════════════════════════════════════
+        // BASIC PROPERTIES
+        // ═══════════════════════════════════════════════════════════
+
         public int Id
         {
             get => _id;
@@ -32,13 +36,13 @@ namespace ProGlassAutomation.Models
         public DateTime Date
         {
             get => _date;
-            set { _date = value; OnPropertyChanged(); }
+            set { _date = value; OnPropertyChanged(); OnPropertyChanged(nameof(FormattedDate)); }
         }
 
         public DateTime UpdateDate
         {
             get => _updateDate;
-            set { _updateDate = value; OnPropertyChanged(); }
+            set { _updateDate = value; OnPropertyChanged(); OnPropertyChanged(nameof(FormattedUpdateDate)); }
         }
 
         public string Company
@@ -68,31 +72,31 @@ namespace ProGlassAutomation.Models
         public string ProductionStatus
         {
             get => _productionStatus;
-            set { _productionStatus = value ?? ""; OnPropertyChanged(); }
+            set { _productionStatus = value ?? ""; OnPropertyChanged(); OnPropertyChanged(nameof(ProductionStatusColor)); }
         }
 
         public string DailyReportStatus
         {
             get => _dailyReportStatus;
-            set { _dailyReportStatus = value ?? ""; OnPropertyChanged(); }
+            set { _dailyReportStatus = value ?? ""; OnPropertyChanged(); OnPropertyChanged(nameof(DailyReportStatusColor)); }
         }
 
         public int Qty
         {
             get => _qty;
-            set { _qty = value; OnPropertyChanged(); }
+            set { _qty = value; OnPropertyChanged(); OnPropertyChanged(nameof(FormattedQty)); }
         }
 
         public double SQM
         {
             get => _sqm;
-            set { _sqm = value; OnPropertyChanged(); }
+            set { _sqm = value; OnPropertyChanged(); OnPropertyChanged(nameof(FormattedSQM)); }
         }
 
         public string Status
         {
             get => _status;
-            set { _status = value ?? ""; OnPropertyChanged(); }
+            set { _status = value ?? ""; OnPropertyChanged(); OnPropertyChanged(nameof(StatusColor)); }
         }
 
         public string Salesman
@@ -119,7 +123,10 @@ namespace ProGlassAutomation.Models
             set { _createdDate = value; OnPropertyChanged(); }
         }
 
-        // Computed Properties for Display
+        // ═══════════════════════════════════════════════════════════
+        // COMPUTED PROPERTIES - Status Colors
+        // ═══════════════════════════════════════════════════════════
+
         public string StatusColor
         {
             get
@@ -128,8 +135,11 @@ namespace ProGlassAutomation.Models
                 {
                     "Release" => "#10B981",
                     "Hold" => "#F59E0B",
-                    "Cancel" => "#EF4444",
+                    "Cancel" or "Cancelled" => "#EF4444",
                     "Confirmed" => "#6366F1",
+                    "Completed" => "#10B981",
+                    "In Progress" => "#3B82F6",
+                    "Pending" => "#F59E0B",
                     _ => "#64748B"
                 };
             }
@@ -170,12 +180,19 @@ namespace ProGlassAutomation.Models
             }
         }
 
-        public string FormattedDate => Date.ToString("yyyy-MM-dd");
-        public string FormattedUpdateDate => UpdateDate.ToString("yyyy-MM-dd");
+        // ═══════════════════════════════════════════════════════════
+        // FORMATTED PROPERTIES
+        // ═══════════════════════════════════════════════════════════
+
+        public string FormattedDate => Date.ToString("dd-MM-yyyy");
+        public string FormattedUpdateDate => UpdateDate.ToString("dd-MM-yyyy");
         public string FormattedSQM => SQM.ToString("N2");
         public string FormattedQty => Qty.ToString();
 
-        // Event
+        // ═══════════════════════════════════════════════════════════
+        // EVENT & METHODS
+        // ═══════════════════════════════════════════════════════════
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
@@ -183,7 +200,10 @@ namespace ProGlassAutomation.Models
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        // Clone Method
+        // ═══════════════════════════════════════════════════════════
+        // CLONE METHOD
+        // ═══════════════════════════════════════════════════════════
+
         public DailyWork Clone()
         {
             return new DailyWork
@@ -204,6 +224,19 @@ namespace ProGlassAutomation.Models
                 Color = this.Color,
                 Notes = this.Notes,
                 CreatedDate = this.CreatedDate
+            };
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // FACTORY METHOD
+        // ═══════════════════════════════════════════════════════════
+
+        public static DailyWork CreateNew()
+        {
+            return new DailyWork
+            {
+                Date = DateTime.Today,
+                CreatedDate = DateTime.Now
             };
         }
     }

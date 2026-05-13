@@ -34,6 +34,7 @@
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
                     <Setter Property="Background" Value="#DBEAFE"/>
@@ -182,6 +183,9 @@
             <Setter Property="Padding" Value="12,10"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="BorderBrush" Value="#D1D5DB"/>
+            <Setter Property="IsEditable" Value="True"/>
+            <EventSetter Event="GotFocus" Handler="ComboBox_GotFocus"/>
+            <EventSetter Event="PreviewMouseLeftButtonDown" Handler="ComboBox_PreviewMouseLeftButtonDown"/>
         </Style>
 
         <Style x:Key="ModernTextBox" TargetType="TextBox">
@@ -191,6 +195,8 @@
             <Setter Property="Padding" Value="12,10"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Foreground" Value="#1E293B"/>
+            <EventSetter Event="GotFocus" Handler="TextBox_GotFocus"/>
+            <EventSetter Event="PreviewMouseLeftButtonDown" Handler="TextBox_PreviewMouseLeftButtonDown"/>
         </Style>
 
         <Style x:Key="ModernDatePicker" TargetType="DatePicker">
@@ -376,10 +382,10 @@
                     <TextBlock Text="DATE FROM" FontSize="9" FontWeight="Bold" Foreground="#BFDBFE" Margin="0,0,0,4"/>
                     <Border CornerRadius="25" Background="White" Padding="10,8">
                         <DatePicker SelectedDate="{Binding FilterStartDate, UpdateSourceTrigger=PropertyChanged}" 
-                                    BorderThickness="0" 
-                                    Background="Transparent" 
-                                    FontSize="12" 
-                                    Foreground="#1E293B"/>
+                                   BorderThickness="0" 
+                                   Background="Transparent" 
+                                   FontSize="12" 
+                                   Foreground="#1E293B"/>
                     </Border>
                 </StackPanel>
 
@@ -387,10 +393,10 @@
                     <TextBlock Text="DATE TO" FontSize="9" FontWeight="Bold" Foreground="#BFDBFE" Margin="0,0,0,4"/>
                     <Border CornerRadius="25" Background="White" Padding="10,8">
                         <DatePicker SelectedDate="{Binding FilterEndDate, UpdateSourceTrigger=PropertyChanged}" 
-                                    BorderThickness="0" 
-                                    Background="Transparent" 
-                                    FontSize="12" 
-                                    Foreground="#1E293B"/>
+                                   BorderThickness="0" 
+                                   Background="Transparent" 
+                                   FontSize="12" 
+                                   Foreground="#1E293B"/>
                     </Border>
                 </StackPanel>
 
@@ -428,42 +434,48 @@
                     <TextBlock Text="COMPANY" FontSize="9" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                     <ComboBox Style="{StaticResource ModernComboBox}" 
                               ItemsSource="{Binding CompanyOptions}" 
-                              SelectedItem="{Binding FilterCompany, UpdateSourceTrigger=PropertyChanged}"/>
+                              Text="{Binding FilterCompany, UpdateSourceTrigger=PropertyChanged}"
+                              IsEditable="True"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Margin="0,0,8,0">
                     <TextBlock Text="TYPE OF WORK" FontSize="9" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                     <ComboBox Style="{StaticResource ModernComboBox}" 
                               ItemsSource="{Binding TypeOfWorkOptions}" 
-                              SelectedItem="{Binding FilterTypeOfWork, UpdateSourceTrigger=PropertyChanged}"/>
+                              Text="{Binding FilterTypeOfWork, UpdateSourceTrigger=PropertyChanged}"
+                              IsEditable="True"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Margin="0,0,8,0">
                     <TextBlock Text="PRODUCTION STATUS" FontSize="9" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                     <ComboBox Style="{StaticResource ModernComboBox}" 
                               ItemsSource="{Binding ProductionStatusOptions}" 
-                              SelectedItem="{Binding FilterProductionStatus, UpdateSourceTrigger=PropertyChanged}"/>
+                              Text="{Binding FilterProductionStatus, UpdateSourceTrigger=PropertyChanged}"
+                              IsEditable="True"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="3" Margin="0,0,8,0">
                     <TextBlock Text="STATUS" FontSize="9" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                     <ComboBox Style="{StaticResource ModernComboBox}" 
                               ItemsSource="{Binding StatusOptions}" 
-                              SelectedItem="{Binding FilterStatus, UpdateSourceTrigger=PropertyChanged}"/>
+                              Text="{Binding FilterStatus, UpdateSourceTrigger=PropertyChanged}"
+                              IsEditable="True"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="4" Margin="0,0,8,0">
                     <TextBlock Text="SALESMAN" FontSize="9" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                     <ComboBox Style="{StaticResource ModernComboBox}" 
                               ItemsSource="{Binding SalesmanOptions}" 
-                              SelectedItem="{Binding FilterSalesman, UpdateSourceTrigger=PropertyChanged}"/>
+                              Text="{Binding FilterSalesman, UpdateSourceTrigger=PropertyChanged}"
+                              IsEditable="True"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="5" Margin="0,0,0,0">
                     <TextBlock Text="COLOR" FontSize="9" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                     <ComboBox Style="{StaticResource ModernComboBox}" 
                               ItemsSource="{Binding ColorOptions}" 
-                              SelectedItem="{Binding FilterColor, UpdateSourceTrigger=PropertyChanged}"/>
+                              Text="{Binding FilterColor, UpdateSourceTrigger=PropertyChanged}"
+                              IsEditable="True"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -474,22 +486,22 @@
                 <DropShadowEffect BlurRadius="15" ShadowDepth="2" Opacity="0.1"/>
             </Border.Effect>
             <DataGrid x:Name="MainDataGrid"
-          ItemsSource="{Binding FilteredDataView}" 
-          SelectedItem="{Binding SelectedDataRowView}"
-          SelectionMode="Extended"
-          SelectionUnit="FullRow"
-          MouseDoubleClick="DataGrid_MouseDoubleClick"
-          Style="{StaticResource ModernDataGrid}" 
-          CellStyle="{StaticResource ModernCell}"
-          RowStyle="{StaticResource ModernRowStyle}"
-          SelectionChanged="MainDataGrid_SelectionChanged">
+                      ItemsSource="{Binding FilteredDataView}" 
+                      SelectedItem="{Binding SelectedDataRowView}"
+                      SelectionMode="Extended"
+                      SelectionUnit="FullRow"
+                      MouseDoubleClick="DataGrid_MouseDoubleClick"
+                      Style="{StaticResource ModernDataGrid}" 
+                      CellStyle="{StaticResource ModernCell}"
+                      RowStyle="{StaticResource ModernRowStyle}"
+                      SelectionChanged="MainDataGrid_SelectionChanged">
                 <DataGrid.Columns>
                     <!-- SELECT CHECKBOX COLUMN -->
                     <DataGridTemplateColumn Header="" Width="45">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <CheckBox HorizontalAlignment="Center" 
-                      IsChecked="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected, Mode=OneWay}"/>
+                                          IsChecked="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected, Mode=OneWay}"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                         <DataGridTemplateColumn.HeaderTemplate>
@@ -502,8 +514,8 @@
                     <DataGridTemplateColumn Header="DATE" Width="100" HeaderStyle="{StaticResource HeaderBlue}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Border Background="#EFF6FF" CornerRadius="6" Padding="8,4">
-                                    <TextBlock Text="{Binding Date, StringFormat='{}{0:dd-MM-yyyy}'}" FontSize="12" Foreground="#1D4ED8" FontWeight="Medium"/>
+                                <Border Background="#EFF6FF" CornerRadius="6" Padding="8,4" HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding Date, StringFormat=dd-MM-yyyy}" FontSize="12" Foreground="#1D4ED8" FontWeight="Medium" HorizontalAlignment="Center"/>
                                 </Border>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
@@ -512,7 +524,7 @@
                     <DataGridTemplateColumn Header="COMPANY" Width="150" HeaderStyle="{StaticResource HeaderPurple}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Company}" FontSize="12" Foreground="#4C1D95" FontWeight="Medium"/>
+                                <TextBlock Text="{Binding Company}" FontSize="12" Foreground="#4C1D95" FontWeight="Medium" HorizontalAlignment="Center"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
@@ -520,7 +532,7 @@
                     <DataGridTemplateColumn Header="PI NUMBER" Width="130" HeaderStyle="{StaticResource HeaderIndigo}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding PINumber}" FontSize="12" Foreground="#3730A3" FontWeight="Medium"/>
+                                <TextBlock Text="{Binding PINumber}" FontSize="12" Foreground="#3730A3" FontWeight="Medium" HorizontalAlignment="Center"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
@@ -528,7 +540,7 @@
                     <DataGridTemplateColumn Header="CUST REF" Width="120" HeaderStyle="{StaticResource HeaderCyan}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding CustomerReference}" FontSize="12" Foreground="#0E7490" FontWeight="Medium"/>
+                                <TextBlock Text="{Binding CustomerReference}" FontSize="12" Foreground="#0E7490" FontWeight="Medium" HorizontalAlignment="Center"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
@@ -536,8 +548,8 @@
                     <DataGridTemplateColumn Header="TYPE OF WORK" Width="150" HeaderStyle="{StaticResource HeaderTeal}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Border Background="#F0FDFA" CornerRadius="4" Padding="6,3">
-                                    <TextBlock Text="{Binding TypeOfWork}" FontSize="11" Foreground="#0F766E" FontWeight="Medium"/>
+                                <Border Background="#F0FDFA" CornerRadius="4" Padding="6,3" HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding TypeOfWork}" FontSize="11" Foreground="#0F766E" FontWeight="Medium" HorizontalAlignment="Center"/>
                                 </Border>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
@@ -546,7 +558,7 @@
                     <DataGridTemplateColumn Header="PRODUCTION" Width="140" HeaderStyle="{StaticResource HeaderAmber}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding ProductionStatus}" FontSize="12" Foreground="#B45309" FontWeight="Medium"/>
+                                <TextBlock Text="{Binding ProductionStatus}" FontSize="12" Foreground="#B45309" FontWeight="Medium" HorizontalAlignment="Center"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
@@ -570,7 +582,7 @@
                     <DataGridTemplateColumn Header="STATUS" Width="100" HeaderStyle="{StaticResource HeaderRose}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Border CornerRadius="10" Padding="8,3">
+                                <Border CornerRadius="10" Padding="8,3" HorizontalAlignment="Center">
                                     <Border.Style>
                                         <Style TargetType="Border">
                                             <Setter Property="Background" Value="#F1F5F9"/>
@@ -584,10 +596,19 @@
                                                 <DataTrigger Binding="{Binding Status}" Value="Pending">
                                                     <Setter Property="Background" Value="#FEE2E2"/>
                                                 </DataTrigger>
+                                                <DataTrigger Binding="{Binding Status}" Value="Release">
+                                                    <Setter Property="Background" Value="#DCFCE7"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Status}" Value="Hold">
+                                                    <Setter Property="Background" Value="#FEF3C7"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Status}" Value="Cancelled">
+                                                    <Setter Property="Background" Value="#FEE2E2"/>
+                                                </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
                                     </Border.Style>
-                                    <TextBlock Text="{Binding Status}" FontSize="11" FontWeight="SemiBold">
+                                    <TextBlock Text="{Binding Status}" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Center">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="Foreground" Value="#64748B"/>
@@ -599,6 +620,15 @@
                                                         <Setter Property="Foreground" Value="#D97706"/>
                                                     </DataTrigger>
                                                     <DataTrigger Binding="{Binding Status}" Value="Pending">
+                                                        <Setter Property="Foreground" Value="#DC2626"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Release">
+                                                        <Setter Property="Foreground" Value="#16A34A"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Hold">
+                                                        <Setter Property="Foreground" Value="#D97706"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Cancelled">
                                                         <Setter Property="Foreground" Value="#DC2626"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
@@ -613,7 +643,7 @@
                     <DataGridTemplateColumn Header="SALESMAN" Width="120" HeaderStyle="{StaticResource HeaderOrange}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Salesman}" FontSize="12" Foreground="#C2410C" FontWeight="Medium"/>
+                                <TextBlock Text="{Binding Salesman}" FontSize="12" Foreground="#C2410C" FontWeight="Medium" HorizontalAlignment="Center"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
@@ -621,7 +651,7 @@
                     <DataGridTemplateColumn Header="COLOR" Width="100" HeaderStyle="{StaticResource HeaderPink}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Color}" FontSize="12" Foreground="#BE185D" FontWeight="Medium"/>
+                                <TextBlock Text="{Binding Color}" FontSize="12" Foreground="#BE185D" FontWeight="Medium" HorizontalAlignment="Center"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
@@ -629,7 +659,7 @@
                     <DataGridTemplateColumn Header="NOTES" Width="*" HeaderStyle="{StaticResource HeaderSlate}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Notes}" FontSize="11" Foreground="#64748B" TextTrimming="CharacterEllipsis" MaxWidth="200"/>
+                                <TextBlock Text="{Binding Notes}" FontSize="11" Foreground="#64748B" TextTrimming="CharacterEllipsis" MaxWidth="200" HorizontalAlignment="Center"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
@@ -688,9 +718,9 @@
                             CommandParameter="{Binding SelectedDataRowView}" 
                             Margin="0,0,10,0"/>
                     <Button Content="Delete Selected" Style="{StaticResource DangerOutlineButton}" 
-        Command="{Binding DeleteSelectedCommand}" 
-        CommandParameter="{Binding ElementName=MainDataGrid}"
-        Margin="0,0,10,0"/>
+                            Command="{Binding DeleteSelectedCommand}" 
+                            CommandParameter="{Binding ElementName=MainDataGrid}"
+                            Margin="0,0,10,0"/>
                     <Button Content="Delete" Style="{StaticResource DangerButton}" 
                             Command="{Binding DeleteCommand}" 
                             CommandParameter="{Binding SelectedDataRowView}"/>
@@ -726,59 +756,72 @@
 
                         <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,10,12">
                             <TextBlock Text="COMPANY" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                            <TextBox Text="{Binding EditingWork.Company}" Style="{StaticResource ModernTextBox}"/>
+                            <TextBox Text="{Binding EditingWork.Company, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernTextBox}"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,12">
                             <TextBlock Text="PI NUMBER" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                            <TextBox Text="{Binding EditingWork.PINumber}" Style="{StaticResource ModernTextBox}"/>
+                            <TextBox Text="{Binding EditingWork.PINumber, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernTextBox}"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,12">
                             <TextBlock Text="CUST REF" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                            <TextBox Text="{Binding EditingWork.CustomerReference}" Style="{StaticResource ModernTextBox}"/>
+                            <TextBox Text="{Binding EditingWork.CustomerReference, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernTextBox}"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,10,12">
                             <TextBlock Text="TYPE OF WORK" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                            <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding TypeOfWorkOptions}" SelectedItem="{Binding EditingWork.TypeOfWork}"/>
+                            <ComboBox Style="{StaticResource ModernComboBox}" 
+                                      ItemsSource="{Binding TypeOfWorkOptions}" 
+                                      Text="{Binding EditingWork.TypeOfWork, UpdateSourceTrigger=PropertyChanged}"
+                                      IsEditable="True"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,12">
                             <TextBlock Text="PRODUCTION" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                            <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding ProductionStatusOptions}" SelectedItem="{Binding EditingWork.ProductionStatus}"/>
+                            <ComboBox Style="{StaticResource ModernComboBox}" 
+                                      ItemsSource="{Binding ProductionStatusOptions}" 
+                                      Text="{Binding EditingWork.ProductionStatus, UpdateSourceTrigger=PropertyChanged}"
+                                      IsEditable="True"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,10,12">
                             <TextBlock Text="QTY" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                            <TextBox Text="{Binding EditingWork.Qty}" Style="{StaticResource ModernTextBox}"/>
+                            <TextBox Text="{Binding EditingWork.Qty, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernTextBox}"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,10,12">
                             <TextBlock Text="SQM" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                            <TextBox Text="{Binding EditingWork.SQM}" Style="{StaticResource ModernTextBox}"/>
+                            <TextBox Text="{Binding EditingWork.SQM, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernTextBox}"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.Column="2" Margin="0,0,0,12">
                             <TextBlock Text="STATUS" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                            <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding StatusOptions}" SelectedItem="{Binding EditingWork.Status}"/>
+                            <ComboBox Style="{StaticResource ModernComboBox}" 
+                                      ItemsSource="{Binding StatusOptions}" 
+                                      Text="{Binding EditingWork.Status, UpdateSourceTrigger=PropertyChanged}"
+                                      IsEditable="True"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="3" Grid.Column="0" Margin="0,0,10,12">
                             <TextBlock Text="SALESMAN" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                            <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding SalesmanOptions}" SelectedItem="{Binding EditingWork.Salesman}"/>
+                            <ComboBox Style="{StaticResource ModernComboBox}" 
+                                      ItemsSource="{Binding SalesmanOptions}" 
+                                      Text="{Binding EditingWork.Salesman, UpdateSourceTrigger=PropertyChanged}"
+                                      IsEditable="True"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="3" Grid.Column="1" Margin="0,0,10,12">
                             <TextBlock Text="COLOR" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <ComboBox Style="{StaticResource ModernComboBox}" 
                                       ItemsSource="{Binding ColorOptions}" 
-                                      SelectedItem="{Binding EditingWork.Color}"/>
+                                      Text="{Binding EditingWork.Color, UpdateSourceTrigger=PropertyChanged}"
+                                      IsEditable="True"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="3" Grid.Column="2" Margin="0,0,0,12">
                             <TextBlock Text="NOTES" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                            <TextBox Text="{Binding EditingWork.Notes}" 
+                            <TextBox Text="{Binding EditingWork.Notes, UpdateSourceTrigger=PropertyChanged}" 
                                      Style="{StaticResource ModernTextBox}"
                                      TextWrapping="Wrap"
                                      AcceptsReturn="True"

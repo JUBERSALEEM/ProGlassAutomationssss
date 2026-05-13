@@ -57,5 +57,51 @@ namespace ProGlassAutomation.Views
                 vm.SetSelectedCount(MainDataGrid?.SelectedItems?.Count ?? 0);
             }
         }
+
+        // ═══════════════════════════════════════════════════════════
+        // SELECT ALL ON CLICK - TextBox
+        // ═══════════════════════════════════════════════════════════
+
+        private void TextBox_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (sender is TextBox textBox)
+            {
+                textBox.SelectAll();
+            }
+        }
+
+        private void TextBox_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is TextBox textBox && !textBox.IsKeyboardFocusWithin)
+            {
+                e.Handled = true;
+                textBox.Focus();
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // SELECT ALL ON CLICK - ComboBox (Editable)
+        // ═══════════════════════════════════════════════════════════
+
+        private void ComboBox_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (sender is ComboBox comboBox && comboBox.IsEditable)
+            {
+                comboBox.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    var textBox = comboBox.Template.FindName("PART_EditableTextBox", comboBox) as TextBox;
+                    textBox?.SelectAll();
+                }), System.Windows.Threading.DispatcherPriority.Input);
+            }
+        }
+
+        private void ComboBox_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is ComboBox comboBox && !comboBox.IsKeyboardFocusWithin)
+            {
+                e.Handled = true;
+                comboBox.Focus();
+            }
+        }
     }
 }

@@ -33,19 +33,121 @@ namespace ProGlassAutomation.ViewModels
         private DailyWork _editingWork;
         private bool _isNewRecord;
 
-        // Options collections
-        public ObservableCollection<string> TypeOfWorkOptions { get; private set; }
-        public ObservableCollection<string> ProductionStatusOptions { get; private set; }
-        public ObservableCollection<string> DailyReportStatusOptions { get; private set; }
-        public ObservableCollection<string> StatusOptions { get; private set; }
-        public ObservableCollection<string> ColorOptions { get; private set; }
-        public ObservableCollection<string> SalesmanOptions { get; private set; }
-        public ObservableCollection<string> CompanyOptions { get; private set; }
+        // ✅ OPTIONS - Empty collections, populated dynamically
+        public ObservableCollection<string> TypeOfWorkOptions { get; } = new();
+        public ObservableCollection<string> ProductionStatusOptions { get; } = new();
+        public ObservableCollection<string> DailyReportStatusOptions { get; } = new();
+        public ObservableCollection<string> StatusOptions { get; } = new();
+        public ObservableCollection<string> ColorOptions { get; } = new();
+        public ObservableCollection<string> SalesmanOptions { get; } = new();
+        public ObservableCollection<string> CompanyOptions { get; } = new();
+
+        // ✅ Current selected values (for editing)
+        private string _selectedTypeOfWork = "";
+        private string _selectedProductionStatus = "";
+        private string _selectedDailyReportStatus = "";
+        private string _selectedStatus = "";
+        private string _selectedColor = "";
+        private string _selectedSalesman = "";
+        private string _selectedCompany = "";
+
+        // ✅ Current selected indices
+        private int _typeOfWorkIndex = -1;
+        private int _productionStatusIndex = -1;
+        private int _dailyReportStatusIndex = -1;
+        private int _statusIndex = -1;
+        private int _colorIndex = -1;
+        private int _salesmanIndex = -1;
+        private int _companyIndex = -1;
+
+        // ✅ Properties for Selected Values - NO AddToOptionsIfNew in setters
+        public string SelectedTypeOfWork
+        {
+            get => _selectedTypeOfWork;
+            set => SetProperty(ref _selectedTypeOfWork, value);
+        }
+
+        public int TypeOfWorkIndex
+        {
+            get => _typeOfWorkIndex;
+            set => SetProperty(ref _typeOfWorkIndex, value);
+        }
+
+        public string SelectedProductionStatus
+        {
+            get => _selectedProductionStatus;
+            set => SetProperty(ref _selectedProductionStatus, value);
+        }
+
+        public int ProductionStatusIndex
+        {
+            get => _productionStatusIndex;
+            set => SetProperty(ref _productionStatusIndex, value);
+        }
+
+        public string SelectedDailyReportStatus
+        {
+            get => _selectedDailyReportStatus;
+            set => SetProperty(ref _selectedDailyReportStatus, value);
+        }
+
+        public int DailyReportStatusIndex
+        {
+            get => _dailyReportStatusIndex;
+            set => SetProperty(ref _dailyReportStatusIndex, value);
+        }
+
+        public string SelectedStatus
+        {
+            get => _selectedStatus;
+            set => SetProperty(ref _selectedStatus, value);
+        }
+
+        public int StatusIndex
+        {
+            get => _statusIndex;
+            set => SetProperty(ref _statusIndex, value);
+        }
+
+        public string SelectedColor
+        {
+            get => _selectedColor;
+            set => SetProperty(ref _selectedColor, value);
+        }
+
+        public int ColorIndex
+        {
+            get => _colorIndex;
+            set => SetProperty(ref _colorIndex, value);
+        }
+
+        public string SelectedSalesman
+        {
+            get => _selectedSalesman;
+            set => SetProperty(ref _selectedSalesman, value);
+        }
+
+        public int SalesmanIndex
+        {
+            get => _salesmanIndex;
+            set => SetProperty(ref _salesmanIndex, value);
+        }
+
+        public string SelectedCompany
+        {
+            get => _selectedCompany;
+            set => SetProperty(ref _selectedCompany, value);
+        }
+
+        public int CompanyIndex
+        {
+            get => _companyIndex;
+            set => SetProperty(ref _companyIndex, value);
+        }
 
         public DailyWorksViewModel()
         {
             DailyWorks = new ObservableCollection<DailyWork>();
-            InitializeOptions();
 
             AddNewCommand = new RelayCommand(ExecuteAddNew);
             EditCommand = new RelayCommand(ExecuteEdit, CanExecuteEdit);
@@ -61,9 +163,68 @@ namespace ProGlassAutomation.ViewModels
             DeleteSelectedCommand = new RelayCommand(ExecuteDeleteSelected, CanExecuteDeleteSelected);
             PrintCommand = new RelayCommand(ExecutePrint);
 
-            // ✅ Load from database only (empty initially)
             LoadFromDatabase();
+            LoadOptionsFromDatabase();
             CreateDataView();
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // HELPER - Add to options if new
+        // ═══════════════════════════════════════════════════════════
+
+        private void AddToOptionsIfNew(ObservableCollection<string> collection, string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return;
+            if (!collection.Contains(value))
+            {
+                collection.Add(value);
+            }
+        }
+
+        private void SetSelectedValue(string value, ObservableCollection<string> collection, Action<int> setIndex, Action<string> setSelected)
+        {
+            var index = collection.IndexOf(value);
+            if (index >= 0)
+            {
+                setIndex(index);
+            }
+            else if (!string.IsNullOrWhiteSpace(value))
+            {
+                AddToOptionsIfNew(collection, value);
+                setIndex(collection.Count - 1);
+            }
+            else
+            {
+                setIndex(-1);
+            }
+            setSelected(value);
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // LOAD OPTIONS FROM DATABASE
+        // ═══════════════════════════════════════════════════════════
+
+        private void LoadOptionsFromDatabase()
+        {
+            try
+            {
+                var dbData = DbHelper.GetAllDailyWork();
+
+                foreach (var work in dbData)
+                {
+                    AddToOptionsIfNew(TypeOfWorkOptions, work.TypeOfWork);
+                    AddToOptionsIfNew(ProductionStatusOptions, work.ProductionStatus);
+                    AddToOptionsIfNew(DailyReportStatusOptions, work.DailyReportStatus);
+                    AddToOptionsIfNew(StatusOptions, work.Status);
+                    AddToOptionsIfNew(ColorOptions, work.Color);
+                    AddToOptionsIfNew(SalesmanOptions, work.Salesman);
+                    AddToOptionsIfNew(CompanyOptions, work.Company);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DailyWork] Load options error: {ex.Message}");
+            }
         }
 
         #region Properties
@@ -90,7 +251,6 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // Multi-select tracking
         public bool SelectAll
         {
             get => _selectAll;
@@ -123,8 +283,8 @@ namespace ProGlassAutomation.ViewModels
             OnPropertyChanged(nameof(SelectedCount));
         }
 
-        private System.Windows.Controls.DataGrid _mainDataGrid;
-        public System.Windows.Controls.DataGrid MainDataGrid
+        private DataGrid _mainDataGrid;
+        public DataGrid MainDataGrid
         {
             get => _mainDataGrid;
             set => SetProperty(ref _mainDataGrid, value);
@@ -289,55 +449,7 @@ namespace ProGlassAutomation.ViewModels
 
         #endregion
 
-        #region Initialization
-
-        private void InitializeOptions()
-        {
-            TypeOfWorkOptions = new ObservableCollection<string>
-            {
-                "Single Unit (SGU)", "Double Unit (DGU)", "Lamination Unit",
-                "Single + Double Unit", "SGU + DGU", "SGU + Lamination",
-                "DGU + Lamination", "SGU + DGU + Lamination", "Tempered",
-                "Tempered + Lamination", "Other"
-            };
-
-            ProductionStatusOptions = new ObservableCollection<string>
-            {
-                "Sent", "Confirmed", "Prepared", "In Production",
-                "Quality Check", "Completed", "Pending"
-            };
-
-            DailyReportStatusOptions = new ObservableCollection<string>
-            {
-                "Not Started", "In Progress", "On Hold", "Completed",
-                "Issue Found", "Re-work Required"
-            };
-
-            StatusOptions = new ObservableCollection<string>
-            {
-                "Pending", "In Progress", "Confirmed", "Cancelled",
-                "Release", "Hold", "Cancel"
-            };
-
-            ColorOptions = new ObservableCollection<string>
-            {
-                "Clear", "Green", "Blue", "Grey", "Bronze",
-                "Reflective Blue", "Reflective Green", "Reflective Grey",
-                "Low-E Clear", "Low-E Blue", "Frosted", "Tinted", "Other"
-            };
-
-            SalesmanOptions = new ObservableCollection<string>
-            {
-                "Ahmed Khan", "Muhammad Ali", "Hassan Ahmed", "Usman Malik",
-                "Bilal Shah", "Ali Raza", "Faisal Mahmood", "Imran Hussain"
-            };
-
-            CompanyOptions = new ObservableCollection<string>
-            {
-                "ABC Construction", "XYZ Windows", "Secure Buildings Ltd",
-                "Modern Glass Works", "Elite Glazing Co", "Premium Windows Inc"
-            };
-        }
+        #region DataView
 
         private void CreateDataView()
         {
@@ -396,7 +508,6 @@ namespace ProGlassAutomation.ViewModels
 
         #region Load Data from Database
 
-        // ✅ Load from database only (empty initially)
         private void LoadFromDatabase()
         {
             try
@@ -479,15 +590,26 @@ namespace ProGlassAutomation.ViewModels
                 Id = 0,
                 Date = DateTime.Today,
                 UpdateDate = DateTime.Today,
-                Status = "Release",
-                ProductionStatus = "Sent",
-                DailyReportStatus = "Not Started",
-                TypeOfWork = "Single Unit (SGU)",
-                Color = "Clear",
-                Qty = 0,
-                SQM = 0
+                CreatedDate = DateTime.Now
+                // ✅ NO DEFAULTS - all fields empty
             };
             IsEditing = true;
+
+            // Reset all selection indices
+            _typeOfWorkIndex = -1;
+            _productionStatusIndex = -1;
+            _dailyReportStatusIndex = -1;
+            _statusIndex = -1;
+            _colorIndex = -1;
+            _salesmanIndex = -1;
+            _companyIndex = -1;
+            _selectedTypeOfWork = "";
+            _selectedProductionStatus = "";
+            _selectedDailyReportStatus = "";
+            _selectedStatus = "";
+            _selectedColor = "";
+            _selectedSalesman = "";
+            _selectedCompany = "";
         }
 
         private void ExecuteEdit(object parameter)
@@ -502,18 +624,18 @@ namespace ProGlassAutomation.ViewModels
                     Id = Convert.ToInt32(dataRow["Id"]),
                     Date = Convert.ToDateTime(dataRow["Date"]),
                     UpdateDate = Convert.ToDateTime(dataRow["UpdateDate"]),
-                    Company = dataRow["Company"].ToString(),
-                    PINumber = dataRow["PINumber"].ToString(),
-                    CustomerReference = dataRow["CustomerReference"].ToString(),
-                    TypeOfWork = dataRow["TypeOfWork"].ToString(),
-                    ProductionStatus = dataRow["ProductionStatus"].ToString(),
-                    DailyReportStatus = dataRow["DailyReportStatus"].ToString(),
+                    Company = dataRow["Company"]?.ToString() ?? "",
+                    PINumber = dataRow["PINumber"]?.ToString() ?? "",
+                    CustomerReference = dataRow["CustomerReference"]?.ToString() ?? "",
+                    TypeOfWork = dataRow["TypeOfWork"]?.ToString() ?? "",
+                    ProductionStatus = dataRow["ProductionStatus"]?.ToString() ?? "",
+                    DailyReportStatus = dataRow["DailyReportStatus"]?.ToString() ?? "",
                     Qty = Convert.ToInt32(dataRow["Qty"]),
                     SQM = Convert.ToDouble(dataRow["SQM"]),
-                    Status = dataRow["Status"].ToString(),
-                    Salesman = dataRow["Salesman"].ToString(),
-                    Color = dataRow["Color"].ToString(),
-                    Notes = dataRow["Notes"].ToString()
+                    Status = dataRow["Status"]?.ToString() ?? "",
+                    Salesman = dataRow["Salesman"]?.ToString() ?? "",
+                    Color = dataRow["Color"]?.ToString() ?? "",
+                    Notes = dataRow["Notes"]?.ToString() ?? ""
                 };
             }
             else if (SelectedWork != null)
@@ -526,6 +648,30 @@ namespace ProGlassAutomation.ViewModels
                 _isNewRecord = false;
                 EditingWork = workToEdit.Clone();
                 IsEditing = true;
+
+                // Set dropdown selections
+                SetSelectedValue(workToEdit.TypeOfWork, TypeOfWorkOptions, i => _typeOfWorkIndex = i, v => _selectedTypeOfWork = v);
+                SetSelectedValue(workToEdit.ProductionStatus, ProductionStatusOptions, i => _productionStatusIndex = i, v => _selectedProductionStatus = v);
+                SetSelectedValue(workToEdit.DailyReportStatus, DailyReportStatusOptions, i => _dailyReportStatusIndex = i, v => _selectedDailyReportStatus = v);
+                SetSelectedValue(workToEdit.Status, StatusOptions, i => _statusIndex = i, v => _selectedStatus = v);
+                SetSelectedValue(workToEdit.Color, ColorOptions, i => _colorIndex = i, v => _selectedColor = v);
+                SetSelectedValue(workToEdit.Salesman, SalesmanOptions, i => _salesmanIndex = i, v => _selectedSalesman = v);
+                SetSelectedValue(workToEdit.Company, CompanyOptions, i => _companyIndex = i, v => _selectedCompany = v);
+
+                OnPropertyChanged(nameof(TypeOfWorkIndex));
+                OnPropertyChanged(nameof(ProductionStatusIndex));
+                OnPropertyChanged(nameof(DailyReportStatusIndex));
+                OnPropertyChanged(nameof(StatusIndex));
+                OnPropertyChanged(nameof(ColorIndex));
+                OnPropertyChanged(nameof(SalesmanIndex));
+                OnPropertyChanged(nameof(CompanyIndex));
+                OnPropertyChanged(nameof(SelectedTypeOfWork));
+                OnPropertyChanged(nameof(SelectedProductionStatus));
+                OnPropertyChanged(nameof(SelectedDailyReportStatus));
+                OnPropertyChanged(nameof(SelectedStatus));
+                OnPropertyChanged(nameof(SelectedColor));
+                OnPropertyChanged(nameof(SelectedSalesman));
+                OnPropertyChanged(nameof(SelectedCompany));
             }
         }
 
@@ -534,7 +680,6 @@ namespace ProGlassAutomation.ViewModels
             return parameter != null || SelectedDataRowView != null || SelectedWork != null;
         }
 
-        // ✅ DELETE - Saves to database
         private void ExecuteDelete(object parameter)
         {
             DailyWork workToDelete = null;
@@ -557,11 +702,9 @@ namespace ProGlassAutomation.ViewModels
 
                 if (result == MessageBoxResult.Yes)
                 {
-                    // ✅ Delete from database
                     DbHelper.DeleteDailyWork(workToDelete.Id);
                     System.Diagnostics.Debug.WriteLine($"[DailyWork] Deleted ID: {workToDelete.Id}");
 
-                    // Remove from collection
                     DailyWorks.Remove(workToDelete);
                     RefreshDataView();
                     UpdateStatistics();
@@ -576,7 +719,6 @@ namespace ProGlassAutomation.ViewModels
             return parameter != null || SelectedDataRowView != null || SelectedWork != null;
         }
 
-        // ✅ SAVE - Saves to database
         private void ExecuteSave(object parameter)
         {
             if (EditingWork == null) return;
@@ -592,7 +734,15 @@ namespace ProGlassAutomation.ViewModels
                 EditingWork.Id = DailyWorks.Count > 0 ? DailyWorks.Max(w => w.Id) + 1 : 1;
                 EditingWork.CreatedDate = DateTime.Now;
 
-                // ✅ Save to database
+                // Add new values to dropdown options
+                AddToOptionsIfNew(TypeOfWorkOptions, EditingWork.TypeOfWork);
+                AddToOptionsIfNew(ProductionStatusOptions, EditingWork.ProductionStatus);
+                AddToOptionsIfNew(DailyReportStatusOptions, EditingWork.DailyReportStatus);
+                AddToOptionsIfNew(StatusOptions, EditingWork.Status);
+                AddToOptionsIfNew(ColorOptions, EditingWork.Color);
+                AddToOptionsIfNew(SalesmanOptions, EditingWork.Salesman);
+                AddToOptionsIfNew(CompanyOptions, EditingWork.Company);
+
                 DbHelper.SaveDailyWork(EditingWork);
                 System.Diagnostics.Debug.WriteLine($"[DailyWork] Saved new ID: {EditingWork.Id}");
 
@@ -618,7 +768,15 @@ namespace ProGlassAutomation.ViewModels
                     existing.Color = EditingWork.Color;
                     existing.Notes = EditingWork.Notes;
 
-                    // ✅ Update in database
+                    // Add new values to dropdown options
+                    AddToOptionsIfNew(TypeOfWorkOptions, EditingWork.TypeOfWork);
+                    AddToOptionsIfNew(ProductionStatusOptions, EditingWork.ProductionStatus);
+                    AddToOptionsIfNew(DailyReportStatusOptions, EditingWork.DailyReportStatus);
+                    AddToOptionsIfNew(StatusOptions, EditingWork.Status);
+                    AddToOptionsIfNew(ColorOptions, EditingWork.Color);
+                    AddToOptionsIfNew(SalesmanOptions, EditingWork.Salesman);
+                    AddToOptionsIfNew(CompanyOptions, EditingWork.Company);
+
                     DbHelper.UpdateDailyWork(existing);
                     System.Diagnostics.Debug.WriteLine($"[DailyWork] Updated ID: {existing.Id}");
                 }
@@ -641,6 +799,7 @@ namespace ProGlassAutomation.ViewModels
         private void ExecuteRefresh(object parameter)
         {
             LoadFromDatabase();
+            LoadOptionsFromDatabase();
             RefreshDataView();
             UpdateStatistics();
         }
@@ -741,7 +900,6 @@ namespace ProGlassAutomation.ViewModels
                 copy.UpdateDate = DateTime.Today;
                 copy.CreatedDate = DateTime.Now;
 
-                // ✅ Save copy to database
                 DbHelper.SaveDailyWork(copy);
 
                 DailyWorks.Add(copy);
@@ -778,7 +936,6 @@ namespace ProGlassAutomation.ViewModels
                 duplicate.UpdateDate = DateTime.Today;
                 duplicate.CreatedDate = DateTime.Now;
 
-                // ✅ Save duplicate to database
                 DbHelper.SaveDailyWork(duplicate);
 
                 DailyWorks.Add(duplicate);
@@ -827,7 +984,6 @@ namespace ProGlassAutomation.ViewModels
         {
             var grid = new Grid { Margin = new Thickness(20) };
 
-            // Header
             var headerPanel = new StackPanel { Margin = new Thickness(0, 0, 0, 20) };
             headerPanel.Children.Add(new TextBlock
             {
@@ -853,7 +1009,6 @@ namespace ProGlassAutomation.ViewModels
             });
             grid.Children.Add(headerPanel);
 
-            // DataGrid for printing
             var dataGrid = new DataGrid
             {
                 ItemsSource = FilteredDataView,
@@ -884,10 +1039,9 @@ namespace ProGlassAutomation.ViewModels
             return grid;
         }
 
-        // ✅ DELETE SELECTED - Deletes multiple records from database
         private void ExecuteDeleteSelected(object parameter)
         {
-            if (parameter is System.Windows.Controls.DataGrid dataGrid)
+            if (parameter is DataGrid dataGrid)
             {
                 var selectedIds = new List<int>();
 
@@ -912,7 +1066,6 @@ namespace ProGlassAutomation.ViewModels
 
                 if (result == MessageBoxResult.Yes)
                 {
-                    // ✅ Delete each from database
                     foreach (var id in selectedIds)
                     {
                         DbHelper.DeleteDailyWork(id);
