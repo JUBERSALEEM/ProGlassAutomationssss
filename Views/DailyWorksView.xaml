@@ -521,7 +521,7 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <DataGridTemplateColumn Header="COMPANY" Width="150" HeaderStyle="{StaticResource HeaderPurple}">
+                    <DataGridTemplateColumn Header="COMPANY" Width="200" HeaderStyle="{StaticResource HeaderPurple}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding Company}" FontSize="12" Foreground="#4C1D95" FontWeight="Medium" HorizontalAlignment="Center"/>
@@ -670,7 +670,7 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <DataGridTemplateColumn Header="NOTES" Width="*" HeaderStyle="{StaticResource HeaderSlate}">
+                    <DataGridTemplateColumn Header="NOTES" Width="2*" HeaderStyle="{StaticResource HeaderSlate}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding Notes}" FontSize="11" Foreground="#64748B" TextTrimming="CharacterEllipsis" MaxWidth="200" HorizontalAlignment="Center"/>
@@ -744,7 +744,7 @@
 
         <!-- EDIT POPUP -->
         <Border Grid.Row="0" Grid.RowSpan="4" Background="#80000000" Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibilityConverter}}">
-            <Border CornerRadius="20" Padding="30" Margin="80,40" Background="White" VerticalAlignment="Center" HorizontalAlignment="Center" MinWidth="650">
+            <Border CornerRadius="20" Padding="30" Margin="80,40" Background="White" VerticalAlignment="Center" HorizontalAlignment="Center" MinWidth="750">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="25" ShadowDepth="5" Opacity="0.25"/>
                 </Border.Effect>
@@ -760,6 +760,7 @@
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="2*"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
@@ -775,23 +776,21 @@
                             <DatePicker Style="{StaticResource ModernDatePicker}" SelectedDate="{Binding EditingWork.Date}"/>
                         </StackPanel>
 
-                        <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,10,12">
+                        <StackPanel Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,0,0,12">
                             <TextBlock Text="COMPANY" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                            <!-- ✅ UPDATED: ComboBox with autocomplete -->
                             <ComboBox Style="{StaticResource ModernComboBox}" 
                                       ItemsSource="{Binding CompanyOptions}" 
                                       Text="{Binding EditingWork.Company, UpdateSourceTrigger=PropertyChanged}"
                                       IsEditable="True"/>
                         </StackPanel>
 
-                        <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,12">
+                        <StackPanel Grid.Row="0" Grid.Column="3" Margin="0,0,0,12">
                             <TextBlock Text="PI NUMBER" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <TextBox Text="{Binding EditingWork.PINumber, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernTextBox}"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,12">
                             <TextBlock Text="CUST REF" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                            <!-- ✅ UPDATED: ComboBox with autocomplete from CustomerReferenceOptions -->
                             <ComboBox Style="{StaticResource ModernComboBox}" 
                                       ItemsSource="{Binding CustomerReferenceOptions}" 
                                       Text="{Binding EditingWork.CustomerReference, UpdateSourceTrigger=PropertyChanged}"
@@ -848,9 +847,8 @@
                                       IsEditable="True"/>
                         </StackPanel>
 
-                        <StackPanel Grid.Row="3" Grid.Column="2" Margin="0,0,0,12">
+                        <StackPanel Grid.Row="3" Grid.Column="2" Grid.ColumnSpan="2" Margin="0,0,0,12">
                             <TextBlock Text="NOTES" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                            <!-- ✅ UPDATED: ComboBox with autocomplete from NotesOptions -->
                             <ComboBox Style="{StaticResource ModernComboBox}" 
                                       ItemsSource="{Binding NotesOptions}" 
                                       Text="{Binding EditingWork.Notes, UpdateSourceTrigger=PropertyChanged}"
