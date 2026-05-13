@@ -18,7 +18,7 @@ namespace ProGlassAutomation.Data.Database
         private static readonly string ConnStr =
             $"Data Source={DbPath};Cache=Shared";
 
-        private static readonly int LatestVersion = 7; // ✅ Updated to 7 for SGUHistory table
+        private static readonly int LatestVersion = 8; // ✅ Updated to 8 for CustomerReferences and NotesSuggestions tables
 
         // ================= CONNECTION =================
         private static SqliteConnection CreateConnection()
@@ -402,6 +402,28 @@ namespace ProGlassAutomation.Data.Database
                             Result REAL,
                             CustomNotes TEXT,
                             CreatedAt TEXT
+                        );
+                        ";
+                        cmd.ExecuteNonQuery();
+                    }
+                    break;
+
+                case 8:
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"
+                        CREATE TABLE IF NOT EXISTS CustomerReferences (
+                            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            CustomerReference TEXT NOT NULL UNIQUE,
+                            Company TEXT,
+                            CreatedAt TEXT
+                        );
+
+                        CREATE TABLE IF NOT EXISTS NotesSuggestions (
+                            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            Note TEXT NOT NULL UNIQUE,
+                            UseCount INTEGER DEFAULT 1,
+                            LastUsedAt TEXT
                         );
                         ";
                         cmd.ExecuteNonQuery();
@@ -837,6 +859,12 @@ namespace ProGlassAutomation.Data.Database
                 cmd.Parameters.AddWithValue("$cd", w.CreatedDate.ToString("yyyy-MM-dd HH:mm"));
 
                 cmd.ExecuteNonQuery();
+
+                // ✅ Save customer reference for autocomplete
+                if (!string.IsNullOrWhiteSpace(w.CustomerReference))
+                {
+                    SaveCustomerReference(w.CustomerReference, w.Company);
+                }
             });
         }
 
@@ -870,6 +898,12 @@ namespace ProGlassAutomation.Data.Database
                 cmd.Parameters.AddWithValue("$n", w.Notes ?? "");
 
                 cmd.ExecuteNonQuery();
+
+                // ✅ Save customer reference for autocomplete
+                if (!string.IsNullOrWhiteSpace(w.CustomerReference))
+                {
+                    SaveCustomerReference(w.CustomerReference, w.Company);
+                }
             });
         }
 
@@ -915,6 +949,134 @@ namespace ProGlassAutomation.Data.Database
                 cmd.CommandText = "DELETE FROM DailyWork WHERE Id = $id";
                 cmd.Parameters.AddWithValue("$id", id);
                 cmd.ExecuteNonQuery();
+            });
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // ✅ CUSTOMER REFERENCE AUTOCOMPLETE METHODS
+        // ═══════════════════════════════════════════════════════════════
+
+        public static void SaveCustomerReference(string customerRef, string company)
+        {
+            if (string.IsNullOrWhiteSpace(customerRef)) return;
+
+            Execute(conn =>
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"
+                    INSERT INTO CustomerReferences (CustomerReference, Company, CreatedAt)
+                    VALUES ($ref, $company, $created)
+                    ON CONFLICT(CustomerReference) DO UPDATE SET Company = $company";
+
+                cmd.Parameters.AddWithValue("$ref", customerRef);
+                cmd.Parameters.AddWithValue("$company", company ?? "");
+                cmd.Parameters.AddWithValue("$created", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
+                cmd.ExecuteNonQuery();
+            });
+        }
+
+        public static List<CustomerRefItem> GetAllCustomerReferences()
+        {
+            return Execute(conn =>
+            {
+                var list = new List<CustomerRefItem>();
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT Id, CustomerReference, Company FROM CustomerReferences ORDER BY CustomerReference";
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                {
+                    list.Add(new CustomerRefItem
+                    {
+                        Id = r.GetInt32(0),
+                        CustomerReference = r.GetString(1),
+                        Company = r.IsDBNull(2) ? "" : r.GetString(2)
+                    });
+                }
+                return list;
+            });
+        }
+
+        public static string GetCompanyByCustomerRef(string customerRef)
+        {
+            if (string.IsNullOrWhiteSpace(customerRef)) return "";
+
+            return Execute(conn =>
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT Company FROM CustomerReferences WHERE CustomerReference = $ref";
+                cmd.Parameters.AddWithValue("$ref", customerRef);
+                var result = cmd.ExecuteScalar();
+                return result?.ToString() ?? "";
+            });
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // ✅ NOTES AUTOCOMPLETE METHODS
+        // ═══════════════════════════════════════════════════════════════
+
+        public static void SaveNoteSuggestion(string note)
+        {
+            if (string.IsNullOrWhiteSpace(note)) return;
+
+            Execute(conn =>
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"
+                    INSERT INTO NotesSuggestions (Note, UseCount, LastUsedAt)
+                    VALUES ($note, 1, $lastUsed)
+                    ON CONFLICT(Note) DO UPDATE SET 
+                        UseCount = UseCount + 1,
+                        LastUsedAt = $lastUsed";
+
+                cmd.Parameters.AddWithValue("$note", note);
+                cmd.Parameters.AddWithValue("$lastUsed", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
+                cmd.ExecuteNonQuery();
+            });
+        }
+
+        public static List<string> GetAllNotes()
+        {
+            return Execute(conn =>
+            {
+                var list = new List<string>();
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT Note FROM NotesSuggestions ORDER BY UseCount DESC, LastUsedAt DESC";
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                {
+                    list.Add(r.GetString(0));
+                }
+                return list;
+            });
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // ✅ DUPLICATE CHECK METHOD
+        // ═══════════════════════════════════════════════════════════════
+
+        public static bool IsDuplicateDailyWork(string customerRef, string piNumber, int excludeId = 0)
+        {
+            if (string.IsNullOrWhiteSpace(customerRef) || string.IsNullOrWhiteSpace(piNumber)) return false;
+
+            return Execute(conn =>
+            {
+                using var cmd = conn.CreateCommand();
+                if (excludeId > 0)
+                {
+                    cmd.CommandText = @"
+                        SELECT COUNT(*) FROM DailyWork 
+                        WHERE CustomerReference = $ref AND PINumber = $pi AND Id != $excludeId";
+                    cmd.Parameters.AddWithValue("$excludeId", excludeId);
+                }
+                else
+                {
+                    cmd.CommandText = @"
+                        SELECT COUNT(*) FROM DailyWork 
+                        WHERE CustomerReference = $ref AND PINumber = $pi";
+                }
+                cmd.Parameters.AddWithValue("$ref", customerRef);
+                cmd.Parameters.AddWithValue("$pi", piNumber);
+                return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
             });
         }
 
@@ -2053,12 +2215,13 @@ namespace ProGlassAutomation.Data.Database
             {
                 return Execute(conn =>
                 {
-                var stats = new System.Text.StringBuilder();
+                    var stats = new System.Text.StringBuilder();
 
                     // Table counts
                     string[] tables = { "SGURecords", "DGURecords", "LaminationRecords",
                         "DailyWork", "Deliveries", "DeliveryItems",
-                        "SheetStore", "CalculationLogs", "SystemMetrics", "SGUHistory" };
+                        "SheetStore", "CalculationLogs", "SystemMetrics", "SGUHistory",
+                        "CustomerReferences", "NotesSuggestions" };
 
                     foreach (var table in tables)
                     {
@@ -2117,5 +2280,16 @@ namespace ProGlassAutomation.Data.Database
         public string PINumber { get; set; }
         public string Company { get; set; }
         public string ChangesJson { get; set; }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // ✅ CUSTOMER REFERENCE HELPER CLASS
+    // ═══════════════════════════════════════════════════════════════
+
+    public class CustomerRefItem
+    {
+        public int Id { get; set; }
+        public string CustomerReference { get; set; }
+        public string Company { get; set; }
     }
 }

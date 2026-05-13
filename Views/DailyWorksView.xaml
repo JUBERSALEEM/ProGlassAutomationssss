@@ -537,10 +537,24 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
+                    <!-- ✅ CUST REF - Now with duplicate check (RED color) -->
                     <DataGridTemplateColumn Header="CUST REF" Width="120" HeaderStyle="{StaticResource HeaderCyan}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding CustomerReference}" FontSize="12" Foreground="#0E7490" FontWeight="Medium" HorizontalAlignment="Center"/>
+                                <TextBlock FontSize="12" FontWeight="Medium" HorizontalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="#0E7490"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsDuplicate}" Value="True">
+                                                    <Setter Property="Foreground" Value="#DC2626"/>
+                                                    <Setter Property="FontWeight" Value="Bold"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                    <Run Text="{Binding CustomerReference, Mode=OneWay}"/>
+                                </TextBlock>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
@@ -736,6 +750,13 @@
                 </Border.Effect>
                 <StackPanel>
                     <TextBlock Text="EDIT / ADD RECORD" FontSize="20" FontWeight="Bold" Foreground="#1E40AF" Margin="0,0,0,20"/>
+
+                    <!-- ✅ DUPLICATE WARNING - Shows red when duplicate found -->
+                    <Border Background="#FEE2E2" CornerRadius="8" Padding="12" Margin="0,0,0,16" 
+                            Visibility="{Binding IsDuplicateWarning, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="{Binding DuplicateMessage}" Foreground="#DC2626" FontWeight="SemiBold" FontSize="12" TextWrapping="Wrap"/>
+                    </Border>
+
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -756,7 +777,11 @@
 
                         <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,10,12">
                             <TextBlock Text="COMPANY" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                            <TextBox Text="{Binding EditingWork.Company, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernTextBox}"/>
+                            <!-- ✅ UPDATED: ComboBox with autocomplete -->
+                            <ComboBox Style="{StaticResource ModernComboBox}" 
+                                      ItemsSource="{Binding CompanyOptions}" 
+                                      Text="{Binding EditingWork.Company, UpdateSourceTrigger=PropertyChanged}"
+                                      IsEditable="True"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,12">
@@ -766,7 +791,11 @@
 
                         <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,12">
                             <TextBlock Text="CUST REF" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                            <TextBox Text="{Binding EditingWork.CustomerReference, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernTextBox}"/>
+                            <!-- ✅ UPDATED: ComboBox with autocomplete from CustomerReferenceOptions -->
+                            <ComboBox Style="{StaticResource ModernComboBox}" 
+                                      ItemsSource="{Binding CustomerReferenceOptions}" 
+                                      Text="{Binding EditingWork.CustomerReference, UpdateSourceTrigger=PropertyChanged}"
+                                      IsEditable="True"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,10,12">
@@ -787,12 +816,12 @@
 
                         <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,10,12">
                             <TextBlock Text="QTY" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                            <TextBox Text="{Binding EditingWork.Qty, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernTextBox}"/>
+                            <TextBox Text="{Binding EditingQtyText, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernTextBox}"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,10,12">
                             <TextBlock Text="SQM" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                            <TextBox Text="{Binding EditingWork.SQM, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernTextBox}"/>
+                            <TextBox Text="{Binding EditingSqmText, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ModernTextBox}"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.Column="2" Margin="0,0,0,12">
@@ -821,12 +850,12 @@
 
                         <StackPanel Grid.Row="3" Grid.Column="2" Margin="0,0,0,12">
                             <TextBlock Text="NOTES" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                            <TextBox Text="{Binding EditingWork.Notes, UpdateSourceTrigger=PropertyChanged}" 
-                                     Style="{StaticResource ModernTextBox}"
-                                     TextWrapping="Wrap"
-                                     AcceptsReturn="True"
-                                     MinHeight="40"
-                                     VerticalScrollBarVisibility="Auto"/>
+                            <!-- ✅ UPDATED: ComboBox with autocomplete from NotesOptions -->
+                            <ComboBox Style="{StaticResource ModernComboBox}" 
+                                      ItemsSource="{Binding NotesOptions}" 
+                                      Text="{Binding EditingWork.Notes, UpdateSourceTrigger=PropertyChanged}"
+                                      IsEditable="True"
+                                      MaxDropDownHeight="150"/>
                         </StackPanel>
                     </Grid>
 

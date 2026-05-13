@@ -4,6 +4,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
+using System.Globalization;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -42,6 +43,10 @@ namespace ProGlassAutomation.ViewModels
         public ObservableCollection<string> SalesmanOptions { get; } = new();
         public ObservableCollection<string> CompanyOptions { get; } = new();
 
+        // ✅ NEW: Customer Reference and Notes options for autocomplete
+        public ObservableCollection<string> CustomerReferenceOptions { get; } = new();
+        public ObservableCollection<string> NotesOptions { get; } = new();
+
         // ✅ Current selected values (for editing)
         private string _selectedTypeOfWork = "";
         private string _selectedProductionStatus = "";
@@ -60,7 +65,7 @@ namespace ProGlassAutomation.ViewModels
         private int _salesmanIndex = -1;
         private int _companyIndex = -1;
 
-        // ✅ Properties for Selected Values - NO AddToOptionsIfNew in setters
+        // ✅ Properties for Selected Values
         public string SelectedTypeOfWork
         {
             get => _selectedTypeOfWork;
@@ -145,6 +150,55 @@ namespace ProGlassAutomation.ViewModels
             set => SetProperty(ref _companyIndex, value);
         }
 
+        // ✅ NEW: Duplicate warning
+        private bool _isDuplicateWarning;
+        public bool IsDuplicateWarning
+        {
+            get => _isDuplicateWarning;
+            set => SetProperty(ref _isDuplicateWarning, value);
+        }
+
+        private string _duplicateMessage = "";
+        public string DuplicateMessage
+        {
+            get => _duplicateMessage;
+            set => SetProperty(ref _duplicateMessage, value);
+        }
+
+        private string _editingSqmText = "";
+        public string EditingSqmText
+        {
+            get => _editingSqmText;
+            set
+            {
+                if (SetProperty(ref _editingSqmText, value))
+                {
+                    if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out double result))
+                    {
+                        if (EditingWork != null)
+                            EditingWork.SQM = result;
+                    }
+                }
+            }
+        }
+
+        private string _editingQtyText = "";
+        public string EditingQtyText
+        {
+            get => _editingQtyText;
+            set
+            {
+                if (SetProperty(ref _editingQtyText, value))
+                {
+                    if (int.TryParse(value, out int result))
+                    {
+                        if (EditingWork != null)
+                            EditingWork.Qty = result;
+                    }
+                }
+            }
+        }
+
         public DailyWorksViewModel()
         {
             DailyWorks = new ObservableCollection<DailyWork>();
@@ -219,12 +273,78 @@ namespace ProGlassAutomation.ViewModels
                     AddToOptionsIfNew(ColorOptions, work.Color);
                     AddToOptionsIfNew(SalesmanOptions, work.Salesman);
                     AddToOptionsIfNew(CompanyOptions, work.Company);
+                    AddToOptionsIfNew(CustomerReferenceOptions, work.CustomerReference);
+                    AddToOptionsIfNew(NotesOptions, work.Notes);
+                }
+
+                // ✅ Load from autocomplete tables
+                var customerRefs = DbHelper.GetAllCustomerReferences();
+                foreach (var cr in customerRefs)
+                {
+                    AddToOptionsIfNew(CustomerReferenceOptions, cr.CustomerReference);
+                }
+
+                var notes = DbHelper.GetAllNotes();
+                foreach (var note in notes)
+                {
+                    AddToOptionsIfNew(NotesOptions, note);
                 }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[DailyWork] Load options error: {ex.Message}");
             }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // CHECK DUPLICATE
+        // ═══════════════════════════════════════════════════════════
+
+        private void CheckForDuplicate()
+        {
+            if (EditingWork == null) return;
+
+            if (!string.IsNullOrWhiteSpace(EditingWork.CustomerReference) &&
+                !string.IsNullOrWhiteSpace(EditingWork.PINumber))
+            {
+                bool isDuplicate = DbHelper.IsDuplicateDailyWork(
+                    EditingWork.CustomerReference,
+                    EditingWork.PINumber,
+                    EditingWork.Id);
+
+                IsDuplicateWarning = isDuplicate;
+                DuplicateMessage = isDuplicate
+                    ? $"⚠️ Duplicate: {EditingWork.CustomerReference} + {EditingWork.PINumber} already exists!"
+                    : "";
+            }
+            else
+            {
+                IsDuplicateWarning = false;
+                DuplicateMessage = "";
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // PARSE DECIMAL (handles both . and , as decimal separator)
+        // ═══════════════════════════════════════════════════════════
+
+        private double ParseDecimal(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return 0;
+
+            // Try current culture first
+            if (double.TryParse(value, NumberStyles.Any, CultureInfo.CurrentCulture, out double result))
+                return result;
+
+            // Try invariant culture (US format with .)
+            if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out result))
+                return result;
+
+            // Try replacing comma with period
+            if (double.TryParse(value.Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out result))
+                return result;
+
+            return 0;
         }
 
         #region Properties
@@ -591,9 +711,12 @@ namespace ProGlassAutomation.ViewModels
                 Date = DateTime.Today,
                 UpdateDate = DateTime.Today,
                 CreatedDate = DateTime.Now
-                // ✅ NO DEFAULTS - all fields empty
             };
             IsEditing = true;
+            IsDuplicateWarning = false;
+            DuplicateMessage = "";
+            EditingSqmText = "";
+            EditingQtyText = "";
 
             // Reset all selection indices
             _typeOfWorkIndex = -1;
@@ -648,6 +771,10 @@ namespace ProGlassAutomation.ViewModels
                 _isNewRecord = false;
                 EditingWork = workToEdit.Clone();
                 IsEditing = true;
+                IsDuplicateWarning = false;
+                DuplicateMessage = "";
+                EditingSqmText = EditingWork.SQM.ToString(CultureInfo.InvariantCulture);
+                EditingQtyText = EditingWork.Qty.ToString();
 
                 // Set dropdown selections
                 SetSelectedValue(workToEdit.TypeOfWork, TypeOfWorkOptions, i => _typeOfWorkIndex = i, v => _selectedTypeOfWork = v);
@@ -729,6 +856,17 @@ namespace ProGlassAutomation.ViewModels
                 return;
             }
 
+            // ✅ Check for duplicate before saving
+            if (DbHelper.IsDuplicateDailyWork(EditingWork.CustomerReference, EditingWork.PINumber, EditingWork.Id))
+            {
+                var result = MessageBox.Show(
+                    $"⚠️ Duplicate Entry!\n\nCustomer Reference: {EditingWork.CustomerReference}\nPI Number: {EditingWork.PINumber}\n\nThis combination already exists. Do you want to save anyway?",
+                    "Duplicate Warning", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+                if (result == MessageBoxResult.No)
+                    return;
+            }
+
             if (_isNewRecord)
             {
                 EditingWork.Id = DailyWorks.Count > 0 ? DailyWorks.Max(w => w.Id) + 1 : 1;
@@ -742,6 +880,12 @@ namespace ProGlassAutomation.ViewModels
                 AddToOptionsIfNew(ColorOptions, EditingWork.Color);
                 AddToOptionsIfNew(SalesmanOptions, EditingWork.Salesman);
                 AddToOptionsIfNew(CompanyOptions, EditingWork.Company);
+                AddToOptionsIfNew(CustomerReferenceOptions, EditingWork.CustomerReference);
+                AddToOptionsIfNew(NotesOptions, EditingWork.Notes);
+
+                // ✅ Save to autocomplete tables
+                DbHelper.SaveCustomerReference(EditingWork.CustomerReference, EditingWork.Company);
+                DbHelper.SaveNoteSuggestion(EditingWork.Notes);
 
                 DbHelper.SaveDailyWork(EditingWork);
                 System.Diagnostics.Debug.WriteLine($"[DailyWork] Saved new ID: {EditingWork.Id}");
@@ -776,6 +920,12 @@ namespace ProGlassAutomation.ViewModels
                     AddToOptionsIfNew(ColorOptions, EditingWork.Color);
                     AddToOptionsIfNew(SalesmanOptions, EditingWork.Salesman);
                     AddToOptionsIfNew(CompanyOptions, EditingWork.Company);
+                    AddToOptionsIfNew(CustomerReferenceOptions, EditingWork.CustomerReference);
+                    AddToOptionsIfNew(NotesOptions, EditingWork.Notes);
+
+                    // ✅ Save to autocomplete tables
+                    DbHelper.SaveCustomerReference(EditingWork.CustomerReference, EditingWork.Company);
+                    DbHelper.SaveNoteSuggestion(EditingWork.Notes);
 
                     DbHelper.UpdateDailyWork(existing);
                     System.Diagnostics.Debug.WriteLine($"[DailyWork] Updated ID: {existing.Id}");
@@ -784,6 +934,8 @@ namespace ProGlassAutomation.ViewModels
 
             IsEditing = false;
             EditingWork = null;
+            IsDuplicateWarning = false;
+            DuplicateMessage = "";
             RefreshDataView();
             UpdateStatistics();
         }
@@ -794,6 +946,8 @@ namespace ProGlassAutomation.ViewModels
         {
             IsEditing = false;
             EditingWork = null;
+            IsDuplicateWarning = false;
+            DuplicateMessage = "";
         }
 
         private void ExecuteRefresh(object parameter)
