@@ -1,5 +1,4 @@
-﻿// Data/Database/DbHelper.cs
-using Microsoft.Data.Sqlite;
+﻿using Microsoft.Data.Sqlite;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -19,7 +18,7 @@ namespace ProGlassAutomation.Data.Database
         private static readonly string ConnStr =
             $"Data Source={DbPath};Cache=Shared";
 
-        private static readonly int LatestVersion = 6; // ✅ Updated to 6 for live dashboard tables
+        private static readonly int LatestVersion = 7; // ✅ Updated to 7 for SGUHistory table
 
         // ================= CONNECTION =================
         private static SqliteConnection CreateConnection()
@@ -325,7 +324,6 @@ namespace ProGlassAutomation.Data.Database
                     }
                     break;
 
-                // ✅ VERSION 6: Live Dashboard Tables
                 case 6:
                     using (var cmd = conn.CreateCommand())
                     {
@@ -368,6 +366,42 @@ namespace ProGlassAutomation.Data.Database
                             Company TEXT,
                             ChangesJson TEXT,
                             FOREIGN KEY (SessionId) REFERENCES ImportSessions(Id)
+                        );
+                        ";
+                        cmd.ExecuteNonQuery();
+                    }
+                    break;
+
+                case 7:
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"
+                        CREATE TABLE IF NOT EXISTS SGUHistory (
+                            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            Category TEXT,
+                            Thickness TEXT,
+                            Color TEXT,
+                            SheetPrice REAL,
+                            Cutting REAL,
+                            TemperingCharge REAL,
+                            OtherCharges REAL,
+                            Wastage TEXT,
+                            ProfitMargin TEXT,
+                            EdgeWork TEXT,
+                            Drilling TEXT,
+                            Tempering TEXT,
+                            Coating TEXT,
+                            SurfaceTreatment TEXT,
+                            Cutout TEXT,
+                            Unit TEXT,
+                            Width INTEGER,
+                            Height INTEGER,
+                            Quantity INTEGER,
+                            TotalArea REAL,
+                            TotalPrice REAL,
+                            Result REAL,
+                            CustomNotes TEXT,
+                            CreatedAt TEXT
                         );
                         ";
                         cmd.ExecuteNonQuery();
@@ -463,6 +497,108 @@ namespace ProGlassAutomation.Data.Database
                 }
 
                 return list;
+            });
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // ✅ SGU HISTORY - Full record with all fields
+        // ═══════════════════════════════════════════════════════════════
+        public static void SaveSguHistory(SguRecord r)
+        {
+            Execute(conn =>
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"
+                INSERT INTO SGUHistory (Category, Thickness, Color, SheetPrice, Cutting, TemperingCharge, OtherCharges, Wastage, ProfitMargin, EdgeWork, Drilling, Tempering, Coating, SurfaceTreatment, Cutout, Unit, Width, Height, Quantity, TotalArea, TotalPrice, Result, CustomNotes, CreatedAt)
+                VALUES ($cat, $th, $col, $sp, $cut, $temp, $other, $wast, $profit, $edge, $drill, $temp2, $coat, $surf, $cutout, $unit, $w, $h, $q, $area, $price, $result, $notes, $created);";
+
+                cmd.Parameters.AddWithValue("$cat", r.Category ?? "");
+                cmd.Parameters.AddWithValue("$th", r.Thickness ?? "");
+                cmd.Parameters.AddWithValue("$col", r.Color ?? "");
+                cmd.Parameters.AddWithValue("$sp", r.SheetPrice);
+                cmd.Parameters.AddWithValue("$cut", r.Cutting);
+                cmd.Parameters.AddWithValue("$temp", r.TemperingCharge);
+                cmd.Parameters.AddWithValue("$other", r.OtherCharges);
+                cmd.Parameters.AddWithValue("$wast", r.Wastage ?? "");
+                cmd.Parameters.AddWithValue("$profit", r.ProfitMargin ?? "");
+                cmd.Parameters.AddWithValue("$edge", r.EdgeWork ?? "");
+                cmd.Parameters.AddWithValue("$drill", r.Drilling ?? "");
+                cmd.Parameters.AddWithValue("$temp2", r.Tempering ?? "");
+                cmd.Parameters.AddWithValue("$coat", r.Coating ?? "");
+                cmd.Parameters.AddWithValue("$surf", r.SurfaceTreatment ?? "");
+                cmd.Parameters.AddWithValue("$cutout", r.Cutout ?? "");
+                cmd.Parameters.AddWithValue("$unit", r.Unit ?? "AED");
+                cmd.Parameters.AddWithValue("$w", r.Width);
+                cmd.Parameters.AddWithValue("$h", r.Height);
+                cmd.Parameters.AddWithValue("$q", r.Quantity);
+                cmd.Parameters.AddWithValue("$area", r.TotalArea);
+                cmd.Parameters.AddWithValue("$price", r.TotalPrice);
+                cmd.Parameters.AddWithValue("$result", r.Result);
+                cmd.Parameters.AddWithValue("$notes", r.CustomNotes ?? "");
+                cmd.Parameters.AddWithValue("$created", r.CreatedAt ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
+
+                cmd.ExecuteNonQuery();
+
+                // ✅ Log calculation for dashboard
+                LogCalculation("SGU", r.TotalArea);
+            });
+        }
+
+        public static List<SguRecord> GetAllSguHistory()
+        {
+            return Execute(conn =>
+            {
+                var list = new List<SguRecord>();
+
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"SELECT * FROM SGUHistory ORDER BY Id DESC";
+
+                using var r = cmd.ExecuteReader();
+
+                while (r.Read())
+                {
+                    list.Add(new SguRecord
+                    {
+                        Id = r.GetInt32(0),
+                        Category = r.IsDBNull(1) ? "" : r.GetString(1),
+                        Thickness = r.IsDBNull(2) ? "" : r.GetString(2),
+                        Color = r.IsDBNull(3) ? "" : r.GetString(3),
+                        SheetPrice = r.GetDouble(4),
+                        Cutting = r.GetDouble(5),
+                        TemperingCharge = r.GetDouble(6),
+                        OtherCharges = r.GetDouble(7),
+                        Wastage = r.IsDBNull(8) ? "" : r.GetString(8),
+                        ProfitMargin = r.IsDBNull(9) ? "" : r.GetString(9),
+                        EdgeWork = r.IsDBNull(10) ? "" : r.GetString(10),
+                        Drilling = r.IsDBNull(11) ? "" : r.GetString(11),
+                        Tempering = r.IsDBNull(12) ? "" : r.GetString(12),
+                        Coating = r.IsDBNull(13) ? "" : r.GetString(13),
+                        SurfaceTreatment = r.IsDBNull(14) ? "" : r.GetString(14),
+                        Cutout = r.IsDBNull(15) ? "" : r.GetString(15),
+                        Unit = r.IsDBNull(16) ? "AED" : r.GetString(16),
+                        Width = r.GetInt32(17),
+                        Height = r.GetInt32(18),
+                        Quantity = r.GetInt32(19),
+                        TotalArea = r.GetDouble(20),
+                        TotalPrice = r.GetDouble(21),
+                        Result = r.GetDouble(22),
+                        CustomNotes = r.IsDBNull(23) ? "" : r.GetString(23),
+                        CreatedAt = r.IsDBNull(24) ? "" : r.GetString(24)
+                    });
+                }
+
+                return list;
+            });
+        }
+
+        public static void DeleteSguHistory(int id)
+        {
+            Execute(conn =>
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "DELETE FROM SGUHistory WHERE Id = $id";
+                cmd.Parameters.AddWithValue("$id", id);
+                cmd.ExecuteNonQuery();
             });
         }
 
@@ -1917,12 +2053,12 @@ namespace ProGlassAutomation.Data.Database
             {
                 return Execute(conn =>
                 {
-                    var stats = new System.Text.StringBuilder();
+                var stats = new System.Text.StringBuilder();
 
                     // Table counts
                     string[] tables = { "SGURecords", "DGURecords", "LaminationRecords",
                         "DailyWork", "Deliveries", "DeliveryItems",
-                        "SheetStore", "CalculationLogs", "SystemMetrics" };
+                        "SheetStore", "CalculationLogs", "SystemMetrics", "SGUHistory" };
 
                     foreach (var table in tables)
                     {

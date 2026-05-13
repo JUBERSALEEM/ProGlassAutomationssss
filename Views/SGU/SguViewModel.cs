@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
 using ProGlassAutomation.Models;
+using ProGlassAutomation.Data.Database;
 
 namespace ProGlassAutomation.ViewModels
 {
@@ -410,6 +411,9 @@ namespace ProGlassAutomation.ViewModels
             _profitIndex = 2;
             _profitMargin = 15.0;
 
+            // ✅ LOAD HISTORY FROM DATABASE
+            LoadHistoryFromDatabase();
+
             SaveCommand = new RelayCommand(o =>
             {
                 if (!_sheetPrice.HasValue)
@@ -418,28 +422,39 @@ namespace ProGlassAutomation.ViewModels
                     return;
                 }
 
-                Records.Insert(0, new SguRecord
+                var record = new SguRecord
                 {
-                    DisplayText = $"{Category} | {Thickness} | {ColorName}",
-                    GlassDetails = $"{Category} | {Thickness} | {ColorName} | {SheetPrice:F2}",
-                    ProcessingDetails = $"{EdgeWork} | {Drilling} | {Tempering}",
-                    TreatmentDetails = $"{Coating} | {SurfaceTreatment} | {Cutout}",
+                    Category = Category,
+                    Thickness = Thickness,
+                    Color = ColorName,
                     SheetPrice = SheetPrice ?? 0,
                     Cutting = Cutting ?? 0,
                     TemperingCharge = TemperingCharge ?? 0,
                     OtherCharges = OtherCharges ?? 0,
                     Wastage = WastageOptions[_wastageIndex],
                     ProfitMargin = ProfitMarginOptions[_profitIndex],
-                    CreatedAt = DateTime.Now.ToString("dd/MM HH:mm"),
-                    Result = Result,
+                    EdgeWork = EdgeWork,
+                    Drilling = Drilling,
+                    Tempering = Tempering,
+                    Coating = Coating,
+                    SurfaceTreatment = SurfaceTreatment,
+                    Cutout = Cutout,
                     Unit = Unit,
                     Width = Width,
                     Height = Height,
                     Quantity = Quantity,
                     TotalArea = TotalArea,
                     TotalPrice = TotalPrice,
-                    CustomNotes = CustomNotes
-                });
+                    Result = Result,
+                    CustomNotes = CustomNotes,
+                    CreatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm")
+                };
+
+                // ✅ SAVE TO DATABASE
+                DbHelper.SaveSguHistory(record);
+
+                // Also add to local collection for immediate display
+                Records.Insert(0, record);
 
                 OnPropertyChanged(nameof(IsHistoryVisible));
                 OnPropertyChanged(nameof(IsHistoryEmpty));
@@ -472,7 +487,15 @@ namespace ProGlassAutomation.ViewModels
 
             DeleteCommand = new RelayCommand(o =>
             {
-                if (o is SguRecord r) Records.Remove(r);
+                if (o is SguRecord r)
+                {
+                    // ✅ DELETE FROM DATABASE if it has an Id
+                    if (r.Id > 0)
+                    {
+                        DbHelper.DeleteSguHistory(r.Id);
+                    }
+                    Records.Remove(r);
+                }
                 OnPropertyChanged(nameof(IsHistoryVisible));
                 OnPropertyChanged(nameof(IsHistoryEmpty));
             });
@@ -590,43 +613,27 @@ namespace ProGlassAutomation.ViewModels
             OnPropertyChanged(nameof(TotalArea));
             OnPropertyChanged(nameof(TotalPrice));
         }
-    }
 
-    // ═══════════════════════════════════════════════════════════
-    // RECORD CLASS
-    // ═══════════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════════════════
+        // LOAD HISTORY FROM DATABASE
+        // ═══════════════════════════════════════════════════════════
 
-    public class SguRecord : INotifyPropertyChanged
-    {
-        public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string n = null)
-            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
-
-        public string DisplayText { get; set; }
-        public string GlassDetails { get; set; }
-        public string ProcessingDetails { get; set; }
-        public string TreatmentDetails { get; set; }
-        public double SheetPrice { get; set; }
-        public double Cutting { get; set; }
-        public double TemperingCharge { get; set; }
-        public double OtherCharges { get; set; }
-        public string Wastage { get; set; }
-        public string ProfitMargin { get; set; }
-        public string CreatedAt { get; set; }
-        public double Result { get; set; }
-        public string Unit { get; set; }
-        public int Width { get; set; }
-        public int Height { get; set; }
-        public int Quantity { get; set; }
-        public double TotalArea { get; set; }
-        public double TotalPrice { get; set; }
-        public string CustomNotes { get; set; }
-
-        private bool _isSelected;
-        public bool IsSelected
+        private void LoadHistoryFromDatabase()
         {
-            get => _isSelected;
-            set { _isSelected = value; OnPropertyChanged(); }
+            try
+            {
+                var history = DbHelper.GetAllSguHistory();
+                foreach (var record in history)
+                {
+                    Records.Add(record);
+                }
+                System.Diagnostics.Debug.WriteLine($"[SguViewModel] Loaded {history.Count} history records from database");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[SguViewModel] Load history error: {ex.Message}");
+            }
         }
+
     }
 }
