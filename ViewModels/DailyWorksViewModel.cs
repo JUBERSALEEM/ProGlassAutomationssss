@@ -28,6 +28,7 @@ namespace ProGlassAutomation.ViewModels
         private string _filterSalesman = "";
         private string _filterCompany = "";
         private string _filterColor = "";
+        private string _filterPINumber = "";
         private DateTime? _filterStartDate;
         private DateTime? _filterEndDate;
         private bool _isEditing;
@@ -42,6 +43,7 @@ namespace ProGlassAutomation.ViewModels
         public ObservableCollection<string> ColorOptions { get; } = new();
         public ObservableCollection<string> SalesmanOptions { get; } = new();
         public ObservableCollection<string> CompanyOptions { get; } = new();
+        public ObservableCollection<string> PINumberOptions { get; } = new();
 
         // ✅ NEW: Customer Reference and Notes options for autocomplete
         public ObservableCollection<string> CustomerReferenceOptions { get; } = new();
@@ -150,7 +152,7 @@ namespace ProGlassAutomation.ViewModels
             set => SetProperty(ref _companyIndex, value);
         }
 
-        // ✅ NEW: Duplicate warning
+        // ✅ Duplicate warning
         private bool _isDuplicateWarning;
         public bool IsDuplicateWarning
         {
@@ -273,6 +275,7 @@ namespace ProGlassAutomation.ViewModels
                     AddToOptionsIfNew(ColorOptions, work.Color);
                     AddToOptionsIfNew(SalesmanOptions, work.Salesman);
                     AddToOptionsIfNew(CompanyOptions, work.Company);
+                    AddToOptionsIfNew(PINumberOptions, work.PINumber);
                     AddToOptionsIfNew(CustomerReferenceOptions, work.CustomerReference);
                     AddToOptionsIfNew(NotesOptions, work.Notes);
                 }
@@ -514,6 +517,16 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
+        public string FilterPINumber
+        {
+            get => _filterPINumber;
+            set
+            {
+                if (SetProperty(ref _filterPINumber, value))
+                    ApplyFilters();
+            }
+        }
+
         public DateTime? FilterStartDate
         {
             get => _filterStartDate;
@@ -718,6 +731,10 @@ namespace ProGlassAutomation.ViewModels
             if (!string.IsNullOrWhiteSpace(FilterColor))
                 filterExpressions.Add($"Color = '{FilterColor}'");
 
+            // ✅ ADD PI Number filter
+            if (!string.IsNullOrWhiteSpace(FilterPINumber))
+                filterExpressions.Add($"PINumber = '{FilterPINumber}'");
+
             if (FilterStartDate.HasValue)
                 filterExpressions.Add($"Date >= #{FilterStartDate.Value:yyyy-MM-dd}#");
 
@@ -914,6 +931,7 @@ namespace ProGlassAutomation.ViewModels
                 AddToOptionsIfNew(ColorOptions, EditingWork.Color);
                 AddToOptionsIfNew(SalesmanOptions, EditingWork.Salesman);
                 AddToOptionsIfNew(CompanyOptions, EditingWork.Company);
+                AddToOptionsIfNew(PINumberOptions, EditingWork.PINumber);
                 AddToOptionsIfNew(CustomerReferenceOptions, EditingWork.CustomerReference);
                 AddToOptionsIfNew(NotesOptions, EditingWork.Notes);
 
@@ -954,6 +972,7 @@ namespace ProGlassAutomation.ViewModels
                     AddToOptionsIfNew(ColorOptions, EditingWork.Color);
                     AddToOptionsIfNew(SalesmanOptions, EditingWork.Salesman);
                     AddToOptionsIfNew(CompanyOptions, EditingWork.Company);
+                    AddToOptionsIfNew(PINumberOptions, EditingWork.PINumber);
                     AddToOptionsIfNew(CustomerReferenceOptions, EditingWork.CustomerReference);
                     AddToOptionsIfNew(NotesOptions, EditingWork.Notes);
 
@@ -1039,6 +1058,7 @@ namespace ProGlassAutomation.ViewModels
             FilterSalesman = "";
             FilterCompany = "";
             FilterColor = "";
+            FilterPINumber = "";
             FilterStartDate = null;
             FilterEndDate = null;
             SortColumn = "";
