@@ -29,13 +29,14 @@ namespace ProGlassAutomation.ViewModels
         private string _filterCompany = "";
         private string _filterColor = "";
         private string _filterPINumber = "";
+        private string _filterCustomerReference = "";
         private DateTime? _filterStartDate;
         private DateTime? _filterEndDate;
         private bool _isEditing;
         private DailyWork _editingWork;
         private bool _isNewRecord;
 
-        // ✅ OPTIONS - Empty collections, populated dynamically
+        // OPTIONS - Empty collections, populated dynamically
         public ObservableCollection<string> TypeOfWorkOptions { get; } = new();
         public ObservableCollection<string> ProductionStatusOptions { get; } = new();
         public ObservableCollection<string> DailyReportStatusOptions { get; } = new();
@@ -44,12 +45,10 @@ namespace ProGlassAutomation.ViewModels
         public ObservableCollection<string> SalesmanOptions { get; } = new();
         public ObservableCollection<string> CompanyOptions { get; } = new();
         public ObservableCollection<string> PINumberOptions { get; } = new();
-
-        // ✅ NEW: Customer Reference and Notes options for autocomplete
         public ObservableCollection<string> CustomerReferenceOptions { get; } = new();
         public ObservableCollection<string> NotesOptions { get; } = new();
 
-        // ✅ Current selected values (for editing)
+        // Current selected values (for editing)
         private string _selectedTypeOfWork = "";
         private string _selectedProductionStatus = "";
         private string _selectedDailyReportStatus = "";
@@ -58,7 +57,7 @@ namespace ProGlassAutomation.ViewModels
         private string _selectedSalesman = "";
         private string _selectedCompany = "";
 
-        // ✅ Current selected indices
+        // Current selected indices
         private int _typeOfWorkIndex = -1;
         private int _productionStatusIndex = -1;
         private int _dailyReportStatusIndex = -1;
@@ -67,7 +66,7 @@ namespace ProGlassAutomation.ViewModels
         private int _salesmanIndex = -1;
         private int _companyIndex = -1;
 
-        // ✅ Properties for Selected Values
+        // Properties for Selected Values
         public string SelectedTypeOfWork
         {
             get => _selectedTypeOfWork;
@@ -152,7 +151,18 @@ namespace ProGlassAutomation.ViewModels
             set => SetProperty(ref _companyIndex, value);
         }
 
-        // ✅ Duplicate warning
+        // Filter Properties
+        public string FilterCustomerReference
+        {
+            get => _filterCustomerReference;
+            set
+            {
+                if (SetProperty(ref _filterCustomerReference, value))
+                    ApplyFilters();
+            }
+        }
+
+        // Duplicate warning
         private bool _isDuplicateWarning;
         public bool IsDuplicateWarning
         {
@@ -224,10 +234,7 @@ namespace ProGlassAutomation.ViewModels
             CreateDataView();
         }
 
-        // ═══════════════════════════════════════════════════════════
         // HELPER - Add to options if new
-        // ═══════════════════════════════════════════════════════════
-
         private void AddToOptionsIfNew(ObservableCollection<string> collection, string value)
         {
             if (string.IsNullOrWhiteSpace(value)) return;
@@ -256,10 +263,7 @@ namespace ProGlassAutomation.ViewModels
             setSelected(value);
         }
 
-        // ═══════════════════════════════════════════════════════════
         // LOAD OPTIONS FROM DATABASE
-        // ═══════════════════════════════════════════════════════════
-
         private void LoadOptionsFromDatabase()
         {
             try
@@ -280,7 +284,7 @@ namespace ProGlassAutomation.ViewModels
                     AddToOptionsIfNew(NotesOptions, work.Notes);
                 }
 
-                // ✅ Load from autocomplete tables
+                // Load from autocomplete tables
                 var customerRefs = DbHelper.GetAllCustomerReferences();
                 foreach (var cr in customerRefs)
                 {
@@ -299,10 +303,7 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // ═══════════════════════════════════════════════════════════
         // CHECK DUPLICATE
-        // ═══════════════════════════════════════════════════════════
-
         private void CheckForDuplicate()
         {
             if (EditingWork == null) return;
@@ -317,7 +318,7 @@ namespace ProGlassAutomation.ViewModels
 
                 IsDuplicateWarning = isDuplicate;
                 DuplicateMessage = isDuplicate
-                    ? $"⚠️ Duplicate: {EditingWork.CustomerReference} + {EditingWork.PINumber} already exists!"
+                    ? $"Duplicate: {EditingWork.CustomerReference} + {EditingWork.PINumber} already exists!"
                     : "";
             }
             else
@@ -327,23 +328,16 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // ═══════════════════════════════════════════════════════════
-        // PARSE DECIMAL (handles both . and , as decimal separator)
-        // ═══════════════════════════════════════════════════════════
-
         private double ParseDecimal(string value)
         {
             if (string.IsNullOrWhiteSpace(value)) return 0;
 
-            // Try current culture first
             if (double.TryParse(value, NumberStyles.Any, CultureInfo.CurrentCulture, out double result))
                 return result;
 
-            // Try invariant culture (US format with .)
             if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out result))
                 return result;
 
-            // Try replacing comma with period
             if (double.TryParse(value.Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out result))
                 return result;
 
@@ -416,7 +410,6 @@ namespace ProGlassAutomation.ViewModels
             set => SetProperty(ref _mainDataGrid, value);
         }
 
-        // ✅ Selected IDs tracking
         private List<int> _selectedIds = new List<int>();
         public List<DailyWork> SelectedRecordsData => DailyWorks?.Where(w => _selectedIds.Contains(w.Id)).ToList() ?? new List<DailyWork>();
 
@@ -579,7 +572,6 @@ namespace ProGlassAutomation.ViewModels
         public double FilteredSQM => FilteredDataView?.Cast<DataRowView>().Sum(r => Convert.ToDouble(r["SQM"])) ?? 0;
         public int FilteredQty => FilteredDataView?.Cast<DataRowView>().Sum(r => Convert.ToInt32(r["Qty"])) ?? 0;
 
-        // ✅ Selected stats (for footer display)
         public int SelectedRecords => _selectedCount;
         public double SelectedSQM => GetSelectedSQM();
         public int SelectedQty => GetSelectedQty();
@@ -731,9 +723,11 @@ namespace ProGlassAutomation.ViewModels
             if (!string.IsNullOrWhiteSpace(FilterColor))
                 filterExpressions.Add($"Color = '{FilterColor}'");
 
-            // ✅ ADD PI Number filter
             if (!string.IsNullOrWhiteSpace(FilterPINumber))
                 filterExpressions.Add($"PINumber = '{FilterPINumber}'");
+
+            if (!string.IsNullOrWhiteSpace(FilterCustomerReference))
+                filterExpressions.Add($"CustomerReference = '{FilterCustomerReference}'");
 
             if (FilterStartDate.HasValue)
                 filterExpressions.Add($"Date >= #{FilterStartDate.Value:yyyy-MM-dd}#");
@@ -769,7 +763,6 @@ namespace ProGlassAutomation.ViewModels
             EditingSqmText = "";
             EditingQtyText = "";
 
-            // Reset all selection indices
             _typeOfWorkIndex = -1;
             _productionStatusIndex = -1;
             _dailyReportStatusIndex = -1;
@@ -827,7 +820,6 @@ namespace ProGlassAutomation.ViewModels
                 EditingSqmText = EditingWork.SQM.ToString(CultureInfo.InvariantCulture);
                 EditingQtyText = EditingWork.Qty.ToString();
 
-                // Set dropdown selections
                 SetSelectedValue(workToEdit.TypeOfWork, TypeOfWorkOptions, i => _typeOfWorkIndex = i, v => _selectedTypeOfWork = v);
                 SetSelectedValue(workToEdit.ProductionStatus, ProductionStatusOptions, i => _productionStatusIndex = i, v => _selectedProductionStatus = v);
                 SetSelectedValue(workToEdit.DailyReportStatus, DailyReportStatusOptions, i => _dailyReportStatusIndex = i, v => _selectedDailyReportStatus = v);
@@ -907,11 +899,10 @@ namespace ProGlassAutomation.ViewModels
                 return;
             }
 
-            // ✅ Check for duplicate before saving
             if (DbHelper.IsDuplicateDailyWork(EditingWork.CustomerReference, EditingWork.PINumber, EditingWork.Id))
             {
                 var result = MessageBox.Show(
-                    $"⚠️ Duplicate Entry!\n\nCustomer Reference: {EditingWork.CustomerReference}\nPI Number: {EditingWork.PINumber}\n\nThis combination already exists. Do you want to save anyway?",
+                    $"Duplicate Entry!\n\nCustomer Reference: {EditingWork.CustomerReference}\nPI Number: {EditingWork.PINumber}\n\nThis combination already exists. Do you want to save anyway?",
                     "Duplicate Warning", MessageBoxButton.YesNo, MessageBoxImage.Warning);
 
                 if (result == MessageBoxResult.No)
@@ -923,7 +914,6 @@ namespace ProGlassAutomation.ViewModels
                 EditingWork.Id = DailyWorks.Count > 0 ? DailyWorks.Max(w => w.Id) + 1 : 1;
                 EditingWork.CreatedDate = DateTime.Now;
 
-                // Add new values to dropdown options
                 AddToOptionsIfNew(TypeOfWorkOptions, EditingWork.TypeOfWork);
                 AddToOptionsIfNew(ProductionStatusOptions, EditingWork.ProductionStatus);
                 AddToOptionsIfNew(DailyReportStatusOptions, EditingWork.DailyReportStatus);
@@ -935,7 +925,6 @@ namespace ProGlassAutomation.ViewModels
                 AddToOptionsIfNew(CustomerReferenceOptions, EditingWork.CustomerReference);
                 AddToOptionsIfNew(NotesOptions, EditingWork.Notes);
 
-                // ✅ Save to autocomplete tables
                 DbHelper.SaveCustomerReference(EditingWork.CustomerReference, EditingWork.Company);
                 DbHelper.SaveNoteSuggestion(EditingWork.Notes);
 
@@ -964,7 +953,6 @@ namespace ProGlassAutomation.ViewModels
                     existing.Color = EditingWork.Color;
                     existing.Notes = EditingWork.Notes;
 
-                    // Add new values to dropdown options
                     AddToOptionsIfNew(TypeOfWorkOptions, EditingWork.TypeOfWork);
                     AddToOptionsIfNew(ProductionStatusOptions, EditingWork.ProductionStatus);
                     AddToOptionsIfNew(DailyReportStatusOptions, EditingWork.DailyReportStatus);
@@ -976,7 +964,6 @@ namespace ProGlassAutomation.ViewModels
                     AddToOptionsIfNew(CustomerReferenceOptions, EditingWork.CustomerReference);
                     AddToOptionsIfNew(NotesOptions, EditingWork.Notes);
 
-                    // ✅ Save to autocomplete tables
                     DbHelper.SaveCustomerReference(EditingWork.CustomerReference, EditingWork.Company);
                     DbHelper.SaveNoteSuggestion(EditingWork.Notes);
 
@@ -1059,6 +1046,7 @@ namespace ProGlassAutomation.ViewModels
             FilterCompany = "";
             FilterColor = "";
             FilterPINumber = "";
+            FilterCustomerReference = "";
             FilterStartDate = null;
             FilterEndDate = null;
             SortColumn = "";
@@ -1289,7 +1277,6 @@ namespace ProGlassAutomation.ViewModels
 
                     System.Diagnostics.Debug.WriteLine($"[DailyWork] Deleted {selectedIds.Count} records");
 
-                    // ✅ Clear selection after delete
                     _selectedIds.Clear();
                     _selectedCount = 0;
 
