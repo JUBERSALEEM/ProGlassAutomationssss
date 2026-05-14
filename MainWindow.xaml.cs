@@ -89,25 +89,115 @@ namespace ProGlassAutomation
         {
             try
             {
-                // Safely hide buttons using the restored x:Names
+                // Hide buttons before capture
                 if (ScreenshotBtn != null) ScreenshotBtn.Visibility = Visibility.Collapsed;
                 if (AboutBtn != null) AboutBtn.Visibility = Visibility.Collapsed;
 
-                RenderTargetBitmap rtb = new RenderTargetBitmap((int)ActualWidth, (int)ActualHeight, 96, 96, PixelFormats.Pbgra32);
-                rtb.Render(this);
-
-                if (ScreenshotBtn != null) ScreenshotBtn.Visibility = Visibility.Visible;
-                if (AboutBtn != null) AboutBtn.Visibility = Visibility.Visible;
-
-                var sfd = new Microsoft.Win32.SaveFileDialog { Filter = "JPG|*.jpg", FileName = $"ProGlass_Capture_{DateTime.Now:HHmm}.jpg" };
-                if (sfd.ShowDialog() == true)
+                // Defer capture to ensure visual tree is ready
+                Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    var encoder = new JpegBitmapEncoder();
-                    encoder.Frames.Add(BitmapFrame.Create(rtb));
-                    using (var fs = System.IO.File.OpenWrite(sfd.FileName)) encoder.Save(fs);
-                }
+                    try
+                    {
+                        CaptureScreenshot();
+                    }
+                    finally
+                    {
+                        RestoreButtons();
+                    }
+                }), DispatcherPriority.Loaded);
             }
-            catch (Exception ex) { MessageBox.Show(ex.Message); }
+            catch (Exception ex)
+            {
+                RestoreButtons();
+                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void CaptureScreenshot()
+        {
+            // Maximum quality settings
+            double scale = 4.0;                    // 4x scale for ultra-high resolution
+            int width = (int)(ActualWidth * scale);
+            int height = (int)(ActualHeight * scale);
+            int dpi = (int)(96 * scale);           // 384 DPI (4x standard)
+
+            // Create render target with maximum quality
+            var rtb = new RenderTargetBitmap(
+                width,
+                height,
+                dpi,
+                dpi,
+                PixelFormats.Pbgra32               // Best pixel format (32-bit with alpha)
+            );
+
+            // Force complete visual update
+            UpdateLayout();
+            InvalidateArrange();
+            InvalidateMeasure();
+            InvalidateVisual();
+
+            // Render at maximum resolution
+            rtb.Render(this);
+
+            // Freeze for better performance
+            rtb.Freeze();
+
+            // Save dialog with high-quality formats
+            var sfd = new Microsoft.Win32.SaveFileDialog
+            {
+                Filter = "PNG Image (Lossless)|*.png|BMP Image|*.bmp|JPEG Image|*.jpg",
+                FileName = $"ProGlass_Capture_{DateTime.Now:HHmm}.png"
+            };
+
+            if (sfd.ShowDialog() == true)
+            {
+                BitmapEncoder encoder;
+                string ext = System.IO.Path.GetExtension(sfd.FileName).ToLower();
+
+                switch (ext)
+                {
+                    case ".png":
+                        // PNG is lossless by default in WPF
+                        encoder = new PngBitmapEncoder();
+                        break;
+
+                    case ".bmp":
+                        // BMP is uncompressed/lossless
+                        encoder = new BmpBitmapEncoder();
+                        break;
+
+                    case ".jpg":
+                    default:
+                        encoder = new JpegBitmapEncoder
+                        {
+                            QualityLevel = 100  // Maximum JPEG quality
+                        };
+                        break;
+                }
+
+                encoder.Frames.Add(BitmapFrame.Create(rtb));
+
+                var directory = System.IO.Path.GetDirectoryName(sfd.FileName);
+                if (!System.IO.Directory.Exists(directory) && !string.IsNullOrEmpty(directory))
+                    System.IO.Directory.CreateDirectory(directory);
+
+                using (var fs = System.IO.File.OpenWrite(sfd.FileName))
+                    encoder.Save(fs);
+
+                // Get file size for display
+                var fileInfo = new System.IO.FileInfo(sfd.FileName);
+                MessageBox.Show(
+                    $"Screenshot saved!\n\nFile: {sfd.FileName}\nSize: {fileInfo.Length / 1024} KB\nResolution: {width} x {height}",
+                    "Success",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+        }
+
+        private void RestoreButtons()
+        {
+            if (ScreenshotBtn != null) ScreenshotBtn.Visibility = Visibility.Visible;
+            if (AboutBtn != null) AboutBtn.Visibility = Visibility.Visible;
         }
     }
 }

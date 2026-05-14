@@ -20,6 +20,13 @@
 
         <DropShadowEffect x:Key="CardShadow" BlurRadius="15" ShadowDepth="2" Opacity="0.1"/>
 
+        <!-- Header Gradient -->
+        <LinearGradientBrush x:Key="HeaderGradient" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#1E40AF" Offset="0"/>
+            <GradientStop Color="#3B82F6" Offset="0.5"/>
+            <GradientStop Color="#2563EB" Offset="1"/>
+        </LinearGradientBrush>
+
         <!-- REFINED CARD STYLE -->
         <Style x:Key="ModuleBorderStyle" TargetType="Border">
             <Setter Property="Background" Value="White"/>
@@ -44,6 +51,63 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- Screenshot Button Style -->
+        <Style x:Key="ScreenshotButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#FFFFFF"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="14,10"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bg" Background="{TemplateBinding Background}" CornerRadius="10" Padding="{TemplateBinding Padding}" BorderBrush="#BFDBFE" BorderThickness="1">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.08"/>
+                            </Border.Effect>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="📷" FontSize="16" VerticalAlignment="Center"/>
+                                <TextBlock Text="Screenshot" FontSize="11" FontWeight="SemiBold" Foreground="#2563EB" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bg" Property="Background" Value="#EFF6FF"/>
+                                <Setter TargetName="bg" Property="BorderBrush" Value="#3B82F6"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- About Button Style -->
+        <Style x:Key="AboutButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#FFFFFF"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="14,10"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bg" Background="{TemplateBinding Background}" CornerRadius="10" Padding="{TemplateBinding Padding}" BorderBrush="#BFDBFE" BorderThickness="1">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.08"/>
+                            </Border.Effect>
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="M12,2C6.48,2 2,6.48 2,12s4.48,10 10,10 10,-4.48 10,-10S17.52,2 12,2zM13,17h-2v-6h2v6zM13,9h-2V7h2v2z" 
+                                      Fill="#3B82F6" Width="18" Height="18" Stretch="Uniform"/>
+                                <TextBlock Text="About" FontSize="11" FontWeight="SemiBold" Foreground="#2563EB" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bg" Property="Background" Value="#EFF6FF"/>
+                                <Setter TargetName="bg" Property="BorderBrush" Value="#3B82F6"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Grid>
@@ -58,7 +122,7 @@
         </Grid.ColumnDefinitions>
 
         <!-- 1. HEADER -->
-        <Border Grid.ColumnSpan="2" Background="{StaticResource DeepBlue}" Padding="24,15">
+        <Border Grid.ColumnSpan="2" Margin="12" CornerRadius="16" Background="{StaticResource HeaderGradient}" Effect="{StaticResource CardShadow}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -66,42 +130,48 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Orientation="Horizontal">
-                    <Border Width="50" Height="50" CornerRadius="10" Background="White">
-                        <TextBlock Text="PG" Foreground="{StaticResource DeepBlue}" FontWeight="Black" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Border>
-                    <StackPanel Margin="18,0,0,0" VerticalAlignment="Center">
-                        <TextBlock Text="PROGLASS ERP SYSTEM" FontSize="22" FontWeight="Black" Foreground="White"/>
-                        <TextBlock Text="PRODUCTION ENGINE v2.4" FontSize="10" Foreground="#93C5FD" FontWeight="Black"/>
+                <!-- Logo -->
+                <Border Grid.Column="0" Margin="16,12" Width="80" Height="88" CornerRadius="14" Background="#FFFFFF">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="15" ShadowDepth="3" Opacity="0.2"/>
+                    </Border.Effect>
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <Border Background="#3B82F6" CornerRadius="6" Padding="6,3" Margin="0,0,0,5">
+                            <TextBlock Text="PROGLASS" FontSize="9" FontWeight="Bold" Foreground="White"/>
+                        </Border>
+                        <TextBlock Text="ERP" FontSize="26" FontWeight="Bold" Foreground="#1E40AF" HorizontalAlignment="Center"/>
+                        <Border Height="2" Background="#3B82F6" Margin="12,6,12,0"/>
+                        <TextBlock Text="SYSTEM" FontSize="9" FontWeight="Bold" Foreground="#3B82F6" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                     </StackPanel>
+                </Border>
+
+                <!-- Title -->
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="20,0,0,0">
+                    <TextBlock Text="PROGLASS ERP SYSTEM" FontSize="28" FontWeight="Bold" Foreground="White"/>
+                    <TextBlock Text="Glass Processing Automation Platform" FontSize="13" Foreground="#BFDBFE" Margin="0,6,0,0"/>
                 </StackPanel>
 
-                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <!-- SCREENSHOT BUTTON -->
-                    <Button x:Name="ScreenshotBtn" Click="ScreenshotBtn_Click" Style="{StaticResource NavButtonStyle}" Margin="0,0,12,0">
-                        <Border Background="#1D4ED8" CornerRadius="8" Padding="15,10">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="📷" Margin="0,0,10,0" Foreground="White"/>
-                                <TextBlock Text="SCREENSHOT" Foreground="White" FontWeight="Black" FontSize="11"/>
-                            </StackPanel>
-                        </Border>
-                    </Button>
-
-                    <!-- ABOUT BUTTON -->
-                    <Button x:Name="AboutBtn" Click="About_Click" Style="{StaticResource NavButtonStyle}" Margin="0,0,12,0">
-                        <Border Background="#1D4ED8" CornerRadius="8" Padding="15,10" BorderBrush="#3B82F6" BorderThickness="1">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="ℹ️" Margin="0,0,10,0" Foreground="White"/>
-                                <TextBlock Text="ABOUT" Foreground="White" FontWeight="Black" FontSize="11"/>
-                            </StackPanel>
-                        </Border>
-                    </Button>
-
-                    <Border Background="#111827" CornerRadius="10" Padding="18,10" BorderBrush="{StaticResource PrimaryBlue}" BorderThickness="1">
+                <!-- Info Cards -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,20,0">
+                    <Button x:Name="ScreenshotBtn" Style="{StaticResource ScreenshotButtonStyle}" Click="ScreenshotBtn_Click" Margin="6"/>
+                    <Button x:Name="AboutBtn" Style="{StaticResource AboutButtonStyle}" Click="About_Click" Margin="6"/>
+                    <Border CornerRadius="12" Padding="16" Margin="6" Effect="{StaticResource CardShadow}">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#FFFFFF" Offset="0"/>
+                                <GradientStop Color="#F0F9FF" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock x:Name="ClockText" Text="00:00:00" FontSize="16" FontWeight="Bold" Foreground="White"/>
-                            <Border Width="1" Background="{StaticResource PrimaryBlue}" Margin="15,2"/>
-                            <TextBlock x:Name="CurrentDateText" Text="01-MAY-2026" FontSize="14" FontWeight="Bold" Foreground="#60A5FA"/>
+                            <StackPanel Margin="0,0,16,0">
+                                <TextBlock Text="📅 DATE" Foreground="#60A5FA" FontWeight="SemiBold" FontSize="9"/>
+                                <TextBlock x:Name="CurrentDateText" FontSize="14" FontWeight="Bold" Foreground="#1E40AF" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <Border Width="1" Background="#BFDBFE"/>
+                            <StackPanel Margin="16,0,0,0">
+                                <TextBlock Text="🕐 TIME" Foreground="#60A5FA" FontWeight="SemiBold" FontSize="9"/>
+                                <TextBlock x:Name="ClockText" FontSize="14" FontWeight="Bold" Foreground="#1E40AF" Margin="0,4,0,0"/>
+                            </StackPanel>
                         </StackPanel>
                     </Border>
                 </StackPanel>
@@ -221,13 +291,112 @@
         </Border>
 
         <!-- 3. CONTENT AREA -->
-        <Border Grid.Row="1" Grid.Column="1" Background="White" Margin="20" CornerRadius="20" Effect="{StaticResource CardShadow}">
+        <Border x:Name="MainContentBorder" Grid.Row="1" Grid.Column="1" Background="White" Margin="12" CornerRadius="16" Effect="{StaticResource CardShadow}">
             <ContentControl Content="{Binding CurrentView}"/>
         </Border>
 
         <!-- 4. FOOTER -->
-        <Border Grid.Row="2" Grid.ColumnSpan="2" Background="{StaticResource DeepBlue}" Padding="20,10">
-            <TextBlock Text="PROGLASS ENGINE: READY" Foreground="White" FontSize="10" FontWeight="Black"/>
+        <Border Grid.Row="2" Grid.ColumnSpan="2" Margin="12,0,12,12" CornerRadius="12" Effect="{StaticResource CardShadow}">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                    <GradientStop Color="#1E40AF" Offset="0"/>
+                    <GradientStop Color="#3B82F6" Offset="0.5"/>
+                    <GradientStop Color="#2563EB" Offset="1"/>
+                </LinearGradientBrush>
+            </Border.Background>
+            <Grid Margin="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- License Status -->
+                <Border CornerRadius="10" Padding="14" Margin="4">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#FFFFFF" Offset="0"/>
+                            <GradientStop Color="#EFF6FF" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Border Width="10" Height="10" CornerRadius="5">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Background" Value="#1E40AF"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsLicensed}" Value="True">
+                                            <Setter Property="Background" Value="#10B981"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                        <TextBlock FontWeight="Bold" FontSize="10" Foreground="#1E40AF" Margin="8,0,0,0" VerticalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Text" Value="LICENSE INACTIVE"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsLicensed}" Value="True">
+                                            <Setter Property="Text" Value="LICENSE ACTIVE"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <!-- Calculators Status -->
+                <Border Grid.Column="1" CornerRadius="10" Padding="14" Margin="4">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#FFFFFF" Offset="0"/>
+                            <GradientStop Color="#EFF6FF" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Border Width="10" Height="10" CornerRadius="5">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Background" Value="#2563EB"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsLicensed}" Value="True">
+                                            <Setter Property="Background" Value="#10B981"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                        <TextBlock FontWeight="Bold" FontSize="10" Foreground="#1E40AF" Margin="8,0,0,0" VerticalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Text" Value="CALCULATORS LOCKED"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsLicensed}" Value="True">
+                                            <Setter Property="Text" Value="CALCULATORS UNLOCKED"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <!-- System Status -->
+                <Border Grid.Column="2" CornerRadius="10" Padding="14" Margin="4">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#FFFFFF" Offset="0"/>
+                            <GradientStop Color="#EFF6FF" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Border Width="10" Height="10" CornerRadius="5" Background="#10B981"/>
+                        <TextBlock Text="SYSTEM READY" FontWeight="Bold" FontSize="10" Foreground="#1E40AF" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
         </Border>
     </Grid>
 </Window>
