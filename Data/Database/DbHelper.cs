@@ -2480,6 +2480,50 @@ namespace ProGlassAutomation.Data.Database
             }
         }
 
+        public static List<string> GetAllColorOptions()
+        {
+            try
+            {
+                return Execute(conn =>
+                {
+                    var list = new List<string>();
+
+                    // Get from Deliveries table
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = "SELECT DISTINCT Color FROM Deliveries WHERE Color IS NOT NULL AND Color != '' ORDER BY Color";
+                        using var r = cmd.ExecuteReader();
+                        while (r.Read())
+                        {
+                            var val = r.GetString(0);
+                            if (!string.IsNullOrWhiteSpace(val) && !list.Contains(val))
+                                list.Add(val);
+                        }
+                    }
+
+                    // Get from DailyWork table
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = "SELECT DISTINCT Color FROM DailyWork WHERE Color IS NOT NULL AND Color != '' ORDER BY Color";
+                        using var r = cmd.ExecuteReader();
+                        while (r.Read())
+                        {
+                            var val = r.GetString(0);
+                            if (!string.IsNullOrWhiteSpace(val) && !list.Contains(val))
+                                list.Add(val);
+                        }
+                    }
+
+                    return list;
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DbHelper] GetAllColorOptions error: {ex.Message}");
+                return new List<string>();
+            }
+        }
+
         // ═══════════════════════════════════════════════════════════════
         // ✅ HELPER CLASSES FOR LIVE DASHBOARD
         // ═══════════════════════════════════════════════════════════════
