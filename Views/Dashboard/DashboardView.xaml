@@ -2,683 +2,775 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:ProGlassAutomation.Views.Dashboard"
-             Background="#F8FAFC">
+             Background="#F0F4F8">
 
     <UserControl.Resources>
-        <!-- Professional Color Palette -->
-        <SolidColorBrush x:Key="PrimaryBlue" Color="#1E40AF"/>
+        <SolidColorBrush x:Key="PrimaryBlue" Color="#3B82F6"/>
         <SolidColorBrush x:Key="SuccessGreen" Color="#10B981"/>
         <SolidColorBrush x:Key="WarningOrange" Color="#F59E0B"/>
-        <SolidColorBrush x:Key="TextDark" Color="#0F172A"/>
+        <SolidColorBrush x:Key="TextDark" Color="#1E293B"/>
         <SolidColorBrush x:Key="TextMuted" Color="#64748B"/>
         <SolidColorBrush x:Key="DangerRed" Color="#EF4444"/>
         <SolidColorBrush x:Key="PurpleAccent" Color="#8B5CF6"/>
+        <SolidColorBrush x:Key="CyanAccent" Color="#06B6D4"/>
+        <SolidColorBrush x:Key="CardBg" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="SheetStoreBlue" Color="#0EA5E9"/>
+        <SolidColorBrush x:Key="DailyWorksGreen" Color="#22C55E"/>
+        <SolidColorBrush x:Key="DeliveryOrange" Color="#F97316"/>
 
-        <!-- Premium Card Style -->
-        <Style x:Key="DashboardCardStyle" TargetType="Border">
-            <Setter Property="Background" Value="White"/>
-            <Setter Property="CornerRadius" Value="16"/>
-            <Setter Property="Padding" Value="28"/>
-            <Setter Property="Margin" Value="0,0,0,24"/>
-            <Setter Property="BorderBrush" Value="#E2E8F0"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Effect">
-                <Setter.Value>
-                    <DropShadowEffect BlurRadius="25" ShadowDepth="3" Opacity="0.15" Color="#00000020"/>
-                </Setter.Value>
-            </Setter>
-        </Style>
+        <DropShadowEffect x:Key="GlassShadow" BlurRadius="15" ShadowDepth="4" Opacity="0.08" Direction="270"/>
 
-        <!-- Status Badge Style -->
-        <Style x:Key="StatusBadgeStyle" TargetType="Border">
+        <LinearGradientBrush x:Key="BlueGradient" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#3B82F6" Offset="0"/>
+            <GradientStop Color="#2563EB" Offset="1"/>
+        </LinearGradientBrush>
+
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource CardBg}"/>
             <Setter Property="CornerRadius" Value="12"/>
-            <Setter Property="Padding" Value="16,12"/>
-            <Setter Property="VerticalAlignment" Value="Top"/>
+            <Setter Property="Padding" Value="16"/>
+            <Setter Property="Effect" Value="{StaticResource GlassShadow}"/>
         </Style>
 
-        <!-- Metric Card Style -->
-        <Style x:Key="MetricCardStyle" TargetType="Border">
-            <Setter Property="Background" Value="White"/>
-            <Setter Property="CornerRadius" Value="16"/>
-            <Setter Property="Padding" Value="24"/>
-            <Setter Property="Margin" Value="0,0,0,0"/>
-            <Setter Property="BorderBrush" Value="#E2E8F0"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Effect">
+        <Style x:Key="HighlightCard" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource CardBg}"/>
+            <Setter Property="CornerRadius" Value="14"/>
+            <Setter Property="Padding" Value="18"/>
+            <Setter Property="Effect" Value="{StaticResource GlassShadow}"/>
+            <Setter Property="BorderThickness" Value="2"/>
+        </Style>
+
+        <Style x:Key="MetricCard" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource CardBg}"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="14"/>
+            <Setter Property="Effect" Value="{StaticResource GlassShadow}"/>
+        </Style>
+
+        <Style x:Key="IconBadge" TargetType="Border">
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="CornerRadius" Value="10"/>
+        </Style>
+
+        <Style x:Key="StatusBadge" TargetType="Border">
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="6,3"/>
+        </Style>
+
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource BlueGradient}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Padding" Value="14,8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
                 <Setter.Value>
-                    <DropShadowEffect BlurRadius="20" ShadowDepth="2" Opacity="0.12" Color="#00000015"/>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
-
-        <!-- Live Indicator Animation -->
-        <Storyboard x:Key="PulseAnimation" RepeatBehavior="Forever">
-            <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                           From="1" To="0.5" Duration="0:0:0.8"
-                           AutoReverse="True"/>
-        </Storyboard>
     </UserControl.Resources>
 
-    <Grid Margin="40">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+    <Grid>
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="16">
 
-        <!-- ==================== HEADER ==================== -->
-        <Grid Grid.Row="0" Margin="0,0,0,24">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-
-            <StackPanel>
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="🔥" FontSize="28" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                    <TextBlock Text="LIVE OPERATIONS DASHBOARD" FontSize="28" FontWeight="Black" Foreground="{StaticResource TextDark}"/>
-                    <!-- Live Indicator Dot -->
-                    <Ellipse x:Name="LiveIndicator" Width="12" Height="12" Fill="{StaticResource SuccessGreen}" 
-                           Margin="16,0,0,0" VerticalAlignment="Center">
-                        <Ellipse.Triggers>
-                            <EventTrigger RoutedEvent="Loaded">
-                                <BeginStoryboard>
-                                    <Storyboard RepeatBehavior="Forever">
-                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                       From="1" To="0.4" Duration="0:0:1"
-                                                       AutoReverse="True"/>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </EventTrigger>
-                        </Ellipse.Triggers>
-                    </Ellipse>
-                </StackPanel>
-                <TextBlock Text="Real-time glass production monitoring &amp; analytics" FontSize="14" Foreground="{StaticResource TextMuted}" Margin="40,6,0,0"/>
-            </StackPanel>
-
-            <!-- Status Cards Row -->
-            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-
-                <!-- Connection Status -->
-                <Border Background="White" CornerRadius="14" Padding="20,14" Margin="0,0,12,0" BorderBrush="#E2E8F0" BorderThickness="1">
-                    <StackPanel Orientation="Horizontal">
-                        <Ellipse x:Name="ConnectionIndicator" Width="10" Height="10" Fill="{StaticResource DangerRed}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                        <StackPanel>
-                            <TextBlock Text="LIVE FEED" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMuted}"/>
-                            <TextBlock x:Name="ConnectionStatusText" Text="Offline" FontSize="13" FontWeight="Black" Foreground="{StaticResource DangerRed}"/>
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
-
-                <!-- Modules Status -->
-                <Border Background="White" CornerRadius="14" Padding="20,14" Margin="0,0,12,0" BorderBrush="#E2E8F0" BorderThickness="1">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="📦" FontSize="20" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                        <StackPanel>
-                            <TextBlock Text="MODULES" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMuted}"/>
-                            <TextBlock x:Name="ModuleCountText" Text="0/5 Active" FontSize="13" FontWeight="Black" Foreground="{StaticResource PrimaryBlue}"/>
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
-
-                <!-- Subscription Status -->
-                <Border Background="White" CornerRadius="14" Padding="20,14" BorderBrush="#E2E8F0" BorderThickness="1">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="🛡️" FontSize="20" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                        <StackPanel>
-                            <TextBlock Text="LICENSE" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMuted}"/>
-                            <TextBlock x:Name="SubscriptionStatusText" Text="Inactive" FontSize="13" FontWeight="Black" Foreground="{StaticResource DangerRed}"/>
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
-            </StackPanel>
-        </Grid>
-
-        <!-- ==================== LIVE METRICS ROW 1 ==================== -->
-        <Grid Grid.Row="1" Margin="0,0,0,16">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-
-            <!-- Total Production -->
-            <Border Grid.Column="0" Style="{StaticResource MetricCardStyle}" Margin="0,0,12,0">
-                <StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                        <Border Background="#EBF5FF" CornerRadius="8" Padding="8,6">
-                            <TextBlock Text="📊" FontSize="16"/>
-                        </Border>
-                        <TextBlock Text="TOTAL PRODUCTION" FontSize="11" FontWeight="Black" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="10,0,0,0"/>
-                    </StackPanel>
-                    <TextBlock x:Name="LiveProductionText" Text="0" FontSize="36" FontWeight="Black" Foreground="{StaticResource PrimaryBlue}"/>
-                    <TextBlock Text="sqm today" FontSize="12" Foreground="{StaticResource TextMuted}"/>
-                    <!-- Change Indicator -->
-                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                        <TextBlock x:Name="ProductionChangeText" Text="▲ +0" FontSize="11" Foreground="{StaticResource SuccessGreen}" FontWeight="SemiBold"/>
-                        <TextBlock Text=" from yesterday" FontSize="11" Foreground="{StaticResource TextMuted}"/>
-                    </StackPanel>
-                </StackPanel>
-            </Border>
-
-            <!-- Efficiency -->
-            <Border Grid.Column="1" Style="{StaticResource MetricCardStyle}" Margin="0,0,12,0">
-                <StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                        <Border Background="#ECFDF5" CornerRadius="8" Padding="8,6">
-                            <TextBlock Text="🎯" FontSize="16"/>
-                        </Border>
-                        <TextBlock Text="EFFICIENCY" FontSize="11" FontWeight="Black" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="10,0,0,0"/>
-                    </StackPanel>
-                    <TextBlock x:Name="EfficiencyText" Text="0.0" FontSize="36" FontWeight="Black" Foreground="{StaticResource SuccessGreen}"/>
-                    <ProgressBar x:Name="EfficiencyBar" Height="8" Margin="0,10,0,0" Background="#F1F5F9" 
-                               Foreground="{StaticResource SuccessGreen}" Value="0" Maximum="100"/>
-                </StackPanel>
-            </Border>
-
-            <!-- Uptime -->
-            <Border Grid.Column="2" Style="{StaticResource MetricCardStyle}" Margin="0,0,12,0">
-                <StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                        <Border Background="#FEF3C7" CornerRadius="8" Padding="8,6">
-                            <TextBlock Text="⚡" FontSize="16"/>
-                        </Border>
-                        <TextBlock Text="UPTIME" FontSize="11" FontWeight="Black" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="10,0,0,0"/>
-                    </StackPanel>
-                    <TextBlock x:Name="UptimeText" Text="0.0" FontSize="36" FontWeight="Black" Foreground="{StaticResource WarningOrange}"/>
-                    <TextBlock Text="24h average" FontSize="12" Foreground="{StaticResource TextMuted}"/>
-                </StackPanel>
-            </Border>
-
-            <!-- Active Users -->
-            <Border Grid.Column="3" Style="{StaticResource MetricCardStyle}">
-                <StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                        <Border Background="#F3E8FF" CornerRadius="8" Padding="8,6">
-                            <TextBlock Text="👥" FontSize="16"/>
-                        </Border>
-                        <TextBlock Text="CALCULATIONS" FontSize="11" FontWeight="Black" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="10,0,0,0"/>
-                    </StackPanel>
-                    <TextBlock x:Name="CalculationsText" Text="0" FontSize="36" FontWeight="Black" Foreground="{StaticResource PurpleAccent}"/>
-                    <TextBlock Text="this session" FontSize="12" Foreground="{StaticResource TextMuted}"/>
-                </StackPanel>
-            </Border>
-        </Grid>
-
-        <!-- ==================== LIVE METRICS ROW 2 - MODULE COUNTERS ==================== -->
-        <Grid Grid.Row="2" Margin="0,0,0,16">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-
-            <!-- SGU Counter -->
-            <Border Grid.Column="0" Style="{StaticResource MetricCardStyle}" Margin="0,0,12,0" Padding="20">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <Border Width="50" Height="50" CornerRadius="12" Background="{StaticResource PrimaryBlue}" VerticalAlignment="Center">
-                        <TextBlock Text="🧮" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Border>
-                    <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center">
-                        <TextBlock Text="SGU CALCULATIONS" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMuted}"/>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock x:Name="SguCountText" Text="0" FontSize="24" FontWeight="Black" Foreground="{StaticResource PrimaryBlue}"/>
-                            <TextBlock Text="/min" FontSize="12" Foreground="{StaticResource TextMuted}" VerticalAlignment="Bottom" Margin="4,0,0,4"/>
-                        </StackPanel>
-                    </StackPanel>
-                </Grid>
-            </Border>
-
-            <!-- DGU Counter -->
-            <Border Grid.Column="1" Style="{StaticResource MetricCardStyle}" Margin="0,0,12,0" Padding="20">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <Border Width="50" Height="50" CornerRadius="12" Background="{StaticResource PrimaryBlue}" VerticalAlignment="Center">
-                        <TextBlock Text="📑" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Border>
-                    <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center">
-                        <TextBlock Text="DGU CALCULATIONS" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMuted}"/>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock x:Name="DguCountText" Text="0" FontSize="24" FontWeight="Black" Foreground="{StaticResource PrimaryBlue}"/>
-                            <TextBlock Text="/min" FontSize="12" Foreground="{StaticResource TextMuted}" VerticalAlignment="Bottom" Margin="4,0,0,4"/>
-                        </StackPanel>
-                    </StackPanel>
-                </Grid>
-            </Border>
-
-            <!-- Lamination Counter -->
-            <Border Grid.Column="2" Style="{StaticResource MetricCardStyle}" Padding="20">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <Border Width="50" Height="50" CornerRadius="12" Background="{StaticResource PrimaryBlue}" VerticalAlignment="Center">
-                        <TextBlock Text="🔳" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Border>
-                    <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center">
-                        <TextBlock Text="LAMINATION" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMuted}"/>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock x:Name="LamCountText" Text="0" FontSize="24" FontWeight="Black" Foreground="{StaticResource PrimaryBlue}"/>
-                            <TextBlock Text="/min" FontSize="12" Foreground="{StaticResource TextMuted}" VerticalAlignment="Bottom" Margin="4,0,0,4"/>
-                        </StackPanel>
-                    </StackPanel>
-                </Grid>
-            </Border>
-        </Grid>
-
-        <!-- ==================== TIMESTAMP & REFRESH ==================== -->
-        <Grid Grid.Row="2" Margin="0,0,0,8">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock x:Name="LastUpdateText" Text="Last update: --:--:--" 
-                       FontSize="12" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center"/>
-            <Button Grid.Column="1" Content="🔄 Refresh" Click="Refresh_Click"
-                   Background="Transparent" Foreground="{StaticResource PrimaryBlue}"
-                   FontWeight="SemiBold" FontSize="12" Padding="16,8" BorderThickness="0" Cursor="Hand"/>
-        </Grid>
-
-        <!-- ==================== CONTENT ==================== -->
-        <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto">
-            <StackPanel>
-
-                <!-- SUBSCRIPTION CARD -->
-                <Border x:Name="SubscriptionCard" Style="{StaticResource DashboardCardStyle}" BorderBrush="{StaticResource DangerRed}" BorderThickness="2">
+                <!-- HEADER -->
+                <Border Style="{StaticResource Card}" Margin="0,0,0,12">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <StackPanel>
-                            <TextBlock Text="🔐 SYSTEM LICENSING" FontSize="12" FontWeight="Black" Foreground="{StaticResource DangerRed}"/>
-                            <TextBlock x:Name="StatusText" Text="INACTIVE" FontSize="42" FontWeight="Black" Foreground="{StaticResource TextDark}" Margin="0,12"/>
 
-                            <Border x:Name="DaysCounterBg" Background="#FEF2F2" CornerRadius="14" Padding="24,16" HorizontalAlignment="Left" Margin="0,16,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <Border Width="40" Height="40" CornerRadius="10" Background="{StaticResource BlueGradient}">
+                                <TextBlock Text="📊" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel Margin="12,0,0,0">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="⏰" FontSize="18" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                    <TextBlock Text="Remaining: " FontSize="14" Foreground="{StaticResource TextMuted}" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                    <TextBlock x:Name="DaysText" Text="0" FontSize="22" FontWeight="Black" Foreground="{StaticResource DangerRed}"/>
-                                    <TextBlock Text=" days" FontSize="14" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Operations Dashboard" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextDark}"/>
+                                    <Border Background="#ECFDF5" CornerRadius="10" Padding="10,4" Margin="12,0,0,0" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Ellipse x:Name="LiveIndicator" Width="8" Height="8" Fill="{StaticResource SuccessGreen}">
+                                                <Ellipse.Triggers>
+                                                    <EventTrigger RoutedEvent="Loaded">
+                                                        <BeginStoryboard>
+                                                            <Storyboard RepeatBehavior="Forever">
+                                                                <DoubleAnimation Storyboard.TargetProperty="Opacity" From="1" To="0.4" Duration="0:0:1" AutoReverse="True"/>
+                                                            </Storyboard>
+                                                        </BeginStoryboard>
+                                                    </EventTrigger>
+                                                </Ellipse.Triggers>
+                                            </Ellipse>
+                                            <TextBlock Text="LIVE" FontSize="10" FontWeight="Bold" Foreground="{StaticResource SuccessGreen}" Margin="6,0,0,0"/>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                                <TextBlock Text="Real-time production monitoring &amp; analytics" FontSize="11" Foreground="{StaticResource TextMuted}"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <Border Style="{StaticResource MetricCard}" Padding="10,6" Margin="0,0,6,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <Ellipse x:Name="ConnectionIndicator" Width="6" Height="6" Fill="{StaticResource DangerRed}"/>
+                                    <TextBlock x:Name="ConnectionStatusText" Text="Offline" FontSize="10" Foreground="{StaticResource TextMuted}" Margin="6,0,0,0"/>
                                 </StackPanel>
                             </Border>
-
-                            <Button x:Name="ActivateBtn" Content="🚀 ACTIVATE FULL SYSTEM" Click="ActivateNow_Click" 
-                                  Background="{StaticResource PrimaryBlue}" Foreground="White" FontWeight="Black" 
-                                  FontSize="15" Padding="40,18" Margin="0,20,0,0" BorderThickness="0" Cursor="Hand">
-                                <Button.Resources>
-                                    <Style TargetType="Border">
-                                        <Setter Property="CornerRadius" Value="12"/>
-                                    </Style>
-                                </Button.Resources>
-                            </Button>
-                        </StackPanel>
-                        <Border x:Name="StatusIndicator" Grid.Column="1" Width="32" Height="32" CornerRadius="16" 
-                              Background="{StaticResource DangerRed}" VerticalAlignment="Top" Margin="0,20,0,0">
-                            <TextBlock Text="⚠️" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                    </Grid>
-                </Border>
-
-                <!-- ==================== PRODUCTION MODULES ==================== -->
-                <TextBlock Text="🏭 PRODUCTION MODULES" FontSize="14" FontWeight="Black" Foreground="{StaticResource PrimaryBlue}" Margin="8,24,0,20"/>
-
-                <!-- SGU MODULE -->
-                <Border Style="{StaticResource DashboardCardStyle}">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="80"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <Border Width="70" Height="70" CornerRadius="14" Background="{StaticResource PrimaryBlue}" VerticalAlignment="Center">
-                            <TextBlock Text="🧮" FontSize="36" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <StackPanel Grid.Column="1" Margin="24,0">
-                            <TextBlock Text="SGU CALCULATOR" FontSize="20" FontWeight="Black" Foreground="{StaticResource TextDark}"/>
-                            <TextBlock Text="Single Glass Unit pricing &amp; edgework calculations" Foreground="{StaticResource TextMuted}" FontSize="13" Margin="0,4,0,0"/>
-                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                                <Border Background="#ECFDF5" CornerRadius="8" Padding="10,6" Margin="0,0,12,0">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="⏱️" FontSize="12" VerticalAlignment="Center"/>
-                                        <TextBlock x:Name="SguLiveCounter" Text=" Live: 0/min" FontSize="12" Foreground="{StaticResource SuccessGreen}" FontWeight="SemiBold" Margin="6,0,0,0"/>
-                                    </StackPanel>
-                                </Border>
-                                <Border Background="#EBF5FF" CornerRadius="8" Padding="10,6">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="📊" FontSize="12" VerticalAlignment="Center"/>
-                                        <TextBlock x:Name="SguTotalText" Text=" Total: 0 sqm" FontSize="12" Foreground="{StaticResource PrimaryBlue}" FontWeight="SemiBold" Margin="6,0,0,0"/>
-                                    </StackPanel>
-                                </Border>
-                            </StackPanel>
-                        </StackPanel>
-                        <Border x:Name="SguStatus" Grid.Column="2" Style="{StaticResource StatusBadgeStyle}" Background="#FEE2E2">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="🔒" FontSize="14" Foreground="{StaticResource DangerRed}" VerticalAlignment="Center"/>
-                                <TextBlock x:Name="SguStatusText" Text="LOCKED" Foreground="{StaticResource DangerRed}" FontWeight="Black" FontSize="11" Margin="8,0,0,0" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Border>
-                    </Grid>
-                </Border>
-
-                <!-- DGU MODULE -->
-                <Border Style="{StaticResource DashboardCardStyle}">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="80"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <Border Width="70" Height="70" CornerRadius="14" Background="{StaticResource PrimaryBlue}" VerticalAlignment="Center">
-                            <TextBlock Text="📑" FontSize="36" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <StackPanel Grid.Column="1" Margin="24,0">
-                            <TextBlock Text="DGU CALCULATOR" FontSize="20" FontWeight="Black" Foreground="{StaticResource TextDark}"/>
-                            <TextBlock Text="Double Glass Unit processing &amp; spacer calculations" Foreground="{StaticResource TextMuted}" FontSize="13" Margin="0,4,0,0"/>
-                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                                <Border Background="#ECFDF5" CornerRadius="8" Padding="10,6" Margin="0,0,12,0">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="⏱️" FontSize="12" VerticalAlignment="Center"/>
-                                        <TextBlock x:Name="DguLiveCounter" Text=" Live: 0/min" FontSize="12" Foreground="{StaticResource SuccessGreen}" FontWeight="SemiBold" Margin="6,0,0,0"/>
-                                    </StackPanel>
-                                </Border>
-                                <Border Background="#EBF5FF" CornerRadius="8" Padding="10,6">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="📊" FontSize="12" VerticalAlignment="Center"/>
-                                        <TextBlock x:Name="DguTotalText" Text=" Total: 0 sqm" FontSize="12" Foreground="{StaticResource PrimaryBlue}" FontWeight="SemiBold" Margin="6,0,0,0"/>
-                                    </StackPanel>
-                                </Border>
-                            </StackPanel>
-                        </StackPanel>
-                        <Border x:Name="DguStatus" Grid.Column="2" Style="{StaticResource StatusBadgeStyle}" Background="#FEE2E2">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="🔒" FontSize="14" Foreground="{StaticResource DangerRed}" VerticalAlignment="Center"/>
-                                <TextBlock x:Name="DguStatusText" Text="LOCKED" Foreground="{StaticResource DangerRed}" FontWeight="Black" FontSize="11" Margin="8,0,0,0" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Border>
-                    </Grid>
-                </Border>
-
-                <!-- LAMINATION MODULE -->
-                <Border Style="{StaticResource DashboardCardStyle}">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="80"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <Border Width="70" Height="70" CornerRadius="14" Background="{StaticResource PrimaryBlue}" VerticalAlignment="Center">
-                            <TextBlock Text="🔳" FontSize="36" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <StackPanel Grid.Column="1" Margin="24,0">
-                            <TextBlock Text="LAMINATION" FontSize="20" FontWeight="Black" Foreground="{StaticResource TextDark}"/>
-                            <TextBlock Text="Safety glass layering &amp; PVB interlayer" Foreground="{StaticResource TextMuted}" FontSize="13" Margin="0,4,0,0"/>
-                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                                <Border Background="#ECFDF5" CornerRadius="8" Padding="10,6" Margin="0,0,12,0">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="⏱️" FontSize="12" VerticalAlignment="Center"/>
-                                        <TextBlock x:Name="LamLiveCounter" Text=" Live: 0/min" FontSize="12" Foreground="{StaticResource SuccessGreen}" FontWeight="SemiBold" Margin="6,0,0,0"/>
-                                    </StackPanel>
-                                </Border>
-                                <Border Background="#EBF5FF" CornerRadius="8" Padding="10,6">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="📊" FontSize="12" VerticalAlignment="Center"/>
-                                        <TextBlock x:Name="LamTotalText" Text=" Total: 0 sqm" FontSize="12" Foreground="{StaticResource PrimaryBlue}" FontWeight="SemiBold" Margin="6,0,0,0"/>
-                                    </StackPanel>
-                                </Border>
-                            </StackPanel>
-                        </StackPanel>
-                        <Border x:Name="LamStatus" Grid.Column="2" Style="{StaticResource StatusBadgeStyle}" Background="#FEE2E2">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="🔒" FontSize="14" Foreground="{StaticResource DangerRed}" VerticalAlignment="Center"/>
-                                <TextBlock x:Name="LamStatusText" Text="LOCKED" Foreground="{StaticResource DangerRed}" FontWeight="Black" FontSize="11" Margin="8,0,0,0" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Border>
-                    </Grid>
-                </Border>
-
-                <!-- DGU + LAMINATION MODULE -->
-                <Border Style="{StaticResource DashboardCardStyle}">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="80"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <Border Width="70" Height="70" CornerRadius="14" Background="{StaticResource PrimaryBlue}" VerticalAlignment="Center">
-                            <TextBlock Text="🪟" FontSize="36" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <StackPanel Grid.Column="1" Margin="24,0">
-                            <TextBlock Text="DGU + LAMINATION" FontSize="20" FontWeight="Black" Foreground="{StaticResource TextDark}"/>
-                            <TextBlock Text="High-performance laminated insulated units" Foreground="{StaticResource TextMuted}" FontSize="13" Margin="0,4,0,0"/>
-                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                                <Border Background="#ECFDF5" CornerRadius="8" Padding="10,6" Margin="0,0,12,0">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="⭐" FontSize="12" VerticalAlignment="Center"/>
-                                        <TextBlock Text=" Combo Module" FontSize="12" Foreground="{StaticResource SuccessGreen}" FontWeight="SemiBold" Margin="6,0,0,0"/>
-                                    </StackPanel>
-                                </Border>
-                            </StackPanel>
-                        </StackPanel>
-                        <Border x:Name="DguLamStatus" Grid.Column="2" Style="{StaticResource StatusBadgeStyle}" Background="#FEE2E2">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="🔒" FontSize="14" Foreground="{StaticResource DangerRed}" VerticalAlignment="Center"/>
-                                <TextBlock x:Name="DguLamStatusText" Text="LOCKED" Foreground="{StaticResource DangerRed}" FontWeight="Black" FontSize="11" Margin="8,0,0,0" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Border>
-                    </Grid>
-                </Border>
-
-                <!-- OPTIMIZATION MODULE -->
-                <Border Style="{StaticResource DashboardCardStyle}">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="80"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <Border Width="70" Height="70" CornerRadius="14" Background="{StaticResource PrimaryBlue}" VerticalAlignment="Center">
-                            <TextBlock Text="✂️" FontSize="36" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <StackPanel Grid.Column="1" Margin="24,0">
-                            <TextBlock Text="OPTIMIZATION" FontSize="20" FontWeight="Black" Foreground="{StaticResource TextDark}"/>
-                            <TextBlock Text="Cutting optimization &amp; waste control" Foreground="{StaticResource TextMuted}" FontSize="13" Margin="0,4,0,0"/>
-                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                                <Border Background="#FEF3C7" CornerRadius="8" Padding="10,6" Margin="0,0,12,0">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="🎯" FontSize="12" VerticalAlignment="Center"/>
-                                        <TextBlock Text=" Auto-nesting" FontSize="12" Foreground="{StaticResource WarningOrange}" FontWeight="SemiBold" Margin="6,0,0,0"/>
-                                    </StackPanel>
-                                </Border>
-                            </StackPanel>
-                        </StackPanel>
-                        <Border x:Name="OptStatus" Grid.Column="2" Style="{StaticResource StatusBadgeStyle}" Background="#FEE2E2">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="🔒" FontSize="14" Foreground="{StaticResource DangerRed}" VerticalAlignment="Center"/>
-                                <TextBlock x:Name="OptStatusText" Text="LOCKED" Foreground="{StaticResource DangerRed}" FontWeight="Black" FontSize="11" Margin="8,0,0,0" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Border>
-                    </Grid>
-                </Border>
-
-                <!-- ==================== BALANCE SERVICE STATUS ==================== -->
-                <TextBlock Text="⚖️ BALANCE SERVICES" FontSize="14" FontWeight="Black" Foreground="{StaticResource PrimaryBlue}" Margin="8,24,0,20"/>
-
-                <!-- Balance Service Overview -->
-                <Border Style="{StaticResource DashboardCardStyle}">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-
-                        <!-- Daily Balance -->
-                        <StackPanel Grid.Column="0" HorizontalAlignment="Center">
-                            <Border Width="60" Height="60" CornerRadius="30" Background="#ECFDF5" Margin="0,0,0,12">
-                                <TextBlock Text="💰" FontSize="28" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Border Style="{StaticResource MetricCard}" Padding="10,6">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="🛡️" FontSize="12"/>
+                                    <TextBlock x:Name="SubscriptionStatusText" Text="Inactive" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource DangerRed}" Margin="4,0,0,0"/>
+                                </StackPanel>
                             </Border>
-                            <TextBlock Text="DAILY BALANCE" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMuted}" HorizontalAlignment="Center"/>
-                            <TextBlock x:Name="DailyBalanceText" Text="$0.00" FontSize="20" FontWeight="Black" Foreground="{StaticResource SuccessGreen}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                        </StackPanel>
-
-                        <!-- Monthly Balance -->
-                        <StackPanel Grid.Column="1" HorizontalAlignment="Center">
-                            <Border Width="60" Height="60" CornerRadius="30" Background="#EBF5FF" Margin="0,0,0,12">
-                                <TextBlock Text="📅" FontSize="28" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <TextBlock Text="MONTHLY BALANCE" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMuted}" HorizontalAlignment="Center"/>
-                            <TextBlock x:Name="MonthlyBalanceText" Text="$0.00" FontSize="20" FontWeight="Black" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                        </StackPanel>
-
-                        <!-- Annual Balance -->
-                        <StackPanel Grid.Column="2" HorizontalAlignment="Center">
-                            <Border Width="60" Height="60" CornerRadius="30" Background="#F3E8FF" Margin="0,0,0,12">
-                                <TextBlock Text="📈" FontSize="28" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <TextBlock Text="ANNUAL BALANCE" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMuted}" HorizontalAlignment="Center"/>
-                            <TextBlock x:Name="AnnualBalanceText" Text="$0.00" FontSize="20" FontWeight="Black" Foreground="{StaticResource PurpleAccent}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                         </StackPanel>
                     </Grid>
                 </Border>
 
-                <!-- Balance Service Details -->
-                <Border Style="{StaticResource DashboardCardStyle}">
-                    <StackPanel>
-                        <TextBlock Text="📋 BALANCE SERVICE DETAILS" FontSize="12" FontWeight="Black" Foreground="{StaticResource TextMuted}" Margin="0,0,0,16"/>
+                <!-- KEY MODULES HEADER -->
+                <TextBlock Text="📦 KEY MODULES" FontSize="13" FontWeight="Bold" Foreground="{StaticResource TextDark}" Margin="0,0,0,10"/>
 
+                <!-- MODULE CARDS ROW -->
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- SHEET STORE -->
+                    <Border Grid.Column="0" Style="{StaticResource HighlightCard}" Margin="0,0,6,0" BorderBrush="{StaticResource SheetStoreBlue}">
                         <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <!-- Row 1: Revenue & Expenses -->
-                            <Border Grid.Row="0" Grid.Column="0" Background="#F8FAFC" CornerRadius="10" Padding="16" Margin="0,0,8,12">
-                                <StackPanel>
-                                    <TextBlock Text="💵 TODAY'S REVENUE" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMuted}"/>
-                                    <TextBlock x:Name="TodayRevenueText" Text="$0.00" FontSize="18" FontWeight="Black" Foreground="{StaticResource SuccessGreen}" Margin="0,4,0,0"/>
+                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
+                                <Border Width="44" Height="44" CornerRadius="10" Background="#E0F2FE">
+                                    <TextBlock Text="📦" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel Margin="10,0,0,0">
+                                    <TextBlock Text="SHEET STORE" FontSize="12" FontWeight="Bold" Foreground="{StaticResource SheetStoreBlue}"/>
+                                    <TextBlock Text="Inventory Management" FontSize="9" Foreground="{StaticResource TextMuted}"/>
                                 </StackPanel>
-                            </Border>
-                            <Border Grid.Row="0" Grid.Column="1" Background="#F8FAFC" CornerRadius="10" Padding="16" Margin="8,0,0,12">
-                                <StackPanel>
-                                    <TextBlock Text="💸 TODAY'S EXPENSES" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMuted}"/>
-                                    <TextBlock x:Name="TodayExpensesText" Text="$0.00" FontSize="18" FontWeight="Black" Foreground="{StaticResource DangerRed}" Margin="0,4,0,0"/>
-                                </StackPanel>
-                            </Border>
+                            </StackPanel>
 
-                            <!-- Row 2: Net Income & Transactions -->
-                            <Border Grid.Row="1" Grid.Column="0" Background="#F8FAFC" CornerRadius="10" Padding="16" Margin="0,0,8,12">
-                                <StackPanel>
-                                    <TextBlock Text="📊 NET INCOME" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMuted}"/>
-                                    <TextBlock x:Name="NetIncomeText" Text="$0.00" FontSize="18" FontWeight="Black" Foreground="{StaticResource PrimaryBlue}" Margin="0,4,0,0"/>
-                                </StackPanel>
-                            </Border>
-                            <Border Grid.Row="1" Grid.Column="1" Background="#F8FAFC" CornerRadius="10" Padding="16" Margin="8,0,0,12">
-                                <StackPanel>
-                                    <TextBlock Text="🔢 TRANSACTIONS" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMuted}"/>
-                                    <TextBlock x:Name="TransactionsText" Text="0 today" FontSize="18" FontWeight="Black" Foreground="{StaticResource TextDark}" Margin="0,4,0,0"/>
-                                </StackPanel>
-                            </Border>
+                            <Grid Grid.Row="1" Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
 
-                            <!-- Row 3: Pending & Completed -->
-                            <Border Grid.Row="2" Grid.Column="0" Background="#F8FAFC" CornerRadius="10" Padding="16" Margin="0,0,8,12">
-                                <StackPanel>
-                                    <TextBlock Text="⏳ PENDING DELIVERIES" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMuted}"/>
-                                    <TextBlock x:Name="PendingDeliveriesText" Text="0" FontSize="18" FontWeight="Black" Foreground="{StaticResource WarningOrange}" Margin="0,4,0,0"/>
+                                <StackPanel Grid.Column="0" Grid.Row="0" Margin="0,0,0,8">
+                                    <TextBlock Text="Total Stock" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                    <TextBlock x:Name="SheetTotalStock" Text="0" FontSize="20" FontWeight="Bold" Foreground="{StaticResource SheetStoreBlue}"/>
                                 </StackPanel>
-                            </Border>
-                            <Border Grid.Row="2" Grid.Column="1" Background="#F8FAFC" CornerRadius="10" Padding="16" Margin="8,0,0,12">
-                                <StackPanel>
-                                    <TextBlock Text="✅ COMPLETED TODAY" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMuted}"/>
-                                    <TextBlock x:Name="CompletedTodayText" Text="0" FontSize="18" FontWeight="Black" Foreground="{StaticResource SuccessGreen}" Margin="0,4,0,0"/>
-                                </StackPanel>
-                            </Border>
 
-                            <!-- Row 4: Last Sync & Service Status -->
-                            <Border Grid.Row="3" Grid.Column="0" Background="#F8FAFC" CornerRadius="10" Padding="16" Margin="0,0,8,0">
-                                <StackPanel>
-                                    <TextBlock Text="🔄 LAST SYNC" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMuted}"/>
-                                    <TextBlock x:Name="LastSyncText" Text="--:--:--" FontSize="14" Foreground="{StaticResource TextDark}" Margin="0,4,0,0"/>
+                                <StackPanel Grid.Column="1" Grid.Row="0" Margin="0,0,0,8">
+                                    <TextBlock Text="Available" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                    <TextBlock x:Name="SheetBalance" Text="0" FontSize="20" FontWeight="Bold" Foreground="{StaticResource SuccessGreen}"/>
                                 </StackPanel>
-                            </Border>
-                            <Border Grid.Row="3" Grid.Column="1" Background="#F8FAFC" CornerRadius="10" Padding="16" Margin="8,0,0,0">
-                                <StackPanel>
-                                    <TextBlock Text="🔗 SERVICE STATUS" FontSize="10" FontWeight="Black" Foreground="{StaticResource TextMuted}"/>
-                                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                                        <Ellipse x:Name="BalanceServiceIndicator" Width="8" Height="8" Fill="{StaticResource DangerRed}" VerticalAlignment="Center"/>
-                                        <TextBlock x:Name="BalanceServiceStatusText" Text="Offline" FontSize="14" Foreground="{StaticResource DangerRed}" Margin="8,0,0,0"/>
-                                    </StackPanel>
+
+                                <StackPanel Grid.Column="0" Grid.Row="1">
+                                    <TextBlock Text="Types" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                    <TextBlock x:Name="SheetTypes" Text="0" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextDark}"/>
                                 </StackPanel>
-                            </Border>
+
+                                <StackPanel Grid.Column="1" Grid.Row="1">
+                                    <TextBlock Text="Value" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                    <TextBlock x:Name="SheetValue" Text="$0" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource CyanAccent}"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <Button x:Name="SheetStoreBtn" Grid.Row="2" Content="📦 View Store" Click="SheetStore_Click"
+                                  Style="{StaticResource PrimaryButton}" Background="#0EA5E9"/>
                         </Grid>
+                    </Border>
+
+                    <!-- DAILY WORKS -->
+                    <Border Grid.Column="1" Style="{StaticResource HighlightCard}" Margin="0,0,6,0" BorderBrush="{StaticResource DailyWorksGreen}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
+                                <Border Width="44" Height="44" CornerRadius="10" Background="#DCFCE7">
+                                    <TextBlock Text="📋" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel Margin="10,0,0,0">
+                                    <TextBlock Text="DAILY WORKS" FontSize="12" FontWeight="Bold" Foreground="{StaticResource DailyWorksGreen}"/>
+                                    <TextBlock Text="Production Orders" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <Grid Grid.Row="1" Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <StackPanel Grid.Column="0" Grid.Row="0" Margin="0,0,0,8">
+                                    <TextBlock Text="Today Orders" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                    <TextBlock x:Name="WorksTodayCount" Text="0" FontSize="20" FontWeight="Bold" Foreground="{StaticResource DailyWorksGreen}"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1" Grid.Row="0" Margin="0,0,0,8">
+                                    <TextBlock Text="Today SQM" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                    <TextBlock x:Name="WorksTodaySQM" Text="0" FontSize="20" FontWeight="Bold" Foreground="{StaticResource PrimaryBlue}"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="0" Grid.Row="1">
+                                    <TextBlock Text="Total Records" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                    <TextBlock x:Name="WorksTotalRecords" Text="0" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextDark}"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1" Grid.Row="1">
+                                    <TextBlock Text="Total SQM" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                    <TextBlock x:Name="WorksTotalSQM" Text="0" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource PurpleAccent}"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <Button x:Name="DailyWorksBtn" Grid.Row="2" Content="📋 View Works" Click="DailyWorks_Click"
+                                  Style="{StaticResource PrimaryButton}" Background="#22C55E"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- DELIVERIES -->
+                    <Border Grid.Column="2" Style="{StaticResource HighlightCard}" BorderBrush="{StaticResource DeliveryOrange}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
+                                <Border Width="44" Height="44" CornerRadius="10" Background="#FFF7ED">
+                                    <TextBlock Text="🚚" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel Margin="10,0,0,0">
+                                    <TextBlock Text="DELIVERIES" FontSize="12" FontWeight="Bold" Foreground="{StaticResource DeliveryOrange}"/>
+                                    <TextBlock Text="Order Tracking" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <Grid Grid.Row="1" Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <StackPanel Grid.Column="0" Grid.Row="0" Margin="0,0,0,8">
+                                    <TextBlock Text="Pending" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                    <TextBlock x:Name="DeliveriesPending" Text="0" FontSize="20" FontWeight="Bold" Foreground="{StaticResource WarningOrange}"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1" Grid.Row="0" Margin="0,0,0,8">
+                                    <TextBlock Text="Completed" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                    <TextBlock x:Name="DeliveriesCompleted" Text="0" FontSize="20" FontWeight="Bold" Foreground="{StaticResource SuccessGreen}"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="0" Grid.Row="1">
+                                    <TextBlock Text="Total Orders" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                    <TextBlock x:Name="DeliveriesTotal" Text="0" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextDark}"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1" Grid.Row="1">
+                                    <TextBlock Text="Balance" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                    <TextBlock x:Name="DeliveriesBalance" Text="0" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource DangerRed}"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <Button x:Name="DeliveriesBtn" Grid.Row="2" Content="🚚 View Deliveries" Click="Deliveries_Click"
+                                  Style="{StaticResource PrimaryButton}" Background="#F97316"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <!-- QUICK METRICS HEADER -->
+                <TextBlock Text="📊 QUICK METRICS" FontSize="13" FontWeight="Bold" Foreground="{StaticResource TextDark}" Margin="0,8,0,10"/>
+
+                <!-- METRICS ROW -->
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Production -->
+                    <Border Grid.Column="0" Style="{StaticResource MetricCard}" Margin="0,0,6,0">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <Border Style="{StaticResource IconBadge}" Background="#DBEAFE">
+                                    <TextBlock Text="📊" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="Production" FontSize="10" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                            </StackPanel>
+                            <TextBlock x:Name="LiveProductionText" Text="0" FontSize="22" FontWeight="Bold" Foreground="{StaticResource PrimaryBlue}"/>
+                            <TextBlock Text="sqm today" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                            <TextBlock x:Name="ProductionChangeText" Text="▲ +0%" FontSize="9" Foreground="{StaticResource SuccessGreen}" Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Efficiency -->
+                    <Border Grid.Column="1" Style="{StaticResource MetricCard}" Margin="0,0,6,0">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <Border Style="{StaticResource IconBadge}" Background="#D1FAE5">
+                                    <TextBlock Text="🎯" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="Efficiency" FontSize="10" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                            </StackPanel>
+                            <TextBlock x:Name="EfficiencyText" Text="0%" FontSize="22" FontWeight="Bold" Foreground="{StaticResource SuccessGreen}"/>
+                            <ProgressBar x:Name="EfficiencyBar" Height="4" Margin="0,6,0,0" Background="#F1F5F9" Foreground="{StaticResource SuccessGreen}" Value="0" Maximum="100"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Uptime -->
+                    <Border Grid.Column="2" Style="{StaticResource MetricCard}" Margin="0,0,6,0">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <Border Style="{StaticResource IconBadge}" Background="#FEF3C7">
+                                    <TextBlock Text="⚡" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="Uptime" FontSize="10" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                            </StackPanel>
+                            <TextBlock x:Name="UptimeText" Text="0%" FontSize="22" FontWeight="Bold" Foreground="{StaticResource WarningOrange}"/>
+                            <TextBlock Text="24h average" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Calculations -->
+                    <Border Grid.Column="3" Style="{StaticResource MetricCard}" Margin="0,0,6,0">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <Border Style="{StaticResource IconBadge}" Background="#EDE9FE">
+                                    <TextBlock Text="🧮" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="Calculations" FontSize="10" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                            </StackPanel>
+                            <TextBlock x:Name="CalculationsText" Text="0" FontSize="22" FontWeight="Bold" Foreground="{StaticResource PurpleAccent}"/>
+                            <TextBlock Text="this session" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Balance -->
+                    <Border Grid.Column="4" Style="{StaticResource MetricCard}">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <Border Style="{StaticResource IconBadge}" Background="#CFFAFE">
+                                    <TextBlock Text="💰" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="Balance" FontSize="10" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                            </StackPanel>
+                            <TextBlock x:Name="DailyBalanceText" Text="$0" FontSize="22" FontWeight="Bold" Foreground="{StaticResource CyanAccent}"/>
+                            <TextBlock Text="today" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- LICENSE + MODULES ROW -->
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="280"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- LICENSE CARD -->
+                    <Border x:Name="SubscriptionCard" Style="{StaticResource Card}" BorderBrush="{StaticResource DangerRed}" BorderThickness="2" Margin="0,0,12,0">
+                        <StackPanel>
+                            <Border Background="#FEE2E2" CornerRadius="4" Padding="6,3" HorizontalAlignment="Left" Margin="0,0,0,8">
+                                <TextBlock Text="⚠️ LICENSE REQUIRED" FontSize="9" FontWeight="Bold" Foreground="{StaticResource DangerRed}"/>
+                            </Border>
+                            <TextBlock x:Name="StatusText" Text="INACTIVE" FontSize="24" FontWeight="Bold" Foreground="{StaticResource TextDark}"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                <Ellipse x:Name="StatusIndicator" Width="8" Height="8" Fill="{StaticResource DangerRed}"/>
+                                <TextBlock Text="⏰" FontSize="12" Margin="6,0,0,0"/>
+                                <TextBlock Text="Remaining: " FontSize="10" Foreground="{StaticResource TextMuted}" Margin="4,0,0,0"/>
+                                <TextBlock x:Name="DaysText" Text="0" FontSize="14" FontWeight="Bold" Foreground="{StaticResource DangerRed}"/>
+                                <TextBlock Text=" days" FontSize="10" Foreground="{StaticResource TextMuted}"/>
+                            </StackPanel>
+                            <Button x:Name="ActivateBtn" Content="🚀 Activate System" Click="ActivateNow_Click" 
+                                  Background="{StaticResource BlueGradient}" Foreground="White" FontWeight="SemiBold" 
+                                  FontSize="11" Padding="16,8" Margin="0,10,0,0" BorderThickness="0" Cursor="Hand">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}" CornerRadius="6">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- MODULES GRID -->
+                    <Grid Grid.Column="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- SGU Module -->
+                        <Border Grid.Column="0" Grid.Row="0" Style="{StaticResource MetricCard}" Margin="0,0,6,6">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Width="32" Height="32" CornerRadius="6" Background="{StaticResource BlueGradient}">
+                                    <TextBlock Text="🧮" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel Grid.Column="1" Margin="8,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="SGU Calculator" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextDark}"/>
+                                        <TextBlock x:Name="SguLiveCounter" Text="" FontSize="9" Foreground="{StaticResource SuccessGreen}" Margin="4,0,0,0" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <TextBlock Text="Single glass unit" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                    <TextBlock x:Name="SguCountText" Text="0" FontSize="16" FontWeight="Bold" Foreground="{StaticResource TextDark}"/>
+                                    <Border x:Name="SguStatus" Style="{StaticResource StatusBadge}" Background="#FEE2E2">
+                                        <TextBlock x:Name="SguStatusText" Text="🔒" FontSize="10"/>
+                                    </Border>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- DGU Module -->
+                        <Border Grid.Column="1" Grid.Row="0" Style="{StaticResource MetricCard}" Margin="0,0,6,6">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Width="32" Height="32" CornerRadius="6" Background="{StaticResource BlueGradient}">
+                                    <TextBlock Text="📑" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel Grid.Column="1" Margin="8,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="DGU Calculator" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextDark}"/>
+                                        <TextBlock x:Name="DguLiveCounter" Text="" FontSize="9" Foreground="{StaticResource SuccessGreen}" Margin="4,0,0,0" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <TextBlock Text="Double glass unit" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                    <TextBlock x:Name="DguCountText" Text="0" FontSize="16" FontWeight="Bold" Foreground="{StaticResource TextDark}"/>
+                                    <Border x:Name="DguStatus" Style="{StaticResource StatusBadge}" Background="#FEE2E2">
+                                        <TextBlock x:Name="DguStatusText" Text="🔒" FontSize="10"/>
+                                    </Border>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Lamination Module -->
+                        <Border Grid.Column="2" Grid.Row="0" Style="{StaticResource MetricCard}" Margin="0,0,0,6">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Width="32" Height="32" CornerRadius="6" Background="{StaticResource BlueGradient}">
+                                    <TextBlock Text="🔳" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel Grid.Column="1" Margin="8,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="Lamination" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextDark}"/>
+                                        <TextBlock x:Name="LamLiveCounter" Text="" FontSize="9" Foreground="{StaticResource SuccessGreen}" Margin="4,0,0,0" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <TextBlock Text="Safety glass layering" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                    <TextBlock x:Name="LamCountText" Text="0" FontSize="16" FontWeight="Bold" Foreground="{StaticResource TextDark}"/>
+                                    <Border x:Name="LamStatus" Style="{StaticResource StatusBadge}" Background="#FEE2E2">
+                                        <TextBlock x:Name="LamStatusText" Text="🔒" FontSize="10"/>
+                                    </Border>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- DGU + Lamination Module -->
+                        <Border Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="1" Style="{StaticResource MetricCard}" Margin="0,0,6,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Width="32" Height="32" CornerRadius="6" Background="{StaticResource BlueGradient}">
+                                    <TextBlock Text="🪟" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel Grid.Column="1" Margin="8,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="DGU + Lamination" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextDark}"/>
+                                        <Border Background="#ECFDF5" CornerRadius="3" Padding="4,1" Margin="6,0,0,0" VerticalAlignment="Center">
+                                            <TextBlock Text="⭐" FontSize="8" Foreground="{StaticResource SuccessGreen}"/>
+                                        </Border>
+                                    </StackPanel>
+                                    <TextBlock Text="Laminated insulated units" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                </StackPanel>
+                                <Border Grid.Column="2" x:Name="DguLamStatus" Style="{StaticResource StatusBadge}" Background="#FEE2E2" VerticalAlignment="Center">
+                                    <TextBlock x:Name="DguLamStatusText" Text="🔒" FontSize="10"/>
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                        <!-- Optimization Module -->
+                        <Border Grid.Column="2" Grid.Row="1" Style="{StaticResource MetricCard}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Width="32" Height="32" CornerRadius="6" Background="{StaticResource BlueGradient}">
+                                    <TextBlock Text="✂️" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel Grid.Column="1" Margin="8,0">
+                                    <TextBlock Text="Optimization" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextDark}"/>
+                                    <TextBlock Text="Cutting optimizer" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                </StackPanel>
+                                <Border Grid.Column="2" x:Name="OptStatus" Style="{StaticResource StatusBadge}" Background="#FEE2E2" VerticalAlignment="Center">
+                                    <TextBlock x:Name="OptStatusText" Text="🔒" FontSize="10"/>
+                                </Border>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Grid>
+
+                <!-- MODULE COUNT + BALANCE ROW -->
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="300"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- LEFT: BALANCE SECTION -->
+                    <StackPanel Grid.Column="0" Margin="0,0,12,0">
+
+                        <!-- Module Count Card -->
+                        <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Width="40" Height="40" CornerRadius="8" Background="#DBEAFE">
+                                    <TextBlock Text="📦" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel Grid.Column="1" Margin="12,0">
+                                    <TextBlock Text="Active Modules" FontSize="11" Foreground="{StaticResource TextMuted}"/>
+                                    <TextBlock x:Name="ModuleCountText" Text="0/5 Active" FontSize="18" FontWeight="Bold" Foreground="{StaticResource PrimaryBlue}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" HorizontalAlignment="Right">
+                                    <TextBlock x:Name="SguTotalText" Text="SGU: 0 sqm" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                    <TextBlock x:Name="DguTotalText" Text="DGU: 0 sqm" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                    <TextBlock x:Name="LamTotalText" Text="Lam: 0 sqm" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Balance Overview -->
+                        <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                                    <Border Width="36" Height="36" CornerRadius="18" Background="#D1FAE5" Margin="0,0,0,6">
+                                        <TextBlock Text="💰" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="Daily" FontSize="9" Foreground="{StaticResource TextMuted}" HorizontalAlignment="Center"/>
+                                    <TextBlock x:Name="DailyBalanceText2" Text="AED 0" FontSize="16" FontWeight="Bold" Foreground="{StaticResource SuccessGreen}" HorizontalAlignment="Center"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                                    <Border Width="36" Height="36" CornerRadius="18" Background="#DBEAFE" Margin="0,0,0,6">
+                                        <TextBlock Text="📅" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="Monthly" FontSize="9" Foreground="{StaticResource TextMuted}" HorizontalAlignment="Center"/>
+                                    <TextBlock x:Name="MonthlyBalanceText" Text="AED 0" FontSize="16" FontWeight="Bold" Foreground="{StaticResource PrimaryBlue}" HorizontalAlignment="Center"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                                    <Border Width="36" Height="36" CornerRadius="18" Background="#EDE9FE" Margin="0,0,0,6">
+                                        <TextBlock Text="📈" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="Annual" FontSize="9" Foreground="{StaticResource TextMuted}" HorizontalAlignment="Center"/>
+                                    <TextBlock x:Name="AnnualBalanceText" Text="AED 0" FontSize="16" FontWeight="Bold" Foreground="{StaticResource PurpleAccent}" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Balance Details -->
+                        <Border Style="{StaticResource Card}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="💵 Revenue" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                    <TextBlock x:Name="TodayRevenueText" Text="AED 0" FontSize="13" FontWeight="Bold" Foreground="{StaticResource SuccessGreen}" Margin="0,2,0,0"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="💸 Expenses" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                    <TextBlock x:Name="TodayExpensesText" Text="AED 0" FontSize="13" FontWeight="Bold" Foreground="{StaticResource DangerRed}" Margin="0,2,0,0"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="📊 Net" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                    <TextBlock x:Name="NetIncomeText" Text="AED 0" FontSize="13" FontWeight="Bold" Foreground="{StaticResource PrimaryBlue}" Margin="0,2,0,0"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="3">
+                                    <TextBlock Text="🔢 Transactions" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                    <TextBlock x:Name="TransactionsText" Text="0" FontSize="13" FontWeight="Bold" Foreground="{StaticResource TextDark}" Margin="0,2,0,0"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
 
                         <!-- Quick Actions -->
-                        <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
                             <Button Content="🔄 Sync Now" Click="SyncBalance_Click"
-                                  Background="{StaticResource PrimaryBlue}" Foreground="White"
-                                  FontWeight="SemiBold" FontSize="12" Padding="20,10" BorderThickness="0" Cursor="Hand">
-                                <Button.Resources>
-                                    <Style TargetType="Border">
-                                        <Setter Property="CornerRadius" Value="8"/>
-                                    </Style>
-                                </Button.Resources>
+                                  Background="{StaticResource BlueGradient}" Foreground="White"
+                                  FontWeight="SemiBold" FontSize="10" Padding="14,6" BorderThickness="0" Cursor="Hand">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}" CornerRadius="5">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Button.Template>
                             </Button>
                             <Button Content="📊 View Reports" Click="ViewBalanceReports_Click"
                                   Background="Transparent" Foreground="{StaticResource PrimaryBlue}"
-                                  FontWeight="SemiBold" FontSize="12" Padding="20,10" Margin="12,0,0,0" BorderThickness="0" Cursor="Hand"/>
+                                  FontWeight="SemiBold" FontSize="10" Padding="14,6" Margin="8,0,0,0" BorderThickness="0" Cursor="Hand"/>
                         </StackPanel>
                     </StackPanel>
-                </Border>
 
-                <!-- ==================== RECENT ACTIVITY ==================== -->
-                <Border Style="{StaticResource DashboardCardStyle}">
-                    <StackPanel>
-                        <TextBlock Text="📜 RECENT ACTIVITY LOG" FontSize="12" FontWeight="Black" Foreground="{StaticResource TextMuted}" Margin="0,0,0,16"/>
+                    <!-- RIGHT: SIDEBAR -->
+                    <StackPanel Grid.Column="1">
 
-                        <!-- Activity List -->
-                        <ListBox x:Name="ActivityLogList" BorderThickness="0" MaxHeight="200" Background="Transparent">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Background="#F8FAFC" CornerRadius="8" Padding="12,10" Margin="0,0,0,6">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="•" FontSize="16" Foreground="{StaticResource PrimaryBlue}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                            <TextBlock Grid.Column="1" Text="{Binding Message}" FontSize="12" Foreground="{StaticResource TextDark}" VerticalAlignment="Center"/>
-                                            <TextBlock Grid.Column="2" Text="{Binding Time}" FontSize="10" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center"/>
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
+                        <!-- Activity Log -->
+                        <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                    <TextBlock Text="📜" FontSize="14"/>
+                                    <TextBlock Text="Recent Activity" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextDark}" Margin="6,0,0,0"/>
+                                </StackPanel>
 
-                        <TextBlock x:Name="NoActivityText" Text="📭 No recent activity" FontSize="12" Foreground="{StaticResource TextMuted}" 
-                                 HorizontalAlignment="Center" Margin="0,20,0,20"/>
+                                <ListBox x:Name="ActivityLogList" BorderThickness="0" MaxHeight="150" Background="Transparent">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="#F8FAFC" CornerRadius="4" Padding="8,6" Margin="0,0,0,3">
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Message}" FontSize="10" Foreground="{StaticResource TextDark}" TextWrapping="Wrap"/>
+                                                    <TextBlock Text="{Binding Time}" FontSize="8" Foreground="{StaticResource TextMuted}" Margin="0,2,0,0"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+
+                                <TextBlock x:Name="NoActivityText" Text="📭 No recent activity" FontSize="10" Foreground="{StaticResource TextMuted}" 
+                                         HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Service Status -->
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                    <TextBlock Text="🔗" FontSize="14"/>
+                                    <TextBlock Text="Service Status" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextDark}" Margin="6,0,0,0"/>
+                                </StackPanel>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <StackPanel Grid.Column="0" Grid.Row="0" Margin="0,0,6,8">
+                                        <TextBlock Text="Live Feed" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                        <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                            <Ellipse x:Name="BalanceServiceIndicator" Width="6" Height="6" Fill="{StaticResource DangerRed}"/>
+                                            <TextBlock x:Name="BalanceServiceStatusText" Text="Offline" FontSize="10" Foreground="{StaticResource DangerRed}" Margin="4,0,0,0"/>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="1" Grid.Row="0" Margin="0,0,0,8">
+                                        <TextBlock Text="Last Sync" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                        <TextBlock x:Name="LastSyncText" Text="--:--:--" FontSize="10" Foreground="{StaticResource TextDark}" Margin="0,2,0,0"/>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="0" Grid.Row="1">
+                                        <TextBlock Text="⏳ Pending" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                        <TextBlock x:Name="PendingDeliveriesText" Text="0" FontSize="10" Foreground="{StaticResource WarningOrange}" Margin="0,2,0,0"/>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="1" Grid.Row="1">
+                                        <TextBlock Text="✅ Completed" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                        <TextBlock x:Name="CompletedTodayText" Text="0" FontSize="10" Foreground="{StaticResource SuccessGreen}" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <TextBlock x:Name="LastUpdateText" Text="Last update: --:--:--" 
+                                           FontSize="9" Foreground="{StaticResource TextMuted}" Margin="0,10,0,0"/>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
-                </Border>
+                </Grid>
 
-                <!-- Bottom Padding -->
-                <Border Height="40"/>
             </StackPanel>
         </ScrollViewer>
     </Grid>

@@ -1,6 +1,6 @@
-﻿// Views/Dashboard/DashboardView.xaml.cs
-using System;
+﻿using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -9,6 +9,7 @@ using System.Windows.Threading;
 using ProGlassAutomation.ViewModels;
 using ProGlassAutomation.Services;
 using ProGlassAutomation.Data.Database;
+using ProGlassAutomation.Models;
 
 namespace ProGlassAutomation.Views.Dashboard
 {
@@ -21,12 +22,18 @@ namespace ProGlassAutomation.Views.Dashboard
         private DispatcherTimer _clockTimer;
         private DispatcherTimer _broadcastTimer;
         private DispatcherTimer _balanceSyncTimer;
+        private DispatcherTimer _moduleStatsTimer;
 
         // Live Services
         private LiveDataService _liveDataService;
         private SignalRService _signalRService;
         private WebSocketService _webSocketService;
         private BalanceService _balanceService;
+
+        // ViewModels for Module Integration
+        private SheetStoreViewModel _sheetStoreVM;
+        private DailyWorksViewModel _dailyWorksVM;
+        private DeliveryViewModel _deliveriesVM;
 
         // Activity Log
         private ObservableCollection<ActivityItem> _activityLog;
@@ -53,6 +60,9 @@ namespace ProGlassAutomation.Views.Dashboard
             _activityLog = new ObservableCollection<ActivityItem>();
             ActivityLogList.ItemsSource = _activityLog;
 
+            // Initialize ViewModels
+            InitializeViewModels();
+
             // Initialize services
             InitializeServices();
 
@@ -71,11 +81,30 @@ namespace ProGlassAutomation.Views.Dashboard
 
         #endregion
 
+        #region ViewModel Initialization
+
+        private void InitializeViewModels()
+        {
+            try
+            {
+                _sheetStoreVM = new SheetStoreViewModel();
+                _dailyWorksVM = new DailyWorksViewModel();
+                _deliveriesVM = new DeliveryViewModel();
+                AddActivity("Module ViewModels initialized", "System");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[Dashboard] ViewModel init error: {ex.Message}");
+                AddActivity($"ViewModel init failed: {ex.Message}", "Error");
+            }
+        }
+
+        #endregion
+
         #region Initialization
 
         private void InitializeServices()
         {
-            // Create Live Data Service (database polling)
             _liveDataService = new LiveDataService();
             _liveDataService.OnProductionUpdated += OnProductionUpdated;
             _liveDataService.OnMetricsUpdated += OnMetricsUpdated;
@@ -83,20 +112,17 @@ namespace ProGlassAutomation.Views.Dashboard
             _liveDataService.OnLiveCounterUpdated += OnLiveCounterUpdated;
             _liveDataService.OnError += OnServiceError;
 
-            // Create SignalR Service (real-time WebSocket)
             _signalRService = new SignalRService();
             _signalRService.OnMessageReceived += OnSignalRMessageReceived;
             _signalRService.OnConnectionStateChanged += OnSignalRConnectionChanged;
             _signalRService.OnError += OnServiceError;
 
-            // Create WebSocket Service (direct connection)
             _webSocketService = new WebSocketService();
             _webSocketService.OnMessageReceived += OnWebSocketMessageReceived;
             _webSocketService.OnConnectionStateChanged += OnWebSocketConnectionChanged;
             _webSocketService.OnError += OnServiceError;
             _webSocketService.OnLogMessage += OnServiceLog;
 
-            // Create Balance Service (financial tracking)
             _balanceService = new BalanceService();
             _balanceService.OnBalanceUpdated += OnBalanceUpdated;
             _balanceService.OnTransactionRecorded += OnTransactionRecorded;
@@ -105,55 +131,37 @@ namespace ProGlassAutomation.Views.Dashboard
 
         private void SetupTimers()
         {
-            // Live update timer (every 3 seconds)
-            _liveTimer = new DispatcherTimer
-            {
-                Interval = TimeSpan.FromSeconds(3)
-            };
+            _liveTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
             _liveTimer.Tick += OnLiveTimerTick;
 
-            // Clock timer (every second)
-            _clockTimer = new DispatcherTimer
-            {
-                Interval = TimeSpan.FromSeconds(1)
-            };
+            _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             _clockTimer.Tick += OnClockTimerTick;
 
-            // Broadcast timer (every 10 seconds)
-            _broadcastTimer = new DispatcherTimer
-            {
-                Interval = TimeSpan.FromSeconds(10)
-            };
+            _broadcastTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(10) };
             _broadcastTimer.Tick += OnBroadcastTimerTick;
 
-            // Balance sync timer (every 30 seconds)
-            _balanceSyncTimer = new DispatcherTimer
-            {
-                Interval = TimeSpan.FromSeconds(30)
-            };
+            _balanceSyncTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
             _balanceSyncTimer.Tick += OnBalanceSyncTimerTick;
+
+            _moduleStatsTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
+            _moduleStatsTimer.Tick += OnModuleStatsTimerTick;
         }
 
         private void StartServices()
         {
-            // Start live data polling
             _liveDataService.Start();
-
-            // Start balance service
             _balanceService.Start();
-
-            // Connect to SignalR hub
             _ = ConnectToSignalRAsync();
 
-            // Start timers
             _clockTimer.Start();
             _liveTimer.Start();
             _broadcastTimer.Start();
             _balanceSyncTimer.Start();
+            _moduleStatsTimer.Start();
 
-            // Load initial data
             RefreshDashboardData();
             RefreshBalanceData();
+            RefreshModuleStats();
 
             AddActivity("All services started", "System");
         }
@@ -164,16 +172,11 @@ namespace ProGlassAutomation.Views.Dashboard
 
         private void OnLiveTimerTick(object sender, EventArgs e)
         {
-            // Get fresh data from service
             var metrics = _liveDataService.GetCurrentMetrics();
-
-            // Update UI
             UpdateProductionDisplay(metrics.TotalProduction);
             UpdateEfficiencyDisplay(metrics.Efficiency);
             UpdateUptimeDisplay(metrics.Uptime);
             UpdateModuleCount(metrics);
-
-            // Update timestamps
             LastUpdateText.Text = $"Last update: {DateTime.Now:HH:mm:ss}";
             LastSyncText.Text = DateTime.Now.ToString("HH:mm:ss");
         }
@@ -196,6 +199,100 @@ namespace ProGlassAutomation.Views.Dashboard
         {
             RefreshBalanceData();
             LastSyncText.Text = DateTime.Now.ToString("HH:mm:ss");
+        }
+
+        private void OnModuleStatsTimerTick(object sender, EventArgs e)
+        {
+            RefreshModuleStats();
+        }
+
+        #endregion
+
+        #region Module Stats Updates
+
+        private void RefreshModuleStats()
+        {
+            try
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    UpdateSheetStoreStats();
+                    UpdateDailyWorksStats();
+                    UpdateDeliveriesStats();
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[Dashboard] Module stats error: {ex.Message}");
+            }
+        }
+
+        private void UpdateSheetStoreStats()
+        {
+            if (_sheetStoreVM == null) return;
+
+            try
+            {
+                SheetTotalStock.Text = _sheetStoreVM.TotalStock.ToString("N0");
+                SheetBalance.Text = _sheetStoreVM.BalanceSheets.ToString("N0");
+                SheetTypes.Text = _sheetStoreVM.TotalSheets.ToString("N0");
+                SheetValue.Text = $"AED {_sheetStoreVM.TotalAll:N0}";
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[Dashboard] SheetStore update error: {ex.Message}");
+            }
+        }
+
+        private void UpdateDailyWorksStats()
+        {
+            if (_dailyWorksVM == null) return;
+
+            try
+            {
+                var today = DateTime.Today;
+                var todayWorks = _dailyWorksVM.DailyWorks?
+                    .Where(w => w.Date.Date == today)
+                    .ToList() ?? new List<DailyWork>();
+
+                WorksTodayCount.Text = todayWorks.Count.ToString("N0");
+                WorksTodaySQM.Text = todayWorks.Sum(w => w.SQM).ToString("N1");
+                WorksTotalRecords.Text = _dailyWorksVM.TotalRecords.ToString("N0");
+                WorksTotalSQM.Text = _dailyWorksVM.TotalSQM.ToString("N1");
+                LiveProductionText.Text = todayWorks.Sum(w => w.SQM).ToString("N1");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[Dashboard] DailyWorks update error: {ex.Message}");
+            }
+        }
+
+        private void UpdateDeliveriesStats()
+        {
+            if (_deliveriesVM == null) return;
+
+            try
+            {
+                var pendingCount = _deliveriesVM.DeliveryOrders?
+                    .Count(d => d.Status == "Pending" || d.Status == "Partially Delivered") ?? 0;
+                var completedCount = _deliveriesVM.DeliveryOrders?
+                    .Count(d => d.Status == "Completed") ?? 0;
+
+                DeliveriesPending.Text = pendingCount.ToString("N0");
+                DeliveriesCompleted.Text = completedCount.ToString("N0");
+                DeliveriesTotal.Text = _deliveriesVM.TotalRecords.ToString("N0");
+
+                var totalBalance = _deliveriesVM.DeliveryOrders?
+                    .Sum(d => d.Balance) ?? 0;
+                DeliveriesBalance.Text = totalBalance.ToString("N0");
+
+                PendingDeliveriesText.Text = pendingCount.ToString();
+                CompletedTodayText.Text = completedCount.ToString();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[Dashboard] Deliveries update error: {ex.Message}");
+            }
         }
 
         #endregion
@@ -255,10 +352,7 @@ namespace ProGlassAutomation.Views.Dashboard
 
         private void OnServiceError(object sender, string error)
         {
-            Dispatcher.Invoke(() =>
-            {
-                AddActivity($"Error: {error}", "Error");
-            });
+            Dispatcher.Invoke(() => AddActivity($"Error: {error}", "Error"));
         }
 
         #endregion
@@ -269,27 +363,22 @@ namespace ProGlassAutomation.Views.Dashboard
         {
             Dispatcher.Invoke(() =>
             {
-                DailyBalanceText.Text = $"${balance.DailyBalance:N2}";
-                MonthlyBalanceText.Text = $"${balance.MonthlyBalance:N2}";
-                AnnualBalanceText.Text = $"${balance.AnnualBalance:N2}";
-                TodayRevenueText.Text = $"${balance.TodayRevenue:N2}";
-                TodayExpensesText.Text = $"${balance.TodayExpenses:N2}";
-                NetIncomeText.Text = $"${balance.NetIncome:N2}";
+                DailyBalanceText.Text = $"AED {balance.DailyBalance:N2}";
+                MonthlyBalanceText.Text = $"AED {balance.MonthlyBalance:N2}";
+                AnnualBalanceText.Text = $"AED {balance.AnnualBalance:N2}";
+                TodayRevenueText.Text = $"AED {balance.TodayRevenue:N2}";
+                TodayExpensesText.Text = $"AED {balance.TodayExpenses:N2}";
+                NetIncomeText.Text = $"AED {balance.NetIncome:N2}";
                 TransactionsText.Text = $"{balance.TransactionCount} today";
                 PendingDeliveriesText.Text = balance.PendingDeliveries.ToString();
                 CompletedTodayText.Text = balance.CompletedToday.ToString();
-
-                // Update indicator
                 UpdateBalanceServiceStatus(true);
             });
         }
 
         private void OnTransactionRecorded(object sender, TransactionInfo transaction)
         {
-            Dispatcher.Invoke(() =>
-            {
-                AddActivity($"Transaction: {transaction.Type} - ${transaction.Amount:N2}", "Finance");
-            });
+            Dispatcher.Invoke(() => AddActivity($"Transaction: {transaction.Type} - AED {transaction.Amount:N2}", "Finance"));
         }
 
         private void UpdateBalanceServiceStatus(bool isActive)
@@ -318,34 +407,37 @@ namespace ProGlassAutomation.Views.Dashboard
         {
             Dispatcher.Invoke(() =>
             {
-            switch (message.Type)
-            {
-                case "ProductionUpdate":
-                    UpdateProductionDisplay(message.Production);
-                    break;
-                case "EfficiencyUpdate":
-                    UpdateEfficiencyDisplay(message.Efficiency);
-                    break;
-                case "MetricsUpdate":
-                    UpdateProductionDisplay(message.Production);
-                    UpdateEfficiencyDisplay(message.Efficiency);
-                    UpdateUptimeDisplay(message.Uptime);
-                    break;
-                case "ModuleStatusChange":
-                    UpdateModuleStatus(message.ModuleName, message.IsActive);
-                    break;
+                switch (message.Type)
+                {
+                    case "ProductionUpdate":
+                        UpdateProductionDisplay(message.Production);
+                        break;
+                    case "EfficiencyUpdate":
+                        UpdateEfficiencyDisplay(message.Efficiency);
+                        break;
+                    case "MetricsUpdate":
+                        UpdateProductionDisplay(message.Production);
+                        UpdateEfficiencyDisplay(message.Efficiency);
+                        UpdateUptimeDisplay(message.Uptime);
+                        break;
+                    case "ModuleStatusChange":
+                        UpdateModuleStatus(message.ModuleName, message.IsActive);
+                        break;
                     case "LicenseChange":
                         if (message.IsLicensed != _isLicensed)
                         {
                             _isLicensed = message.IsLicensed;
                             UpdateSubscriptionStatus();
-                            AddActivity($"License status changed: {(_isLicensed ? "Active" : "Inactive")}", "System");
+                            AddActivity($"License: {(_isLicensed ? "Active" : "Inactive")}", "System");
                         }
                         break;
-
                     case "BalanceUpdate":
-                        // Handle balance updates from other clients
                         RefreshBalanceData();
+                        break;
+                    case "SheetStoreUpdate":
+                    case "DailyWorksUpdate":
+                    case "DeliveriesUpdate":
+                        RefreshModuleStats();
                         break;
                 }
             });
@@ -367,16 +459,12 @@ namespace ProGlassAutomation.Views.Dashboard
 
         private void OnWebSocketMessageReceived(object sender, LiveDataMessage message)
         {
-            // Forward to SignalR handler for unified processing
             OnSignalRMessageReceived(sender, message);
         }
 
         private void OnWebSocketConnectionChanged(object sender, bool isConnected)
         {
-            Dispatcher.Invoke(() =>
-            {
-                System.Diagnostics.Debug.WriteLine($"[WebSocket] Connection: {(isConnected ? "Connected" : "Disconnected")}");
-            });
+            System.Diagnostics.Debug.WriteLine($"[WebSocket] Connection: {(isConnected ? "Connected" : "Disconnected")}");
         }
 
         private void OnServiceLog(object sender, string message)
@@ -419,7 +507,6 @@ namespace ProGlassAutomation.Views.Dashboard
             }
             ModuleCountText.Text = $"{activeCount}/5 Active";
 
-            // Calculate total from individual counts
             int totalCalcs = metrics.SguCount + metrics.DguCount + metrics.LamCount;
             CalculationsText.Text = totalCalcs.ToString();
         }
@@ -482,9 +569,9 @@ namespace ProGlassAutomation.Views.Dashboard
                 UpdateUptimeDisplay(stats.AverageUptime);
 
                 // Update module totals
-                SguTotalText.Text = $" Total: {DbHelper.GetTodayTotalSGU():N0} sqm";
-                DguTotalText.Text = $" Total: {DbHelper.GetTodayTotalDGU():N0} sqm";
-                LamTotalText.Text = $" Total: {DbHelper.GetTodayTotalLamination():N0} sqm";
+                SguTotalText.Text = $"SGU: {DbHelper.GetTodayTotalSGU():N0} sqm";
+                DguTotalText.Text = $"DGU: {DbHelper.GetTodayTotalDGU():N0} sqm";
+                LamTotalText.Text = $"Lam: {DbHelper.GetTodayTotalLamination():N0} sqm";
 
                 // Update calculation counts
                 SguCountText.Text = DbHelper.GetTodayCalculationCount("SGU").ToString();
@@ -507,12 +594,12 @@ namespace ProGlassAutomation.Views.Dashboard
             {
                 var balance = _balanceService.GetCurrentBalance();
 
-                DailyBalanceText.Text = $"${balance.DailyBalance:N2}";
-                MonthlyBalanceText.Text = $"${balance.MonthlyBalance:N2}";
-                AnnualBalanceText.Text = $"${balance.AnnualBalance:N2}";
-                TodayRevenueText.Text = $"${balance.TodayRevenue:N2}";
-                TodayExpensesText.Text = $"${balance.TodayExpenses:N2}";
-                NetIncomeText.Text = $"${balance.NetIncome:N2}";
+                DailyBalanceText.Text = $"AED {balance.DailyBalance:N2}";
+                MonthlyBalanceText.Text = $"AED {balance.MonthlyBalance:N2}";
+                AnnualBalanceText.Text = $"AED {balance.AnnualBalance:N2}";
+                TodayRevenueText.Text = $"AED {balance.TodayRevenue:N2}";
+                TodayExpensesText.Text = $"AED {balance.TodayExpenses:N2}";
+                NetIncomeText.Text = $"AED {balance.NetIncome:N2}";
                 TransactionsText.Text = $"{balance.TransactionCount} today";
                 PendingDeliveriesText.Text = balance.PendingDeliveries.ToString();
                 CompletedTodayText.Text = balance.CompletedToday.ToString();
@@ -543,13 +630,11 @@ namespace ProGlassAutomation.Views.Dashboard
 
                 _activityLog.Insert(0, item);
 
-                // Keep only last 50 items
                 while (_activityLog.Count > 50)
                 {
                     _activityLog.RemoveAt(_activityLog.Count - 1);
                 }
 
-                // Show/hide no activity text
                 NoActivityText.Visibility = _activityLog.Count > 0 ? Visibility.Collapsed : Visibility.Visible;
             });
         }
@@ -579,7 +664,6 @@ namespace ProGlassAutomation.Views.Dashboard
             scaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, animation);
             scaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, animation);
 
-            // Clean up transform after animation
             var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(400) };
             timer.Tick += (s, e) =>
             {
@@ -661,10 +745,7 @@ namespace ProGlassAutomation.Views.Dashboard
         {
             try
             {
-                // Reload subscription config
                 SubscriptionService.Instance.ReloadConfig();
-
-                // Check license status
                 _isLicensed = CheckLicenseStatus();
 
                 if (_isLicensed)
@@ -678,7 +759,6 @@ namespace ProGlassAutomation.Views.Dashboard
                     _liveTimer.Stop();
                 }
 
-                // Broadcast license change
                 if (_signalRService.IsConnected)
                 {
                     int daysRemaining = GetRemainingDays();
@@ -703,8 +783,7 @@ namespace ProGlassAutomation.Views.Dashboard
             DaysText.Text = GetRemainingDays().ToString();
             DaysText.Foreground = new SolidColorBrush(green);
             ActivateBtn.Visibility = Visibility.Collapsed;
-            StatusIndicator.Background = new SolidColorBrush(green);
-            DaysCounterBg.Background = new SolidColorBrush(greenBg);
+            StatusIndicator.Fill = new SolidColorBrush(green);
             SubscriptionCard.BorderBrush = new SolidColorBrush(green);
             SubscriptionCard.BorderThickness = new Thickness(3);
 
@@ -731,8 +810,7 @@ namespace ProGlassAutomation.Views.Dashboard
             DaysText.Text = "0";
             DaysText.Foreground = new SolidColorBrush(red);
             ActivateBtn.Visibility = Visibility.Visible;
-            StatusIndicator.Background = new SolidColorBrush(red);
-            DaysCounterBg.Background = new SolidColorBrush(redBg);
+            StatusIndicator.Fill = new SolidColorBrush(red);
             SubscriptionCard.BorderBrush = new SolidColorBrush(red);
             SubscriptionCard.BorderThickness = new Thickness(2);
 
@@ -783,19 +861,65 @@ namespace ProGlassAutomation.Views.Dashboard
 
         #endregion
 
-        #region Event Handlers
+        #region Navigation Handlers
+
+        private void SheetStore_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (DataContext is MainViewModel viewModel)
+                {
+                    viewModel.ShowSheetStore();
+                }
+                AddActivity("Navigated to Sheet Store", "Navigation");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}", "Navigation Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void DailyWorks_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (DataContext is MainViewModel viewModel)
+                {
+                    viewModel.ShowDailyWorks();
+                }
+                AddActivity("Navigated to Daily Works", "Navigation");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}", "Navigation Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void Deliveries_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (DataContext is MainViewModel viewModel)
+                {
+                    viewModel.ShowDeliveries();
+                }
+                AddActivity("Navigated to Deliveries", "Navigation");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}", "Navigation Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
 
         private void ActivateNow_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                // Navigate to subscription view
                 if (DataContext is MainViewModel viewModel)
                 {
                     viewModel.ShowSubscriptionPlan();
                 }
 
-                // Refresh status after navigation
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
                     System.Threading.Thread.Sleep(500);
@@ -804,8 +928,7 @@ namespace ProGlassAutomation.Views.Dashboard
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error: {ex.Message}", "Error",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -813,6 +936,7 @@ namespace ProGlassAutomation.Views.Dashboard
         {
             RefreshDashboardData();
             RefreshBalanceData();
+            RefreshModuleStats();
             AddActivity("Manual refresh triggered", "User");
         }
 
@@ -826,8 +950,7 @@ namespace ProGlassAutomation.Views.Dashboard
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Sync error: {ex.Message}", "Error",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Sync error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -835,20 +958,21 @@ namespace ProGlassAutomation.Views.Dashboard
         {
             try
             {
-                // Show balance summary dialog
+                var balance = _balanceService.GetCurrentBalance();
+
                 MessageBox.Show(
                     "Balance Summary Report\n\n" +
                     "━━━━━━━━━━━━━━━━━━━━\n" +
-                    $"Daily Balance: {DailyBalanceText.Text}\n" +
-                    $"Monthly Balance: {MonthlyBalanceText.Text}\n" +
-                    $"Annual Balance: {AnnualBalanceText.Text}\n\n" +
+                    $"Daily Balance: AED {balance.DailyBalance:N2}\n" +
+                    $"Monthly Balance: AED {balance.MonthlyBalance:N2}\n" +
+                    $"Annual Balance: AED {balance.AnnualBalance:N2}\n\n" +
                     "━━━━━━━━━━━━━━━━━━━━\n" +
-                    $"Today's Revenue: {TodayRevenueText.Text}\n" +
-                    $"Today's Expenses: {TodayExpensesText.Text}\n" +
-                    $"Net Income: {NetIncomeText.Text}\n\n" +
-                    $"Transactions: {TransactionsText.Text}\n" +
-                    $"Completed Today: {CompletedTodayText.Text}\n" +
-                    $"Pending Deliveries: {PendingDeliveriesText.Text}",
+                    $"Today's Revenue: AED {balance.TodayRevenue:N2}\n" +
+                    $"Today's Expenses: AED {balance.TodayExpenses:N2}\n" +
+                    $"Net Income: AED {balance.NetIncome:N2}\n\n" +
+                    $"Transactions: {balance.TransactionCount:N0}\n" +
+                    $"Completed Today: {balance.CompletedToday:N0}\n" +
+                    $"Pending Deliveries: {balance.PendingDeliveries:N0}",
                     "Balance Reports",
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
@@ -857,8 +981,7 @@ namespace ProGlassAutomation.Views.Dashboard
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error: {ex.Message}", "Error",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -871,23 +994,22 @@ namespace ProGlassAutomation.Views.Dashboard
             if (_isDisposed) return;
             _isDisposed = true;
 
-            // Stop all timers
             _liveTimer?.Stop();
             _clockTimer?.Stop();
             _broadcastTimer?.Stop();
             _balanceSyncTimer?.Stop();
+            _moduleStatsTimer?.Stop();
 
-            // Disconnect from services
             _ = DisconnectFromSignalRAsync();
             _ = _webSocketService.DisconnectAsync();
 
-            // Dispose services
             _liveDataService?.Dispose();
             _signalRService?.Dispose();
             _webSocketService?.Dispose();
             _balanceService?.Dispose();
 
-            // Unsubscribe from events
+            _sheetStoreVM?.Cleanup();
+
             if (_liveDataService != null)
             {
                 _liveDataService.OnProductionUpdated -= OnProductionUpdated;
@@ -924,7 +1046,7 @@ namespace ProGlassAutomation.Views.Dashboard
 
         #endregion
 
-        #region Helper Properties & Classes
+        #region Helper Properties
 
         private MainViewModel ViewModel => DataContext as MainViewModel;
 

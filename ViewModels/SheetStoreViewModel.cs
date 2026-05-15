@@ -201,7 +201,7 @@ namespace ProGlassAutomation.ViewModels
         public int TotalStock => AllSheets?.Sum(s => s.TotalStock) ?? 0;
         public int TotalUsed => AllSheets?.Sum(s => s.UsedSheets) ?? 0;
         public int BalanceSheets => TotalStock - TotalUsed;
-        public decimal TotalAll => AllSheets?.Sum(s => s.TotalStock * s.SellPrice) ?? 0;
+        public decimal TotalAll => AllSheets?.Sum(s => s.BalanceSheets * s.SellPrice) ?? 0;
         public int FilteredCount => FilteredSheets?.Count ?? 0;
         public bool HasSelection => SelectedSheet != null;
 
@@ -406,7 +406,7 @@ namespace ProGlassAutomation.ViewModels
             MainStock = sheets?.Sum(s => s.TotalStock) ?? 0;
             MainUsed = sheets?.Sum(s => s.UsedSheets) ?? 0;
             MainBalance = MainStock - MainUsed;
-            MainTotalValue = sheets?.Sum(s => s.TotalStock * s.SellPrice) ?? 0;
+            MainTotalValue = sheets?.Sum(s => s.BalanceSheets * s.SellPrice) ?? 0;
 
             // Last Purchase
             var lastPurchaseSheet = sheets?.Where(s => s.LatestPurchaseDate.HasValue)

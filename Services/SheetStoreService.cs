@@ -451,6 +451,9 @@ namespace ProGlassAutomation.Services
                             });
                         }
 
+                        // ✅ FIX: Recalculate BalanceSheets from TotalStock - UsedSheets
+                        sheet.BalanceSheets = sheet.TotalStock - sheet.UsedSheets;
+
                         sheets.Add(sheet);
                     }
                     catch (Exception ex)
