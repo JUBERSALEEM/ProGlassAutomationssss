@@ -488,7 +488,7 @@ namespace ProGlassAutomation.Services
                         new XAttribute("Height", sheet.Height),
                         new XAttribute("SquareMeter", sheet.SquareMeter),
                         new XAttribute("PurchasePrice", sheet.PurchasePrice),
-                                                new XAttribute("SellPrice", sheet.SellPrice),
+                        new XAttribute("SellPrice", sheet.SellPrice),
                         new XAttribute("TotalStock", sheet.TotalStock),
                         new XAttribute("UsedSheets", sheet.UsedSheets),
                         new XAttribute("BalanceSheets", sheet.BalanceSheets),
@@ -496,8 +496,8 @@ namespace ProGlassAutomation.Services
                         new XAttribute("Supplier", sheet.Supplier ?? ""),
                         new XAttribute("SupplierName", sheet.SupplierName ?? ""),
                         new XAttribute("Description", sheet.Description ?? ""),
-                        new XAttribute("CreatedDate", sheet.CreatedDate),
-                        new XAttribute("LatestPurchaseDate", sheet.LatestPurchaseDate?.ToString() ?? "")
+                        new XAttribute("CreatedDate", sheet.CreatedDate.ToString("yyyy-MM-dd HH:mm:ss")),
+                        new XAttribute("LatestPurchaseDate", sheet.LatestPurchaseDate?.ToString("yyyy-MM-dd HH:mm:ss") ?? "")
                     );
 
                     // Save Purchase History
@@ -510,9 +510,9 @@ namespace ProGlassAutomation.Services
                                 new XAttribute("Quantity", purch.Quantity),
                                 new XAttribute("UnitPrice", purch.UnitPrice),
                                 new XAttribute("Supplier", purch.Supplier ?? ""),
-                                new XAttribute("PurchasedOn", purch.PurchasedOn),
+                                new XAttribute("PurchasedOn", purch.PurchasedOn.ToString("yyyy-MM-dd HH:mm:ss")),
                                 new XAttribute("Notes", purch.Notes ?? ""),
-                                new XAttribute("CreatedAt", purch.CreatedAt)
+                                new XAttribute("CreatedAt", purch.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"))
                             ));
                         }
                     }
@@ -526,8 +526,8 @@ namespace ProGlassAutomation.Services
                                 new XAttribute("Id", use.Id),
                                 new XAttribute("Quantity", use.Quantity),
                                 new XAttribute("Reason", use.Reason ?? ""),
-                                new XAttribute("UsedOn", use.UsedOn),
-                                new XAttribute("CreatedAt", use.CreatedAt)
+                                new XAttribute("UsedOn", use.UsedOn.ToString("yyyy-MM-dd HH:mm:ss")),
+                                new XAttribute("CreatedAt", use.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"))
                             ));
                         }
                     }
@@ -615,6 +615,29 @@ namespace ProGlassAutomation.Services
                 System.Diagnostics.Debug.WriteLine($"Error importing: {ex.Message}");
                 throw;
             }
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // STATISTICS
+        // ═══════════════════════════════════════════════════════
+        public int GetTotalSheets() => _cachedSheets?.Count ?? 0;
+
+        public int GetTotalStock() => _cachedSheets?.Sum(s => s.TotalStock) ?? 0;
+
+        public int GetTotalBalance() => _cachedSheets?.Sum(s => s.BalanceSheets) ?? 0;
+
+        public decimal GetTotalValue() => _cachedSheets?.Sum(s => s.BalanceSheets * s.SellPrice) ?? 0;
+
+        public List<Sheet> GetLowStockSheets(int threshold = 5)
+        {
+            return _cachedSheets?.Where(s => s.BalanceSheets <= threshold && s.BalanceSheets > 0).ToList()
+                   ?? new List<Sheet>();
+        }
+
+        public List<Sheet> GetOutOfStockSheets()
+        {
+            return _cachedSheets?.Where(s => s.BalanceSheets == 0).ToList()
+                   ?? new List<Sheet>();
         }
     }
 }

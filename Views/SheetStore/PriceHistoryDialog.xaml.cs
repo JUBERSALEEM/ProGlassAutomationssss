@@ -12,32 +12,30 @@ namespace ProGlassAutomation.Views.SheetStore
 {
     public partial class PriceHistoryDialog : Window
     {
-        public ObservableCollection<Sheet> AllSheets { get; set; }
-        public ObservableCollection<Sheet> FilteredSheets { get; set; }
+        // Combined history items for display
+        public ObservableCollection<HistoryItem> AllHistoryItems { get; set; }
+        public ObservableCollection<HistoryItem> FilteredHistoryItems { get; set; }
 
         private string _currentCategory = "";
         private string _currentDateRange = "";
         private string _currentSearch = "";
+        private string _currentHistoryType = "All";
 
-        // ═══════════════════════════════════════════════════════
-        // FIX #1: CancellationToken instead of System.Timers.Timer
-        // ═══════════════════════════════════════════════════════
         private CancellationTokenSource _debounceCts;
 
         public PriceHistoryDialog()
         {
             InitializeComponent();
 
-            // Subscribe to auto-refresh with correct EventHandler signature
+            AllHistoryItems = new ObservableCollection<HistoryItem>();
+            FilteredHistoryItems = new ObservableCollection<HistoryItem>();
+
             SheetStoreService.Instance.DataChanged += OnDataChanged;
 
             InitializeFilters();
             LoadData();
         }
 
-        // ═══════════════════════════════════════════════════════
-        // FIX #7: EventHandler signature
-        // ═══════════════════════════════════════════════════════
         private void OnDataChanged(object sender, EventArgs e)
         {
             if (this.IsActive || this.IsVisible)
@@ -46,7 +44,6 @@ namespace ProGlassAutomation.Views.SheetStore
             }
         }
 
-        // ==================== CLEANUP ====================
         protected override void OnClosed(EventArgs e)
         {
             base.OnClosed(e);
@@ -59,20 +56,17 @@ namespace ProGlassAutomation.Views.SheetStore
         {
             try
             {
+                // Category filter
                 CategoryFilterCombo.Items.Clear();
                 CategoryFilterCombo.Items.Add(new ComboBoxItem { Content = "All Categories", IsSelected = true });
-
-                // ═══════════════════════════════════════════════════════
-                // FIX #4: Use prebuilt category index from cache
-                // ═══════════════════════════════════════════════════════
                 var categories = SheetStoreService.Instance.GetCategories();
                 foreach (string cat in categories)
                 {
                     CategoryFilterCombo.Items.Add(new ComboBoxItem { Content = cat });
                 }
-
                 CategoryFilterCombo.SelectedIndex = 0;
 
+                // Date filter
                 DateFilterCombo.Items.Clear();
                 DateFilterCombo.Items.Add(new ComboBoxItem { Content = "All Time", IsSelected = true });
                 DateFilterCombo.Items.Add(new ComboBoxItem { Content = "Today" });
@@ -80,25 +74,90 @@ namespace ProGlassAutomation.Views.SheetStore
                 DateFilterCombo.Items.Add(new ComboBoxItem { Content = "This Month" });
                 DateFilterCombo.Items.Add(new ComboBoxItem { Content = "This Year" });
                 DateFilterCombo.SelectedIndex = 0;
+
+                // History type filter
+                HistoryTypeCombo.Items.Clear();
+                HistoryTypeCombo.Items.Add(new ComboBoxItem { Content = "All", IsSelected = true });
+                HistoryTypeCombo.Items.Add(new ComboBoxItem { Content = "Purchase Only" });
+                HistoryTypeCombo.Items.Add(new ComboBoxItem { Content = "Usage Only" });
+                HistoryTypeCombo.SelectedIndex = 0;
             }
-            catch
-            {
-                // Silently handle filter initialization errors
-            }
+            catch { }
         }
 
         private void LoadData()
         {
             try
             {
-                AllSheets = SheetStoreService.Instance.GetAllActive();
+                var sheets = SheetStoreService.Instance.GetAllActive();
+                var historyItems = new System.Collections.Generic.List<HistoryItem>();
+
+                foreach (var sheet in sheets)
+                {
+                    // Add purchase history records
+                    if (sheet.PurchaseHistory != null)
+                    {
+                        foreach (var purchase in sheet.PurchaseHistory)
+                        {
+                            historyItems.Add(new HistoryItem
+                            {
+                                SrNo = historyItems.Count + 1,
+                                SheetId = sheet.Id,
+                                Category = sheet.Category,
+                                Thickness = sheet.Thickness,
+                                Color = sheet.Color,
+                                HistoryType = "Purchase",
+                                Quantity = purchase.Quantity,
+                                UnitPrice = purchase.UnitPrice,
+                                TotalAmount = purchase.TotalAmt,
+                                Supplier = purchase.Supplier,
+                                Reason = purchase.Notes,
+                                HistoryDate = purchase.PurchasedOn,
+                                CreatedAt = purchase.CreatedAt
+                            });
+                        }
+                    }
+
+                    // Add usage history records
+                    if (sheet.UseHistory != null)
+                    {
+                        foreach (var usage in sheet.UseHistory)
+                        {
+                            historyItems.Add(new HistoryItem
+                            {
+                                SrNo = historyItems.Count + 1,
+                                SheetId = sheet.Id,
+                                Category = sheet.Category,
+                                Thickness = sheet.Thickness,
+                                Color = sheet.Color,
+                                HistoryType = "Usage",
+                                Quantity = usage.Quantity,
+                                UnitPrice = 0,
+                                TotalAmount = 0,
+                                Supplier = "",
+                                Reason = usage.Reason,
+                                HistoryDate = usage.UsedOn,
+                                CreatedAt = usage.CreatedAt
+                            });
+                        }
+                    }
+                }
+
+                // Sort by date descending
+                historyItems = historyItems.OrderByDescending(h => h.HistoryDate).ToList();
+                for (int i = 0; i < historyItems.Count; i++)
+                {
+                    historyItems[i].SrNo = i + 1;
+                }
+
+                AllHistoryItems = new ObservableCollection<HistoryItem>(historyItems);
                 ApplyFilters();
             }
             catch
             {
-                AllSheets = new ObservableCollection<Sheet>();
-                FilteredSheets = new ObservableCollection<Sheet>();
-                PriceHistoryGrid.ItemsSource = FilteredSheets;
+                AllHistoryItems = new ObservableCollection<HistoryItem>();
+                FilteredHistoryItems = new ObservableCollection<HistoryItem>();
+                PriceHistoryGrid.ItemsSource = FilteredHistoryItems;
                 UpdateSummary();
             }
         }
@@ -107,79 +166,84 @@ namespace ProGlassAutomation.Views.SheetStore
         {
             try
             {
-                TotalCountText.Text = FilteredSheets?.Count.ToString() ?? "0";
-                TotalPurchaseText.Text = "AED " + (FilteredSheets?.Sum(s => s.PurchasePrice) ?? 0).ToString("N2");
-                TotalSellText.Text = "AED " + (FilteredSheets?.Sum(s => s.SellPrice) ?? 0).ToString("N2");
+                var items = FilteredHistoryItems?.ToList() ?? new System.Collections.Generic.List<HistoryItem>();
+
+                TotalCountText.Text = items.Count.ToString();
+
+                var purchases = items.Where(i => i.HistoryType == "Purchase").ToList();
+                var totalPurchase = purchases.Sum(i => i.TotalAmount);
+                TotalPurchaseText.Text = "AED " + totalPurchase.ToString("N2");
+
+                var totalQty = items.Sum(i => i.Quantity);
+                TotalSellText.Text = items.Count + " records";
             }
             catch
             {
                 TotalCountText.Text = "0";
                 TotalPurchaseText.Text = "AED 0.00";
-                TotalSellText.Text = "AED 0.00";
+                TotalSellText.Text = "0 records";
             }
         }
 
         private void ApplyFilters()
         {
-            if (AllSheets == null) return;
+            if (AllHistoryItems == null) return;
 
             try
             {
-                var filtered = AllSheets.ToList();
+                var filtered = AllHistoryItems.ToList();
 
-                // ═══════════════════════════════════════════════════════
-                // FIX #9: Use prebuilt category lookup instead of LINQ
-                // ═══════════════════════════════════════════════════════
+                // Category filter
                 if (!string.IsNullOrEmpty(_currentCategory) && _currentCategory != "All Categories")
                 {
-                    // Use cached category lookup
-                    var byCategory = SheetStoreService.Instance.GetByCategory(_currentCategory);
-                    filtered = byCategory.ToList();
+                    filtered = filtered.Where(h => h.Category == _currentCategory).ToList();
                 }
 
-                // Date filter (keep as-is, no prebuilt index needed)
+                // History type filter
+                if (_currentHistoryType == "Purchase Only")
+                {
+                    filtered = filtered.Where(h => h.HistoryType == "Purchase").ToList();
+                }
+                else if (_currentHistoryType == "Usage Only")
+                {
+                    filtered = filtered.Where(h => h.HistoryType == "Usage").ToList();
+                }
+
+                // Date filter
                 var now = DateTime.Now;
                 switch (_currentDateRange)
                 {
                     case "Today":
-                        filtered = filtered.Where(s => s.LatestPurchaseDate?.Date == now.Date).ToList();
+                        filtered = filtered.Where(h => h.HistoryDate.Date == now.Date).ToList();
                         break;
                     case "This Week":
-                        filtered = filtered.Where(s => s.LatestPurchaseDate >= now.AddDays(-7)).ToList();
+                        filtered = filtered.Where(h => h.HistoryDate >= now.AddDays(-7)).ToList();
                         break;
                     case "This Month":
-                        filtered = filtered.Where(s => s.LatestPurchaseDate >= now.AddMonths(-1)).ToList();
+                        filtered = filtered.Where(h => h.HistoryDate >= now.AddMonths(-1)).ToList();
                         break;
                     case "This Year":
-                        filtered = filtered.Where(s => s.LatestPurchaseDate >= now.AddYears(-1)).ToList();
+                        filtered = filtered.Where(h => h.HistoryDate >= now.AddYears(-1)).ToList();
                         break;
                 }
 
-                // Search filter - use prebuilt search index
+                // Search filter
                 if (!string.IsNullOrWhiteSpace(_currentSearch))
                 {
-                    var searchResults = SheetStoreService.Instance.Search(_currentSearch);
-                    if (filtered.Count == AllSheets.Count)
-                    {
-                        // No other filters, use search results directly
-                        filtered = searchResults.ToList();
-                    }
-                    else
-                    {
-                        // Combine with existing filters
-                        var searchSet = new HashSet<int>(searchResults.Select(s => s.Id));
-                        filtered = filtered.Where(s => searchSet.Contains(s.Id)).ToList();
-                    }
+                    var search = _currentSearch.ToLower();
+                    filtered = filtered.Where(h =>
+                        h.Category.ToLower().Contains(search) ||
+                        h.Thickness.ToLower().Contains(search) ||
+                        h.Color.ToLower().Contains(search) ||
+                        h.Supplier.ToLower().Contains(search) ||
+                        h.Reason.ToLower().Contains(search)).ToList();
                 }
 
-                FilteredSheets = new ObservableCollection<Sheet>(filtered);
-                PriceHistoryGrid.ItemsSource = FilteredSheets;
+                FilteredHistoryItems = new ObservableCollection<HistoryItem>(filtered);
+                PriceHistoryGrid.ItemsSource = FilteredHistoryItems;
                 UpdateSummary();
             }
-            catch
-            {
-                // Silently handle filter errors
-            }
+            catch { }
         }
 
         private void CategoryFilterCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -194,9 +258,12 @@ namespace ProGlassAutomation.Views.SheetStore
             ApplyFilters();
         }
 
-        // ═══════════════════════════════════════════════════════
-        // FIX #1: Task.Delay + CancellationToken debounce
-        // ═══════════════════════════════════════════════════════
+        private void HistoryTypeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            _currentHistoryType = (HistoryTypeCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "All";
+            ApplyFilters();
+        }
+
         private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             _currentSearch = SearchBox?.Text ?? "";
@@ -222,20 +289,19 @@ namespace ProGlassAutomation.Views.SheetStore
                 var dialog = new Microsoft.Win32.SaveFileDialog
                 {
                     Filter = "CSV|*.csv",
-                    FileName = "PriceHistory_" + DateTime.Now.ToString("yyyyMMdd")
+                    FileName = "History_" + DateTime.Now.ToString("yyyyMMdd_HHmmss")
                 };
 
                 if (dialog.ShowDialog() == true)
                 {
                     var lines = new System.Collections.Generic.List<string>
                     {
-                        "SrNo,Category,Thickness,Color,Purchase,Sell,Supplier,Date"
+                        "SrNo,Type,Category,Thickness,Color,Quantity,UnitPrice,Total,Supplier,Date,Notes"
                     };
 
-                    foreach (var s in FilteredSheets)
+                    foreach (var h in FilteredHistoryItems)
                     {
-                        string date = s.LatestPurchaseDate.HasValue ? s.LatestPurchaseDate.Value.ToString("dd-MMM-yyyy") : "-";
-                        lines.Add($"{s.SrNo},{s.Category},{s.Thickness},{s.Color},{s.PurchasePrice},{s.SellPrice},{s.Supplier},{date}");
+                        lines.Add($"{h.SrNo},{h.HistoryType},{h.Category},{h.Thickness},{h.Color},{h.Quantity},{h.UnitPrice},{h.TotalAmount},{h.Supplier},{h.HistoryDate:dd-MMM-yyyy},{h.Reason}");
                     }
 
                     System.IO.File.WriteAllLines(dialog.FileName, lines);
@@ -252,5 +318,25 @@ namespace ProGlassAutomation.Views.SheetStore
         {
             Close();
         }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // HISTORY ITEM CLASS
+    // ═══════════════════════════════════════════════════════
+    public class HistoryItem
+    {
+        public int SrNo { get; set; }
+        public int SheetId { get; set; }
+        public string Category { get; set; } = "";
+        public string Thickness { get; set; } = "";
+        public string Color { get; set; } = "";
+        public string HistoryType { get; set; } = ""; // "Purchase" or "Usage"
+        public int Quantity { get; set; }
+        public decimal UnitPrice { get; set; }
+        public decimal TotalAmount { get; set; }
+        public string Supplier { get; set; } = "";
+        public string Reason { get; set; } = "";
+        public DateTime HistoryDate { get; set; }
+        public DateTime CreatedAt { get; set; }
     }
 }
