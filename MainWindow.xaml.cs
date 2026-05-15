@@ -20,6 +20,34 @@ namespace ProGlassAutomation
             _viewModel = new MainViewModel();
             DataContext = _viewModel;
             StartClock();
+            UpdateLicenseStatus();
+
+            _viewModel.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(_viewModel.IsLicensed))
+                {
+                    UpdateLicenseStatus();
+                }
+            };
+        }
+
+        private void UpdateLicenseStatus()
+        {
+            if (_viewModel.IsLicensed)
+            {
+                LicenseWarningBorder.Visibility = Visibility.Collapsed;
+                LicenseActiveBorder.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                LicenseWarningBorder.Visibility = Visibility.Visible;
+                LicenseActiveBorder.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void LicenseWarningBorder_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            _viewModel.ShowSubscriptionPlan();
         }
 
         private void StartClock()
@@ -32,22 +60,12 @@ namespace ProGlassAutomation
             _clockTimer.Start();
         }
 
-        private void About_Click(object sender, RoutedEventArgs e)
+        private void AnimateButton(Button btn)
         {
-            try
-            {
-                var aboutDialog = new Views.About.AboutDialog { Owner = this };
-                aboutDialog.ShowDialog();
-            }
-            catch (Exception ex) { MessageBox.Show(ex.Message); }
-        }
-
-        private void AnimateButton(Button btn, Border border)
-        {
-            if (border == null) return;
-            border.RenderTransformOrigin = new Point(0.5, 0.5);
-            if (!(border.RenderTransform is ScaleTransform)) border.RenderTransform = new ScaleTransform(1, 1);
-            var scale = (ScaleTransform)border.RenderTransform;
+            if (btn == null) return;
+            btn.RenderTransformOrigin = new Point(0.5, 0.5);
+            if (!(btn.RenderTransform is ScaleTransform)) btn.RenderTransform = new ScaleTransform(1, 1);
+            var scale = (ScaleTransform)btn.RenderTransform;
 
             DoubleAnimation grow = new DoubleAnimation(1.04, TimeSpan.FromMilliseconds(100));
             DoubleAnimation shrink = new DoubleAnimation(1.0, TimeSpan.FromMilliseconds(100)) { BeginTime = TimeSpan.FromMilliseconds(100) };
@@ -64,140 +82,211 @@ namespace ProGlassAutomation
             {
                 MessageBox.Show("Security Warning: Enterprise License Required.", "Access Denied", MessageBoxButton.OK, MessageBoxImage.Warning);
                 _viewModel.ShowSubscriptionPlan();
+                UpdateLicenseStatus();
                 return false;
             }
             return true;
         }
 
-        // NAVIGATION HANDLERS
-        private void BtnDashboard_Click(object sender, RoutedEventArgs e) { _viewModel.ShowDashboard(); AnimateButton(BtnDashboard, BorderDash); }
-        private void BtnSubscription_Click(object sender, RoutedEventArgs e) { _viewModel.ShowSubscriptionPlan(); AnimateButton(BtnSubscription, BorderSub); }
-        private void BtnSGU_Click(object sender, RoutedEventArgs e) { if (CheckLicense()) { _viewModel.ShowSGUCalculator(); AnimateButton(BtnSGU, BorderSGU); } }
-        private void BtnDGU_Click(object sender, RoutedEventArgs e) { if (CheckLicense()) { _viewModel.ShowDGUCalculator(); AnimateButton(BtnDGU, BorderDGU); } }
-        private void BtnLamination_Click(object sender, RoutedEventArgs e) { if (CheckLicense()) { _viewModel.ShowLaminationCalculator(); AnimateButton(BtnLam, BorderLam); } }
-        private void BtnDguLam_Click(object sender, RoutedEventArgs e) { if (CheckLicense()) { _viewModel.ShowDGULaminationCalculator(); AnimateButton(BtnDguLam, BorderDguLam); } }
-        private void BtnOptimization_Click(object sender, RoutedEventArgs e) { if (CheckLicense()) { _viewModel.ShowGlassOptimization(); AnimateButton(BtnOpt, BorderOpt); } }
+        // ==================== NAVIGATION BUTTONS ====================
 
-        // OPERATIONS HANDLERS
-        private void BtnSheetStore_Click(object sender, RoutedEventArgs e) => _viewModel.ShowSheetStore();
-        private void BtnDailyWorks_Click(object sender, RoutedEventArgs e) => _viewModel.ShowDailyWorks();
-        private void BtnDeliveries_Click(object sender, RoutedEventArgs e) => _viewModel.ShowDeliveries();
-        private void BtnProfile_Click(object sender, RoutedEventArgs e) => _viewModel.ShowProfile();
-        private void BtnUsers_Click(object sender, RoutedEventArgs e) => _viewModel.ShowUsers();
+        private void BtnHome_Click(object sender, RoutedEventArgs e)
+        {
+            _viewModel.ShowDashboard();
+            AnimateButton(BtnHome);
+        }
+
+        private void BtnDashboard_Click(object sender, RoutedEventArgs e)
+        {
+            _viewModel.ShowDashboard();
+            AnimateButton(BtnDashboard);
+        }
+
+        private void BtnSubscription_Click(object sender, RoutedEventArgs e)
+        {
+            _viewModel.ShowSubscriptionPlan();
+            AnimateButton(BtnSubscription);
+        }
+
+        // ==================== CALCULATORS DROPDOWN ====================
+
+        private void BtnCalculators_Click(object sender, RoutedEventArgs e)
+        {
+            CalculatorsMenu.PlacementTarget = BtnCalculators;
+            CalculatorsMenu.IsOpen = true;
+        }
+
+        private void BtnSGU_Click(object sender, RoutedEventArgs e)
+        {
+            if (CheckLicense())
+            {
+                _viewModel.ShowSGUCalculator();
+                AnimateButton(BtnCalculators);
+            }
+        }
+
+        private void BtnDGU_Click(object sender, RoutedEventArgs e)
+        {
+            if (CheckLicense())
+            {
+                _viewModel.ShowDGUCalculator();
+                AnimateButton(BtnCalculators);
+            }
+        }
+
+        private void BtnLamination_Click(object sender, RoutedEventArgs e)
+        {
+            if (CheckLicense())
+            {
+                _viewModel.ShowLaminationCalculator();
+                AnimateButton(BtnCalculators);
+            }
+        }
+
+        private void BtnDguLam_Click(object sender, RoutedEventArgs e)
+        {
+            if (CheckLicense())
+            {
+                _viewModel.ShowDGULaminationCalculator();
+                AnimateButton(BtnCalculators);
+            }
+        }
+
+        private void BtnOptimization_Click(object sender, RoutedEventArgs e)
+        {
+            if (CheckLicense())
+            {
+                _viewModel.ShowGlassOptimization();
+                AnimateButton(BtnCalculators);
+            }
+        }
+
+        // ==================== OPERATIONS DROPDOWN ====================
+
+        private void BtnOperations_Click(object sender, RoutedEventArgs e)
+        {
+            OperationsMenu.PlacementTarget = BtnOperations;
+            OperationsMenu.IsOpen = true;
+        }
+
+        private void BtnSheetStore_Click(object sender, RoutedEventArgs e)
+        {
+            _viewModel.ShowSheetStore();
+            AnimateButton(BtnOperations);
+        }
+
+        private void BtnDailyWorks_Click(object sender, RoutedEventArgs e)
+        {
+            _viewModel.ShowDailyWorks();
+            AnimateButton(BtnOperations);
+        }
+
+        private void BtnDeliveries_Click(object sender, RoutedEventArgs e)
+        {
+            _viewModel.ShowDeliveries();
+            AnimateButton(BtnOperations);
+        }
+
+        // ==================== REPORTS DROPDOWN ====================
+
+        private void BtnReports_Click(object sender, RoutedEventArgs e)
+        {
+            ReportsMenu.PlacementTarget = BtnReports;
+            ReportsMenu.IsOpen = true;
+        }
+
+        // ==================== SETTINGS DROPDOWN ====================
+
+        private void BtnSettings_Click(object sender, RoutedEventArgs e)
+        {
+            SettingsMenu.PlacementTarget = BtnSettings;
+            SettingsMenu.IsOpen = true;
+        }
+
+        private void BtnProfile_Click(object sender, RoutedEventArgs e)
+        {
+            _viewModel.ShowProfile();
+            AnimateButton(BtnSettings);
+        }
+
+        private void BtnUsers_Click(object sender, RoutedEventArgs e)
+        {
+            _viewModel.ShowUsers();
+            AnimateButton(BtnSettings);
+        }
+
+        // ==================== SCREENSHOT ====================
 
         private void ScreenshotBtn_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                // Hide buttons before capture
-                if (ScreenshotBtn != null) ScreenshotBtn.Visibility = Visibility.Collapsed;
-                if (AboutBtn != null) AboutBtn.Visibility = Visibility.Collapsed;
-
-                // Defer capture to ensure visual tree is ready
-                Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    try
-                    {
-                        CaptureScreenshot();
-                    }
-                    finally
-                    {
-                        RestoreButtons();
-                    }
-                }), DispatcherPriority.Loaded);
-            }
-            catch (Exception ex)
-            {
-                RestoreButtons();
-                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            CaptureScreenshot();
         }
 
         private void CaptureScreenshot()
         {
-            // Maximum quality settings
-            double scale = 4.0;                    // 4x scale for ultra-high resolution
-            int width = (int)(ActualWidth * scale);
-            int height = (int)(ActualHeight * scale);
-            int dpi = (int)(96 * scale);           // 384 DPI (4x standard)
-
-            // Create render target with maximum quality
-            var rtb = new RenderTargetBitmap(
-                width,
-                height,
-                dpi,
-                dpi,
-                PixelFormats.Pbgra32               // Best pixel format (32-bit with alpha)
-            );
-
-            // Force complete visual update
-            UpdateLayout();
-            InvalidateArrange();
-            InvalidateMeasure();
-            InvalidateVisual();
-
-            // Render at maximum resolution
-            rtb.Render(this);
-
-            // Freeze for better performance
-            rtb.Freeze();
-
-            // Save dialog with high-quality formats
-            var sfd = new Microsoft.Win32.SaveFileDialog
+            try
             {
-                Filter = "PNG Image (Lossless)|*.png|BMP Image|*.bmp|JPEG Image|*.jpg",
-                FileName = $"ProGlass_Capture_{DateTime.Now:HHmm}.png"
-            };
+                double scale = 4.0;
+                int width = (int)(ActualWidth * scale);
+                int height = (int)(ActualHeight * scale);
+                int dpi = (int)(96 * scale);
 
-            if (sfd.ShowDialog() == true)
-            {
-                BitmapEncoder encoder;
-                string ext = System.IO.Path.GetExtension(sfd.FileName).ToLower();
+                var rtb = new RenderTargetBitmap(width, height, dpi, dpi, PixelFormats.Pbgra32);
 
-                switch (ext)
+                UpdateLayout();
+                InvalidateArrange();
+                InvalidateMeasure();
+                InvalidateVisual();
+
+                rtb.Render(this);
+                rtb.Freeze();
+
+                var sfd = new Microsoft.Win32.SaveFileDialog
                 {
-                    case ".png":
-                        // PNG is lossless by default in WPF
-                        encoder = new PngBitmapEncoder();
-                        break;
+                    Filter = "PNG Image (Lossless)|*.png|BMP Image|*.bmp|JPEG Image|*.jpg",
+                    FileName = $"ProGlass_Capture_{DateTime.Now:HHmm}.png"
+                };
 
-                    case ".bmp":
-                        // BMP is uncompressed/lossless
-                        encoder = new BmpBitmapEncoder();
-                        break;
+                if (sfd.ShowDialog() == true)
+                {
+                    BitmapEncoder encoder;
+                    string ext = System.IO.Path.GetExtension(sfd.FileName).ToLower();
 
-                    case ".jpg":
-                    default:
-                        encoder = new JpegBitmapEncoder
-                        {
-                            QualityLevel = 100  // Maximum JPEG quality
-                        };
-                        break;
+                    switch (ext)
+                    {
+                        case ".png":
+                            encoder = new PngBitmapEncoder();
+                            break;
+                        case ".bmp":
+                            encoder = new BmpBitmapEncoder();
+                            break;
+                        case ".jpg":
+                        default:
+                            encoder = new JpegBitmapEncoder { QualityLevel = 100 };
+                            break;
+                    }
+
+                    encoder.Frames.Add(BitmapFrame.Create(rtb));
+
+                    var directory = System.IO.Path.GetDirectoryName(sfd.FileName);
+                    if (!System.IO.Directory.Exists(directory) && !string.IsNullOrEmpty(directory))
+                        System.IO.Directory.CreateDirectory(directory);
+
+                    using (var fs = System.IO.File.OpenWrite(sfd.FileName))
+                        encoder.Save(fs);
+
+                    var fileInfo = new System.IO.FileInfo(sfd.FileName);
+                    MessageBox.Show(
+                        $"Screenshot saved!\n\nFile: {sfd.FileName}\nSize: {fileInfo.Length / 1024} KB",
+                        "Success",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
                 }
-
-                encoder.Frames.Add(BitmapFrame.Create(rtb));
-
-                var directory = System.IO.Path.GetDirectoryName(sfd.FileName);
-                if (!System.IO.Directory.Exists(directory) && !string.IsNullOrEmpty(directory))
-                    System.IO.Directory.CreateDirectory(directory);
-
-                using (var fs = System.IO.File.OpenWrite(sfd.FileName))
-                    encoder.Save(fs);
-
-                // Get file size for display
-                var fileInfo = new System.IO.FileInfo(sfd.FileName);
-                MessageBox.Show(
-                    $"Screenshot saved!\n\nFile: {sfd.FileName}\nSize: {fileInfo.Length / 1024} KB\nResolution: {width} x {height}",
-                    "Success",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
             }
-        }
-
-        private void RestoreButtons()
-        {
-            if (ScreenshotBtn != null) ScreenshotBtn.Visibility = Visibility.Visible;
-            if (AboutBtn != null) AboutBtn.Visibility = Visibility.Visible;
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }
