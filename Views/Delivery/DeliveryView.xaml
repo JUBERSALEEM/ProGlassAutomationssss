@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:ProGlassAutomation.ViewModels"
              xmlns:converters="clr-namespace:ProGlassAutomation.Converters"
-             Background="Transparent">
+             Background="#F1F5F9">
 
     <UserControl.DataContext>
         <vm:DeliveryViewModel/>
@@ -13,16 +13,17 @@
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
         <converters:NullToBoolConverter x:Key="NullToBoolConverter"/>
 
-        <!-- INDUSTRIAL DATA GRID -->
+        <!-- MODERN DATA GRID -->
         <Style x:Key="ModernDataGrid" TargetType="DataGrid">
             <Setter Property="Background" Value="White"/>
-            <Setter Property="BorderBrush" Value="#CBD5E1"/>
-            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="Black"/>
+            <Setter Property="BorderThickness" Value="2"/>
             <Setter Property="GridLinesVisibility" Value="All"/>
-            <Setter Property="HorizontalGridLinesBrush" Value="#E2E8F0"/>
-            <Setter Property="VerticalGridLinesBrush" Value="#E2E8F0"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="Black"/>
+            <Setter Property="VerticalGridLinesBrush" Value="Black"/>
             <Setter Property="RowBackground" Value="White"/>
-            <Setter Property="AlternatingRowBackground" Value="#F8FAFC"/>
+            <Setter Property="AlternatingRowBackground" Value="#F9F9F9"/>
+            <Setter Property="RowHeaderWidth" Value="0"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontFamily" Value="Segoe UI, Arial"/>
             <Setter Property="HeadersVisibility" Value="Column"/>
@@ -35,35 +36,21 @@
             <Setter Property="RowHeight" Value="40"/>
         </Style>
 
-        <!-- INDUSTRIAL CELL -->
+        <!-- MODERN CELL -->
         <Style x:Key="ModernCell" TargetType="DataGridCell">
-            <Setter Property="Padding" Value="8,6"/>
-            <Setter Property="BorderBrush" Value="#E2E8F0"/>
-            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="DataGridCell">
-                        <Border Background="{TemplateBinding Background}" 
-                                BorderBrush="#E2E8F0"
-                                BorderThickness="1"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="#D1FAE5"/>
-                    <Setter Property="Foreground" Value="#065F46"/>
+                    <Setter Property="Background" Value="#DBEAFE"/>
+                    <Setter Property="Foreground" Value="#1E40AF"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
 
-        <!-- INDUSTRIAL ROW -->
+        <!-- MODERN ROW -->
         <Style x:Key="ModernRowStyle" TargetType="DataGridRow">
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Background" Value="White"/>
@@ -72,14 +59,14 @@
                     <Setter Property="Background" Value="#F1F5F9"/>
                 </Trigger>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="#D1FAE5"/>
+                    <Setter Property="Background" Value="#DBEAFE"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
 
         <!-- PRIMARY BUTTON -->
         <Style x:Key="PrimaryButton" TargetType="Button">
-            <Setter Property="Background" Value="#334155"/>
+            <Setter Property="Background" Value="#1E40AF"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="11"/>
@@ -90,15 +77,15 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#1E293B"/>
+                                <Setter Property="Background" Value="#3B82F6"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#0F172A"/>
+                                <Setter Property="Background" Value="#1E3A8A"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -119,15 +106,15 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#047857"/>
+                                <Setter Property="Background" Value="#10B981"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#065F46"/>
+                                <Setter Property="Background" Value="#047857"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -148,15 +135,15 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#B91C1C"/>
+                                <Setter Property="Background" Value="#EF4444"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#991B1B"/>
+                                <Setter Property="Background" Value="#B91C1C"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -181,7 +168,7 @@
                         <Border Background="{TemplateBinding Background}" 
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}" 
-                                CornerRadius="4" Padding="{TemplateBinding Padding}">
+                                CornerRadius="8" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -196,7 +183,7 @@
 
         <!-- SECONDARY BUTTON -->
         <Style x:Key="SecondaryButton" TargetType="Button">
-            <Setter Property="Background" Value="#71717A"/>
+            <Setter Property="Background" Value="#64748B"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="11"/>
@@ -207,15 +194,15 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#52525B"/>
+                                <Setter Property="Background" Value="#475569"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#3F3F46"/>
+                                <Setter Property="Background" Value="#334155"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -236,15 +223,15 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#B45309"/>
+                                <Setter Property="Background" Value="#F59E0B"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#92400E"/>
+                                <Setter Property="Background" Value="#B45309"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -252,7 +239,7 @@
             </Setter>
         </Style>
 
-        <!-- COMBOBOX -->
+        <!-- MODERN COMBOBOX -->
         <Style x:Key="ModernComboBox" TargetType="ComboBox">
             <Setter Property="Background" Value="White"/>
             <Setter Property="Foreground" Value="#334155"/>
@@ -261,11 +248,9 @@
             <Setter Property="Padding" Value="10,8"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="BorderBrush" Value="#CBD5E1"/>
-            <Setter Property="IsEditable" Value="True"/>
-            <Setter Property="StaysOpenOnEdit" Value="True"/>
         </Style>
 
-        <!-- TEXTBOX -->
+        <!-- MODERN TEXTBOX -->
         <Style x:Key="ModernTextBox" TargetType="TextBox">
             <Setter Property="Background" Value="White"/>
             <Setter Property="BorderBrush" Value="#CBD5E1"/>
@@ -276,7 +261,7 @@
             <Setter Property="Foreground" Value="#334155"/>
         </Style>
 
-        <!-- DATEPICKER -->
+        <!-- MODERN DATEPICKER -->
         <Style x:Key="ModernDatePicker" TargetType="DatePicker">
             <Setter Property="Background" Value="White"/>
             <Setter Property="BorderBrush" Value="#CBD5E1"/>
@@ -287,114 +272,39 @@
             <Setter Property="Foreground" Value="#334155"/>
         </Style>
 
-        <!-- COLUMN HEADERS -->
-        <Style x:Key="HeaderGreen" TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="#10B981"/>
+        <!-- BLUE HEADER -->
+        <Style x:Key="HeaderBlue" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#1E40AF"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="10,10"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="10"/>
-            <Setter Property="FontFamily" Value="Segoe UI, Arial"/>
-            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Padding" Value="12,15"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
             <Setter Property="BorderBrush" Value="Black"/>
-            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderThickness" Value="0,0,1,1"/>
         </Style>
 
-        <Style x:Key="HeaderEmerald" TargetType="DataGridColumnHeader">
+        <!-- GREEN HEADER -->
+        <Style x:Key="HeaderGreen" TargetType="DataGridColumnHeader">
             <Setter Property="Background" Value="#059669"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="10,10"/>
+            <Setter Property="Padding" Value="12,10"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontSize" Value="11"/>
             <Setter Property="FontFamily" Value="Segoe UI, Arial"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
-            <Setter Property="BorderBrush" Value="Black"/>
-            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderThickness" Value="0"/>
         </Style>
 
-        <Style x:Key="HeaderTeal" TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="#0D9488"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="10,10"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="10"/>
-            <Setter Property="FontFamily" Value="Segoe UI, Arial"/>
-            <Setter Property="HorizontalContentAlignment" Value="Center"/>
-            <Setter Property="BorderBrush" Value="Black"/>
-            <Setter Property="BorderThickness" Value="1"/>
-        </Style>
-
-        <Style x:Key="HeaderBlue" TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="#3B82F6"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="10,10"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="10"/>
-            <Setter Property="FontFamily" Value="Segoe UI, Arial"/>
-            <Setter Property="HorizontalContentAlignment" Value="Center"/>
-            <Setter Property="BorderBrush" Value="Black"/>
-            <Setter Property="BorderThickness" Value="1"/>
-        </Style>
-
-        <Style x:Key="HeaderPurple" TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="#7C3AED"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="10,10"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="10"/>
-            <Setter Property="FontFamily" Value="Segoe UI, Arial"/>
-            <Setter Property="HorizontalContentAlignment" Value="Center"/>
-            <Setter Property="BorderBrush" Value="Black"/>
-            <Setter Property="BorderThickness" Value="1"/>
-        </Style>
-
-        <Style x:Key="HeaderRose" TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="#E11D48"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="10,10"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="10"/>
-            <Setter Property="FontFamily" Value="Segoe UI, Arial"/>
-            <Setter Property="HorizontalContentAlignment" Value="Center"/>
-            <Setter Property="BorderBrush" Value="Black"/>
-            <Setter Property="BorderThickness" Value="1"/>
-        </Style>
-
-        <Style x:Key="HeaderOrange" TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="#EA580C"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="10,10"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="10"/>
-            <Setter Property="FontFamily" Value="Segoe UI, Arial"/>
-            <Setter Property="HorizontalContentAlignment" Value="Center"/>
-            <Setter Property="BorderBrush" Value="Black"/>
-            <Setter Property="BorderThickness" Value="1"/>
-        </Style>
-
+        <!-- SLATE HEADER -->
         <Style x:Key="HeaderSlate" TargetType="DataGridColumnHeader">
             <Setter Property="Background" Value="#475569"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="10,10"/>
+            <Setter Property="Padding" Value="12,10"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontSize" Value="11"/>
             <Setter Property="FontFamily" Value="Segoe UI, Arial"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
-            <Setter Property="BorderBrush" Value="Black"/>
-            <Setter Property="BorderThickness" Value="1"/>
-        </Style>
-
-        <!-- COLOR HEADER - Pink -->
-        <Style x:Key="HeaderPink" TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="#EC4899"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="10,10"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="10"/>
-            <Setter Property="FontFamily" Value="Segoe UI, Arial"/>
-            <Setter Property="HorizontalContentAlignment" Value="Center"/>
-            <Setter Property="BorderBrush" Value="Black"/>
-            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderThickness" Value="0"/>
         </Style>
     </UserControl.Resources>
 
@@ -407,12 +317,17 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- 1. MODERN HEADER -->
-        <Border Grid.Row="0" CornerRadius="12" Padding="16" Margin="0,0,0,12"
-        BorderBrush="#CBD5E1" BorderThickness="1"
-        Background="White">
+        <!-- 1. HEADER SECTION -->
+        <Border Grid.Row="0" CornerRadius="12" Padding="16,12" Margin="0,0,0,12"
+                BorderBrush="#1E40AF" BorderThickness="2">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#1E40AF" Offset="0"/>
+                    <GradientStop Color="#3B82F6" Offset="1"/>
+                </LinearGradientBrush>
+            </Border.Background>
             <Border.Effect>
-                <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.08"/>
+                <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.2"/>
             </Border.Effect>
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -421,74 +336,68 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Title Section -->
-                <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,20,0">
-                    <StackPanel Orientation="Horizontal">
-                        <Border Background="#059669" CornerRadius="6" Padding="10,6" Margin="0,0,12,0">
-                            <TextBlock Text="📦" FontSize="16"/>
-                        </Border>
-                        <StackPanel VerticalAlignment="Center">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="DELIVERIES" FontSize="20" FontWeight="Bold" Foreground="#0F172A" FontFamily="Segoe UI, Arial"/>
-                                <Border Background="#FEF3C7" CornerRadius="4" Padding="8,3" Margin="10,0,0,0" VerticalAlignment="Center" BorderBrush="#F59E0B" BorderThickness="1">
-                                    <TextBlock Text="PRODUCTION" FontSize="9" FontWeight="Bold" Foreground="#92400E"/>
-                                </Border>
-                            </StackPanel>
-                            <TextBlock Text="Auto-sync from confirmed orders" FontSize="10" Foreground="#64748B" Margin="0,3,0,0"/>
+                <!-- Title -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Background="#DBEAFE" CornerRadius="10" Padding="12,10" Margin="0,0,12,0">
+                        <TextBlock Text="📦" FontSize="20"/>
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="DELIVERIES" FontSize="22" FontWeight="Bold" Foreground="White"/>
+                            <Border Background="#FEF3C7" CornerRadius="6" Padding="10,4" Margin="12,0,0,0" BorderBrush="#F59E0B" BorderThickness="1" VerticalAlignment="Center">
+                                <TextBlock Text="PRODUCTION" FontSize="10" FontWeight="Bold" Foreground="#92400E"/>
+                            </Border>
                         </StackPanel>
+                        <TextBlock Text="Auto-sync from confirmed orders" FontSize="11" Foreground="#BFDBFE" Margin="0,4,0,0"/>
                     </StackPanel>
                 </StackPanel>
 
-                <!-- Date Filters -->
+                <!-- Search & Date Filters -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <!-- Search Box -->
-                    <Border Background="#F8FAFC" CornerRadius="10" Padding="4" Margin="0,0,12,0" BorderBrush="#E2E8F0" BorderThickness="1">
+                    <Border Background="White" CornerRadius="10" Padding="4" Margin="0,0,12,0" BorderBrush="#3B82F6" BorderThickness="1">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="200"/>
                             </Grid.ColumnDefinitions>
-                            <Border Background="#059669" CornerRadius="8" Padding="10,8" Margin="2">
+                            <Border Background="#1E40AF" CornerRadius="8" Padding="10,8" Margin="2">
                                 <TextBlock Text="🔍" FontSize="12"/>
                             </Border>
                             <TextBox Grid.Column="1" 
-                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
-                     BorderThickness="0" 
-                     VerticalAlignment="Center" 
-                     Padding="10,6" 
-                     FontSize="11"
-                     Background="Transparent"
-                     Foreground="#334155"
-                     Width="180"/>
+                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
+                                     BorderThickness="0" 
+                                     VerticalAlignment="Center" 
+                                     Padding="10,6" 
+                                     FontSize="12"
+                                     Background="Transparent"/>
                         </Grid>
                     </Border>
 
                     <!-- Date From -->
-                    <Border Background="#F0FDF4" CornerRadius="10" Padding="12,8" Margin="0,0,8,0" BorderBrush="#10B981" BorderThickness="1">
+                    <Border Background="White" CornerRadius="10" Padding="12,8" Margin="0,0,8,0" BorderBrush="#10B981" BorderThickness="1">
                         <StackPanel Orientation="Horizontal">
                             <StackPanel Margin="0,0,12,0">
-                                <TextBlock Text="FROM" FontSize="8" FontWeight="Bold" Foreground="#10B981" Margin="0,0,0,2"/>
+                                <TextBlock Text="FROM" FontSize="9" FontWeight="Bold" Foreground="#059669"/>
                                 <DatePicker SelectedDate="{Binding FilterStartDate, UpdateSourceTrigger=PropertyChanged}" 
-                           BorderThickness="0" 
-                           Background="Transparent" 
-                           FontSize="11"
-                           Foreground="#334155"/>
+                                           BorderThickness="0" 
+                                           Background="Transparent" 
+                                           FontSize="12"
+                                           Foreground="#334155"/>
                             </StackPanel>
                             <Border Width="1" Background="#10B981" Opacity="0.3" Margin="0,4"/>
                         </StackPanel>
                     </Border>
 
                     <!-- Date To -->
-                    <Border Background="#FEF3C7" CornerRadius="10" Padding="12,8" BorderBrush="#F59E0B" BorderThickness="1">
-                        <StackPanel Orientation="Horizontal">
-                            <StackPanel>
-                                <TextBlock Text="TO" FontSize="8" FontWeight="Bold" Foreground="#D97706" Margin="0,0,0,2"/>
-                                <DatePicker SelectedDate="{Binding FilterEndDate, UpdateSourceTrigger=PropertyChanged}" 
-                           BorderThickness="0" 
-                           Background="Transparent" 
-                           FontSize="11"
-                           Foreground="#334155"/>
-                            </StackPanel>
+                    <Border Background="White" CornerRadius="10" Padding="12,8" BorderBrush="#F59E0B" BorderThickness="1">
+                        <StackPanel>
+                            <TextBlock Text="TO" FontSize="9" FontWeight="Bold" Foreground="#D97706"/>
+                            <DatePicker SelectedDate="{Binding FilterEndDate, UpdateSourceTrigger=PropertyChanged}" 
+                                       BorderThickness="0" 
+                                       Background="Transparent" 
+                                       FontSize="12"
+                                       Foreground="#334155"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>
@@ -496,7 +405,7 @@
                 <!-- Action Buttons -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                     <Button Content="📥 Import" Style="{StaticResource WarningButton}" Command="{Binding ImportConfirmedCommand}" Margin="0,0,6,0"/>
-                    <Button Content="📋 Import Log" Style="{StaticResource PrimaryButton}" Command="{Binding ViewImportLogCommand}" Margin="0,0,6,0"/>
+                    <Button Content="📋 Log" Style="{StaticResource PrimaryButton}" Command="{Binding ViewImportLogCommand}" Margin="0,0,6,0"/>
                     <Button Content="🔄 Refresh" Style="{StaticResource PrimaryButton}" Command="{Binding ClearFiltersCommand}" Margin="0,0,6,0"/>
                     <Button Content="🖨️ Print" Style="{StaticResource SecondaryButton}" Command="{Binding PrintCommand}" Margin="0,0,6,0"/>
                     <Button Content="Export CSV" Style="{StaticResource SecondaryButton}" Command="{Binding ExportCommand}"/>
@@ -504,69 +413,95 @@
             </Grid>
         </Border>
 
-        <!-- 2. INDUSTRIAL FILTERS BAR - CENTERED -->
-        <Border Grid.Row="1" CornerRadius="4" Padding="16" Margin="0,0,0,12"
-                BorderBrush="#CBD5E1" BorderThickness="1">
+        <!-- 2. FILTER BAR -->
+        <Border Grid.Row="1" CornerRadius="12" Padding="12,10" Margin="0,0,0,12"
+                BorderBrush="#3B82F6" BorderThickness="2">
             <Border.Background>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                    <GradientStop Color="#FFFFFF" Offset="0"/>
-                    <GradientStop Color="#F8FAFC" Offset="1"/>
+                    <GradientStop Color="#DBEAFE" Offset="0"/>
+                    <GradientStop Color="#BFDBFE" Offset="1"/>
                 </LinearGradientBrush>
             </Border.Background>
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                <StackPanel Orientation="Horizontal">
-                    <!-- Filter: Company -->
-                    <StackPanel Margin="0,0,10,0" Width="130">
-                        <TextBlock Text="COMPANY" FontSize="8" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                        <ComboBox Style="{StaticResource ModernComboBox}" 
-                                  ItemsSource="{Binding CompanyOptions}" 
-                                  SelectedItem="{Binding FilterCompany, UpdateSourceTrigger=PropertyChanged}"/>
-                    </StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-                    <!-- Filter: Type of Work -->
-                    <StackPanel Margin="0,0,10,0" Width="130">
-                        <TextBlock Text="TYPE OF WORK" FontSize="8" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                        <ComboBox Style="{StaticResource ModernComboBox}" 
-                                  ItemsSource="{Binding TypeOfWorkOptions}" 
-                                  SelectedItem="{Binding FilterTypeOfWork, UpdateSourceTrigger=PropertyChanged}"/>
+                <!-- Filter: Company -->
+                <Border Grid.Column="0" Margin="0,0,8,0">
+                    <StackPanel>
+                        <TextBlock Text="COMPANY" FontSize="9" FontWeight="Bold" Foreground="#1E40AF" Margin="4,0,0,4"/>
+                        <ComboBox ItemsSource="{Binding CompanyOptions}" 
+                                 SelectedItem="{Binding FilterCompany, UpdateSourceTrigger=PropertyChanged}"
+                                 Background="White" BorderBrush="#93C5FD" BorderThickness="1" Padding="10,8" FontSize="11"/>
                     </StackPanel>
+                </Border>
 
-                    <!-- Filter: Status -->
-                    <StackPanel Margin="0,0,10,0" Width="130">
-                        <TextBlock Text="STATUS" FontSize="8" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                        <ComboBox Style="{StaticResource ModernComboBox}" 
-                                  ItemsSource="{Binding StatusOptions}" 
-                                  SelectedItem="{Binding FilterStatus, UpdateSourceTrigger=PropertyChanged}"/>
+                <!-- Filter: Type of Work -->
+                <Border Grid.Column="1" Margin="0,0,8,0">
+                    <StackPanel>
+                        <TextBlock Text="TYPE OF WORK" FontSize="9" FontWeight="Bold" Foreground="#1E40AF" Margin="4,0,0,4"/>
+                        <ComboBox ItemsSource="{Binding TypeOfWorkOptions}" 
+                                 SelectedItem="{Binding FilterTypeOfWork, UpdateSourceTrigger=PropertyChanged}"
+                                 Background="White" BorderBrush="#93C5FD" BorderThickness="1" Padding="10,8" FontSize="11"/>
                     </StackPanel>
+                </Border>
 
-                    <!-- Filter: Salesman -->
-                    <StackPanel Margin="0,0,10,0" Width="130">
-                        <TextBlock Text="SALESMAN" FontSize="8" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                        <ComboBox Style="{StaticResource ModernComboBox}" 
-                                  ItemsSource="{Binding SalesmanOptions}" 
-                                  SelectedItem="{Binding FilterSalesman, UpdateSourceTrigger=PropertyChanged}"/>
+                <!-- Filter: Status -->
+                <Border Grid.Column="2" Margin="0,0,8,0">
+                    <StackPanel>
+                        <TextBlock Text="STATUS" FontSize="9" FontWeight="Bold" Foreground="#1E40AF" Margin="4,0,0,4"/>
+                        <ComboBox ItemsSource="{Binding StatusOptions}" 
+                                 SelectedItem="{Binding FilterStatus, UpdateSourceTrigger=PropertyChanged}"
+                                 Background="White" BorderBrush="#93C5FD" BorderThickness="1" Padding="10,8" FontSize="11"/>
                     </StackPanel>
+                </Border>
 
-                    <!-- Filter: Color -->
-                    <StackPanel Margin="0,0,10,0" Width="130">
-                        <TextBlock Text="COLOR" FontSize="8" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                        <ComboBox Style="{StaticResource ModernComboBox}" 
-                                  ItemsSource="{Binding ColorOptions}" 
-                                  SelectedItem="{Binding FilterColor, UpdateSourceTrigger=PropertyChanged}"/>
+                <!-- Filter: Salesman -->
+                <Border Grid.Column="3" Margin="0,0,8,0">
+                    <StackPanel>
+                        <TextBlock Text="SALESMAN" FontSize="9" FontWeight="Bold" Foreground="#1E40AF" Margin="4,0,0,4"/>
+                        <ComboBox ItemsSource="{Binding SalesmanOptions}" 
+                                 SelectedItem="{Binding FilterSalesman, UpdateSourceTrigger=PropertyChanged}"
+                                 Background="White" BorderBrush="#93C5FD" BorderThickness="1" Padding="10,8" FontSize="11"/>
                     </StackPanel>
-                </StackPanel>
+                </Border>
+
+                <!-- Filter: Color -->
+                <Border Grid.Column="4" Margin="0,0,8,0">
+                    <StackPanel>
+                        <TextBlock Text="COLOR" FontSize="9" FontWeight="Bold" Foreground="#1E40AF" Margin="4,0,0,4"/>
+                        <ComboBox ItemsSource="{Binding ColorOptions}" 
+                                 SelectedItem="{Binding FilterColor, UpdateSourceTrigger=PropertyChanged}"
+                                 Background="White" BorderBrush="#93C5FD" BorderThickness="1" Padding="10,8" FontSize="11"/>
+                    </StackPanel>
+                </Border>
 
                 <!-- Clear All Button -->
-                <Button Content="Clear All" Style="{StaticResource SecondaryButton}" 
-                        Command="{Binding ClearFiltersCommand}" 
-                        Padding="16,8"
-                        VerticalAlignment="Bottom"
-                        Margin="10,0,0,0"/>
-            </StackPanel>
+                <Border Grid.Column="5" CornerRadius="10" Background="#1E40AF" VerticalAlignment="Bottom">
+                    <Button Content="Clear All" 
+                            Command="{Binding ClearFiltersCommand}" 
+                            Padding="20,10"
+                            MinWidth="100"
+                            Background="Transparent"
+                            Foreground="White"
+                            BorderThickness="0"
+                            FontWeight="SemiBold"
+                            Cursor="Hand"/>
+                </Border>
+            </Grid>
         </Border>
 
-        <!-- 3. INDUSTRIAL DATA GRID -->
-        <Border Grid.Row="2" CornerRadius="4" BorderBrush="#CBD5E1" BorderThickness="1">
+        <!-- 3. DATA GRID -->
+        <Border Grid.Row="2" CornerRadius="12" BorderBrush="#CBD5E1" BorderThickness="1" Background="White">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.1"/>
+            </Border.Effect>
             <DataGrid x:Name="MainDataGrid"
                       ItemsSource="{Binding FilteredDataView}" 
                       SelectedItem="{Binding SelectedDataRowView}"
@@ -579,7 +514,7 @@
                       RowStyle="{StaticResource ModernRowStyle}"
                       SelectionChanged="MainDataGrid_SelectionChanged">
                 <DataGrid.Columns>
-                    <!-- SELECT CHECKBOX COLUMN -->
+                    <!-- SELECT CHECKBOX -->
                     <DataGridTemplateColumn Header="" Width="45">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
@@ -595,51 +530,51 @@
                         </DataGridTemplateColumn.HeaderTemplate>
                     </DataGridTemplateColumn>
 
-                    <!-- DATE - Green -->
+                    <!-- DATE -->
                     <DataGridTemplateColumn Header="DATE" Width="100" HeaderStyle="{StaticResource HeaderGreen}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Border Background="#D1FAE5" CornerRadius="3" Padding="6,4" HorizontalAlignment="Center">
+                                <Border Background="#D1FAE5" CornerRadius="4" Padding="6,4" HorizontalAlignment="Center">
                                     <TextBlock Text="{Binding Date, StringFormat='{}{0:dd-MM-yyyy}'}" FontSize="11" Foreground="#065F46" FontWeight="Medium"/>
                                 </Border>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <!-- COMPANY - Teal -->
-                    <DataGridTemplateColumn Header="COMPANY" Width="150" HeaderStyle="{StaticResource HeaderTeal}">
+                    <!-- COMPANY -->
+                    <DataGridTemplateColumn Header="COMPANY" Width="150" HeaderStyle="{StaticResource HeaderBlue}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Company}" FontSize="11" Foreground="#0F766E" FontWeight="Medium"/>
+                                <TextBlock Text="{Binding Company}" FontSize="11" Foreground="#1E40AF" FontWeight="Medium"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <!-- PI NUMBER - Blue -->
-                    <DataGridTemplateColumn Header="PI NUMBER" Width="130" HeaderStyle="{StaticResource HeaderBlue}">
+                    <!-- PI NUMBER -->
+                    <DataGridTemplateColumn Header="PI NUMBER" Width="130" HeaderStyle="{StaticResource HeaderSlate}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding PINumber}" FontSize="11" Foreground="#1D4ED8" FontWeight="Medium"/>
+                                <TextBlock Text="{Binding PINumber}" FontSize="11" Foreground="#475569" FontWeight="Medium"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <!-- TYPE - Purple -->
-                    <DataGridTemplateColumn Header="TYPE" Width="130" HeaderStyle="{StaticResource HeaderPurple}">
+                    <!-- TYPE -->
+                    <DataGridTemplateColumn Header="TYPE" Width="130" HeaderStyle="{StaticResource HeaderSlate}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Border Background="#F5F3FF" CornerRadius="3" Padding="6,3" HorizontalAlignment="Center">
-                                    <TextBlock Text="{Binding TypeOfWork}" FontSize="10" Foreground="#5B21B6" FontWeight="Medium"/>
+                                <Border Background="#F1F5F9" CornerRadius="4" Padding="6,4" HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding TypeOfWork}" FontSize="10" Foreground="#475569" FontWeight="Medium"/>
                                 </Border>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <!-- COLOR - Pink (NEW) -->
-                    <DataGridTemplateColumn Header="COLOR" Width="110" HeaderStyle="{StaticResource HeaderPink}">
+                    <!-- COLOR -->
+                    <DataGridTemplateColumn Header="COLOR" Width="100" HeaderStyle="{StaticResource HeaderSlate}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Border CornerRadius="3" Padding="6,3" HorizontalAlignment="Center">
+                                <Border CornerRadius="4" Padding="6,3" HorizontalAlignment="Center">
                                     <Border.Style>
                                         <Style TargetType="Border">
                                             <Setter Property="Background" Value="#FDF2F8"/>
@@ -658,9 +593,6 @@
                                                 </DataTrigger>
                                                 <DataTrigger Binding="{Binding Color}" Value="Green">
                                                     <Setter Property="Background" Value="#D1FAE5"/>
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding Color}" Value="Pink">
-                                                    <Setter Property="Background" Value="#FCE7F3"/>
                                                 </DataTrigger>
                                                 <DataTrigger Binding="{Binding Color}" Value="Black">
                                                     <Setter Property="Background" Value="#1E293B"/>
@@ -688,9 +620,6 @@
                                                     <DataTrigger Binding="{Binding Color}" Value="Green">
                                                         <Setter Property="Foreground" Value="#047857"/>
                                                     </DataTrigger>
-                                                    <DataTrigger Binding="{Binding Color}" Value="Pink">
-                                                        <Setter Property="Foreground" Value="#BE185D"/>
-                                                    </DataTrigger>
                                                     <DataTrigger Binding="{Binding Color}" Value="Black">
                                                         <Setter Property="Foreground" Value="White"/>
                                                     </DataTrigger>
@@ -703,40 +632,41 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <!-- ORDER QTY - Emerald -->
-                    <DataGridTemplateColumn Header="ORDER QTY" Width="90" HeaderStyle="{StaticResource HeaderEmerald}">
+                    <!-- ORDER QTY -->
+                    <DataGridTemplateColumn Header="ORDER QTY" Width="100" HeaderStyle="{StaticResource HeaderBlue}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding OrderQty}" FontSize="12" Foreground="#047857" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding OrderQty}" FontSize="12" Foreground="#1E40AF" FontWeight="Bold" HorizontalAlignment="Center"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <!-- DELIVERED - Green -->
-                    <DataGridTemplateColumn Header="DELIVERED" Width="90" HeaderStyle="{StaticResource HeaderGreen}">
+                    <!-- DELIVERED -->
+                    <DataGridTemplateColumn Header="DELIVERED" Width="100" HeaderStyle="{StaticResource HeaderGreen}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding TotalDelivered}" FontSize="12" Foreground="#15803D" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding TotalDelivered}" FontSize="12" Foreground="#059669" FontWeight="Bold" HorizontalAlignment="Center"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <!-- RETURNED - Rose -->
-                    <DataGridTemplateColumn Header="RETURNED" Width="85" HeaderStyle="{StaticResource HeaderRose}">
+                    <!-- RETURNED -->
+                    <DataGridTemplateColumn Header="RETURNED" Width="90" HeaderStyle="{StaticResource HeaderSlate}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding TotalReturned}" FontSize="12" Foreground="#BE123C" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding TotalReturned}" FontSize="12" Foreground="#DC2626" FontWeight="Bold" HorizontalAlignment="Center"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <!-- BALANCE - Orange -->
-                    <DataGridTemplateColumn Header="BALANCE" Width="85" HeaderStyle="{StaticResource HeaderOrange}">
+                    <!-- BALANCE -->
+                    <DataGridTemplateColumn Header="BALANCE" Width="90" HeaderStyle="{StaticResource HeaderSlate}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Balance}" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center">
+                                <TextBlock FontSize="12" FontWeight="Bold" HorizontalAlignment="Center">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="{Binding Balance}"/>
                                             <Setter Property="Foreground" Value="#64748B"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding Balance}" Value="0">
@@ -750,35 +680,35 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <!-- SQM - Slate -->
-                    <DataGridTemplateColumn Header="SQM" Width="80" HeaderStyle="{StaticResource HeaderSlate}">
+                    <!-- SQM -->
+                    <DataGridTemplateColumn Header="SQM" Width="80" HeaderStyle="{StaticResource HeaderBlue}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding OrderSQM, StringFormat=N2}" FontSize="12" Foreground="#475569" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding OrderSQM, StringFormat=N2}" FontSize="12" Foreground="#3B82F6" FontWeight="Bold" HorizontalAlignment="Center"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <!-- SALESMAN - Blue -->
-                    <DataGridTemplateColumn Header="SALESMAN" Width="120" HeaderStyle="{StaticResource HeaderBlue}">
+                    <!-- SALESMAN -->
+                    <DataGridTemplateColumn Header="SALESMAN" Width="120" HeaderStyle="{StaticResource HeaderSlate}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Salesman}" FontSize="11" Foreground="#1E40AF" FontWeight="Medium"/>
+                                <TextBlock Text="{Binding Salesman}" FontSize="11" Foreground="#475569" FontWeight="Medium"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <!-- STATUS - Teal -->
-                    <DataGridTemplateColumn Header="STATUS" Width="120" HeaderStyle="{StaticResource HeaderTeal}">
+                    <!-- STATUS -->
+                    <DataGridTemplateColumn Header="STATUS" Width="120" HeaderStyle="{StaticResource HeaderGreen}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Border CornerRadius="3" Padding="8,3" HorizontalAlignment="Center">
+                                <Border CornerRadius="4" Padding="8,4" HorizontalAlignment="Center">
                                     <Border.Style>
                                         <Style TargetType="Border">
                                             <Setter Property="Background" Value="#F1F5F9"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding Status}" Value="Completed">
-                                                    <Setter Property="Background" Value="#DCFCE7"/>
+                                                    <Setter Property="Background" Value="#D1FAE5"/>
                                                 </DataTrigger>
                                                 <DataTrigger Binding="{Binding Status}" Value="Partially Delivered">
                                                     <Setter Property="Background" Value="#FEF3C7"/>
@@ -795,7 +725,7 @@
                                                 <Setter Property="Foreground" Value="#64748B"/>
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding Status}" Value="Completed">
-                                                        <Setter Property="Foreground" Value="#16A34A"/>
+                                                        <Setter Property="Foreground" Value="#059669"/>
                                                     </DataTrigger>
                                                     <DataTrigger Binding="{Binding Status}" Value="Partially Delivered">
                                                         <Setter Property="Foreground" Value="#D97706"/>
@@ -812,18 +742,19 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <!-- NOTES - Stone -->
-                    <DataGridTemplateColumn Header="NOTES" Width="*" HeaderStyle="{StaticResource HeaderSlate}">
+                    <!-- NOTES -->
+                    <DataGridTemplateColumn Header="NOTES" Width="80" HeaderStyle="{StaticResource HeaderSlate}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Style="{StaticResource SecondaryButton}" 
-                                        Content="📋 View" 
+                                <Button Content="📋 View" 
                                         FontSize="10" 
                                         Padding="8,4"
                                         Command="{Binding DataContext.ViewNotesCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                         CommandParameter="{Binding Notes}"
                                         Background="#F1F5F9"
-                                        Foreground="#475569"/>
+                                        Foreground="#475569"
+                                        BorderThickness="0"
+                                        Cursor="Hand"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
@@ -831,8 +762,12 @@
             </DataGrid>
         </Border>
 
-        <!-- 4. MODERN STATS BAR -->
-        <Border Grid.Row="3" CornerRadius="12" Padding="12" Margin="0,10,0,0" Background="#F1F5F9">
+        <!-- 4. STATS BAR -->
+        <Border Grid.Row="3" CornerRadius="12" Padding="12" Margin="0,12,0,0" Background="White"
+                BorderBrush="#CBD5E1" BorderThickness="1">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.1"/>
+            </Border.Effect>
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -840,15 +775,17 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- SECTION 1: TOTAL STATS -->
-                <Border Grid.Column="0" CornerRadius="10" Padding="12" 
-                BorderBrush="#3B82F6" BorderThickness="2"
-                Background="White" Margin="0,0,6,0">
-                    <Border.Effect>
-                        <DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.1"/>
-                    </Border.Effect>
+                <!-- TOTAL STATS -->
+                <Border Grid.Column="0" CornerRadius="10" Padding="12" Margin="0,0,6,0"
+                        BorderBrush="#3B82F6" BorderThickness="2">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                            <GradientStop Color="#DBEAFE" Offset="0"/>
+                            <GradientStop Color="#BFDBFE" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
                     <StackPanel>
-                        <Border Background="#3B82F6" CornerRadius="6" Padding="10,5" HorizontalAlignment="Left" Margin="0,0,0,10">
+                        <Border Background="#1E40AF" CornerRadius="6" Padding="10,5" HorizontalAlignment="Left" Margin="0,0,0,10">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="📊" FontSize="12" Margin="0,0,6,0"/>
                                 <TextBlock Text="TOTAL STATS" FontSize="10" FontWeight="Bold" Foreground="White"/>
@@ -863,37 +800,37 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Background="#EFF6FF" CornerRadius="6" Padding="5,4" Margin="0,0,3,0">
+                            <Border Grid.Column="0" Background="White" CornerRadius="6" Padding="4,3" Margin="0,0,3,0" BorderBrush="#3B82F6" BorderThickness="1">
                                 <StackPanel HorizontalAlignment="Center">
                                     <TextBlock Text="REC" FontSize="7" Foreground="#64748B" HorizontalAlignment="Center"/>
-                                    <TextBlock Text="{Binding TotalRecords}" FontSize="13" FontWeight="Bold" Foreground="#3B82F6" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding TotalRecords}" FontSize="13" FontWeight="Bold" Foreground="#1E40AF" HorizontalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
-                            <Border Grid.Column="1" Background="#F0FDF4" CornerRadius="6" Padding="5,4" Margin="0,0,3,0">
+                            <Border Grid.Column="1" Background="White" CornerRadius="6" Padding="4,3" Margin="0,0,3,0" BorderBrush="#10B981" BorderThickness="1">
                                 <StackPanel HorizontalAlignment="Center">
                                     <TextBlock Text="ORDER" FontSize="7" Foreground="#64748B" HorizontalAlignment="Center"/>
-                                    <TextBlock Text="{Binding TotalOrderQty}" FontSize="13" FontWeight="Bold" Foreground="#10B981" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding TotalOrderQty}" FontSize="13" FontWeight="Bold" Foreground="#059669" HorizontalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
-                            <Border Grid.Column="2" Background="#F0FDF4" CornerRadius="6" Padding="5,4" Margin="0,0,3,0">
+                            <Border Grid.Column="2" Background="White" CornerRadius="6" Padding="4,3" Margin="0,0,3,0" BorderBrush="#10B981" BorderThickness="1">
                                 <StackPanel HorizontalAlignment="Center">
                                     <TextBlock Text="DEL" FontSize="7" Foreground="#64748B" HorizontalAlignment="Center"/>
-                                    <TextBlock Text="{Binding TotalDelivered}" FontSize="13" FontWeight="Bold" Foreground="#84CC16" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding TotalDelivered}" FontSize="13" FontWeight="Bold" Foreground="#10B981" HorizontalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
-                            <Border Grid.Column="3" Background="#FEF2F2" CornerRadius="6" Padding="5,4" Margin="0,0,3,0">
+                            <Border Grid.Column="3" Background="White" CornerRadius="6" Padding="4,3" Margin="0,0,3,0" BorderBrush="#DC2626" BorderThickness="1">
                                 <StackPanel HorizontalAlignment="Center">
                                     <TextBlock Text="RET" FontSize="7" Foreground="#64748B" HorizontalAlignment="Center"/>
-                                    <TextBlock Text="{Binding TotalReturned}" FontSize="13" FontWeight="Bold" Foreground="#FB7185" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding TotalReturned}" FontSize="13" FontWeight="Bold" Foreground="#DC2626" HorizontalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
-                            <Border Grid.Column="4" Background="#FEF3C7" CornerRadius="6" Padding="5,4" Margin="0,0,3,0">
+                            <Border Grid.Column="4" Background="White" CornerRadius="6" Padding="4,3" Margin="0,0,3,0" BorderBrush="#F59E0B" BorderThickness="1">
                                 <StackPanel HorizontalAlignment="Center">
                                     <TextBlock Text="BAL" FontSize="7" Foreground="#64748B" HorizontalAlignment="Center"/>
-                                    <TextBlock Text="{Binding TotalBalance}" FontSize="13" FontWeight="Bold" Foreground="#F59E0B" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding TotalBalance}" FontSize="13" FontWeight="Bold" Foreground="#D97706" HorizontalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
-                            <Border Grid.Column="5" Background="#F8FAFC" CornerRadius="6" Padding="5,4">
+                            <Border Grid.Column="5" Background="White" CornerRadius="6" Padding="4,3" BorderBrush="#64748B" BorderThickness="1">
                                 <StackPanel HorizontalAlignment="Center">
                                     <TextBlock Text="SQM" FontSize="7" Foreground="#64748B" HorizontalAlignment="Center"/>
                                     <TextBlock Text="{Binding TotalOrderSQM, StringFormat=N2}" FontSize="13" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center"/>
@@ -903,15 +840,17 @@
                     </StackPanel>
                 </Border>
 
-                <!-- SECTION 2: FILTERED STATS -->
-                <Border Grid.Column="1" CornerRadius="10" Padding="12" 
-                BorderBrush="#10B981" BorderThickness="2"
-                Background="White" Margin="0,0,6,0">
-                    <Border.Effect>
-                        <DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.1"/>
-                    </Border.Effect>
+                <!-- FILTERED STATS -->
+                <Border Grid.Column="1" CornerRadius="10" Padding="12" Margin="0,0,6,0"
+                        BorderBrush="#3B82F6" BorderThickness="2">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                            <GradientStop Color="#DBEAFE" Offset="0"/>
+                            <GradientStop Color="#BFDBFE" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
                     <StackPanel>
-                        <Border Background="#10B981" CornerRadius="6" Padding="10,5" HorizontalAlignment="Left" Margin="0,0,0,10">
+                        <Border Background="#3B82F6" CornerRadius="6" Padding="10,5" HorizontalAlignment="Left" Margin="0,0,0,10">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="🔍" FontSize="12" Margin="0,0,6,0"/>
                                 <TextBlock Text="FILTERED STATS" FontSize="10" FontWeight="Bold" Foreground="White"/>
@@ -923,35 +862,37 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Background="SaddleBrown" CornerRadius="6" Padding="5,4" Margin="0,0,3,0">
+                            <Border Grid.Column="0" Background="White" CornerRadius="8" Padding="6,4" Margin="0,0,4,0" BorderBrush="#3B82F6" BorderThickness="1">
                                 <StackPanel HorizontalAlignment="Center">
-                                    <TextBlock Text="REC" FontSize="7" Foreground="white" HorizontalAlignment="Center"/>
-                                    <TextBlock Text="{Binding FilteredRecords}" FontSize="18" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <TextBlock Text="RECORDS" FontSize="7" Foreground="#1E40AF" HorizontalAlignment="Center" FontWeight="Bold"/>
+                                    <TextBlock Text="{Binding FilteredRecords}" FontSize="16" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
-                            <Border Grid.Column="1" Background="SaddleBrown" CornerRadius="6" Padding="5,4" Margin="0,0,3,0">
+                            <Border Grid.Column="1" Background="White" CornerRadius="8" Padding="6,4" Margin="0,0,4,0" BorderBrush="#3B82F6" BorderThickness="1">
                                 <StackPanel HorizontalAlignment="Center">
-                                    <TextBlock Text="ORDER" FontSize="7" Foreground="White" HorizontalAlignment="Center"/>
-                                    <TextBlock Text="{Binding FilteredOrderQty}" FontSize="15" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="ORDER QTY" FontSize="7" Foreground="#1E40AF" HorizontalAlignment="Center" FontWeight="Bold"/>
+                                    <TextBlock Text="{Binding FilteredOrderQty}" FontSize="16" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
-                            <Border Grid.Column="2" Background="SaddleBrown" CornerRadius="6" Padding="5,4" Margin="0,0,3,0">
+                            <Border Grid.Column="2" Background="White" CornerRadius="8" Padding="6,4" BorderBrush="#3B82F6" BorderThickness="1">
                                 <StackPanel HorizontalAlignment="Center">
-                                    <TextBlock Text="DEL" FontSize="7" Foreground="White" HorizontalAlignment="Center"/>
-                                    <TextBlock Text="{Binding FilteredDelivered}" FontSize="15" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="DELIVERED" FontSize="7" Foreground="#1E40AF" HorizontalAlignment="Center" FontWeight="Bold"/>
+                                    <TextBlock Text="{Binding FilteredDelivered}" FontSize="16" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
                         </Grid>
                     </StackPanel>
                 </Border>
 
-                <!-- SECTION 3: SELECTED + ACTIONS -->
-                <Border Grid.Column="2" CornerRadius="10" Padding="12" 
-                BorderBrush="#7C3AED" BorderThickness="2"
-                Background="White">
-                    <Border.Effect>
-                        <DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.1"/>
-                    </Border.Effect>
+                <!-- SELECTED + ACTIONS -->
+                <Border Grid.Column="2" CornerRadius="10" Padding="12"
+                        BorderBrush="#7C3AED" BorderThickness="2">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                            <GradientStop Color="#F5F3FF" Offset="0"/>
+                            <GradientStop Color="#EDE9FE" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
@@ -959,10 +900,10 @@
                         </Grid.ColumnDefinitions>
 
                         <!-- Selected Count -->
-                        <Border Background="#F5F3FF" CornerRadius="8" Padding="10,6" Margin="0,0,10,0" VerticalAlignment="Center">
+                        <Border Background="#7C3AED" CornerRadius="10" Padding="12,8" Margin="0,0,10,0" VerticalAlignment="Center">
                             <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="SELECTED" FontSize="8" FontWeight="Bold" Foreground="#7C3AED" HorizontalAlignment="Center"/>
-                                <TextBlock Text="{Binding SelectedCount}" FontSize="20" FontWeight="Bold" Foreground="#A78BFA" HorizontalAlignment="Center"/>
+                                <TextBlock Text="SELECTED" FontSize="8" FontWeight="Bold" Foreground="#DDD6FE" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding SelectedCount}" FontSize="22" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Border>
 
@@ -970,7 +911,7 @@
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                             <WrapPanel Margin="0,0,0,4">
                                 <Button Content="Details" Style="{StaticResource PrimaryButton}" Command="{Binding ViewDetailsCommand}" Padding="10,5" Margin="0,0,4,0" FontSize="9"/>
-                                <Button Content="Add Delivery" Style="{StaticResource SuccessButton}" Command="{Binding AddDeliveryCommand}" IsEnabled="{Binding SelectedOrder, Converter={StaticResource NullToBoolConverter}}" Padding="10,5" Margin="0,0,4,0" FontSize="9"/>
+                                <Button Content="Add" Style="{StaticResource SuccessButton}" Command="{Binding AddDeliveryCommand}" IsEnabled="{Binding SelectedOrder, Converter={StaticResource NullToBoolConverter}}" Padding="10,5" Margin="0,0,4,0" FontSize="9"/>
                                 <Button Content="Edit" Style="{StaticResource PrimaryButton}" Command="{Binding EditCommand}" CommandParameter="{Binding SelectedDataRowView}" Padding="10,5" Margin="0,0,4,0" FontSize="9"/>
                                 <Button Content="Delete" Style="{StaticResource DangerButton}" Command="{Binding DeleteCommand}" CommandParameter="{Binding SelectedDataRowView}" Padding="10,5" FontSize="9"/>
                             </WrapPanel>
@@ -983,8 +924,8 @@
 
         <!-- VIEW DETAILS POPUP -->
         <Border Grid.Row="0" Grid.RowSpan="4" Background="#80000000" Visibility="{Binding IsViewingDetails, Converter={StaticResource BoolToVisibilityConverter}}">
-            <Border CornerRadius="6" Padding="30" Margin="60,30" Background="White" VerticalAlignment="Center" HorizontalAlignment="Center" MinWidth="800" MaxWidth="1000"
-                    BorderBrush="#CBD5E1" BorderThickness="1">
+            <Border CornerRadius="12" Padding="30" Margin="60,30" Background="White" VerticalAlignment="Center" HorizontalAlignment="Center" MinWidth="800" MaxWidth="1000"
+                    BorderBrush="#CBD5E1" BorderThickness="2">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="25" ShadowDepth="5" Opacity="0.25"/>
                 </Border.Effect>
@@ -997,13 +938,12 @@
                     </Grid.RowDefinitions>
 
                     <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,20">
-                        <TextBlock Text="DELIVERY DETAILS" FontSize="20" FontWeight="Bold" Foreground="#059669"/>
+                        <TextBlock Text="📦 DELIVERY DETAILS" FontSize="20" FontWeight="Bold" Foreground="#1E40AF"/>
                         <TextBlock Text=" - " FontSize="20" Foreground="#64748B"/>
                         <TextBlock Text="{Binding SelectedOrder.PINumber}" FontSize="20" FontWeight="Bold" Foreground="#059669"/>
                     </StackPanel>
 
-                    <Border Grid.Row="1" CornerRadius="4" Background="#F0FDF4" Padding="16" Margin="0,0,0,16"
-                            BorderBrush="#CBD5E1" BorderThickness="1">
+                    <Border Grid.Row="1" CornerRadius="8" Background="#DBEAFE" Padding="16" Margin="0,0,0,16" BorderBrush="#3B82F6" BorderThickness="1">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -1016,12 +956,12 @@
 
                             <StackPanel Grid.Column="0">
                                 <TextBlock Text="COMPANY" FontSize="9" Foreground="#64748B"/>
-                                <TextBlock Text="{Binding SelectedOrder.Company}" FontSize="14" FontWeight="Bold" Foreground="#065F46"/>
+                                <TextBlock Text="{Binding SelectedOrder.Company}" FontSize="14" FontWeight="Bold" Foreground="#1E40AF"/>
                             </StackPanel>
 
                             <StackPanel Grid.Column="1">
                                 <TextBlock Text="ORDER QTY" FontSize="9" Foreground="#64748B"/>
-                                <TextBlock Text="{Binding SelectedOrder.OrderQty}" FontSize="14" FontWeight="Bold" Foreground="#065F46"/>
+                                <TextBlock Text="{Binding SelectedOrder.OrderQty}" FontSize="14" FontWeight="Bold" Foreground="#1E40AF"/>
                             </StackPanel>
 
                             <StackPanel Grid.Column="2">
@@ -1041,19 +981,19 @@
 
                             <StackPanel Grid.Column="5">
                                 <TextBlock Text="SQM" FontSize="9" Foreground="#64748B"/>
-                                <TextBlock Text="{Binding SelectedOrder.OrderSQM, StringFormat=N2}" FontSize="14" FontWeight="Bold" Foreground="#065F46"/>
+                                <TextBlock Text="{Binding SelectedOrder.OrderSQM, StringFormat=N2}" FontSize="14" FontWeight="Bold" Foreground="#475569"/>
                             </StackPanel>
                         </Grid>
                     </Border>
 
-                    <Border Grid.Row="2" CornerRadius="4" BorderBrush="#CBD5E1" BorderThickness="1" Margin="0,0,0,16">
+                    <Border Grid.Row="2" CornerRadius="8" BorderBrush="#CBD5E1" BorderThickness="1" Margin="0,0,0,16">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
 
-                            <Border Grid.Row="0" Background="#059669" CornerRadius="4,4,0,0" Padding="16,12">
+                            <Border Grid.Row="0" Background="#1E40AF" CornerRadius="8,8,0,0" Padding="16,12">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="100"/>
@@ -1117,10 +1057,10 @@
                     <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button Content="➕ Add Delivery" Style="{StaticResource SuccessButton}" 
                                 Command="{Binding AddDeliveryCommand}" 
-                                Margin="0,0,12,0" Padding="24,12"/>
+                                Margin="0,0,12,0" Padding="20,10"/>
                         <Button Content="Close" Style="{StaticResource SecondaryButton}" 
                                 Command="{Binding CancelCommand}" 
-                                Padding="24,12"/>
+                                Padding="20,10"/>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -1128,13 +1068,13 @@
 
         <!-- ADD DELIVERY POPUP -->
         <Border Grid.Row="0" Grid.RowSpan="4" Background="#80000000" Visibility="{Binding IsAddingDelivery, Converter={StaticResource BoolToVisibilityConverter}}">
-            <Border CornerRadius="6" Padding="30" Margin="100,60" Background="White" VerticalAlignment="Center" HorizontalAlignment="Center" MinWidth="450"
-                    BorderBrush="#CBD5E1" BorderThickness="1">
+            <Border CornerRadius="12" Padding="30" Margin="100,60" Background="White" VerticalAlignment="Center" HorizontalAlignment="Center" MinWidth="450"
+                    BorderBrush="#CBD5E1" BorderThickness="2">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="25" ShadowDepth="5" Opacity="0.25"/>
                 </Border.Effect>
                 <StackPanel>
-                    <TextBlock Text="ADD DELIVERY" FontSize="20" FontWeight="Bold" Foreground="#059669" Margin="0,0,0,20"/>
+                    <TextBlock Text="➕ ADD DELIVERY" FontSize="20" FontWeight="Bold" Foreground="#1E40AF" Margin="0,0,0,20"/>
 
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -1166,25 +1106,25 @@
                         <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,0,12">
                             <TextBlock Text="DRIVER" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <ComboBox Style="{StaticResource ModernComboBox}" 
-                                      ItemsSource="{Binding DriverOptions}" 
-                                      SelectedItem="{Binding EditingDeliveryItem.Driver}"
-                                      IsEditable="True"
-                                      Text="{Binding EditingDeliveryItem.Driver, UpdateSourceTrigger=PropertyChanged}"
-                                      Background="White"
-                                      BorderBrush="#CBD5E1"
-                                      BorderThickness="1"/>
+                                     ItemsSource="{Binding DriverOptions}" 
+                                     SelectedItem="{Binding EditingDeliveryItem.Driver}"
+                                     IsEditable="True"
+                                     Text="{Binding EditingDeliveryItem.Driver, UpdateSourceTrigger=PropertyChanged}"
+                                     Background="White"
+                                     BorderBrush="#CBD5E1"
+                                     BorderThickness="1"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,10,12">
                             <TextBlock Text="VEHICLE" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <ComboBox Style="{StaticResource ModernComboBox}" 
-                                      ItemsSource="{Binding VehicleOptions}" 
-                                      SelectedItem="{Binding EditingDeliveryItem.Vehicle}"
-                                      IsEditable="True"
-                                      Text="{Binding EditingDeliveryItem.Vehicle, UpdateSourceTrigger=PropertyChanged}"
-                                      Background="White"
-                                      BorderBrush="#CBD5E1"
-                                      BorderThickness="1"/>
+                                     ItemsSource="{Binding VehicleOptions}" 
+                                     SelectedItem="{Binding EditingDeliveryItem.Vehicle}"
+                                     IsEditable="True"
+                                     Text="{Binding EditingDeliveryItem.Vehicle, UpdateSourceTrigger=PropertyChanged}"
+                                     Background="White"
+                                     BorderBrush="#CBD5E1"
+                                     BorderThickness="1"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,0,12">
@@ -1192,8 +1132,8 @@
                             <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditingDeliveryItem.Notes}" GotFocus="TextBox_GotFocus"/>
                         </StackPanel>
 
-                        <Border Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" CornerRadius="4" Background="#FEF3C7" Padding="12" Margin="0,0,0,12"
-                                BorderBrush="#D97706" BorderThickness="1">
+                        <Border Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" CornerRadius="8" Background="#FEF3C7" Padding="12" Margin="0,0,0,12"
+                                BorderBrush="#F59E0B" BorderThickness="1">
                             <StackPanel>
                                 <TextBlock Text="💡 Info: Current Balance" FontSize="11" FontWeight="Bold" Foreground="#92400E"/>
                                 <TextBlock FontSize="18" FontWeight="Bold" Foreground="#D97706">
@@ -1205,8 +1145,8 @@
                     </Grid>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
-                        <Button Content="Cancel" Style="{StaticResource SecondaryButton}" Command="{Binding CancelCommand}" Margin="0,0,12,0" Padding="24,12"/>
-                        <Button Content="Save Delivery" Style="{StaticResource SuccessButton}" Command="{Binding SaveDeliveryCommand}" Padding="24,12"/>
+                        <Button Content="Cancel" Style="{StaticResource SecondaryButton}" Command="{Binding CancelCommand}" Margin="0,0,12,0" Padding="20,10"/>
+                        <Button Content="Save Delivery" Style="{StaticResource SuccessButton}" Command="{Binding SaveDeliveryCommand}" Padding="20,10"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -1214,13 +1154,13 @@
 
         <!-- EDIT POPUP -->
         <Border Grid.Row="0" Grid.RowSpan="4" Background="#80000000" Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibilityConverter}}">
-            <Border CornerRadius="6" Padding="30" Margin="80,40" Background="White" VerticalAlignment="Center" HorizontalAlignment="Center" MinWidth="650"
-                    BorderBrush="#CBD5E1" BorderThickness="1">
+            <Border CornerRadius="12" Padding="30" Margin="80,40" Background="White" VerticalAlignment="Center" HorizontalAlignment="Center" MinWidth="650"
+                    BorderBrush="#CBD5E1" BorderThickness="2">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="25" ShadowDepth="5" Opacity="0.25"/>
                 </Border.Effect>
                 <StackPanel>
-                    <TextBlock Text="EDIT ORDER" FontSize="20" FontWeight="Bold" Foreground="#059669" Margin="0,0,0,20"/>
+                    <TextBlock Text="✏️ EDIT ORDER" FontSize="20" FontWeight="Bold" Foreground="#1E40AF" Margin="0,0,0,20"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -1252,16 +1192,15 @@
                         <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,12">
                             <TextBlock Text="TYPE OF WORK" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <ComboBox Style="{StaticResource ModernComboBox}" 
-                                      ItemsSource="{Binding TypeOfWorkOptions}" 
-                                      SelectedItem="{Binding EditingOrder.TypeOfWork}"/>
+                                     ItemsSource="{Binding TypeOfWorkOptions}" 
+                                     SelectedItem="{Binding EditingOrder.TypeOfWork}"/>
                         </StackPanel>
 
-                        <!-- COLOR - Added to Edit Popup -->
                         <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,10,12">
                             <TextBlock Text="COLOR" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <ComboBox Style="{StaticResource ModernComboBox}" 
-                                      ItemsSource="{Binding ColorOptions}" 
-                                      SelectedItem="{Binding EditingOrder.Color}"/>
+                                     ItemsSource="{Binding ColorOptions}" 
+                                     SelectedItem="{Binding EditingOrder.Color}"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,12">
@@ -1277,15 +1216,15 @@
                         <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,10,12">
                             <TextBlock Text="SALESMAN" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <ComboBox Style="{StaticResource ModernComboBox}" 
-                                      ItemsSource="{Binding SalesmanOptions}" 
-                                      SelectedItem="{Binding EditingOrder.Salesman}"/>
+                                     ItemsSource="{Binding SalesmanOptions}" 
+                                     SelectedItem="{Binding EditingOrder.Salesman}"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.Column="2" Margin="0,0,0,12">
                             <TextBlock Text="STATUS" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <ComboBox Style="{StaticResource ModernComboBox}" 
-                                      ItemsSource="{Binding StatusOptions}" 
-                                      SelectedItem="{Binding EditingOrder.Status}"/>
+                                     ItemsSource="{Binding StatusOptions}" 
+                                     SelectedItem="{Binding EditingOrder.Status}"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,0,0,12">
@@ -1299,9 +1238,9 @@
                         </StackPanel>
                     </Grid>
 
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,24,0,0">
-                        <Button Content="Cancel" Style="{StaticResource SecondaryButton}" Command="{Binding CancelCommand}" Margin="0,0,12,0" Padding="24,12"/>
-                        <Button Content="Save" Style="{StaticResource SuccessButton}" Command="{Binding SaveCommand}" Padding="24,12"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                        <Button Content="Cancel" Style="{StaticResource SecondaryButton}" Command="{Binding CancelCommand}" Margin="0,0,12,0" Padding="20,10"/>
+                        <Button Content="Save" Style="{StaticResource SuccessButton}" Command="{Binding SaveCommand}" Padding="20,10"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -1309,19 +1248,19 @@
 
         <!-- NOTES VIEW POPUP -->
         <Border Grid.Row="0" Grid.RowSpan="4" Background="#80000000" Visibility="{Binding IsViewingNotes, Converter={StaticResource BoolToVisibilityConverter}}">
-            <Border CornerRadius="6" Padding="30" Background="White" VerticalAlignment="Center" HorizontalAlignment="Center" MinWidth="500" MaxWidth="700"
-                    BorderBrush="#CBD5E1" BorderThickness="1">
+            <Border CornerRadius="12" Padding="30" Background="White" VerticalAlignment="Center" HorizontalAlignment="Center" MinWidth="500" MaxWidth="700"
+                    BorderBrush="#CBD5E1" BorderThickness="2">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="25" ShadowDepth="5" Opacity="0.25"/>
                 </Border.Effect>
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
-                        <TextBlock Text="📋 ORDER NOTES" FontSize="20" FontWeight="Bold" Foreground="#059669"/>
+                        <TextBlock Text="📋 ORDER NOTES" FontSize="20" FontWeight="Bold" Foreground="#1E40AF"/>
                         <TextBlock Text=" - " FontSize="20" Foreground="#64748B"/>
                         <TextBlock Text="{Binding SelectedOrder.PINumber}" FontSize="20" FontWeight="Bold" Foreground="#059669"/>
                     </StackPanel>
 
-                    <Border CornerRadius="4" BorderBrush="#CBD5E1" BorderThickness="1" Background="#F8FAFC" Padding="20" Margin="0,0,0,20">
+                    <Border CornerRadius="8" BorderBrush="#CBD5E1" BorderThickness="1" Background="#F8FAFC" Padding="20" Margin="0,0,0,20">
                         <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto">
                             <TextBlock Text="{Binding ViewNotesContent}" 
                                        FontSize="14" 
@@ -1332,24 +1271,23 @@
                     </Border>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Content="Close" Style="{StaticResource SecondaryButton}" Command="{Binding CloseNotesCommand}" Padding="24,12"/>
+                        <Button Content="Close" Style="{StaticResource SecondaryButton}" Command="{Binding CloseNotesCommand}" Padding="20,10"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
         </Border>
 
-        <!-- DELETE DELIVERY ITEM CONFIRM POPUP -->
+        <!-- DELETE CONFIRM POPUP -->
         <Border Grid.Row="0" Grid.RowSpan="4" Background="#80000000" Visibility="{Binding IsDeletingDeliveryItem, Converter={StaticResource BoolToVisibilityConverter}}">
-            <Border CornerRadius="6" Padding="30" Background="White" VerticalAlignment="Center" HorizontalAlignment="Center" MinWidth="400"
-                    BorderBrush="#CBD5E1" BorderThickness="1">
+            <Border CornerRadius="12" Padding="30" Background="White" VerticalAlignment="Center" HorizontalAlignment="Center" MinWidth="400"
+                    BorderBrush="#CBD5E1" BorderThickness="2">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="25" ShadowDepth="5" Opacity="0.25"/>
                 </Border.Effect>
                 <StackPanel>
                     <TextBlock Text="⚠️ CONFIRM DELETE" FontSize="20" FontWeight="Bold" Foreground="#DC2626" Margin="0,0,0,20"/>
 
-                    <Border CornerRadius="4" Background="#FEF2F2" Padding="16" Margin="0,0,0,20"
-                            BorderBrush="#DC2626" BorderThickness="1">
+                    <Border CornerRadius="8" Background="#FEE2E2" Padding="16" Margin="0,0,0,20" BorderBrush="#DC2626" BorderThickness="1">
                         <StackPanel>
                             <TextBlock Text="Are you sure you want to delete this delivery record?" FontSize="14" Foreground="#991B1B" FontWeight="Medium" Margin="0,0,0,12"/>
                             <Grid>
@@ -1369,8 +1307,8 @@
                                 <TextBlock Grid.Row="1" Grid.Column="0" Text="Delivered:" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                                 <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ConfirmDeleteItem.DeliveredQty}" Foreground="#059669" FontWeight="Bold" Margin="0,0,0,4"/>
 
-                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Returned:" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,0"/>
-                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding ConfirmDeleteItem.ReturnedQty}" Foreground="#DC2626" FontWeight="Bold" Margin="0,0,0,0"/>
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Returned:" FontWeight="Bold" Foreground="#64748B"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding ConfirmDeleteItem.ReturnedQty}" Foreground="#DC2626" FontWeight="Bold"/>
                             </Grid>
                         </StackPanel>
                     </Border>
@@ -1378,8 +1316,8 @@
                     <TextBlock Text="This action cannot be undone. The order balance will be updated accordingly." FontSize="12" Foreground="#64748B" Margin="0,0,0,20"/>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Content="Cancel" Style="{StaticResource SecondaryButton}" Command="{Binding CancelDeleteDeliveryItemCommand}" Margin="0,0,12,0" Padding="24,12"/>
-                        <Button Content="Delete" Style="{StaticResource DangerButton}" Command="{Binding ConfirmDeleteDeliveryItemCommand}" Padding="24,12"/>
+                        <Button Content="Cancel" Style="{StaticResource SecondaryButton}" Command="{Binding CancelDeleteDeliveryItemCommand}" Margin="0,0,12,0" Padding="20,10"/>
+                        <Button Content="Delete" Style="{StaticResource DangerButton}" Command="{Binding ConfirmDeleteDeliveryItemCommand}" Padding="20,10"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -1387,13 +1325,13 @@
 
         <!-- EDIT DELIVERY ITEM POPUP -->
         <Border Grid.Row="0" Grid.RowSpan="4" Background="#80000000" Visibility="{Binding IsEditingDeliveryItem, Converter={StaticResource BoolToVisibilityConverter}}">
-            <Border CornerRadius="6" Padding="30" Margin="100,60" Background="White" VerticalAlignment="Center" HorizontalAlignment="Center" MinWidth="450"
-                    BorderBrush="#CBD5E1" BorderThickness="1">
+            <Border CornerRadius="12" Padding="30" Margin="100,60" Background="White" VerticalAlignment="Center" HorizontalAlignment="Center" MinWidth="450"
+                    BorderBrush="#CBD5E1" BorderThickness="2">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="25" ShadowDepth="5" Opacity="0.25"/>
                 </Border.Effect>
                 <StackPanel>
-                    <TextBlock Text="✏️ EDIT DELIVERY" FontSize="20" FontWeight="Bold" Foreground="#059669" Margin="0,0,0,20"/>
+                    <TextBlock Text="✏️ EDIT DELIVERY" FontSize="20" FontWeight="Bold" Foreground="#1E40AF" Margin="0,0,0,20"/>
 
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -1425,25 +1363,25 @@
                         <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,0,12">
                             <TextBlock Text="DRIVER" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <ComboBox Style="{StaticResource ModernComboBox}" 
-                                      ItemsSource="{Binding DriverOptions}" 
-                                      SelectedItem="{Binding EditingDeliveryItemFromDb.Driver}"
-                                      IsEditable="True"
-                                      Text="{Binding EditingDeliveryItemFromDb.Driver, UpdateSourceTrigger=PropertyChanged}"
-                                      Background="White"
-                                      BorderBrush="#CBD5E1"
-                                      BorderThickness="1"/>
+                                     ItemsSource="{Binding DriverOptions}" 
+                                     SelectedItem="{Binding EditingDeliveryItemFromDb.Driver}"
+                                     IsEditable="True"
+                                     Text="{Binding EditingDeliveryItemFromDb.Driver, UpdateSourceTrigger=PropertyChanged}"
+                                     Background="White"
+                                     BorderBrush="#CBD5E1"
+                                     BorderThickness="1"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,10,12">
                             <TextBlock Text="VEHICLE" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <ComboBox Style="{StaticResource ModernComboBox}" 
-                                      ItemsSource="{Binding VehicleOptions}" 
-                                      SelectedItem="{Binding EditingDeliveryItemFromDb.Vehicle}"
-                                      IsEditable="True"
-                                      Text="{Binding EditingDeliveryItemFromDb.Vehicle, UpdateSourceTrigger=PropertyChanged}"
-                                      Background="White"
-                                      BorderBrush="#CBD5E1"
-                                      BorderThickness="1"/>
+                                     ItemsSource="{Binding VehicleOptions}" 
+                                     SelectedItem="{Binding EditingDeliveryItemFromDb.Vehicle}"
+                                     IsEditable="True"
+                                     Text="{Binding EditingDeliveryItemFromDb.Vehicle, UpdateSourceTrigger=PropertyChanged}"
+                                     Background="White"
+                                     BorderBrush="#CBD5E1"
+                                     BorderThickness="1"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,0,12">
@@ -1451,8 +1389,8 @@
                             <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditingDeliveryItemFromDb.Notes}" GotFocus="TextBox_GotFocus"/>
                         </StackPanel>
 
-                        <Border Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" CornerRadius="4" Background="#FEF3C7" Padding="12" Margin="0,0,0,12"
-                                BorderBrush="#D97706" BorderThickness="1">
+                        <Border Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" CornerRadius="8" Background="#FEF3C7" Padding="12" Margin="0,0,0,12"
+                                BorderBrush="#F59E0B" BorderThickness="1">
                             <StackPanel>
                                 <TextBlock Text="💡 Info: Order Balance" FontSize="11" FontWeight="Bold" Foreground="#92400E"/>
                                 <TextBlock FontSize="18" FontWeight="Bold" Foreground="#D97706">
@@ -1464,8 +1402,8 @@
                     </Grid>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
-                        <Button Content="Cancel" Style="{StaticResource SecondaryButton}" Command="{Binding CancelEditDeliveryItemCommand}" Margin="0,0,12,0" Padding="24,12"/>
-                        <Button Content="Save Changes" Style="{StaticResource SuccessButton}" Command="{Binding SaveEditDeliveryItemCommand}" Padding="24,12"/>
+                        <Button Content="Cancel" Style="{StaticResource SecondaryButton}" Command="{Binding CancelEditDeliveryItemCommand}" Margin="0,0,12,0" Padding="20,10"/>
+                        <Button Content="Save Changes" Style="{StaticResource SuccessButton}" Command="{Binding SaveEditDeliveryItemCommand}" Padding="20,10"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -1473,8 +1411,8 @@
 
         <!-- IMPORT LOG POPUP -->
         <Border Grid.Row="0" Grid.RowSpan="4" Background="#80000000" Visibility="{Binding IsViewingImportLog, Converter={StaticResource BoolToVisibilityConverter}}">
-            <Border CornerRadius="6" Padding="30" Margin="40,20" Background="White" VerticalAlignment="Stretch"
-                    BorderBrush="#CBD5E1" BorderThickness="1">
+            <Border CornerRadius="12" Padding="30" Margin="40,20" Background="White" VerticalAlignment="Stretch"
+                    BorderBrush="#CBD5E1" BorderThickness="2">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="25" ShadowDepth="5" Opacity="0.25"/>
                 </Border.Effect>
@@ -1487,7 +1425,7 @@
 
                     <StackPanel Grid.Row="0" Margin="0,0,0,20">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="📋 IMPORT HISTORY" FontSize="22" FontWeight="Bold" Foreground="#059669"/>
+                            <TextBlock Text="📋 IMPORT HISTORY" FontSize="22" FontWeight="Bold" Foreground="#1E40AF"/>
                             <TextBlock Text=" - " FontSize="22" Foreground="#64748B" VerticalAlignment="Center"/>
                             <TextBlock Text="{Binding ImportHistory.Count, StringFormat='{}{0} sessions'}" FontSize="16" Foreground="#64748B" VerticalAlignment="Center"/>
                         </StackPanel>
@@ -1498,14 +1436,14 @@
                         <ItemsControl ItemsSource="{Binding ImportHistory}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border CornerRadius="4" BorderBrush="#CBD5E1" BorderThickness="1" Margin="0,0,0,16" Padding="0">
+                                    <Border CornerRadius="8" BorderBrush="#CBD5E1" BorderThickness="1" Margin="0,0,0,16">
                                         <Grid>
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="Auto"/>
                                                 <RowDefinition Height="*"/>
                                             </Grid.RowDefinitions>
 
-                                            <Border Grid.Row="0" Background="#059669" CornerRadius="4,4,0,0" Padding="20,16">
+                                            <Border Grid.Row="0" Background="#1E40AF" CornerRadius="8,8,0,0" Padding="20,16">
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="*"/>
@@ -1517,12 +1455,12 @@
                                                                    FontSize="16" FontWeight="Bold" Foreground="White"/>
                                                         <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                                                             <Border Background="White" CornerRadius="12" Padding="10,4" Margin="0,0,10,0">
-                                                                <TextBlock Foreground="#059669" FontSize="11" FontWeight="Bold">
+                                                                <TextBlock Foreground="#1E40AF" FontSize="11" FontWeight="Bold">
                                                                     <Run Text="{Binding UpdatedOrders, Mode=OneWay}"/>
                                                                     <Run Text=" orders updated"/>
                                                                 </TextBlock>
                                                             </Border>
-                                                            <Border Background="#10B981" CornerRadius="12" Padding="10,4">
+                                                            <Border Background="#059669" CornerRadius="12" Padding="10,4">
                                                                 <TextBlock Foreground="White" FontSize="11" FontWeight="Bold">
                                                                     <Run Text="{Binding TotalChanges, Mode=OneWay}"/>
                                                                     <Run Text=" changes"/>
@@ -1531,19 +1469,17 @@
                                                         </StackPanel>
                                                     </StackPanel>
 
-                                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" MaxWidth="300">
-                                                        <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" 
-                                                                 Width="250" 
-                                                                 Padding="12,10" 
-                                                                 FontSize="12"
-                                                                 BorderThickness="0"
-                                                                 Background="#D1FAE5"
-                                                                 BorderBrush="#059669"/>
-                                                    </StackPanel>
+                                                    <TextBox Grid.Column="1" 
+                                                             Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" 
+                                                             Width="250" 
+                                                             Padding="12,10" 
+                                                             FontSize="12"
+                                                             BorderThickness="0"
+                                                             Background="#DBEAFE"/>
                                                 </Grid>
                                             </Border>
 
-                                            <ItemsControl Grid.Row="1" ItemsSource="{Binding Entries}" Margin="0">
+                                            <ItemsControl Grid.Row="1" ItemsSource="{Binding Entries}">
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>
                                                         <Border BorderBrush="#E2E8F0" BorderThickness="0,1,0,0" Padding="20,16">
@@ -1615,16 +1551,15 @@
                     </ScrollViewer>
 
                     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
-                        <Border Background="#F0FDF4" CornerRadius="4" Padding="16,12" Margin="0,0,16,0"
-                                BorderBrush="#CBD5E1" BorderThickness="1">
-                            <TextBlock FontSize="12" Foreground="#059669">
+                        <Border Background="#DBEAFE" CornerRadius="8" Padding="16,12" Margin="0,0,16,0" BorderBrush="#3B82F6" BorderThickness="1">
+                            <TextBlock FontSize="12" Foreground="#1E40AF">
                                 <Run Text="Total: "/>
                                 <Run Text="{Binding ImportHistory.Count, Mode=OneWay}" FontWeight="Bold"/>
                                 <Run Text=" import sessions"/>
                             </TextBlock>
                         </Border>
                         <Button Content="Close" Style="{StaticResource SecondaryButton}" 
-                                Command="{Binding CloseImportLogCommand}" Padding="24,12"/>
+                                Command="{Binding CloseImportLogCommand}" Padding="20,10"/>
                     </StackPanel>
                 </Grid>
             </Border>
