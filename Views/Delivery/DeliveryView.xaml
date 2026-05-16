@@ -383,6 +383,19 @@
             <Setter Property="BorderBrush" Value="Black"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
+
+        <!-- COLOR HEADER - Pink -->
+        <Style x:Key="HeaderPink" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#EC4899"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="10,10"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontFamily" Value="Segoe UI, Arial"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="BorderBrush" Value="Black"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
     </UserControl.Resources>
 
     <!-- MAIN LAYOUT -->
@@ -535,7 +548,7 @@
                     </StackPanel>
 
                     <!-- Filter: Color -->
-                    <StackPanel Margin="0,0,10,0" Width="110">
+                    <StackPanel Margin="0,0,10,0" Width="130">
                         <TextBlock Text="COLOR" FontSize="8" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                         <ComboBox Style="{StaticResource ModernComboBox}" 
                                   ItemsSource="{Binding ColorOptions}" 
@@ -617,6 +630,74 @@
                             <DataTemplate>
                                 <Border Background="#F5F3FF" CornerRadius="3" Padding="6,3" HorizontalAlignment="Center">
                                     <TextBlock Text="{Binding TypeOfWork}" FontSize="10" Foreground="#5B21B6" FontWeight="Medium"/>
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- COLOR - Pink (NEW) -->
+                    <DataGridTemplateColumn Header="COLOR" Width="110" HeaderStyle="{StaticResource HeaderPink}">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Border CornerRadius="3" Padding="6,3" HorizontalAlignment="Center">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="#FDF2F8"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Color}" Value="Clear">
+                                                    <Setter Property="Background" Value="#E0F2FE"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Color}" Value="Bronze">
+                                                    <Setter Property="Background" Value="#FEF3C7"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Color}" Value="Grey">
+                                                    <Setter Property="Background" Value="#F1F5F9"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Color}" Value="Blue">
+                                                    <Setter Property="Background" Value="#DBEAFE"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Color}" Value="Green">
+                                                    <Setter Property="Background" Value="#D1FAE5"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Color}" Value="Pink">
+                                                    <Setter Property="Background" Value="#FCE7F3"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Color}" Value="Black">
+                                                    <Setter Property="Background" Value="#1E293B"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <TextBlock Text="{Binding Color}" FontSize="10" FontWeight="SemiBold">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#BE185D"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Color}" Value="Clear">
+                                                        <Setter Property="Foreground" Value="#0369A1"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Color}" Value="Bronze">
+                                                        <Setter Property="Foreground" Value="#92400E"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Color}" Value="Grey">
+                                                        <Setter Property="Foreground" Value="#475569"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Color}" Value="Blue">
+                                                        <Setter Property="Foreground" Value="#1D4ED8"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Color}" Value="Green">
+                                                        <Setter Property="Foreground" Value="#047857"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Color}" Value="Pink">
+                                                        <Setter Property="Foreground" Value="#BE185D"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Color}" Value="Black">
+                                                        <Setter Property="Foreground" Value="White"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
                                 </Border>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
@@ -1175,37 +1256,45 @@
                                       SelectedItem="{Binding EditingOrder.TypeOfWork}"/>
                         </StackPanel>
 
+                        <!-- COLOR - Added to Edit Popup -->
                         <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,10,12">
+                            <TextBlock Text="COLOR" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
+                            <ComboBox Style="{StaticResource ModernComboBox}" 
+                                      ItemsSource="{Binding ColorOptions}" 
+                                      SelectedItem="{Binding EditingOrder.Color}"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,12">
                             <TextBlock Text="ORDER QTY" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditingOrder.OrderQty}" GotFocus="TextBox_GotFocus"/>
                         </StackPanel>
 
-                        <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,12">
+                        <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,10,12">
                             <TextBlock Text="ORDER SQM" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditingOrder.OrderSQM}" GotFocus="TextBox_GotFocus"/>
                         </StackPanel>
 
-                        <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,10,12">
+                        <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,10,12">
                             <TextBlock Text="SALESMAN" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <ComboBox Style="{StaticResource ModernComboBox}" 
                                       ItemsSource="{Binding SalesmanOptions}" 
                                       SelectedItem="{Binding EditingOrder.Salesman}"/>
                         </StackPanel>
 
-                        <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,10,12">
+                        <StackPanel Grid.Row="2" Grid.Column="2" Margin="0,0,0,12">
                             <TextBlock Text="STATUS" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <ComboBox Style="{StaticResource ModernComboBox}" 
                                       ItemsSource="{Binding StatusOptions}" 
                                       SelectedItem="{Binding EditingOrder.Status}"/>
                         </StackPanel>
 
-                        <StackPanel Grid.Row="2" Grid.Column="2" Margin="0,0,0,12">
+                        <StackPanel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,0,0,12">
                             <TextBlock Text="NOTES" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <TextBox Style="{StaticResource ModernTextBox}" 
                                     Text="{Binding EditingOrder.Notes}"
                                     TextWrapping="Wrap"
                                     AcceptsReturn="True"
-                                    MinHeight="40"
+                                    MinHeight="60"
                                     GotFocus="TextBox_GotFocus"/>
                         </StackPanel>
                     </Grid>

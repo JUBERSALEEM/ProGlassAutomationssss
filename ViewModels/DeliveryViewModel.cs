@@ -797,18 +797,19 @@ namespace ProGlassAutomation.ViewModels
 
                     if (existingDelivery != null)
                     {
-                        // ✅ CHECK IF SOURCE DATA HAS CHANGED
+                        // ✅ CHECK IF SOURCE DATA HAS CHANGED (including Color)
                         bool hasChanges =
                             existingDelivery.OrderQty != sourceOrder.Qty ||
                             existingDelivery.OrderSQM != sourceOrder.SQM ||
                             existingDelivery.Notes != sourceOrder.Notes ||
                             existingDelivery.Company != sourceOrder.Company ||
                             existingDelivery.TypeOfWork != sourceOrder.TypeOfWork ||
-                            existingDelivery.Salesman != sourceOrder.Salesman;
+                            existingDelivery.Salesman != sourceOrder.Salesman ||
+                            existingDelivery.Color != sourceOrder.Color;  // ✅ ADDED: Color change check
 
                         if (hasChanges)
                         {
-                            // ✅ Track changes for import log
+                            // ✅ Track changes for import log (including Color)
                             var changes = new ObservableCollection<ImportLogItem>();
 
                             if (existingDelivery.OrderQty != sourceOrder.Qty)
@@ -821,6 +822,8 @@ namespace ProGlassAutomation.ViewModels
                                 changes.Add(new ImportLogItem { FieldName = "Type of Work", OldValue = existingDelivery.TypeOfWork, NewValue = sourceOrder.TypeOfWork ?? "" });
                             if (existingDelivery.Salesman != sourceOrder.Salesman)
                                 changes.Add(new ImportLogItem { FieldName = "Salesman", OldValue = existingDelivery.Salesman, NewValue = sourceOrder.Salesman ?? "" });
+                            if (existingDelivery.Color != sourceOrder.Color)  // ✅ ADDED: Color change tracking
+                                changes.Add(new ImportLogItem { FieldName = "Color", OldValue = existingDelivery.Color ?? "", NewValue = sourceOrder.Color ?? "" });
                             if (existingDelivery.Notes != sourceOrder.Notes)
                                 changes.Add(new ImportLogItem { FieldName = "Notes", OldValue = existingDelivery.Notes ?? "", NewValue = sourceOrder.Notes ?? "" });
 
@@ -833,12 +836,13 @@ namespace ProGlassAutomation.ViewModels
                                 Changes = changes
                             });
 
-                            // ✅ UPDATE EXISTING DELIVERY WITH NEW VALUES
+                            // ✅ UPDATE EXISTING DELIVERY WITH NEW VALUES (including Color)
                             existingDelivery.OrderQty = sourceOrder.Qty;
                             existingDelivery.OrderSQM = sourceOrder.SQM;
                             existingDelivery.Company = sourceOrder.Company ?? "";
                             existingDelivery.TypeOfWork = sourceOrder.TypeOfWork ?? "";
                             existingDelivery.Salesman = sourceOrder.Salesman ?? "";
+                            existingDelivery.Color = sourceOrder.Color ?? "";  // ✅ ADDED: Color update
                             existingDelivery.Notes = sourceOrder.Notes ?? "";
                             existingDelivery.UpdatedDate = DateTime.Today;
                             UpdateOrderStatus(existingDelivery);
@@ -855,7 +859,7 @@ namespace ProGlassAutomation.ViewModels
                         continue;
                     }
 
-                    // CREATE NEW DELIVERY ORDER
+                    // CREATE NEW DELIVERY ORDER (including Color from DailyWork)
                     var newDelivery = new Delivery
                     {
                         Id = DeliveryOrders.Count > 0 ? DeliveryOrders.Max(d => d.Id) + 1 : 1,
@@ -868,7 +872,7 @@ namespace ProGlassAutomation.ViewModels
                         OrderQty = sourceOrder.Qty,
                         OrderSQM = sourceOrder.SQM,
                         Salesman = sourceOrder.Salesman ?? "",
-                        Color = sourceOrder.Color ?? "",
+                        Color = sourceOrder.Color ?? "",  // ✅ ADDED: Color from DailyWork
                         ProductionStatus = sourceOrder.ProductionStatus ?? "",
                         Status = "Pending",
                         Notes = sourceOrder.Notes ?? "",
@@ -941,7 +945,7 @@ namespace ProGlassAutomation.ViewModels
             if (!string.IsNullOrWhiteSpace(FilterCompany))
                 filterExpressions.Add($"Company = '{FilterCompany}'");
 
-            if (!string.IsNullOrWhiteSpace(FilterColor))
+            if (!string.IsNullOrWhiteSpace(FilterColor))  // ✅ ADDED: Color filter
                 filterExpressions.Add($"Color = '{FilterColor}'");
 
             if (FilterStartDate.HasValue)
@@ -970,6 +974,7 @@ namespace ProGlassAutomation.ViewModels
             dataTable.Columns.Add("Company", typeof(string));
             dataTable.Columns.Add("PINumber", typeof(string));
             dataTable.Columns.Add("TypeOfWork", typeof(string));
+            dataTable.Columns.Add("Color", typeof(string));  // ✅ ADDED: Color column
             dataTable.Columns.Add("OrderQty", typeof(int));
             dataTable.Columns.Add("TotalDelivered", typeof(int));
             dataTable.Columns.Add("TotalReturned", typeof(int));
@@ -977,7 +982,6 @@ namespace ProGlassAutomation.ViewModels
             dataTable.Columns.Add("OrderSQM", typeof(double));
             dataTable.Columns.Add("Salesman", typeof(string));
             dataTable.Columns.Add("Status", typeof(string));
-            dataTable.Columns.Add("Color", typeof(string));
             dataTable.Columns.Add("Notes", typeof(string));
 
             foreach (var order in DeliveryOrders)
@@ -988,6 +992,7 @@ namespace ProGlassAutomation.ViewModels
                 row["Company"] = order.Company ?? "";
                 row["PINumber"] = order.PINumber ?? "";
                 row["TypeOfWork"] = order.TypeOfWork ?? "";
+                row["Color"] = order.Color ?? "";  // ✅ ADDED: Color data
                 row["OrderQty"] = order.OrderQty;
                 row["TotalDelivered"] = order.TotalDelivered;
                 row["TotalReturned"] = order.TotalReturned;
@@ -995,7 +1000,6 @@ namespace ProGlassAutomation.ViewModels
                 row["OrderSQM"] = order.OrderSQM;
                 row["Salesman"] = order.Salesman ?? "";
                 row["Status"] = order.Status ?? "";
-                row["Color"] = order.Color ?? "";
                 row["Notes"] = order.Notes ?? "";
                 dataTable.Rows.Add(row);
             }
@@ -1034,6 +1038,7 @@ namespace ProGlassAutomation.ViewModels
                         row["Company"] = order.Company ?? "";
                         row["PINumber"] = order.PINumber ?? "";
                         row["TypeOfWork"] = order.TypeOfWork ?? "";
+                        row["Color"] = order.Color ?? "";  // ✅ ADDED: Color update
                         row["OrderQty"] = order.OrderQty;
                         row["TotalDelivered"] = order.TotalDelivered;
                         row["TotalReturned"] = order.TotalReturned;
@@ -1041,7 +1046,6 @@ namespace ProGlassAutomation.ViewModels
                         row["OrderSQM"] = order.OrderSQM;
                         row["Salesman"] = order.Salesman ?? "";
                         row["Status"] = order.Status ?? "";
-                        row["Color"] = order.Color ?? "";
                         row["Notes"] = order.Notes ?? "";
                         row.EndEdit();
 
@@ -1228,7 +1232,7 @@ namespace ProGlassAutomation.ViewModels
                     existing.OrderQty = EditingOrder.OrderQty;
                     existing.OrderSQM = EditingOrder.OrderSQM;
                     existing.Salesman = EditingOrder.Salesman;
-                    existing.Color = EditingOrder.Color;
+                    existing.Color = EditingOrder.Color;  // ✅ ADDED: Color update
                     existing.Status = EditingOrder.Status;
                     existing.Notes = EditingOrder.Notes;
                     existing.UpdatedDate = DateTime.Today;
@@ -1646,11 +1650,11 @@ namespace ProGlassAutomation.ViewModels
         private void ExportToCSV(string filePath)
         {
             var sb = new System.Text.StringBuilder();
-            sb.AppendLine("Date,Company,PI Number,Type of Work,Order Qty,Delivered,Returned,Balance,SQM,Salesman,Status,Color,Notes");
+            sb.AppendLine("Date,Company,PI Number,Type of Work,Color,Order Qty,Delivered,Returned,Balance,SQM,Salesman,Status,Notes");
 
             foreach (var order in DeliveryOrders)
             {
-                sb.AppendLine($"\"{order.Date:dd-MM-yyyy}\",\"{order.Company}\",\"{order.PINumber}\",\"{order.TypeOfWork}\",{order.OrderQty},{order.TotalDelivered},{order.TotalReturned},{order.Balance},{order.OrderSQM:N2},\"{order.Salesman}\",\"{order.Status}\",\"{order.Color}\",\"{order.Notes}\"");
+                sb.AppendLine($"\"{order.Date:dd-MM-yyyy}\",\"{order.Company}\",\"{order.PINumber}\",\"{order.TypeOfWork}\",\"{order.Color}\",{order.OrderQty},{order.TotalDelivered},{order.TotalReturned},{order.Balance},{order.OrderSQM:N2},\"{order.Salesman}\",\"{order.Status}\",\"{order.Notes}\"");
             }
 
             System.IO.File.WriteAllText(filePath, sb.ToString(), System.Text.Encoding.UTF8);
@@ -1749,6 +1753,7 @@ namespace ProGlassAutomation.ViewModels
             dataGrid.Columns.Add(new DataGridTextColumn { Header = "Company", Binding = new System.Windows.Data.Binding("Company"), Width = 120 });
             dataGrid.Columns.Add(new DataGridTextColumn { Header = "PI No", Binding = new System.Windows.Data.Binding("PINumber"), Width = 100 });
             dataGrid.Columns.Add(new DataGridTextColumn { Header = "Type", Binding = new System.Windows.Data.Binding("TypeOfWork"), Width = 100 });
+            dataGrid.Columns.Add(new DataGridTextColumn { Header = "Color", Binding = new System.Windows.Data.Binding("Color"), Width = 80 });  // ✅ ADDED: Color column
             dataGrid.Columns.Add(new DataGridTextColumn { Header = "Order Qty", Binding = new System.Windows.Data.Binding("OrderQty"), Width = 70 });
             dataGrid.Columns.Add(new DataGridTextColumn { Header = "Delivered", Binding = new System.Windows.Data.Binding("TotalDelivered"), Width = 70 });
             dataGrid.Columns.Add(new DataGridTextColumn { Header = "Returned", Binding = new System.Windows.Data.Binding("TotalReturned"), Width = 70 });
@@ -1756,7 +1761,6 @@ namespace ProGlassAutomation.ViewModels
             dataGrid.Columns.Add(new DataGridTextColumn { Header = "SQM", Binding = new System.Windows.Data.Binding("OrderSQM") { StringFormat = "N2" }, Width = 60 });
             dataGrid.Columns.Add(new DataGridTextColumn { Header = "Salesman", Binding = new System.Windows.Data.Binding("Salesman"), Width = 90 });
             dataGrid.Columns.Add(new DataGridTextColumn { Header = "Status", Binding = new System.Windows.Data.Binding("Status"), Width = 80 });
-            dataGrid.Columns.Add(new DataGridTextColumn { Header = "Color", Binding = new System.Windows.Data.Binding("Color"), Width = 60 });
 
             grid.Children.Add(dataGrid);
 
