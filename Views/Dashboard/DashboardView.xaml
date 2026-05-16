@@ -47,6 +47,12 @@
             <Setter Property="Effect" Value="{StaticResource GlassShadow}"/>
         </Style>
 
+        <Style x:Key="InnerCard" TargetType="Border">
+            <Setter Property="Background" Value="#F8FAFC"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="12"/>
+        </Style>
+
         <Style x:Key="IconBadge" TargetType="Border">
             <Setter Property="Width" Value="40"/>
             <Setter Property="Height" Value="40"/>
@@ -151,53 +157,54 @@
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
-                                <Border Width="44" Height="44" CornerRadius="10" Background="#E0F2FE">
-                                    <TextBlock Text="📦" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,14">
+                                <Border Width="48" Height="48" CornerRadius="12" Background="#E0F2FE">
+                                    <TextBlock Text="📦" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <StackPanel Margin="10,0,0,0">
-                                    <TextBlock Text="SHEET STORE" FontSize="12" FontWeight="Bold" Foreground="{StaticResource SheetStoreBlue}"/>
-                                    <TextBlock Text="Inventory Management" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock Text="SHEET STORE" FontSize="14" FontWeight="Bold" Foreground="{StaticResource SheetStoreBlue}"/>
+                                    <TextBlock Text="Inventory Management" FontSize="10" Foreground="{StaticResource TextMuted}"/>
                                 </StackPanel>
                             </StackPanel>
 
-                            <Grid Grid.Row="1" Margin="0,0,0,12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
+                            <!-- Stats Card -->
+                            <Border Grid.Row="1" Style="{StaticResource InnerCard}" Margin="0,0,0,14">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
 
-                                <StackPanel Grid.Column="0" Grid.Row="0" Margin="0,0,0,8">
-                                    <TextBlock Text="Total Stock" FontSize="9" Foreground="{StaticResource TextMuted}"/>
-                                    <TextBlock x:Name="SheetTotalStock" Text="0" FontSize="20" FontWeight="Bold" Foreground="{StaticResource SheetStoreBlue}"/>
-                                </StackPanel>
+                                    <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                                        <TextBlock Text="Total Stock" FontSize="10" Foreground="{StaticResource TextMuted}" TextAlignment="Center"/>
+                                        <TextBlock x:Name="SheetTotalStock" Text="0" FontSize="18" FontWeight="Bold" Foreground="{StaticResource SheetStoreBlue}" TextAlignment="Center"/>
+                                    </StackPanel>
 
-                                <StackPanel Grid.Column="1" Grid.Row="0" Margin="0,0,0,8">
-                                    <TextBlock Text="Available" FontSize="9" Foreground="{StaticResource TextMuted}"/>
-                                    <TextBlock x:Name="SheetBalance" Text="0" FontSize="20" FontWeight="Bold" Foreground="{StaticResource SuccessGreen}"/>
-                                </StackPanel>
+                                    <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                                        <TextBlock Text="Available" FontSize="10" Foreground="{StaticResource TextMuted}" TextAlignment="Center"/>
+                                        <TextBlock x:Name="SheetBalance" Text="0" FontSize="18" FontWeight="Bold" Foreground="{StaticResource SuccessGreen}" TextAlignment="Center"/>
+                                    </StackPanel>
 
-                                <StackPanel Grid.Column="0" Grid.Row="1">
-                                    <TextBlock Text="Types" FontSize="9" Foreground="{StaticResource TextMuted}"/>
-                                    <TextBlock x:Name="SheetTypes" Text="0" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextDark}"/>
-                                </StackPanel>
+                                    <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                                        <TextBlock Text="Types" FontSize="10" Foreground="{StaticResource TextMuted}" TextAlignment="Center"/>
+                                        <TextBlock x:Name="SheetTypes" Text="0" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextDark}" TextAlignment="Center"/>
+                                    </StackPanel>
 
-                                <StackPanel Grid.Column="1" Grid.Row="1">
-                                    <TextBlock Text="Value" FontSize="9" Foreground="{StaticResource TextMuted}"/>
-                                    <TextBlock x:Name="SheetValue" Text="$0" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource CyanAccent}"/>
-                                </StackPanel>
-                            </Grid>
+                                    <StackPanel Grid.Column="3" HorizontalAlignment="Center">
+                                        <TextBlock Text="Value" FontSize="10" Foreground="{StaticResource TextMuted}" TextAlignment="Center"/>
+                                        <TextBlock x:Name="SheetValue" Text="$0" FontSize="18" FontWeight="Bold" Foreground="{StaticResource CyanAccent}" TextAlignment="Center"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
 
                             <Button x:Name="SheetStoreBtn" Grid.Row="2" Content="📦 View Store" Click="SheetStore_Click"
-                                  Style="{StaticResource PrimaryButton}" Background="#0EA5E9"/>
+                                  Style="{StaticResource PrimaryButton}" Background="#0EA5E9" Height="44" FontSize="12"/>
                         </Grid>
                     </Border>
 
@@ -206,53 +213,54 @@
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
-                                <Border Width="44" Height="44" CornerRadius="10" Background="#DCFCE7">
-                                    <TextBlock Text="📋" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,14">
+                                <Border Width="48" Height="48" CornerRadius="12" Background="#DCFCE7">
+                                    <TextBlock Text="📋" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <StackPanel Margin="10,0,0,0">
-                                    <TextBlock Text="DAILY WORKS" FontSize="12" FontWeight="Bold" Foreground="{StaticResource DailyWorksGreen}"/>
-                                    <TextBlock Text="Production Orders" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock Text="DAILY WORKS" FontSize="14" FontWeight="Bold" Foreground="{StaticResource DailyWorksGreen}"/>
+                                    <TextBlock Text="Production Orders" FontSize="10" Foreground="{StaticResource TextMuted}"/>
                                 </StackPanel>
                             </StackPanel>
 
-                            <Grid Grid.Row="1" Margin="0,0,0,12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
+                            <!-- Stats Card -->
+                            <Border Grid.Row="1" Style="{StaticResource InnerCard}" Margin="0,0,0,14">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
 
-                                <StackPanel Grid.Column="0" Grid.Row="0" Margin="0,0,0,8">
-                                    <TextBlock Text="Today Orders" FontSize="9" Foreground="{StaticResource TextMuted}"/>
-                                    <TextBlock x:Name="WorksTodayCount" Text="0" FontSize="20" FontWeight="Bold" Foreground="{StaticResource DailyWorksGreen}"/>
-                                </StackPanel>
+                                    <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                                        <TextBlock Text="Today Orders" FontSize="10" Foreground="{StaticResource TextMuted}" TextAlignment="Center"/>
+                                        <TextBlock x:Name="WorksTodayCount" Text="0" FontSize="18" FontWeight="Bold" Foreground="{StaticResource DailyWorksGreen}" TextAlignment="Center"/>
+                                    </StackPanel>
 
-                                <StackPanel Grid.Column="1" Grid.Row="0" Margin="0,0,0,8">
-                                    <TextBlock Text="Today SQM" FontSize="9" Foreground="{StaticResource TextMuted}"/>
-                                    <TextBlock x:Name="WorksTodaySQM" Text="0" FontSize="20" FontWeight="Bold" Foreground="{StaticResource PrimaryBlue}"/>
-                                </StackPanel>
+                                    <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                                        <TextBlock Text="Today SQM" FontSize="10" Foreground="{StaticResource TextMuted}" TextAlignment="Center"/>
+                                        <TextBlock x:Name="WorksTodaySQM" Text="0" FontSize="18" FontWeight="Bold" Foreground="{StaticResource PrimaryBlue}" TextAlignment="Center"/>
+                                    </StackPanel>
 
-                                <StackPanel Grid.Column="0" Grid.Row="1">
-                                    <TextBlock Text="Total Records" FontSize="9" Foreground="{StaticResource TextMuted}"/>
-                                    <TextBlock x:Name="WorksTotalRecords" Text="0" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextDark}"/>
-                                </StackPanel>
+                                    <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                                        <TextBlock Text="Total Records" FontSize="10" Foreground="{StaticResource TextMuted}" TextAlignment="Center"/>
+                                        <TextBlock x:Name="WorksTotalRecords" Text="0" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextDark}" TextAlignment="Center"/>
+                                    </StackPanel>
 
-                                <StackPanel Grid.Column="1" Grid.Row="1">
-                                    <TextBlock Text="Total SQM" FontSize="9" Foreground="{StaticResource TextMuted}"/>
-                                    <TextBlock x:Name="WorksTotalSQM" Text="0" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource PurpleAccent}"/>
-                                </StackPanel>
-                            </Grid>
+                                    <StackPanel Grid.Column="3" HorizontalAlignment="Center">
+                                        <TextBlock Text="Total SQM" FontSize="10" Foreground="{StaticResource TextMuted}" TextAlignment="Center"/>
+                                        <TextBlock x:Name="WorksTotalSQM" Text="0" FontSize="18" FontWeight="Bold" Foreground="{StaticResource PurpleAccent}" TextAlignment="Center"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
 
                             <Button x:Name="DailyWorksBtn" Grid.Row="2" Content="📋 View Works" Click="DailyWorks_Click"
-                                  Style="{StaticResource PrimaryButton}" Background="#22C55E"/>
+                                  Style="{StaticResource PrimaryButton}" Background="#22C55E" Height="44" FontSize="12"/>
                         </Grid>
                     </Border>
 
@@ -261,53 +269,60 @@
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
-                                <Border Width="44" Height="44" CornerRadius="10" Background="#FFF7ED">
-                                    <TextBlock Text="🚚" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,14">
+                                <Border Width="48" Height="48" CornerRadius="12" Background="#FFF7ED">
+                                    <TextBlock Text="🚚" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <StackPanel Margin="10,0,0,0">
-                                    <TextBlock Text="DELIVERIES" FontSize="12" FontWeight="Bold" Foreground="{StaticResource DeliveryOrange}"/>
-                                    <TextBlock Text="Order Tracking" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock Text="DELIVERIES" FontSize="14" FontWeight="Bold" Foreground="{StaticResource DeliveryOrange}"/>
+                                    <TextBlock Text="Order Tracking" FontSize="10" Foreground="{StaticResource TextMuted}"/>
                                 </StackPanel>
                             </StackPanel>
 
-                            <Grid Grid.Row="1" Margin="0,0,0,12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
+                            <!-- Stats Card -->
+                            <Border Grid.Row="1" Style="{StaticResource InnerCard}" Margin="0,0,0,14">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
 
-                                <StackPanel Grid.Column="0" Grid.Row="0" Margin="0,0,0,8">
-                                    <TextBlock Text="Pending" FontSize="9" Foreground="{StaticResource TextMuted}"/>
-                                    <TextBlock x:Name="DeliveriesPending" Text="0" FontSize="20" FontWeight="Bold" Foreground="{StaticResource WarningOrange}"/>
-                                </StackPanel>
+                                    <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                                        <TextBlock Text="Pending" FontSize="10" Foreground="{StaticResource TextMuted}" TextAlignment="Center"/>
+                                        <TextBlock x:Name="DeliveriesPending" Text="0" FontSize="18" FontWeight="Bold" Foreground="{StaticResource WarningOrange}" TextAlignment="Center"/>
+                                    </StackPanel>
 
-                                <StackPanel Grid.Column="1" Grid.Row="0" Margin="0,0,0,8">
-                                    <TextBlock Text="Completed" FontSize="9" Foreground="{StaticResource TextMuted}"/>
-                                    <TextBlock x:Name="DeliveriesCompleted" Text="0" FontSize="20" FontWeight="Bold" Foreground="{StaticResource SuccessGreen}"/>
-                                </StackPanel>
+                                    <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                                        <TextBlock Text="Completed" FontSize="10" Foreground="{StaticResource TextMuted}" TextAlignment="Center"/>
+                                        <TextBlock x:Name="DeliveriesCompleted" Text="0" FontSize="18" FontWeight="Bold" Foreground="{StaticResource SuccessGreen}" TextAlignment="Center"/>
+                                    </StackPanel>
 
-                                <StackPanel Grid.Column="0" Grid.Row="1">
-                                    <TextBlock Text="Total Orders" FontSize="9" Foreground="{StaticResource TextMuted}"/>
-                                    <TextBlock x:Name="DeliveriesTotal" Text="0" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextDark}"/>
-                                </StackPanel>
+                                    <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                                        <TextBlock Text="Returned" FontSize="10" Foreground="{StaticResource TextMuted}" TextAlignment="Center"/>
+                                        <TextBlock x:Name="DeliveriesReturned" Text="0" FontSize="18" FontWeight="Bold" Foreground="{StaticResource DangerRed}" TextAlignment="Center"/>
+                                    </StackPanel>
 
-                                <StackPanel Grid.Column="1" Grid.Row="1">
-                                    <TextBlock Text="Balance" FontSize="9" Foreground="{StaticResource TextMuted}"/>
-                                    <TextBlock x:Name="DeliveriesBalance" Text="0" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource DangerRed}"/>
-                                </StackPanel>
-                            </Grid>
+                                    <StackPanel Grid.Column="3" HorizontalAlignment="Center">
+                                        <TextBlock Text="Total Orders" FontSize="10" Foreground="{StaticResource TextMuted}" TextAlignment="Center"/>
+                                        <TextBlock x:Name="DeliveriesTotal" Text="0" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextDark}" TextAlignment="Center"/>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="4" HorizontalAlignment="Center">
+                                        <TextBlock Text="Balance" FontSize="10" Foreground="{StaticResource TextMuted}" TextAlignment="Center"/>
+                                        <TextBlock x:Name="DeliveriesBalance" Text="0" FontSize="18" FontWeight="Bold" Foreground="{StaticResource PurpleAccent}" TextAlignment="Center"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
 
                             <Button x:Name="DeliveriesBtn" Grid.Row="2" Content="🚚 View Deliveries" Click="Deliveries_Click"
-                                  Style="{StaticResource PrimaryButton}" Background="#F97316"/>
+                                  Style="{StaticResource PrimaryButton}" Background="#F97316" Height="44" FontSize="12"/>
                         </Grid>
                     </Border>
                 </Grid>
