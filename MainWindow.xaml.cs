@@ -17,17 +17,19 @@ namespace ProGlassAutomation
         private readonly MainViewModel _viewModel;
         private DispatcherTimer _clockTimer;
 
-        // TRACK ALL CARDS - Always monitor mouse position
-        private Popup _openDropdown;
-        private string _openDropdownName;
-        private Border _hoveredCard;
+        // SINGLE SOURCE OF TRUTH
+        private Popup _activeDropdown;
+        private string _activeDropdownName;
 
         // Independent layer
         private Popup _screenshotPopup;
 
-        // Throttle
-        private DateTime _lastCheckTime;
-        private const int THROTTLE_MS = 16;
+        // Throttle validation
+        private DateTime _lastValidationTime;
+        private const int VALIDATION_THROTTLE_MS = 16;
+
+        // Thread safety
+        private readonly object _dropdownLock = new object();
 
         public MainWindow()
         {
@@ -45,83 +47,86 @@ namespace ProGlassAutomation
             };
         }
 
-        // ALWAYS TRACK MOUSE - Check which card mouse is over
         private void Window_MouseMove(object sender, MouseEventArgs e)
         {
             var now = DateTime.Now;
-            if ((now - _lastCheckTime).TotalMilliseconds < THROTTLE_MS)
+            if ((now - _lastValidationTime).TotalMilliseconds < VALIDATION_THROTTLE_MS)
                 return;
-            _lastCheckTime = now;
+            _lastValidationTime = now;
 
-            // Don't interfere with screenshot popup
+            ValidateDropdownState();
+        }
+
+        private void ValidateDropdownState()
+        {
             if (_screenshotPopup != null && _screenshotPopup.IsOpen)
                 return;
 
-            // Find which card mouse is currently over
-            Border cardUnderMouse = GetCardUnderMouse();
-
-            if (cardUnderMouse != null)
+            if (!Dispatcher.CheckAccess())
             {
-                // Mouse is over a card - open its dropdown
-                string dropdownName = cardUnderMouse.Tag as string;
-                if (!string.IsNullOrEmpty(dropdownName) && dropdownName != _openDropdownName)
-                {
-                    OpenDropdown(dropdownName, cardUnderMouse);
-                }
+                Dispatcher.Invoke(ValidateDropdownState);
+                return;
             }
-            else
-            {
-                // Mouse is not over any card - check if over open dropdown
-                bool overDropdown = IsOverOpenDropdown();
 
-                if (!overDropdown && _openDropdown != null)
+            if (_activeDropdown == null || !_activeDropdown.IsOpen)
+            {
+                _activeDropdown = null;
+                _activeDropdownName = null;
+                return;
+            }
+
+            Point mousePos = Mouse.GetPosition(this);
+            Button activeButton = GetButtonByDropdownName(_activeDropdownName);
+
+            if (activeButton != null)
+            {
+                bool mouseOverCard = IsMouseOverElement(activeButton, true);
+                bool mouseOverDropdown = IsMouseOverElement(_activeDropdown.Child as FrameworkElement, false);
+
+                if (!mouseOverCard && !mouseOverDropdown)
                 {
                     CloseDropdown();
                 }
             }
         }
 
-        private Border GetCardUnderMouse()
+        private bool IsMouseOverElement(FrameworkElement element, bool useParentBorder)
         {
+            if (element == null)
+                return false;
+
             try
             {
                 Point mousePos = Mouse.GetPosition(this);
 
-                // Check each module card
-                Border[] cards = new Border[]
+                FrameworkElement checkElement = element;
+                if (useParentBorder)
                 {
-                    GetCardBorder(BtnDashboard),
-                    GetCardBorder(BtnSubscription),
-                    GetCardBorder(BtnCalculators),
-                    GetCardBorder(BtnOperations),
-                    GetCardBorder(BtnReports),
-                    GetCardBorder(BtnSettings)
-                };
-
-                foreach (var card in cards)
-                {
-                    if (card == null) continue;
-
-                    GeneralTransform transform = card.TransformToAncestor(this);
-                    Point cardPos = transform.Transform(new Point(0, 0));
-
-                    if (mousePos.X >= cardPos.X && mousePos.X <= cardPos.X + card.ActualWidth &&
-                        mousePos.Y >= cardPos.Y && mousePos.Y <= cardPos.Y + card.ActualHeight)
-                    {
-                        return card;
-                    }
+                    var border = GetParentBorder(element);
+                    if (border != null)
+                        checkElement = border;
                 }
-            }
-            catch { }
 
-            return null;
+                GeneralTransform transform = checkElement.TransformToAncestor(this);
+                Point elementPos = transform.Transform(new Point(0, 0));
+
+                double width = checkElement.ActualWidth;
+                double height = checkElement.ActualHeight;
+
+                return mousePos.X >= elementPos.X &&
+                       mousePos.X <= elementPos.X + width &&
+                       mousePos.Y >= elementPos.Y &&
+                       mousePos.Y <= elementPos.Y + height;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
-        private Border GetCardBorder(Button button)
+        private Border GetParentBorder(DependencyObject element)
         {
-            if (button == null) return null;
-
-            DependencyObject parent = button;
+            DependencyObject parent = element;
             while (parent != null)
             {
                 if (parent is Border border)
@@ -131,58 +136,87 @@ namespace ProGlassAutomation
             return null;
         }
 
-        private bool IsOverOpenDropdown()
+        private Button GetButtonByDropdownName(string dropdownName)
         {
-            if (_openDropdown == null || !_openDropdown.IsOpen || _openDropdown.Child == null)
-                return false;
+            if (string.IsNullOrEmpty(dropdownName))
+                return null;
 
-            try
+            return dropdownName switch
             {
-                Point mousePos = Mouse.GetPosition(this);
-                GeneralTransform transform = _openDropdown.Child.TransformToAncestor(this);
-                Point popupPos = transform.Transform(new Point(0, 0));
-
-                return mousePos.X >= popupPos.X && mousePos.X <= popupPos.X + _openDropdown.Child.RenderSize.Width &&
-                       mousePos.Y >= popupPos.Y && mousePos.Y <= popupPos.Y + _openDropdown.Child.RenderSize.Height;
-            }
-            catch { }
-
-            return false;
-        }
-
-        private void OpenDropdown(string dropdownName, Border card)
-        {
-            var dropdown = this.FindName(dropdownName) as Popup;
-            if (dropdown == null) return;
-
-            // Close previous dropdown
-            if (_openDropdown != null && _openDropdown != dropdown)
-            {
-                try { _openDropdown.IsOpen = false; }
-                catch { }
-            }
-
-            _openDropdown = dropdown;
-            _openDropdownName = dropdownName;
-            _hoveredCard = card;
-
-            try { dropdown.IsOpen = true; }
-            catch { }
+                "DashboardDropdown" => BtnDashboard,
+                "LicensingDropdown" => BtnSubscription,
+                "CalculatorsDropdown" => BtnCalculators,
+                "OperationsDropdown" => BtnOperations,
+                "ReportsDropdown" => BtnReports,
+                "SettingsDropdown" => BtnSettings,
+                _ => null
+            };
         }
 
         private void CloseDropdown()
         {
-            if (_openDropdown != null)
+            lock (_dropdownLock)
             {
-                try { _openDropdown.IsOpen = false; }
-                catch { }
+                if (_activeDropdown != null)
+                {
+                    try { _activeDropdown.IsOpen = false; }
+                    catch { }
+                }
+                _activeDropdown = null;
+                _activeDropdownName = null;
             }
-            _openDropdown = null;
-            _openDropdownName = null;
-            _hoveredCard = null;
         }
 
-        // Click handlers for menu items
+        private void OpenDropdown(string dropdownName)
+        {
+            lock (_dropdownLock)
+            {
+                var dropdown = this.FindName(dropdownName) as Popup;
+                if (dropdown == null)
+                    return;
+
+                if (_activeDropdown != null && _activeDropdown != dropdown)
+                {
+                    try { _activeDropdown.IsOpen = false; }
+                    catch { }
+                }
+
+                _activeDropdown = dropdown;
+                _activeDropdownName = dropdownName;
+
+                try { dropdown.IsOpen = true; }
+                catch { }
+            }
+        }
+
+        // CLICK handler - open dropdown
+        private void DropdownButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button)
+            {
+                string dropdownName = button.Tag as string;
+                if (!string.IsNullOrEmpty(dropdownName))
+                {
+                    OpenDropdown(dropdownName);
+                }
+            }
+        }
+
+        // MOUSE ENTER handler - auto-open dropdown
+        private void DropdownButton_MouseEnter(object sender, MouseEventArgs e)
+        {
+            if (sender is Button button)
+            {
+                string dropdownName = button.Tag as string;
+                if (!string.IsNullOrEmpty(dropdownName))
+                {
+                    OpenDropdown(dropdownName);
+                }
+            }
+        }
+
+        // ==================== MENU HANDLERS ====================
+
         private void MenuItem_Overview_Click(object sender, RoutedEventArgs e)
         {
             CloseDropdown();
@@ -221,27 +255,47 @@ namespace ProGlassAutomation
 
         private void MenuItem_SGU_Click(object sender, RoutedEventArgs e)
         {
-            if (CheckLicense()) { CloseDropdown(); _viewModel.ShowSGUCalculator(); }
+            if (CheckLicense())
+            {
+                CloseDropdown();
+                _viewModel.ShowSGUCalculator();
+            }
         }
 
         private void MenuItem_DGU_Click(object sender, RoutedEventArgs e)
         {
-            if (CheckLicense()) { CloseDropdown(); _viewModel.ShowDGUCalculator(); }
+            if (CheckLicense())
+            {
+                CloseDropdown();
+                _viewModel.ShowDGUCalculator();
+            }
         }
 
         private void MenuItem_Lamination_Click(object sender, RoutedEventArgs e)
         {
-            if (CheckLicense()) { CloseDropdown(); _viewModel.ShowLaminationCalculator(); }
+            if (CheckLicense())
+            {
+                CloseDropdown();
+                _viewModel.ShowLaminationCalculator();
+            }
         }
 
         private void MenuItem_DguLam_Click(object sender, RoutedEventArgs e)
         {
-            if (CheckLicense()) { CloseDropdown(); _viewModel.ShowDGULaminationCalculator(); }
+            if (CheckLicense())
+            {
+                CloseDropdown();
+                _viewModel.ShowDGULaminationCalculator();
+            }
         }
 
         private void MenuItem_Optimizer_Click(object sender, RoutedEventArgs e)
         {
-            if (CheckLicense()) { CloseDropdown(); _viewModel.ShowGlassOptimization(); }
+            if (CheckLicense())
+            {
+                CloseDropdown();
+                _viewModel.ShowGlassOptimization();
+            }
         }
 
         private void MenuItem_SheetStore_Click(object sender, RoutedEventArgs e)
@@ -343,11 +397,11 @@ namespace ProGlassAutomation
             stack.Children.Add(header);
 
             var btnStack = new StackPanel { Margin = new Thickness(8, 12, 8, 12) };
-            btnStack.Children.Add(CreateQualityButton("📱", "HD 720p", "1280 × 720", "#64748B", "#F1F5F9", "720p", ScreenshotQuality.HD));
-            btnStack.Children.Add(CreateQualityButton("🖥️", "Full HD 1080p", "1920 × 1080", "#2563EB", "#DBEAFE", "1080p", ScreenshotQuality.FullHD));
-            btnStack.Children.Add(CreateQualityButton("🎬", "2K QHD", "2560 × 1440", "#D97706", "#FEF3C7", "2K", ScreenshotQuality.QHD));
-            btnStack.Children.Add(CreateQualityButton("📺", "4K UHD", "3840 × 2160", "#059669", "#D1FAE5", "4K", ScreenshotQuality.UltraHD));
-            btnStack.Children.Add(CreateQualityButton("🏆", "8K UHD", "7680 × 4320", "#DC2626", "#FEE2E2", "8K", ScreenshotQuality.UHD8K));
+            btnStack.Children.Add(CreateQualityButton("📱", "HD 720p", "2560 × 1440", "#64748B", "#F1F5F9", "720p", ScreenshotQuality.HD));
+            btnStack.Children.Add(CreateQualityButton("🖥️", "Full HD 1080p", "3840 × 2160", "#2563EB", "#DBEAFE", "1080p", ScreenshotQuality.FullHD));
+            btnStack.Children.Add(CreateQualityButton("🎬", "2K QHD", "5120 × 2880", "#D97706", "#FEF3C7", "2K", ScreenshotQuality.QHD));
+            btnStack.Children.Add(CreateQualityButton("📺", "4K UHD", "7680 × 4320", "#059669", "#D1FAE5", "4K", ScreenshotQuality.UltraHD));
+            btnStack.Children.Add(CreateQualityButton("🏆", "8K UHD", "10240 × 5760", "#DC2626", "#FEE2E2", "8K", ScreenshotQuality.UHD8K));
             stack.Children.Add(btnStack);
 
             var cancelBorder = new Border
@@ -453,33 +507,43 @@ namespace ProGlassAutomation
 
         public enum ScreenshotQuality { HD, FullHD, QHD, UltraHD, UHD8K }
 
-        private void CaptureScreenshot(ScreenshotQuality quality)
+        private async void CaptureScreenshot(ScreenshotQuality quality)
         {
             try
             {
-                int targetWidth = 1920, targetHeight = 1080;
+                // Target resolutions - maximum quality presets
+                int targetWidth = 3840, targetHeight = 2160; // 4K base
                 switch (quality)
                 {
-                    case ScreenshotQuality.HD: targetWidth = 1280; targetHeight = 720; break;
-                    case ScreenshotQuality.QHD: targetWidth = 2560; targetHeight = 1440; break;
-                    case ScreenshotQuality.UltraHD: targetWidth = 3840; targetHeight = 2160; break;
-                    case ScreenshotQuality.UHD8K: targetWidth = 7680; targetHeight = 4320; break;
+                    case ScreenshotQuality.HD: targetWidth = 2560; targetHeight = 1440; break;
+                    case ScreenshotQuality.QHD: targetWidth = 5120; targetHeight = 2880; break;
+                    case ScreenshotQuality.UltraHD: targetWidth = 7680; targetHeight = 4320; break;
+                    case ScreenshotQuality.UHD8K: targetWidth = 10240; targetHeight = 5760; break;
                 }
 
+                // Force layout update on UI thread
                 UpdateLayout();
                 Dispatcher.Invoke(() => { }, DispatcherPriority.Loaded);
 
-                double scale = Math.Max(targetWidth / ActualWidth, targetHeight / ActualHeight);
-                if (scale < 2.0) scale = 2.0;
+                // Calculate scale to reach target resolution
+                double scaleX = targetWidth / ActualWidth;
+                double scaleY = targetHeight / ActualHeight;
+                double scale = Math.Max(scaleX, scaleY);
+
+                // Minimum 4x scale for ultra quality
+                if (scale < 4.0) scale = 4.0;
 
                 int width = (int)(ActualWidth * scale);
                 int height = (int)(ActualHeight * scale);
                 int dpi = (int)(96 * scale);
 
-                RenderTargetBitmap rtb = new RenderTargetBitmap(width, height, dpi, dpi, PixelFormats.Pbgra32);
+                // Create high-quality bitmap on UI thread
+                RenderTargetBitmap rtb = new RenderTargetBitmap(
+                    width, height, dpi, dpi, PixelFormats.Pbgra32);
                 rtb.Render(this);
                 rtb.Freeze();
 
+                // Show save dialog
                 var sfd = new Microsoft.Win32.SaveFileDialog
                 {
                     Filter = "PNG Image|*.png|BMP Image|*.bmp|JPEG Image|*.jpg",
@@ -489,33 +553,50 @@ namespace ProGlassAutomation
 
                 if (sfd.ShowDialog() == true)
                 {
-                    BitmapEncoder encoder = Path.GetExtension(sfd.FileName).ToLower() switch
-                    {
-                        ".png" => new PngBitmapEncoder { Interlace = PngInterlaceOption.On },
-                        ".bmp" => new BmpBitmapEncoder(),
-                        _ => new JpegBitmapEncoder { QualityLevel = 100 }
-                    };
+                    string filePath = sfd.FileName;
+                    string extension = Path.GetExtension(filePath).ToLower();
 
-                    encoder.Frames.Add(BitmapFrame.Create(rtb));
-
-                    var directory = Path.GetDirectoryName(sfd.FileName);
+                    // Ensure directory exists
+                    var directory = Path.GetDirectoryName(filePath);
                     if (!Directory.Exists(directory) && !string.IsNullOrEmpty(directory))
                         Directory.CreateDirectory(directory);
 
-                    using var fs = File.OpenWrite(sfd.FileName);
-                    encoder.Save(fs);
+                    // Save file on background thread - ENCODE HERE, NOT ON UI THREAD
+                    await Task.Run(() =>
+                    {
+                        // Create encoder on background thread
+                        BitmapEncoder encoder = extension switch
+                        {
+                            ".png" => new PngBitmapEncoder { Interlace = PngInterlaceOption.On },
+                            ".bmp" => new BmpBitmapEncoder(),
+                            _ => new JpegBitmapEncoder { QualityLevel = 100 }
+                        };
 
-                    var fileInfo = new FileInfo(sfd.FileName);
+                        encoder.Frames.Add(BitmapFrame.Create(rtb));
+
+                        using var fs = File.Create(filePath);
+                        encoder.Save(fs);
+                    });
+
+                    // Get file size for display
+                    var fileInfo = new FileInfo(filePath);
                     string sizeDisplay = fileInfo.Length >= 1024 * 1024
                         ? $"{fileInfo.Length / (1024.0 * 1024.0):F2} MB"
                         : $"{fileInfo.Length / 1024.0:F1} KB";
 
-                    MessageBox.Show($"✅ Screenshot saved!\n\n📁 {sfd.FileName}\n📐 {width}x{height}\n💾 {sizeDisplay}", "Screenshot", MessageBoxButton.OK, MessageBoxImage.Information);
+                    // Show success message on UI thread
+                    Dispatcher.Invoke(() =>
+                    {
+                        MessageBox.Show($"✅ Screenshot saved!\n\n📁 {filePath}\n📐 {width}x{height}\n💾 {sizeDisplay}", "Screenshot", MessageBoxButton.OK, MessageBoxImage.Information);
+                    });
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error: {ex.Message}", "Screenshot Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                Dispatcher.Invoke(() =>
+                {
+                    MessageBox.Show($"Error: {ex.Message}", "Screenshot Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                });
             }
         }
 
