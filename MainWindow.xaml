@@ -5,63 +5,63 @@
         Title="ProGlass ERP System" Height="950" Width="1650"
         WindowStartupLocation="CenterScreen" Background="#F1F5F9"
         UseLayoutRounding="True" SnapsToDevicePixels="True"
-        TextOptions.TextFormattingMode="Display">
+        TextOptions.TextFormattingMode="Display"
+        MouseMove="Window_MouseMove">
 
     <Window.DataContext>
         <vm:MainViewModel/>
     </Window.DataContext>
 
     <Window.Resources>
-        <!-- Colors -->
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
         <SolidColorBrush x:Key="DeepBlue" Color="#1E3A8A"/>
         <SolidColorBrush x:Key="PrimaryBlue" Color="#2563EB"/>
-        <SolidColorBrush x:Key="TextDark" Color="#0F172A"/>
-        <SolidColorBrush x:Key="BorderSharp" Color="#CBD5E1"/>
-        <SolidColorBrush x:Key="HoverBlue" Color="#EFF6FF"/>
-
         <DropShadowEffect x:Key="CardShadow" BlurRadius="12" ShadowDepth="2" Opacity="0.08"/>
+        <DropShadowEffect x:Key="ModuleCardShadow" BlurRadius="10" ShadowDepth="3" Opacity="0.25"/>
 
-        <!-- Header Gradient -->
         <LinearGradientBrush x:Key="HeaderGradient" StartPoint="0,0" EndPoint="1,1">
             <GradientStop Color="#1E40AF" Offset="0"/>
             <GradientStop Color="#3B82F6" Offset="1"/>
         </LinearGradientBrush>
 
-        <!-- License Warning Style -->
         <Style x:Key="LicenseWarningStyle" TargetType="Border">
             <Setter Property="Background" Value="#FEF2F2"/>
             <Setter Property="BorderBrush" Value="#FECACA"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="12,8"/>
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
 
-        <!-- License Active Style -->
         <Style x:Key="LicenseActiveStyle" TargetType="Border">
             <Setter Property="Background" Value="#ECFDF5"/>
             <Setter Property="BorderBrush" Value="#A7F3D0"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="12,8"/>
         </Style>
 
-        <!-- Compact Dropdown Button Style -->
-        <Style x:Key="CompactDropdownButtonStyle" TargetType="Button">
+        <Style x:Key="ModuleCardStyle" TargetType="Border">
+            <Setter Property="Background" Value="#1E40AF"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0,0"/>
+        </Style>
+
+        <Style x:Key="ModuleButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="Padding" Value="16,12"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="6">
-                            <StackPanel Orientation="Horizontal">
-                                <ContentPresenter/>
-                                <TextBlock Text="▼" FontSize="8" Margin="6,0,0,0" VerticalAlignment="Center" Opacity="0.7"/>
-                            </StackPanel>
+                        <Border x:Name="border" Background="{TemplateBinding Background}" 
+                                CornerRadius="10" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -73,51 +73,24 @@
             </Setter>
         </Style>
 
-        <!-- Compact Home Button Style -->
-        <Style x:Key="CompactHomeButtonStyle" TargetType="Button">
+        <Style x:Key="HomeButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="Foreground" Value="{StaticResource PrimaryBlue}"/>
+            <Setter Property="Foreground" Value="#1E40AF"/>
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="Padding" Value="16,12"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" 
+                                CornerRadius="10" Padding="{TemplateBinding Padding}">
                             <Border.Effect>
-                                <DropShadowEffect BlurRadius="6" ShadowDepth="1" Opacity="0.12"/>
+                                <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
                             </Border.Effect>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="🏠" FontSize="12" Margin="0,0,6,0"/>
+                                <TextBlock Text="🏠" FontSize="14" Margin="0,0,8,0"/>
                                 <TextBlock Text="HOME" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="{StaticResource HoverBlue}"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- Compact Screenshot Button Style -->
-        <Style x:Key="CompactScreenshotButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Padding" Value="10,6"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="6" ShadowDepth="1" Opacity="0.1"/>
-                            </Border.Effect>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="📷" FontSize="12" VerticalAlignment="Center"/>
-                                <TextBlock Text="Screenshot" FontSize="10" FontWeight="SemiBold" Foreground="#2563EB" Margin="6,0,0,0" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -130,49 +103,54 @@
             </Setter>
         </Style>
 
-        <!-- ContextMenu Style -->
-        <Style TargetType="ContextMenu">
-            <Setter Property="Background" Value="White"/>
-            <Setter Property="BorderBrush" Value="{StaticResource BorderSharp}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="4"/>
+        <Style x:Key="ScreenshotButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#FFFFFF"/>
+            <Setter Property="Foreground" Value="#2563EB"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="14,8"/>
+            <Setter Property="Margin" Value="4,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="ContextMenu">
-                        <Border Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="8"
-                                Padding="{TemplateBinding Padding}">
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" 
+                                CornerRadius="10" Padding="{TemplateBinding Padding}">
                             <Border.Effect>
-                                <DropShadowEffect BlurRadius="15" ShadowDepth="4" Opacity="0.15"/>
+                                <DropShadowEffect BlurRadius="6" ShadowDepth="2" Opacity="0.1"/>
                             </Border.Effect>
-                            <StackPanel IsItemsHost="True"/>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="📷" FontSize="12" Margin="0,0,6,0"/>
+                                <TextBlock Text="Screenshot" VerticalAlignment="Center"/>
+                            </StackPanel>
                         </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#EFF6FF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
 
-        <!-- MenuItem Style -->
-        <Style TargetType="MenuItem">
+        <Style x:Key="DropdownMenuItemStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{StaticResource TextDark}"/>
+            <Setter Property="Foreground" Value="#0F172A"/>
             <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="Padding" Value="14,10"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="MenuItem">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="6">
-                            <ContentPresenter ContentSource="Header"/>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" 
+                                Padding="{TemplateBinding Padding}" CornerRadius="8">
+                            <ContentPresenter/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="{StaticResource HoverBlue}"/>
-                            </Trigger>
-                            <Trigger Property="IsHighlighted" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="{StaticResource HoverBlue}"/>
+                                <Setter TargetName="border" Property="Background" Value="#EFF6FF"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -187,147 +165,145 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- COMPACT HEADER - Always Visible (Dashboard + Modules) -->
-        <Border x:Name="MainHeader" Grid.Row="0" Margin="12,12,12,0" CornerRadius="12" Background="{StaticResource HeaderGradient}" Effect="{StaticResource CardShadow}">
-            <Grid>
+        <!-- HEADER -->
+        <Border x:Name="MainHeader" Grid.Row="0" Margin="12,12,12,0" 
+                CornerRadius="14" Background="{StaticResource HeaderGradient}" 
+                Effect="{StaticResource CardShadow}">
+            <Grid Margin="16,10">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- LEFT: Logo + Nav -->
+                <!-- LEFT: Logo + Home -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-
-                    <!-- Compact Logo -->
-                    <Border Margin="12,8" Width="60" Height="52" CornerRadius="8" Background="#FFFFFF">
+                    <Border Width="68" Height="56" CornerRadius="10" Background="#FFFFFF">
                         <Border.Effect>
-                            <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
+                            <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.18"/>
                         </Border.Effect>
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                            <Border Background="#3B82F6" CornerRadius="4" Padding="4,2">
+                            <Border Background="#3B82F6" CornerRadius="4" Padding="5,2">
                                 <TextBlock Text="PROGLASS" FontSize="6" FontWeight="Bold" Foreground="White"/>
                             </Border>
-                            <TextBlock Text="ERP" FontSize="16" FontWeight="Bold" Foreground="#1E40AF" HorizontalAlignment="Center"/>
+                            <TextBlock Text="ERP" FontSize="16" FontWeight="Bold" Foreground="#1E40AF" HorizontalAlignment="Center" Margin="0,2,0,0"/>
                             <Border Height="1" Background="#3B82F6" Margin="8,2,8,0"/>
                             <TextBlock Text="SYSTEM" FontSize="5" FontWeight="Bold" Foreground="#3B82F6" HorizontalAlignment="Center"/>
                         </StackPanel>
                     </Border>
-
-                    <!-- Compact Nav Buttons -->
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
-
-                        <!-- Home Button -->
-                        <Button x:Name="BtnHome" Style="{StaticResource CompactHomeButtonStyle}" Click="BtnHome_Click" Margin="0,0,10,0"/>
-
-                        <!-- Dashboard Button -->
-                        <Button x:Name="BtnDashboard" Style="{StaticResource CompactDropdownButtonStyle}" Click="BtnDashboard_Click">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="📊" FontSize="12" Margin="0,0,6,0"/>
-                                <TextBlock Text="DASHBOARD"/>
-                            </StackPanel>
-                        </Button>
-
-                        <!-- Licensing Button -->
-                        <Button x:Name="BtnSubscription" Style="{StaticResource CompactDropdownButtonStyle}" Click="BtnSubscription_Click">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="⭐" FontSize="12" Margin="0,0,6,0"/>
-                                <TextBlock Text="LICENSING"/>
-                            </StackPanel>
-                        </Button>
-
-                        <!-- Calculators Dropdown -->
-                        <Button x:Name="BtnCalculators" Style="{StaticResource CompactDropdownButtonStyle}" Click="BtnCalculators_Click">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="🧮" FontSize="12" Margin="0,0,6,0"/>
-                                <TextBlock Text="CALCULATORS"/>
-                            </StackPanel>
-                            <Button.ContextMenu>
-                                <ContextMenu x:Name="CalculatorsMenu">
-                                    <MenuItem Header="🧮 SGU CALC" Click="BtnSGU_Click"/>
-                                    <MenuItem Header="📑 DGU CALC" Click="BtnDGU_Click"/>
-                                    <MenuItem Header="🔳 LAMINATION" Click="BtnLamination_Click"/>
-                                    <MenuItem Header="🪟 DGU + LAM" Click="BtnDguLam_Click"/>
-                                    <MenuItem Header="✂️ OPTIMIZER" Click="BtnOptimization_Click"/>
-                                </ContextMenu>
-                            </Button.ContextMenu>
-                        </Button>
-
-                        <!-- Operations Dropdown -->
-                        <Button x:Name="BtnOperations" Style="{StaticResource CompactDropdownButtonStyle}" Click="BtnOperations_Click">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="⚙️" FontSize="12" Margin="0,0,6,0"/>
-                                <TextBlock Text="OPERATIONS"/>
-                            </StackPanel>
-                            <Button.ContextMenu>
-                                <ContextMenu x:Name="OperationsMenu">
-                                    <MenuItem Header="📦 SHEET STORE" Click="BtnSheetStore_Click"/>
-                                    <MenuItem Header="📋 DAILY WORKS" Click="BtnDailyWorks_Click"/>
-                                    <MenuItem Header="🚚 DELIVERIES" Click="BtnDeliveries_Click"/>
-                                </ContextMenu>
-                            </Button.ContextMenu>
-                        </Button>
-
-                        <!-- Reports Dropdown -->
-                        <Button x:Name="BtnReports" Style="{StaticResource CompactDropdownButtonStyle}" Click="BtnReports_Click">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="📈" FontSize="12" Margin="0,0,6,0"/>
-                                <TextBlock Text="REPORTS"/>
-                            </StackPanel>
-                            <Button.ContextMenu>
-                                <ContextMenu x:Name="ReportsMenu">
-                                    <MenuItem Header="📋 DAILY WORKS REPORT" Click="BtnDailyWorks_Click"/>
-                                    <MenuItem Header="🚚 DELIVERY REPORT" Click="BtnDeliveries_Click"/>
-                                    <MenuItem Header="📦 INVENTORY REPORT" Click="BtnSheetStore_Click"/>
-                                </ContextMenu>
-                            </Button.ContextMenu>
-                        </Button>
-
-                        <!-- Settings Dropdown -->
-                        <Button x:Name="BtnSettings" Style="{StaticResource CompactDropdownButtonStyle}" Click="BtnSettings_Click">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="⚙️" FontSize="12" Margin="0,0,6,0"/>
-                                <TextBlock Text="SETTINGS"/>
-                            </StackPanel>
-                            <Button.ContextMenu>
-                                <ContextMenu x:Name="SettingsMenu">
-                                    <MenuItem Header="👤 PROFILE" Click="BtnProfile_Click"/>
-                                    <MenuItem Header="👥 USERS" Click="BtnUsers_Click"/>
-                                </ContextMenu>
-                            </Button.ContextMenu>
-                        </Button>
-
-                        <!-- License Status -->
-                        <Border x:Name="LicenseWarningBorder" Style="{StaticResource LicenseWarningStyle}" Margin="10,0,0,0" MouseLeftButtonDown="LicenseWarningBorder_Click">
-                            <StackPanel Orientation="Horizontal">
-                                <Border Width="8" Height="8" CornerRadius="4" Background="#EF4444" Margin="0,0,8,0"/>
-                                <TextBlock Text="⚠️" FontSize="10" Margin="0,0,4,0"/>
-                                <TextBlock Text="Activate License" FontSize="10" FontWeight="SemiBold" Foreground="#DC2626"/>
-                            </StackPanel>
-                        </Border>
-
-                        <Border x:Name="LicenseActiveBorder" Style="{StaticResource LicenseActiveStyle}" Margin="10,0,0,0" Visibility="Collapsed">
-                            <StackPanel Orientation="Horizontal">
-                                <Border Width="8" Height="8" CornerRadius="4" Background="#10B981" Margin="0,0,8,0"/>
-                                <TextBlock Text="✓" FontSize="10" Foreground="#10B981" Margin="0,0,4,0"/>
-                                <TextBlock Text="Active" FontSize="10" FontWeight="SemiBold" Foreground="#059669"/>
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
+                    <Button x:Name="BtnHome" Style="{StaticResource HomeButtonStyle}" Click="BtnHome_Click" Margin="10,0,0,0"/>
                 </StackPanel>
 
-                <!-- RIGHT: Screenshot + Date/Time -->
-                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
-                    <Button x:Name="ScreenshotBtn" Style="{StaticResource CompactScreenshotButtonStyle}" Click="ScreenshotBtn_Click" Margin="4">
-                        <TextBlock Text="📷" FontSize="12" Margin="0,0,6,0"/>
-                    </Button>
-                    <Border CornerRadius="8" Padding="12,6" Margin="4" Effect="{StaticResource CardShadow}">
+                <!-- CENTER: Module Cards - TAG on Border for mouse tracking -->
+                <Grid Grid.Column="1" Margin="20,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Dashboard Card -->
+                    <Border Grid.Column="0" Style="{StaticResource ModuleCardStyle}" Effect="{StaticResource ModuleCardShadow}" Margin="0,0,4,0" Tag="DashboardDropdown">
+                        <Button x:Name="BtnDashboard" Style="{StaticResource ModuleButtonStyle}" Tag="DashboardDropdown">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="📊" FontSize="13" Margin="0,0,6,0"/>
+                                <TextBlock Text="DASHBOARD"/>
+                                <TextBlock Text="▼" FontSize="7" Margin="6,0,0,0" VerticalAlignment="Center" Opacity="0.7"/>
+                            </StackPanel>
+                        </Button>
+                    </Border>
+
+                    <!-- Licensing Card -->
+                    <Border Grid.Column="1" Style="{StaticResource ModuleCardStyle}" Effect="{StaticResource ModuleCardShadow}" Margin="4,0" Tag="LicensingDropdown">
+                        <Button x:Name="BtnSubscription" Style="{StaticResource ModuleButtonStyle}" Tag="LicensingDropdown">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="⭐" FontSize="13" Margin="0,0,6,0"/>
+                                <TextBlock Text="LICENSING"/>
+                                <TextBlock Text="▼" FontSize="7" Margin="6,0,0,0" VerticalAlignment="Center" Opacity="0.7"/>
+                            </StackPanel>
+                        </Button>
+                    </Border>
+
+                    <!-- Calculators Card -->
+                    <Border Grid.Column="2" Style="{StaticResource ModuleCardStyle}" Effect="{StaticResource ModuleCardShadow}" Margin="4,0" Tag="CalculatorsDropdown">
+                        <Button x:Name="BtnCalculators" Style="{StaticResource ModuleButtonStyle}" Tag="CalculatorsDropdown">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="🧮" FontSize="13" Margin="0,0,6,0"/>
+                                <TextBlock Text="CALCULATORS"/>
+                                <TextBlock Text="▼" FontSize="7" Margin="6,0,0,0" VerticalAlignment="Center" Opacity="0.7"/>
+                            </StackPanel>
+                        </Button>
+                    </Border>
+
+                    <!-- Operations Card -->
+                    <Border Grid.Column="3" Style="{StaticResource ModuleCardStyle}" Effect="{StaticResource ModuleCardShadow}" Margin="4,0" Tag="OperationsDropdown">
+                        <Button x:Name="BtnOperations" Style="{StaticResource ModuleButtonStyle}" Tag="OperationsDropdown">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="⚙️" FontSize="13" Margin="0,0,6,0"/>
+                                <TextBlock Text="OPERATIONS"/>
+                                <TextBlock Text="▼" FontSize="7" Margin="6,0,0,0" VerticalAlignment="Center" Opacity="0.7"/>
+                            </StackPanel>
+                        </Button>
+                    </Border>
+
+                    <!-- Reports Card -->
+                    <Border Grid.Column="4" Style="{StaticResource ModuleCardStyle}" Effect="{StaticResource ModuleCardShadow}" Margin="4,0" Tag="ReportsDropdown">
+                        <Button x:Name="BtnReports" Style="{StaticResource ModuleButtonStyle}" Tag="ReportsDropdown">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="📈" FontSize="13" Margin="0,0,6,0"/>
+                                <TextBlock Text="REPORTS"/>
+                                <TextBlock Text="▼" FontSize="7" Margin="6,0,0,0" VerticalAlignment="Center" Opacity="0.7"/>
+                            </StackPanel>
+                        </Button>
+                    </Border>
+
+                    <!-- Settings Card -->
+                    <Border Grid.Column="5" Style="{StaticResource ModuleCardStyle}" Effect="{StaticResource ModuleCardShadow}" Margin="4,0,0,0" Tag="SettingsDropdown">
+                        <Button x:Name="BtnSettings" Style="{StaticResource ModuleButtonStyle}" Tag="SettingsDropdown">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="⚙️" FontSize="13" Margin="0,0,6,0"/>
+                                <TextBlock Text="SETTINGS"/>
+                                <TextBlock Text="▼" FontSize="7" Margin="6,0,0,0" VerticalAlignment="Center" Opacity="0.7"/>
+                            </StackPanel>
+                        </Button>
+                    </Border>
+                </Grid>
+
+                <!-- RIGHT: Actions -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border x:Name="LicenseWarningBorder" Style="{StaticResource LicenseWarningStyle}" 
+                            Margin="0,0,10,0" MouseLeftButtonDown="LicenseWarningBorder_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <Border Width="8" Height="8" CornerRadius="4" Background="#EF4444" Margin="0,0,6,0"/>
+                            <TextBlock Text="⚠️" FontSize="10" Margin="0,0,4,0"/>
+                            <TextBlock Text="Activate License" FontSize="10" FontWeight="SemiBold" Foreground="#DC2626"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border x:Name="LicenseActiveBorder" Style="{StaticResource LicenseActiveStyle}" 
+                            Margin="0,0,10,0" Visibility="Collapsed">
+                        <StackPanel Orientation="Horizontal">
+                            <Border Width="8" Height="8" CornerRadius="4" Background="#10B981" Margin="0,0,6,0"/>
+                            <TextBlock Text="✓" FontSize="10" Foreground="#10B981" Margin="0,0,4,0"/>
+                            <TextBlock Text="Active" FontSize="10" FontWeight="SemiBold" Foreground="#059669"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Button x:Name="ScreenshotBtn" Style="{StaticResource ScreenshotButtonStyle}" Click="ScreenshotBtn_Click"/>
+
+                    <Border CornerRadius="10" Padding="12,6" Margin="10,0,0,0">
                         <Border.Background>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                                 <GradientStop Color="#FFFFFF" Offset="0"/>
                                 <GradientStop Color="#F0F9FF" Offset="1"/>
                             </LinearGradientBrush>
                         </Border.Background>
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="6" ShadowDepth="2" Opacity="0.1"/>
+                        </Border.Effect>
                         <StackPanel Orientation="Horizontal">
                             <StackPanel Margin="0,0,10,0">
                                 <TextBlock Text="📅" Foreground="#60A5FA" FontSize="8"/>
@@ -344,8 +320,120 @@
             </Grid>
         </Border>
 
-        <!-- CONTENT AREA - Full height for modules -->
-        <Border x:Name="MainContentBorder" Grid.Row="1" Background="White" Margin="12" CornerRadius="12" Effect="{StaticResource CardShadow}">
+        <!-- ==================== POPUP DROPDOWNS ==================== -->
+
+        <!-- Dashboard Dropdown -->
+        <Popup x:Name="DashboardDropdown" PlacementTarget="{Binding ElementName=BtnDashboard}" 
+               Placement="Bottom" HorizontalOffset="0" VerticalOffset="10"
+               StaysOpen="False" AllowsTransparency="True" 
+               PopupAnimation="Fade" IsOpen="False">
+            <Border Background="White" BorderBrush="#CBD5E1" BorderThickness="1" 
+                    CornerRadius="10" Padding="4" MinWidth="170">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="15" ShadowDepth="4" Opacity="0.18"/>
+                </Border.Effect>
+                <StackPanel>
+                    <Button Style="{StaticResource DropdownMenuItemStyle}" Content="📊 OVERVIEW" Click="MenuItem_Overview_Click"/>
+                    <Button Style="{StaticResource DropdownMenuItemStyle}" Content="📈 STATISTICS" Click="MenuItem_Statistics_Click"/>
+                    <Button Style="{StaticResource DropdownMenuItemStyle}" Content="📋 RECENT ACTIVITY" Click="MenuItem_RecentActivity_Click"/>
+                </StackPanel>
+            </Border>
+        </Popup>
+
+        <!-- Licensing Dropdown -->
+        <Popup x:Name="LicensingDropdown" PlacementTarget="{Binding ElementName=BtnSubscription}" 
+               Placement="Bottom" HorizontalOffset="0" VerticalOffset="10"
+               StaysOpen="False" AllowsTransparency="True" 
+               PopupAnimation="Fade" IsOpen="False">
+            <Border Background="White" BorderBrush="#CBD5E1" BorderThickness="1" 
+                    CornerRadius="10" Padding="4" MinWidth="170">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="15" ShadowDepth="4" Opacity="0.18"/>
+                </Border.Effect>
+                <StackPanel>
+                    <Button Style="{StaticResource DropdownMenuItemStyle}" Content="⭐ ACTIVATE LICENSE" Click="MenuItem_ActivateLicense_Click"/>
+                    <Button Style="{StaticResource DropdownMenuItemStyle}" Content="📝 LICENSE INFO" Click="MenuItem_LicenseInfo_Click"/>
+                    <Button Style="{StaticResource DropdownMenuItemStyle}" Content="💳 SUBSCRIPTION" Click="MenuItem_Subscription_Click"/>
+                </StackPanel>
+            </Border>
+        </Popup>
+
+        <!-- Calculators Dropdown -->
+        <Popup x:Name="CalculatorsDropdown" PlacementTarget="{Binding ElementName=BtnCalculators}" 
+               Placement="Bottom" HorizontalOffset="0" VerticalOffset="10"
+               StaysOpen="False" AllowsTransparency="True" 
+               PopupAnimation="Fade" IsOpen="False">
+            <Border Background="White" BorderBrush="#CBD5E1" BorderThickness="1" 
+                    CornerRadius="10" Padding="4" MinWidth="170">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="15" ShadowDepth="4" Opacity="0.18"/>
+                </Border.Effect>
+                <StackPanel>
+                    <Button Style="{StaticResource DropdownMenuItemStyle}" Content="🧮 SGU CALC" Click="MenuItem_SGU_Click"/>
+                    <Button Style="{StaticResource DropdownMenuItemStyle}" Content="📑 DGU CALC" Click="MenuItem_DGU_Click"/>
+                    <Button Style="{StaticResource DropdownMenuItemStyle}" Content="🔳 LAMINATION" Click="MenuItem_Lamination_Click"/>
+                    <Button Style="{StaticResource DropdownMenuItemStyle}" Content="🪟 DGU + LAM" Click="MenuItem_DguLam_Click"/>
+                    <Button Style="{StaticResource DropdownMenuItemStyle}" Content="✂️ OPTIMIZER" Click="MenuItem_Optimizer_Click"/>
+                </StackPanel>
+            </Border>
+        </Popup>
+
+        <!-- Operations Dropdown -->
+        <Popup x:Name="OperationsDropdown" PlacementTarget="{Binding ElementName=BtnOperations}" 
+               Placement="Bottom" HorizontalOffset="0" VerticalOffset="10"
+               StaysOpen="False" AllowsTransparency="True" 
+               PopupAnimation="Fade" IsOpen="False">
+            <Border Background="White" BorderBrush="#CBD5E1" BorderThickness="1" 
+                    CornerRadius="10" Padding="4" MinWidth="170">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="15" ShadowDepth="4" Opacity="0.18"/>
+                </Border.Effect>
+                <StackPanel>
+                    <Button Style="{StaticResource DropdownMenuItemStyle}" Content="📦 SHEET STORE" Click="MenuItem_SheetStore_Click"/>
+                    <Button Style="{StaticResource DropdownMenuItemStyle}" Content="📋 DAILY WORKS" Click="MenuItem_DailyWorks_Click"/>
+                    <Button Style="{StaticResource DropdownMenuItemStyle}" Content="🚚 DELIVERIES" Click="MenuItem_Deliveries_Click"/>
+                </StackPanel>
+            </Border>
+        </Popup>
+
+        <!-- Reports Dropdown -->
+        <Popup x:Name="ReportsDropdown" PlacementTarget="{Binding ElementName=BtnReports}" 
+               Placement="Bottom" HorizontalOffset="0" VerticalOffset="10"
+               StaysOpen="False" AllowsTransparency="True" 
+               PopupAnimation="Fade" IsOpen="False">
+            <Border Background="White" BorderBrush="#CBD5E1" BorderThickness="1" 
+                    CornerRadius="10" Padding="4" MinWidth="190">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="15" ShadowDepth="4" Opacity="0.18"/>
+                </Border.Effect>
+                <StackPanel>
+                    <Button Style="{StaticResource DropdownMenuItemStyle}" Content="📋 DAILY WORKS REPORT" Click="MenuItem_DailyWorksReport_Click"/>
+                    <Button Style="{StaticResource DropdownMenuItemStyle}" Content="🚚 DELIVERY REPORT" Click="MenuItem_DeliveryReport_Click"/>
+                    <Button Style="{StaticResource DropdownMenuItemStyle}" Content="📦 INVENTORY REPORT" Click="MenuItem_InventoryReport_Click"/>
+                </StackPanel>
+            </Border>
+        </Popup>
+
+        <!-- Settings Dropdown -->
+        <Popup x:Name="SettingsDropdown" PlacementTarget="{Binding ElementName=BtnSettings}" 
+               Placement="Bottom" HorizontalOffset="0" VerticalOffset="10"
+               StaysOpen="False" AllowsTransparency="True" 
+               PopupAnimation="Fade" IsOpen="False">
+            <Border Background="White" BorderBrush="#CBD5E1" BorderThickness="1" 
+                    CornerRadius="10" Padding="4" MinWidth="160">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="15" ShadowDepth="4" Opacity="0.18"/>
+                </Border.Effect>
+                <StackPanel>
+                    <Button Style="{StaticResource DropdownMenuItemStyle}" Content="👤 PROFILE" Click="MenuItem_Profile_Click"/>
+                    <Button Style="{StaticResource DropdownMenuItemStyle}" Content="👥 USERS" Click="MenuItem_Users_Click"/>
+                </StackPanel>
+            </Border>
+        </Popup>
+
+        <!-- CONTENT AREA -->
+        <Border x:Name="MainContentBorder" Grid.Row="1" Background="White" Margin="12" 
+                CornerRadius="12" Effect="{StaticResource CardShadow}">
             <ContentControl Content="{Binding CurrentView}"/>
         </Border>
     </Grid>

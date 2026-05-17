@@ -112,10 +112,21 @@ namespace ProGlassAutomation.ViewModels
             }
 
             // Clear cache for fresh instance
-            _viewCache.Clear();
+            // intentionally preserved cache for fast navigation
 
             // Get cached view and inject
-            CurrentView = GetOrCreateView(viewName);
+            var newView = GetOrCreateView(viewName);
+
+            // prevent reloading same module
+            if (CurrentView == newView)
+            {
+                // TOGGLE OFF (close module)
+                CurrentView = null;
+                CurrentViewName = "";
+                return;
+            }
+
+            CurrentView = newView;
             CurrentViewName = viewName;
         }
 
@@ -230,7 +241,6 @@ namespace ProGlassAutomation.ViewModels
             Notify(nameof(CalculatorsEnabled));
             Notify(nameof(IsLocked));
 
-            _viewCache.Clear();
             InitializePages();
             ShowDashboard();
         }
@@ -245,7 +255,6 @@ namespace ProGlassAutomation.ViewModels
             Notify(nameof(CalculatorsEnabled));
             Notify(nameof(IsLocked));
 
-            _viewCache.Clear();
             InitializePages();
             ShowDashboard();
         }
