@@ -328,10 +328,15 @@
         <!-- ==================== POPUP DROPDOWNS ==================== -->
 
         <!-- Dashboard Dropdown -->
-        <Popup x:Name="DashboardDropdown" PlacementTarget="{Binding ElementName=BtnDashboard}" 
-               Placement="Bottom" HorizontalOffset="0" VerticalOffset="10"
-               StaysOpen="False" AllowsTransparency="True" 
-               PopupAnimation="Fade" IsOpen="False">
+        <Popup x:Name="DashboardDropdown"
+       PlacementTarget="{Binding ElementName=BtnDashboard}"
+       Placement="Bottom"
+       HorizontalOffset="0"
+       VerticalOffset="2"
+       AllowsTransparency="True"
+       PopupAnimation="Fade"
+       Focusable="False"
+       IsOpen="False">
             <Border Background="White" BorderBrush="#CBD5E1" BorderThickness="1" 
                     CornerRadius="10" Padding="4" MinWidth="170">
                 <Border.Effect>
@@ -347,8 +352,8 @@
 
         <!-- Licensing Dropdown -->
         <Popup x:Name="LicensingDropdown" PlacementTarget="{Binding ElementName=BtnSubscription}" 
-               Placement="Bottom" HorizontalOffset="0" VerticalOffset="10"
-               StaysOpen="False" AllowsTransparency="True" 
+               Placement="Bottom" HorizontalOffset="0" VerticalOffset="2"
+                AllowsTransparency="True" 
                PopupAnimation="Fade" IsOpen="False">
             <Border Background="White" BorderBrush="#CBD5E1" BorderThickness="1" 
                     CornerRadius="10" Padding="4" MinWidth="170">
@@ -365,8 +370,8 @@
 
         <!-- Calculators Dropdown -->
         <Popup x:Name="CalculatorsDropdown" PlacementTarget="{Binding ElementName=BtnCalculators}" 
-               Placement="Bottom" HorizontalOffset="0" VerticalOffset="10"
-               StaysOpen="False" AllowsTransparency="True" 
+               Placement="Bottom" HorizontalOffset="0" VerticalOffset="2"
+                AllowsTransparency="True" 
                PopupAnimation="Fade" IsOpen="False">
             <Border Background="White" BorderBrush="#CBD5E1" BorderThickness="1" 
                     CornerRadius="10" Padding="4" MinWidth="170">
@@ -385,8 +390,8 @@
 
         <!-- Operations Dropdown -->
         <Popup x:Name="OperationsDropdown" PlacementTarget="{Binding ElementName=BtnOperations}" 
-               Placement="Bottom" HorizontalOffset="0" VerticalOffset="10"
-               StaysOpen="False" AllowsTransparency="True" 
+               Placement="Bottom" HorizontalOffset="0" VerticalOffset="2"
+               AllowsTransparency="True" 
                PopupAnimation="Fade" IsOpen="False">
             <Border Background="White" BorderBrush="#CBD5E1" BorderThickness="1" 
                     CornerRadius="10" Padding="4" MinWidth="170">
@@ -403,8 +408,8 @@
 
         <!-- Reports Dropdown -->
         <Popup x:Name="ReportsDropdown" PlacementTarget="{Binding ElementName=BtnReports}" 
-               Placement="Bottom" HorizontalOffset="0" VerticalOffset="10"
-               StaysOpen="False" AllowsTransparency="True" 
+               Placement="Bottom" HorizontalOffset="0" VerticalOffset="2"
+               AllowsTransparency="True" 
                PopupAnimation="Fade" IsOpen="False">
             <Border Background="White" BorderBrush="#CBD5E1" BorderThickness="1" 
                     CornerRadius="10" Padding="4" MinWidth="190">
@@ -421,8 +426,8 @@
 
         <!-- Settings Dropdown -->
         <Popup x:Name="SettingsDropdown" PlacementTarget="{Binding ElementName=BtnSettings}" 
-               Placement="Bottom" HorizontalOffset="0" VerticalOffset="10"
-               StaysOpen="False" AllowsTransparency="True" 
+               Placement="Bottom" HorizontalOffset="0" VerticalOffset="2"
+              AllowsTransparency="True" 
                PopupAnimation="Fade" IsOpen="False">
             <Border Background="White" BorderBrush="#CBD5E1" BorderThickness="1" 
                     CornerRadius="10" Padding="4" MinWidth="160">

@@ -13,19 +13,19 @@
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
         <converters:NullToBoolConverter x:Key="NullToBoolConverter"/>
 
-        <!-- MODERN DATA GRID -->
-        <Style x:Key="ModernDataGrid" TargetType="DataGrid">
+        <!-- SIMPLE DATA GRID -->
+        <Style x:Key="SimpleDataGrid" TargetType="DataGrid">
             <Setter Property="Background" Value="White"/>
             <Setter Property="BorderBrush" Value="Black"/>
-            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="GridLinesVisibility" Value="All"/>
             <Setter Property="HorizontalGridLinesBrush" Value="Black"/>
             <Setter Property="VerticalGridLinesBrush" Value="Black"/>
             <Setter Property="RowBackground" Value="White"/>
-            <Setter Property="AlternatingRowBackground" Value="#F9F9F9"/>
+            <Setter Property="AlternatingRowBackground" Value="#F5F5F5"/>
             <Setter Property="RowHeaderWidth" Value="0"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="FontFamily" Value="Segoe UI, Arial"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
             <Setter Property="HeadersVisibility" Value="Column"/>
             <Setter Property="SelectionMode" Value="Extended"/>
             <Setter Property="SelectionUnit" Value="FullRow"/>
@@ -33,35 +33,36 @@
             <Setter Property="CanUserDeleteRows" Value="False"/>
             <Setter Property="AutoGenerateColumns" Value="False"/>
             <Setter Property="IsReadOnly" Value="True"/>
-            <Setter Property="RowHeight" Value="40"/>
+            <Setter Property="RowHeight" Value="28"/>
         </Style>
 
-        <!-- MODERN CELL -->
-        <Style x:Key="ModernCell" TargetType="DataGridCell">
-            <Setter Property="Padding" Value="10,8"/>
-            <Setter Property="BorderThickness" Value="0"/>
+        <!-- SIMPLE CELL -->
+        <Style x:Key="SimpleCell" TargetType="DataGridCell">
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="Black"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
-            <Style.Triggers>
-                <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="#DBEAFE"/>
-                    <Setter Property="Foreground" Value="#1E40AF"/>
-                </Trigger>
-            </Style.Triggers>
         </Style>
 
-        <!-- MODERN ROW -->
-        <Style x:Key="ModernRowStyle" TargetType="DataGridRow">
+        <!-- SIMPLE ROW -->
+        <Style x:Key="SimpleRow" TargetType="DataGridRow">
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Background" Value="White"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#F1F5F9"/>
-                </Trigger>
-                <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="#DBEAFE"/>
-                </Trigger>
-            </Style.Triggers>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="Black"/>
+        </Style>
+
+        <!-- SIMPLE HEADER -->
+        <Style x:Key="SimpleHeader" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#333333"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="BorderBrush" Value="Black"/>
+            <Setter Property="BorderThickness" Value="1"/>
         </Style>
 
         <!-- PRIMARY BUTTON -->
@@ -271,41 +272,6 @@
             <Setter Property="FontFamily" Value="Segoe UI, Arial"/>
             <Setter Property="Foreground" Value="#334155"/>
         </Style>
-
-        <!-- BLUE HEADER -->
-        <Style x:Key="HeaderBlue" TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="#1E40AF"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Padding" Value="12,15"/>
-            <Setter Property="HorizontalContentAlignment" Value="Left"/>
-            <Setter Property="BorderBrush" Value="Black"/>
-            <Setter Property="BorderThickness" Value="0,0,1,1"/>
-        </Style>
-
-        <!-- GREEN HEADER -->
-        <Style x:Key="HeaderGreen" TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="#059669"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="12,10"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="11"/>
-            <Setter Property="FontFamily" Value="Segoe UI, Arial"/>
-            <Setter Property="HorizontalContentAlignment" Value="Center"/>
-            <Setter Property="BorderThickness" Value="0"/>
-        </Style>
-
-        <!-- SLATE HEADER -->
-        <Style x:Key="HeaderSlate" TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="#475569"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="12,10"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="11"/>
-            <Setter Property="FontFamily" Value="Segoe UI, Arial"/>
-            <Setter Property="HorizontalContentAlignment" Value="Center"/>
-            <Setter Property="BorderThickness" Value="0"/>
-        </Style>
     </UserControl.Resources>
 
     <!-- MAIN LAYOUT -->
@@ -509,9 +475,9 @@
                       SelectionUnit="FullRow"
                       MouseDoubleClick="DataGrid_MouseDoubleClick"
                       PreviewMouseLeftButtonDown="DataGrid_PreviewMouseLeftButtonDown"
-                      Style="{StaticResource ModernDataGrid}" 
-                      CellStyle="{StaticResource ModernCell}"
-                      RowStyle="{StaticResource ModernRowStyle}"
+                      Style="{StaticResource SimpleDataGrid}" 
+                      CellStyle="{StaticResource SimpleCell}"
+                      RowStyle="{StaticResource SimpleRow}"
                       SelectionChanged="MainDataGrid_SelectionChanged">
                 <DataGrid.Columns>
                     <!-- SELECT CHECKBOX -->
@@ -531,230 +497,118 @@
                     </DataGridTemplateColumn>
 
                     <!-- DATE -->
-                    <DataGridTemplateColumn Header="DATE" Width="100" HeaderStyle="{StaticResource HeaderGreen}">
+                    <DataGridTemplateColumn Header="DATE" Width="90" HeaderStyle="{StaticResource SimpleHeader}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Border Background="#D1FAE5" CornerRadius="4" Padding="6,4" HorizontalAlignment="Center">
-                                    <TextBlock Text="{Binding Date, StringFormat='{}{0:dd-MM-yyyy}'}" FontSize="11" Foreground="#065F46" FontWeight="Medium"/>
-                                </Border>
+                                <TextBlock Text="{Binding Date, StringFormat='{}{0:dd-MM-yyyy}'}" HorizontalAlignment="Center"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
                     <!-- COMPANY -->
-                    <DataGridTemplateColumn Header="COMPANY" Width="150" HeaderStyle="{StaticResource HeaderBlue}">
+                    <DataGridTemplateColumn Header="COMPANY" Width="130" HeaderStyle="{StaticResource SimpleHeader}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Company}" FontSize="11" Foreground="#1E40AF" FontWeight="Medium"/>
+                                <TextBlock Text="{Binding Company}" HorizontalAlignment="Left" Margin="5,0"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
                     <!-- PI NUMBER -->
-                    <DataGridTemplateColumn Header="PI NUMBER" Width="130" HeaderStyle="{StaticResource HeaderSlate}">
+                    <DataGridTemplateColumn Header="PI NUMBER" Width="110" HeaderStyle="{StaticResource SimpleHeader}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding PINumber}" FontSize="11" Foreground="#475569" FontWeight="Medium"/>
+                                <TextBlock Text="{Binding PINumber}" HorizontalAlignment="Center"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
                     <!-- TYPE -->
-                    <DataGridTemplateColumn Header="TYPE" Width="130" HeaderStyle="{StaticResource HeaderSlate}">
+                    <DataGridTemplateColumn Header="TYPE" Width="110" HeaderStyle="{StaticResource SimpleHeader}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Border Background="#F1F5F9" CornerRadius="4" Padding="6,4" HorizontalAlignment="Center">
-                                    <TextBlock Text="{Binding TypeOfWork}" FontSize="10" Foreground="#475569" FontWeight="Medium"/>
-                                </Border>
+                                <TextBlock Text="{Binding TypeOfWork}" HorizontalAlignment="Center"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
                     <!-- COLOR -->
-                    <DataGridTemplateColumn Header="COLOR" Width="100" HeaderStyle="{StaticResource HeaderSlate}">
+                    <DataGridTemplateColumn Header="COLOR" Width="80" HeaderStyle="{StaticResource SimpleHeader}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Border CornerRadius="4" Padding="6,3" HorizontalAlignment="Center">
-                                    <Border.Style>
-                                        <Style TargetType="Border">
-                                            <Setter Property="Background" Value="#FDF2F8"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding Color}" Value="Clear">
-                                                    <Setter Property="Background" Value="#E0F2FE"/>
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding Color}" Value="Bronze">
-                                                    <Setter Property="Background" Value="#FEF3C7"/>
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding Color}" Value="Grey">
-                                                    <Setter Property="Background" Value="#F1F5F9"/>
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding Color}" Value="Blue">
-                                                    <Setter Property="Background" Value="#DBEAFE"/>
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding Color}" Value="Green">
-                                                    <Setter Property="Background" Value="#D1FAE5"/>
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding Color}" Value="Black">
-                                                    <Setter Property="Background" Value="#1E293B"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Border.Style>
-                                    <TextBlock Text="{Binding Color}" FontSize="10" FontWeight="SemiBold">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Foreground" Value="#BE185D"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Color}" Value="Clear">
-                                                        <Setter Property="Foreground" Value="#0369A1"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding Color}" Value="Bronze">
-                                                        <Setter Property="Foreground" Value="#92400E"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding Color}" Value="Grey">
-                                                        <Setter Property="Foreground" Value="#475569"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding Color}" Value="Blue">
-                                                        <Setter Property="Foreground" Value="#1D4ED8"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding Color}" Value="Green">
-                                                        <Setter Property="Foreground" Value="#047857"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding Color}" Value="Black">
-                                                        <Setter Property="Foreground" Value="White"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                </Border>
+                                <TextBlock Text="{Binding Color}" HorizontalAlignment="Center"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
                     <!-- ORDER QTY -->
-                    <DataGridTemplateColumn Header="ORDER QTY" Width="100" HeaderStyle="{StaticResource HeaderBlue}">
+                    <DataGridTemplateColumn Header="ORDER QTY" Width="80" HeaderStyle="{StaticResource SimpleHeader}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding OrderQty}" FontSize="12" Foreground="#1E40AF" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding OrderQty}" HorizontalAlignment="Center"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
                     <!-- DELIVERED -->
-                    <DataGridTemplateColumn Header="DELIVERED" Width="100" HeaderStyle="{StaticResource HeaderGreen}">
+                    <DataGridTemplateColumn Header="DELIVERED" Width="80" HeaderStyle="{StaticResource SimpleHeader}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding TotalDelivered}" FontSize="12" Foreground="#059669" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding TotalDelivered}" HorizontalAlignment="Center"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
                     <!-- RETURNED -->
-                    <DataGridTemplateColumn Header="RETURNED" Width="90" HeaderStyle="{StaticResource HeaderSlate}">
+                    <DataGridTemplateColumn Header="RETURNED" Width="80" HeaderStyle="{StaticResource SimpleHeader}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding TotalReturned}" FontSize="12" Foreground="#DC2626" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding TotalReturned}" HorizontalAlignment="Center"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
                     <!-- BALANCE -->
-                    <DataGridTemplateColumn Header="BALANCE" Width="90" HeaderStyle="{StaticResource HeaderSlate}">
+                    <DataGridTemplateColumn Header="BALANCE" Width="80" HeaderStyle="{StaticResource SimpleHeader}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock FontSize="12" FontWeight="Bold" HorizontalAlignment="Center">
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="Text" Value="{Binding Balance}"/>
-                                            <Setter Property="Foreground" Value="#64748B"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding Balance}" Value="0">
-                                                    <Setter Property="Foreground" Value="#10B981"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
+                                <TextBlock Text="{Binding Balance}" HorizontalAlignment="Center"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
                     <!-- SQM -->
-                    <DataGridTemplateColumn Header="SQM" Width="80" HeaderStyle="{StaticResource HeaderBlue}">
+                    <DataGridTemplateColumn Header="SQM" Width="70" HeaderStyle="{StaticResource SimpleHeader}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding OrderSQM, StringFormat=N2}" FontSize="12" Foreground="#3B82F6" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding OrderSQM, StringFormat=N2}" HorizontalAlignment="Center"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
                     <!-- SALESMAN -->
-                    <DataGridTemplateColumn Header="SALESMAN" Width="120" HeaderStyle="{StaticResource HeaderSlate}">
+                    <DataGridTemplateColumn Header="SALESMAN" Width="100" HeaderStyle="{StaticResource SimpleHeader}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Salesman}" FontSize="11" Foreground="#475569" FontWeight="Medium"/>
+                                <TextBlock Text="{Binding Salesman}" HorizontalAlignment="Center"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
                     <!-- STATUS -->
-                    <DataGridTemplateColumn Header="STATUS" Width="120" HeaderStyle="{StaticResource HeaderGreen}">
+                    <DataGridTemplateColumn Header="STATUS" Width="100" HeaderStyle="{StaticResource SimpleHeader}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Border CornerRadius="4" Padding="8,4" HorizontalAlignment="Center">
-                                    <Border.Style>
-                                        <Style TargetType="Border">
-                                            <Setter Property="Background" Value="#F1F5F9"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding Status}" Value="Completed">
-                                                    <Setter Property="Background" Value="#D1FAE5"/>
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding Status}" Value="Partially Delivered">
-                                                    <Setter Property="Background" Value="#FEF3C7"/>
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding Status}" Value="Pending">
-                                                    <Setter Property="Background" Value="#FEE2E2"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Border.Style>
-                                    <TextBlock Text="{Binding Status}" FontSize="10" FontWeight="SemiBold">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Foreground" Value="#64748B"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Status}" Value="Completed">
-                                                        <Setter Property="Foreground" Value="#059669"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding Status}" Value="Partially Delivered">
-                                                        <Setter Property="Foreground" Value="#D97706"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding Status}" Value="Pending">
-                                                        <Setter Property="Foreground" Value="#DC2626"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                </Border>
+                                <TextBlock Text="{Binding Status}" HorizontalAlignment="Center"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
                     <!-- NOTES -->
-                    <DataGridTemplateColumn Header="NOTES" Width="80" HeaderStyle="{StaticResource HeaderSlate}">
+                    <DataGridTemplateColumn Header="NOTES" Width="60" HeaderStyle="{StaticResource SimpleHeader}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="📋 View" 
-                                        FontSize="10" 
-                                        Padding="8,4"
-                                        Command="{Binding DataContext.ViewNotesCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                        CommandParameter="{Binding Notes}"
-                                        Background="#F1F5F9"
-                                        Foreground="#475569"
-                                        BorderThickness="0"
-                                        Cursor="Hand"/>
+                                <TextBlock Text="View" HorizontalAlignment="Center"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
@@ -1152,6 +1006,7 @@
             </Border>
         </Border>
 
+
         <!-- EDIT POPUP -->
         <Border Grid.Row="0" Grid.RowSpan="4" Background="#80000000" Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibilityConverter}}">
             <Border CornerRadius="12" Padding="30" Margin="80,40" Background="White" VerticalAlignment="Center" HorizontalAlignment="Center" MinWidth="650"
@@ -1408,6 +1263,7 @@
                 </StackPanel>
             </Border>
         </Border>
+
 
         <!-- IMPORT LOG POPUP -->
         <Border Grid.Row="0" Grid.RowSpan="4" Background="#80000000" Visibility="{Binding IsViewingImportLog, Converter={StaticResource BoolToVisibilityConverter}}">

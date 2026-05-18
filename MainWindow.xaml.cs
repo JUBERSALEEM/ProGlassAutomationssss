@@ -20,6 +20,8 @@ namespace ProGlassAutomation
         private Popup _activeDropdown;
         private string _activeDropdownName;
         private Popup _screenshotPopup;
+        private DispatcherTimer _closeTimer;
+        private bool _isMouseOverPopup;
 
         public MainWindow()
         {
@@ -29,6 +31,11 @@ namespace ProGlassAutomation
             StartClock();
             UpdateLicenseStatus();
             CreateScreenshotPopup();
+
+            _closeTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
+            _closeTimer.Tick += CloseTimer_Tick;
+
+            this.Deactivated += MainWindow_Deactivated;
 
             _viewModel.PropertyChanged += (s, e) =>
             {
@@ -46,8 +53,7 @@ namespace ProGlassAutomation
                 string dropdownName = button.Tag as string;
                 if (!string.IsNullOrEmpty(dropdownName))
                 {
-                    // Toggle dropdown
-                    if (_activeDropdownName == dropdownName && _activeDropdown?.IsOpen == true)
+                    if (_activeDropdownName == dropdownName && _activeDropdown != null && _activeDropdown.IsOpen)
                     {
                         CloseCurrentDropdown();
                     }
@@ -61,6 +67,8 @@ namespace ProGlassAutomation
 
         private void DropdownButton_MouseEnter(object sender, MouseEventArgs e)
         {
+            _closeTimer.Stop();
+
             if (sender is Button button)
             {
                 string dropdownName = button.Tag as string;
@@ -73,36 +81,87 @@ namespace ProGlassAutomation
 
         private void DropdownButton_MouseLeave(object sender, MouseEventArgs e)
         {
-            CloseCurrentDropdown();
+            _isMouseOverPopup = false;
+            _closeTimer.Start();
+        }
+
+        private void CloseTimer_Tick(object sender, EventArgs e)
+        {
+            _closeTimer.Stop();
+            if (!_isMouseOverPopup)
+            {
+                CloseCurrentDropdown();
+            }
         }
 
         private void OpenDropdown(string dropdownName)
         {
-            // Close current dropdown first
-            if (_activeDropdown != null)
+            // Close previous dropdown
+            if (_activeDropdown != null && _activeDropdownName != dropdownName)
             {
                 try { _activeDropdown.IsOpen = false; }
                 catch { }
+                DetachPopupEvents();
             }
 
-            var dropdown = this.FindName(dropdownName) as Popup;
+            var dropdown = FindName(dropdownName) as Popup;
             if (dropdown == null)
                 return;
 
             _activeDropdown = dropdown;
             _activeDropdownName = dropdownName;
+            _isMouseOverPopup = false;
 
             try { dropdown.IsOpen = true; }
             catch { }
+
+            AttachPopupEvents(dropdown);
+        }
+
+        private void AttachPopupEvents(Popup popup)
+        {
+            if (popup?.Child is FrameworkElement child)
+            {
+                child.MouseEnter -= Popup_MouseEnter;
+                child.MouseLeave -= Popup_MouseLeave;
+                child.MouseEnter += Popup_MouseEnter;
+                child.MouseLeave += Popup_MouseLeave;
+            }
+        }
+
+        private void DetachPopupEvents()
+        {
+            if (_activeDropdown?.Child is FrameworkElement child)
+            {
+                child.MouseEnter -= Popup_MouseEnter;
+                child.MouseLeave -= Popup_MouseLeave;
+            }
+        }
+
+        private void Popup_MouseEnter(object sender, MouseEventArgs e)
+        {
+            _closeTimer.Stop();
+            _isMouseOverPopup = true;
+        }
+
+        private void Popup_MouseLeave(object sender, MouseEventArgs e)
+        {
+            _isMouseOverPopup = false;
+            _closeTimer.Start();
         }
 
         private void CloseCurrentDropdown()
         {
+            _isMouseOverPopup = false;
+            _closeTimer.Stop();
+
             if (_activeDropdown != null)
             {
+                DetachPopupEvents();
                 try { _activeDropdown.IsOpen = false; }
                 catch { }
             }
+
             _activeDropdown = null;
             _activeDropdownName = null;
         }
@@ -482,6 +541,9 @@ namespace ProGlassAutomation
 
         private void UpdateLicenseStatus()
         {
+            if (_viewModel == null)
+                return;
+
             if (_viewModel.IsLicensed)
             {
                 LicenseWarningBorder.Visibility = Visibility.Collapsed;
@@ -508,6 +570,11 @@ namespace ProGlassAutomation
                 CurrentDateText.Text = DateTime.Now.ToString("dd-MMMM-yyyy");
             };
             _clockTimer.Start();
+        }
+
+        private void MainWindow_Deactivated(object sender, EventArgs e)
+        {
+            CloseCurrentDropdown();
         }
 
         private bool CheckLicense()
