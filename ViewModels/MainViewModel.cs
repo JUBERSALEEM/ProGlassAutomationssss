@@ -52,6 +52,7 @@ namespace ProGlassAutomation.ViewModels
                 "Deliveries" => new Views.Delivery.DeliveryView(),
                 "Profile" => new Views.Profile.ProfileView(),
                 "Users" => CreatePlaceholder("Users - Coming Soon!"),
+                "ProformaInvoice" => new Views.ProformaInvoice.ProformaInvoiceView(),
                 _ => null
             };
 
@@ -276,6 +277,7 @@ namespace ProGlassAutomation.ViewModels
         public void ShowProfile() => Navigate("Profile");
         public void ShowUsers() => Navigate("Users");
         public void ShowBalanceReports() => Navigate("BalanceReports");
+        public void ShowProformaInvoice() => Navigate("ProformaInvoice");
 
         // ✅ Calculator methods - changed from private to public
         public void ShowSGUCalculator() => Navigate("SGU");
@@ -326,6 +328,7 @@ namespace ProGlassAutomation.ViewModels
         public ICommand DeliveriesCommand => new RelayCommand(o => ShowDeliveries());
         public ICommand ProfileCommand => new RelayCommand(o => ShowProfile());
         public ICommand UsersCommand => new RelayCommand(o => ShowUsers());
+        public ICommand ProformaInvoiceCommand => new RelayCommand(o => ShowProformaInvoice());
     }
 
     public class RelayCommand : ICommand

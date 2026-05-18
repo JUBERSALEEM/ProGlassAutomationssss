@@ -338,7 +338,7 @@
        Focusable="False"
        IsOpen="False">
             <Border Background="White" BorderBrush="#CBD5E1" BorderThickness="1" 
-                    CornerRadius="10" Padding="4" MinWidth="170">
+            CornerRadius="10" Padding="4" MinWidth="170">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="15" ShadowDepth="4" Opacity="0.18"/>
                 </Border.Effect>
@@ -346,6 +346,9 @@
                     <Button Style="{StaticResource DropdownMenuItemStyle}" Content="📊 OVERVIEW" Click="MenuItem_Overview_Click"/>
                     <Button Style="{StaticResource DropdownMenuItemStyle}" Content="📈 STATISTICS" Click="MenuItem_Statistics_Click"/>
                     <Button Style="{StaticResource DropdownMenuItemStyle}" Content="📋 RECENT ACTIVITY" Click="MenuItem_RecentActivity_Click"/>
+
+                    <!-- NEW: Proforma Invoice -->
+                    <Button Style="{StaticResource DropdownMenuItemStyle}" Content="📄 PROFORMA INVOICE" Click="MenuItem_ProformaInvoice_Click"/>
                 </StackPanel>
             </Border>
         </Popup>

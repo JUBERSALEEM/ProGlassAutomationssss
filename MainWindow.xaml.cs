@@ -168,6 +168,8 @@ namespace ProGlassAutomation
 
         // ==================== MENU HANDLERS ====================
 
+        // ==================== DASHBOARD DROPDOWN ====================
+
         private void MenuItem_Overview_Click(object sender, RoutedEventArgs e)
         {
             CloseCurrentDropdown();
@@ -186,6 +188,14 @@ namespace ProGlassAutomation
             _viewModel.ShowDashboard();
         }
 
+        private void MenuItem_ProformaInvoice_Click(object sender, RoutedEventArgs e)
+        {
+            CloseCurrentDropdown();
+            _viewModel.ShowProformaInvoice();
+        }
+
+        // ==================== LICENSING DROPDOWN ====================
+
         private void MenuItem_ActivateLicense_Click(object sender, RoutedEventArgs e)
         {
             CloseCurrentDropdown();
@@ -203,6 +213,8 @@ namespace ProGlassAutomation
             CloseCurrentDropdown();
             _viewModel.ShowSubscriptionPlan();
         }
+
+        // ==================== CALCULATORS DROPDOWN ====================
 
         private void MenuItem_SGU_Click(object sender, RoutedEventArgs e)
         {
@@ -249,6 +261,8 @@ namespace ProGlassAutomation
             }
         }
 
+        // ==================== OPERATIONS DROPDOWN ====================
+
         private void MenuItem_SheetStore_Click(object sender, RoutedEventArgs e)
         {
             CloseCurrentDropdown();
@@ -266,6 +280,8 @@ namespace ProGlassAutomation
             CloseCurrentDropdown();
             _viewModel.ShowDeliveries();
         }
+
+        // ==================== REPORTS DROPDOWN ====================
 
         private void MenuItem_DailyWorksReport_Click(object sender, RoutedEventArgs e)
         {
@@ -285,6 +301,8 @@ namespace ProGlassAutomation
             _viewModel.ShowSheetStore();
         }
 
+        // ==================== SETTINGS DROPDOWN ====================
+
         private void MenuItem_Profile_Click(object sender, RoutedEventArgs e)
         {
             CloseCurrentDropdown();
@@ -296,6 +314,8 @@ namespace ProGlassAutomation
             CloseCurrentDropdown();
             _viewModel.ShowUsers();
         }
+
+        // ==================== HOME BUTTON ====================
 
         private void BtnHome_Click(object sender, RoutedEventArgs e)
         {
