@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -16,20 +17,9 @@ namespace ProGlassAutomation
     {
         private readonly MainViewModel _viewModel;
         private DispatcherTimer _clockTimer;
-
-        // SINGLE SOURCE OF TRUTH
         private Popup _activeDropdown;
         private string _activeDropdownName;
-
-        // Independent layer
         private Popup _screenshotPopup;
-
-        // Throttle validation
-        private DateTime _lastValidationTime;
-        private const int VALIDATION_THROTTLE_MS = 16;
-
-        // Thread safety
-        private readonly object _dropdownLock = new object();
 
         public MainWindow()
         {
@@ -47,149 +37,8 @@ namespace ProGlassAutomation
             };
         }
 
-        private void Window_MouseMove(object sender, MouseEventArgs e)
-        {
-            var now = DateTime.Now;
-            if ((now - _lastValidationTime).TotalMilliseconds < VALIDATION_THROTTLE_MS)
-                return;
-            _lastValidationTime = now;
+        // ==================== CORE DROPDOWN LOGIC ====================
 
-            ValidateDropdownState();
-        }
-
-        private void ValidateDropdownState()
-        {
-            if (_screenshotPopup != null && _screenshotPopup.IsOpen)
-                return;
-
-            if (!Dispatcher.CheckAccess())
-            {
-                Dispatcher.Invoke(ValidateDropdownState);
-                return;
-            }
-
-            if (_activeDropdown == null || !_activeDropdown.IsOpen)
-            {
-                _activeDropdown = null;
-                _activeDropdownName = null;
-                return;
-            }
-
-            Point mousePos = Mouse.GetPosition(this);
-            Button activeButton = GetButtonByDropdownName(_activeDropdownName);
-
-            if (activeButton != null)
-            {
-                bool mouseOverCard = IsMouseOverElement(activeButton, true);
-                bool mouseOverDropdown = IsMouseOverElement(_activeDropdown.Child as FrameworkElement, false);
-
-                if (!mouseOverCard && !mouseOverDropdown)
-                {
-                    CloseDropdown();
-                }
-            }
-        }
-
-        private bool IsMouseOverElement(FrameworkElement element, bool useParentBorder)
-        {
-            if (element == null)
-                return false;
-
-            try
-            {
-                Point mousePos = Mouse.GetPosition(this);
-
-                FrameworkElement checkElement = element;
-                if (useParentBorder)
-                {
-                    var border = GetParentBorder(element);
-                    if (border != null)
-                        checkElement = border;
-                }
-
-                GeneralTransform transform = checkElement.TransformToAncestor(this);
-                Point elementPos = transform.Transform(new Point(0, 0));
-
-                double width = checkElement.ActualWidth;
-                double height = checkElement.ActualHeight;
-
-                return mousePos.X >= elementPos.X &&
-                       mousePos.X <= elementPos.X + width &&
-                       mousePos.Y >= elementPos.Y &&
-                       mousePos.Y <= elementPos.Y + height;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        private Border GetParentBorder(DependencyObject element)
-        {
-            DependencyObject parent = element;
-            while (parent != null)
-            {
-                if (parent is Border border)
-                    return border;
-                parent = VisualTreeHelper.GetParent(parent);
-            }
-            return null;
-        }
-
-        private Button GetButtonByDropdownName(string dropdownName)
-        {
-            if (string.IsNullOrEmpty(dropdownName))
-                return null;
-
-            return dropdownName switch
-            {
-                "DashboardDropdown" => BtnDashboard,
-                "LicensingDropdown" => BtnSubscription,
-                "CalculatorsDropdown" => BtnCalculators,
-                "OperationsDropdown" => BtnOperations,
-                "ReportsDropdown" => BtnReports,
-                "SettingsDropdown" => BtnSettings,
-                _ => null
-            };
-        }
-
-        private void CloseDropdown()
-        {
-            lock (_dropdownLock)
-            {
-                if (_activeDropdown != null)
-                {
-                    try { _activeDropdown.IsOpen = false; }
-                    catch { }
-                }
-                _activeDropdown = null;
-                _activeDropdownName = null;
-            }
-        }
-
-        private void OpenDropdown(string dropdownName)
-        {
-            lock (_dropdownLock)
-            {
-                var dropdown = this.FindName(dropdownName) as Popup;
-                if (dropdown == null)
-                    return;
-
-                if (_activeDropdown != null && _activeDropdown != dropdown)
-                {
-                    try { _activeDropdown.IsOpen = false; }
-                    catch { }
-                }
-
-                _activeDropdown = dropdown;
-                _activeDropdownName = dropdownName;
-
-                try { dropdown.IsOpen = true; }
-                catch { }
-            }
-        }
-
-        // CLICK handler - open dropdown
         private void DropdownButton_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button button)
@@ -197,12 +46,19 @@ namespace ProGlassAutomation
                 string dropdownName = button.Tag as string;
                 if (!string.IsNullOrEmpty(dropdownName))
                 {
-                    OpenDropdown(dropdownName);
+                    // Toggle dropdown
+                    if (_activeDropdownName == dropdownName && _activeDropdown?.IsOpen == true)
+                    {
+                        CloseCurrentDropdown();
+                    }
+                    else
+                    {
+                        OpenDropdown(dropdownName);
+                    }
                 }
             }
         }
 
-        // MOUSE ENTER handler - auto-open dropdown
         private void DropdownButton_MouseEnter(object sender, MouseEventArgs e)
         {
             if (sender is Button button)
@@ -215,41 +71,77 @@ namespace ProGlassAutomation
             }
         }
 
+        private void DropdownButton_MouseLeave(object sender, MouseEventArgs e)
+        {
+            CloseCurrentDropdown();
+        }
+
+        private void OpenDropdown(string dropdownName)
+        {
+            // Close current dropdown first
+            if (_activeDropdown != null)
+            {
+                try { _activeDropdown.IsOpen = false; }
+                catch { }
+            }
+
+            var dropdown = this.FindName(dropdownName) as Popup;
+            if (dropdown == null)
+                return;
+
+            _activeDropdown = dropdown;
+            _activeDropdownName = dropdownName;
+
+            try { dropdown.IsOpen = true; }
+            catch { }
+        }
+
+        private void CloseCurrentDropdown()
+        {
+            if (_activeDropdown != null)
+            {
+                try { _activeDropdown.IsOpen = false; }
+                catch { }
+            }
+            _activeDropdown = null;
+            _activeDropdownName = null;
+        }
+
         // ==================== MENU HANDLERS ====================
 
         private void MenuItem_Overview_Click(object sender, RoutedEventArgs e)
         {
-            CloseDropdown();
+            CloseCurrentDropdown();
             _viewModel.ShowDashboard();
         }
 
         private void MenuItem_Statistics_Click(object sender, RoutedEventArgs e)
         {
-            CloseDropdown();
+            CloseCurrentDropdown();
             _viewModel.ShowDashboard();
         }
 
         private void MenuItem_RecentActivity_Click(object sender, RoutedEventArgs e)
         {
-            CloseDropdown();
+            CloseCurrentDropdown();
             _viewModel.ShowDashboard();
         }
 
         private void MenuItem_ActivateLicense_Click(object sender, RoutedEventArgs e)
         {
-            CloseDropdown();
+            CloseCurrentDropdown();
             _viewModel.ShowSubscriptionPlan();
         }
 
         private void MenuItem_LicenseInfo_Click(object sender, RoutedEventArgs e)
         {
-            CloseDropdown();
+            CloseCurrentDropdown();
             _viewModel.ShowSubscriptionPlan();
         }
 
         private void MenuItem_Subscription_Click(object sender, RoutedEventArgs e)
         {
-            CloseDropdown();
+            CloseCurrentDropdown();
             _viewModel.ShowSubscriptionPlan();
         }
 
@@ -257,7 +149,7 @@ namespace ProGlassAutomation
         {
             if (CheckLicense())
             {
-                CloseDropdown();
+                CloseCurrentDropdown();
                 _viewModel.ShowSGUCalculator();
             }
         }
@@ -266,7 +158,7 @@ namespace ProGlassAutomation
         {
             if (CheckLicense())
             {
-                CloseDropdown();
+                CloseCurrentDropdown();
                 _viewModel.ShowDGUCalculator();
             }
         }
@@ -275,7 +167,7 @@ namespace ProGlassAutomation
         {
             if (CheckLicense())
             {
-                CloseDropdown();
+                CloseCurrentDropdown();
                 _viewModel.ShowLaminationCalculator();
             }
         }
@@ -284,7 +176,7 @@ namespace ProGlassAutomation
         {
             if (CheckLicense())
             {
-                CloseDropdown();
+                CloseCurrentDropdown();
                 _viewModel.ShowDGULaminationCalculator();
             }
         }
@@ -293,62 +185,62 @@ namespace ProGlassAutomation
         {
             if (CheckLicense())
             {
-                CloseDropdown();
+                CloseCurrentDropdown();
                 _viewModel.ShowGlassOptimization();
             }
         }
 
         private void MenuItem_SheetStore_Click(object sender, RoutedEventArgs e)
         {
-            CloseDropdown();
+            CloseCurrentDropdown();
             _viewModel.ShowSheetStore();
         }
 
         private void MenuItem_DailyWorks_Click(object sender, RoutedEventArgs e)
         {
-            CloseDropdown();
+            CloseCurrentDropdown();
             _viewModel.ShowDailyWorks();
         }
 
         private void MenuItem_Deliveries_Click(object sender, RoutedEventArgs e)
         {
-            CloseDropdown();
+            CloseCurrentDropdown();
             _viewModel.ShowDeliveries();
         }
 
         private void MenuItem_DailyWorksReport_Click(object sender, RoutedEventArgs e)
         {
-            CloseDropdown();
+            CloseCurrentDropdown();
             _viewModel.ShowDailyWorks();
         }
 
         private void MenuItem_DeliveryReport_Click(object sender, RoutedEventArgs e)
         {
-            CloseDropdown();
+            CloseCurrentDropdown();
             _viewModel.ShowDeliveries();
         }
 
         private void MenuItem_InventoryReport_Click(object sender, RoutedEventArgs e)
         {
-            CloseDropdown();
+            CloseCurrentDropdown();
             _viewModel.ShowSheetStore();
         }
 
         private void MenuItem_Profile_Click(object sender, RoutedEventArgs e)
         {
-            CloseDropdown();
+            CloseCurrentDropdown();
             _viewModel.ShowProfile();
         }
 
         private void MenuItem_Users_Click(object sender, RoutedEventArgs e)
         {
-            CloseDropdown();
+            CloseCurrentDropdown();
             _viewModel.ShowUsers();
         }
 
         private void BtnHome_Click(object sender, RoutedEventArgs e)
         {
-            CloseDropdown();
+            CloseCurrentDropdown();
             _viewModel.ShowDashboard();
         }
 
@@ -369,8 +261,6 @@ namespace ProGlassAutomation
             {
                 Background = Brushes.White,
                 CornerRadius = new CornerRadius(12),
-                Padding = new Thickness(0),
-                Margin = new Thickness(0, 8, 0, 0),
                 MinWidth = 280,
                 Effect = new System.Windows.Media.Effects.DropShadowEffect
                 {
@@ -381,7 +271,7 @@ namespace ProGlassAutomation
                 }
             };
 
-            var stack = new StackPanel { Margin = new Thickness(0) };
+            var stack = new StackPanel { Margin = new Thickness(8) };
 
             var header = new Border
             {
@@ -500,7 +390,7 @@ namespace ProGlassAutomation
 
         private void ScreenshotBtn_Click(object sender, RoutedEventArgs e)
         {
-            CloseDropdown();
+            CloseCurrentDropdown();
             if (_screenshotPopup != null)
                 _screenshotPopup.IsOpen = !_screenshotPopup.IsOpen;
         }
@@ -511,8 +401,7 @@ namespace ProGlassAutomation
         {
             try
             {
-                // Target resolutions - maximum quality presets
-                int targetWidth = 3840, targetHeight = 2160; // 4K base
+                int targetWidth = 3840, targetHeight = 2160;
                 switch (quality)
                 {
                     case ScreenshotQuality.HD: targetWidth = 2560; targetHeight = 1440; break;
@@ -521,29 +410,23 @@ namespace ProGlassAutomation
                     case ScreenshotQuality.UHD8K: targetWidth = 10240; targetHeight = 5760; break;
                 }
 
-                // Force layout update on UI thread
                 UpdateLayout();
                 Dispatcher.Invoke(() => { }, DispatcherPriority.Loaded);
 
-                // Calculate scale to reach target resolution
                 double scaleX = targetWidth / ActualWidth;
                 double scaleY = targetHeight / ActualHeight;
                 double scale = Math.Max(scaleX, scaleY);
 
-                // Minimum 4x scale for ultra quality
                 if (scale < 4.0) scale = 4.0;
 
                 int width = (int)(ActualWidth * scale);
                 int height = (int)(ActualHeight * scale);
                 int dpi = (int)(96 * scale);
 
-                // Create high-quality bitmap on UI thread
-                RenderTargetBitmap rtb = new RenderTargetBitmap(
-                    width, height, dpi, dpi, PixelFormats.Pbgra32);
+                RenderTargetBitmap rtb = new RenderTargetBitmap(width, height, dpi, dpi, PixelFormats.Pbgra32);
                 rtb.Render(this);
                 rtb.Freeze();
 
-                // Show save dialog
                 var sfd = new Microsoft.Win32.SaveFileDialog
                 {
                     Filter = "PNG Image|*.png|BMP Image|*.bmp|JPEG Image|*.jpg",
@@ -556,15 +439,12 @@ namespace ProGlassAutomation
                     string filePath = sfd.FileName;
                     string extension = Path.GetExtension(filePath).ToLower();
 
-                    // Ensure directory exists
                     var directory = Path.GetDirectoryName(filePath);
                     if (!Directory.Exists(directory) && !string.IsNullOrEmpty(directory))
                         Directory.CreateDirectory(directory);
 
-                    // Save file on background thread - ENCODE HERE, NOT ON UI THREAD
                     await Task.Run(() =>
                     {
-                        // Create encoder on background thread
                         BitmapEncoder encoder = extension switch
                         {
                             ".png" => new PngBitmapEncoder { Interlace = PngInterlaceOption.On },
@@ -578,16 +458,14 @@ namespace ProGlassAutomation
                         encoder.Save(fs);
                     });
 
-                    // Get file size for display
                     var fileInfo = new FileInfo(filePath);
                     string sizeDisplay = fileInfo.Length >= 1024 * 1024
                         ? $"{fileInfo.Length / (1024.0 * 1024.0):F2} MB"
                         : $"{fileInfo.Length / 1024.0:F1} KB";
 
-                    // Show success message on UI thread
                     Dispatcher.Invoke(() =>
                     {
-                        MessageBox.Show($"✅ Screenshot saved!\n\n📁 {filePath}\n📐 {width}x{height}\n💾 {sizeDisplay}", "Screenshot", MessageBoxButton.OK, MessageBoxImage.Information);
+                        MessageBox.Show($"Screenshot saved!\n\nFile: {filePath}\nResolution: {width}x{height}\nSize: {sizeDisplay}", "Screenshot", MessageBoxButton.OK, MessageBoxImage.Information);
                     });
                 }
             }
@@ -599,6 +477,8 @@ namespace ProGlassAutomation
                 });
             }
         }
+
+        // ==================== OTHER METHODS ====================
 
         private void UpdateLicenseStatus()
         {
@@ -622,9 +502,10 @@ namespace ProGlassAutomation
         private void StartClock()
         {
             _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
-            _clockTimer.Tick += (s, e) => {
+            _clockTimer.Tick += (s, e) =>
+            {
                 ClockText.Text = DateTime.Now.ToString("HH:mm:ss");
-                CurrentDateText.Text = DateTime.Now.ToString("dd-MMM-yyyy");
+                CurrentDateText.Text = DateTime.Now.ToString("dd-MMMM-yyyy");
             };
             _clockTimer.Start();
         }

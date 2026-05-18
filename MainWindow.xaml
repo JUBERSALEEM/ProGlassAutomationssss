@@ -5,8 +5,7 @@
         Title="ProGlass ERP System" Height="950" Width="1650"
         WindowStartupLocation="CenterScreen" Background="#F1F5F9"
         UseLayoutRounding="True" SnapsToDevicePixels="True"
-        TextOptions.TextFormattingMode="Display"
-        MouseMove="Window_MouseMove">
+        TextOptions.TextFormattingMode="Display">
 
     <Window.DataContext>
         <vm:MainViewModel/>
@@ -194,7 +193,7 @@
                     <Button x:Name="BtnHome" Style="{StaticResource HomeButtonStyle}" Click="BtnHome_Click" Margin="10,0,0,0"/>
                 </StackPanel>
 
-                <!-- CENTER: Module Cards - TAG on Border for mouse tracking -->
+                <!-- CENTER: Module Cards -->
                 <Grid Grid.Column="1" Margin="20,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -206,8 +205,9 @@
                     </Grid.ColumnDefinitions>
 
                     <!-- Dashboard Card -->
-                    <Border Grid.Column="0" Style="{StaticResource ModuleCardStyle}" Effect="{StaticResource ModuleCardShadow}" Margin="0,0,4,0" Tag="DashboardDropdown">
-                        <Button x:Name="BtnDashboard" Style="{StaticResource ModuleButtonStyle}" Tag="DashboardDropdown">
+                    <Border Grid.Column="0" Style="{StaticResource ModuleCardStyle}" Effect="{StaticResource ModuleCardShadow}" Margin="0,0,4,0">
+                        <Button x:Name="BtnDashboard" Style="{StaticResource ModuleButtonStyle}" Tag="DashboardDropdown"
+                                Click="DropdownButton_Click" MouseEnter="DropdownButton_MouseEnter" MouseLeave="DropdownButton_MouseLeave">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="📊" FontSize="13" Margin="0,0,6,0"/>
                                 <TextBlock Text="DASHBOARD"/>
@@ -217,8 +217,9 @@
                     </Border>
 
                     <!-- Licensing Card -->
-                    <Border Grid.Column="1" Style="{StaticResource ModuleCardStyle}" Effect="{StaticResource ModuleCardShadow}" Margin="4,0" Tag="LicensingDropdown">
-                        <Button x:Name="BtnSubscription" Style="{StaticResource ModuleButtonStyle}" Tag="LicensingDropdown">
+                    <Border Grid.Column="1" Style="{StaticResource ModuleCardStyle}" Effect="{StaticResource ModuleCardShadow}" Margin="4,0">
+                        <Button x:Name="BtnSubscription" Style="{StaticResource ModuleButtonStyle}" Tag="LicensingDropdown"
+                                Click="DropdownButton_Click" MouseEnter="DropdownButton_MouseEnter" MouseLeave="DropdownButton_MouseLeave">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="⭐" FontSize="13" Margin="0,0,6,0"/>
                                 <TextBlock Text="LICENSING"/>
@@ -228,8 +229,9 @@
                     </Border>
 
                     <!-- Calculators Card -->
-                    <Border Grid.Column="2" Style="{StaticResource ModuleCardStyle}" Effect="{StaticResource ModuleCardShadow}" Margin="4,0" Tag="CalculatorsDropdown">
-                        <Button x:Name="BtnCalculators" Style="{StaticResource ModuleButtonStyle}" Tag="CalculatorsDropdown">
+                    <Border Grid.Column="2" Style="{StaticResource ModuleCardStyle}" Effect="{StaticResource ModuleCardShadow}" Margin="4,0">
+                        <Button x:Name="BtnCalculators" Style="{StaticResource ModuleButtonStyle}" Tag="CalculatorsDropdown"
+                                Click="DropdownButton_Click" MouseEnter="DropdownButton_MouseEnter" MouseLeave="DropdownButton_MouseLeave">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="🧮" FontSize="13" Margin="0,0,6,0"/>
                                 <TextBlock Text="CALCULATORS"/>
@@ -239,8 +241,9 @@
                     </Border>
 
                     <!-- Operations Card -->
-                    <Border Grid.Column="3" Style="{StaticResource ModuleCardStyle}" Effect="{StaticResource ModuleCardShadow}" Margin="4,0" Tag="OperationsDropdown">
-                        <Button x:Name="BtnOperations" Style="{StaticResource ModuleButtonStyle}" Tag="OperationsDropdown">
+                    <Border Grid.Column="3" Style="{StaticResource ModuleCardStyle}" Effect="{StaticResource ModuleCardShadow}" Margin="4,0">
+                        <Button x:Name="BtnOperations" Style="{StaticResource ModuleButtonStyle}" Tag="OperationsDropdown"
+                                Click="DropdownButton_Click" MouseEnter="DropdownButton_MouseEnter" MouseLeave="DropdownButton_MouseLeave">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="⚙️" FontSize="13" Margin="0,0,6,0"/>
                                 <TextBlock Text="OPERATIONS"/>
@@ -250,8 +253,9 @@
                     </Border>
 
                     <!-- Reports Card -->
-                    <Border Grid.Column="4" Style="{StaticResource ModuleCardStyle}" Effect="{StaticResource ModuleCardShadow}" Margin="4,0" Tag="ReportsDropdown">
-                        <Button x:Name="BtnReports" Style="{StaticResource ModuleButtonStyle}" Tag="ReportsDropdown">
+                    <Border Grid.Column="4" Style="{StaticResource ModuleCardStyle}" Effect="{StaticResource ModuleCardShadow}" Margin="4,0">
+                        <Button x:Name="BtnReports" Style="{StaticResource ModuleButtonStyle}" Tag="ReportsDropdown"
+                                Click="DropdownButton_Click" MouseEnter="DropdownButton_MouseEnter" MouseLeave="DropdownButton_MouseLeave">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="📈" FontSize="13" Margin="0,0,6,0"/>
                                 <TextBlock Text="REPORTS"/>
@@ -261,8 +265,9 @@
                     </Border>
 
                     <!-- Settings Card -->
-                    <Border Grid.Column="5" Style="{StaticResource ModuleCardStyle}" Effect="{StaticResource ModuleCardShadow}" Margin="4,0,0,0" Tag="SettingsDropdown">
-                        <Button x:Name="BtnSettings" Style="{StaticResource ModuleButtonStyle}" Tag="SettingsDropdown">
+                    <Border Grid.Column="5" Style="{StaticResource ModuleCardStyle}" Effect="{StaticResource ModuleCardShadow}" Margin="4,0,0,0">
+                        <Button x:Name="BtnSettings" Style="{StaticResource ModuleButtonStyle}" Tag="SettingsDropdown"
+                                Click="DropdownButton_Click" MouseEnter="DropdownButton_MouseEnter" MouseLeave="DropdownButton_MouseLeave">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="⚙️" FontSize="13" Margin="0,0,6,0"/>
                                 <TextBlock Text="SETTINGS"/>
