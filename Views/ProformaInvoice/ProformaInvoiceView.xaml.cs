@@ -1,5 +1,4 @@
-﻿using System;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using ProGlassAutomation.Models;
@@ -34,10 +33,9 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             }
         }
 
+        // KEY HANDLER - Handle Enter, Tab, and Arrow keys
         private void DataGrid_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key != Key.Tab) return;
-            if (Keyboard.Modifiers == ModifierKeys.Shift) return;
             if (sender is not DataGrid dataGrid) return;
 
             try
@@ -45,65 +43,140 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 var cell = dataGrid.CurrentCell;
                 if (!cell.IsValid || cell.Column == null) return;
 
-                int currentColumnIndex = cell.Column.DisplayIndex;
-                int totalColumns = dataGrid.Columns.Count;
-
-                // Check if on Price column (index 11) or after - create new row
-                // This intercepts Tab BEFORE going to TotalAED
-                if (currentColumnIndex >= totalColumns - 3)
+                // ENTER KEY - Move to next row or create new row if on last row
+                if (e.Key == Key.Enter)
                 {
                     e.Handled = true;
+                    HandleEnterKey(dataGrid);
+                    return;
+                }
 
-                    var currentItem = cell.Item as InvoiceItemModel;
-                    if (currentItem == null) return;
+                // TAB KEY - Move to next row when at last columns
+                if (e.Key == Key.Tab && Keyboard.Modifiers != ModifierKeys.Shift)
+                {
+                    int currentColumnIndex = cell.Column.DisplayIndex;
+                    int totalColumns = dataGrid.Columns.Count;
 
-                    var spec = FindSpecification(currentItem);
-                    if (spec == null) return;
-
-                    int itemIndex = spec.Items.IndexOf(currentItem);
-
-                    // If not last row, move to next row
-                    if (itemIndex < spec.Items.Count - 1)
+                    if (currentColumnIndex >= totalColumns - 3)
                     {
-                        System.Threading.Tasks.Task.Delay(50).ContinueWith(_ =>
+                        e.Handled = true;
+                        HandleTabKey(dataGrid);
+                        return;
+                    }
+                }
+            }
+            catch { }
+        }
+
+        // ENTER KEY - Move to next row, or create new row with price copied from first row
+        private void HandleEnterKey(DataGrid dataGrid)
+        {
+            try
+            {
+                var currentItem = dataGrid.CurrentCell.Item as InvoiceItemModel;
+                if (currentItem == null) return;
+
+                var spec = FindSpecification(currentItem);
+                if (spec == null) return;
+
+                int currentIndex = spec.Items.IndexOf(currentItem);
+                int totalRows = spec.Items.Count;
+
+                // If not on last row, move to next row
+                if (currentIndex < totalRows - 1)
+                {
+                    var nextItem = spec.Items[currentIndex + 1];
+                    dataGrid.SelectedItem = nextItem;
+                    dataGrid.ScrollIntoView(nextItem);
+
+                    // Stay in same column
+                    int currentColIndex = dataGrid.CurrentCell.Column.DisplayIndex;
+                    if (currentColIndex < dataGrid.Columns.Count)
+                    {
+                        dataGrid.CurrentCell = new DataGridCellInfo(nextItem, dataGrid.Columns[currentColIndex]);
+                    }
+                    dataGrid.BeginEdit();
+                }
+                else
+                {
+                    // On last row - create new row with price from first row
+                    _viewModel.AddItemWithPrice(spec);
+
+                    System.Threading.Tasks.Task.Delay(100).ContinueWith(_ =>
+                    {
+                        Dispatcher.Invoke(() =>
                         {
-                            Dispatcher.Invoke(() =>
+                            int newIndex = spec.Items.Count - 1;
+                            if (newIndex >= 0)
                             {
-                                var nextItem = spec.Items[itemIndex + 1];
-                                dataGrid.SelectedItem = nextItem;
-                                dataGrid.ScrollIntoView(nextItem);
+                                var newItem = spec.Items[newIndex];
+                                dataGrid.SelectedItem = newItem;
+                                dataGrid.ScrollIntoView(newItem);
+
+                                // Move to GlassRef column (column index 1)
                                 if (dataGrid.Columns.Count > 1)
                                 {
-                                    dataGrid.CurrentCell = new DataGridCellInfo(nextItem, dataGrid.Columns[1]);
+                                    dataGrid.CurrentCell = new DataGridCellInfo(newItem, dataGrid.Columns[1]);
                                 }
                                 dataGrid.BeginEdit();
-                            });
+                            }
                         });
-                    }
-                    else
-                    {
-                        // Create new row
-                        _viewModel.AddItem(spec);
+                    });
+                }
+            }
+            catch { }
+        }
 
-                        System.Threading.Tasks.Task.Delay(100).ContinueWith(_ =>
-                        {
-                            Dispatcher.Invoke(() =>
-                            {
-                                int newIndex = spec.Items.Count - 1;
-                                if (newIndex >= 0)
-                                {
-                                    var newItem = spec.Items[newIndex];
-                                    dataGrid.SelectedItem = newItem;
-                                    dataGrid.ScrollIntoView(newItem);
-                                    if (dataGrid.Columns.Count > 1)
-                                    {
-                                        dataGrid.CurrentCell = new DataGridCellInfo(newItem, dataGrid.Columns[1]);
-                                    }
-                                    dataGrid.BeginEdit();
-                                }
-                            });
-                        });
+        // TAB KEY - Move to next row or create new row
+        private void HandleTabKey(DataGrid dataGrid)
+        {
+            try
+            {
+                var currentItem = dataGrid.CurrentCell.Item as InvoiceItemModel;
+                if (currentItem == null) return;
+
+                var spec = FindSpecification(currentItem);
+                if (spec == null) return;
+
+                int currentIndex = spec.Items.IndexOf(currentItem);
+
+                if (currentIndex < spec.Items.Count - 1)
+                {
+                    // Move to next row
+                    var nextItem = spec.Items[currentIndex + 1];
+                    dataGrid.SelectedItem = nextItem;
+                    dataGrid.ScrollIntoView(nextItem);
+
+                    if (dataGrid.Columns.Count > 1)
+                    {
+                        dataGrid.CurrentCell = new DataGridCellInfo(nextItem, dataGrid.Columns[1]);
                     }
+                    dataGrid.BeginEdit();
+                }
+                else
+                {
+                    // Create new row with price from first row
+                    _viewModel.AddItemWithPrice(spec);
+
+                    System.Threading.Tasks.Task.Delay(100).ContinueWith(_ =>
+                    {
+                        Dispatcher.Invoke(() =>
+                        {
+                            int newIndex = spec.Items.Count - 1;
+                            if (newIndex >= 0)
+                            {
+                                var newItem = spec.Items[newIndex];
+                                dataGrid.SelectedItem = newItem;
+                                dataGrid.ScrollIntoView(newItem);
+
+                                if (dataGrid.Columns.Count > 1)
+                                {
+                                    dataGrid.CurrentCell = new DataGridCellInfo(newItem, dataGrid.Columns[1]);
+                                }
+                                dataGrid.BeginEdit();
+                            }
+                        });
+                    });
                 }
             }
             catch { }
@@ -121,6 +194,39 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 }
             }
             return null;
+        }
+
+        private void PrintPreview_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var printPreview = new ProformaInvoicePrintPreviewView
+                {
+                    DataContext = DataContext
+                };
+
+                var scrollViewer = new ScrollViewer
+                {
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                    HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+                    Content = printPreview
+                };
+
+                var window = new Window
+                {
+                    Content = scrollViewer,
+                    Title = "Print Preview - ProForma Invoice",
+                    Width = 1100,
+                    Height = 800,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen
+                };
+
+                window.Show();
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show($"Error opening print preview: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }

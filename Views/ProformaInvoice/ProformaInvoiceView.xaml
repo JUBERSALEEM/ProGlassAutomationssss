@@ -544,7 +544,7 @@
                     </StackPanel>
                     <StackPanel Grid.Column="1" Orientation="Horizontal">
                         <Button Style="{StaticResource SecondaryButtonStyle}" Content="TOGGLE LM" Command="{Binding ToggleLMCommand}" Margin="0,0,8,0"/>
-                        <Button Style="{StaticResource SecondaryButtonStyle}" Content="PREVIEW" Command="{Binding PrintPreviewCommand}" Margin="0,0,8,0"/>
+                        <Button Style="{StaticResource SecondaryButtonStyle}" Content="PREVIEW" Click="PrintPreview_Click" Margin="0,0,8,0"/>
                         <Button Style="{StaticResource PrimaryButtonStyle}" Content="PRINT" Command="{Binding PrintCommand}"/>
                     </StackPanel>
                 </Grid>
@@ -892,7 +892,7 @@
                     Padding="0" 
                     Click="DeleteRow_Click" 
                     Tag="{Binding}"
-                    HorizontalAlignment="Center" 
+                    HorizontalAlignment="Center"
                     VerticalAlignment="Center"
                     Focusable="False"/>
                                                             </DataTemplate>

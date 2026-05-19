@@ -271,6 +271,26 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
+        // Add item with ONLY price copied from first row
+        public void AddItemWithPrice(SpecificationModel spec)
+        {
+            if (spec == null) return;
+
+            var newItem = new InvoiceItemModel { SrNo = spec.Items.Count + 1 };
+
+            // Copy ONLY price from first row if exists
+            if (spec.Items.Count > 0)
+            {
+                var firstRow = spec.Items[0];
+                newItem.Price = firstRow.Price;
+                // Width, Height, Qty, GlassRef - all EMPTY
+            }
+
+            spec.Items.Add(newItem);
+            Invoice.IsDirty = true;
+        }
+
+        // Regular add item
         public void AddItem(SpecificationModel spec)
         {
             if (spec == null) return;
