@@ -494,6 +494,41 @@
                         </StackPanel>
                     </Border>
 
+                    <!-- LARGE SIZE SURCHARGE -->
+                    <Border Background="White" CornerRadius="8" Padding="12" Margin="0,0,0,12" BorderBrush="#DC2626" BorderThickness="2">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                <TextBlock Text="⚠️" FontSize="14" Margin="0,0,6,0"/>
+                                <TextBlock Text="LARGE SIZE SURCHARGE" FontSize="12" FontWeight="Bold" Foreground="#DC2626"/>
+                            </StackPanel>
+
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Threshold (SQM)" Style="{StaticResource CalcLabelStyle}"/>
+                                    <TextBox Text="{Binding SurchargeThreshold, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource CalcInputStyle}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Surcharge %" Style="{StaticResource CalcLabelStyle}"/>
+                                    <TextBox Text="{Binding SurchargePercent, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource CalcInputStyle}"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <Border Background="#FEF2F2" CornerRadius="6" Padding="10">
+                                <StackPanel>
+                                    <TextBlock Text="How it works:" FontSize="9" FontWeight="Bold" Foreground="#DC2626" Margin="0,0,0,4"/>
+                                    <TextBlock Text="• If SQM >= Threshold → Price + Surcharge%" FontSize="8" Foreground="#991B1B" TextWrapping="Wrap"/>
+                                    <TextBlock Text="• Example: Price=125, SQM=4, Surcharge=10% → Final=137" FontSize="8" Foreground="#991B1B" TextWrapping="Wrap"/>
+                                    <TextBlock Text="• Applies per row independently" FontSize="8" Foreground="#991B1B" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
                     <!-- SAVED FILES LIST -->
                     <Border Background="White" CornerRadius="8" Padding="12" Margin="0,0,0,12" BorderBrush="#E2E8F0" BorderThickness="1">
                         <StackPanel>
@@ -659,13 +694,23 @@
                                                     <ColumnDefinition Width="Auto"/>
                                                     <ColumnDefinition Width="*"/>
                                                     <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Grid.Column="0" Text="SPECIFICATION:" FontSize="12" FontWeight="Bold" Foreground="White" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                                 <TextBox Grid.Column="1" Text="{Binding SpecificationName}" 
-                                     Background="White" Foreground="#0F172A" FontSize="12" FontWeight="SemiBold"
-                                     MinWidth="250" Padding="8,4" VerticalAlignment="Center"/>
-                                                <Button Grid.Column="2" Content="+ ADD ROW" Style="{StaticResource SecondaryButtonStyle}" 
-                                    Click="AddRow_Click" Tag="{Binding}" Padding="12,6"/>
+             Background="White" Foreground="#0F172A" FontSize="12" FontWeight="SemiBold"
+             MinWidth="150" Padding="8,4" VerticalAlignment="Center"/>
+
+                                                <!-- BASE PRICE INPUT -->
+                                                <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="16,0">
+                                                    <TextBlock Text="BASE PRICE:" FontSize="11" FontWeight="Bold" Foreground="White" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                    <TextBox Text="{Binding BasePrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}" 
+                 Width="80" Padding="8,4" FontSize="12" Background="#FEF9C3" Foreground="#0F172A" FontWeight="Bold"
+                 VerticalAlignment="Center"/>
+                                                </StackPanel>
+
+                                                <Button Grid.Column="3" Content="+ ADD ROW" Style="{StaticResource SecondaryButtonStyle}" 
+            Click="AddRow_Click" Tag="{Binding}" Padding="12,6"/>
                                             </Grid>
                                         </Border>
 
@@ -847,22 +892,17 @@
                                                         </DataGridTemplateColumn.CellTemplate>
                                                     </DataGridTemplateColumn>
 
-                                                    <!-- Price -->
-                                                    <DataGridTextColumn Header="PRICE/AED" Binding="{Binding Price, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}" Width="100">
+                                                    <!-- Price (Read Only - Shows Display Price with Surcharge) -->
+                                                    <DataGridTextColumn Header="PRICE/AED" Binding="{Binding DisplayPrice, StringFormat=N2}" Width="100" IsReadOnly="True">
                                                         <DataGridTextColumn.ElementStyle>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="HorizontalAlignment" Value="Right"/>
                                                                 <Setter Property="VerticalAlignment" Value="Center"/>
                                                                 <Setter Property="Padding" Value="0,0,8,0"/>
+                                                                <Setter Property="FontWeight" Value="Bold"/>
+                                                                <Setter Property="Foreground" Value="#1E40AF"/>
                                                             </Style>
                                                         </DataGridTextColumn.ElementStyle>
-                                                        <DataGridTextColumn.EditingElementStyle>
-                                                            <Style TargetType="TextBox">
-                                                                <Setter Property="TextAlignment" Value="Right"/>
-                                                                <Setter Property="VerticalContentAlignment" Value="Center"/>
-                                                                <Setter Property="Padding" Value="0,0,4,0"/>
-                                                            </Style>
-                                                        </DataGridTextColumn.EditingElementStyle>
                                                     </DataGridTextColumn>
 
                                                     <!-- Total Price (Read Only) -->

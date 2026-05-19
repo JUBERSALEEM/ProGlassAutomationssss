@@ -116,6 +116,21 @@ namespace ProGlassAutomation.ViewModels
             set { _sGUProfitPercent = value; OnPropertyChanged(); }
         }
 
+        // Surcharge Settings
+        private double _surchargeThreshold = 4;
+        public double SurchargeThreshold
+        {
+            get => _surchargeThreshold;
+            set { _surchargeThreshold = value; OnPropertyChanged(); }
+        }
+
+        private double _surchargePercent = 20;
+        public double SurchargePercent
+        {
+            get => _surchargePercent;
+            set { _surchargePercent = value; OnPropertyChanged(); }
+        }
+
         // Commands
         public ICommand NewInvoiceCommand { get; }
         public ICommand SaveInvoiceCommand { get; }
@@ -131,6 +146,9 @@ namespace ProGlassAutomation.ViewModels
         {
             Invoice = new ProformaInvoiceModel();
             Invoice.InvoiceNo = Invoice.GenerateInvoiceNo();
+
+            // ADD DEFAULT SPECIFICATION WITH 1 ROW
+            AddSpecification();
 
             NewInvoiceCommand = new RelayCommand(_ => NewInvoice());
             SaveInvoiceCommand = new RelayCommand(_ => SaveInvoice());
@@ -159,6 +177,10 @@ namespace ProGlassAutomation.ViewModels
             Invoice = new ProformaInvoiceModel();
             Invoice.InvoiceNo = Invoice.GenerateInvoiceNo();
             CurrentFileName = "Untitled";
+
+            // ADD DEFAULT SPECIFICATION WITH 1 ROW
+            AddSpecification();
+
             LoadSavedFiles();
         }
 
@@ -260,6 +282,16 @@ namespace ProGlassAutomation.ViewModels
             {
                 SpecificationName = $"Specification {Invoice.Specifications.Count + 1}"
             };
+
+            // ADD 1 EMPTY ROW BY DEFAULT
+            var firstItem = new InvoiceItemModel
+            {
+                SrNo = 1,
+                SurchargePercent = SurchargePercent,
+                SurchargeThreshold = SurchargeThreshold
+            };
+            spec.Items.Add(firstItem);
+
             Invoice.Specifications.Add(spec);
         }
 
@@ -271,19 +303,25 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // Add item with ONLY price copied from first row
+        // Add item with price copied from first row (base price, not calculated)
         public void AddItemWithPrice(SpecificationModel spec)
         {
             if (spec == null) return;
 
             var newItem = new InvoiceItemModel { SrNo = spec.Items.Count + 1 };
 
-            // Copy ONLY price from first row if exists
             if (spec.Items.Count > 0)
             {
                 var firstRow = spec.Items[0];
-                newItem.Price = firstRow.Price;
-                // Width, Height, Qty, GlassRef - all EMPTY
+                // Copy base price, not the calculated Price getter
+                newItem.Price = firstRow.BasePrice;
+                newItem.SurchargePercent = firstRow.SurchargePercent;
+                newItem.SurchargeThreshold = firstRow.SurchargeThreshold;
+            }
+            else
+            {
+                newItem.SurchargePercent = SurchargePercent;
+                newItem.SurchargeThreshold = SurchargeThreshold;
             }
 
             spec.Items.Add(newItem);
@@ -294,7 +332,12 @@ namespace ProGlassAutomation.ViewModels
         public void AddItem(SpecificationModel spec)
         {
             if (spec == null) return;
-            var item = new InvoiceItemModel { SrNo = spec.Items.Count + 1 };
+            var item = new InvoiceItemModel
+            {
+                SrNo = spec.Items.Count + 1,
+                SurchargePercent = SurchargePercent,
+                SurchargeThreshold = SurchargeThreshold
+            };
             spec.Items.Add(item);
             Invoice.IsDirty = true;
         }
@@ -328,11 +371,11 @@ namespace ProGlassAutomation.ViewModels
             }
             else if (IsDGUSelected)
             {
-                CalculatedPrice = 200; // Placeholder
+                CalculatedPrice = 200;
             }
             else if (IsLAMSelected)
             {
-                CalculatedPrice = 250; // Placeholder
+                CalculatedPrice = 250;
             }
         }
 

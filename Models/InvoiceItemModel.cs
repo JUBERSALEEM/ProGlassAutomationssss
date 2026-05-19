@@ -68,19 +68,70 @@ namespace ProGlassAutomation.Models
         public int Qty
         {
             get => _qty;
-            set => SetProperty(ref _qty, Math.Max(1, value));
+            set => SetProperty(ref _qty, value);
+        }
+
+        private double _price = 0;
+        public double Price
+        {
+            get => _price;
+            set => SetProperty(ref _price, value);
+        }
+
+        public double BasePrice
+        {
+            get => _price;
+        }
+
+        public double DisplayPrice
+        {
+            get
+            {
+                if (SQM >= _surchargeThreshold && _surchargePercent > 0)
+                {
+                    return Math.Round(_price * (1 + _surchargePercent / 100), 2);
+                }
+                return _price;
+            }
+        }
+
+        private double _surchargePercent = 20;
+        public double SurchargePercent
+        {
+            get => _surchargePercent;
+            set
+            {
+                if (SetProperty(ref _surchargePercent, value))
+                {
+                    OnPropertyChanged(nameof(DisplayPrice));
+                }
+            }
+        }
+
+        private double _surchargeThreshold = 4;
+        public double SurchargeThreshold
+        {
+            get => _surchargeThreshold;
+            set
+            {
+                if (SetProperty(ref _surchargeThreshold, value))
+                {
+                    OnPropertyChanged(nameof(DisplayPrice));
+                }
+            }
         }
 
         private double _sqm = 0;
         public double SQM
         {
             get => _sqm;
-            set
+            private set
             {
                 if (_sqm != value)
                 {
                     _sqm = value;
                     OnPropertyChanged(nameof(SQM));
+                    OnPropertyChanged(nameof(DisplayPrice));
                 }
             }
         }
@@ -89,7 +140,7 @@ namespace ProGlassAutomation.Models
         public double TotalSQM
         {
             get => _totalSQM;
-            set
+            private set
             {
                 if (_totalSQM != value)
                 {
@@ -103,7 +154,7 @@ namespace ProGlassAutomation.Models
         public double LM
         {
             get => _lm;
-            set
+            private set
             {
                 if (_lm != value)
                 {
@@ -117,7 +168,7 @@ namespace ProGlassAutomation.Models
         public double TotalLM
         {
             get => _totalLM;
-            set
+            private set
             {
                 if (_totalLM != value)
                 {
@@ -127,18 +178,11 @@ namespace ProGlassAutomation.Models
             }
         }
 
-        private double _price = 0;
-        public double Price
-        {
-            get => _price;
-            set => SetProperty(ref _price, value);
-        }
-
         private double _totalPrice = 0;
         public double TotalPrice
         {
             get => _totalPrice;
-            set
+            private set
             {
                 if (_totalPrice != value)
                 {
@@ -148,28 +192,48 @@ namespace ProGlassAutomation.Models
             }
         }
 
+        public bool HasSurcharge
+        {
+            get => SQM >= _surchargeThreshold && _surchargePercent > 0;
+        }
+
+        public double FinalPrice
+        {
+            get
+            {
+                if (SQM >= _surchargeThreshold && _surchargePercent > 0)
+                {
+                    return Math.Round(_price * (1 + _surchargePercent / 100), 2);
+                }
+                return _price;
+            }
+        }
+
         private void CalculateAll()
         {
-            // Calculate SQM: Average of (W1+H1) and (W2+H2) / 2
-            double avgWidth = (_width1 + _width2) / 2.0;
-            double avgHeight = (_height1 + _height2) / 2.0;
+            double sqm = 0;
+            if (_width1 > 0 && _height1 > 0)
+            {
+                sqm = (_width1 * _height1) / 1000000.0;
+                if (sqm < 0.5) sqm = 0.5;
+            }
+            SQM = Math.Round(sqm, 4);
+            TotalSQM = Math.Round(SQM * _qty, 4);
 
-            _sqm = Math.Round((avgWidth * avgHeight) / 1000000.0, 4);
-            _totalSQM = Math.Round(_sqm * _qty, 4);
+            double lm = 0;
+            if (_width1 > 0 && _height1 > 0)
+            {
+                lm = ((_width1 + _height1) * 2) / 1000.0;
+                if (lm < 0.5) lm = 0.5;
+            }
+            LM = Math.Round(lm, 4);
+            TotalLM = Math.Round(LM * _qty, 4);
 
-            // Calculate LM
-            double perimeter = _width1 + _width2 + _height1 + _height2;
-            _lm = Math.Round(perimeter * 2.0 / 1000.0, 4);
-            _totalLM = Math.Round(_lm * _qty, 4);
+            TotalPrice = Math.Round(FinalPrice * TotalSQM, 2);
 
-            // Calculate Total Price
-            _totalPrice = Math.Round(_totalSQM * _price, 2);
-
-            OnPropertyChanged(nameof(SQM));
-            OnPropertyChanged(nameof(TotalSQM));
-            OnPropertyChanged(nameof(LM));
-            OnPropertyChanged(nameof(TotalLM));
-            OnPropertyChanged(nameof(TotalPrice));
+            OnPropertyChanged(nameof(HasSurcharge));
+            OnPropertyChanged(nameof(FinalPrice));
+            OnPropertyChanged(nameof(DisplayPrice));
         }
 
         public InvoiceItemModel()

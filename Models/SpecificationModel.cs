@@ -67,6 +67,27 @@ namespace ProGlassAutomation.Models
 
         public ObservableCollection<InvoiceItemModel> Items { get; }
 
+        // Base Price - updates all items when changed
+        private double _basePrice = 0;
+        public double BasePrice
+        {
+            get => _basePrice;
+            set
+            {
+                if (_basePrice != value)
+                {
+                    _basePrice = value;
+                    OnPropertyChanged();
+
+                    // Update all items with new base price
+                    foreach (var item in Items)
+                    {
+                        item.Price = value;
+                    }
+                }
+            }
+        }
+
         private double _specTotalSQM = 0;
         public double SpecTotalSQM
         {

@@ -21,7 +21,8 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         {
             if (sender is Button button && button.Tag is SpecificationModel spec)
             {
-                _viewModel.AddItem(spec);
+                // Use AddItemWithPrice to copy base price from first row
+                _viewModel.AddItemWithPrice(spec);
             }
         }
 
