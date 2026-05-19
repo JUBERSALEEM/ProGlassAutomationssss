@@ -9,404 +9,263 @@ namespace ProGlassAutomation.Models
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
-        protected void Notify(params string[] props)
+        public ProformaInvoiceModel()
         {
-            foreach (var p in props)
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(p));
+            Specifications = new ObservableCollection<SpecificationModel>();
+            Specifications.CollectionChanged += Specs_CollectionChanged;
+            InvoiceNo = GenerateInvoiceNo();
         }
 
-        protected bool Set<T>(ref T field, T value, params string[] props)
+        private void Specs_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
-            if (EqualityComparer<T>.Default.Equals(field, value)) return false;
-            field = value;
-            Notify(props);
-            return true;
+            // Subscribe to new specs
+            if (e.NewItems != null)
+            {
+                foreach (SpecificationModel spec in e.NewItems)
+                {
+                    spec.PropertyChanged += Spec_PropertyChanged;
+                }
+            }
+            // Unsubscribe from old specs
+            if (e.OldItems != null)
+            {
+                foreach (SpecificationModel spec in e.OldItems)
+                {
+                    spec.PropertyChanged -= Spec_PropertyChanged;
+                }
+            }
+            CalculateTotals();
         }
 
-        // ==================== HEADER ====================
+        private void Spec_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            // Recalculate totals when any spec totals change
+            if (e.PropertyName == nameof(SpecificationModel.SpecTotalSQM) ||
+                e.PropertyName == nameof(SpecificationModel.SpecTotalLM) ||
+                e.PropertyName == nameof(SpecificationModel.SpecTotalQty) ||
+                e.PropertyName == nameof(SpecificationModel.SpecTotalPrice))
+            {
+                CalculateTotals();
+            }
+        }
+
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
         private string _invoiceNo = "";
         public string InvoiceNo
         {
             get => _invoiceNo;
-            set => Set(ref _invoiceNo, value, nameof(InvoiceNo));
+            set { _invoiceNo = value; OnPropertyChanged(); }
         }
 
         private DateTime _invoiceDate = DateTime.Now;
         public DateTime InvoiceDate
         {
             get => _invoiceDate;
-            set => Set(ref _invoiceDate, value, nameof(InvoiceDate));
+            set { _invoiceDate = value; OnPropertyChanged(); }
         }
 
         private DateTime _validUntil = DateTime.Now.AddDays(30);
         public DateTime ValidUntil
         {
             get => _validUntil;
-            set => Set(ref _validUntil, value, nameof(ValidUntil));
+            set { _validUntil = value; OnPropertyChanged(); }
         }
 
-        // ==================== COMPANY DETAILS ====================
-        private string _companyName = "PROGLASS AUTOMATION";
-        public string CompanyName
-        {
-            get => _companyName;
-            set => Set(ref _companyName, value, nameof(CompanyName));
-        }
-
-        private string _companyTRN = "";
-        public string CompanyTRN
-        {
-            get => _companyTRN;
-            set => Set(ref _companyTRN, value, nameof(CompanyTRN));
-        }
-
-        private string _companyAddress = "";
-        public string CompanyAddress
-        {
-            get => _companyAddress;
-            set => Set(ref _companyAddress, value, nameof(CompanyAddress));
-        }
-
-        private string _companyPhone = "";
-        public string CompanyPhone
-        {
-            get => _companyPhone;
-            set => Set(ref _companyPhone, value, nameof(CompanyPhone));
-        }
-
-        private string _companyEmail = "";
-        public string CompanyEmail
-        {
-            get => _companyEmail;
-            set => Set(ref _companyEmail, value, nameof(CompanyEmail));
-        }
-
-        // ==================== CUSTOMER DETAILS ====================
         private string _customerName = "";
         public string CustomerName
         {
             get => _customerName;
-            set => Set(ref _customerName, value, nameof(CustomerName));
+            set { _customerName = value; OnPropertyChanged(); }
         }
 
         private string _customerTRN = "";
         public string CustomerTRN
         {
             get => _customerTRN;
-            set => Set(ref _customerTRN, value, nameof(CustomerTRN));
+            set { _customerTRN = value; OnPropertyChanged(); }
         }
 
         private string _customerAddress = "";
         public string CustomerAddress
         {
             get => _customerAddress;
-            set => Set(ref _customerAddress, value, nameof(CustomerAddress));
+            set { _customerAddress = value; OnPropertyChanged(); }
         }
 
-        private string _customerPhone = "";
-        public string CustomerPhone
-        {
-            get => _customerPhone;
-            set => Set(ref _customerPhone, value, nameof(CustomerPhone));
-        }
-
-        // ==================== PROJECT DETAILS ====================
         private string _projectName = "";
         public string ProjectName
         {
             get => _projectName;
-            set => Set(ref _projectName, value, nameof(ProjectName));
+            set { _projectName = value; OnPropertyChanged(); }
         }
 
         private string _projectLocation = "";
         public string ProjectLocation
         {
             get => _projectLocation;
-            set => Set(ref _projectLocation, value, nameof(ProjectLocation));
+            set { _projectLocation = value; OnPropertyChanged(); }
         }
 
-        // ==================== SPECIFICATIONS ====================
-        public ObservableCollection<SpecificationModel> Specifications { get; set; } = new();
+        private string _lPONo = "";
+        public string LPONo
+        {
+            get => _lPONo;
+            set { _lPONo = value; OnPropertyChanged(); }
+        }
 
-        // ==================== TOTALS ====================
-        private double _totalSQM;
+        private string _attentionName = "";
+        public string AttentionName
+        {
+            get => _attentionName;
+            set { _attentionName = value; OnPropertyChanged(); }
+        }
+
+        private string _contactNo = "";
+        public string ContactNo
+        {
+            get => _contactNo;
+            set { _contactNo = value; OnPropertyChanged(); }
+        }
+
+        public ObservableCollection<SpecificationModel> Specifications { get; }
+
+        private double _totalSQM = 0;
         public double TotalSQM
         {
             get => _totalSQM;
-            set => Set(ref _totalSQM, value, nameof(TotalSQM));
+            private set
+            {
+                if (_totalSQM != value)
+                {
+                    _totalSQM = value;
+                    OnPropertyChanged();
+                }
+            }
         }
 
-        private int _totalQty;
+        private double _totalLM = 0;
+        public double TotalLM
+        {
+            get => _totalLM;
+            private set
+            {
+                if (_totalLM != value)
+                {
+                    _totalLM = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private int _totalQty = 0;
         public int TotalQty
         {
             get => _totalQty;
-            set => Set(ref _totalQty, value, nameof(TotalQty));
+            private set
+            {
+                if (_totalQty != value)
+                {
+                    _totalQty = value;
+                    OnPropertyChanged();
+                }
+            }
         }
 
-        private double _grandTotal;
+        private double _grandTotal = 0;
         public double GrandTotal
         {
             get => _grandTotal;
-            set => Set(ref _grandTotal, value, nameof(GrandTotal));
+            private set
+            {
+                if (_grandTotal != value)
+                {
+                    _grandTotal = value;
+                    OnPropertyChanged();
+                }
+            }
         }
 
         private double _vatPercent = 5;
         public double VatPercent
         {
             get => _vatPercent;
-            set => Set(ref _vatPercent, value, nameof(VatPercent));
+            set
+            {
+                if (_vatPercent != value)
+                {
+                    _vatPercent = value;
+                    OnPropertyChanged();
+                    CalculateTotals();
+                }
+            }
         }
 
-        private double _vatAmount;
+        private double _vatAmount = 0;
         public double VatAmount
         {
             get => _vatAmount;
-            set => Set(ref _vatAmount, value, nameof(VatAmount));
+            private set
+            {
+                if (_vatAmount != value)
+                {
+                    _vatAmount = value;
+                    OnPropertyChanged();
+                }
+            }
         }
 
-        private double _netTotal;
+        private double _netTotal = 0;
         public double NetTotal
         {
             get => _netTotal;
-            set => Set(ref _netTotal, value, nameof(NetTotal));
+            private set
+            {
+                if (_netTotal != value)
+                {
+                    _netTotal = value;
+                    OnPropertyChanged();
+                }
+            }
         }
 
-        // ==================== FILE INFO ====================
-        private string _filePath = "";
-        public string FilePath
-        {
-            get => _filePath;
-            set => Set(ref _filePath, value, nameof(FilePath));
-        }
-
-        private bool _isDirty;
+        private bool _isDirty = false;
         public bool IsDirty
         {
             get => _isDirty;
-            set => Set(ref _isDirty, value, nameof(IsDirty));
+            set { _isDirty = value; OnPropertyChanged(); }
         }
 
-        // ==================== METHODS ====================
         public void CalculateTotals()
         {
-            TotalSQM = 0;
-            TotalQty = 0;
-            GrandTotal = 0;
+            double sqm = 0, lm = 0;
+            int qty = 0;
+            double price = 0;
 
             foreach (var spec in Specifications)
             {
-                foreach (var item in spec.Items)
-                {
-                    TotalSQM += item.TotalSQM;
-                    TotalQty += item.Qty;
-                    GrandTotal += item.TotalPrice;
-                }
+                spec.CalculateSpecTotals();
+                sqm += spec.SpecTotalSQM;
+                lm += spec.SpecTotalLM;
+                qty += spec.SpecTotalQty;
+                price += spec.SpecTotalPrice;
             }
 
-            VatAmount = GrandTotal * VatPercent / 100;
-            NetTotal = GrandTotal + VatAmount;
+            TotalSQM = Math.Round(sqm, 4);
+            TotalLM = Math.Round(lm, 4);
+            TotalQty = qty;
+            GrandTotal = Math.Round(price, 2);
+            VatAmount = Math.Round(GrandTotal * VatPercent / 100, 2);
+            NetTotal = Math.Round(GrandTotal + VatAmount, 2);
             IsDirty = true;
         }
 
         public string GenerateInvoiceNo()
         {
             return $"PI-{DateTime.Now:yyyyMMdd}-{new Random().Next(1000, 9999)}";
-        }
-    }
-
-    // ==================== SPECIFICATION MODEL ====================
-    public class SpecificationModel : INotifyPropertyChanged
-    {
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        protected void Notify(params string[] props)
-        {
-            foreach (var p in props)
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(p));
-        }
-
-        protected bool Set<T>(ref T field, T value, params string[] props)
-        {
-            if (EqualityComparer<T>.Default.Equals(field, value)) return false;
-            field = value;
-            Notify(props);
-            return true;
-        }
-
-        private string _specificationName = "";
-        public string SpecificationName
-        {
-            get => _specificationName;
-            set => Set(ref _specificationName, value, nameof(SpecificationName));
-        }
-
-        public ObservableCollection<InvoiceItemModel> Items { get; set; } = new();
-
-        private double _specTotalSQM;
-        public double SpecTotalSQM
-        {
-            get => _specTotalSQM;
-            set => Set(ref _specTotalSQM, value, nameof(SpecTotalSQM));
-        }
-
-        private int _specTotalQty;
-        public int SpecTotalQty
-        {
-            get => _specTotalQty;
-            set => Set(ref _specTotalQty, value, nameof(SpecTotalQty));
-        }
-
-        private double _specTotalPrice;
-        public double SpecTotalPrice
-        {
-            get => _specTotalPrice;
-            set => Set(ref _specTotalPrice, value, nameof(SpecTotalPrice));
-        }
-
-        public void CalculateSpecTotals()
-        {
-            SpecTotalSQM = 0;
-            SpecTotalQty = 0;
-            SpecTotalPrice = 0;
-
-            foreach (var item in Items)
-            {
-                SpecTotalSQM += item.TotalSQM;
-                SpecTotalQty += item.Qty;
-                SpecTotalPrice += item.TotalPrice;
-            }
-        }
-    }
-
-    // ==================== INVOICE ITEM MODEL ====================
-    public class InvoiceItemModel : INotifyPropertyChanged
-    {
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        protected void Notify(params string[] props)
-        {
-            foreach (var p in props)
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(p));
-        }
-
-        protected bool Set<T>(ref T field, T value, params string[] props)
-        {
-            if (EqualityComparer<T>.Default.Equals(field, value)) return false;
-            field = value;
-            Notify(props);
-            return true;
-        }
-
-        private int _srNo = 1;
-        public int SrNo
-        {
-            get => _srNo;
-            set => Set(ref _srNo, value, nameof(SrNo));
-        }
-
-        private string _glassRef = "";
-        public string GlassRef
-        {
-            get => _glassRef;
-            set => Set(ref _glassRef, value, nameof(GlassRef));
-        }
-
-        private double _width1;
-        public double Width1
-        {
-            get => _width1;
-            set { Set(ref _width1, value); CalculateSQM(); }
-        }
-
-        private double _height1;
-        public double Height1
-        {
-            get => _height1;
-            set { Set(ref _height1, value); CalculateSQM(); }
-        }
-
-        private double _width2;
-        public double Width2
-        {
-            get => _width2;
-            set { Set(ref _width2, value); CalculateSQM(); }
-        }
-
-        private double _height2;
-        public double Height2
-        {
-            get => _height2;
-            set { Set(ref _height2, value); CalculateSQM(); }
-        }
-
-        private int _qty = 1;
-        public int Qty
-        {
-            get => _qty;
-            set { Set(ref _qty, value); CalculateSQM(); }
-        }
-
-        private double _sqm;
-        public double SQM
-        {
-            get => _sqm;
-            set => Set(ref _sqm, value, nameof(SQM));
-        }
-
-        private double _totalSQM;
-        public double TotalSQM
-        {
-            get => _totalSQM;
-            set => Set(ref _totalSQM, value, nameof(TotalSQM));
-        }
-
-        private double _lm;
-        public double LM
-        {
-            get => _lm;
-            set => Set(ref _lm, value, nameof(LM));
-        }
-
-        private double _totalLM;
-        public double TotalLM
-        {
-            get => _totalLM;
-            set => Set(ref _totalLM, value, nameof(TotalLM));
-        }
-
-        private double _price;
-        public double Price
-        {
-            get => _price;
-            set { Set(ref _price, value); CalculateTotalPrice(); }
-        }
-
-        private double _totalPrice;
-        public double TotalPrice
-        {
-            get => _totalPrice;
-            set => Set(ref _totalPrice, value, nameof(TotalPrice));
-        }
-
-        public Action OnCalculationChanged { get; set; }
-
-        private void CalculateSQM()
-        {
-            double avgWidth = (_width1 + _width2) / 2;
-            double avgHeight = (_height1 + _height2) / 2;
-            SQM = Math.Round((avgWidth * avgHeight) / 1000000, 4);
-            TotalSQM = Math.Round(SQM * _qty, 4);
-
-            LM = Math.Round((_width1 + _width2 + _height1 + _height2) * 2 / 1000, 4);
-            TotalLM = Math.Round(LM * _qty, 4);
-
-            CalculateTotalPrice();
-        }
-
-        private void CalculateTotalPrice()
-        {
-            TotalPrice = Math.Round(TotalSQM * _price, 2);
-            OnCalculationChanged?.Invoke();
         }
     }
 }
