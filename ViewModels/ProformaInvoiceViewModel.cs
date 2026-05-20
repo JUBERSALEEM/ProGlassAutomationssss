@@ -1,9 +1,12 @@
-﻿using Microsoft.Win32;
+﻿// ViewModels/ProformaInvoiceViewModel.cs
+using Microsoft.Win32;
 using Newtonsoft.Json;
 using ProGlassAutomation.Models;
+using ProGlassAutomation.Services;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -15,6 +18,7 @@ namespace ProGlassAutomation.ViewModels
     public class ProformaInvoiceViewModel : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
+        private readonly ExcelCsvService _excelCsvService;
 
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
@@ -25,7 +29,11 @@ namespace ProGlassAutomation.ViewModels
         public ProformaInvoiceModel Invoice
         {
             get => _invoice;
-            set { _invoice = value; OnPropertyChanged(); }
+            set
+            {
+                _invoice = value;
+                OnPropertyChanged();
+            }
         }
 
         private ObservableCollection<FileListItem> _savedFiles = new();
@@ -42,6 +50,13 @@ namespace ProGlassAutomation.ViewModels
             set { _currentFileName = value; OnPropertyChanged(); }
         }
 
+        private string _statusMessage = "Ready";
+        public string StatusMessage
+        {
+            get => _statusMessage;
+            set { _statusMessage = value; OnPropertyChanged(); }
+        }
+
         private bool _isLMVisible = true;
         public bool IsLMVisible
         {
@@ -50,6 +65,35 @@ namespace ProGlassAutomation.ViewModels
         }
 
         public string IsLMToggleText => IsLMVisible ? "HIDE LM" : "SHOW LM";
+
+        // ==================== COMPANY DETAILS ====================
+        private string _companyName = "PROGLASS AUTOMATION";
+        public string CompanyName
+        {
+            get => _companyName;
+            set { _companyName = value; OnPropertyChanged(); }
+        }
+
+        private string _companyTRN = "100458979400003";
+        public string CompanyTRN
+        {
+            get => _companyTRN;
+            set { _companyTRN = value; OnPropertyChanged(); }
+        }
+
+        private string _companyLocation = "Dubai, UAE";
+        public string CompanyLocation
+        {
+            get => _companyLocation;
+            set { _companyLocation = value; OnPropertyChanged(); }
+        }
+
+        private string _companyPhone = "+971-50-123-4567";
+        public string CompanyPhone
+        {
+            get => _companyPhone;
+            set { _companyPhone = value; OnPropertyChanged(); }
+        }
 
         // Calculator Properties
         private bool _isSGUSelected = true;
@@ -141,15 +185,27 @@ namespace ProGlassAutomation.ViewModels
         public ICommand CalculatePriceCommand { get; }
         public ICommand UseCalculatedPriceCommand { get; }
 
+        // Import/Export Commands
+        public ICommand ExportCsvCommand { get; }
+        public ICommand ImportCsvCommand { get; }
+        public ICommand ImportItemsCommand { get; }
+
         // Constructor
         public ProformaInvoiceViewModel()
         {
+            _excelCsvService = new ExcelCsvService();
+            _excelCsvService.StatusChanged += status =>
+            {
+                Application.Current.Dispatcher.Invoke(() => StatusMessage = status);
+            };
+
             Invoice = new ProformaInvoiceModel();
             Invoice.InvoiceNo = Invoice.GenerateInvoiceNo();
 
             // ADD DEFAULT SPECIFICATION WITH 1 ROW
             AddSpecification();
 
+            // Standard Commands
             NewInvoiceCommand = new RelayCommand(_ => NewInvoice());
             SaveInvoiceCommand = new RelayCommand(_ => SaveInvoice());
             OpenInvoiceCommand = new RelayCommand(_ => OpenInvoice());
@@ -158,6 +214,11 @@ namespace ProGlassAutomation.ViewModels
             ToggleLMCommand = new RelayCommand(_ => ToggleLM());
             CalculatePriceCommand = new RelayCommand(_ => CalculatePrice());
             UseCalculatedPriceCommand = new RelayCommand(_ => UseCalculatedPrice());
+
+            // Import/Export Commands
+            ExportCsvCommand = new RelayCommand(_ => ExportToCsv());
+            ImportCsvCommand = new RelayCommand(_ => ImportFromCsv());
+            ImportItemsCommand = new RelayCommand(_ => ImportItemsFromCsv());
 
             LoadSavedFiles();
         }
@@ -203,11 +264,12 @@ namespace ProGlassAutomation.ViewModels
                     Invoice.IsDirty = false;
                     CurrentFileName = Path.GetFileNameWithoutExtension(dialog.FileName);
                     LoadSavedFiles();
-                    MessageBox.Show("Invoice saved!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    StatusMessage = $"✅ Invoice saved: {CurrentFileName}";
                 }
             }
             catch (Exception ex)
             {
+                StatusMessage = $"❌ Error: {ex.Message}";
                 MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -231,11 +293,13 @@ namespace ProGlassAutomation.ViewModels
                         Invoice = invoice;
                         CurrentFileName = Path.GetFileNameWithoutExtension(dialog.FileName);
                         Invoice.CalculateTotals();
+                        StatusMessage = $"✅ Opened: {CurrentFileName}";
                     }
                 }
             }
             catch (Exception ex)
             {
+                StatusMessage = $"❌ Error: {ex.Message}";
                 MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -395,7 +459,181 @@ namespace ProGlassAutomation.ViewModels
                 }
             }
             Invoice.CalculateTotals();
-            MessageBox.Show($"Applied AED {CalculatedPrice:N2} to all items!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            StatusMessage = $"✅ Applied AED {CalculatedPrice:N2} to all items";
+        }
+
+        // ==================== IMPORT/EXPORT METHODS ====================
+
+        private void ExportToCsv()
+        {
+            if (Invoice == null || Invoice.Specifications.Count == 0)
+            {
+                StatusMessage = "❌ No invoice data to export";
+                MessageBox.Show("No invoice data to export!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            try
+            {
+                Invoice.CalculateTotals();
+                _excelCsvService.ExportToCsv(Invoice);
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"❌ CSV export failed: {ex.Message}";
+                Debug.WriteLine($"[Export Error] {ex}");
+            }
+        }
+
+        private void ImportFromCsv()
+        {
+            try
+            {
+                Debug.WriteLine("[ImportFromCsv] Starting import...");
+
+                var importedInvoice = _excelCsvService.ImportFromCsv();
+
+                if (importedInvoice != null)
+                {
+                    Debug.WriteLine($"[ImportFromCsv] Imported invoice: {importedInvoice.InvoiceNo}");
+                    Debug.WriteLine($"[ImportFromCsv] Specifications: {importedInvoice.Specifications.Count}");
+
+                    int totalItems = importedInvoice.Specifications.Sum(s => s.Items.Count);
+                    Debug.WriteLine($"[ImportFromCsv] Total items: {totalItems}");
+
+                    // CRITICAL FIX: Clear existing specifications first
+                    Invoice.Specifications.Clear();
+
+                    // Copy specifications one by one
+                    foreach (var spec in importedInvoice.Specifications)
+                    {
+                        var newSpec = new SpecificationModel
+                        {
+                            SpecificationName = spec.SpecificationName,
+                            BasePrice = spec.BasePrice
+                        };
+
+                        // Copy items - set dimensions AFTER creation to trigger CalculateAll()
+                        foreach (var item in spec.Items)
+                        {
+                            var newItem = new InvoiceItemModel
+                            {
+                                SrNo = item.SrNo,
+                                GlassRef = item.GlassRef,
+                                Qty = item.Qty,
+                                Price = item.Price,
+                                SurchargePercent = item.SurchargePercent,
+                                SurchargeThreshold = item.SurchargeThreshold
+                            };
+
+                            // Set dimensions AFTER to trigger CalculateAll() in InvoiceItemModel
+                            newItem.Width1 = item.Width1;
+                            newItem.Height1 = item.Height1;
+                            newItem.Width2 = item.Width2;
+                            newItem.Height2 = item.Height2;
+
+                            newSpec.Items.Add(newItem);
+                            Debug.WriteLine($"[ImportFromCsv] Item: {newItem.GlassRef}, W={newItem.Width1}, H={newItem.Height1}, SQM={newItem.SQM}");
+                        }
+
+                        Invoice.Specifications.Add(newSpec);
+                    }
+
+                    // Update invoice properties
+                    Invoice.InvoiceNo = importedInvoice.InvoiceNo;
+                    Invoice.InvoiceDate = importedInvoice.InvoiceDate;
+                    Invoice.ValidUntil = importedInvoice.ValidUntil;
+                    Invoice.CustomerName = importedInvoice.CustomerName;
+                    Invoice.CustomerTRN = importedInvoice.CustomerTRN;
+                    Invoice.CustomerAddress = importedInvoice.CustomerAddress;
+                    Invoice.ProjectName = importedInvoice.ProjectName;
+                    Invoice.ProjectLocation = importedInvoice.ProjectLocation;
+                    Invoice.LPONo = importedInvoice.LPONo;
+                    Invoice.AttentionName = importedInvoice.AttentionName;
+                    Invoice.ContactNo = importedInvoice.ContactNo;
+
+                    // Calculate totals and mark as dirty
+                    Invoice.CalculateTotals();
+                    Invoice.IsDirty = true;
+
+                    CurrentFileName = "Imported";
+                    StatusMessage = $"✅ Imported {totalItems} items";
+                    Debug.WriteLine($"[ImportFromCsv] Complete - {totalItems} items");
+                }
+                else
+                {
+                    StatusMessage = "❌ Import returned null";
+                    Debug.WriteLine("[ImportFromCsv] Returned null");
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"❌ Import failed: {ex.Message}";
+                Debug.WriteLine($"[ImportFromCsv] Error: {ex}");
+                MessageBox.Show($"Import failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void ImportItemsFromCsv()
+        {
+            try
+            {
+                Debug.WriteLine("[ImportItemsFromCsv] Starting import...");
+
+                var items = _excelCsvService.ImportItemsFromCsv();
+
+                if (items != null && items.Count > 0)
+                {
+                    Debug.WriteLine($"[ImportItemsFromCsv] Found {items.Count} items");
+
+                    // Ensure we have a specification
+                    if (Invoice.Specifications.Count == 0)
+                    {
+                        AddSpecification();
+                    }
+
+                    var targetSpec = Invoice.Specifications[0];
+                    int startSrNo = targetSpec.Items.Count + 1;
+
+                    foreach (var item in items)
+                    {
+                        var newItem = new InvoiceItemModel
+                        {
+                            SrNo = startSrNo++,
+                            GlassRef = item.GlassRef,
+                            Qty = item.Qty,
+                            Price = item.Price,
+                            SurchargePercent = SurchargePercent,
+                            SurchargeThreshold = SurchargeThreshold
+                        };
+
+                        // Set dimensions AFTER to trigger CalculateAll()
+                        newItem.Width1 = item.Width1;
+                        newItem.Height1 = item.Height1;
+                        newItem.Width2 = item.Width2;
+                        newItem.Height2 = item.Height2;
+
+                        targetSpec.Items.Add(newItem);
+                        Debug.WriteLine($"[ImportItemsFromCsv] Added: {newItem.GlassRef}, W={newItem.Width1}, H={newItem.Height1}, SQM={newItem.SQM}");
+                    }
+
+                    Invoice.CalculateTotals();
+                    Invoice.IsDirty = true;
+
+                    StatusMessage = $"✅ Imported {items.Count} items";
+                    Debug.WriteLine($"[ImportItemsFromCsv] Complete");
+                }
+                else
+                {
+                    StatusMessage = "❌ No items found in file";
+                    Debug.WriteLine("[ImportItemsFromCsv] No items found");
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"❌ Item import failed: {ex.Message}";
+                Debug.WriteLine($"[ImportItemsFromCsv] Error: {ex}");
+            }
         }
     }
 

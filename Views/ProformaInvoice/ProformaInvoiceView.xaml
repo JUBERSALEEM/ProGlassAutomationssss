@@ -208,10 +208,51 @@
                         <StackPanel>
                             <TextBlock Text="PROFORMA INVOICES" FontSize="12" FontWeight="Bold" Foreground="#1E40AF"/>
                             <TextBlock Text="File Manager" FontSize="9" Foreground="#64748B" Margin="0,2,0,10"/>
-                            <Button Style="{StaticResource PrimaryButtonStyle}" Content="+ NEW INVOICE" Command="{Binding NewInvoiceCommand}" Margin="0,0,0,6"/>
-                            <Button Style="{StaticResource SecondaryButtonStyle}" Content="📂 OPEN FILE" Command="{Binding OpenInvoiceCommand}" Margin="0,0,0,6"/>
-                            <Button Style="{StaticResource PrimaryButtonStyle}" Content="💾 SAVE" Command="{Binding SaveInvoiceCommand}" Margin="0,0,0,6"/>
-                            <Button Style="{StaticResource DangerButtonStyle}" Content="🗑️ DELETE" Command="{Binding DeleteInvoiceCommand}"/>
+
+                            <!-- New/Save Row -->
+                            <Grid Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="6"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" Style="{StaticResource PrimaryButtonStyle}" Content="+ NEW" 
+                    Command="{Binding NewInvoiceCommand}"/>
+                                <Button Grid.Column="2" Style="{StaticResource PrimaryButtonStyle}" Content="💾 SAVE" 
+                    Command="{Binding SaveInvoiceCommand}"/>
+                            </Grid>
+
+                            <!-- Open/Delete Row -->
+                            <Grid Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="6"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" Style="{StaticResource SecondaryButtonStyle}" Content="📂 OPEN" 
+                    Command="{Binding OpenInvoiceCommand}"/>
+                                <Button Grid.Column="2" Style="{StaticResource DangerButtonStyle}" Content="🗑️ DELETE" 
+                    Command="{Binding DeleteInvoiceCommand}"/>
+                            </Grid>
+
+                            <!-- Import/Export Section -->
+                            <Border BorderBrush="#E2E8F0" BorderThickness="0,1,0,0" Padding="0,10,0,0" Margin="0,0,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="📤 EXPORT" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,6"/>
+                                    <Button Style="{StaticResource SecondaryButtonStyle}" 
+                Content="📄 EXPORT CSV" Command="{Binding ExportCsvCommand}" 
+                Padding="8,6" Margin="0,0,0,6"/>
+
+                                    <TextBlock Text="📥 IMPORT" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,8,0,6"/>
+                                    <Button Style="{StaticResource SecondaryButtonStyle}" 
+                Content="📄 IMPORT CSV" Command="{Binding ImportCsvCommand}" 
+                Padding="8,6" Margin="0,0,0,6"/>
+
+                                    <Button Style="{StaticResource SecondaryButtonStyle}" 
+                Content="📥 IMPORT ITEMS" Command="{Binding ImportItemsCommand}" 
+                Padding="8,6" FontSize="10"/>
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
                     </Border>
 
@@ -597,22 +638,134 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="PROGLASS AUTOMATION" FontSize="22" FontWeight="Bold" Foreground="#1E40AF"/>
-                                <TextBlock Text="TRN: 100458979400003" FontSize="10" Foreground="#64748B" Margin="0,4,0,0"/>
-                                <TextBlock Text="Dubai, UAE | Tel: +971 50 123 4567" FontSize="10" Foreground="#64748B"/>
-                            </StackPanel>
+                            <!-- Left Side - Company Info Card -->
+                            <Border Grid.Column="0" 
+                Background="#F8FAFC"
+                CornerRadius="12" 
+                Padding="20" 
+                BorderBrush="#E2E8F0" 
+                BorderThickness="1"
+                Margin="0,0,20,0">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
 
+                                    <!-- Company Name - Large & Bold -->
+                                    <TextBox Grid.Row="0" 
+                         Text="{Binding CompanyName, UpdateSourceTrigger=PropertyChanged}" 
+                         FontSize="24" 
+                         FontWeight="Bold" 
+                         Foreground="#1E40AF"
+                         BorderThickness="0"
+                         Background="Transparent"
+                         Padding="0"
+                         Margin="0,0,0,12"/>
+
+                                    <!-- TRN Badge -->
+                                    <Border Grid.Row="1" 
+                        HorizontalAlignment="Left"
+                        Background="#EFF6FF" 
+                        CornerRadius="6" 
+                        Padding="12,6" 
+                        Margin="0,0,0,12"
+                        BorderBrush="#BFDBFE"
+                        BorderThickness="1">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="TRN:" FontSize="10" FontWeight="SemiBold" Foreground="#64748B" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <TextBox Text="{Binding CompanyTRN, UpdateSourceTrigger=PropertyChanged}" 
+                                 FontSize="11" 
+                                 FontWeight="SemiBold"
+                                 Foreground="#1E40AF"
+                                 BorderThickness="0"
+                                 Background="Transparent"
+                                 Padding="0"
+                                 VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Contact Info Row -->
+                                    <Grid Grid.Row="2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Location with Icon -->
+                                        <Border Grid.Column="0" 
+                            Background="#F0FDF4" 
+                            CornerRadius="20" 
+                            Padding="10,6" 
+                            Margin="0,0,12,0">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="📍" FontSize="12" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                                <TextBox Text="{Binding CompanyLocation, UpdateSourceTrigger=PropertyChanged}" 
+                                     FontSize="10" 
+                                     FontWeight="Medium"
+                                     Foreground="#166534"
+                                     BorderThickness="0"
+                                     Background="Transparent"
+                                     Padding="0"
+                                     VerticalAlignment="Center"
+                                     MinWidth="80"/>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- Phone with Icon -->
+                                        <Border Grid.Column="2" 
+                            Background="#FEF2F2" 
+                            CornerRadius="20" 
+                            Padding="10,6">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="📞" FontSize="12" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                                <TextBox Text="{Binding CompanyPhone, UpdateSourceTrigger=PropertyChanged}" 
+                                     FontSize="10" 
+                                     FontWeight="Medium"
+                                     Foreground="#991B1B"
+                                     BorderThickness="0"
+                                     Background="Transparent"
+                                     Padding="0"
+                                     VerticalAlignment="Center"
+                                     MinWidth="100"
+                                     PreviewTextInput="PhoneNumber_PreviewTextInput"
+                                     GotFocus="PhoneNumber_GotFocus"
+                                     LostFocus="PhoneNumber_LostFocus"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+                                </Grid>
+                            </Border>
+
+                            <!-- Right Side - Invoice Info -->
                             <StackPanel Grid.Column="1" HorizontalAlignment="Right">
-                                <TextBlock Text="PROFORMA INVOICE" FontSize="20" FontWeight="Bold" Foreground="#1E40AF" HorizontalAlignment="Right"/>
-                                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                                    <TextBlock Text="Date:" FontSize="10" Foreground="#64748B" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <DatePicker SelectedDate="{Binding Invoice.InvoiceDate}" Width="120"/>
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                    <TextBlock Text="Valid Until:" FontSize="10" Foreground="#64748B" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <DatePicker SelectedDate="{Binding Invoice.ValidUntil}" Width="120"/>
-                                </StackPanel>
+                                <!-- Invoice Title Badge -->
+                                <Border Background="#1E40AF" 
+                    CornerRadius="12" 
+                    Padding="24,14"
+                    Margin="0,0,0,16">
+                                    <TextBlock Text="PROFORMA INVOICE" FontSize="16" FontWeight="Bold" Foreground="White"/>
+                                </Border>
+
+                                <!-- Date Fields -->
+                                <Border Background="#F8FAFC" CornerRadius="8" Padding="16,12" Margin="0,0,0,8" BorderBrush="#E2E8F0" BorderThickness="1">
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                            <TextBlock Text="📅" FontSize="12" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <TextBlock Text="Date:" FontSize="10" FontWeight="SemiBold" Foreground="#64748B" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <DatePicker SelectedDate="{Binding Invoice.InvoiceDate}" Width="120"/>
+                                        </StackPanel>
+
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="⏰" FontSize="12" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <TextBlock Text="Valid Until:" FontSize="10" FontWeight="SemiBold" Foreground="#64748B" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <DatePicker SelectedDate="{Binding Invoice.ValidUntil}" Width="120"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -627,37 +780,75 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
+                        <!-- CUSTOMER DETAILS -->
                         <Border Grid.Column="0" Style="{StaticResource CardStyle}">
                             <StackPanel>
                                 <TextBlock Text="CUSTOMER DETAILS" FontSize="12" FontWeight="Bold" Foreground="#1E40AF" Margin="0,0,0,12"/>
-                                <TextBlock Text="Company Name" FontSize="10" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,4"/>
-                                <TextBox Text="{Binding Invoice.CustomerName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputStyle}" Margin="0,0,0,8"/>
+
+                                <TextBlock Text="Company Name *" FontSize="10" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding Invoice.CustomerName, UpdateSourceTrigger=PropertyChanged}" 
+                     Style="{StaticResource InputStyle}" 
+                     Margin="0,0,0,8"
+                     ToolTip="Enter company name"/>
+
                                 <TextBlock Text="TRN Number" FontSize="10" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,4"/>
-                                <TextBox Text="{Binding Invoice.CustomerTRN, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputStyle}" Margin="0,0,0,8"/>
+                                <TextBox Text="{Binding Invoice.CustomerTRN, UpdateSourceTrigger=PropertyChanged}" 
+                     Style="{StaticResource InputStyle}" 
+                     Margin="0,0,0,8"
+                     ToolTip="Enter TRN number (e.g., 100458979400003)"/>
+
                                 <TextBlock Text="Address" FontSize="10" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,4"/>
-                                <TextBox Text="{Binding Invoice.CustomerAddress, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputStyle}" TextWrapping="Wrap" AcceptsReturn="True" Height="60"/>
+                                <TextBox Text="{Binding Invoice.CustomerAddress, UpdateSourceTrigger=PropertyChanged}" 
+                     Style="{StaticResource InputStyle}" 
+                     TextWrapping="Wrap" 
+                     AcceptsReturn="True" 
+                     Height="60"
+                     ToolTip="Enter full address"/>
                             </StackPanel>
                         </Border>
 
+                        <!-- PROJECT DETAILS -->
                         <Border Grid.Column="2" Style="{StaticResource CardStyle}">
                             <StackPanel>
                                 <TextBlock Text="PROJECT DETAILS" FontSize="12" FontWeight="Bold" Foreground="#1E40AF" Margin="0,0,0,12"/>
-                                <TextBlock Text="Project Name" FontSize="10" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,4"/>
-                                <TextBox Text="{Binding Invoice.ProjectName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputStyle}" Margin="0,0,0,8"/>
-                                <TextBlock Text="Location" FontSize="10" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,4"/>
-                                <TextBox Text="{Binding Invoice.ProjectLocation, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputStyle}"/>
+
+                                <TextBlock Text="Project Name *" FontSize="10" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding Invoice.ProjectName, UpdateSourceTrigger=PropertyChanged}" 
+                     Style="{StaticResource InputStyle}" 
+                     Margin="0,0,0,8"
+                     ToolTip="Enter project name"/>
+
+                                <TextBlock Text="Location *" FontSize="10" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding Invoice.ProjectLocation, UpdateSourceTrigger=PropertyChanged}" 
+                     Style="{StaticResource InputStyle}"
+                     ToolTip="Enter project location (e.g., Dubai, Abu Dhabi)"/>
                             </StackPanel>
                         </Border>
 
+                        <!-- OTHER DETAILS -->
                         <Border Grid.Column="4" Style="{StaticResource CardStyle}">
                             <StackPanel>
                                 <TextBlock Text="OTHER DETAILS" FontSize="12" FontWeight="Bold" Foreground="#1E40AF" Margin="0,0,0,12"/>
+
                                 <TextBlock Text="LPO No." FontSize="10" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,4"/>
-                                <TextBox Text="{Binding Invoice.LPONo, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputStyle}" Margin="0,0,0,8"/>
+                                <TextBox Text="{Binding Invoice.LPONo, UpdateSourceTrigger=PropertyChanged}" 
+                     Style="{StaticResource InputStyle}" 
+                     Margin="0,0,0,8"
+                     ToolTip="Enter LPO number"/>
+
                                 <TextBlock Text="Attention Name" FontSize="10" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,4"/>
-                                <TextBox Text="{Binding Invoice.AttentionName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputStyle}" Margin="0,0,0,8"/>
-                                <TextBlock Text="Contact No." FontSize="10" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,4"/>
-                                <TextBox Text="{Binding Invoice.ContactNo, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputStyle}"/>
+                                <TextBox Text="{Binding Invoice.AttentionName, UpdateSourceTrigger=PropertyChanged}" 
+                     Style="{StaticResource InputStyle}" 
+                     Margin="0,0,0,8"
+                     ToolTip="Enter contact person name"/>
+
+                                <TextBlock Text="Contact No. (Phone)" FontSize="10" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding Invoice.ContactNo, UpdateSourceTrigger=PropertyChanged}" 
+                     Style="{StaticResource InputStyle}"
+                     ToolTip="Enter phone number (e.g., +971-50-123-4567)"
+                     PreviewTextInput="PhoneNumber_PreviewTextInput"
+                     GotFocus="PhoneNumber_GotFocus"
+                     LostFocus="PhoneNumber_LostFocus"/>
                             </StackPanel>
                         </Border>
                     </Grid>
@@ -1071,19 +1262,22 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <StackPanel Orientation="Horizontal">
+                    <StackPanel Grid.Column="0" Orientation="Horizontal">
                         <TextBlock Text="File:" FontSize="10" Foreground="#64748B" Margin="0,0,4,0"/>
                         <TextBlock Text="{Binding CurrentFileName}" FontSize="10" FontWeight="SemiBold" Foreground="#0F172A"/>
                         <TextBlock Text=" *" FontSize="10" FontWeight="Bold" Foreground="#EF4444" Margin="4,0,0,0"
-                                   Visibility="{Binding Invoice.IsDirty, Converter={StaticResource BoolToVis}}"/>
+                       Visibility="{Binding Invoice.IsDirty, Converter={StaticResource BoolToVis}}"/>
                         <TextBlock Text="(Unsaved)" FontSize="10" Foreground="#F59E0B" Margin="4,0,0,0"
-                                   Visibility="{Binding Invoice.IsDirty, Converter={StaticResource BoolToVis}}"/>
+                       Visibility="{Binding Invoice.IsDirty, Converter={StaticResource BoolToVis}}"/>
                     </StackPanel>
-                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="16,0">
                         <TextBlock Text="LM:" FontSize="10" Foreground="#64748B" Margin="0,0,4,0"/>
                         <TextBlock Text="{Binding IsLMToggleText}" FontSize="10" FontWeight="Bold" Foreground="#059669"/>
                     </StackPanel>
+                    <TextBlock Grid.Column="2" Text="{Binding StatusMessage}" FontSize="10" Foreground="#64748B" 
+                   VerticalAlignment="Center" MaxWidth="300" TextTrimming="CharacterEllipsis"/>
                 </Grid>
             </Border>
         </Grid>

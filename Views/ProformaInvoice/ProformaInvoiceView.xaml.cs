@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System.Text.RegularExpressions;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using ProGlassAutomation.Models;
@@ -16,6 +17,34 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             _viewModel = new ProformaInvoiceViewModel();
             DataContext = _viewModel;
         }
+
+        // ==================== PHONE NUMBER VALIDATION ====================
+
+        private void PhoneNumber_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            // Allow: numbers, +, -, spaces, parentheses
+            Regex regex = new Regex(@"^[0-9\+\-\s\$\$]+$");
+            e.Handled = !regex.IsMatch(e.Text);
+        }
+
+        private void PhoneNumber_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (sender is TextBox tb && string.IsNullOrEmpty(tb.Text))
+            {
+                tb.Text = "+971-";
+                tb.Select(tb.Text.Length, 0);
+            }
+        }
+
+        private void PhoneNumber_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (sender is TextBox tb && tb.Text == "+971-")
+            {
+                tb.Text = "";
+            }
+        }
+
+        // ==================== EXISTING HANDLERS ====================
 
         private void AddRow_Click(object sender, RoutedEventArgs e)
         {
