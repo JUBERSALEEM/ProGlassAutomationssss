@@ -137,10 +137,15 @@ namespace ProGlassAutomation.ViewModels
             "4", "5", "6", "8", "10", "12", "15", "19"
         };
 
-        public ObservableCollection<string> ColorOptions { get; } = new ObservableCollection<string>
+        private ObservableCollection<string> _colorHistory = new ObservableCollection<string>
         {
             "Clear", "Grey", "Green", "Blue", "Bronze", "Black"
         };
+        public ObservableCollection<string> ColorHistory
+        {
+            get => _colorHistory;
+            set { _colorHistory = value; OnPropertyChanged(); }
+        }
 
         // ==================== SGU FIELDS ====================
         private string _selectedThickness = "6";
@@ -154,7 +159,7 @@ namespace ProGlassAutomation.ViewModels
         public string SelectedColor
         {
             get => _selectedColor;
-            set { _selectedColor = value; OnPropertyChanged(); }
+            set { _selectedColor = value; OnPropertyChanged(); AddToColorHistory(value); }
         }
 
         private bool _isAnnealedSelected = true;
@@ -220,7 +225,7 @@ namespace ProGlassAutomation.ViewModels
         public string DGUOuterColor
         {
             get => _dGUOuterColor;
-            set { _dGUOuterColor = value; OnPropertyChanged(); }
+            set { _dGUOuterColor = value; OnPropertyChanged(); AddToColorHistory(value); }
         }
 
         private double _dGUOuterPrice = 100;
@@ -255,7 +260,7 @@ namespace ProGlassAutomation.ViewModels
         public string DGUInnerColor
         {
             get => _dGUInnerColor;
-            set { _dGUInnerColor = value; OnPropertyChanged(); }
+            set { _dGUInnerColor = value; OnPropertyChanged(); AddToColorHistory(value); }
         }
 
         private double _dGUInnerPrice = 100;
@@ -291,7 +296,7 @@ namespace ProGlassAutomation.ViewModels
         public string LAMOuterColor
         {
             get => _lAMOuterColor;
-            set { _lAMOuterColor = value; OnPropertyChanged(); }
+            set { _lAMOuterColor = value; OnPropertyChanged(); AddToColorHistory(value); }
         }
 
         private double _lAMOuterPrice = 100;
@@ -333,7 +338,7 @@ namespace ProGlassAutomation.ViewModels
         public string LAMInnerColor
         {
             get => _lAMInnerColor;
-            set { _lAMInnerColor = value; OnPropertyChanged(); }
+            set { _lAMInnerColor = value; OnPropertyChanged(); AddToColorHistory(value); }
         }
 
         private double _lAMInnerPrice = 100;
@@ -452,6 +457,16 @@ namespace ProGlassAutomation.ViewModels
         {
             return CalculatedPrice > 0 &&
                    SelectedTargetSpecification != null;
+        }
+
+        // ==================== COLOR HISTORY ====================
+        private void AddToColorHistory(string color)
+        {
+            if (string.IsNullOrWhiteSpace(color)) return;
+            if (!ColorHistory.Contains(color))
+            {
+                ColorHistory.Add(color);
+            }
         }
 
         // ==================== METHODS ====================
