@@ -152,6 +152,7 @@
             <Setter Property="Padding" Value="12,10"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <EventSetter Event="GotFocus" Handler="TextBox_GotFocus"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
@@ -175,6 +176,7 @@
             <Setter Property="Padding" Value="8,6"/>
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="TextAlignment" Value="Center"/>
+            <EventSetter Event="GotFocus" Handler="TextBox_GotFocus"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
@@ -195,8 +197,9 @@
             <Setter Property="Background" Value="White"/>
             <Setter Property="BorderBrush" Value="{StaticResource BorderLight}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="8,6"/>
-            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Padding" Value="6,4"/>
+            <Setter Property="FontSize" Value="10"/>
+            <!-- REMOVE GotFocus EventSetter - let default behavior work -->
         </Style>
 
         <!-- ==================== -->
