@@ -416,6 +416,11 @@ namespace ProGlassAutomation.ViewModels
         public ICommand CalculatePriceCommand { get; }
         public ICommand IncludeInSpecificationCommand { get; }
 
+        // Module Selection Commands
+        public ICommand SelectSGUCommand { get; }
+        public ICommand SelectDGUCommand { get; }
+        public ICommand SelectLAMCommand { get; }
+
         // Import/Export Commands
         public ICommand ExportCsvCommand { get; }
         public ICommand ImportCsvCommand { get; }
@@ -445,6 +450,11 @@ namespace ProGlassAutomation.ViewModels
             CalculatePriceCommand = new RelayCommand(_ => CalculatePrice());
             IncludeInSpecificationCommand = new RelayCommand(_ => IncludeInSpecification(), _ => CanIncludeInSpecification());
 
+            // Module Selection Commands
+            SelectSGUCommand = new RelayCommand(_ => SelectSGU());
+            SelectDGUCommand = new RelayCommand(_ => SelectDGU());
+            SelectLAMCommand = new RelayCommand(_ => SelectLAM());
+
             // Import/Export Commands
             ExportCsvCommand = new RelayCommand(_ => ExportToCsv());
             ImportCsvCommand = new RelayCommand(_ => ImportFromCsv());
@@ -457,6 +467,28 @@ namespace ProGlassAutomation.ViewModels
         {
             return CalculatedPrice > 0 &&
                    SelectedTargetSpecification != null;
+        }
+
+        // ==================== MODULE SELECTION METHODS ====================
+        private void SelectSGU()
+        {
+            IsSGUSelected = true;
+            IsDGUSelected = false;
+            IsLAMSelected = false;
+        }
+
+        private void SelectDGU()
+        {
+            IsDGUSelected = true;
+            IsSGUSelected = false;
+            IsLAMSelected = false;
+        }
+
+        private void SelectLAM()
+        {
+            IsLAMSelected = true;
+            IsSGUSelected = false;
+            IsDGUSelected = false;
         }
 
         // ==================== COLOR HISTORY ====================
