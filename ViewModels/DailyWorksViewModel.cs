@@ -1,5 +1,9 @@
-﻿using ProGlassAutomation.Models;
-using ProGlassAutomation.Data.Database;
+﻿using ProGlassAutomation.Data.Database;
+using ProGlassAutomation.Models;
+
+// Add this alias to disambiguate:
+using DbDailyWork = ProGlassAutomation.Data.Database.DailyWork;
+
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -15,8 +19,8 @@ namespace ProGlassAutomation.ViewModels
 {
     public class DailyWorksViewModel : ViewModelBase
     {
-        private ObservableCollection<DailyWork> _dailyWorks;
-        private DailyWork _selectedWork;
+        private ObservableCollection<DbDailyWork> _dailyWorks;
+        private DbDailyWork _selectedWork;
         private DataRowView _selectedDataRowView;
         private DataView _filteredDataView;
         private string _searchText = "";
@@ -33,7 +37,7 @@ namespace ProGlassAutomation.ViewModels
         private DateTime? _filterStartDate;
         private DateTime? _filterEndDate;
         private bool _isEditing;
-        private DailyWork _editingWork;
+        private DbDailyWork _editingWork;
         private bool _isNewRecord;
 
         // OPTIONS - Empty collections, populated dynamically
@@ -213,7 +217,7 @@ namespace ProGlassAutomation.ViewModels
 
         public DailyWorksViewModel()
         {
-            DailyWorks = new ObservableCollection<DailyWork>();
+            DailyWorks = new ObservableCollection<DbDailyWork>();
 
             AddNewCommand = new RelayCommand(ExecuteAddNew);
             EditCommand = new RelayCommand(ExecuteEdit, CanExecuteEdit);
@@ -346,7 +350,7 @@ namespace ProGlassAutomation.ViewModels
 
         #region Properties
 
-        public ObservableCollection<DailyWork> DailyWorks
+        public ObservableCollection<DbDailyWork> DailyWorks
         {
             get => _dailyWorks;
             set => SetProperty(ref _dailyWorks, value);
@@ -358,7 +362,7 @@ namespace ProGlassAutomation.ViewModels
             private set => SetProperty(ref _filteredDataView, value);
         }
 
-        public DailyWork SelectedWork
+        public DbDailyWork SelectedWork
         {
             get => _selectedWork;
             set
@@ -411,7 +415,7 @@ namespace ProGlassAutomation.ViewModels
         }
 
         private List<int> _selectedIds = new List<int>();
-        public List<DailyWork> SelectedRecordsData => DailyWorks?.Where(w => _selectedIds.Contains(w.Id)).ToList() ?? new List<DailyWork>();
+        public List<DbDailyWork> SelectedRecordsData => DailyWorks?.Where(w => _selectedIds.Contains(w.Id)).ToList() ?? new List<DbDailyWork>();
 
         public void UpdateSelectedIds(List<int> ids)
         {
@@ -546,7 +550,7 @@ namespace ProGlassAutomation.ViewModels
             set => SetProperty(ref _isEditing, value);
         }
 
-        public DailyWork EditingWork
+        public DbDailyWork EditingWork
         {
             get => _editingWork;
             set => SetProperty(ref _editingWork, value);
@@ -750,7 +754,7 @@ namespace ProGlassAutomation.ViewModels
         private void ExecuteAddNew(object parameter)
         {
             _isNewRecord = true;
-            EditingWork = new DailyWork
+            EditingWork = new DbDailyWork
             {
                 Id = 0,
                 Date = DateTime.Today,
@@ -781,12 +785,12 @@ namespace ProGlassAutomation.ViewModels
 
         private void ExecuteEdit(object parameter)
         {
-            DailyWork workToEdit = null;
+            DbDailyWork workToEdit = null;
 
             if (SelectedDataRowView != null)
             {
                 var dataRow = SelectedDataRowView;
-                workToEdit = new DailyWork
+                workToEdit = new DbDailyWork
                 {
                     Id = Convert.ToInt32(dataRow["Id"]),
                     Date = Convert.ToDateTime(dataRow["Date"]),
@@ -852,7 +856,7 @@ namespace ProGlassAutomation.ViewModels
 
         private void ExecuteDelete(object parameter)
         {
-            DailyWork workToDelete = null;
+            DbDailyWork workToDelete = null;
 
             if (SelectedDataRowView != null)
             {
@@ -1075,7 +1079,7 @@ namespace ProGlassAutomation.ViewModels
 
         private void ExecuteCopyRow(object parameter)
         {
-            DailyWork sourceWork = null;
+            DbDailyWork sourceWork = null;
 
             if (SelectedDataRowView != null)
             {
@@ -1111,7 +1115,7 @@ namespace ProGlassAutomation.ViewModels
 
         private void ExecuteDuplicateRow(object parameter)
         {
-            DailyWork sourceWork = null;
+            DbDailyWork sourceWork = null;
 
             if (SelectedDataRowView != null)
             {

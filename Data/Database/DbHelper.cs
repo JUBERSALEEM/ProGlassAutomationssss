@@ -1,8 +1,10 @@
 ﻿// Data/Database/DbHelper.cs
 using Microsoft.Data.Sqlite;
 using ProGlassAutomation.Models;
+using ProGlassAutomation.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -775,6 +777,40 @@ VALUES ($oid, $d, $dq, $ds, $rq, $rs, $dr, $v, $n, $cd)";
                 cmd.CommandText = "DELETE FROM DeliveryItems WHERE Id = $id";
                 cmd.Parameters.AddWithValue("$id", id);
                 cmd.ExecuteNonQuery();
+            });
+        }
+
+        public static Delivery GetDeliveryById(int id)
+        {
+            return Execute(conn =>
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT * FROM Deliveries WHERE Id = $id";
+                cmd.Parameters.AddWithValue("$id", id);
+                using var r = cmd.ExecuteReader();
+                if (r.Read())
+                {
+                    var delivery = new Delivery
+                    {
+                        Id = r.GetInt32(0),
+                        SourceId = r.IsDBNull(1) ? 0 : r.GetInt32(1),
+                        Date = DateTime.TryParse(r.GetString(2), out var d) ? d : DateTime.Today,
+                        Company = r.IsDBNull(3) ? "" : r.GetString(3),
+                        PINumber = r.IsDBNull(4) ? "" : r.GetString(4),
+                        CustomerReference = r.IsDBNull(5) ? "" : r.GetString(5),
+                        TypeOfWork = r.IsDBNull(6) ? "" : r.GetString(6),
+                        OrderQty = r.GetInt32(7),
+                        OrderSQM = r.GetDouble(8),
+                        Salesman = r.IsDBNull(9) ? "" : r.GetString(9),
+                        Status = r.IsDBNull(10) ? "" : r.GetString(10),
+                        Notes = r.IsDBNull(11) ? "" : r.GetString(11),
+                        CreatedDate = DateTime.TryParse(r.GetString(12), out var cd) ? cd : DateTime.Today,
+                        UpdatedDate = DateTime.TryParse(r.GetString(13), out var ud) ? ud : DateTime.Today
+                    };
+                    delivery.DeliveryItems = new ObservableCollection<DeliveryItem>(GetDeliveryItems(delivery.Id));
+                    return delivery;
+                }
+                return null;
             });
         }
 
@@ -2428,6 +2464,9 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
             public double TotalTaxInvoiceValue { get; set; }
             public double TotalPaidAmount { get; set; }
             public double TotalOutstanding { get; set; }
+            public int TotalProduction { get; set; }
+            public double Efficiency { get; set; }
+            public double AverageUptime { get; set; }
         }
 
         public class ImportSessionInfo
@@ -2454,6 +2493,109 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
             public int Id { get; set; }
             public string CustomerReference { get; set; }
             public string Company { get; set; }
+        }
+
+        public class ImportSession
+        {
+            public int Id { get; set; }
+            public DateTime SessionDateTime { get; set; }
+            public string Notes { get; set; }
+            public int ImportedCount { get; set; }
+            public int UpdatedCount { get; set; }
+            public int SkippedCount { get; set; }
+            public ObservableCollection<ImportLog> Entries { get; set; } = new ObservableCollection<ImportLog>();
+        }
+
+        public class ImportLog
+        {
+            public int Id { get; set; }
+            public DateTime ImportDateTime { get; set; }
+            public string PINumber { get; set; }
+            public string Company { get; set; }
+            public ObservableCollection<ImportLogItem> Changes { get; set; } = new ObservableCollection<ImportLogItem>();
+        }
+
+        public class ImportLogItem
+        {
+            public string FieldName { get; set; }
+            public string OldValue { get; set; }
+            public string NewValue { get; set; }
+        }
+
+        // ═══════════════════════════════════════════════════
+        // LIVE DATA SERVICE METHODS
+        // ═══════════════════════════════════════════════════
+
+        public static int GetTodayTotalProduction()
+        {
+            try
+            {
+                return Execute(conn =>
+                {
+                    using var cmd = conn.CreateCommand();
+                    cmd.CommandText = "SELECT COALESCE(SUM(Qty), 0) FROM DailyWork WHERE DATE(Date) = DATE('now', 'localtime') AND ProductionStatus = 'Completed'";
+                    return Convert.ToInt32(cmd.ExecuteScalar());
+                });
+            }
+            catch { return 0; }
+        }
+
+        public static int GetTodayCompletedOrders()
+        {
+            try
+            {
+                return Execute(conn =>
+                {
+                    using var cmd = conn.CreateCommand();
+                    cmd.CommandText = "SELECT COUNT(*) FROM DailyWork WHERE DATE(Date) = DATE('now', 'localtime') AND Status = 'Completed'";
+                    return Convert.ToInt32(cmd.ExecuteScalar());
+                });
+            }
+            catch { return 0; }
+        }
+
+        public static int GetTodayTotalOrders()
+        {
+            try
+            {
+                return Execute(conn =>
+                {
+                    using var cmd = conn.CreateCommand();
+                    cmd.CommandText = "SELECT COUNT(*) FROM DailyWork WHERE DATE(Date) = DATE('now', 'localtime')";
+                    return Convert.ToInt32(cmd.ExecuteScalar());
+                });
+            }
+            catch { return 0; }
+        }
+
+        // ═══════════════════════════════════════════════════
+        // BALANCE SERVICE METHODS
+        // ═══════════════════════════════════════════════════
+
+        public static List<SheetPurchase> GetAllSheetPurchases()
+        {
+            return Execute(conn =>
+            {
+                var list = new List<SheetPurchase>();
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT * FROM SheetPurchases ORDER BY Id DESC";
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                {
+                    list.Add(new SheetPurchase
+                    {
+                        Id = r.GetInt32(0),
+                        SheetId = r.GetInt32(1),
+                        Quantity = r.GetInt32(2),
+                        UnitPrice = Convert.ToDecimal(r.GetDouble(3)),
+                        Supplier = r.IsDBNull(4) ? "" : r.GetString(4),
+                        PurchasedOn = DateTime.TryParse(r.GetString(5), out var pd) ? pd : DateTime.Today,
+                        Notes = r.IsDBNull(6) ? "" : r.GetString(6),
+                        CreatedAt = DateTime.TryParse(r.GetString(7), out var cd) ? cd : DateTime.Now
+                    });
+                }
+                return list;
+            });
         }
     }
 
@@ -2536,24 +2678,159 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
         public string Color { get; set; } = "";
         public string Notes { get; set; } = "";
         public DateTime CreatedDate { get; set; } = DateTime.Now;
+
+        // Clone method for copying records
+        public DailyWork Clone()
+        {
+            return new DailyWork
+            {
+                Id = this.Id,
+                Date = this.Date,
+                UpdateDate = this.UpdateDate,
+                Company = this.Company,
+                PINumber = this.PINumber,
+                CustomerReference = this.CustomerReference,
+                TypeOfWork = this.TypeOfWork,
+                ProductionStatus = this.ProductionStatus,
+                DailyReportStatus = this.DailyReportStatus,
+                Qty = this.Qty,
+                SQM = this.SQM,
+                Status = this.Status,
+                Salesman = this.Salesman,
+                Color = this.Color,
+                Notes = this.Notes,
+                CreatedDate = this.CreatedDate
+            };
+        }
     }
 
-    public class Delivery
+    public class Delivery : ViewModelBase
     {
-        public int Id { get; set; }
-        public int SourceId { get; set; }
-        public DateTime Date { get; set; } = DateTime.Today;
-        public string Company { get; set; } = "";
-        public string PINumber { get; set; } = "";
-        public string CustomerReference { get; set; } = "";
-        public string TypeOfWork { get; set; } = "";
-        public int OrderQty { get; set; }
-        public double OrderSQM { get; set; }
-        public string Salesman { get; set; } = "";
-        public string Status { get; set; } = "";
-        public string Notes { get; set; } = "";
-        public DateTime CreatedDate { get; set; } = DateTime.Now;
-        public DateTime UpdatedDate { get; set; } = DateTime.Now;
+        private int _id;
+        private int _sourceId;
+        private DateTime _date = DateTime.Today;
+        private string _company = "";
+        private string _piNumber = "";
+        private string _customerReference = "";
+        private string _typeOfWork = "";
+        private int _orderQty;
+        private double _orderSQM;
+        private string _salesman = "";
+        private string _color = "";
+        private string _productionStatus = "";
+        private string _status = "Pending";
+        private string _notes = "";
+        private DateTime _createdDate = DateTime.Now;
+        private DateTime _updatedDate = DateTime.Now;
+        private ObservableCollection<DeliveryItem> _deliveryItems = new ObservableCollection<DeliveryItem>();
+
+        public int Id
+        {
+            get => _id;
+            set { _id = value; OnPropertyChanged(nameof(Id)); }
+        }
+
+        public int SourceId
+        {
+            get => _sourceId;
+            set { _sourceId = value; OnPropertyChanged(nameof(SourceId)); }
+        }
+
+        public DateTime Date
+        {
+            get => _date;
+            set { _date = value; OnPropertyChanged(nameof(Date)); }
+        }
+
+        public string Company
+        {
+            get => _company;
+            set { _company = value ?? ""; OnPropertyChanged(nameof(Company)); }
+        }
+
+        public string PINumber
+        {
+            get => _piNumber;
+            set { _piNumber = value ?? ""; OnPropertyChanged(nameof(PINumber)); }
+        }
+
+        public string CustomerReference
+        {
+            get => _customerReference;
+            set { _customerReference = value ?? ""; OnPropertyChanged(nameof(CustomerReference)); }
+        }
+
+        public string TypeOfWork
+        {
+            get => _typeOfWork;
+            set { _typeOfWork = value ?? ""; OnPropertyChanged(nameof(TypeOfWork)); }
+        }
+
+        public int OrderQty
+        {
+            get => _orderQty;
+            set { _orderQty = value; OnPropertyChanged(nameof(OrderQty)); OnPropertyChanged(nameof(Balance)); OnPropertyChanged(nameof(BalanceSQM)); }
+        }
+
+        public double OrderSQM
+        {
+            get => _orderSQM;
+            set { _orderSQM = value; OnPropertyChanged(nameof(OrderSQM)); OnPropertyChanged(nameof(BalanceSQM)); }
+        }
+
+        public string Salesman
+        {
+            get => _salesman;
+            set { _salesman = value ?? ""; OnPropertyChanged(nameof(Salesman)); }
+        }
+
+        public string Color
+        {
+            get => _color;
+            set { _color = value ?? ""; OnPropertyChanged(nameof(Color)); }
+        }
+
+        public string ProductionStatus
+        {
+            get => _productionStatus;
+            set { _productionStatus = value ?? ""; OnPropertyChanged(nameof(ProductionStatus)); }
+        }
+
+        public string Status
+        {
+            get => _status;
+            set { _status = value ?? ""; OnPropertyChanged(nameof(Status)); }
+        }
+
+        public string Notes
+        {
+            get => _notes;
+            set { _notes = value ?? ""; OnPropertyChanged(nameof(Notes)); }
+        }
+
+        public DateTime CreatedDate
+        {
+            get => _createdDate;
+            set { _createdDate = value; OnPropertyChanged(nameof(CreatedDate)); }
+        }
+
+        public DateTime UpdatedDate
+        {
+            get => _updatedDate;
+            set { _updatedDate = value; OnPropertyChanged(nameof(UpdatedDate)); }
+        }
+
+        public ObservableCollection<DeliveryItem> DeliveryItems
+        {
+            get => _deliveryItems;
+            set { _deliveryItems = value; OnPropertyChanged(nameof(DeliveryItems)); }
+        }
+
+        // Computed Properties
+        public int TotalDelivered => DeliveryItems?.Sum(x => x.DeliveredQty) ?? 0;
+        public int TotalReturned => DeliveryItems?.Sum(x => x.ReturnedQty) ?? 0;
+        public int Balance => OrderQty - TotalDelivered + TotalReturned;
+        public double BalanceSQM => Math.Round(OrderSQM - (TotalDelivered > 0 ? (double)TotalDelivered / OrderQty * OrderSQM : 0) + (TotalReturned > 0 ? (double)TotalReturned / OrderQty * OrderSQM : 0), 2);
     }
 
     public class DeliveryItem

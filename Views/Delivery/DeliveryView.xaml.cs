@@ -2,11 +2,18 @@
 using ProGlassAutomation.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+
+// Add aliases to disambiguate:
+using DbDeliveryItem = ProGlassAutomation.Data.Database.DeliveryItem;
+using DbDelivery = ProGlassAutomation.Data.Database.Delivery;
+using DbDailyWork = ProGlassAutomation.Data.Database.DailyWork;
+using ModelsDeliveryItem = ProGlassAutomation.Models.DeliveryItem;
 
 namespace ProGlassAutomation.Views.Delivery
 {
@@ -83,7 +90,7 @@ namespace ProGlassAutomation.Views.Delivery
                         if (order.DeliveryItems == null || order.DeliveryItems.Count == 0)
                         {
                             var items = DbHelper.GetDeliveryItems(order.Id);
-                            order.DeliveryItems = new System.Collections.ObjectModel.ObservableCollection<Models.DeliveryItem>(items);
+                            order.DeliveryItems = new ObservableCollection<DbDeliveryItem>(items);
                         }
                         vm.SelectedOrder = order;
                     }

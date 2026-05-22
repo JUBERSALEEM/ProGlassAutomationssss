@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -10,6 +11,11 @@ using ProGlassAutomation.ViewModels;
 using ProGlassAutomation.Services;
 using ProGlassAutomation.Data.Database;
 using ProGlassAutomation.Models;
+
+// Add aliases to disambiguate:
+using DbDailyWork = ProGlassAutomation.Data.Database.DailyWork;
+using DbDelivery = ProGlassAutomation.Data.Database.Delivery;
+using DbDeliveryItem = ProGlassAutomation.Data.Database.DeliveryItem;
 
 namespace ProGlassAutomation.Views.Dashboard
 {
@@ -252,8 +258,8 @@ namespace ProGlassAutomation.Views.Dashboard
             {
                 var today = DateTime.Today;
                 var todayWorks = _dailyWorksVM.DailyWorks?
-                    .Where(w => w.Date.Date == today)
-                    .ToList() ?? new List<DailyWork>();
+    .Where(w => w.Date.Date == today)
+    .ToList() ?? new List<DbDailyWork>();
 
                 WorksTodayCount.Text = todayWorks.Count.ToString("N0");
                 WorksTodaySQM.Text = todayWorks.Sum(w => w.SQM).ToString("N1");

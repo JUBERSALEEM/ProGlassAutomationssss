@@ -1,1782 +1,1786 @@
-﻿using ProGlassAutomation.Models;
-using ProGlassAutomation.Data.Database;
-using System;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Data;
-using System.Globalization;
-using System.Linq;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Media;
+﻿    using ProGlassAutomation.Data.Database;
+    using ProGlassAutomation.Models;
 
-namespace ProGlassAutomation.ViewModels
-{
-    public class DeliveryViewModel : ViewModelBase
+    // Add these aliases to disambiguate:
+    using DbDelivery = ProGlassAutomation.Data.Database.Delivery;
+    using DbDeliveryItem = ProGlassAutomation.Data.Database.DeliveryItem;
+    using DbDailyWork = ProGlassAutomation.Data.Database.DailyWork;
+
+    using System;
+    using System.Collections.ObjectModel;
+    using System.Collections.Generic;
+    using System.ComponentModel;
+    using System.Data;
+    using System.Globalization;
+    using System.Linq;
+    using System.Windows;
+    using System.Windows.Controls;
+    using System.Windows.Input;
+    using System.Windows.Media;
+
+    namespace ProGlassAutomation.ViewModels
     {
-        private ObservableCollection<Delivery> _deliveryOrders;
-        private ObservableCollection<DailyWork> _sourceOrders;
-        private Delivery _selectedOrder;
-        private DeliveryItem _selectedDeliveryItem;
-        private DataRowView _selectedDataRowView;
-        private DataView _filteredDataView;
-        private string _searchText = "";
-        private string _sortColumn = "";
-        private ListSortDirection _sortDirection = ListSortDirection.Ascending;
-        private string _filterStatus = "";
-        private string _filterTypeOfWork = "";
-        private string _filterSalesman = "";
-        private string _filterCompany = "";
-        private string _filterColor = "";
-        private DateTime? _filterStartDate;
-        private DateTime? _filterEndDate;
-        private bool _isEditing;
-        private bool _isAddingDelivery;
-        private bool _isViewingDetails;
-        private Delivery _editingOrder;
-        private DeliveryItem _editingDeliveryItem;
-        private bool _isNewRecord;
-        private bool _isInitialized;
-
-        // ✅ NEW: Notes View Popup
-        private bool _isViewingNotes = false;
-        private string _viewNotesContent = "";
-
-        // ✅ NEW: Delete Delivery Item Confirmation
-        private bool _isDeletingDeliveryItem = false;
-        private DeliveryItem _confirmDeleteItem;
-
-        // ✅ NEW: Edit Delivery Item
-        private bool _isEditingDeliveryItem = false;
-        private DeliveryItem _editingDeliveryItemFromDb;
-
-        // ✅ UPDATED: Import Log - Complete History
-        private bool _isViewingImportLog = false;
-        private ObservableCollection<ImportSession> _importHistory = new ObservableCollection<ImportSession>();
-        private ImportSession _currentSession;
-
-        // ✅ Selected IDs tracking
-        private List<int> _selectedIds = new List<int>();
-
-        // Options collections - Loaded from database
-        public ObservableCollection<string> TypeOfWorkOptions { get; private set; }
-        public ObservableCollection<string> StatusOptions { get; private set; }
-        public ObservableCollection<string> SalesmanOptions { get; private set; }
-        public ObservableCollection<string> CompanyOptions { get; private set; }
-        public ObservableCollection<string> ColorOptions { get; private set; }
-
-        // ✅ Driver and Vehicle - Dynamic collections (loaded from database)
-        public ObservableCollection<string> DriverOptions { get; set; }
-        public ObservableCollection<string> VehicleOptions { get; set; }
-
-        public DeliveryViewModel()
+        public class DeliveryViewModel : ViewModelBase
         {
-            // Initialize database FIRST
-            InitializeDatabase();
+            private ObservableCollection<DbDelivery> _deliveryOrders;
+            private ObservableCollection<DbDailyWork> _sourceOrders;
+            private DbDelivery _selectedOrder;
+            private DbDeliveryItem _selectedDeliveryItem;
+            private DataRowView _selectedDataRowView;
+            private DataView _filteredDataView;
+            private string _searchText = "";
+            private string _sortColumn = "";
+            private ListSortDirection _sortDirection = ListSortDirection.Ascending;
+            private string _filterStatus = "";
+            private string _filterTypeOfWork = "";
+            private string _filterSalesman = "";
+            private string _filterCompany = "";
+            private string _filterColor = "";
+            private DateTime? _filterStartDate;
+            private DateTime? _filterEndDate;
+            private bool _isEditing;
+            private bool _isAddingDelivery;
+            private bool _isViewingDetails;
+            private DbDelivery _editingOrder;
+            private DbDeliveryItem _editingDeliveryItem;
+            private bool _isNewRecord;
+            private bool _isInitialized;
 
-            DeliveryOrders = new ObservableCollection<Delivery>();
-            SourceOrders = new ObservableCollection<DailyWork>();
-            TypeOfWorkOptions = new ObservableCollection<string>();
-            StatusOptions = new ObservableCollection<string>();
-            SalesmanOptions = new ObservableCollection<string>();
-            CompanyOptions = new ObservableCollection<string>();
-            ColorOptions = new ObservableCollection<string>();
-            DriverOptions = new ObservableCollection<string>();
-            VehicleOptions = new ObservableCollection<string>();
+            // Notes View Popup
+            private bool _isViewingNotes = false;
+            private string _viewNotesContent = "";
 
-            AddNewCommand = new RelayCommand(ExecuteAddNew);
-            EditCommand = new RelayCommand(ExecuteEdit, CanExecuteEdit);
-            DeleteCommand = new RelayCommand(ExecuteDelete, CanExecuteDelete);
-            SaveCommand = new RelayCommand(ExecuteSave, CanExecuteSave);
-            CancelCommand = new RelayCommand(ExecuteCancel);
-            RefreshCommand = new RelayCommand(ExecuteRefresh);
-            ImportConfirmedCommand = new RelayCommand(ExecuteImportConfirmed);
-            ExportCommand = new RelayCommand(ExecuteExport);
-            ClearFiltersCommand = new RelayCommand(ExecuteClearFilters);
-            PrintCommand = new RelayCommand(ExecutePrint);
-            AddDeliveryCommand = new RelayCommand(ExecuteAddDelivery, CanExecuteAddDelivery);
-            SaveDeliveryCommand = new RelayCommand(ExecuteSaveDelivery);
-            DeleteDeliveryItemCommand = new RelayCommand(ExecuteDeleteDeliveryItem, CanExecuteDeleteDeliveryItem);
-            ViewDetailsCommand = new RelayCommand(ExecuteViewDetails, CanExecuteViewDetails);
-            DeleteSelectedCommand = new RelayCommand(ExecuteDeleteSelected, CanExecuteDeleteSelected);
+            // Delete Delivery Item Confirmation
+            private bool _isDeletingDeliveryItem = false;
+            private DbDeliveryItem _confirmDeleteItem;
 
-            // ✅ NEW Commands for Notes View and Delete Confirmation
-            ViewNotesCommand = new RelayCommand(ExecuteViewNotes);
-            CloseNotesCommand = new RelayCommand(ExecuteCloseNotes);
-            CancelDeleteDeliveryItemCommand = new RelayCommand(ExecuteCancelDeleteDeliveryItem);
-            ConfirmDeleteDeliveryItemCommand = new RelayCommand(ExecuteConfirmDeleteDeliveryItem);
+            // Edit Delivery Item
+            private bool _isEditingDeliveryItem = false;
+            private DbDeliveryItem _editingDeliveryItemFromDb;
 
-            // ✅ NEW: Edit Delivery Item Commands
-            EditDeliveryItemCommand = new RelayCommand(ExecuteEditDeliveryItem, CanExecuteEditDeliveryItem);
-            SaveEditDeliveryItemCommand = new RelayCommand(ExecuteSaveEditDeliveryItem, CanExecuteSaveEditDeliveryItem);
-            CancelEditDeliveryItemCommand = new RelayCommand(ExecuteCancelEditDeliveryItem);
+            // Import Log - Complete History
+            private bool _isViewingImportLog = false;
+            private ObservableCollection<ImportSession> _importHistory = new ObservableCollection<ImportSession>();
+            private ImportSession _currentSession;
 
-            // ✅ UPDATED: Import Log Commands
-            ViewImportLogCommand = new RelayCommand(ExecuteViewImportLog, CanExecuteViewImportLog);
-            CloseImportLogCommand = new RelayCommand(ExecuteCloseImportLog);
+            // Selected IDs tracking
+            private List<int> _selectedIds = new List<int>();
 
-            LoadDataFromDatabase();
-            LoadOptionsFromDatabase();
-            CreateDataView();
-        }
+            // Options collections - Loaded from database
+            public ObservableCollection<string> TypeOfWorkOptions { get; private set; }
+            public ObservableCollection<string> StatusOptions { get; private set; }
+            public ObservableCollection<string> SalesmanOptions { get; private set; }
+            public ObservableCollection<string> CompanyOptions { get; private set; }
+            public ObservableCollection<string> ColorOptions { get; private set; }
 
-        #region Database Initialization
+            // Driver and Vehicle - Dynamic collections (loaded from database)
+            public ObservableCollection<string> DriverOptions { get; set; }
+            public ObservableCollection<string> VehicleOptions { get; set; }
 
-        private void InitializeDatabase()
-        {
-            try
+            public DeliveryViewModel()
             {
-                System.Diagnostics.Debug.WriteLine("[DeliveryViewModel] Initializing database...");
-                DbHelper.Init();
-                System.Diagnostics.Debug.WriteLine("[DeliveryViewModel] Database initialized successfully!");
-                _isInitialized = true;
+                // Initialize database FIRST
+                InitializeDatabase();
+
+                DeliveryOrders = new ObservableCollection<DbDelivery>();
+                SourceOrders = new ObservableCollection<DbDailyWork>();
+                TypeOfWorkOptions = new ObservableCollection<string>();
+                StatusOptions = new ObservableCollection<string>();
+                SalesmanOptions = new ObservableCollection<string>();
+                CompanyOptions = new ObservableCollection<string>();
+                ColorOptions = new ObservableCollection<string>();
+                DriverOptions = new ObservableCollection<string>();
+                VehicleOptions = new ObservableCollection<string>();
+
+                AddNewCommand = new RelayCommand(ExecuteAddNew);
+                EditCommand = new RelayCommand(ExecuteEdit, CanExecuteEdit);
+                DeleteCommand = new RelayCommand(ExecuteDelete, CanExecuteDelete);
+                SaveCommand = new RelayCommand(ExecuteSave, CanExecuteSave);
+                CancelCommand = new RelayCommand(ExecuteCancel);
+                RefreshCommand = new RelayCommand(ExecuteRefresh);
+                ImportConfirmedCommand = new RelayCommand(ExecuteImportConfirmed);
+                ExportCommand = new RelayCommand(ExecuteExport);
+                ClearFiltersCommand = new RelayCommand(ExecuteClearFilters);
+                PrintCommand = new RelayCommand(ExecutePrint);
+                AddDeliveryCommand = new RelayCommand(ExecuteAddDelivery, CanExecuteAddDelivery);
+                SaveDeliveryCommand = new RelayCommand(ExecuteSaveDelivery);
+                DeleteDeliveryItemCommand = new RelayCommand(ExecuteDeleteDeliveryItem, CanExecuteDeleteDeliveryItem);
+                ViewDetailsCommand = new RelayCommand(ExecuteViewDetails, CanExecuteViewDetails);
+                DeleteSelectedCommand = new RelayCommand(ExecuteDeleteSelected, CanExecuteDeleteSelected);
+
+                // Notes View and Delete Confirmation Commands
+                ViewNotesCommand = new RelayCommand(ExecuteViewNotes);
+                CloseNotesCommand = new RelayCommand(ExecuteCloseNotes);
+                CancelDeleteDeliveryItemCommand = new RelayCommand(ExecuteCancelDeleteDeliveryItem);
+                ConfirmDeleteDeliveryItemCommand = new RelayCommand(ExecuteConfirmDeleteDeliveryItem);
+
+                // Edit Delivery Item Commands
+                EditDeliveryItemCommand = new RelayCommand(ExecuteEditDeliveryItem, CanExecuteEditDeliveryItem);
+                SaveEditDeliveryItemCommand = new RelayCommand(ExecuteSaveEditDeliveryItem, CanExecuteSaveEditDeliveryItem);
+                CancelEditDeliveryItemCommand = new RelayCommand(ExecuteCancelEditDeliveryItem);
+
+                // Import Log Commands
+                ViewImportLogCommand = new RelayCommand(ExecuteViewImportLog, CanExecuteViewImportLog);
+                CloseImportLogCommand = new RelayCommand(ExecuteCloseImportLog);
+
+                LoadDataFromDatabase();
+                LoadOptionsFromDatabase();
+                CreateDataView();
             }
-            catch (Exception ex)
+
+            #region Database Initialization
+
+            private void InitializeDatabase()
             {
-                System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Database initialization failed: {ex.Message}");
-                MessageBox.Show(
-                    $"Database initialization failed:\n\n{ex.Message}\n\n" +
-                    $"Please check if the database file exists and is accessible.",
-                    "Database Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
-                _isInitialized = false;
-            }
-        }
-
-        #endregion
-
-        #region Properties
-
-        public ObservableCollection<Delivery> DeliveryOrders
-        {
-            get => _deliveryOrders;
-            set => SetProperty(ref _deliveryOrders, value);
-        }
-
-        public ObservableCollection<DailyWork> SourceOrders
-        {
-            get => _sourceOrders;
-            set => SetProperty(ref _sourceOrders, value);
-        }
-
-        public DataView FilteredDataView
-        {
-            get => _filteredDataView;
-            private set => SetProperty(ref _filteredDataView, value);
-        }
-
-        public Delivery SelectedOrder
-        {
-            get => _selectedOrder;
-            set
-            {
-                if (SetProperty(ref _selectedOrder, value))
+                try
                 {
-                    if (value != null)
-                        LoadDeliveryItems(value);
-                    CommandManager.InvalidateRequerySuggested();
+                    System.Diagnostics.Debug.WriteLine("[DeliveryViewModel] Initializing database...");
+                    DbHelper.Init();
+                    System.Diagnostics.Debug.WriteLine("[DeliveryViewModel] Database initialized successfully!");
+                    _isInitialized = true;
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Database initialization failed: {ex.Message}");
+                    MessageBox.Show(
+                        $"Database initialization failed:\n\n{ex.Message}\n\n" +
+                        $"Please check if the database file exists and is accessible.",
+                        "Database Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                    _isInitialized = false;
                 }
             }
-        }
 
-        public DeliveryItem SelectedDeliveryItem
-        {
-            get => _selectedDeliveryItem;
-            set
+            #endregion
+
+            #region Properties
+
+            public ObservableCollection<DbDelivery> DeliveryOrders
             {
-                if (SetProperty(ref _selectedDeliveryItem, value))
-                    CommandManager.InvalidateRequerySuggested();
+                get => _deliveryOrders;
+                set => SetProperty(ref _deliveryOrders, value);
             }
-        }
 
-        public DataRowView SelectedDataRowView
-        {
-            get => _selectedDataRowView;
-            set
+            public ObservableCollection<DbDailyWork> SourceOrders
             {
-                if (SetProperty(ref _selectedDataRowView, value))
+                get => _sourceOrders;
+                set => SetProperty(ref _sourceOrders, value);
+            }
+
+            public DataView FilteredDataView
+            {
+                get => _filteredDataView;
+                private set => SetProperty(ref _filteredDataView, value);
+            }
+
+            public DbDelivery SelectedOrder
+            {
+                get => _selectedOrder;
+                set
                 {
-                    // ✅ Load selected order when row is selected
-                    if (value != null)
+                    if (SetProperty(ref _selectedOrder, value))
                     {
-                        int id = Convert.ToInt32(value["Id"]);
-                        var order = DeliveryOrders.FirstOrDefault(w => w.Id == id);
-                        if (order != null)
-                        {
-                            // ✅ Use internal setter to avoid triggering LoadDeliveryItems twice
-                            _selectedOrder = order;
-                            OnPropertyChanged(nameof(SelectedOrder));
-
-                            // Load delivery items for the selected order
-                            LoadDeliveryItems(order);
-
-                            System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Row selected: Id={id}, Company={order.Company}, Balance={order.Balance}");
-                        }
+                        if (value != null)
+                            LoadDeliveryItems(value);
+                        CommandManager.InvalidateRequerySuggested();
                     }
-                    CommandManager.InvalidateRequerySuggested();
                 }
             }
-        }
 
-        public string SearchText
-        {
-            get => _searchText;
-            set
+            public DbDeliveryItem SelectedDeliveryItem
             {
-                if (SetProperty(ref _searchText, value))
-                    ApplyFilters();
-            }
-        }
-
-        public string FilterStatus
-        {
-            get => _filterStatus;
-            set
-            {
-                if (SetProperty(ref _filterStatus, value))
-                    ApplyFilters();
-            }
-        }
-
-        public string FilterTypeOfWork
-        {
-            get => _filterTypeOfWork;
-            set
-            {
-                if (SetProperty(ref _filterTypeOfWork, value))
-                    ApplyFilters();
-            }
-        }
-
-        public string FilterSalesman
-        {
-            get => _filterSalesman;
-            set
-            {
-                if (SetProperty(ref _filterSalesman, value))
-                    ApplyFilters();
-            }
-        }
-
-        public string FilterCompany
-        {
-            get => _filterCompany;
-            set
-            {
-                if (SetProperty(ref _filterCompany, value))
-                    ApplyFilters();
-            }
-        }
-
-        public string FilterColor
-        {
-            get => _filterColor;
-            set
-            {
-                if (SetProperty(ref _filterColor, value))
-                    ApplyFilters();
-            }
-        }
-
-        public DateTime? FilterStartDate
-        {
-            get => _filterStartDate;
-            set
-            {
-                if (SetProperty(ref _filterStartDate, value))
-                    ApplyFilters();
-            }
-        }
-
-        public DateTime? FilterEndDate
-        {
-            get => _filterEndDate;
-            set
-            {
-                if (SetProperty(ref _filterEndDate, value))
-                    ApplyFilters();
-            }
-        }
-
-        public bool IsEditing
-        {
-            get => _isEditing;
-            set => SetProperty(ref _isEditing, value);
-        }
-
-        public bool IsAddingDelivery
-        {
-            get => _isAddingDelivery;
-            set => SetProperty(ref _isAddingDelivery, value);
-        }
-
-        public bool IsViewingDetails
-        {
-            get => _isViewingDetails;
-            set => SetProperty(ref _isViewingDetails, value);
-        }
-
-        public Delivery EditingOrder
-        {
-            get => _editingOrder;
-            set => SetProperty(ref _editingOrder, value);
-        }
-
-        public DeliveryItem EditingDeliveryItem
-        {
-            get => _editingDeliveryItem;
-            set => SetProperty(ref _editingDeliveryItem, value);
-        }
-
-        // ✅ NEW: Notes View Popup Properties
-        public bool IsViewingNotes
-        {
-            get => _isViewingNotes;
-            set => SetProperty(ref _isViewingNotes, value);
-        }
-
-        public string ViewNotesContent
-        {
-            get => _viewNotesContent;
-            set => SetProperty(ref _viewNotesContent, value);
-        }
-
-        // ✅ NEW: Delete Delivery Item Confirmation Properties
-        public bool IsDeletingDeliveryItem
-        {
-            get => _isDeletingDeliveryItem;
-            set => SetProperty(ref _isDeletingDeliveryItem, value);
-        }
-
-        public DeliveryItem ConfirmDeleteItem
-        {
-            get => _confirmDeleteItem;
-            set => SetProperty(ref _confirmDeleteItem, value);
-        }
-
-        // ✅ NEW: Edit Delivery Item Properties
-        public bool IsEditingDeliveryItem
-        {
-            get => _isEditingDeliveryItem;
-            set => SetProperty(ref _isEditingDeliveryItem, value);
-        }
-
-        public DeliveryItem EditingDeliveryItemFromDb
-        {
-            get => _editingDeliveryItemFromDb;
-            set => SetProperty(ref _editingDeliveryItemFromDb, value);
-        }
-
-        // ✅ UPDATED: Import Log Properties - Complete History
-        public bool IsViewingImportLog
-        {
-            get => _isViewingImportLog;
-            set => SetProperty(ref _isViewingImportLog, value);
-        }
-
-        public ObservableCollection<ImportSession> ImportHistory
-        {
-            get => _importHistory;
-            set => SetProperty(ref _importHistory, value);
-        }
-
-        public ImportSession CurrentSession
-        {
-            get => _currentSession;
-            set => SetProperty(ref _currentSession, value);
-        }
-
-        public string SortColumn
-        {
-            get => _sortColumn;
-            set => SetProperty(ref _sortColumn, value);
-        }
-
-        public ListSortDirection SortDirection
-        {
-            get => _sortDirection;
-            set => SetProperty(ref _sortDirection, value);
-        }
-
-        // ═══════════════════════════════════════════════════════════
-        // STATISTICS - Shows TOTAL by default, SELECTED when rows selected
-        // ═══════════════════════════════════════════════════════════
-
-        // ✅ Private field FIRST (before property that uses it)
-        private int _selectedCount;
-
-        // Total Stats (Full data)
-        public int TotalRecords => DeliveryOrders?.Count ?? 0;
-        public int TotalOrderQty => DeliveryOrders?.Sum(w => w.OrderQty) ?? 0;
-        public int TotalDelivered => DeliveryOrders?.Sum(w => w.TotalDelivered) ?? 0;
-        public int TotalReturned => DeliveryOrders?.Sum(w => w.TotalReturned) ?? 0;
-        public int TotalBalance => DeliveryOrders?.Sum(w => w.Balance) ?? 0;
-        public double TotalOrderSQM => DeliveryOrders?.Sum(w => w.OrderSQM) ?? 0;
-
-        // Filtered Stats
-        public int FilteredRecords => FilteredDataView?.Count ?? 0;
-        public int FilteredOrderQty => FilteredDataView?.Cast<DataRowView>().Sum(x => Convert.ToInt32(x["OrderQty"])) ?? 0;
-        public int FilteredDelivered => FilteredDataView?.Cast<DataRowView>().Sum(x => Convert.ToInt32(x["TotalDelivered"])) ?? 0;
-        public int FilteredReturned => FilteredDataView?.Cast<DataRowView>().Sum(x => Convert.ToInt32(x["TotalReturned"])) ?? 0;
-        public int FilteredBalance => FilteredDataView?.Cast<DataRowView>().Sum(x => Convert.ToInt32(x["Balance"])) ?? 0;
-        public double FilteredOrderSQM => FilteredDataView?.Cast<DataRowView>().Sum(x => Convert.ToDouble(x["OrderSQM"])) ?? 0;
-
-        // Selection Stats - Using backing field with property
-        public int SelectedCount
-        {
-            get => _selectedCount;
-            private set
-            {
-                if (_selectedCount != value)
+                get => _selectedDeliveryItem;
+                set
                 {
-                    _selectedCount = value;
-                    OnPropertyChanged(nameof(SelectedCount));
+                    if (SetProperty(ref _selectedDeliveryItem, value))
+                        CommandManager.InvalidateRequerySuggested();
                 }
             }
-        }
 
-        // ✅ Selected stats - recalculates based on _selectedIds
-        public int SelectedRecords => _selectedCount == 0 ? TotalRecords : _selectedCount;
-        public int SelectedOrderQty => _selectedCount == 0 ? TotalOrderQty : GetSelectedSum(w => w.OrderQty);
-        public int SelectedDelivered => _selectedCount == 0 ? TotalDelivered : GetSelectedSum(w => w.TotalDelivered);
-        public int SelectedReturned => _selectedCount == 0 ? TotalReturned : GetSelectedSum(w => w.TotalReturned);
-        public int SelectedBalance => _selectedCount == 0 ? TotalBalance : GetSelectedSum(w => w.Balance);
-        public double SelectedOrderSQM => _selectedCount == 0 ? TotalOrderSQM : GetSelectedDoubleSum(w => w.OrderSQM);
-
-        // Helper methods for calculating selected totals
-        private int GetSelectedSum(Func<Delivery, int> selector)
-        {
-            if (_selectedCount == 0) return TotalOrderQty;
-            return DeliveryOrders?.Where(w => _selectedIds.Contains(w.Id)).Sum(selector) ?? 0;
-        }
-
-        private double GetSelectedDoubleSum(Func<Delivery, double> selector)
-        {
-            if (_selectedCount == 0) return TotalOrderSQM;
-            return DeliveryOrders?.Where(w => _selectedIds.Contains(w.Id)).Sum(selector) ?? 0;
-        }
-
-        public void SetSelectedCount(int count)
-        {
-            SelectedCount = count;
-            RefreshSelectedStats();
-        }
-
-        public void UpdateSelectedIds(List<int> ids)
-        {
-            _selectedIds = ids;
-            SelectedCount = ids.Count;
-            RefreshSelectedStats();
-        }
-
-        // ✅ Single method to refresh all selected stats
-        private void RefreshSelectedStats()
-        {
-            OnPropertyChanged(nameof(SelectedCount));
-            OnPropertyChanged(nameof(SelectedRecords));
-            OnPropertyChanged(nameof(SelectedOrderQty));
-            OnPropertyChanged(nameof(SelectedDelivered));
-            OnPropertyChanged(nameof(SelectedReturned));
-            OnPropertyChanged(nameof(SelectedBalance));
-            OnPropertyChanged(nameof(SelectedOrderSQM));
-            OnPropertyChanged(nameof(TotalRecords));
-            OnPropertyChanged(nameof(TotalOrderQty));
-            OnPropertyChanged(nameof(TotalDelivered));
-            OnPropertyChanged(nameof(TotalReturned));
-            OnPropertyChanged(nameof(TotalBalance));
-            OnPropertyChanged(nameof(TotalOrderSQM));
-            OnPropertyChanged(nameof(FilteredRecords));
-            OnPropertyChanged(nameof(FilteredOrderQty));
-            OnPropertyChanged(nameof(FilteredDelivered));
-            OnPropertyChanged(nameof(FilteredReturned));
-            OnPropertyChanged(nameof(FilteredBalance));
-            OnPropertyChanged(nameof(FilteredOrderSQM));
-        }
-
-        // ✅ Alias for compatibility
-        private void UpdateAllStats()
-        {
-            RefreshSelectedStats();
-        }
-
-        #endregion
-
-        #region Commands
-
-        public ICommand AddNewCommand { get; }
-        public ICommand EditCommand { get; }
-        public ICommand DeleteCommand { get; }
-        public ICommand SaveCommand { get; }
-        public ICommand CancelCommand { get; }
-        public ICommand RefreshCommand { get; }
-        public ICommand ImportConfirmedCommand { get; }
-        public ICommand ExportCommand { get; }
-        public ICommand ClearFiltersCommand { get; }
-        public ICommand PrintCommand { get; }
-        public ICommand AddDeliveryCommand { get; }
-        public ICommand SaveDeliveryCommand { get; }
-        public ICommand DeleteDeliveryItemCommand { get; }
-        public ICommand ViewDetailsCommand { get; }
-        public ICommand DeleteSelectedCommand { get; }
-
-        // ✅ NEW Commands for Notes View and Delete Confirmation
-        public ICommand ViewNotesCommand { get; }
-        public ICommand CloseNotesCommand { get; }
-        public ICommand CancelDeleteDeliveryItemCommand { get; }
-        public ICommand ConfirmDeleteDeliveryItemCommand { get; }
-
-        // ✅ NEW Commands for Edit Delivery Item
-        public ICommand EditDeliveryItemCommand { get; }
-        public ICommand SaveEditDeliveryItemCommand { get; }
-        public ICommand CancelEditDeliveryItemCommand { get; }
-
-        // ✅ UPDATED Commands for Import Log
-        public ICommand ViewImportLogCommand { get; }
-        public ICommand CloseImportLogCommand { get; }
-
-        #endregion
-
-        #region Load Options From Database
-
-        private void LoadOptionsFromDatabase()
-        {
-            try
+            public DataRowView SelectedDataRowView
             {
-                // Clear existing options
-                TypeOfWorkOptions.Clear();
-                StatusOptions.Clear();
-                SalesmanOptions.Clear();
-                CompanyOptions.Clear();
-                ColorOptions.Clear();
-                DriverOptions.Clear();
-                VehicleOptions.Clear();
-
-                // Load Type of Work options from database
-                var typeOfWorkOptions = DbHelper.GetAllTypeOfWorkOptions();
-                foreach (var option in typeOfWorkOptions)
+                get => _selectedDataRowView;
+                set
                 {
-                    if (!string.IsNullOrWhiteSpace(option))
-                        TypeOfWorkOptions.Add(option);
+                    if (SetProperty(ref _selectedDataRowView, value))
+                    {
+                        if (value != null)
+                        {
+                            int id = Convert.ToInt32(value["Id"]);
+                            var order = DeliveryOrders.FirstOrDefault(w => w.Id == id);
+                            if (order != null)
+                            {
+                                _selectedOrder = order;
+                                OnPropertyChanged(nameof(SelectedOrder));
+                                LoadDeliveryItems(order);
+                                System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Row selected: Id={id}, Company={order.Company}, Balance={order.Balance}");
+                            }
+                        }
+                        CommandManager.InvalidateRequerySuggested();
+                    }
                 }
-
-                // Load Status options from database
-                var statusOptions = DbHelper.GetAllDeliveryStatusOptions();
-                foreach (var option in statusOptions)
-                {
-                    if (!string.IsNullOrWhiteSpace(option))
-                        StatusOptions.Add(option);
-                }
-
-                // Load Salesman options from database
-                var salesmanOptions = DbHelper.GetAllSalesmanOptions();
-                foreach (var option in salesmanOptions)
-                {
-                    if (!string.IsNullOrWhiteSpace(option))
-                        SalesmanOptions.Add(option);
-                }
-
-                // Load Company options from database
-                var companyOptions = DbHelper.GetAllCompanyOptions();
-                foreach (var option in companyOptions)
-                {
-                    if (!string.IsNullOrWhiteSpace(option))
-                        CompanyOptions.Add(option);
-                }
-
-                // Load Color options from database
-                var colorOptions = DbHelper.GetAllColorOptions();
-                foreach (var option in colorOptions)
-                {
-                    if (!string.IsNullOrWhiteSpace(option))
-                        ColorOptions.Add(option);
-                }
-
-                // Load Driver options from database
-                var driverOptions = DbHelper.GetAllDriverOptions();
-                foreach (var option in driverOptions)
-                {
-                    if (!string.IsNullOrWhiteSpace(option))
-                        DriverOptions.Add(option);
-                }
-
-                // Load Vehicle options from database
-                var vehicleOptions = DbHelper.GetAllVehicleOptions();
-                foreach (var option in vehicleOptions)
-                {
-                    if (!string.IsNullOrWhiteSpace(option))
-                        VehicleOptions.Add(option);
-                }
-
-                System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Loaded options: TypeOfWork={TypeOfWorkOptions.Count}, Status={StatusOptions.Count}, Salesman={SalesmanOptions.Count}, Company={CompanyOptions.Count}, Color={ColorOptions.Count}, Driver={DriverOptions.Count}, Vehicle={VehicleOptions.Count}");
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Load options error: {ex.Message}");
-            }
-        }
-
-        #endregion
-
-        #region Load Data From Database
-
-        private void LoadDataFromDatabase()
-        {
-            if (!_isInitialized)
-            {
-                System.Diagnostics.Debug.WriteLine("[DeliveryViewModel] Database not initialized, skipping load.");
-                return;
             }
 
-            try
+            public string SearchText
             {
-                System.Diagnostics.Debug.WriteLine("[DeliveryViewModel] Loading data from database...");
-
-                // Test connection first
-                if (!DbHelper.TestConnection())
+                get => _searchText;
+                set
                 {
-                    MessageBox.Show("Cannot connect to database. Please restart the application.",
-                        "Connection Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    if (SetProperty(ref _searchText, value))
+                        ApplyFilters();
+                }
+            }
+
+            public string FilterStatus
+            {
+                get => _filterStatus;
+                set
+                {
+                    if (SetProperty(ref _filterStatus, value))
+                        ApplyFilters();
+                }
+            }
+
+            public string FilterTypeOfWork
+            {
+                get => _filterTypeOfWork;
+                set
+                {
+                    if (SetProperty(ref _filterTypeOfWork, value))
+                        ApplyFilters();
+                }
+            }
+
+            public string FilterSalesman
+            {
+                get => _filterSalesman;
+                set
+                {
+                    if (SetProperty(ref _filterSalesman, value))
+                        ApplyFilters();
+                }
+            }
+
+            public string FilterCompany
+            {
+                get => _filterCompany;
+                set
+                {
+                    if (SetProperty(ref _filterCompany, value))
+                        ApplyFilters();
+                }
+            }
+
+            public string FilterColor
+            {
+                get => _filterColor;
+                set
+                {
+                    if (SetProperty(ref _filterColor, value))
+                        ApplyFilters();
+                }
+            }
+
+            public DateTime? FilterStartDate
+            {
+                get => _filterStartDate;
+                set
+                {
+                    if (SetProperty(ref _filterStartDate, value))
+                        ApplyFilters();
+                }
+            }
+
+            public DateTime? FilterEndDate
+            {
+                get => _filterEndDate;
+                set
+                {
+                    if (SetProperty(ref _filterEndDate, value))
+                        ApplyFilters();
+                }
+            }
+
+            public bool IsEditing
+            {
+                get => _isEditing;
+                set => SetProperty(ref _isEditing, value);
+            }
+
+            public bool IsAddingDelivery
+            {
+                get => _isAddingDelivery;
+                set => SetProperty(ref _isAddingDelivery, value);
+            }
+
+            public bool IsViewingDetails
+            {
+                get => _isViewingDetails;
+                set => SetProperty(ref _isViewingDetails, value);
+            }
+
+            public DbDelivery EditingOrder
+            {
+                get => _editingOrder;
+                set => SetProperty(ref _editingOrder, value);
+            }
+
+            public DbDeliveryItem EditingDeliveryItem
+            {
+                get => _editingDeliveryItem;
+                set => SetProperty(ref _editingDeliveryItem, value);
+            }
+
+            // Notes View Popup Properties
+            public bool IsViewingNotes
+            {
+                get => _isViewingNotes;
+                set => SetProperty(ref _isViewingNotes, value);
+            }
+
+            public string ViewNotesContent
+            {
+                get => _viewNotesContent;
+                set => SetProperty(ref _viewNotesContent, value);
+            }
+
+            // Delete Delivery Item Confirmation Properties
+            public bool IsDeletingDeliveryItem
+            {
+                get => _isDeletingDeliveryItem;
+                set => SetProperty(ref _isDeletingDeliveryItem, value);
+            }
+
+            public DbDeliveryItem ConfirmDeleteItem
+            {
+                get => _confirmDeleteItem;
+                set => SetProperty(ref _confirmDeleteItem, value);
+            }
+
+            // Edit Delivery Item Properties
+            public bool IsEditingDeliveryItem
+            {
+                get => _isEditingDeliveryItem;
+                set => SetProperty(ref _isEditingDeliveryItem, value);
+            }
+
+            public DbDeliveryItem EditingDeliveryItemFromDb
+            {
+                get => _editingDeliveryItemFromDb;
+                set => SetProperty(ref _editingDeliveryItemFromDb, value);
+            }
+
+            // Import Log Properties
+            public bool IsViewingImportLog
+            {
+                get => _isViewingImportLog;
+                set => SetProperty(ref _isViewingImportLog, value);
+            }
+
+            public ObservableCollection<ImportSession> ImportHistory
+            {
+                get => _importHistory;
+                set => SetProperty(ref _importHistory, value);
+            }
+
+            public ImportSession CurrentSession
+            {
+                get => _currentSession;
+                set => SetProperty(ref _currentSession, value);
+            }
+
+            public string SortColumn
+            {
+                get => _sortColumn;
+                set => SetProperty(ref _sortColumn, value);
+            }
+
+            public ListSortDirection SortDirection
+            {
+                get => _sortDirection;
+                set => SetProperty(ref _sortDirection, value);
+            }
+
+            // Statistics
+            private int _selectedCount;
+
+            public int TotalRecords => DeliveryOrders?.Count ?? 0;
+            public int TotalOrderQty => DeliveryOrders?.Sum(w => w.OrderQty) ?? 0;
+            public int TotalDelivered => DeliveryOrders?.Sum(w => w.TotalDelivered) ?? 0;
+            public int TotalReturned => DeliveryOrders?.Sum(w => w.TotalReturned) ?? 0;
+            public int TotalBalance => DeliveryOrders?.Sum(w => w.Balance) ?? 0;
+            public double TotalOrderSQM => DeliveryOrders?.Sum(w => w.OrderSQM) ?? 0;
+
+            public int FilteredRecords => FilteredDataView?.Count ?? 0;
+            public int FilteredOrderQty => FilteredDataView?.Cast<DataRowView>().Sum(x => Convert.ToInt32(x["OrderQty"])) ?? 0;
+            public int FilteredDelivered => FilteredDataView?.Cast<DataRowView>().Sum(x => Convert.ToInt32(x["TotalDelivered"])) ?? 0;
+            public int FilteredReturned => FilteredDataView?.Cast<DataRowView>().Sum(x => Convert.ToInt32(x["TotalReturned"])) ?? 0;
+            public int FilteredBalance => FilteredDataView?.Cast<DataRowView>().Sum(x => Convert.ToInt32(x["Balance"])) ?? 0;
+            public double FilteredOrderSQM => FilteredDataView?.Cast<DataRowView>().Sum(x => Convert.ToDouble(x["OrderSQM"])) ?? 0;
+
+            public int SelectedCount
+            {
+                get => _selectedCount;
+                private set
+                {
+                    if (_selectedCount != value)
+                    {
+                        _selectedCount = value;
+                        OnPropertyChanged(nameof(SelectedCount));
+                    }
+                }
+            }
+
+            public int SelectedRecords => _selectedCount == 0 ? TotalRecords : _selectedCount;
+            public int SelectedOrderQty => _selectedCount == 0 ? TotalOrderQty : GetSelectedSum(w => w.OrderQty);
+            public int SelectedDelivered => _selectedCount == 0 ? TotalDelivered : GetSelectedSum(w => w.TotalDelivered);
+            public int SelectedReturned => _selectedCount == 0 ? TotalReturned : GetSelectedSum(w => w.TotalReturned);
+            public int SelectedBalance => _selectedCount == 0 ? TotalBalance : GetSelectedSum(w => w.Balance);
+            public double SelectedOrderSQM => _selectedCount == 0 ? TotalOrderSQM : GetSelectedDoubleSum(w => w.OrderSQM);
+
+            private int GetSelectedSum(Func<DbDelivery, int> selector)
+            {
+                if (_selectedCount == 0) return TotalOrderQty;
+                return DeliveryOrders?.Where(w => _selectedIds.Contains(w.Id)).Sum(selector) ?? 0;
+            }
+
+            private double GetSelectedDoubleSum(Func<DbDelivery, double> selector)
+            {
+                if (_selectedCount == 0) return TotalOrderSQM;
+                return DeliveryOrders?.Where(w => _selectedIds.Contains(w.Id)).Sum(selector) ?? 0;
+            }
+
+            public void SetSelectedCount(int count)
+            {
+                SelectedCount = count;
+                RefreshSelectedStats();
+            }
+
+            public void UpdateSelectedIds(List<int> ids)
+            {
+                _selectedIds = ids;
+                SelectedCount = ids.Count;
+                RefreshSelectedStats();
+            }
+
+            private void RefreshSelectedStats()
+            {
+                OnPropertyChanged(nameof(SelectedCount));
+                OnPropertyChanged(nameof(SelectedRecords));
+                OnPropertyChanged(nameof(SelectedOrderQty));
+                OnPropertyChanged(nameof(SelectedDelivered));
+                OnPropertyChanged(nameof(SelectedReturned));
+                OnPropertyChanged(nameof(SelectedBalance));
+                OnPropertyChanged(nameof(SelectedOrderSQM));
+                OnPropertyChanged(nameof(TotalRecords));
+                OnPropertyChanged(nameof(TotalOrderQty));
+                OnPropertyChanged(nameof(TotalDelivered));
+                OnPropertyChanged(nameof(TotalReturned));
+                OnPropertyChanged(nameof(TotalBalance));
+                OnPropertyChanged(nameof(TotalOrderSQM));
+                OnPropertyChanged(nameof(FilteredRecords));
+                OnPropertyChanged(nameof(FilteredOrderQty));
+                OnPropertyChanged(nameof(FilteredDelivered));
+                OnPropertyChanged(nameof(FilteredReturned));
+                OnPropertyChanged(nameof(FilteredBalance));
+                OnPropertyChanged(nameof(FilteredOrderSQM));
+            }
+
+            private void UpdateAllStats()
+            {
+                RefreshSelectedStats();
+            }
+
+            #endregion
+
+            #region Commands
+
+            public ICommand AddNewCommand { get; }
+            public ICommand EditCommand { get; }
+            public ICommand DeleteCommand { get; }
+            public ICommand SaveCommand { get; }
+            public ICommand CancelCommand { get; }
+            public ICommand RefreshCommand { get; }
+            public ICommand ImportConfirmedCommand { get; }
+            public ICommand ExportCommand { get; }
+            public ICommand ClearFiltersCommand { get; }
+            public ICommand PrintCommand { get; }
+            public ICommand AddDeliveryCommand { get; }
+            public ICommand SaveDeliveryCommand { get; }
+            public ICommand DeleteDeliveryItemCommand { get; }
+            public ICommand ViewDetailsCommand { get; }
+            public ICommand DeleteSelectedCommand { get; }
+            public ICommand ViewNotesCommand { get; }
+            public ICommand CloseNotesCommand { get; }
+            public ICommand CancelDeleteDeliveryItemCommand { get; }
+            public ICommand ConfirmDeleteDeliveryItemCommand { get; }
+            public ICommand EditDeliveryItemCommand { get; }
+            public ICommand SaveEditDeliveryItemCommand { get; }
+            public ICommand CancelEditDeliveryItemCommand { get; }
+            public ICommand ViewImportLogCommand { get; }
+            public ICommand CloseImportLogCommand { get; }
+
+            #endregion
+
+            #region Load Options From Database
+
+            private void LoadOptionsFromDatabase()
+            {
+                try
+                {
+                    TypeOfWorkOptions.Clear();
+                    StatusOptions.Clear();
+                    SalesmanOptions.Clear();
+                    CompanyOptions.Clear();
+                    ColorOptions.Clear();
+                    DriverOptions.Clear();
+                    VehicleOptions.Clear();
+
+                    var typeOfWorkOptions = DbHelper.GetAllTypeOfWorkOptions();
+                    foreach (var option in typeOfWorkOptions)
+                    {
+                        if (!string.IsNullOrWhiteSpace(option))
+                            TypeOfWorkOptions.Add(option);
+                    }
+
+                    var statusOptions = DbHelper.GetAllDeliveryStatusOptions();
+                    foreach (var option in statusOptions)
+                    {
+                        if (!string.IsNullOrWhiteSpace(option))
+                            StatusOptions.Add(option);
+                    }
+
+                    var salesmanOptions = DbHelper.GetAllSalesmanOptions();
+                    foreach (var option in salesmanOptions)
+                    {
+                        if (!string.IsNullOrWhiteSpace(option))
+                            SalesmanOptions.Add(option);
+                    }
+
+                    var companyOptions = DbHelper.GetAllCompanyOptions();
+                    foreach (var option in companyOptions)
+                    {
+                        if (!string.IsNullOrWhiteSpace(option))
+                            CompanyOptions.Add(option);
+                    }
+
+                    var colorOptions = DbHelper.GetAllColorOptions();
+                    foreach (var option in colorOptions)
+                    {
+                        if (!string.IsNullOrWhiteSpace(option))
+                            ColorOptions.Add(option);
+                    }
+
+                    var driverOptions = DbHelper.GetAllDriverOptions();
+                    foreach (var option in driverOptions)
+                    {
+                        if (!string.IsNullOrWhiteSpace(option))
+                            DriverOptions.Add(option);
+                    }
+
+                    var vehicleOptions = DbHelper.GetAllVehicleOptions();
+                    foreach (var option in vehicleOptions)
+                    {
+                        if (!string.IsNullOrWhiteSpace(option))
+                            VehicleOptions.Add(option);
+                    }
+
+                    System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Loaded options: TypeOfWork={TypeOfWorkOptions.Count}, Status={StatusOptions.Count}, Salesman={SalesmanOptions.Count}, Company={CompanyOptions.Count}, Color={ColorOptions.Count}, Driver={DriverOptions.Count}, Vehicle={VehicleOptions.Count}");
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Load options error: {ex.Message}");
+                }
+            }
+
+            #endregion
+
+            #region Load Data From Database
+
+            private void LoadDataFromDatabase()
+            {
+                if (!_isInitialized)
+                {
+                    System.Diagnostics.Debug.WriteLine("[DeliveryViewModel] Database not initialized, skipping load.");
                     return;
                 }
 
-                // Load DailyWork (Source Orders) from database
-                var dbDailyWork = DbHelper.GetAllDailyWork();
-                SourceOrders = new ObservableCollection<DailyWork>(dbDailyWork);
-                System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Loaded {dbDailyWork.Count} source orders");
-
-                // Load Deliveries from database
-                var dbDeliveries = DbHelper.GetAllDeliveries();
-                System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Loaded {dbDeliveries.Count} deliveries");
-
-                DeliveryOrders.Clear();
-                foreach (var delivery in dbDeliveries)
+                try
                 {
-                    // ✅ Load delivery items for each delivery
-                    var items = DbHelper.GetDeliveryItems(delivery.Id);
+                    System.Diagnostics.Debug.WriteLine("[DeliveryViewModel] Loading data from database...");
 
-                    // ✅ Create new collection and add items (triggers notification)
-                    var itemCollection = new ObservableCollection<DeliveryItem>(items);
-                    delivery.DeliveryItems = itemCollection;
+                    if (!DbHelper.TestConnection())
+                    {
+                        MessageBox.Show("Cannot connect to database. Please restart the application.",
+                            "Connection Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
 
-                    // Update status based on delivery items
-                    UpdateOrderStatus(delivery);
+                    var dbDailyWork = DbHelper.GetAllDailyWork();
+                    SourceOrders = new ObservableCollection<DbDailyWork>(dbDailyWork);
+                    System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Loaded {dbDailyWork.Count} source orders");
 
-                    DeliveryOrders.Add(delivery);
+                    var dbDeliveries = DbHelper.GetAllDeliveries();
+                    System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Loaded {dbDeliveries.Count} deliveries");
+
+                    DeliveryOrders.Clear();
+                    foreach (var delivery in dbDeliveries)
+                    {
+                        var items = DbHelper.GetDeliveryItems(delivery.Id);
+                        var itemCollection = new ObservableCollection<DbDeliveryItem>(items);
+                        delivery.DeliveryItems = itemCollection;
+                        UpdateOrderStatus(delivery);
+                        DeliveryOrders.Add(delivery);
+                    }
+
+                    LoadUniqueDriversAndVehicles();
+
+                    System.Diagnostics.Debug.WriteLine("[DeliveryViewModel] Data loading complete!");
+                    UpdateAllStats();
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Error loading data: {ex.Message}");
+                    MessageBox.Show($"Error loading data from database:\n\n{ex.Message}\n\n{ex.StackTrace}",
+                        "Database Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+
+            private void LoadDeliveryItems(DbDelivery order)
+            {
+                try
+                {
+                    var items = DbHelper.GetDeliveryItems(order.Id);
+                    order.DeliveryItems.Clear();
+                    foreach (var item in items)
+                    {
+                        order.DeliveryItems.Add(item);
+                    }
+                    UpdateOrderStatus(order);
+                    System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Loaded {items.Count} delivery items for order {order.Id}");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error loading delivery items: {ex.Message}",
+                        "Database Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+
+            private void LoadUniqueDriversAndVehicles()
+            {
+                try
+                {
+                    var allDeliveryItems = new List<DbDeliveryItem>();
+                    foreach (var order in DeliveryOrders)
+                    {
+                        foreach (var item in order.DeliveryItems)
+                        {
+                            allDeliveryItems.Add(item);
+                        }
+                    }
+
+                    var uniqueDrivers = allDeliveryItems
+                        .Where(x => !string.IsNullOrWhiteSpace(x.Driver))
+                        .Select(x => x.Driver.Trim())
+                        .Distinct()
+                        .OrderBy(x => x)
+                        .ToList();
+
+                    foreach (var driver in uniqueDrivers)
+                    {
+                        if (!DriverOptions.Contains(driver))
+                            DriverOptions.Add(driver);
+                    }
+
+                    var uniqueVehicles = allDeliveryItems
+                        .Where(x => !string.IsNullOrWhiteSpace(x.Vehicle))
+                        .Select(x => x.Vehicle.Trim())
+                        .Distinct()
+                        .OrderBy(x => x)
+                        .ToList();
+
+                    foreach (var vehicle in uniqueVehicles)
+                    {
+                        if (!VehicleOptions.Contains(vehicle))
+                            VehicleOptions.Add(vehicle);
+                    }
+
+                    System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Loaded {DriverOptions.Count} drivers and {VehicleOptions.Count} vehicles");
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Error loading drivers/vehicles: {ex.Message}");
+                }
+            }
+
+            #endregion
+
+            #region Import from Confirmed Orders
+
+            private void ExecuteImportConfirmed(object parameter)
+            {
+                try
+                {
+                    var confirmedOrders = SourceOrders
+                        .Where(w => w.Status == "Confirmed")
+                        .ToList();
+
+                    if (confirmedOrders.Count == 0)
+                    {
+                        MessageBox.Show("No confirmed orders found in Daily Works to import.",
+                            "Import", MessageBoxButton.OK, MessageBoxImage.Information);
+                        return;
+                    }
+
+                    int importedCount = 0;
+                    int updatedCount = 0;
+                    int skippedCount = 0;
+
+                    var session = new ImportSession
+                    {
+                        SessionDateTime = DateTime.Now,
+                        Notes = "",
+                        Entries = new ObservableCollection<ImportLog>()
+                    };
+
+                    foreach (var sourceOrder in confirmedOrders)
+                    {
+                        var existingDelivery = DeliveryOrders.FirstOrDefault(d =>
+                            d.PINumber == sourceOrder.PINumber &&
+                            !string.IsNullOrEmpty(sourceOrder.PINumber));
+
+                        if (existingDelivery != null)
+                        {
+                            bool hasChanges =
+                                existingDelivery.OrderQty != sourceOrder.Qty ||
+                                existingDelivery.OrderSQM != sourceOrder.SQM ||
+                                existingDelivery.Notes != sourceOrder.Notes ||
+                                existingDelivery.Company != sourceOrder.Company ||
+                                existingDelivery.TypeOfWork != sourceOrder.TypeOfWork ||
+                                existingDelivery.Salesman != sourceOrder.Salesman ||
+                                existingDelivery.Color != sourceOrder.Color;
+
+                            if (hasChanges)
+                            {
+                                var changes = new ObservableCollection<ImportLogItem>();
+
+                                if (existingDelivery.OrderQty != sourceOrder.Qty)
+                                    changes.Add(new ImportLogItem { FieldName = "Order Qty", OldValue = existingDelivery.OrderQty.ToString(), NewValue = sourceOrder.Qty.ToString() });
+                                if (existingDelivery.OrderSQM != sourceOrder.SQM)
+                                    changes.Add(new ImportLogItem { FieldName = "Order SQM", OldValue = existingDelivery.OrderSQM.ToString("N2"), NewValue = sourceOrder.SQM.ToString("N2") });
+                                if (existingDelivery.Company != sourceOrder.Company)
+                                    changes.Add(new ImportLogItem { FieldName = "Company", OldValue = existingDelivery.Company, NewValue = sourceOrder.Company ?? "" });
+                                if (existingDelivery.TypeOfWork != sourceOrder.TypeOfWork)
+                                    changes.Add(new ImportLogItem { FieldName = "Type of Work", OldValue = existingDelivery.TypeOfWork, NewValue = sourceOrder.TypeOfWork ?? "" });
+                                if (existingDelivery.Salesman != sourceOrder.Salesman)
+                                    changes.Add(new ImportLogItem { FieldName = "Salesman", OldValue = existingDelivery.Salesman, NewValue = sourceOrder.Salesman ?? "" });
+                                if (existingDelivery.Color != sourceOrder.Color)
+                                    changes.Add(new ImportLogItem { FieldName = "Color", OldValue = existingDelivery.Color ?? "", NewValue = sourceOrder.Color ?? "" });
+                                if (existingDelivery.Notes != sourceOrder.Notes)
+                                    changes.Add(new ImportLogItem { FieldName = "Notes", OldValue = existingDelivery.Notes ?? "", NewValue = sourceOrder.Notes ?? "" });
+
+                                session.Entries.Add(new ImportLog
+                                {
+                                    ImportDateTime = DateTime.Now,
+                                    PINumber = existingDelivery.PINumber,
+                                    Company = existingDelivery.Company,
+                                    Changes = changes
+                                });
+
+                                existingDelivery.OrderQty = sourceOrder.Qty;
+                                existingDelivery.OrderSQM = sourceOrder.SQM;
+                                existingDelivery.Company = sourceOrder.Company ?? "";
+                                existingDelivery.TypeOfWork = sourceOrder.TypeOfWork ?? "";
+                                existingDelivery.Salesman = sourceOrder.Salesman ?? "";
+                                existingDelivery.Color = sourceOrder.Color ?? "";
+                                existingDelivery.Notes = sourceOrder.Notes ?? "";
+                                existingDelivery.UpdatedDate = DateTime.Today;
+                                UpdateOrderStatus(existingDelivery);
+
+                                DbHelper.UpdateDelivery(existingDelivery);
+                                updatedCount++;
+                            }
+                            else
+                            {
+                                skippedCount++;
+                            }
+                            continue;
+                        }
+
+                        var newDelivery = new DbDelivery
+                        {
+                            Id = DeliveryOrders.Count > 0 ? DeliveryOrders.Max(d => d.Id) + 1 : 1,
+                            SourceId = sourceOrder.Id,
+                            Date = sourceOrder.Date,
+                            Company = sourceOrder.Company ?? "",
+                            PINumber = sourceOrder.PINumber ?? "",
+                            CustomerReference = sourceOrder.CustomerReference ?? "",
+                            TypeOfWork = sourceOrder.TypeOfWork ?? "",
+                            OrderQty = sourceOrder.Qty,
+                            OrderSQM = sourceOrder.SQM,
+                            Salesman = sourceOrder.Salesman ?? "",
+                            Color = sourceOrder.Color ?? "",
+                            ProductionStatus = sourceOrder.ProductionStatus ?? "",
+                            Status = "Pending",
+                            Notes = sourceOrder.Notes ?? "",
+                            CreatedDate = DateTime.Now,
+                            UpdatedDate = DateTime.Now,
+                            DeliveryItems = new ObservableCollection<DbDeliveryItem>()
+                        };
+
+                        DbHelper.SaveDelivery(newDelivery);
+                        DeliveryOrders.Add(newDelivery);
+                        importedCount++;
+                    }
+
+                    if (session.Entries.Count > 0 || importedCount > 0)
+                    {
+                        ImportHistory.Insert(0, session);
+                        CurrentSession = session;
+                    }
+
+                    RefreshDataView();
+                    UpdateAllStats();
+
+                    string message = $"Import Complete!\n\n";
+                    message += $"New: {importedCount} orders\n";
+                    message += $"Updated: {updatedCount} orders\n";
+                    message += $"Skipped (no changes): {skippedCount} orders";
+
+                    MessageBox.Show(message, "Import", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                    if (updatedCount > 0)
+                    {
+                        IsViewingImportLog = true;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error importing orders: {ex.Message}", "Error",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+
+            #endregion
+
+            #region Filter Implementation
+
+            private void ApplyFilters()
+            {
+                if (FilteredDataView == null) return;
+                var filterExpressions = new System.Collections.Generic.List<string>();
+
+                if (!string.IsNullOrWhiteSpace(SearchText))
+                {
+                    var searchLower = SearchText.Replace("'", "''");
+                    filterExpressions.Add($"(Company LIKE '%{searchLower}%' OR PINumber LIKE '%{searchLower}%' OR Salesman LIKE '%{searchLower}%' OR Notes LIKE '%{searchLower}%')");
                 }
 
-                // ✅ Load unique drivers and vehicles from existing delivery items
-                LoadUniqueDriversAndVehicles();
+                if (!string.IsNullOrWhiteSpace(FilterStatus))
+                    filterExpressions.Add($"Status = '{FilterStatus}'");
 
-                System.Diagnostics.Debug.WriteLine("[DeliveryViewModel] Data loading complete!");
+                if (!string.IsNullOrWhiteSpace(FilterTypeOfWork))
+                    filterExpressions.Add($"TypeOfWork = '{FilterTypeOfWork}'");
+
+                if (!string.IsNullOrWhiteSpace(FilterSalesman))
+                    filterExpressions.Add($"Salesman = '{FilterSalesman}'");
+
+                if (!string.IsNullOrWhiteSpace(FilterCompany))
+                    filterExpressions.Add($"Company = '{FilterCompany}'");
+
+                if (!string.IsNullOrWhiteSpace(FilterColor))
+                    filterExpressions.Add($"Color = '{FilterColor}'");
+
+                if (FilterStartDate.HasValue)
+                    filterExpressions.Add($"Date >= #{FilterStartDate.Value:yyyy-MM-dd}#");
+
+                if (FilterEndDate.HasValue)
+                    filterExpressions.Add($"Date <= #{FilterEndDate.Value:yyyy-MM-dd}#");
+
+                FilteredDataView.RowFilter = filterExpressions.Count > 0 ? string.Join(" AND ", filterExpressions) : "";
+
+                if (!string.IsNullOrEmpty(SortColumn))
+                    FilteredDataView.Sort = $"{SortColumn} {(SortDirection == ListSortDirection.Ascending ? "ASC" : "DESC")}";
+
                 UpdateAllStats();
             }
-            catch (Exception ex)
+
+            #endregion
+
+            #region DataView
+
+            private void CreateDataView()
             {
-                System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Error loading data: {ex.Message}");
-                MessageBox.Show($"Error loading data from database:\n\n{ex.Message}\n\n{ex.StackTrace}",
-                    "Database Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        private void LoadDeliveryItems(Delivery order)
-        {
-            try
-            {
-                var items = DbHelper.GetDeliveryItems(order.Id);
-
-                // ✅ Clear and add items (triggers notification)
-                order.DeliveryItems.Clear();
-                foreach (var item in items)
-                {
-                    order.DeliveryItems.Add(item);
-                }
-
-                // Update status
-                UpdateOrderStatus(order);
-
-                System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Loaded {items.Count} delivery items for order {order.Id}");
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error loading delivery items: {ex.Message}",
-                    "Database Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
-        }
-
-        private void LoadUniqueDriversAndVehicles()
-        {
-            try
-            {
-                // Get all delivery items from all orders
-                var allDeliveryItems = new List<DeliveryItem>();
+                var dataTable = new DataTable("Deliveries");
+                dataTable.Columns.Add("Id", typeof(int));
+                dataTable.Columns.Add("Date", typeof(DateTime));
+                dataTable.Columns.Add("Company", typeof(string));
+                dataTable.Columns.Add("PINumber", typeof(string));
+                dataTable.Columns.Add("TypeOfWork", typeof(string));
+                dataTable.Columns.Add("Color", typeof(string));
+                dataTable.Columns.Add("OrderQty", typeof(int));
+                dataTable.Columns.Add("TotalDelivered", typeof(int));
+                dataTable.Columns.Add("TotalReturned", typeof(int));
+                dataTable.Columns.Add("Balance", typeof(int));
+                dataTable.Columns.Add("OrderSQM", typeof(double));
+                dataTable.Columns.Add("Salesman", typeof(string));
+                dataTable.Columns.Add("Status", typeof(string));
+                dataTable.Columns.Add("Notes", typeof(string));
 
                 foreach (var order in DeliveryOrders)
                 {
-                    foreach (var item in order.DeliveryItems)
+                    var row = dataTable.NewRow();
+                    row["Id"] = order.Id;
+                    row["Date"] = order.Date;
+                    row["Company"] = order.Company ?? "";
+                    row["PINumber"] = order.PINumber ?? "";
+                    row["TypeOfWork"] = order.TypeOfWork ?? "";
+                    row["Color"] = order.Color ?? "";
+                    row["OrderQty"] = order.OrderQty;
+                    row["TotalDelivered"] = order.TotalDelivered;
+                    row["TotalReturned"] = order.TotalReturned;
+                    row["Balance"] = order.Balance;
+                    row["OrderSQM"] = order.OrderSQM;
+                    row["Salesman"] = order.Salesman ?? "";
+                    row["Status"] = order.Status ?? "";
+                    row["Notes"] = order.Notes ?? "";
+                    dataTable.Rows.Add(row);
+                }
+
+                FilteredDataView = dataTable.DefaultView;
+            }
+
+            private void RefreshDataView()
+            {
+                if (FilteredDataView == null) return;
+                var currentSort = FilteredDataView.Sort;
+                var currentFilter = FilteredDataView.RowFilter;
+                CreateDataView();
+                if (!string.IsNullOrEmpty(currentSort)) FilteredDataView.Sort = currentSort;
+                if (!string.IsNullOrEmpty(currentFilter)) FilteredDataView.RowFilter = currentFilter;
+            }
+
+            private void UpdateDataTableRow(DbDelivery order)
+            {
+                if (FilteredDataView == null) return;
+
+                try
+                {
+                    var dataTable = FilteredDataView.Table;
+                    if (dataTable == null) return;
+
+                    foreach (DataRow row in dataTable.Rows)
                     {
-                        allDeliveryItems.Add(item);
+                        if (Convert.ToInt32(row["Id"]) == order.Id)
+                        {
+                            row.BeginEdit();
+                            row["Date"] = order.Date;
+                            row["Company"] = order.Company ?? "";
+                            row["PINumber"] = order.PINumber ?? "";
+                            row["TypeOfWork"] = order.TypeOfWork ?? "";
+                            row["Color"] = order.Color ?? "";
+                            row["OrderQty"] = order.OrderQty;
+                            row["TotalDelivered"] = order.TotalDelivered;
+                            row["TotalReturned"] = order.TotalReturned;
+                            row["Balance"] = order.Balance;
+                            row["OrderSQM"] = order.OrderSQM;
+                            row["Salesman"] = order.Salesman ?? "";
+                            row["Status"] = order.Status ?? "";
+                            row["Notes"] = order.Notes ?? "";
+                            row.EndEdit();
+
+                            NotifyAllStats();
+                            System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] DataTable row updated for order {order.Id}");
+                            break;
+                        }
                     }
                 }
-
-                // Add unique drivers
-                var uniqueDrivers = allDeliveryItems
-                    .Where(x => !string.IsNullOrWhiteSpace(x.Driver))
-                    .Select(x => x.Driver.Trim())
-                    .Distinct()
-                    .OrderBy(x => x)
-                    .ToList();
-
-                foreach (var driver in uniqueDrivers)
+                catch (Exception ex)
                 {
-                    if (!DriverOptions.Contains(driver))
-                        DriverOptions.Add(driver);
+                    System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] UpdateDataTableRow error: {ex.Message}");
+                    RefreshDataView();
+                }
+            }
+
+            private void NotifyAllStats()
+            {
+                OnPropertyChanged(nameof(TotalRecords));
+                OnPropertyChanged(nameof(TotalOrderQty));
+                OnPropertyChanged(nameof(TotalDelivered));
+                OnPropertyChanged(nameof(TotalReturned));
+                OnPropertyChanged(nameof(TotalBalance));
+                OnPropertyChanged(nameof(TotalOrderSQM));
+                OnPropertyChanged(nameof(FilteredRecords));
+                OnPropertyChanged(nameof(FilteredOrderQty));
+                OnPropertyChanged(nameof(FilteredDelivered));
+                OnPropertyChanged(nameof(FilteredReturned));
+                OnPropertyChanged(nameof(FilteredBalance));
+                OnPropertyChanged(nameof(FilteredOrderSQM));
+                OnPropertyChanged(nameof(SelectedCount));
+                OnPropertyChanged(nameof(SelectedRecords));
+                OnPropertyChanged(nameof(SelectedOrderQty));
+                OnPropertyChanged(nameof(SelectedDelivered));
+                OnPropertyChanged(nameof(SelectedReturned));
+                OnPropertyChanged(nameof(SelectedBalance));
+                OnPropertyChanged(nameof(SelectedOrderSQM));
+            }
+
+            private void UpdateOrderStatus(DbDelivery order)
+            {
+                if (order.Balance <= 0)
+                    order.Status = "Completed";
+                else if (order.TotalDelivered > 0)
+                    order.Status = "Partially Delivered";
+                else
+                    order.Status = "Pending";
+            }
+
+            #endregion
+
+            #region Command Implementations
+
+            private void ExecuteAddNew(object parameter)
+            {
+                _isNewRecord = true;
+                EditingOrder = new DbDelivery
+                {
+                    Id = 0,
+                    Date = DateTime.Today,
+                    Status = "Pending",
+                    OrderQty = 0,
+                    OrderSQM = 0,
+                    DeliveryItems = new ObservableCollection<DbDeliveryItem>()
+                };
+                IsEditing = true;
+            }
+
+            private void ExecuteEdit(object parameter)
+            {
+                DbDelivery orderToEdit = null;
+
+                if (SelectedDataRowView != null)
+                {
+                    int id = Convert.ToInt32(SelectedDataRowView["Id"]);
+                    orderToEdit = DeliveryOrders.FirstOrDefault(w => w.Id == id);
+                }
+                else if (SelectedOrder != null)
+                {
+                    orderToEdit = SelectedOrder;
                 }
 
-                // Add unique vehicles
-                var uniqueVehicles = allDeliveryItems
-                    .Where(x => !string.IsNullOrWhiteSpace(x.Vehicle))
-                    .Select(x => x.Vehicle.Trim())
-                    .Distinct()
-                    .OrderBy(x => x)
-                    .ToList();
-
-                foreach (var vehicle in uniqueVehicles)
+                if (orderToEdit != null)
                 {
-                    if (!VehicleOptions.Contains(vehicle))
-                        VehicleOptions.Add(vehicle);
+                    _isNewRecord = false;
+                    EditingOrder = new DbDelivery
+                    {
+                        Id = orderToEdit.Id,
+                        SourceId = orderToEdit.SourceId,
+                        Date = orderToEdit.Date,
+                        Company = orderToEdit.Company,
+                        PINumber = orderToEdit.PINumber,
+                        CustomerReference = orderToEdit.CustomerReference,
+                        TypeOfWork = orderToEdit.TypeOfWork,
+                        OrderQty = orderToEdit.OrderQty,
+                        OrderSQM = orderToEdit.OrderSQM,
+                        Salesman = orderToEdit.Salesman,
+                        Color = orderToEdit.Color,
+                        Status = orderToEdit.Status,
+                        Notes = orderToEdit.Notes,
+                        CreatedDate = orderToEdit.CreatedDate,
+                        UpdatedDate = DateTime.Now,
+                        DeliveryItems = orderToEdit.DeliveryItems
+                    };
+                    IsEditing = true;
+                }
+            }
+
+            private bool CanExecuteEdit(object parameter)
+            {
+                return parameter != null || SelectedDataRowView != null || SelectedOrder != null;
+            }
+
+            private void ExecuteDelete(object parameter)
+            {
+                DbDelivery orderToDelete = null;
+
+                if (SelectedDataRowView != null)
+                {
+                    int id = Convert.ToInt32(SelectedDataRowView["Id"]);
+                    orderToDelete = DeliveryOrders.FirstOrDefault(w => w.Id == id);
+                }
+                else if (SelectedOrder != null)
+                {
+                    orderToDelete = SelectedOrder;
                 }
 
-                System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Loaded {DriverOptions.Count} drivers and {VehicleOptions.Count} vehicles");
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Error loading drivers/vehicles: {ex.Message}");
-            }
-        }
-
-        #endregion
-
-        #region Import from Confirmed Orders
-
-        private void ExecuteImportConfirmed(object parameter)
-        {
-            try
-            {
-                // Get only CONFIRMED orders from SourceOrders (from database)
-                var confirmedOrders = SourceOrders
-                    .Where(w => w.Status == "Confirmed")
-                    .ToList();
-
-                if (confirmedOrders.Count == 0)
+                if (orderToDelete != null)
                 {
-                    MessageBox.Show("No confirmed orders found in Daily Works to import.",
-                        "Import", MessageBoxButton.OK, MessageBoxImage.Information);
+                    var result = MessageBox.Show(
+                        $"Delete delivery order for {orderToDelete.Company}?\nPI: {orderToDelete.PINumber}\n\nThis will also delete all delivery items.",
+                        "Confirm Delete",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Warning);
+
+                    if (result == MessageBoxResult.Yes)
+                    {
+                        DbHelper.DeleteDelivery(orderToDelete.Id);
+                        DeliveryOrders.Remove(orderToDelete);
+                        RefreshDataView();
+                        UpdateAllStats();
+                        SelectedOrder = null;
+                        SelectedDataRowView = null;
+                    }
+                }
+            }
+
+            private bool CanExecuteDelete(object parameter)
+            {
+                return parameter != null || SelectedDataRowView != null || SelectedOrder != null;
+            }
+
+            private void ExecuteSave(object parameter)
+            {
+                if (EditingOrder == null) return;
+
+                if (string.IsNullOrWhiteSpace(EditingOrder.Company))
+                {
+                    MessageBox.Show("Company name is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
-                int importedCount = 0;
-                int updatedCount = 0;
-                int skippedCount = 0;
-
-                // ✅ UPDATED: Create import session (groups all changes from this import)
-                var session = new ImportSession
+                if (_isNewRecord)
                 {
-                    SessionDateTime = DateTime.Now,
-                    Notes = "",
-                    Entries = new ObservableCollection<ImportLog>()
-                };
+                    EditingOrder.Id = DeliveryOrders.Count > 0 ? DeliveryOrders.Max(w => w.Id) + 1 : 1;
+                    EditingOrder.CreatedDate = DateTime.Today;
+                    EditingOrder.UpdatedDate = DateTime.Today;
 
-                foreach (var sourceOrder in confirmedOrders)
-                {
-                    // CHECK IF ALREADY IMPORTED (by PI Number)
-                    var existingDelivery = DeliveryOrders.FirstOrDefault(d =>
-                        d.PINumber == sourceOrder.PINumber &&
-                        !string.IsNullOrEmpty(sourceOrder.PINumber));
+                    DbHelper.SaveDelivery(EditingOrder);
 
-                    if (existingDelivery != null)
-                    {
-                        // ✅ CHECK IF SOURCE DATA HAS CHANGED (including Color)
-                        bool hasChanges =
-                            existingDelivery.OrderQty != sourceOrder.Qty ||
-                            existingDelivery.OrderSQM != sourceOrder.SQM ||
-                            existingDelivery.Notes != sourceOrder.Notes ||
-                            existingDelivery.Company != sourceOrder.Company ||
-                            existingDelivery.TypeOfWork != sourceOrder.TypeOfWork ||
-                            existingDelivery.Salesman != sourceOrder.Salesman ||
-                            existingDelivery.Color != sourceOrder.Color;  // ✅ ADDED: Color change check
-
-                        if (hasChanges)
-                        {
-                            // ✅ Track changes for import log (including Color)
-                            var changes = new ObservableCollection<ImportLogItem>();
-
-                            if (existingDelivery.OrderQty != sourceOrder.Qty)
-                                changes.Add(new ImportLogItem { FieldName = "Order Qty", OldValue = existingDelivery.OrderQty.ToString(), NewValue = sourceOrder.Qty.ToString() });
-                            if (existingDelivery.OrderSQM != sourceOrder.SQM)
-                                changes.Add(new ImportLogItem { FieldName = "Order SQM", OldValue = existingDelivery.OrderSQM.ToString("N2"), NewValue = sourceOrder.SQM.ToString("N2") });
-                            if (existingDelivery.Company != sourceOrder.Company)
-                                changes.Add(new ImportLogItem { FieldName = "Company", OldValue = existingDelivery.Company, NewValue = sourceOrder.Company ?? "" });
-                            if (existingDelivery.TypeOfWork != sourceOrder.TypeOfWork)
-                                changes.Add(new ImportLogItem { FieldName = "Type of Work", OldValue = existingDelivery.TypeOfWork, NewValue = sourceOrder.TypeOfWork ?? "" });
-                            if (existingDelivery.Salesman != sourceOrder.Salesman)
-                                changes.Add(new ImportLogItem { FieldName = "Salesman", OldValue = existingDelivery.Salesman, NewValue = sourceOrder.Salesman ?? "" });
-                            if (existingDelivery.Color != sourceOrder.Color)  // ✅ ADDED: Color change tracking
-                                changes.Add(new ImportLogItem { FieldName = "Color", OldValue = existingDelivery.Color ?? "", NewValue = sourceOrder.Color ?? "" });
-                            if (existingDelivery.Notes != sourceOrder.Notes)
-                                changes.Add(new ImportLogItem { FieldName = "Notes", OldValue = existingDelivery.Notes ?? "", NewValue = sourceOrder.Notes ?? "" });
-
-                            // ✅ ADD entry with import datetime
-                            session.Entries.Add(new ImportLog
-                            {
-                                ImportDateTime = DateTime.Now,
-                                PINumber = existingDelivery.PINumber,
-                                Company = existingDelivery.Company,
-                                Changes = changes
-                            });
-
-                            // ✅ UPDATE EXISTING DELIVERY WITH NEW VALUES (including Color)
-                            existingDelivery.OrderQty = sourceOrder.Qty;
-                            existingDelivery.OrderSQM = sourceOrder.SQM;
-                            existingDelivery.Company = sourceOrder.Company ?? "";
-                            existingDelivery.TypeOfWork = sourceOrder.TypeOfWork ?? "";
-                            existingDelivery.Salesman = sourceOrder.Salesman ?? "";
-                            existingDelivery.Color = sourceOrder.Color ?? "";  // ✅ ADDED: Color update
-                            existingDelivery.Notes = sourceOrder.Notes ?? "";
-                            existingDelivery.UpdatedDate = DateTime.Today;
-                            UpdateOrderStatus(existingDelivery);
-
-                            // UPDATE IN DATABASE
-                            DbHelper.UpdateDelivery(existingDelivery);
-
-                            updatedCount++;
-                        }
-                        else
-                        {
-                            skippedCount++;
-                        }
-                        continue;
-                    }
-
-                    // CREATE NEW DELIVERY ORDER (including Color from DailyWork)
-                    var newDelivery = new Delivery
-                    {
-                        Id = DeliveryOrders.Count > 0 ? DeliveryOrders.Max(d => d.Id) + 1 : 1,
-                        SourceId = sourceOrder.Id,
-                        Date = sourceOrder.Date,
-                        Company = sourceOrder.Company ?? "",
-                        PINumber = sourceOrder.PINumber ?? "",
-                        CustomerReference = sourceOrder.CustomerReference ?? "",
-                        TypeOfWork = sourceOrder.TypeOfWork ?? "",
-                        OrderQty = sourceOrder.Qty,
-                        OrderSQM = sourceOrder.SQM,
-                        Salesman = sourceOrder.Salesman ?? "",
-                        Color = sourceOrder.Color ?? "",  // ✅ ADDED: Color from DailyWork
-                        ProductionStatus = sourceOrder.ProductionStatus ?? "",
-                        Status = "Pending",
-                        Notes = sourceOrder.Notes ?? "",
-                        CreatedDate = DateTime.Now,
-                        UpdatedDate = DateTime.Now,
-                        DeliveryItems = new ObservableCollection<DeliveryItem>()
-                    };
-
-                    // SAVE TO DATABASE
-                    DbHelper.SaveDelivery(newDelivery);
-
-                    DeliveryOrders.Add(newDelivery);
-                    importedCount++;
-                }
-
-                // ✅ UPDATED: Store session in history (keep all previous logs)
-                if (session.Entries.Count > 0 || importedCount > 0)
-                {
-                    ImportHistory.Insert(0, session); // Add to top (newest first)
-                    CurrentSession = session;
-                }
-
-                RefreshDataView();
-                UpdateAllStats();
-
-                string message = $"Import Complete!\n\n";
-                message += $"New: {importedCount} orders\n";
-                message += $"Updated: {updatedCount} orders\n";
-                message += $"Skipped (no changes): {skippedCount} orders";
-
-                MessageBox.Show(message, "Import", MessageBoxButton.OK, MessageBoxImage.Information);
-
-                // ✅ UPDATED: Auto-show import log if there were updates
-                if (updatedCount > 0)
-                {
-                    IsViewingImportLog = true;
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error importing orders: {ex.Message}", "Error",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        #endregion
-
-        #region Filter Implementation
-
-        private void ApplyFilters()
-        {
-            if (FilteredDataView == null) return;
-            var filterExpressions = new System.Collections.Generic.List<string>();
-
-            if (!string.IsNullOrWhiteSpace(SearchText))
-            {
-                var searchLower = SearchText.Replace("'", "''");
-                filterExpressions.Add($"(Company LIKE '%{searchLower}%' OR PINumber LIKE '%{searchLower}%' OR Salesman LIKE '%{searchLower}%' OR Notes LIKE '%{searchLower}%')");
-            }
-
-            if (!string.IsNullOrWhiteSpace(FilterStatus))
-                filterExpressions.Add($"Status = '{FilterStatus}'");
-
-            if (!string.IsNullOrWhiteSpace(FilterTypeOfWork))
-                filterExpressions.Add($"TypeOfWork = '{FilterTypeOfWork}'");
-
-            if (!string.IsNullOrWhiteSpace(FilterSalesman))
-                filterExpressions.Add($"Salesman = '{FilterSalesman}'");
-
-            if (!string.IsNullOrWhiteSpace(FilterCompany))
-                filterExpressions.Add($"Company = '{FilterCompany}'");
-
-            if (!string.IsNullOrWhiteSpace(FilterColor))  // ✅ ADDED: Color filter
-                filterExpressions.Add($"Color = '{FilterColor}'");
-
-            if (FilterStartDate.HasValue)
-                filterExpressions.Add($"Date >= #{FilterStartDate.Value:yyyy-MM-dd}#");
-
-            if (FilterEndDate.HasValue)
-                filterExpressions.Add($"Date <= #{FilterEndDate.Value:yyyy-MM-dd}#");
-
-            FilteredDataView.RowFilter = filterExpressions.Count > 0 ? string.Join(" AND ", filterExpressions) : "";
-
-            if (!string.IsNullOrEmpty(SortColumn))
-                FilteredDataView.Sort = $"{SortColumn} {(SortDirection == ListSortDirection.Ascending ? "ASC" : "DESC")}";
-
-            UpdateAllStats();
-        }
-
-        #endregion
-
-        #region DataView
-
-        private void CreateDataView()
-        {
-            var dataTable = new DataTable("Deliveries");
-            dataTable.Columns.Add("Id", typeof(int));
-            dataTable.Columns.Add("Date", typeof(DateTime));
-            dataTable.Columns.Add("Company", typeof(string));
-            dataTable.Columns.Add("PINumber", typeof(string));
-            dataTable.Columns.Add("TypeOfWork", typeof(string));
-            dataTable.Columns.Add("Color", typeof(string));  // ✅ ADDED: Color column
-            dataTable.Columns.Add("OrderQty", typeof(int));
-            dataTable.Columns.Add("TotalDelivered", typeof(int));
-            dataTable.Columns.Add("TotalReturned", typeof(int));
-            dataTable.Columns.Add("Balance", typeof(int));
-            dataTable.Columns.Add("OrderSQM", typeof(double));
-            dataTable.Columns.Add("Salesman", typeof(string));
-            dataTable.Columns.Add("Status", typeof(string));
-            dataTable.Columns.Add("Notes", typeof(string));
-
-            foreach (var order in DeliveryOrders)
-            {
-                var row = dataTable.NewRow();
-                row["Id"] = order.Id;
-                row["Date"] = order.Date;
-                row["Company"] = order.Company ?? "";
-                row["PINumber"] = order.PINumber ?? "";
-                row["TypeOfWork"] = order.TypeOfWork ?? "";
-                row["Color"] = order.Color ?? "";  // ✅ ADDED: Color data
-                row["OrderQty"] = order.OrderQty;
-                row["TotalDelivered"] = order.TotalDelivered;
-                row["TotalReturned"] = order.TotalReturned;
-                row["Balance"] = order.Balance;
-                row["OrderSQM"] = order.OrderSQM;
-                row["Salesman"] = order.Salesman ?? "";
-                row["Status"] = order.Status ?? "";
-                row["Notes"] = order.Notes ?? "";
-                dataTable.Rows.Add(row);
-            }
-
-            FilteredDataView = dataTable.DefaultView;
-        }
-
-        private void RefreshDataView()
-        {
-            if (FilteredDataView == null) return;
-            var currentSort = FilteredDataView.Sort;
-            var currentFilter = FilteredDataView.RowFilter;
-            CreateDataView();
-            if (!string.IsNullOrEmpty(currentSort)) FilteredDataView.Sort = currentSort;
-            if (!string.IsNullOrEmpty(currentFilter)) FilteredDataView.RowFilter = currentFilter;
-        }
-
-        // ✅ UPDATE SPECIFIC DATATABLE ROW (FIX FOR DATAGRID NOT UPDATING)
-        private void UpdateDataTableRow(Delivery order)
-        {
-            if (FilteredDataView == null) return;
-
-            try
-            {
-                var dataTable = FilteredDataView.Table;
-                if (dataTable == null) return;
-
-                // Find the row with matching Id
-                foreach (DataRow row in dataTable.Rows)
-                {
-                    if (Convert.ToInt32(row["Id"]) == order.Id)
-                    {
-                        // Use BeginEdit/EndEdit for proper DataView notification
-                        row.BeginEdit();
-                        row["Date"] = order.Date;
-                        row["Company"] = order.Company ?? "";
-                        row["PINumber"] = order.PINumber ?? "";
-                        row["TypeOfWork"] = order.TypeOfWork ?? "";
-                        row["Color"] = order.Color ?? "";  // ✅ ADDED: Color update
-                        row["OrderQty"] = order.OrderQty;
-                        row["TotalDelivered"] = order.TotalDelivered;
-                        row["TotalReturned"] = order.TotalReturned;
-                        row["Balance"] = order.Balance;
-                        row["OrderSQM"] = order.OrderSQM;
-                        row["Salesman"] = order.Salesman ?? "";
-                        row["Status"] = order.Status ?? "";
-                        row["Notes"] = order.Notes ?? "";
-                        row.EndEdit();
-
-                        // ✅ Notify ALL stats including Filtered stats
-                        NotifyAllStats();
-
-                        System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] DataTable row updated for order {order.Id}");
-                        break;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] UpdateDataTableRow error: {ex.Message}");
-                // Fallback: refresh entire DataView
-                RefreshDataView();
-            }
-        }
-
-        // ✅ NEW: Notify all stats properties
-        private void NotifyAllStats()
-        {
-            // Total stats
-            OnPropertyChanged(nameof(TotalRecords));
-            OnPropertyChanged(nameof(TotalOrderQty));
-            OnPropertyChanged(nameof(TotalDelivered));
-            OnPropertyChanged(nameof(TotalReturned));
-            OnPropertyChanged(nameof(TotalBalance));
-            OnPropertyChanged(nameof(TotalOrderSQM));
-
-            // Filtered stats
-            OnPropertyChanged(nameof(FilteredRecords));
-            OnPropertyChanged(nameof(FilteredOrderQty));
-            OnPropertyChanged(nameof(FilteredDelivered));
-            OnPropertyChanged(nameof(FilteredReturned));
-            OnPropertyChanged(nameof(FilteredBalance));
-            OnPropertyChanged(nameof(FilteredOrderSQM));
-
-            // Selected stats
-            OnPropertyChanged(nameof(SelectedCount));
-            OnPropertyChanged(nameof(SelectedRecords));
-            OnPropertyChanged(nameof(SelectedOrderQty));
-            OnPropertyChanged(nameof(SelectedDelivered));
-            OnPropertyChanged(nameof(SelectedReturned));
-            OnPropertyChanged(nameof(SelectedBalance));
-            OnPropertyChanged(nameof(SelectedOrderSQM));
-        }
-
-        private void UpdateOrderStatus(Delivery order)
-        {
-            if (order.Balance <= 0)
-                order.Status = "Completed";
-            else if (order.TotalDelivered > 0)
-                order.Status = "Partially Delivered";
-            else
-                order.Status = "Pending";
-        }
-
-        #endregion
-
-        #region Command Implementations
-
-        private void ExecuteAddNew(object parameter)
-        {
-            _isNewRecord = true;
-            EditingOrder = new Delivery
-            {
-                Id = 0,
-                Date = DateTime.Today,
-                Status = "Pending",
-                OrderQty = 0,
-                OrderSQM = 0,
-                DeliveryItems = new ObservableCollection<DeliveryItem>()
-            };
-            IsEditing = true;
-        }
-
-        private void ExecuteEdit(object parameter)
-        {
-            Delivery orderToEdit = null;
-
-            if (SelectedDataRowView != null)
-            {
-                int id = Convert.ToInt32(SelectedDataRowView["Id"]);
-                orderToEdit = DeliveryOrders.FirstOrDefault(w => w.Id == id);
-            }
-            else if (SelectedOrder != null)
-            {
-                orderToEdit = SelectedOrder;
-            }
-
-            if (orderToEdit != null)
-            {
-                _isNewRecord = false;
-                EditingOrder = orderToEdit.Clone();
-                IsEditing = true;
-            }
-        }
-
-        private bool CanExecuteEdit(object parameter)
-        {
-            return parameter != null || SelectedDataRowView != null || SelectedOrder != null;
-        }
-
-        private void ExecuteDelete(object parameter)
-        {
-            Delivery orderToDelete = null;
-
-            if (SelectedDataRowView != null)
-            {
-                int id = Convert.ToInt32(SelectedDataRowView["Id"]);
-                orderToDelete = DeliveryOrders.FirstOrDefault(w => w.Id == id);
-            }
-            else if (SelectedOrder != null)
-            {
-                orderToDelete = SelectedOrder;
-            }
-
-            if (orderToDelete != null)
-            {
-                var result = MessageBox.Show(
-                    $"Delete delivery order for {orderToDelete.Company}?\nPI: {orderToDelete.PINumber}\n\nThis will also delete all delivery items.",
-                    "Confirm Delete",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Warning);
-
-                if (result == MessageBoxResult.Yes)
-                {
-                    // DELETE FROM DATABASE
-                    DbHelper.DeleteDelivery(orderToDelete.Id);
-
-                    DeliveryOrders.Remove(orderToDelete);
-                    RefreshDataView();
-                    UpdateAllStats();
-                    SelectedOrder = null;
-                    SelectedDataRowView = null;
-                }
-            }
-        }
-
-        private bool CanExecuteDelete(object parameter)
-        {
-            return parameter != null || SelectedDataRowView != null || SelectedOrder != null;
-        }
-
-        private void ExecuteSave(object parameter)
-        {
-            if (EditingOrder == null) return;
-
-            if (string.IsNullOrWhiteSpace(EditingOrder.Company))
-            {
-                MessageBox.Show("Company name is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            // Handle Add New
-            if (_isNewRecord)
-            {
-                EditingOrder.Id = DeliveryOrders.Count > 0 ? DeliveryOrders.Max(w => w.Id) + 1 : 1;
-                EditingOrder.CreatedDate = DateTime.Today;
-                EditingOrder.UpdatedDate = DateTime.Today;
-
-                // SAVE TO DATABASE
-                DbHelper.SaveDelivery(EditingOrder);
-
-                // ✅ Add new values to dropdown options
-                AddToOptionsIfNew(TypeOfWorkOptions, EditingOrder.TypeOfWork);
-                AddToOptionsIfNew(StatusOptions, EditingOrder.Status);
-                AddToOptionsIfNew(SalesmanOptions, EditingOrder.Salesman);
-                AddToOptionsIfNew(CompanyOptions, EditingOrder.Company);
-                AddToOptionsIfNew(ColorOptions, EditingOrder.Color);
-            }
-
-            // Handle Update (existing record)
-            if (!_isNewRecord && EditingOrder != null)
-            {
-                var existing = DeliveryOrders.FirstOrDefault(w => w.Id == EditingOrder.Id);
-                if (existing != null)
-                {
-                    existing.Company = EditingOrder.Company;
-                    existing.PINumber = EditingOrder.PINumber;
-                    existing.CustomerReference = EditingOrder.CustomerReference;
-                    existing.TypeOfWork = EditingOrder.TypeOfWork;
-                    existing.OrderQty = EditingOrder.OrderQty;
-                    existing.OrderSQM = EditingOrder.OrderSQM;
-                    existing.Salesman = EditingOrder.Salesman;
-                    existing.Color = EditingOrder.Color;  // ✅ ADDED: Color update
-                    existing.Status = EditingOrder.Status;
-                    existing.Notes = EditingOrder.Notes;
-                    existing.UpdatedDate = DateTime.Today;
-                    UpdateOrderStatus(existing);
-
-                    // UPDATE IN DATABASE
-                    DbHelper.UpdateDelivery(existing);
-
-                    // ✅ Add new values to dropdown options
                     AddToOptionsIfNew(TypeOfWorkOptions, EditingOrder.TypeOfWork);
                     AddToOptionsIfNew(StatusOptions, EditingOrder.Status);
                     AddToOptionsIfNew(SalesmanOptions, EditingOrder.Salesman);
                     AddToOptionsIfNew(CompanyOptions, EditingOrder.Company);
                     AddToOptionsIfNew(ColorOptions, EditingOrder.Color);
+
+                    DeliveryOrders.Add(EditingOrder);
                 }
-            }
-
-            IsEditing = false;
-            EditingOrder = null;
-            RefreshDataView();
-            UpdateAllStats();
-        }
-
-        private bool CanExecuteSave(object parameter) => EditingOrder != null;
-
-        private void ExecuteCancel(object parameter)
-        {
-            IsEditing = false;
-            IsAddingDelivery = false;
-            IsViewingDetails = false;
-            IsViewingNotes = false;
-            IsDeletingDeliveryItem = false;
-            IsEditingDeliveryItem = false;
-            IsViewingImportLog = false;
-            EditingOrder = null;
-            EditingDeliveryItem = null;
-            EditingDeliveryItemFromDb = null;
-            ViewNotesContent = "";
-            ConfirmDeleteItem = null;
-        }
-
-        private void ExecuteRefresh(object parameter)
-        {
-            LoadDataFromDatabase();
-            LoadOptionsFromDatabase();
-            RefreshDataView();
-            UpdateAllStats();
-        }
-
-        private void ExecuteViewDetails(object parameter)
-        {
-            Delivery orderToView = null;
-
-            if (SelectedDataRowView != null)
-            {
-                int id = Convert.ToInt32(SelectedDataRowView["Id"]);
-                orderToView = DeliveryOrders.FirstOrDefault(w => w.Id == id);
-            }
-            else if (SelectedOrder != null)
-            {
-                orderToView = SelectedOrder;
-            }
-
-            if (orderToView != null)
-            {
-                SelectedOrder = orderToView;
-                IsViewingDetails = true;
-            }
-        }
-
-        private bool CanExecuteViewDetails(object parameter)
-        {
-            return parameter != null || SelectedDataRowView != null || SelectedOrder != null;
-        }
-
-        private void ExecuteAddDelivery(object parameter)
-        {
-            Delivery order = SelectedOrder;
-
-            if (order != null && order.Balance > 0)
-            {
-                EditingDeliveryItem = new DeliveryItem
+                else
                 {
-                    Id = 0,
-                    OrderId = order.Id,
-                    DeliveryDate = DateTime.Today,
-                    DeliveredQty = 0,
-                    ReturnedQty = 0,
-                    DeliveredSQM = 0,
-                    ReturnedSQM = 0,
-                    Driver = "",
-                    Vehicle = ""
-                };
-                IsAddingDelivery = true;
-            }
-            else
-            {
-                MessageBox.Show("No balance remaining. Order is fully delivered.", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
-
-        private bool CanExecuteAddDelivery(object parameter)
-        {
-            return SelectedOrder != null && SelectedOrder.Balance > 0;
-        }
-
-        private void ExecuteSaveDelivery(object parameter)
-        {
-            if (EditingDeliveryItem == null || SelectedOrder == null) return;
-
-            if (EditingDeliveryItem.DeliveredQty <= 0)
-            {
-                MessageBox.Show("Delivered quantity must be greater than 0.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            // ✅ Add new Driver to options if not exists
-            if (!string.IsNullOrWhiteSpace(EditingDeliveryItem.Driver))
-            {
-                var driverTrimmed = EditingDeliveryItem.Driver.Trim();
-                if (!DriverOptions.Contains(driverTrimmed))
-                {
-                    DriverOptions.Add(driverTrimmed);
-                }
-            }
-
-            // ✅ Add new Vehicle to options if not exists
-            if (!string.IsNullOrWhiteSpace(EditingDeliveryItem.Vehicle))
-            {
-                var vehicleTrimmed = EditingDeliveryItem.Vehicle.Trim();
-                if (!VehicleOptions.Contains(vehicleTrimmed))
-                {
-                    VehicleOptions.Add(vehicleTrimmed);
-                }
-            }
-
-            var totalAfterDelivery = SelectedOrder.TotalDelivered + EditingDeliveryItem.DeliveredQty - SelectedOrder.TotalReturned;
-            var balance = SelectedOrder.OrderQty - totalAfterDelivery;
-
-            if (balance < 0)
-            {
-                var result = MessageBox.Show(
-                    $"Delivered quantity ({EditingDeliveryItem.DeliveredQty}) will exceed order quantity.\n\n" +
-                    $"Current Balance: {SelectedOrder.Balance}\n" +
-                    $"After Delivery: {balance} (negative)\n\n" +
-                    "Do you want to continue?",
-                    "Warning",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Warning);
-
-                if (result != MessageBoxResult.Yes) return;
-            }
-
-            EditingDeliveryItem.Id = SelectedOrder.DeliveryItems.Count > 0
-                ? SelectedOrder.DeliveryItems.Max(x => x.Id) + 1
-                : 1;
-            EditingDeliveryItem.DeliveredSQM = Math.Round((double)EditingDeliveryItem.DeliveredQty / SelectedOrder.OrderQty * SelectedOrder.OrderSQM, 2);
-            EditingDeliveryItem.ReturnedSQM = Math.Round((double)EditingDeliveryItem.ReturnedQty / SelectedOrder.OrderQty * SelectedOrder.OrderSQM, 2);
-            EditingDeliveryItem.CreatedDate = DateTime.Today;
-
-            // SAVE TO DATABASE
-            DbHelper.SaveDeliveryItem(EditingDeliveryItem);
-
-            SelectedOrder.DeliveryItems.Add(EditingDeliveryItem);
-            SelectedOrder.UpdatedDate = DateTime.Today;
-            UpdateOrderStatus(SelectedOrder);
-
-            // UPDATE DELIVERY STATUS IN DATABASE
-            DbHelper.UpdateDelivery(SelectedOrder);
-
-            IsAddingDelivery = false;
-            EditingDeliveryItem = null;
-            RefreshDataView();
-            UpdateAllStats();
-
-            MessageBox.Show("Delivery recorded successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
-
-        private void ExecuteDeleteDeliveryItem(object parameter)
-        {
-            if (parameter is DeliveryItem item)
-            {
-                ConfirmDeleteItem = item;
-                IsDeletingDeliveryItem = true;
-            }
-            else if (SelectedDeliveryItem != null && SelectedOrder != null)
-            {
-                ConfirmDeleteItem = SelectedDeliveryItem;
-                IsDeletingDeliveryItem = true;
-            }
-        }
-
-        private bool CanExecuteDeleteDeliveryItem(object parameter)
-        {
-            return parameter != null || SelectedDeliveryItem != null;
-        }
-
-        // ✅ NEW: Edit Delivery Item Methods
-        private void ExecuteEditDeliveryItem(object parameter)
-        {
-            if (parameter is DeliveryItem item)
-            {
-                // Create a copy for editing
-                EditingDeliveryItemFromDb = new DeliveryItem
-                {
-                    Id = item.Id,
-                    OrderId = item.OrderId,
-                    DeliveryDate = item.DeliveryDate,
-                    DeliveredQty = item.DeliveredQty,
-                    ReturnedQty = item.ReturnedQty,
-                    DeliveredSQM = item.DeliveredSQM,
-                    ReturnedSQM = item.ReturnedSQM,
-                    Driver = item.Driver,
-                    Vehicle = item.Vehicle,
-                    Notes = item.Notes
-                };
-                IsEditingDeliveryItem = true;
-            }
-        }
-
-        private bool CanExecuteEditDeliveryItem(object parameter)
-        {
-            return parameter is DeliveryItem;
-        }
-
-        private bool CanExecuteSaveEditDeliveryItem(object parameter)
-        {
-            return EditingDeliveryItemFromDb != null;
-        }
-
-        private void ExecuteSaveEditDeliveryItem(object parameter)
-        {
-            if (EditingDeliveryItemFromDb == null || SelectedOrder == null) return;
-
-            if (EditingDeliveryItemFromDb.DeliveredQty < 0)
-            {
-                MessageBox.Show("Delivered quantity cannot be negative.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            // Find the original item in the collection
-            var originalItem = SelectedOrder.DeliveryItems.FirstOrDefault(x => x.Id == EditingDeliveryItemFromDb.Id);
-            if (originalItem == null)
-            {
-                MessageBox.Show("Original delivery item not found.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
-
-            // ✅ Add new Driver to options if not exists
-            if (!string.IsNullOrWhiteSpace(EditingDeliveryItemFromDb.Driver))
-            {
-                var driverTrimmed = EditingDeliveryItemFromDb.Driver.Trim();
-                if (!DriverOptions.Contains(driverTrimmed))
-                {
-                    DriverOptions.Add(driverTrimmed);
-                }
-            }
-
-            // ✅ Add new Vehicle to options if not exists
-            if (!string.IsNullOrWhiteSpace(EditingDeliveryItemFromDb.Vehicle))
-            {
-                var vehicleTrimmed = EditingDeliveryItemFromDb.Vehicle.Trim();
-                if (!VehicleOptions.Contains(vehicleTrimmed))
-                {
-                    VehicleOptions.Add(vehicleTrimmed);
-                }
-            }
-
-            // Update the original item (triggers PropertyChanged for each)
-            originalItem.DeliveryDate = EditingDeliveryItemFromDb.DeliveryDate;
-            originalItem.DeliveredQty = EditingDeliveryItemFromDb.DeliveredQty;
-            originalItem.ReturnedQty = EditingDeliveryItemFromDb.ReturnedQty;
-            originalItem.Driver = EditingDeliveryItemFromDb.Driver;
-            originalItem.Vehicle = EditingDeliveryItemFromDb.Vehicle;
-            originalItem.Notes = EditingDeliveryItemFromDb.Notes;
-
-            // Recalculate SQM values
-            originalItem.DeliveredSQM = Math.Round((double)originalItem.DeliveredQty / SelectedOrder.OrderQty * SelectedOrder.OrderSQM, 2);
-            originalItem.ReturnedSQM = Math.Round((double)originalItem.ReturnedQty / SelectedOrder.OrderQty * SelectedOrder.OrderSQM, 2);
-
-            // UPDATE IN DATABASE
-            DbHelper.UpdateDeliveryItem(originalItem);
-
-            // ✅ FIX: Notify Delivery that totals changed (important!)
-            SelectedOrder.OnPropertyChanged(nameof(SelectedOrder.TotalDelivered));
-            SelectedOrder.OnPropertyChanged(nameof(SelectedOrder.TotalReturned));
-            SelectedOrder.OnPropertyChanged(nameof(SelectedOrder.Balance));
-            SelectedOrder.OnPropertyChanged(nameof(SelectedOrder.BalanceSQM));
-
-            // Update order totals and status
-            SelectedOrder.UpdatedDate = DateTime.Today;
-            UpdateOrderStatus(SelectedOrder);
-
-            // UPDATE DELIVERY STATUS IN DATABASE
-            DbHelper.UpdateDelivery(SelectedOrder);
-
-            // ✅ UPDATE DATATABLE ROW DIRECTLY (FIX FOR DATAGRID NOT UPDATING)
-            UpdateDataTableRow(SelectedOrder);
-
-            IsEditingDeliveryItem = false;
-            EditingDeliveryItemFromDb = null;
-            UpdateAllStats();
-
-            MessageBox.Show("Delivery item updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
-
-        private void ExecuteCancelEditDeliveryItem(object parameter)
-        {
-            IsEditingDeliveryItem = false;
-            EditingDeliveryItemFromDb = null;
-        }
-
-        // ✅ UPDATED: Import Log Command Methods - Complete History
-        private void ExecuteViewImportLog(object parameter)
-        {
-            if (ImportHistory != null && ImportHistory.Count > 0)
-            {
-                IsViewingImportLog = true;
-            }
-            else
-            {
-                MessageBox.Show("No import history available.", "Import History", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
-
-        private bool CanExecuteViewImportLog(object parameter)
-        {
-            return ImportHistory != null && ImportHistory.Count > 0;
-        }
-
-        private void ExecuteCloseImportLog(object parameter)
-        {
-            IsViewingImportLog = false;
-        }
-
-        #endregion
-
-        #region Notes View
-
-        private void ExecuteViewNotes(object parameter)
-        {
-            if (parameter is string notes)
-            {
-                ViewNotesContent = string.IsNullOrWhiteSpace(notes) ? "No notes available." : notes;
-                IsViewingNotes = true;
-            }
-        }
-
-        private void ExecuteCloseNotes(object parameter)
-        {
-            IsViewingNotes = false;
-            ViewNotesContent = "";
-        }
-
-        #endregion
-
-        #region Delete Delivery Item with Confirmation
-
-        private void ExecuteCancelDeleteDeliveryItem(object parameter)
-        {
-            IsDeletingDeliveryItem = false;
-            ConfirmDeleteItem = null;
-        }
-
-        private void ExecuteConfirmDeleteDeliveryItem(object parameter)
-        {
-            if (ConfirmDeleteItem == null || SelectedOrder == null) return;
-
-            // DELETE FROM DATABASE
-            DbHelper.DeleteDeliveryItem(ConfirmDeleteItem.Id);
-
-            SelectedOrder.DeliveryItems.Remove(ConfirmDeleteItem);
-            SelectedOrder.UpdatedDate = DateTime.Today;
-            UpdateOrderStatus(SelectedOrder);
-
-            // UPDATE DELIVERY STATUS IN DATABASE
-            DbHelper.UpdateDelivery(SelectedOrder);
-
-            // ✅ UPDATE DATATABLE ROW DIRECTLY (FIX FOR DATAGRID NOT UPDATING)
-            UpdateDataTableRow(SelectedOrder);
-
-            IsDeletingDeliveryItem = false;
-            ConfirmDeleteItem = null;
-            SelectedDeliveryItem = null;
-            UpdateAllStats();
-        }
-
-        #endregion
-
-        #region Export
-
-        private void ExecuteExport(object parameter)
-        {
-            try
-            {
-                var dialog = new Microsoft.Win32.SaveFileDialog
-                {
-                    Filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*",
-                    DefaultExt = ".csv",
-                    FileName = $"Deliveries_Export_{DateTime.Now:yyyyMMdd_HHmmss}"
-                };
-
-                if (dialog.ShowDialog() == true)
-                {
-                    ExportToCSV(dialog.FileName);
-                    MessageBox.Show($"Export completed!\n{dialog.FileName}", "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Export failed: {ex.Message}", "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        private void ExportToCSV(string filePath)
-        {
-            var sb = new System.Text.StringBuilder();
-            sb.AppendLine("Date,Company,PI Number,Type of Work,Color,Order Qty,Delivered,Returned,Balance,SQM,Salesman,Status,Notes");
-
-            foreach (var order in DeliveryOrders)
-            {
-                sb.AppendLine($"\"{order.Date:dd-MM-yyyy}\",\"{order.Company}\",\"{order.PINumber}\",\"{order.TypeOfWork}\",\"{order.Color}\",{order.OrderQty},{order.TotalDelivered},{order.TotalReturned},{order.Balance},{order.OrderSQM:N2},\"{order.Salesman}\",\"{order.Status}\",\"{order.Notes}\"");
-            }
-
-            System.IO.File.WriteAllText(filePath, sb.ToString(), System.Text.Encoding.UTF8);
-        }
-
-        #endregion
-
-        #region Clear Filters
-
-        private void ExecuteClearFilters(object parameter)
-        {
-            SearchText = "";
-            FilterStatus = "";
-            FilterTypeOfWork = "";
-            FilterSalesman = "";
-            FilterCompany = "";
-            FilterColor = "";
-            FilterStartDate = null;
-            FilterEndDate = null;
-            SortColumn = "";
-            SortDirection = ListSortDirection.Ascending;
-            ApplyFilters();
-        }
-
-        #endregion
-
-        #region Print
-
-        private void ExecutePrint(object parameter)
-        {
-            try
-            {
-                var printDialog = new PrintDialog();
-                if (printDialog.ShowDialog() == true)
-                {
-                    var printVisual = CreatePrintVisual();
-                    if (printVisual != null)
+                    var existing = DeliveryOrders.FirstOrDefault(w => w.Id == EditingOrder.Id);
+                    if (existing != null)
                     {
-                        printDialog.PrintVisual(printVisual, "Delivery Report");
+                        existing.Company = EditingOrder.Company;
+                        existing.PINumber = EditingOrder.PINumber;
+                        existing.CustomerReference = EditingOrder.CustomerReference;
+                        existing.TypeOfWork = EditingOrder.TypeOfWork;
+                        existing.OrderQty = EditingOrder.OrderQty;
+                        existing.OrderSQM = EditingOrder.OrderSQM;
+                        existing.Salesman = EditingOrder.Salesman;
+                        existing.Color = EditingOrder.Color;
+                        existing.Status = EditingOrder.Status;
+                        existing.Notes = EditingOrder.Notes;
+                        existing.UpdatedDate = DateTime.Today;
+                        UpdateOrderStatus(existing);
+
+                        DbHelper.UpdateDelivery(existing);
+
+                        AddToOptionsIfNew(TypeOfWorkOptions, EditingOrder.TypeOfWork);
+                        AddToOptionsIfNew(StatusOptions, EditingOrder.Status);
+                        AddToOptionsIfNew(SalesmanOptions, EditingOrder.Salesman);
+                        AddToOptionsIfNew(CompanyOptions, EditingOrder.Company);
+                        AddToOptionsIfNew(ColorOptions, EditingOrder.Color);
+                    }
+                }
+
+                IsEditing = false;
+                EditingOrder = null;
+                RefreshDataView();
+                UpdateAllStats();
+            }
+
+            private bool CanExecuteSave(object parameter) => EditingOrder != null;
+
+            private void ExecuteCancel(object parameter)
+            {
+                IsEditing = false;
+                IsAddingDelivery = false;
+                IsViewingDetails = false;
+                IsViewingNotes = false;
+                IsDeletingDeliveryItem = false;
+                IsEditingDeliveryItem = false;
+                IsViewingImportLog = false;
+                EditingOrder = null;
+                EditingDeliveryItem = null;
+                EditingDeliveryItemFromDb = null;
+                ViewNotesContent = "";
+                ConfirmDeleteItem = null;
+            }
+
+            private void ExecuteRefresh(object parameter)
+            {
+                LoadDataFromDatabase();
+                LoadOptionsFromDatabase();
+                RefreshDataView();
+                UpdateAllStats();
+            }
+
+            private void ExecuteViewDetails(object parameter)
+            {
+                DbDelivery orderToView = null;
+
+                if (SelectedDataRowView != null)
+                {
+                    int id = Convert.ToInt32(SelectedDataRowView["Id"]);
+                    orderToView = DeliveryOrders.FirstOrDefault(w => w.Id == id);
+                }
+                else if (SelectedOrder != null)
+                {
+                    orderToView = SelectedOrder;
+                }
+
+                if (orderToView != null)
+                {
+                    SelectedOrder = orderToView;
+                    IsViewingDetails = true;
+                }
+            }
+
+            private bool CanExecuteViewDetails(object parameter)
+            {
+                return parameter != null || SelectedDataRowView != null || SelectedOrder != null;
+            }
+
+            private void ExecuteAddDelivery(object parameter)
+            {
+                DbDelivery order = SelectedOrder;
+
+                if (order != null && order.Balance > 0)
+                {
+                    EditingDeliveryItem = new DbDeliveryItem
+                    {
+                        Id = 0,
+                        OrderId = order.Id,
+                        DeliveryDate = DateTime.Today,
+                        DeliveredQty = 0,
+                        ReturnedQty = 0,
+                        DeliveredSQM = 0,
+                        ReturnedSQM = 0,
+                        Driver = "",
+                        Vehicle = ""
+                    };
+                    IsAddingDelivery = true;
+                }
+                else
+                {
+                    MessageBox.Show("No balance remaining. Order is fully delivered.", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+
+            private bool CanExecuteAddDelivery(object parameter)
+            {
+                return SelectedOrder != null && SelectedOrder.Balance > 0;
+            }
+
+            private void ExecuteSaveDelivery(object parameter)
+            {
+                if (EditingDeliveryItem == null || SelectedOrder == null) return;
+
+                if (EditingDeliveryItem.DeliveredQty <= 0)
+                {
+                    MessageBox.Show("Delivered quantity must be greater than 0.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                if (!string.IsNullOrWhiteSpace(EditingDeliveryItem.Driver))
+                {
+                    var driverTrimmed = EditingDeliveryItem.Driver.Trim();
+                    if (!DriverOptions.Contains(driverTrimmed))
+                        DriverOptions.Add(driverTrimmed);
+                }
+
+                if (!string.IsNullOrWhiteSpace(EditingDeliveryItem.Vehicle))
+                {
+                    var vehicleTrimmed = EditingDeliveryItem.Vehicle.Trim();
+                    if (!VehicleOptions.Contains(vehicleTrimmed))
+                        VehicleOptions.Add(vehicleTrimmed);
+                }
+
+                var totalAfterDelivery = SelectedOrder.TotalDelivered + EditingDeliveryItem.DeliveredQty - SelectedOrder.TotalReturned;
+                var balance = SelectedOrder.OrderQty - totalAfterDelivery;
+
+                if (balance < 0)
+                {
+                    var result = MessageBox.Show(
+                        $"Delivered quantity ({EditingDeliveryItem.DeliveredQty}) will exceed order quantity.\n\n" +
+                        $"Current Balance: {SelectedOrder.Balance}\n" +
+                        $"After Delivery: {balance} (negative)\n\n" +
+                        "Do you want to continue?",
+                        "Warning",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Warning);
+
+                    if (result != MessageBoxResult.Yes) return;
+                }
+
+                EditingDeliveryItem.Id = SelectedOrder.DeliveryItems.Count > 0
+                    ? SelectedOrder.DeliveryItems.Max(x => x.Id) + 1
+                    : 1;
+                EditingDeliveryItem.DeliveredSQM = Math.Round((double)EditingDeliveryItem.DeliveredQty / SelectedOrder.OrderQty * SelectedOrder.OrderSQM, 2);
+                EditingDeliveryItem.ReturnedSQM = Math.Round((double)EditingDeliveryItem.ReturnedQty / SelectedOrder.OrderQty * SelectedOrder.OrderSQM, 2);
+                EditingDeliveryItem.CreatedDate = DateTime.Today;
+
+                DbHelper.SaveDeliveryItem(EditingDeliveryItem);
+
+                SelectedOrder.DeliveryItems.Add(EditingDeliveryItem);
+                SelectedOrder.UpdatedDate = DateTime.Today;
+                UpdateOrderStatus(SelectedOrder);
+
+                DbHelper.UpdateDelivery(SelectedOrder);
+
+                IsAddingDelivery = false;
+                EditingDeliveryItem = null;
+                RefreshDataView();
+                UpdateAllStats();
+
+                MessageBox.Show("Delivery recorded successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+
+            private void ExecuteDeleteDeliveryItem(object parameter)
+            {
+                if (parameter is DbDeliveryItem item)
+                {
+                    ConfirmDeleteItem = item;
+                    IsDeletingDeliveryItem = true;
+                }
+                else if (SelectedDeliveryItem != null && SelectedOrder != null)
+                {
+                    ConfirmDeleteItem = SelectedDeliveryItem;
+                    IsDeletingDeliveryItem = true;
+                }
+            }
+
+            private bool CanExecuteDeleteDeliveryItem(object parameter)
+            {
+                return parameter != null || SelectedDeliveryItem != null;
+            }
+
+            private void ExecuteEditDeliveryItem(object parameter)
+            {
+                if (parameter is DbDeliveryItem item)
+                {
+                    EditingDeliveryItemFromDb = new DbDeliveryItem
+                    {
+                        Id = item.Id,
+                        OrderId = item.OrderId,
+                        DeliveryDate = item.DeliveryDate,
+                        DeliveredQty = item.DeliveredQty,
+                        ReturnedQty = item.ReturnedQty,
+                        DeliveredSQM = item.DeliveredSQM,
+                        ReturnedSQM = item.ReturnedSQM,
+                        Driver = item.Driver,
+                        Vehicle = item.Vehicle,
+                        Notes = item.Notes
+                    };
+                    IsEditingDeliveryItem = true;
+                }
+            }
+
+            private bool CanExecuteEditDeliveryItem(object parameter)
+            {
+                return parameter is DbDeliveryItem;
+            }
+
+            private bool CanExecuteSaveEditDeliveryItem(object parameter)
+            {
+                return EditingDeliveryItemFromDb != null;
+            }
+
+            private void ExecuteSaveEditDeliveryItem(object parameter)
+            {
+                if (EditingDeliveryItemFromDb == null || SelectedOrder == null) return;
+
+                if (EditingDeliveryItemFromDb.DeliveredQty < 0)
+                {
+                    MessageBox.Show("Delivered quantity cannot be negative.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var originalItem = SelectedOrder.DeliveryItems.FirstOrDefault(x => x.Id == EditingDeliveryItemFromDb.Id);
+                if (originalItem == null)
+                {
+                    MessageBox.Show("Original delivery item not found.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                if (!string.IsNullOrWhiteSpace(EditingDeliveryItemFromDb.Driver))
+                {
+                    var driverTrimmed = EditingDeliveryItemFromDb.Driver.Trim();
+                    if (!DriverOptions.Contains(driverTrimmed))
+                        DriverOptions.Add(driverTrimmed);
+                }
+
+                if (!string.IsNullOrWhiteSpace(EditingDeliveryItemFromDb.Vehicle))
+                {
+                    var vehicleTrimmed = EditingDeliveryItemFromDb.Vehicle.Trim();
+                    if (!VehicleOptions.Contains(vehicleTrimmed))
+                        VehicleOptions.Add(vehicleTrimmed);
+                }
+
+                originalItem.DeliveryDate = EditingDeliveryItemFromDb.DeliveryDate;
+                originalItem.DeliveredQty = EditingDeliveryItemFromDb.DeliveredQty;
+                originalItem.ReturnedQty = EditingDeliveryItemFromDb.ReturnedQty;
+                originalItem.Driver = EditingDeliveryItemFromDb.Driver;
+                originalItem.Vehicle = EditingDeliveryItemFromDb.Vehicle;
+                originalItem.Notes = EditingDeliveryItemFromDb.Notes;
+
+                originalItem.DeliveredSQM = Math.Round((double)originalItem.DeliveredQty / SelectedOrder.OrderQty * SelectedOrder.OrderSQM, 2);
+                originalItem.ReturnedSQM = Math.Round((double)originalItem.ReturnedQty / SelectedOrder.OrderQty * SelectedOrder.OrderSQM, 2);
+
+                DbHelper.UpdateDeliveryItem(originalItem);
+
+                // Refresh the order by reloading from database and updating DataView
+                var refreshedOrder = DbHelper.GetDeliveryById(SelectedOrder.Id);
+                if (refreshedOrder != null)
+                {
+                    SelectedOrder.DeliveryItems.Clear();
+                    foreach (var item in refreshedOrder.DeliveryItems)
+                    {
+                        SelectedOrder.DeliveryItems.Add(item);
+                    }
+                    UpdateDataTableRow(SelectedOrder);
+                }
+
+                SelectedOrder.UpdatedDate = DateTime.Today;
+                UpdateOrderStatus(SelectedOrder);
+
+                DbHelper.UpdateDelivery(SelectedOrder);
+
+                UpdateDataTableRow(SelectedOrder);
+
+                IsEditingDeliveryItem = false;
+                EditingDeliveryItemFromDb = null;
+                UpdateAllStats();
+
+                MessageBox.Show("Delivery item updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+
+            private void ExecuteCancelEditDeliveryItem(object parameter)
+            {
+                IsEditingDeliveryItem = false;
+                EditingDeliveryItemFromDb = null;
+            }
+
+            private void ExecuteViewImportLog(object parameter)
+            {
+                if (ImportHistory != null && ImportHistory.Count > 0)
+                {
+                    IsViewingImportLog = true;
+                }
+                else
+                {
+                    MessageBox.Show("No import history available.", "Import History", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+
+            private bool CanExecuteViewImportLog(object parameter)
+            {
+                return ImportHistory != null && ImportHistory.Count > 0;
+            }
+
+            private void ExecuteCloseImportLog(object parameter)
+            {
+                IsViewingImportLog = false;
+            }
+
+            #endregion
+
+            #region Notes View
+
+            private void ExecuteViewNotes(object parameter)
+            {
+                if (parameter is string notes)
+                {
+                    ViewNotesContent = string.IsNullOrWhiteSpace(notes) ? "No notes available." : notes;
+                    IsViewingNotes = true;
+                }
+            }
+
+            private void ExecuteCloseNotes(object parameter)
+            {
+                IsViewingNotes = false;
+                ViewNotesContent = "";
+            }
+
+            #endregion
+
+            #region Delete Delivery Item with Confirmation
+
+            private void ExecuteCancelDeleteDeliveryItem(object parameter)
+            {
+                IsDeletingDeliveryItem = false;
+                ConfirmDeleteItem = null;
+            }
+
+            private void ExecuteConfirmDeleteDeliveryItem(object parameter)
+            {
+                if (ConfirmDeleteItem == null || SelectedOrder == null) return;
+
+                DbHelper.DeleteDeliveryItem(ConfirmDeleteItem.Id);
+
+                SelectedOrder.DeliveryItems.Remove(ConfirmDeleteItem);
+                SelectedOrder.UpdatedDate = DateTime.Today;
+                UpdateOrderStatus(SelectedOrder);
+
+                DbHelper.UpdateDelivery(SelectedOrder);
+
+                UpdateDataTableRow(SelectedOrder);
+
+                IsDeletingDeliveryItem = false;
+                ConfirmDeleteItem = null;
+                SelectedDeliveryItem = null;
+                UpdateAllStats();
+            }
+
+            #endregion
+
+            #region Export
+
+            private void ExecuteExport(object parameter)
+            {
+                try
+                {
+                    var dialog = new Microsoft.Win32.SaveFileDialog
+                    {
+                        Filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*",
+                        DefaultExt = ".csv",
+                        FileName = $"Deliveries_Export_{DateTime.Now:yyyyMMdd_HHmmss}"
+                    };
+
+                    if (dialog.ShowDialog() == true)
+                    {
+                        ExportToCSV(dialog.FileName);
+                        MessageBox.Show($"Export completed!\n{dialog.FileName}", "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Export failed: {ex.Message}", "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+
+            private void ExportToCSV(string filePath)
+            {
+                var sb = new System.Text.StringBuilder();
+                sb.AppendLine("Date,Company,PI Number,Type of Work,Color,Order Qty,Delivered,Returned,Balance,SQM,Salesman,Status,Notes");
+
+                foreach (var order in DeliveryOrders)
+                {
+                    sb.AppendLine($"\"{order.Date:dd-MM-yyyy}\",\"{order.Company}\",\"{order.PINumber}\",\"{order.TypeOfWork}\",\"{order.Color}\",{order.OrderQty},{order.TotalDelivered},{order.TotalReturned},{order.Balance},{order.OrderSQM:N2},\"{order.Salesman}\",\"{order.Status}\",\"{order.Notes}\"");
+                }
+
+                System.IO.File.WriteAllText(filePath, sb.ToString(), System.Text.Encoding.UTF8);
+            }
+
+            #endregion
+
+            #region Clear Filters
+
+            private void ExecuteClearFilters(object parameter)
+            {
+                SearchText = "";
+                FilterStatus = "";
+                FilterTypeOfWork = "";
+                FilterSalesman = "";
+                FilterCompany = "";
+                FilterColor = "";
+                FilterStartDate = null;
+                FilterEndDate = null;
+                SortColumn = "";
+                SortDirection = ListSortDirection.Ascending;
+                ApplyFilters();
+            }
+
+            #endregion
+
+            #region Print
+
+            private void ExecutePrint(object parameter)
+            {
+                try
+                {
+                    var printDialog = new PrintDialog();
+                    if (printDialog.ShowDialog() == true)
+                    {
+                        var printVisual = CreatePrintVisual();
+                        if (printVisual != null)
+                        {
+                            printDialog.PrintVisual(printVisual, "Delivery Report");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Print failed: {ex.Message}", "Print Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+
+            private Grid CreatePrintVisual()
+            {
+                var grid = new Grid { Margin = new Thickness(20) };
+
+                var headerPanel = new StackPanel { Margin = new Thickness(0, 0, 0, 20) };
+                headerPanel.Children.Add(new TextBlock
+                {
+                    Text = "DELIVERY REPORT",
+                    FontSize = 20,
+                    FontWeight = FontWeights.Bold,
+                    HorizontalAlignment = HorizontalAlignment.Center
+                });
+                headerPanel.Children.Add(new TextBlock
+                {
+                    Text = $"Generated: {DateTime.Now:dd-MM-yyyy HH:mm}",
+                    FontSize = 10,
+                    Foreground = Brushes.Gray,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Margin = new Thickness(0, 5, 0, 0)
+                });
+                headerPanel.Children.Add(new TextBlock
+                {
+                    Text = $"Total Orders: {TotalRecords} | Order Qty: {TotalOrderQty} | Delivered: {TotalDelivered} | Balance: {TotalBalance}",
+                    FontSize = 12,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Margin = new Thickness(0, 5, 0, 0)
+                });
+                grid.Children.Add(headerPanel);
+
+                var dataGrid = new DataGrid
+                {
+                    ItemsSource = FilteredDataView,
+                    AutoGenerateColumns = false,
+                    CanUserAddRows = false,
+                    IsReadOnly = true,
+                    FontSize = 10,
+                    GridLinesVisibility = DataGridGridLinesVisibility.All,
+                    HorizontalGridLinesBrush = Brushes.LightGray,
+                    VerticalGridLinesBrush = Brushes.LightGray,
+                    BorderThickness = new Thickness(1),
+                    BorderBrush = Brushes.Black,
+                    Margin = new Thickness(0, 10, 0, 0)
+                };
+
+                dataGrid.Columns.Add(new DataGridTextColumn { Header = "Date", Binding = new System.Windows.Data.Binding("Date") { StringFormat = "dd-MM-yyyy" }, Width = 80 });
+                dataGrid.Columns.Add(new DataGridTextColumn { Header = "Company", Binding = new System.Windows.Data.Binding("Company"), Width = 120 });
+                dataGrid.Columns.Add(new DataGridTextColumn { Header = "PI No", Binding = new System.Windows.Data.Binding("PINumber"), Width = 100 });
+                dataGrid.Columns.Add(new DataGridTextColumn { Header = "Type", Binding = new System.Windows.Data.Binding("TypeOfWork"), Width = 100 });
+                dataGrid.Columns.Add(new DataGridTextColumn { Header = "Color", Binding = new System.Windows.Data.Binding("Color"), Width = 80 });
+                dataGrid.Columns.Add(new DataGridTextColumn { Header = "Order Qty", Binding = new System.Windows.Data.Binding("OrderQty"), Width = 70 });
+                dataGrid.Columns.Add(new DataGridTextColumn { Header = "Delivered", Binding = new System.Windows.Data.Binding("TotalDelivered"), Width = 70 });
+                dataGrid.Columns.Add(new DataGridTextColumn { Header = "Returned", Binding = new System.Windows.Data.Binding("TotalReturned"), Width = 70 });
+                dataGrid.Columns.Add(new DataGridTextColumn { Header = "Balance", Binding = new System.Windows.Data.Binding("Balance"), Width = 60 });
+                dataGrid.Columns.Add(new DataGridTextColumn { Header = "SQM", Binding = new System.Windows.Data.Binding("OrderSQM") { StringFormat = "N2" }, Width = 60 });
+                dataGrid.Columns.Add(new DataGridTextColumn { Header = "Salesman", Binding = new System.Windows.Data.Binding("Salesman"), Width = 90 });
+                dataGrid.Columns.Add(new DataGridTextColumn { Header = "Status", Binding = new System.Windows.Data.Binding("Status"), Width = 80 });
+
+                grid.Children.Add(dataGrid);
+
+                return grid;
+            }
+
+            #endregion
+
+            #region Delete Selected
+
+            private void ExecuteDeleteSelected(object parameter)
+            {
+                if (parameter is System.Windows.Controls.DataGrid dataGrid)
+                {
+                    var selectedIds = new List<int>();
+
+                    foreach (var item in dataGrid.SelectedItems)
+                    {
+                        if (item is DataRowView rowView)
+                        {
+                            selectedIds.Add(Convert.ToInt32(rowView["Id"]));
+                        }
+                    }
+
+                    if (selectedIds.Count == 0)
+                    {
+                        MessageBox.Show("Please select rows to delete.", "No Selection",
+                            MessageBoxButton.OK, MessageBoxImage.Information);
+                        return;
+                    }
+
+                    var result = MessageBox.Show(
+                        $"Delete {selectedIds.Count} selected order(s)?\n\nThis will also delete all delivery items.\n\nThis action cannot be undone.",
+                        "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+                    if (result == MessageBoxResult.Yes)
+                    {
+                        foreach (var id in selectedIds)
+                        {
+                            DbHelper.DeleteDelivery(id);
+                            var item = DeliveryOrders.FirstOrDefault(w => w.Id == id);
+                            if (item != null)
+                            {
+                                DeliveryOrders.Remove(item);
+                            }
+                        }
+
+                        _selectedIds.Clear();
+                        _selectedCount = 0;
+
+                        RefreshDataView();
+                        UpdateAllStats();
+                        SelectedOrder = null;
+                        SelectedDataRowView = null;
                     }
                 }
             }
-            catch (Exception ex)
+
+            private bool CanExecuteDeleteSelected(object parameter)
             {
-                MessageBox.Show($"Print failed: {ex.Message}", "Print Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return _selectedCount > 0;
             }
-        }
 
-        private Grid CreatePrintVisual()
-        {
-            var grid = new Grid { Margin = new Thickness(20) };
+            #endregion
 
-            // Header
-            var headerPanel = new StackPanel { Margin = new Thickness(0, 0, 0, 20) };
-            headerPanel.Children.Add(new TextBlock
+            #region Helper Methods
+
+            private void AddToOptionsIfNew(ObservableCollection<string> collection, string value)
             {
-                Text = "DELIVERY REPORT",
-                FontSize = 20,
-                FontWeight = FontWeights.Bold,
-                HorizontalAlignment = HorizontalAlignment.Center
-            });
-            headerPanel.Children.Add(new TextBlock
+                if (string.IsNullOrWhiteSpace(value)) return;
+                if (!collection.Contains(value))
+                {
+                    collection.Add(value);
+                }
+            }
+
+            #endregion
+
+            #region Row Selection Handler
+
+            public void OnDataGridSelectionChanged(DataRowView rowView)
             {
-                Text = $"Generated: {DateTime.Now:dd-MM-yyyy HH:mm}",
-                FontSize = 10,
-                Foreground = Brushes.Gray,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(0, 5, 0, 0)
-            });
-            headerPanel.Children.Add(new TextBlock
+                SelectedDataRowView = rowView;
+            }
+
+            public void OnDataGridSelectionChanged(int selectedCount, List<int> selectedIds)
             {
-                Text = $"Total Orders: {TotalRecords} | Order Qty: {TotalOrderQty} | Delivered: {TotalDelivered} | Balance: {TotalBalance}",
-                FontSize = 12,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(0, 5, 0, 0)
-            });
-            grid.Children.Add(headerPanel);
+                SetSelectedCount(selectedCount);
+                UpdateSelectedIds(selectedIds);
+            }
 
-            // DataGrid for printing
-            var dataGrid = new DataGrid
+            #endregion
+
+            #region Selection Tracking
+
+            private void TrackDataGridSelection(System.Windows.Controls.DataGrid dataGrid)
             {
-                ItemsSource = FilteredDataView,
-                AutoGenerateColumns = false,
-                CanUserAddRows = false,
-                IsReadOnly = true,
-                FontSize = 10,
-                GridLinesVisibility = DataGridGridLinesVisibility.All,
-                HorizontalGridLinesBrush = Brushes.LightGray,
-                VerticalGridLinesBrush = Brushes.LightGray,
-                BorderThickness = new Thickness(1),
-                BorderBrush = Brushes.Black,
-                Margin = new Thickness(0, 10, 0, 0)
-            };
+                if (dataGrid == null) return;
 
-            dataGrid.Columns.Add(new DataGridTextColumn { Header = "Date", Binding = new System.Windows.Data.Binding("Date") { StringFormat = "dd-MM-yyyy" }, Width = 80 });
-            dataGrid.Columns.Add(new DataGridTextColumn { Header = "Company", Binding = new System.Windows.Data.Binding("Company"), Width = 120 });
-            dataGrid.Columns.Add(new DataGridTextColumn { Header = "PI No", Binding = new System.Windows.Data.Binding("PINumber"), Width = 100 });
-            dataGrid.Columns.Add(new DataGridTextColumn { Header = "Type", Binding = new System.Windows.Data.Binding("TypeOfWork"), Width = 100 });
-            dataGrid.Columns.Add(new DataGridTextColumn { Header = "Color", Binding = new System.Windows.Data.Binding("Color"), Width = 80 });  // ✅ ADDED: Color column
-            dataGrid.Columns.Add(new DataGridTextColumn { Header = "Order Qty", Binding = new System.Windows.Data.Binding("OrderQty"), Width = 70 });
-            dataGrid.Columns.Add(new DataGridTextColumn { Header = "Delivered", Binding = new System.Windows.Data.Binding("TotalDelivered"), Width = 70 });
-            dataGrid.Columns.Add(new DataGridTextColumn { Header = "Returned", Binding = new System.Windows.Data.Binding("TotalReturned"), Width = 70 });
-            dataGrid.Columns.Add(new DataGridTextColumn { Header = "Balance", Binding = new System.Windows.Data.Binding("Balance"), Width = 60 });
-            dataGrid.Columns.Add(new DataGridTextColumn { Header = "SQM", Binding = new System.Windows.Data.Binding("OrderSQM") { StringFormat = "N2" }, Width = 60 });
-            dataGrid.Columns.Add(new DataGridTextColumn { Header = "Salesman", Binding = new System.Windows.Data.Binding("Salesman"), Width = 90 });
-            dataGrid.Columns.Add(new DataGridTextColumn { Header = "Status", Binding = new System.Windows.Data.Binding("Status"), Width = 80 });
-
-            grid.Children.Add(dataGrid);
-
-            return grid;
-        }
-
-        #endregion
-
-        #region Delete Selected
-
-        private void ExecuteDeleteSelected(object parameter)
-        {
-            if (parameter is System.Windows.Controls.DataGrid dataGrid)
-            {
                 var selectedIds = new List<int>();
-
                 foreach (var item in dataGrid.SelectedItems)
                 {
                     if (item is DataRowView rowView)
@@ -1785,96 +1789,10 @@ namespace ProGlassAutomation.ViewModels
                     }
                 }
 
-                if (selectedIds.Count == 0)
-                {
-                    MessageBox.Show("Please select rows to delete.", "No Selection",
-                        MessageBoxButton.OK, MessageBoxImage.Information);
-                    return;
-                }
-
-                var result = MessageBox.Show(
-                    $"Delete {selectedIds.Count} selected order(s)?\n\nThis will also delete all delivery items.\n\nThis action cannot be undone.",
-                    "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-
-                if (result == MessageBoxResult.Yes)
-                {
-                    // DELETE EACH FROM DATABASE
-                    foreach (var id in selectedIds)
-                    {
-                        DbHelper.DeleteDelivery(id);
-                        var item = DeliveryOrders.FirstOrDefault(w => w.Id == id);
-                        if (item != null)
-                        {
-                            DeliveryOrders.Remove(item);
-                        }
-                    }
-
-                    // ✅ Clear selection after delete
-                    _selectedIds.Clear();
-                    _selectedCount = 0;
-
-                    RefreshDataView();
-                    UpdateAllStats();
-                    SelectedOrder = null;
-                    SelectedDataRowView = null;
-                }
-            }
-        }
-
-        private bool CanExecuteDeleteSelected(object parameter)
-        {
-            return _selectedCount > 0;
-        }
-
-        #endregion
-
-        #region Helper Methods
-
-        private void AddToOptionsIfNew(ObservableCollection<string> collection, string value)
-        {
-            if (string.IsNullOrWhiteSpace(value)) return;
-            if (!collection.Contains(value))
-            {
-                collection.Add(value);
-            }
-        }
-
-        #endregion
-
-        #region Row Selection Handler
-
-        public void OnDataGridSelectionChanged(DataRowView rowView)
-        {
-            SelectedDataRowView = rowView;
-        }
-
-        public void OnDataGridSelectionChanged(int selectedCount, List<int> selectedIds)
-        {
-            SetSelectedCount(selectedCount);
-            UpdateSelectedIds(selectedIds);
-        }
-
-        #endregion
-
-        #region Selection Tracking
-
-        private void TrackDataGridSelection(System.Windows.Controls.DataGrid dataGrid)
-        {
-            if (dataGrid == null) return;
-
-            var selectedIds = new List<int>();
-            foreach (var item in dataGrid.SelectedItems)
-            {
-                if (item is DataRowView rowView)
-                {
-                    selectedIds.Add(Convert.ToInt32(rowView["Id"]));
-                }
+                SetSelectedCount(selectedIds.Count);
+                UpdateSelectedIds(selectedIds);
             }
 
-            SetSelectedCount(selectedIds.Count);
-            UpdateSelectedIds(selectedIds);
+            #endregion
         }
-
-        #endregion
     }
-}

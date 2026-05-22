@@ -6,8 +6,12 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
-using ProGlassAutomation.Models;
 using ProGlassAutomation.Data.Database;
+using ProGlassAutomation.Models;
+
+// Add these aliases to disambiguate:
+using DbSguRecord = ProGlassAutomation.Data.Database.SguRecord;
+using SheetData = ProGlassAutomation.Models.Sheet;
 
 namespace ProGlassAutomation.ViewModels
 {
@@ -36,23 +40,13 @@ namespace ProGlassAutomation.ViewModels
         // Wastage options WITH % symbol
         public ObservableCollection<string> WastageOptions { get; } = new()
         {
-            "5%",
-            "10%",
-            "15%",
-            "20%",
-            "25%",
-            "30%"
+            "5%", "10%", "15%", "20%", "25%", "30%"
         };
 
         // Profit margin options WITH % symbol
         public ObservableCollection<string> ProfitMarginOptions { get; } = new()
         {
-            "5%",
-            "10%",
-            "15%",
-            "20%",
-            "25%",
-            "30%"
+            "5%", "10%", "15%", "20%", "25%", "30%"
         };
 
         public ObservableCollection<string> EdgeWorkTypes { get; } = new();
@@ -63,7 +57,7 @@ namespace ProGlassAutomation.ViewModels
         public ObservableCollection<string> CutoutOptions { get; } = new();
         public ObservableCollection<string> UnitOptions { get; } = new();
 
-        public ObservableCollection<SguRecord> Records { get; } = new();
+        public ObservableCollection<DbSguRecord> Records { get; } = new();
 
         // ═══════════════════════════════════════════════════════════
         // INVENTORY TOTALS
@@ -142,7 +136,7 @@ namespace ProGlassAutomation.ViewModels
         // PROPERTIES - WASTAGE (Index-based for XAML binding)
         // ═══════════════════════════════════════════════════════════
 
-        private int _wastageIndex = 2; // Default to "15%" (index 2)
+        private int _wastageIndex = 2;
         public int WastageIndex
         {
             get => _wastageIndex;
@@ -157,25 +151,18 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // Double property for calculation
         private double _wastage = 15.0;
         public double Wastage
         {
             get => _wastage;
-            set
-            {
-                if (Set(ref _wastage, value))
-                {
-                    RecalculateAll();
-                }
-            }
+            set { if (Set(ref _wastage, value)) RecalculateAll(); }
         }
 
         // ═══════════════════════════════════════════════════════════
         // PROPERTIES - PROFIT MARGIN (Index-based for XAML binding)
         // ═══════════════════════════════════════════════════════════
 
-        private int _profitIndex = 2; // Default to "15%" (index 2)
+        private int _profitIndex = 2;
         public int ProfitIndex
         {
             get => _profitIndex;
@@ -190,18 +177,11 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // Double property for calculation
         private double _profitMargin = 15.0;
         public double ProfitMargin
         {
             get => _profitMargin;
-            set
-            {
-                if (Set(ref _profitMargin, value))
-                {
-                    RecalculateAll();
-                }
-            }
+            set { if (Set(ref _profitMargin, value)) RecalculateAll(); }
         }
 
         // ═══════════════════════════════════════════════════════════
@@ -379,17 +359,17 @@ namespace ProGlassAutomation.ViewModels
 
         public SguViewModel()
         {
-            // Load data from Sheet.cs
-            AddRange(CategoryOptions, Sheet.Categories);
-            AddRange(ThicknessOptions, Sheet.Thicknesses);
-            AddRange(ColorOptions, Sheet.ColorItems);
-            AddRange(EdgeWorkTypes, Sheet.EdgeWorkTypes);
-            AddRange(DrillingOptions, Sheet.DrillingOptions);
-            AddRange(TemperingOptions, Sheet.TemperingOptions);
-            AddRange(CoatingTypes, Sheet.CoatingTypes);
-            AddRange(SurfaceTreatments, Sheet.SurfaceTreatments);
-            AddRange(CutoutOptions, Sheet.CutoutOptions);
-            AddRange(UnitOptions, Sheet.UnitOptions);
+            // Load data from Sheet.cs (Models namespace)
+            AddRange(CategoryOptions, SheetData.Categories);
+            AddRange(ThicknessOptions, SheetData.Thicknesses);
+            AddRange(ColorOptions, SheetData.ColorItems);
+            AddRange(EdgeWorkTypes, SheetData.EdgeWorkTypes);
+            AddRange(DrillingOptions, SheetData.DrillingOptions);
+            AddRange(TemperingOptions, SheetData.TemperingOptions);
+            AddRange(CoatingTypes, SheetData.CoatingTypes);
+            AddRange(SurfaceTreatments, SheetData.SurfaceTreatments);
+            AddRange(CutoutOptions, SheetData.CutoutOptions);
+            AddRange(UnitOptions, SheetData.UnitOptions);
 
             // Set dropdown defaults
             if (CategoryOptions.Count > 0) _category = CategoryOptions[0];
@@ -403,15 +383,12 @@ namespace ProGlassAutomation.ViewModels
             if (CutoutOptions.Count > 0) _cutout = CutoutOptions[0];
             if (UnitOptions.Count > 0) _unit = UnitOptions[0];
 
-            // Initialize wastage index (default = 15% = index 2)
+            // Initialize wastage and profit margin
             _wastageIndex = 2;
             _wastage = 15.0;
-
-            // Initialize profit margin index (default = 15% = index 2)
             _profitIndex = 2;
             _profitMargin = 15.0;
 
-            // ✅ LOAD HISTORY FROM DATABASE
             LoadHistoryFromDatabase();
 
             SaveCommand = new RelayCommand(o =>
@@ -422,7 +399,7 @@ namespace ProGlassAutomation.ViewModels
                     return;
                 }
 
-                var record = new SguRecord
+                var record = new DbSguRecord
                 {
                     Category = Category,
                     Thickness = Thickness,
@@ -450,10 +427,7 @@ namespace ProGlassAutomation.ViewModels
                     CreatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm")
                 };
 
-                // ✅ SAVE TO DATABASE
                 DbHelper.SaveSguHistory(record);
-
-                // Also add to local collection for immediate display
                 Records.Insert(0, record);
 
                 OnPropertyChanged(nameof(IsHistoryVisible));
@@ -487,9 +461,8 @@ namespace ProGlassAutomation.ViewModels
 
             DeleteCommand = new RelayCommand(o =>
             {
-                if (o is SguRecord r)
+                if (o is DbSguRecord r)
                 {
-                    // ✅ DELETE FROM DATABASE if it has an Id
                     if (r.Id > 0)
                     {
                         DbHelper.DeleteSguHistory(r.Id);
@@ -528,20 +501,12 @@ namespace ProGlassAutomation.ViewModels
                 collection.Add(item);
         }
 
-        /// <summary>
-        /// Parse percentage string to double value (removes % symbol)
-        /// </summary>
         private double ParsePercentage(string value)
         {
             if (string.IsNullOrWhiteSpace(value))
                 return 0;
-
             string cleaned = value.Replace("%", "").Trim();
-
-            if (double.TryParse(cleaned, out double result))
-                return result;
-
-            return 0;
+            return double.TryParse(cleaned, out double result) ? result : 0;
         }
 
         // ═══════════════════════════════════════════════════════════
@@ -550,38 +515,26 @@ namespace ProGlassAutomation.ViewModels
 
         private void RecalculateAll()
         {
-            // Glass Cost
             _glassCost = SheetPrice ?? 0;
 
-            // Wastage calculation
-            // Formula: Base Cost = Glass Cost / (1 - wastage%)
             double wastageFactor = 1.0 - (_wastage / 100.0);
             _baseCost = wastageFactor > 0 ? _glassCost / wastageFactor : _glassCost;
 
-            // Processing costs
             double cutting = Cutting ?? 0;
             double tempering = TemperingCharge ?? 0;
             double other = OtherCharges ?? 0;
             _processingCost = cutting + tempering + other;
 
-            // Subtotal (base cost + processing)
             _subtotal = _baseCost + _processingCost;
 
-            // Profit margin calculation
-            // Formula: Result = Subtotal * (1 + profit%)
             double profitFactor = 1.0 + (_profitMargin / 100.0);
             _result = _subtotal * profitFactor;
 
-            // VAT (5%)
             _vatAmount = _result * 0.05;
-
-            // Gross Total
             _grossTotal = _result + _vatAmount;
 
-            // Update dimension calculations
             CalculateDimensions();
 
-            // Notify all calculation result properties changed
             OnPropertyChanged(nameof(GlassCost));
             OnPropertyChanged(nameof(BaseCost));
             OnPropertyChanged(nameof(ProcessingCost));
@@ -599,7 +552,6 @@ namespace ProGlassAutomation.ViewModels
         {
             if (Width > 0 && Height > 0)
             {
-                // Area in square meters (dimensions in mm)
                 _totalArea = (Width * Height * Quantity) / 1000000.0;
             }
             else
@@ -607,7 +559,6 @@ namespace ProGlassAutomation.ViewModels
                 _totalArea = 0;
             }
 
-            // Total price = unit price * quantity
             _totalPrice = _result * Quantity;
 
             OnPropertyChanged(nameof(TotalArea));
@@ -634,6 +585,5 @@ namespace ProGlassAutomation.ViewModels
                 System.Diagnostics.Debug.WriteLine($"[SguViewModel] Load history error: {ex.Message}");
             }
         }
-
     }
 }
