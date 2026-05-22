@@ -18,11 +18,28 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             DataContext = _viewModel;
         }
 
+        // ==================== TEXT SELECTION ON FOCUS ====================
+
+        private void TextBox_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (sender is TextBox tb)
+            {
+                tb.SelectAll();
+            }
+        }
+
+        private void ComboBox_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (sender is ComboBox cb)
+            {
+                cb.IsDropDownOpen = true;
+            }
+        }
+
         // ==================== PHONE NUMBER VALIDATION ====================
 
         private void PhoneNumber_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
-            // Allow: numbers, +, -, spaces, parentheses
             Regex regex = new Regex(@"^[0-9\+\-\s\$\$]+$");
             e.Handled = !regex.IsMatch(e.Text);
         }
@@ -50,7 +67,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         {
             if (sender is Button button && button.Tag is SpecificationModel spec)
             {
-                // Use AddItemWithPrice to copy base price from first row
                 _viewModel.AddItemWithPrice(spec);
             }
         }
@@ -98,7 +114,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             catch { }
         }
 
-        // ENTER KEY - Move to next row, or create new row with price copied from first row
         private void HandleEnterKey(DataGrid dataGrid)
         {
             try
@@ -112,14 +127,12 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 int currentIndex = spec.Items.IndexOf(currentItem);
                 int totalRows = spec.Items.Count;
 
-                // If not on last row, move to next row
                 if (currentIndex < totalRows - 1)
                 {
                     var nextItem = spec.Items[currentIndex + 1];
                     dataGrid.SelectedItem = nextItem;
                     dataGrid.ScrollIntoView(nextItem);
 
-                    // Stay in same column
                     int currentColIndex = dataGrid.CurrentCell.Column.DisplayIndex;
                     if (currentColIndex < dataGrid.Columns.Count)
                     {
@@ -129,7 +142,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 }
                 else
                 {
-                    // On last row - create new row with price from first row
                     _viewModel.AddItemWithPrice(spec);
 
                     System.Threading.Tasks.Task.Delay(100).ContinueWith(_ =>
@@ -143,7 +155,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                                 dataGrid.SelectedItem = newItem;
                                 dataGrid.ScrollIntoView(newItem);
 
-                                // Move to GlassRef column (column index 1)
                                 if (dataGrid.Columns.Count > 1)
                                 {
                                     dataGrid.CurrentCell = new DataGridCellInfo(newItem, dataGrid.Columns[1]);
@@ -157,7 +168,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             catch { }
         }
 
-        // TAB KEY - Move to next row or create new row
         private void HandleTabKey(DataGrid dataGrid)
         {
             try
@@ -172,7 +182,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
                 if (currentIndex < spec.Items.Count - 1)
                 {
-                    // Move to next row
                     var nextItem = spec.Items[currentIndex + 1];
                     dataGrid.SelectedItem = nextItem;
                     dataGrid.ScrollIntoView(nextItem);
@@ -185,7 +194,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 }
                 else
                 {
-                    // Create new row with price from first row
                     _viewModel.AddItemWithPrice(spec);
 
                     System.Threading.Tasks.Task.Delay(100).ContinueWith(_ =>
