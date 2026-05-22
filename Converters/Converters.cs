@@ -156,6 +156,74 @@ namespace ProGlassAutomation.Converters
         }
     }
 
+    // ==================== GREEN COLOR CONVERTERS ====================
+
+    /// <summary>
+    /// Converts Boolean to Green Color (True = #059669, False = #64748B)
+    /// </summary>
+    public class BoolToColorGreenConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is bool boolValue)
+            {
+                return boolValue
+                    ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#059669"))   // Green Dark
+                    : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#64748B")); // Gray
+            }
+            return new SolidColorBrush((Color)ColorConverter.ConvertFromString("#64748B"));
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    /// <summary>
+    /// Converts Boolean to Green Brush (True = Light Green, False = White)
+    /// </summary>
+    public class BoolToBrushGreenConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is bool boolValue)
+            {
+                return boolValue
+                    ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#ECFDF5"))  // Light Green #ECFDF5
+                    : new SolidColorBrush(Colors.White);
+            }
+            return new SolidColorBrush(Colors.White);
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    /// <summary>
+    /// Converts Boolean to Green Border Brush (True = #10B981, False = #E2E8F0)
+    /// </summary>
+    public class BoolToBrushGreenBorderConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is bool boolValue)
+            {
+                return boolValue
+                    ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"))   // Green #10B981
+                    : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E2E8F0")); // Light Gray
+            }
+            return new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E2E8F0"));
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
     // ==================== STRING CONVERTERS ====================
 
     /// <summary>
