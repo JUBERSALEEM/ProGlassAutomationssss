@@ -306,8 +306,7 @@ namespace ProGlassAutomation.Services
                     GlassRef = item.GlassRef,
                     Qty = item.Qty,
                     Price = item.Price > 0 ? item.Price : basePrice,
-                    SurchargePercent = item.SurchargePercent,
-                    SurchargeThreshold = item.SurchargeThreshold
+                    SurchargePercent = item.SurchargePercent // SurchargeThreshold is fixed at 4
                 };
 
                 // Set dimensions AFTER to trigger CalculateAll() in InvoiceItemModel

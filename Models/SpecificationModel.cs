@@ -43,7 +43,9 @@ namespace ProGlassAutomation.Models
                 e.PropertyName == nameof(InvoiceItemModel.LM) ||
                 e.PropertyName == nameof(InvoiceItemModel.TotalLM) ||
                 e.PropertyName == nameof(InvoiceItemModel.TotalPrice) ||
-                e.PropertyName == nameof(InvoiceItemModel.Qty))
+                e.PropertyName == nameof(InvoiceItemModel.Qty) ||
+                e.PropertyName == nameof(InvoiceItemModel.DisplayPrice) ||
+                e.PropertyName == nameof(InvoiceItemModel.FinalPrice))
             {
                 CalculateSpecTotals();
             }
@@ -87,6 +89,30 @@ namespace ProGlassAutomation.Models
                 }
             }
         }
+
+        // Surcharge Percent - updates all items when changed
+        private double _surchargePercent = 20;
+        public double SurchargePercent
+        {
+            get => _surchargePercent;
+            set
+            {
+                if (_surchargePercent != value)
+                {
+                    _surchargePercent = value;
+                    OnPropertyChanged();
+
+                    // Update all items with new surcharge percent
+                    foreach (var item in Items)
+                    {
+                        item.SurchargePercent = value;
+                    }
+                }
+            }
+        }
+
+        // Fixed threshold at 4 SQM
+        public double SurchargeThreshold => 4;
 
         private double _specTotalSQM = 0;
         public double SpecTotalSQM

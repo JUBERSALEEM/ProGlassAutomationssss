@@ -83,18 +83,6 @@ namespace ProGlassAutomation.Models
             get => _price;
         }
 
-        public double DisplayPrice
-        {
-            get
-            {
-                if (SQM >= _surchargeThreshold && _surchargePercent > 0)
-                {
-                    return Math.Round(_price * (1 + _surchargePercent / 100), 2);
-                }
-                return _price;
-            }
-        }
-
         private double _surchargePercent = 20;
         public double SurchargePercent
         {
@@ -108,16 +96,18 @@ namespace ProGlassAutomation.Models
             }
         }
 
-        private double _surchargeThreshold = 4;
-        public double SurchargeThreshold
+        // Fixed threshold at 4 SQM
+        public double SurchargeThreshold => 4;
+
+        public double DisplayPrice
         {
-            get => _surchargeThreshold;
-            set
+            get
             {
-                if (SetProperty(ref _surchargeThreshold, value))
+                if (SQM >= 4 && _surchargePercent > 0)
                 {
-                    OnPropertyChanged(nameof(DisplayPrice));
+                    return Math.Round(_price * (1 + _surchargePercent / 100), 2);
                 }
+                return _price;
             }
         }
 
@@ -194,14 +184,14 @@ namespace ProGlassAutomation.Models
 
         public bool HasSurcharge
         {
-            get => SQM >= _surchargeThreshold && _surchargePercent > 0;
+            get => SQM >= 4 && _surchargePercent > 0;
         }
 
         public double FinalPrice
         {
             get
             {
-                if (SQM >= _surchargeThreshold && _surchargePercent > 0)
+                if (SQM >= 4 && _surchargePercent > 0)
                 {
                     return Math.Round(_price * (1 + _surchargePercent / 100), 2);
                 }
@@ -211,24 +201,39 @@ namespace ProGlassAutomation.Models
 
         private void CalculateAll()
         {
+            // Calculate SQM (Square Meters)
             double sqm = 0;
             if (_width1 > 0 && _height1 > 0)
             {
                 sqm = (_width1 * _height1) / 1000000.0;
                 if (sqm < 0.5) sqm = 0.5;
             }
+            if (_width2 > 0 && _height2 > 0)
+            {
+                double sqm2 = (_width2 * _height2) / 1000000.0;
+                if (sqm2 < 0.5) sqm2 = 0.5;
+                sqm += sqm2;
+            }
             SQM = Math.Round(sqm, 4);
             TotalSQM = Math.Round(SQM * _qty, 4);
 
+            // Calculate LM (Linear Meters)
             double lm = 0;
             if (_width1 > 0 && _height1 > 0)
             {
                 lm = ((_width1 + _height1) * 2) / 1000.0;
                 if (lm < 0.5) lm = 0.5;
             }
+            if (_width2 > 0 && _height2 > 0)
+            {
+                double lm2 = ((_width2 + _height2) * 2) / 1000.0;
+                if (lm2 < 0.5) lm2 = 0.5;
+                lm += lm2;
+            }
             LM = Math.Round(lm, 4);
             TotalLM = Math.Round(LM * _qty, 4);
 
+            // Calculate Total Price
             TotalPrice = Math.Round(FinalPrice * TotalSQM, 2);
 
             OnPropertyChanged(nameof(HasSurcharge));

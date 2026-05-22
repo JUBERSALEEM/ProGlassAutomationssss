@@ -595,8 +595,8 @@ namespace ProGlassAutomation.ViewModels
             var firstItem = new InvoiceItemModel
             {
                 SrNo = 1,
-                SurchargePercent = 20,
-                SurchargeThreshold = 4
+                SurchargePercent = 20
+                // SurchargeThreshold is fixed at 4
             };
             spec.Items.Add(firstItem);
 
@@ -628,7 +628,7 @@ namespace ProGlassAutomation.ViewModels
                 var firstRow = spec.Items[0];
                 newItem.Price = firstRow.Price;
                 newItem.SurchargePercent = firstRow.SurchargePercent;
-                newItem.SurchargeThreshold = firstRow.SurchargeThreshold;
+                // SurchargeThreshold is fixed at 4
             }
 
             spec.Items.Add(newItem);
@@ -792,8 +792,8 @@ namespace ProGlassAutomation.ViewModels
                                 GlassRef = item.GlassRef,
                                 Qty = item.Qty,
                                 Price = item.Price,
-                                SurchargePercent = item.SurchargePercent,
-                                SurchargeThreshold = item.SurchargeThreshold
+                                SurchargePercent = item.SurchargePercent
+                                // SurchargeThreshold is fixed at 4
                             };
 
                             newItem.Width1 = item.Width1;
@@ -869,8 +869,8 @@ namespace ProGlassAutomation.ViewModels
                             GlassRef = item.GlassRef,
                             Qty = item.Qty,
                             Price = item.Price,
-                            SurchargePercent = 20,
-                            SurchargeThreshold = 4
+                            SurchargePercent = 20
+                            // SurchargeThreshold is fixed at 4
                         };
 
                         newItem.Width1 = item.Width1;

@@ -510,7 +510,6 @@
                                                     <ColumnDefinition Width="Auto"/>
                                                     <ColumnDefinition Width="Auto"/>
                                                     <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="Auto"/>
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Grid.Column="0" Text="SPEC:" FontSize="9" FontWeight="Bold" Foreground="White" VerticalAlignment="Center" Margin="0,0,4,0"/>
                                                 <TextBox Grid.Column="1" Text="{Binding SpecificationName}" Background="White" FontSize="9" FontWeight="SemiBold" MinWidth="80" Padding="4,2" VerticalAlignment="Center"/>
@@ -525,16 +524,10 @@
                                                     <TextBox Text="{Binding SurchargePercent, UpdateSourceTrigger=PropertyChanged, StringFormat=N1}" Width="40" Padding="4,2" FontSize="9" Background="#FEF9C3" FontWeight="Bold"/>
                                                 </StackPanel>
 
-                                                <StackPanel Grid.Column="4" Orientation="Horizontal" Margin="0,0,8,0">
-                                                    <TextBlock Text="THR:" FontSize="8" FontWeight="Bold" Foreground="White" VerticalAlignment="Center" Margin="0,0,3,0"/>
-                                                    <TextBox Text="{Binding SurchargeThreshold, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}" Width="40" Padding="4,2" FontSize="9" Background="#FEF9C3" FontWeight="Bold"/>
-                                                </StackPanel>
-
-                                                <Button Grid.Column="5" Content="+ ROW" Style="{StaticResource SecondaryButtonStyle}" Click="AddRow_Click" Tag="{Binding}" Padding="8,4"/>
+                                                <Button Grid.Column="4" Content="+ ROW" Style="{StaticResource SecondaryButtonStyle}" Click="AddRow_Click" Tag="{Binding}" Padding="8,4"/>
                                             </Grid>
                                         </Border>
 
-                                        <!-- DataGrid -->
                                         <Border Grid.Row="1" BorderBrush="{StaticResource BorderLight}" BorderThickness="1,0,1,1">
                                             <DataGrid ItemsSource="{Binding Items}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" BorderThickness="0" Background="White" ColumnHeaderStyle="{StaticResource DataGridHeaderStyle}" CellStyle="{StaticResource DataGridCellStyle}" RowStyle="{StaticResource DataGridRowStyle}" GridLinesVisibility="All" HorizontalGridLinesBrush="{StaticResource BorderLight}" VerticalGridLinesBrush="{StaticResource BorderLight}" HeadersVisibility="Column" RowHeight="28" MinHeight="56" SelectionUnit="Cell" FocusVisualStyle="{x:Null}" PreviewKeyDown="DataGrid_PreviewKeyDown">
                                                 <DataGrid.Columns>
@@ -717,29 +710,32 @@
                                                         <ColumnDefinition Width="Auto"/>
                                                         <ColumnDefinition Width="Auto"/>
                                                         <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="Auto"/>
                                                     </Grid.ColumnDefinitions>
 
                                                     <TextBlock Grid.Column="0" Text="SPEC TOTAL" FontSize="8" FontWeight="Bold" Foreground="{StaticResource PrimaryBlueDark}" VerticalAlignment="Center"/>
 
-                                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,0,16,0">
+                                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,0,12,0">
                                                         <TextBlock Text="Qty:" FontSize="8" Foreground="{StaticResource TextSecondary}" Margin="0,0,3,0" VerticalAlignment="Center"/>
                                                         <TextBlock Text="{Binding SpecTotalQty}" FontSize="8" FontWeight="Bold" VerticalAlignment="Center"/>
                                                     </StackPanel>
 
-                                                    <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="0,0,16,0">
+                                                    <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="0,0,12,0">
                                                         <TextBlock Text="SQM:" FontSize="8" Foreground="{StaticResource TextSecondary}" Margin="0,0,3,0" VerticalAlignment="Center"/>
                                                         <TextBlock Text="{Binding SpecTotalSQM, StringFormat=N4}" FontSize="8" FontWeight="Bold" VerticalAlignment="Center"/>
                                                     </StackPanel>
 
-                                                    <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="0,0,16,0">
+                                                    <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="0,0,12,0" Visibility="{Binding DataContext.IsLMVisible, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}">
                                                         <TextBlock Text="LM:" FontSize="8" Foreground="{StaticResource TextSecondary}" Margin="0,0,3,0" VerticalAlignment="Center"/>
                                                         <TextBlock Text="{Binding SpecTotalLM, StringFormat=N4}" FontSize="8" FontWeight="Bold" Foreground="{StaticResource SuccessGreen}" VerticalAlignment="Center"/>
                                                     </StackPanel>
 
-                                                    <StackPanel Grid.Column="4" Orientation="Horizontal">
+                                                    <StackPanel Grid.Column="4" Orientation="Horizontal" Margin="0,0,12,0">
                                                         <TextBlock Text="AED:" FontSize="8" Foreground="{StaticResource TextSecondary}" Margin="0,0,3,0" VerticalAlignment="Center"/>
                                                         <TextBlock Text="{Binding SpecTotalPrice, StringFormat=N2}" FontSize="9" FontWeight="Bold" Foreground="{StaticResource SuccessGreen}" VerticalAlignment="Center"/>
                                                     </StackPanel>
+
+                                                    <Button Grid.Column="5" Content="👁" FontSize="9" Cursor="Hand" Padding="4,2" Background="Transparent" BorderThickness="0" ToolTip="Toggle LM" Click="ToggleLM_Click" VerticalAlignment="Center"/>
                                                 </Grid>
                                             </Border>
                                         </Border>
@@ -754,7 +750,7 @@
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="240"/>
+                                <ColumnDefinition Width="220"/>
                             </Grid.ColumnDefinitions>
 
                             <StackPanel Grid.Column="0" VerticalAlignment="Center">
@@ -785,8 +781,10 @@
                                     <TextBlock Grid.Row="1" Grid.Column="0" Text="Total Qty:" FontSize="8" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,3"/>
                                     <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Invoice.TotalQty}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right"/>
 
-                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Total LM:" FontSize="8" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4"/>
-                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Invoice.TotalLM, StringFormat=N4}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right"/>
+                                    <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal" Visibility="{Binding IsLMVisible, Converter={StaticResource BoolToVis}}">
+                                        <TextBlock Text="Total LM:" FontSize="8" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4"/>
+                                    </StackPanel>
+                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Invoice.TotalLM, StringFormat=N4}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" Visibility="{Binding IsLMVisible, Converter={StaticResource BoolToVis}}"/>
 
                                     <Separator Grid.Row="3" Grid.ColumnSpan="2" Margin="0,3,0,6"/>
 

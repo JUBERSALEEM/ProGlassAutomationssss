@@ -71,6 +71,14 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             }
         }
 
+        private void ToggleLM_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is ProformaInvoiceViewModel vm)
+            {
+                vm.IsLMVisible = !vm.IsLMVisible;
+            }
+        }
+
         private void DeleteRow_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button button && button.Tag is InvoiceItemModel item)
