@@ -39,8 +39,11 @@ namespace ProGlassAutomation.ViewModels
         public ObservableCollection<FileListItem> SavedFiles
         {
             get => _savedFiles;
-            set { _savedFiles = value; OnPropertyChanged(); }
+            set { _savedFiles = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasSavedFiles)); }
         }
+
+        // ==================== PATCH 1: HasSavedFiles Property ====================
+        public bool HasSavedFiles => SavedFiles?.Any() == true;
 
         private string _currentFileName = "Untitled";
         public string CurrentFileName
@@ -60,7 +63,7 @@ namespace ProGlassAutomation.ViewModels
         public bool IsLMVisible
         {
             get => _isLMVisible;
-            set { _isLMVisible = value; OnPropertyChanged(); }
+            set { _isLMVisible = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsLMToggleText)); }
         }
 
         public string IsLMToggleText => IsLMVisible ? "HIDE LM" : "SHOW LM";
@@ -406,15 +409,36 @@ namespace ProGlassAutomation.ViewModels
             set { _selectedTargetSpecification = value; OnPropertyChanged(); }
         }
 
+        // PATCH 7: Sync SelectedSpecificationId with SelectedTargetSpecification
+        private int _selectedSpecificationId;
+        public int SelectedSpecificationId
+        {
+            get => _selectedSpecificationId;
+            set
+            {
+                _selectedSpecificationId = value;
+                OnPropertyChanged();
+
+                // Sync with SelectedTargetSpecification
+                if (Invoice?.Specifications != null)
+                {
+                    SelectedTargetSpecification = Invoice.Specifications
+                        .FirstOrDefault(s => s.Id == value);
+                }
+            }
+        }
+
         // ==================== COMMANDS ====================
         public ICommand NewInvoiceCommand { get; }
         public ICommand SaveInvoiceCommand { get; }
         public ICommand OpenInvoiceCommand { get; }
+        public ICommand DeleteInvoiceCommand { get; }  // PATCH 2: Added
         public ICommand AddSpecificationCommand { get; }
         public ICommand RemoveSpecificationCommand { get; }
         public ICommand ToggleLMCommand { get; }
         public ICommand CalculatePriceCommand { get; }
         public ICommand IncludeInSpecificationCommand { get; }
+        public ICommand PrintCommand { get; }  // PATCH 2: Added
 
         // Module Selection Commands
         public ICommand SelectSGUCommand { get; }
@@ -444,11 +468,13 @@ namespace ProGlassAutomation.ViewModels
             NewInvoiceCommand = new RelayCommand(_ => NewInvoice());
             SaveInvoiceCommand = new RelayCommand(_ => SaveInvoice());
             OpenInvoiceCommand = new RelayCommand(_ => OpenInvoice());
+            DeleteInvoiceCommand = new RelayCommand(_ => DeleteInvoice());  // PATCH 2: Added
             AddSpecificationCommand = new RelayCommand(_ => AddSpecification());
             RemoveSpecificationCommand = new RelayCommand(_ => RemoveSpecification(), _ => Invoice.Specifications.Count > 0);
             ToggleLMCommand = new RelayCommand(_ => ToggleLM());
             CalculatePriceCommand = new RelayCommand(_ => CalculatePrice());
             IncludeInSpecificationCommand = new RelayCommand(_ => IncludeInSpecification(), _ => CanIncludeInSpecification());
+            PrintCommand = new RelayCommand(_ => PrintInvoice());  // PATCH 2: Added
 
             // Module Selection Commands
             SelectSGUCommand = new RelayCommand(_ => SelectSGU());
@@ -466,7 +492,8 @@ namespace ProGlassAutomation.ViewModels
         private bool CanIncludeInSpecification()
         {
             return CalculatedPrice > 0 &&
-                   SelectedTargetSpecification != null;
+                   SelectedTargetSpecification != null &&
+                   Invoice?.Specifications?.Contains(SelectedTargetSpecification) == true;
         }
 
         // ==================== MODULE SELECTION METHODS ====================
@@ -581,6 +608,66 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
+        // PATCH 2: DeleteInvoice method
+        private void DeleteInvoice()
+        {
+            try
+            {
+                var result = MessageBox.Show(
+                    $"Are you sure you want to delete '{CurrentFileName}'?\nThis action cannot be undone.",
+                    "Confirm Delete",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    string filePath = Path.Combine(GetDataFolder(), $"{CurrentFileName}.json");
+                    if (File.Exists(filePath))
+                    {
+                        File.Delete(filePath);
+                        LoadSavedFiles();
+                        StatusMessage = $"✅ Deleted: {CurrentFileName}";
+                        NewInvoice();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"❌ Delete failed: {ex.Message}";
+                MessageBox.Show($"Delete failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // PATCH 2: PrintInvoice method
+        private void PrintInvoice()
+        {
+            try
+            {
+                // Find the window containing this view model
+                var window = Application.Current.Windows.OfType<Window>()
+                    .FirstOrDefault(w => w.DataContext == this);
+
+                if (window != null)
+                {
+                    var printDialog = new System.Windows.Controls.PrintDialog();
+                    if (printDialog.ShowDialog() == true)
+                    {
+                        printDialog.PrintVisual(window.Content as System.Windows.Media.Visual, "ProForma Invoice");
+                        StatusMessage = "✅ Printed successfully";
+                    }
+                }
+                else
+                {
+                    StatusMessage = "❌ Cannot find window to print";
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"❌ Print failed: {ex.Message}";
+                MessageBox.Show($"Print failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private string GetDataFolder()
         {
             string folder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data");
@@ -615,6 +702,7 @@ namespace ProGlassAutomation.ViewModels
                     catch { }
                 }
             }
+            OnPropertyChanged(nameof(HasSavedFiles));
         }
 
         private void AddSpecification()
@@ -628,7 +716,6 @@ namespace ProGlassAutomation.ViewModels
             {
                 SrNo = 1,
                 SurchargePercent = 20
-                // SurchargeThreshold is fixed at 4
             };
             spec.Items.Add(firstItem);
 
@@ -660,7 +747,6 @@ namespace ProGlassAutomation.ViewModels
                 var firstRow = spec.Items[0];
                 newItem.Price = firstRow.Price;
                 newItem.SurchargePercent = firstRow.SurchargePercent;
-                // SurchargeThreshold is fixed at 4
             }
 
             spec.Items.Add(newItem);
@@ -761,6 +847,12 @@ namespace ProGlassAutomation.ViewModels
             // Update base price for all items in this specification
             SelectedTargetSpecification.BasePrice = CalculatedPrice;
 
+            // Update surcharge from first item if exists
+            if (SelectedTargetSpecification.Items.Count > 0)
+            {
+                SelectedTargetSpecification.SurchargePercent = SelectedTargetSpecification.Items[0].SurchargePercent;
+            }
+
             Invoice.CalculateTotals();
             Invoice.IsDirty = true;
 
@@ -825,7 +917,6 @@ namespace ProGlassAutomation.ViewModels
                                 Qty = item.Qty,
                                 Price = item.Price,
                                 SurchargePercent = item.SurchargePercent
-                                // SurchargeThreshold is fixed at 4
                             };
 
                             newItem.Width1 = item.Width1;
@@ -902,7 +993,6 @@ namespace ProGlassAutomation.ViewModels
                             Qty = item.Qty,
                             Price = item.Price,
                             SurchargePercent = 20
-                            // SurchargeThreshold is fixed at 4
                         };
 
                         newItem.Width1 = item.Width1;

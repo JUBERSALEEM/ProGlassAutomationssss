@@ -512,7 +512,7 @@
                                                     <ColumnDefinition Width="Auto"/>
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Grid.Column="0" Text="SPEC:" FontSize="9" FontWeight="Bold" Foreground="White" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                                <TextBox Grid.Column="1" Text="{Binding SpecificationName}" Background="White" FontSize="9" FontWeight="SemiBold" MinWidth="80" Padding="4,2" VerticalAlignment="Center"/>
+                                                <TextBox Grid.Column="1" Text="{Binding SpecificationName, UpdateSourceTrigger=PropertyChanged}" Background="White" FontSize="9" FontWeight="SemiBold" MinWidth="80" Padding="4,2" VerticalAlignment="Center"/>
 
                                                 <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="8,0">
                                                     <TextBlock Text="BASE:" FontSize="8" FontWeight="Bold" Foreground="White" VerticalAlignment="Center" Margin="0,0,3,0"/>
@@ -543,7 +543,7 @@
                                                         </DataGridTextColumn.ElementStyle>
                                                     </DataGridTextColumn>
 
-                                                    <DataGridTextColumn Header="GLASS REF" Binding="{Binding GlassRef}" Width="90">
+                                                    <DataGridTextColumn Header="GLASS REF" Binding="{Binding GlassRef, UpdateSourceTrigger=PropertyChanged}" Width="90">
                                                         <DataGridTextColumn.ElementStyle>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="VerticalAlignment" Value="Center"/>
@@ -639,7 +639,7 @@
                                                         </DataGridTextColumn.EditingElementStyle>
                                                     </DataGridTextColumn>
 
-                                                    <DataGridTextColumn Header="SQM" Binding="{Binding SQM, StringFormat=N4}" Width="60" IsReadOnly="True">
+                                                    <DataGridTextColumn Header="SQM" Binding="{Binding SQM, Mode=OneWay, StringFormat=N4}" Width="60" IsReadOnly="True">
                                                         <DataGridTextColumn.ElementStyle>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -651,7 +651,7 @@
                                                         </DataGridTextColumn.ElementStyle>
                                                     </DataGridTextColumn>
 
-                                                    <DataGridTextColumn Header="TOTAL SQM" Binding="{Binding TotalSQM, StringFormat=N4}" Width="70" IsReadOnly="True">
+                                                    <DataGridTextColumn Header="TOTAL SQM" Binding="{Binding TotalSQM, Mode=OneWay, StringFormat=N4}" Width="70" IsReadOnly="True">
                                                         <DataGridTextColumn.ElementStyle>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -663,7 +663,7 @@
                                                         </DataGridTextColumn.ElementStyle>
                                                     </DataGridTextColumn>
 
-                                                    <DataGridTextColumn Header="PRICE" Binding="{Binding DisplayPrice, StringFormat=N2}" Width="65" IsReadOnly="True">
+                                                    <DataGridTextColumn Header="PRICE" Binding="{Binding DisplayPrice, Mode=OneWay, StringFormat=N2}" Width="65" IsReadOnly="True">
                                                         <DataGridTextColumn.ElementStyle>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="HorizontalAlignment" Value="Right"/>
@@ -676,7 +676,7 @@
                                                         </DataGridTextColumn.ElementStyle>
                                                     </DataGridTextColumn>
 
-                                                    <DataGridTextColumn Header="TOTAL" Binding="{Binding TotalPrice, StringFormat=N2}" Width="75" IsReadOnly="True">
+                                                    <DataGridTextColumn Header="TOTAL" Binding="{Binding TotalPrice, Mode=OneWay, StringFormat=N2}" Width="75" IsReadOnly="True">
                                                         <DataGridTextColumn.ElementStyle>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="HorizontalAlignment" Value="Right"/>
@@ -717,22 +717,22 @@
 
                                                     <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,0,12,0">
                                                         <TextBlock Text="Qty:" FontSize="8" Foreground="{StaticResource TextSecondary}" Margin="0,0,3,0" VerticalAlignment="Center"/>
-                                                        <TextBlock Text="{Binding SpecTotalQty}" FontSize="8" FontWeight="Bold" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{Binding SpecTotalQty, Mode=OneWay}" FontSize="8" FontWeight="Bold" VerticalAlignment="Center"/>
                                                     </StackPanel>
 
                                                     <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="0,0,12,0">
                                                         <TextBlock Text="SQM:" FontSize="8" Foreground="{StaticResource TextSecondary}" Margin="0,0,3,0" VerticalAlignment="Center"/>
-                                                        <TextBlock Text="{Binding SpecTotalSQM, StringFormat=N4}" FontSize="8" FontWeight="Bold" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{Binding SpecTotalSQM, Mode=OneWay, StringFormat=N4}" FontSize="8" FontWeight="Bold" VerticalAlignment="Center"/>
                                                     </StackPanel>
 
                                                     <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="0,0,12,0" Visibility="{Binding DataContext.IsLMVisible, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}">
                                                         <TextBlock Text="LM:" FontSize="8" Foreground="{StaticResource TextSecondary}" Margin="0,0,3,0" VerticalAlignment="Center"/>
-                                                        <TextBlock Text="{Binding SpecTotalLM, StringFormat=N4}" FontSize="8" FontWeight="Bold" Foreground="{StaticResource SuccessGreen}" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{Binding SpecTotalLM, Mode=OneWay, StringFormat=N4}" FontSize="8" FontWeight="Bold" Foreground="{StaticResource SuccessGreen}" VerticalAlignment="Center"/>
                                                     </StackPanel>
 
                                                     <StackPanel Grid.Column="4" Orientation="Horizontal" Margin="0,0,12,0">
                                                         <TextBlock Text="AED:" FontSize="8" Foreground="{StaticResource TextSecondary}" Margin="0,0,3,0" VerticalAlignment="Center"/>
-                                                        <TextBlock Text="{Binding SpecTotalPrice, StringFormat=N2}" FontSize="9" FontWeight="Bold" Foreground="{StaticResource SuccessGreen}" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{Binding SpecTotalPrice, Mode=OneWay, StringFormat=N2}" FontSize="9" FontWeight="Bold" Foreground="{StaticResource SuccessGreen}" VerticalAlignment="Center"/>
                                                     </StackPanel>
 
                                                     <Button Grid.Column="5" Content="👁" FontSize="9" Cursor="Hand" Padding="4,2" Background="Transparent" BorderThickness="0" ToolTip="Toggle LM" Click="ToggleLM_Click" VerticalAlignment="Center"/>
@@ -776,23 +776,23 @@
                                     </Grid.ColumnDefinitions>
 
                                     <TextBlock Grid.Row="0" Grid.Column="0" Text="Total SQM:" FontSize="8" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,3"/>
-                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Invoice.TotalSQM, StringFormat=N4}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Invoice.TotalSQM, Mode=OneWay, StringFormat=N4}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right"/>
 
                                     <TextBlock Grid.Row="1" Grid.Column="0" Text="Total Qty:" FontSize="8" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,3"/>
-                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Invoice.TotalQty}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Invoice.TotalQty, Mode=OneWay}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right"/>
 
                                     <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal" Visibility="{Binding IsLMVisible, Converter={StaticResource BoolToVis}}">
                                         <TextBlock Text="Total LM:" FontSize="8" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4"/>
                                     </StackPanel>
-                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Invoice.TotalLM, StringFormat=N4}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" Visibility="{Binding IsLMVisible, Converter={StaticResource BoolToVis}}"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Invoice.TotalLM, Mode=OneWay, StringFormat=N4}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Right" Visibility="{Binding IsLMVisible, Converter={StaticResource BoolToVis}}"/>
 
                                     <Separator Grid.Row="3" Grid.ColumnSpan="2" Margin="0,3,0,6"/>
 
                                     <TextBlock Grid.Row="4" Grid.Column="0" Text="Sub Total (AED):" FontSize="9" FontWeight="SemiBold" Margin="0,0,0,2"/>
-                                    <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Invoice.GrandTotal, StringFormat=N2}" FontSize="10" FontWeight="Bold" HorizontalAlignment="Right"/>
+                                    <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Invoice.GrandTotal, Mode=OneWay, StringFormat=N2}" FontSize="10" FontWeight="Bold" HorizontalAlignment="Right"/>
 
                                     <TextBlock Grid.Row="5" Grid.Column="0" Text="VAT (5%):" FontSize="8" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4"/>
-                                    <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Invoice.VatAmount, StringFormat=N2}" FontSize="8" Foreground="{StaticResource TextSecondary}" HorizontalAlignment="Right"/>
+                                    <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Invoice.VatAmount, Mode=OneWay, StringFormat=N2}" FontSize="8" Foreground="{StaticResource TextSecondary}" HorizontalAlignment="Right"/>
 
                                     <Border Grid.Row="5" Grid.ColumnSpan="2" Background="{StaticResource PrimaryBlueDark}" CornerRadius="6" Padding="8,6" Margin="0,4,0,0">
                                         <Grid>
@@ -801,7 +801,7 @@
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Grid.Column="0" Text="NET TOTAL (AED):" FontSize="10" FontWeight="Bold" Foreground="White"/>
-                                            <TextBlock Grid.Column="1" Text="{Binding Invoice.NetTotal, StringFormat=N2}" FontSize="12" FontWeight="Bold" Foreground="White"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Invoice.NetTotal, Mode=OneWay, StringFormat=N2}" FontSize="12" FontWeight="Bold" Foreground="White"/>
                                         </Grid>
                                     </Border>
                                 </Grid>
@@ -873,6 +873,7 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
+                                <!-- PATCH 3: Module Selection - Using SelectedModule string binding -->
                                 <Button Grid.Column="0" Command="{Binding SelectSGUCommand}" Cursor="Hand" Padding="0">
                                     <Button.Template>
                                         <ControlTemplate TargetType="Button">
@@ -967,12 +968,13 @@
                                     </StackPanel>
                                 </Border>
 
+                                <!-- PATCH 6: Color Input - UpdateSourceTrigger=LostFocus -->
                                 <Border Grid.Column="2" Background="White" CornerRadius="8" Padding="8" BorderThickness="1" BorderBrush="#93C5FD">
                                     <StackPanel>
                                         <TextBlock Text="COLOR" FontSize="7" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,4"/>
                                         <ComboBox IsEditable="True"
                                                   ItemsSource="{Binding ColorHistory}"
-                                                  Text="{Binding SelectedColor, UpdateSourceTrigger=PropertyChanged}"
+                                                  Text="{Binding SelectedColor, UpdateSourceTrigger=LostFocus}"
                                                   Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="6,4" FontSize="9"
                                                   StaysOpenOnEdit="True"/>
                                     </StackPanel>
@@ -1113,11 +1115,12 @@
                                             <ComboBox ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding DGUOuterThickness}" Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="6,4" FontSize="9"/>
                                         </StackPanel>
 
+                                        <!-- PATCH 6: Color Input - UpdateSourceTrigger=LostFocus -->
                                         <StackPanel Grid.Column="2">
                                             <TextBlock Text="COLOR" FontSize="6" Foreground="#94A3B8" Margin="0,0,0,2"/>
                                             <ComboBox IsEditable="True"
                                                       ItemsSource="{Binding ColorHistory}"
-                                                      Text="{Binding DGUOuterColor, UpdateSourceTrigger=PropertyChanged}"
+                                                      Text="{Binding DGUOuterColor, UpdateSourceTrigger=LostFocus}"
                                                       Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="6,4" FontSize="9"
                                                       StaysOpenOnEdit="True"/>
                                         </StackPanel>
@@ -1177,11 +1180,12 @@
                                             <ComboBox ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding DGUInnerThickness}" Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="6,4" FontSize="9"/>
                                         </StackPanel>
 
+                                        <!-- PATCH 6: Color Input - UpdateSourceTrigger=LostFocus -->
                                         <StackPanel Grid.Column="2">
                                             <TextBlock Text="COLOR" FontSize="6" Foreground="#94A3B8" Margin="0,0,0,2"/>
                                             <ComboBox IsEditable="True"
                                                       ItemsSource="{Binding ColorHistory}"
-                                                      Text="{Binding DGUInnerColor, UpdateSourceTrigger=PropertyChanged}"
+                                                      Text="{Binding DGUInnerColor, UpdateSourceTrigger=LostFocus}"
                                                       Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="6,4" FontSize="9"
                                                       StaysOpenOnEdit="True"/>
                                         </StackPanel>
@@ -1255,11 +1259,12 @@
                                             <ComboBox ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding LAMOuterThickness}" Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="6,4" FontSize="9"/>
                                         </StackPanel>
 
+                                        <!-- PATCH 6: Color Input - UpdateSourceTrigger=LostFocus -->
                                         <StackPanel Grid.Column="2">
                                             <TextBlock Text="COLOR" FontSize="6" Foreground="#94A3B8" Margin="0,0,0,2"/>
                                             <ComboBox IsEditable="True"
                                                       ItemsSource="{Binding ColorHistory}"
-                                                      Text="{Binding LAMOuterColor, UpdateSourceTrigger=PropertyChanged}"
+                                                      Text="{Binding LAMOuterColor, UpdateSourceTrigger=LostFocus}"
                                                       Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="6,4" FontSize="9"
                                                       StaysOpenOnEdit="True"/>
                                         </StackPanel>
@@ -1328,11 +1333,12 @@
                                             <ComboBox ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding LAMInnerThickness}" Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="6,4" FontSize="9"/>
                                         </StackPanel>
 
+                                        <!-- PATCH 6: Color Input - UpdateSourceTrigger=LostFocus -->
                                         <StackPanel Grid.Column="2">
                                             <TextBlock Text="COLOR" FontSize="6" Foreground="#94A3B8" Margin="0,0,0,2"/>
                                             <ComboBox IsEditable="True"
                                                       ItemsSource="{Binding ColorHistory}"
-                                                      Text="{Binding LAMInnerColor, UpdateSourceTrigger=PropertyChanged}"
+                                                      Text="{Binding LAMInnerColor, UpdateSourceTrigger=LostFocus}"
                                                       Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="6,4" FontSize="9"
                                                       StaysOpenOnEdit="True"/>
                                         </StackPanel>
@@ -1413,6 +1419,7 @@
                             <Border Background="White" CornerRadius="8" Padding="8" Margin="0,0,0,6" BorderThickness="1" BorderBrush="#6EE7B7">
                                 <StackPanel>
                                     <TextBlock Text="DESCRIPTION" FontSize="7" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,4"/>
+                                    <!-- PATCH 9: Output - OneWay binding -->
                                     <TextBox Text="{Binding GeneratedDescription, Mode=OneWay}" IsReadOnly="True" Background="#F0FDF4" BorderBrush="#6EE7B7" BorderThickness="1" Padding="8,6" FontSize="9" FontWeight="SemiBold" Foreground="#166534" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </Border>
@@ -1422,13 +1429,15 @@
                                     <TextBlock Text="CALCULATED PRICE" FontSize="7" FontWeight="SemiBold" Foreground="#A7F3D0" HorizontalAlignment="Center" Margin="0,0,0,2"/>
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                         <TextBlock Text="AED" FontSize="10" FontWeight="Bold" Foreground="White" VerticalAlignment="Bottom" Margin="0,0,4,1"/>
-                                        <TextBlock Text="{Binding CalculatedPrice, StringFormat=N2}" FontSize="18" FontWeight="Bold" Foreground="White"/>
+                                        <!-- PATCH 9: Output - OneWay binding -->
+                                        <TextBlock Text="{Binding CalculatedPrice, Mode=OneWay, StringFormat=N2}" FontSize="18" FontWeight="Bold" Foreground="White"/>
                                     </StackPanel>
                                 </StackPanel>
                             </Border>
 
                             <Border Background="White" CornerRadius="8" Padding="8,6" Margin="0,0,0,6" BorderThickness="1" BorderBrush="#6EE7B7">
-                                <TextBlock Text="{Binding PriceCalculationSummary}" FontSize="7" Foreground="#64748B" FontFamily="Consolas" TextWrapping="Wrap" HorizontalAlignment="Center"/>
+                                <!-- PATCH 9: Output - OneWay binding -->
+                                <TextBlock Text="{Binding PriceCalculationSummary, Mode=OneWay}" FontSize="7" Foreground="#64748B" FontFamily="Consolas" TextWrapping="Wrap" HorizontalAlignment="Center"/>
                             </Border>
 
                             <Button Command="{Binding CalculatePriceCommand}" Cursor="Hand" Padding="0">
@@ -1471,7 +1480,10 @@
                             <Border Background="White" CornerRadius="8" Padding="8" Margin="0,0,0,6" BorderThickness="1" BorderBrush="#C4B5FD">
                                 <StackPanel>
                                     <TextBlock Text="Select spec to apply price" FontSize="7" Foreground="#64748B" Margin="0,0,0,4"/>
-                                    <ComboBox ItemsSource="{Binding Invoice.Specifications}" SelectedItem="{Binding SelectedTargetSpecification}" DisplayMemberPath="SpecificationName" Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="8,6" FontSize="9"/>
+                                    <ComboBox ItemsSource="{Binding Invoice.Specifications}" 
+                  SelectedItem="{Binding SelectedTargetSpecification}"
+                  DisplayMemberPath="SpecificationName" 
+                  Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="8,6" FontSize="9"/>
                                 </StackPanel>
                             </Border>
 
@@ -1534,7 +1546,8 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <Button Grid.Column="0" Style="{StaticResource SecondaryButtonStyle}" Content="NEW" Command="{Binding NewInvoiceCommand}" Padding="6,6"/>
-                            <Button Grid.Column="2" Style="{StaticResource DangerButtonStyle}" Content="DELETE" Padding="6,6"/>
+                            <!-- PATCH 2: Delete Button - Added Command binding -->
+                            <Button Grid.Column="2" Style="{StaticResource DangerButtonStyle}" Content="DELETE" Command="{Binding DeleteInvoiceCommand}" Padding="6,6"/>
                         </Grid>
 
                         <Separator Margin="0,6"/>
@@ -1588,8 +1601,8 @@
                         </ListBox.ItemTemplate>
                     </ListBox>
 
-                    <!-- Empty State -->
-                    <StackPanel Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="{Binding SavedFiles.Count, Converter={StaticResource InverseBoolToVis}, FallbackValue=Visible}">
+                    <!-- PATCH 1: Empty State - Using HasSavedFiles property -->
+                    <StackPanel Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="{Binding HasSavedFiles, Converter={StaticResource InverseBoolToVis}}">
                         <TextBlock Text="📋" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,8"/>
                         <TextBlock Text="No saved invoices" FontSize="8" Foreground="{StaticResource TextMuted}" HorizontalAlignment="Center"/>
                     </StackPanel>

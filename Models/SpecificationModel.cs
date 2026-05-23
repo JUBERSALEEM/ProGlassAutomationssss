@@ -56,6 +56,18 @@ namespace ProGlassAutomation.Models
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
+        // ==================== PATCH 7: Added Id Property ====================
+        private int _id = 0;
+        public int Id
+        {
+            get => _id;
+            set
+            {
+                _id = value;
+                OnPropertyChanged();
+            }
+        }
+
         private string _specificationName = "";
         public string SpecificationName
         {
