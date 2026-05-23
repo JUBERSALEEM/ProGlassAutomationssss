@@ -1,4 +1,5 @@
-﻿using Microsoft.Win32;
+﻿using LiveChartsCore.SkiaSharpView.WPF;
+using Microsoft.Win32;
 using Newtonsoft.Json;
 using ProGlassAutomation.Models;
 using ProGlassAutomation.Services;
@@ -14,813 +15,351 @@ using System.Windows.Input;
 
 namespace ProGlassAutomation.ViewModels
 {
-    // ==================== HELPER CLASSES ====================
-    public class DimensionOption
+    public class DimensionOption { public string Value { get; set; } = ""; public string Label { get; set; } = ""; }
+    public class ChargeTypeOption { public string Value { get; set; } = ""; public string Label { get; set; } = ""; }
+    public class AirSpacerOption { public string Thickness { get; set; } = ""; public string Type { get; set; } = ""; public double Price { get; set; } public string Display => $"{Thickness}mm {Type} - AED {Price:F2}"; }
+    public class FileListItem { public string FilePath { get; set; } = ""; public string InvoiceNo { get; set; } = ""; public string CustomerName { get; set; } = ""; public DateTime InvoiceDate { get; set; } public string FileName => Path.GetFileNameWithoutExtension(FilePath); public string DateDisplay => InvoiceDate.ToString("dd MMM yyyy"); }
+
+    public class GlassPriceCalculator
     {
-        public string Value { get; set; }
-        public string Label { get; set; }
+        public double CalculateSGU(double sheetPrice, double cutting, double tempering, double wasteFactor, double profitPercent, string thickness, string color, string workType, out string description, out string summary)
+        {
+            double step1 = sheetPrice / wasteFactor;
+            double step2 = step1 + cutting + tempering;
+            double final = step2 * (1 + profitPercent / 100.0);
+            description = $"{thickness}mm {color} {workType}";
+            summary = $"({sheetPrice} / {wasteFactor:F2}) + {cutting} + {tempering} = {step2:F2} × {1 + profitPercent / 100.0:F2} = {final:F2}";
+            return Math.Round(final, 2);
+        }
+        public double CalculateDGU(double outerPrice, double innerPrice, double aspPrice, double wasteFactor, double profitPercent, string outerThickness, string outerColor, string workType, string spacerThickness, string spacerType, bool includeUInsert, string innerThickness, string innerColor, out string description, out string summary)
+        {
+            double glassTotal = outerPrice + innerPrice;
+            double step1 = glassTotal / wasteFactor;
+            double step2 = step1 + aspPrice;
+            double final = step2 * (1 + profitPercent / 100.0);
+            string uInsertText = includeUInsert ? " with U-Insert" : "";
+            description = $"{outerThickness}mm {outerColor} {workType} + {spacerThickness}mm {spacerType} ASP{uInsertText} + {innerThickness}mm {innerColor} {workType}";
+            summary = $"(({outerPrice} + {innerPrice}) / {wasteFactor:F2}) + {aspPrice} = {step2:F2} × {1 + profitPercent / 100.0:F2} = {final:F2}";
+            return Math.Round(final, 2);
+        }
+        public double CalculateLAM(double outerPrice, double pvbPrice, double innerPrice, double cutting, double tempering, double wasteFactor, double profitPercent, string outerThickness, string outerColor, string workType, string pvbThickness, string pvbColor, string innerThickness, string innerColor, out string description, out string summary)
+        {
+            double glassTotal = outerPrice + pvbPrice + innerPrice;
+            double step1 = glassTotal / wasteFactor;
+            double step2 = step1 + cutting + tempering;
+            double final = step2 * (1 + profitPercent / 100.0);
+            description = $"{outerThickness}mm {outerColor} {workType} + {pvbThickness}mm PVB ({pvbColor}) + {innerThickness}mm {innerColor} {workType}";
+            summary = $"({outerPrice} + {pvbPrice} + {innerPrice}) / {wasteFactor:F2} + {cutting} + {tempering} = {step2:F2} × {1 + profitPercent / 100.0:F2} = {final:F2}";
+            return Math.Round(final, 2);
+        }
     }
 
-    public class ChargeTypeOption
-    {
-        public string Value { get; set; }
-        public string Label { get; set; }
-    }
-
-    public class AirSpacerOption
-    {
-        public string Thickness { get; set; }
-        public string Type { get; set; }
-        public double Price { get; set; }
-        public string Display => $"{Thickness}mm {Type} - AED {Price:F2}";
-    }
-
-    // ==================== FILE LIST ITEM ====================
-    public class FileListItem
-    {
-        public string FilePath { get; set; }
-        public string InvoiceNo { get; set; }
-        public string CustomerName { get; set; }
-        public DateTime InvoiceDate { get; set; }
-        public string FileName => Path.GetFileNameWithoutExtension(FilePath);
-        public string DateDisplay => InvoiceDate.ToString("dd MMM yyyy");
-    }
-
-    // ==================== MAIN VIEWMODEL ====================
     public class ProformaInvoiceViewModel : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
-        private readonly ExcelCsvService _excelCsvService;
-
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
-        // ==================== INVOICE NUMBER GENERATION ====================
+        private readonly ExcelCsvService _excelCsvService = new ExcelCsvService();
+        private readonly GlassPriceCalculator _priceCalculator = new GlassPriceCalculator();
+        private static readonly object _invoiceLock = new object();
+        private static int _lastGeneratedNumber;
         private int _currentPINumber = 0;
-        public int CurrentPINumber
+        private bool _isUpdatingASPPrice = false; // Prevent circular updates
+
+        public ProformaInvoiceViewModel()
         {
-            get => _currentPINumber;
-            set { _currentPINumber = value; OnPropertyChanged(); }
+            _excelCsvService.StatusChanged += status => Application.Current?.Dispatcher.Invoke(() => StatusMessage = status);
+            InitializeCommands();
+            LoadSavedFiles();
+            CreateNewInvoice();
         }
 
-        private string GetNextInvoiceNo()
-        {
-            CurrentPINumber++;
-            return $"PI-{DateTime.Now.Year}-{CurrentPINumber:D2}";
-        }
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = null) { if (Equals(field, value)) return false; field = value; OnPropertyChanged(propertyName); return true; }
+        private void OnInvoicePropertyChanged(object? sender, PropertyChangedEventArgs e) { if (e.PropertyName == nameof(ProformaInvoiceModel.IsDirty)) OnPropertyChanged(nameof(HasUnsavedChanges)); }
+        private string GetNextSequentialInvoiceNo() { _currentPINumber++; return $"PI-{DateTime.Now.Year}-{_currentPINumber:D2}"; }
 
         private ProformaInvoiceModel _invoice = new();
-        public ProformaInvoiceModel Invoice
-        {
-            get => _invoice;
-            set
-            {
-                _invoice = value;
-                OnPropertyChanged();
-                SubscribeToOtherChargeChanges();
-            }
-        }
-
+        public ProformaInvoiceModel Invoice { get => _invoice; set { if (_invoice != null) _invoice.PropertyChanged -= OnInvoicePropertyChanged; SetProperty(ref _invoice, value); if (_invoice != null) { _invoice.PropertyChanged += OnInvoicePropertyChanged; SubscribeToOtherChargeChanges(); } } }
+        public bool HasUnsavedChanges => Invoice?.IsDirty == true;
         private ObservableCollection<FileListItem> _savedFiles = new();
-        public ObservableCollection<FileListItem> SavedFiles
-        {
-            get => _savedFiles;
-            set { _savedFiles = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasSavedFiles)); }
-        }
-
+        public ObservableCollection<FileListItem> SavedFiles { get => _savedFiles; set => SetProperty(ref _savedFiles, value); }
         public bool HasSavedFiles => SavedFiles?.Any() == true;
-
         private string _currentFileName = "Untitled";
-        public string CurrentFileName
-        {
-            get => _currentFileName;
-            set { _currentFileName = value; OnPropertyChanged(); }
-        }
-
+        public string CurrentFileName { get => _currentFileName; set => SetProperty(ref _currentFileName, value); }
         private string _statusMessage = "Ready";
-        public string StatusMessage
-        {
-            get => _statusMessage;
-            set { _statusMessage = value; OnPropertyChanged(); }
-        }
-
+        public string StatusMessage { get => _statusMessage; set => SetProperty(ref _statusMessage, value); }
         private bool _isLMVisible = true;
-        public bool IsLMVisible
-        {
-            get => _isLMVisible;
-            set { _isLMVisible = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsLMToggleText)); }
-        }
-
+        public bool IsLMVisible { get => _isLMVisible; set { if (SetProperty(ref _isLMVisible, value)) OnPropertyChanged(nameof(IsLMToggleText)); } }
         public string IsLMToggleText => IsLMVisible ? "HIDE LM" : "SHOW LM";
 
-        // ==================== COMPANY DETAILS ====================
-        private string _companyName = "PROGLASS AUTOMATION";
-        public string CompanyName
-        {
-            get => _companyName;
-            set { _companyName = value; OnPropertyChanged(); }
-        }
+        public string CompanyName { get; set; } = "PROGLASS AUTOMATION";
+        public string CompanyTRN { get; set; } = "100458979400003";
+        public string CompanyLocation { get; set; } = "Dubai, UAE";
+        public string CompanyPhone { get; set; } = "+971-50-123-4567";
 
-        private string _companyTRN = "100458979400003";
-        public string CompanyTRN
-        {
-            get => _companyTRN;
-            set { _companyTRN = value; OnPropertyChanged(); }
-        }
-
-        private string _companyLocation = "Dubai, UAE";
-        public string CompanyLocation
-        {
-            get => _companyLocation;
-            set { _companyLocation = value; OnPropertyChanged(); }
-        }
-
-        private string _companyPhone = "+971-50-123-4567";
-        public string CompanyPhone
-        {
-            get => _companyPhone;
-            set { _companyPhone = value; OnPropertyChanged(); }
-        }
-
-        // ==================== MODULE SELECTION ====================
         private bool _isSGUSelected = true;
-        public bool IsSGUSelected
-        {
-            get => _isSGUSelected;
-            set
-            {
-                _isSGUSelected = value;
-                OnPropertyChanged();
-                if (value) { IsDGUSelected = false; IsLAMSelected = false; }
-            }
-        }
-
+        public bool IsSGUSelected { get => _isSGUSelected; set { if (SetProperty(ref _isSGUSelected, value) && value) { _isDGUSelected = false; OnPropertyChanged(nameof(IsDGUSelected)); _isLAMSelected = false; OnPropertyChanged(nameof(IsLAMSelected)); } } }
         private bool _isDGUSelected;
-        public bool IsDGUSelected
-        {
-            get => _isDGUSelected;
-            set
-            {
-                _isDGUSelected = value;
-                OnPropertyChanged();
-                if (value) { IsSGUSelected = false; IsLAMSelected = false; }
-            }
-        }
-
+        public bool IsDGUSelected { get => _isDGUSelected; set { if (SetProperty(ref _isDGUSelected, value) && value) { _isSGUSelected = false; OnPropertyChanged(nameof(IsSGUSelected)); _isLAMSelected = false; OnPropertyChanged(nameof(IsLAMSelected)); } } }
         private bool _isLAMSelected;
-        public bool IsLAMSelected
-        {
-            get => _isLAMSelected;
-            set
-            {
-                _isLAMSelected = value;
-                OnPropertyChanged();
-                if (value) { IsSGUSelected = false; IsDGUSelected = false; }
-            }
-        }
+        public bool IsLAMSelected { get => _isLAMSelected; set { if (SetProperty(ref _isLAMSelected, value) && value) { _isSGUSelected = false; OnPropertyChanged(nameof(IsSGUSelected)); _isDGUSelected = false; OnPropertyChanged(nameof(IsDGUSelected)); } } }
 
-        // ==================== DROPDOWN OPTIONS ====================
-        public ObservableCollection<string> ThicknessOptions { get; } = new ObservableCollection<string>
+        public ObservableCollection<string> ThicknessOptions { get; } = new() { "4", "5", "6", "8", "10", "12", "15", "19" };
+        public ObservableCollection<string> ColorHistory { get; set; } = new() { "Clear", "Grey", "Green", "Blue", "Bronze", "Black" };
+
+        // Updated ASP prices: 6-14mm = 45/50, 16-18mm = 50/55, 20-22mm = 55/60, 24mm = 60/65
+        public ObservableCollection<AirSpacerOption> AirSpacerOptions { get; } = new()
         {
-            "4", "5", "6", "8", "10", "12", "15", "19"
+            new() { Thickness = "6", Type = "Normal", Price = 45 }, new() { Thickness = "6", Type = "Black", Price = 50 },
+            new() { Thickness = "8", Type = "Normal", Price = 45 }, new() { Thickness = "8", Type = "Black", Price = 50 },
+            new() { Thickness = "10", Type = "Normal", Price = 45 }, new() { Thickness = "10", Type = "Black", Price = 50 },
+            new() { Thickness = "12", Type = "Normal", Price = 45 }, new() { Thickness = "12", Type = "Black", Price = 50 },
+            new() { Thickness = "14", Type = "Normal", Price = 45 }, new() { Thickness = "14", Type = "Black", Price = 50 },
+            new() { Thickness = "16", Type = "Normal", Price = 50 }, new() { Thickness = "16", Type = "Black", Price = 55 },
+            new() { Thickness = "18", Type = "Normal", Price = 50 }, new() { Thickness = "18", Type = "Black", Price = 55 },
+            new() { Thickness = "20", Type = "Normal", Price = 55 }, new() { Thickness = "20", Type = "Black", Price = 60 },
+            new() { Thickness = "22", Type = "Normal", Price = 55 }, new() { Thickness = "22", Type = "Black", Price = 60 },
+            new() { Thickness = "24", Type = "Normal", Price = 60 }, new() { Thickness = "24", Type = "Black", Price = 65 }
         };
 
-        private ObservableCollection<string> _colorHistory = new ObservableCollection<string>
-        {
-            "Clear", "Grey", "Green", "Blue", "Bronze", "Black"
-        };
-        public ObservableCollection<string> ColorHistory
-        {
-            get => _colorHistory;
-            set { _colorHistory = value; OnPropertyChanged(); }
-        }
+        public ObservableCollection<string> AirSpacerThicknessOptions { get; } = new() { "6", "8", "10", "12", "14", "16", "18", "20", "22", "24" };
+        public ObservableCollection<string> AirSpacerTypeOptions { get; } = new() { "Normal", "Black" };
+        public ObservableCollection<DimensionOption> LMDimensionOptions { get; } = new() { new() { Value = "w1h1", Label = "2×(W1+H1) — Single Glass Polish" }, new() { Value = "4w1h1", Label = "4×(W1+H1) — DGU/LAM Polish" }, new() { Value = "2w1", Label = "2×W1 — Both Widths" }, new() { Value = "2h1", Label = "2×H1 — Both Heights" }, new() { Value = "w1_only", Label = "1×W1 — One Width" }, new() { Value = "h1_only", Label = "1×H1 — One Height" }, new() { Value = "w2h2", Label = "2×(W2+H2) — W2/H2 Perimeter" }, new() { Value = "2w2", Label = "2×W2" }, new() { Value = "2h2", Label = "2×H2" }, new() { Value = "w2_only", Label = "1×W2" }, new() { Value = "h2_only", Label = "1×H2" } };
+        public ObservableCollection<ChargeTypeOption> ChargeTypeOptions { get; } = new() { new() { Value = "amount", Label = "amount" }, new() { Value = "lm", Label = "lm" }, new() { Value = "sqm", Label = "sqm" }, new() { Value = "qty", Label = "qty" }, new() { Value = "holes", Label = "holes (2X)" }, new() { Value = "cutout", Label = "cutout (2X)" } };
 
-        // ==================== AIR SPACER OPTIONS ====================
-        public ObservableCollection<AirSpacerOption> AirSpacerOptions { get; } = new ObservableCollection<AirSpacerOption>
-        {
-            // Normal Air Spacer
-            new AirSpacerOption { Thickness = "6", Type = "Normal", Price = 8 },
-            new AirSpacerOption { Thickness = "8", Type = "Normal", Price = 10 },
-            new AirSpacerOption { Thickness = "10", Type = "Normal", Price = 12 },
-            new AirSpacerOption { Thickness = "12", Type = "Normal", Price = 15 },
-            new AirSpacerOption { Thickness = "14", Type = "Normal", Price = 18 },
-            new AirSpacerOption { Thickness = "16", Type = "Normal", Price = 20 },
-            new AirSpacerOption { Thickness = "18", Type = "Normal", Price = 22 },
-            new AirSpacerOption { Thickness = "20", Type = "Normal", Price = 25 },
-            new AirSpacerOption { Thickness = "22", Type = "Normal", Price = 28 },
-            new AirSpacerOption { Thickness = "24", Type = "Normal", Price = 30 },
-            // Black Air Spacer
-            new AirSpacerOption { Thickness = "6", Type = "Black", Price = 12 },
-            new AirSpacerOption { Thickness = "8", Type = "Black", Price = 15 },
-            new AirSpacerOption { Thickness = "10", Type = "Black", Price = 18 },
-            new AirSpacerOption { Thickness = "12", Type = "Black", Price = 22 },
-            new AirSpacerOption { Thickness = "14", Type = "Black", Price = 26 },
-            new AirSpacerOption { Thickness = "16", Type = "Black", Price = 30 },
-            new AirSpacerOption { Thickness = "18", Type = "Black", Price = 34 },
-            new AirSpacerOption { Thickness = "20", Type = "Black", Price = 38 },
-            new AirSpacerOption { Thickness = "22", Type = "Black", Price = 42 },
-            new AirSpacerOption { Thickness = "24", Type = "Black", Price = 45 }
-        };
-
-        public ObservableCollection<string> AirSpacerThicknessOptions { get; } = new ObservableCollection<string>
-        {
-            "6", "8", "10", "12", "14", "16", "18", "20", "22", "24"
-        };
-
-        public ObservableCollection<string> AirSpacerTypeOptions { get; } = new ObservableCollection<string>
-        {
-            "Normal", "Black"
-        };
-
-        // ==================== LM DIMENSION OPTIONS ====================
-        public ObservableCollection<DimensionOption> LMDimensionOptions { get; } = new ObservableCollection<DimensionOption>
-        {
-            new DimensionOption { Value = "w1h1", Label = "2×(W1+H1) — Single Glass Polish" },
-            new DimensionOption { Value = "4w1h1", Label = "4×(W1+H1) — DGU/LAM Polish" },
-            new DimensionOption { Value = "2w1", Label = "2×W1 — Both Widths" },
-            new DimensionOption { Value = "2h1", Label = "2×H1 — Both Heights" },
-            new DimensionOption { Value = "w1_only", Label = "1×W1 — One Width" },
-            new DimensionOption { Value = "h1_only", Label = "1×H1 — One Height" },
-            new DimensionOption { Value = "w2h2", Label = "2×(W2+H2) — W2/H2 Perimeter" },
-            new DimensionOption { Value = "2w2", Label = "2×W2" },
-            new DimensionOption { Value = "2h2", Label = "2×H2" },
-            new DimensionOption { Value = "w2_only", Label = "1×W2" },
-            new DimensionOption { Value = "h2_only", Label = "1×H2" }
-        };
-
-        // ==================== CHARGE TYPE OPTIONS ====================
-        public ObservableCollection<ChargeTypeOption> ChargeTypeOptions { get; } = new ObservableCollection<ChargeTypeOption>
-        {
-            new ChargeTypeOption { Value = "amount", Label = "amount" },
-            new ChargeTypeOption { Value = "lm", Label = "lm" },
-            new ChargeTypeOption { Value = "sqm", Label = "sqm" },
-            new ChargeTypeOption { Value = "qty", Label = "qty" },
-            new ChargeTypeOption { Value = "holes", Label = "holes (2X)" },
-            new ChargeTypeOption { Value = "cutout", Label = "cutout (2X)" }
-        };
-
-        // ==================== SGU FIELDS ====================
         private string _selectedThickness = "6";
         public string SelectedThickness
         {
             get => _selectedThickness;
-            set { _selectedThickness = value; OnPropertyChanged(); }
+            set => SetProperty(ref _selectedThickness, value);
         }
-
-        private string _selectedColor = "Clear";
-        public string SelectedColor
-        {
-            get => _selectedColor;
-            set { _selectedColor = value; OnPropertyChanged(); AddToColorHistory(value); }
-        }
-
-        private bool _isAnnealedSelected = true;
-        public bool IsAnnealedSelected
-        {
-            get => _isAnnealedSelected;
-            set { _isAnnealedSelected = value; OnPropertyChanged(); }
-        }
-
-        private bool _isFTSelected;
-        public bool IsFTSelected
-        {
-            get => _isFTSelected;
-            set { _isFTSelected = value; OnPropertyChanged(); }
-        }
-
+        public string SelectedColor { get; set; } = "Clear";
+        public bool IsAnnealedSelected { get; set; } = true;
+        public bool IsFTSelected { get; set; }
         public string WorkTypeText => IsFTSelected ? "FT Glass" : "Annealed";
+        public double SGUSheetPrice { get; set; } = 150;
+        public double SGUCutting { get; set; } = 10;
+        public double SGUTempering { get; set; } = 10;
+        public double SGUWasteFactor { get; set; } = 0.85;
+        public double SGUProfitPercent { get; set; } = 15;
 
-        private double _sGUSheetPrice = 150;
-        public double SGUSheetPrice
-        {
-            get => _sGUSheetPrice;
-            set { _sGUSheetPrice = value; OnPropertyChanged(); }
-        }
-
-        private double _sGUCutting = 10;
-        public double SGUCutting
-        {
-            get => _sGUCutting;
-            set { _sGUCutting = value; OnPropertyChanged(); }
-        }
-
-        private double _sGUTempering = 10;
-        public double SGUTempering
-        {
-            get => _sGUTempering;
-            set { _sGUTempering = value; OnPropertyChanged(); }
-        }
-
-        private double _sGUWasteFactor = 0.85;
-        public double SGUWasteFactor
-        {
-            get => _sGUWasteFactor;
-            set { _sGUWasteFactor = value; OnPropertyChanged(); }
-        }
-
-        private double _sGUProfitPercent = 15;
-        public double SGUProfitPercent
-        {
-            get => _sGUProfitPercent;
-            set { _sGUProfitPercent = value; OnPropertyChanged(); }
-        }
-
-        // ==================== DGU FIELDS ====================
-        private bool _isDGUAnnealedSelected = true;
-        public bool IsDGUAnnealedSelected
-        {
-            get => _isDGUAnnealedSelected;
-            set
-            {
-                _isDGUAnnealedSelected = value;
-                OnPropertyChanged();
-                if (value) IsDGUFTSelected = false;
-            }
-        }
-
-        private bool _isDGUFTSelected;
-        public bool IsDGUFTSelected
-        {
-            get => _isDGUFTSelected;
-            set
-            {
-                _isDGUFTSelected = value;
-                OnPropertyChanged();
-                if (value) IsDGUAnnealedSelected = false;
-            }
-        }
-
+        public bool IsDGUAnnealedSelected { get; set; } = true;
+        public bool IsDGUFTSelected { get; set; }
         public string DGUWorkTypeText => IsDGUFTSelected ? "FT Glass" : "Annealed";
+        public bool IsDGUIncludeInSpec { get; set; } = true;
+        public bool IsDGUInternalOnly { get; set; }
+        public string DGUOuterThickness { get; set; } = "6";
+        public string DGUOuterColor { get; set; } = "Clear";
+        public double DGUOuterPrice { get; set; } = 100;
 
-        private bool _isDGUIncludeInSpec = true;
-        public bool IsDGUIncludeInSpec
-        {
-            get => _isDGUIncludeInSpec;
-            set
-            {
-                _isDGUIncludeInSpec = value;
-                OnPropertyChanged();
-                if (value) IsDGUInternalOnly = false;
-            }
-        }
-
-        private bool _isDGUInternalOnly;
-        public bool IsDGUInternalOnly
-        {
-            get => _isDGUInternalOnly;
-            set
-            {
-                _isDGUInternalOnly = value;
-                OnPropertyChanged();
-                if (value) IsDGUIncludeInSpec = false;
-            }
-        }
-
-        private string _dGUOuterThickness = "6";
-        public string DGUOuterThickness
-        {
-            get => _dGUOuterThickness;
-            set { _dGUOuterThickness = value; OnPropertyChanged(); }
-        }
-
-        private string _dGUOuterColor = "Clear";
-        public string DGUOuterColor
-        {
-            get => _dGUOuterColor;
-            set { _dGUOuterColor = value; OnPropertyChanged(); AddToColorHistory(value); }
-        }
-
-        private double _dGUOuterPrice = 100;
-        public double DGUOuterPrice
-        {
-            get => _dGUOuterPrice;
-            set { _dGUOuterPrice = value; OnPropertyChanged(); }
-        }
-
-        // ==================== AIR SPACER FIELDS ====================
+        // ASP Thickness - triggers auto price update
         private string _dGUAirSpacerThickness = "12";
         public string DGUAirSpacerThickness
         {
             get => _dGUAirSpacerThickness;
             set
             {
-                _dGUAirSpacerThickness = value;
-                OnPropertyChanged();
-                UpdateAirSpacerPrice();
+                if (SetProperty(ref _dGUAirSpacerThickness, value))
+                {
+                    // Reset manual mode when selection changes
+                    if (_isASPPriceManual)
+                    {
+                        _isASPPriceManual = false;
+                        OnPropertyChanged(nameof(IsASPPriceManual));
+                        OnPropertyChanged(nameof(ASPPriceModeText));
+                    }
+                    UpdateAirSpacerPrice();
+                }
             }
         }
 
+        // ASP Type - triggers auto price update
         private string _dGUAirSpacerType = "Normal";
         public string DGUAirSpacerType
         {
             get => _dGUAirSpacerType;
             set
             {
-                _dGUAirSpacerType = value;
-                OnPropertyChanged();
-                UpdateAirSpacerPrice();
-            }
-        }
-
-        private double _dGUASPPrice = 15;
-        public double DGUASPPrice
-        {
-            get => _dGUASPPrice;
-            set { _dGUASPPrice = value; OnPropertyChanged(); }
-        }
-
-        private bool _isASPPriceManual = false;
-        public bool IsASPPriceManual
-        {
-            get => _isASPPriceManual;
-            set { _isASPPriceManual = value; OnPropertyChanged(); }
-        }
-
-        private void UpdateAirSpacerPrice()
-        {
-            if (IsASPPriceManual) return;
-
-            var option = AirSpacerOptions.FirstOrDefault(x =>
-                x.Thickness == DGUAirSpacerThickness &&
-                x.Type == DGUAirSpacerType);
-
-            if (option != null)
-            {
-                DGUASPPrice = option.Price;
-            }
-        }
-
-        private string _dGUInnerThickness = "6";
-        public string DGUInnerThickness
-        {
-            get => _dGUInnerThickness;
-            set { _dGUInnerThickness = value; OnPropertyChanged(); }
-        }
-
-        private string _dGUInnerColor = "Clear";
-        public string DGUInnerColor
-        {
-            get => _dGUInnerColor;
-            set { _dGUInnerColor = value; OnPropertyChanged(); AddToColorHistory(value); }
-        }
-
-        private double _dGUInnerPrice = 100;
-        public double DGUInnerPrice
-        {
-            get => _dGUInnerPrice;
-            set { _dGUInnerPrice = value; OnPropertyChanged(); }
-        }
-
-        private double _dGUWasteFactor = 0.85;
-        public double DGUWasteFactor
-        {
-            get => _dGUWasteFactor;
-            set { _dGUWasteFactor = value; OnPropertyChanged(); }
-        }
-
-        private double _dGUProfitPercent = 15;
-        public double DGUProfitPercent
-        {
-            get => _dGUProfitPercent;
-            set { _dGUProfitPercent = value; OnPropertyChanged(); }
-        }
-
-        // ==================== LAM FIELDS ====================
-        private bool _isLAMAnnealedSelected = true;
-        public bool IsLAMAnnealedSelected
-        {
-            get => _isLAMAnnealedSelected;
-            set
-            {
-                _isLAMAnnealedSelected = value;
-                OnPropertyChanged();
-                if (value) IsLAMFTSelected = false;
-            }
-        }
-
-        private bool _isLAMFTSelected;
-        public bool IsLAMFTSelected
-        {
-            get => _isLAMFTSelected;
-            set
-            {
-                _isLAMFTSelected = value;
-                OnPropertyChanged();
-                if (value) IsLAMAnnealedSelected = false;
-            }
-        }
-
-        public string LAMWorkTypeText => IsLAMFTSelected ? "FT Glass" : "Annealed";
-
-        private string _lAMOuterThickness = "6";
-        public string LAMOuterThickness
-        {
-            get => _lAMOuterThickness;
-            set { _lAMOuterThickness = value; OnPropertyChanged(); }
-        }
-
-        private string _lAMOuterColor = "Clear";
-        public string LAMOuterColor
-        {
-            get => _lAMOuterColor;
-            set { _lAMOuterColor = value; OnPropertyChanged(); AddToColorHistory(value); }
-        }
-
-        private double _lAMOuterPrice = 100;
-        public double LAMOuterPrice
-        {
-            get => _lAMOuterPrice;
-            set { _lAMOuterPrice = value; OnPropertyChanged(); }
-        }
-
-        private string _lAMPVBThickness = "0.76";
-        public string LAMPVBThickness
-        {
-            get => _lAMPVBThickness;
-            set { _lAMPVBThickness = value; OnPropertyChanged(); }
-        }
-
-        private string _lAMPVBColor = "Clear";
-        public string LAMPVBColor
-        {
-            get => _lAMPVBColor;
-            set { _lAMPVBColor = value; OnPropertyChanged(); }
-        }
-
-        private double _lAMPVBPrice = 25;
-        public double LAMPVBPrice
-        {
-            get => _lAMPVBPrice;
-            set { _lAMPVBPrice = value; OnPropertyChanged(); }
-        }
-
-        private string _lAMInnerThickness = "6";
-        public string LAMInnerThickness
-        {
-            get => _lAMInnerThickness;
-            set { _lAMInnerThickness = value; OnPropertyChanged(); }
-        }
-
-        private string _lAMInnerColor = "Clear";
-        public string LAMInnerColor
-        {
-            get => _lAMInnerColor;
-            set { _lAMInnerColor = value; OnPropertyChanged(); AddToColorHistory(value); }
-        }
-
-        private double _lAMInnerPrice = 100;
-        public double LAMInnerPrice
-        {
-            get => _lAMInnerPrice;
-            set { _lAMInnerPrice = value; OnPropertyChanged(); }
-        }
-
-        private double _lAMCutting = 10;
-        public double LAMCutting
-        {
-            get => _lAMCutting;
-            set { _lAMCutting = value; OnPropertyChanged(); }
-        }
-
-        private double _lAMTempering = 10;
-        public double LAMTempering
-        {
-            get => _lAMTempering;
-            set { _lAMTempering = value; OnPropertyChanged(); }
-        }
-
-        private double _lAMWasteFactor = 0.85;
-        public double LAMWasteFactor
-        {
-            get => _lAMWasteFactor;
-            set { _lAMWasteFactor = value; OnPropertyChanged(); }
-        }
-
-        private double _lAMProfitPercent = 15;
-        public double LAMProfitPercent
-        {
-            get => _lAMProfitPercent;
-            set { _lAMProfitPercent = value; OnPropertyChanged(); }
-        }
-
-        // ==================== GENERATED OUTPUT ====================
-        private string _generatedDescription = "";
-        public string GeneratedDescription
-        {
-            get => _generatedDescription;
-            set { _generatedDescription = value; OnPropertyChanged(); }
-        }
-
-        private double _calculatedPrice = 0;
-        public double CalculatedPrice
-        {
-            get => _calculatedPrice;
-            set { _calculatedPrice = value; OnPropertyChanged(); }
-        }
-
-        private string _priceCalculationSummary = "";
-        public string PriceCalculationSummary
-        {
-            get => _priceCalculationSummary;
-            set { _priceCalculationSummary = value; OnPropertyChanged(); }
-        }
-
-        // ==================== TARGET SPECIFICATION ====================
-        private SpecificationModel _selectedTargetSpecification;
-        public SpecificationModel SelectedTargetSpecification
-        {
-            get => _selectedTargetSpecification;
-            set
-            {
-                _selectedTargetSpecification = value;
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(SelectedSpecificationOtherCharges));
-            }
-        }
-
-        public ObservableCollection<OtherChargeModel> SelectedSpecificationOtherCharges
-        {
-            get
-            {
-                if (SelectedTargetSpecification?.OtherCharges == null)
-                    return new ObservableCollection<OtherChargeModel>();
-                return SelectedTargetSpecification.OtherCharges;
-            }
-        }
-
-        private int _selectedSpecificationId;
-        public int SelectedSpecificationId
-        {
-            get => _selectedSpecificationId;
-            set
-            {
-                _selectedSpecificationId = value;
-                OnPropertyChanged();
-
-                if (Invoice?.Specifications != null)
+                if (SetProperty(ref _dGUAirSpacerType, value))
                 {
-                    SelectedTargetSpecification = Invoice.Specifications
-                        .FirstOrDefault(s => s.Id == value);
+                    // Reset manual mode when selection changes
+                    if (_isASPPriceManual)
+                    {
+                        _isASPPriceManual = false;
+                        OnPropertyChanged(nameof(IsASPPriceManual));
+                        OnPropertyChanged(nameof(ASPPriceModeText));
+                    }
+                    UpdateAirSpacerPrice();
                 }
             }
         }
 
-        // ==================== COMMANDS ====================
-        public ICommand NewInvoiceCommand { get; }
-        public ICommand SaveInvoiceCommand { get; }
-        public ICommand OpenInvoiceCommand { get; }
-        public ICommand DeleteInvoiceCommand { get; }
-        public ICommand AddSpecificationCommand { get; }
-        public ICommand RemoveSpecificationCommand { get; }
-        public ICommand ToggleLMCommand { get; }
-        public ICommand CalculatePriceCommand { get; }
-        public ICommand IncludeInSpecificationCommand { get; }
-        public ICommand PrintCommand { get; }
-        public ICommand PasteFromExcelCommand { get; }
-
-        // Module Selection Commands
-        public ICommand SelectSGUCommand { get; }
-        public ICommand SelectDGUCommand { get; }
-        public ICommand SelectLAMCommand { get; }
-
-        // Import/Export Commands
-        public ICommand ExportCsvCommand { get; }
-        public ICommand ImportCsvCommand { get; }
-        public ICommand ImportItemsCommand { get; }
-
-        // ==================== OTHER CHARGES COMMANDS ====================
-        public ICommand AddOtherChargeCommand { get; }
-        public ICommand RemoveOtherChargeCommand { get; }
-        public ICommand CalculateOtherChargeCommand { get; }
-
-        // Constructor
-        public ProformaInvoiceViewModel()
+        // ASP Price - manual edit sets IsASPPriceManual = true
+        private double _dGUASPPrice = 45;
+        public double DGUASPPrice
         {
-            _excelCsvService = new ExcelCsvService();
-            _excelCsvService.StatusChanged += status =>
+            get => _dGUASPPrice;
+            set
             {
-                Application.Current.Dispatcher.Invoke(() => StatusMessage = status);
-            };
+                if (SetProperty(ref _dGUASPPrice, value))
+                {
+                    // Only mark as manual if user is directly editing (not from auto-update)
+                    if (!_isUpdatingASPPrice)
+                    {
+                        SetProperty(ref _isASPPriceManual, true);
+                    }
+                }
+            }
+        }
 
-            // Initialize with auto-generated invoice number (PI-2026-01 format)
-            Invoice = new ProformaInvoiceModel
-            {
-                InvoiceNo = GetNextInvoiceNo(),
-                InvoiceDate = DateTime.Now,
-                ValidUntil = DateTime.Now.AddDays(2)
-            };
+        // Manual ASP Price flag
+        private bool _isASPPriceManual = false;
+        public bool IsASPPriceManual
+        {
+            get => _isASPPriceManual;
+            set { SetProperty(ref _isASPPriceManual, value); OnPropertyChanged(nameof(ASPPriceModeText)); }
+        }
 
-            AddSpecification();
+        public string ASPPriceModeText => IsASPPriceManual ? "MANUAL ✓" : "AUTO";
 
-            // Standard Commands
+        public string DGUInnerThickness { get; set; } = "6";
+        public string DGUInnerColor { get; set; } = "Clear";
+        public double DGUInnerPrice { get; set; } = 100;
+        public double DGUWasteFactor { get; set; } = 0.85;
+        public double DGUProfitPercent { get; set; } = 15;
+
+        public bool IsLAMAnnealedSelected { get; set; } = true;
+        public bool IsLAMFTSelected { get; set; }
+        public string LAMWorkTypeText => IsLAMFTSelected ? "FT Glass" : "Annealed";
+        public string LAMOuterThickness { get; set; } = "6";
+        public string LAMOuterColor { get; set; } = "Clear";
+        public double LAMOuterPrice { get; set; } = 100;
+        public string LAMPVBThickness { get; set; } = "0.76";
+        public string LAMPVBColor { get; set; } = "Clear";
+        public double LAMPVBPrice { get; set; } = 25;
+        public string LAMInnerThickness { get; set; } = "6";
+        public string LAMInnerColor { get; set; } = "Clear";
+        public double LAMInnerPrice { get; set; } = 100;
+        public double LAMCutting { get; set; } = 10;
+        public double LAMTempering { get; set; } = 10;
+        public double LAMWasteFactor { get; set; } = 0.85;
+        public double LAMProfitPercent { get; set; } = 15;
+
+        private string _generatedDescription = "";
+        public string GeneratedDescription { get => _generatedDescription; set => SetProperty(ref _generatedDescription, value); }
+        private double _calculatedPrice;
+        public double CalculatedPrice { get => _calculatedPrice; set => SetProperty(ref _calculatedPrice, value); }
+        private string _priceCalculationSummary = "";
+        public string PriceCalculationSummary { get => _priceCalculationSummary; set => SetProperty(ref _priceCalculationSummary, value); }
+
+        private SpecificationModel _selectedTargetSpecification;
+        public SpecificationModel SelectedTargetSpecification { get => _selectedTargetSpecification; set { SetProperty(ref _selectedTargetSpecification, value); OnPropertyChanged(nameof(SelectedSpecificationOtherCharges)); } }
+        public ObservableCollection<OtherChargeModel> SelectedSpecificationOtherCharges => SelectedTargetSpecification?.OtherCharges ?? new ObservableCollection<OtherChargeModel>();
+        private int _selectedSpecificationId;
+        public int SelectedSpecificationId { get => _selectedSpecificationId; set { SetProperty(ref _selectedSpecificationId, value); if (Invoice?.Specifications != null) SelectedTargetSpecification = Invoice.Specifications.FirstOrDefault(s => s.Id == value); } }
+
+        public ICommand NewInvoiceCommand { get; private set; } = null!;
+        public ICommand SaveInvoiceCommand { get; private set; } = null!;
+        public ICommand OpenInvoiceCommand { get; private set; } = null!;
+        public ICommand DeleteInvoiceCommand { get; private set; } = null!;
+        public ICommand AddSpecificationCommand { get; private set; } = null!;
+        public ICommand RemoveSpecificationCommand { get; private set; } = null!;
+        public ICommand ToggleLMCommand { get; private set; } = null!;
+        public ICommand CalculatePriceCommand { get; private set; } = null!;
+        public ICommand IncludeInSpecificationCommand { get; private set; } = null!;
+        public ICommand PrintCommand { get; private set; } = null!;
+        public ICommand PasteFromExcelCommand { get; private set; } = null!;
+        public ICommand SelectSGUCommand { get; private set; } = null!;
+        public ICommand SelectDGUCommand { get; private set; } = null!;
+        public ICommand SelectLAMCommand { get; private set; } = null!;
+        public ICommand ExportCsvCommand { get; private set; } = null!;
+        public ICommand ImportCsvCommand { get; private set; } = null!;
+        public ICommand ImportItemsCommand { get; private set; } = null!;
+        public ICommand AddOtherChargeCommand { get; private set; } = null!;
+        public ICommand RemoveOtherChargeCommand { get; private set; } = null!;
+        public ICommand CalculateOtherChargeCommand { get; private set; } = null!;
+        public ICommand ResetASPPriceCommand { get; private set; } = null!;
+        public ICommand DebugCsvCommand { get; private set; } = null!;
+        public ICommand TestCsvRoundTripCommand { get; private set; } = null!;
+
+        private void InitializeCommands()
+        {
             NewInvoiceCommand = new RelayCommand(_ => NewInvoice());
             SaveInvoiceCommand = new RelayCommand(_ => SaveInvoice());
             OpenInvoiceCommand = new RelayCommand(_ => OpenInvoice());
             DeleteInvoiceCommand = new RelayCommand(_ => DeleteInvoice());
             AddSpecificationCommand = new RelayCommand(_ => AddSpecification());
-            RemoveSpecificationCommand = new RelayCommand(_ => RemoveSpecification(), _ => Invoice.Specifications.Count > 0);
+            RemoveSpecificationCommand = new RelayCommand(_ => RemoveSpecification(), _ => Invoice?.Specifications?.Count > 0);
             ToggleLMCommand = new RelayCommand(_ => ToggleLM());
             CalculatePriceCommand = new RelayCommand(_ => CalculatePrice());
             IncludeInSpecificationCommand = new RelayCommand(_ => IncludeInSpecification(), _ => CanIncludeInSpecification());
             PrintCommand = new RelayCommand(_ => PrintInvoice());
             PasteFromExcelCommand = new RelayCommand(_ => PasteFromExcel());
-
-            // Module Selection Commands
-            SelectSGUCommand = new RelayCommand(_ => SelectSGU());
-            SelectDGUCommand = new RelayCommand(_ => SelectDGU());
-            SelectLAMCommand = new RelayCommand(_ => SelectLAM());
-
-            // Import/Export Commands
+            SelectSGUCommand = new RelayCommand(_ => { IsSGUSelected = true; });
+            SelectDGUCommand = new RelayCommand(_ => { IsDGUSelected = true; });
+            SelectLAMCommand = new RelayCommand(_ => { IsLAMSelected = true; });
             ExportCsvCommand = new RelayCommand(_ => ExportToCsv());
             ImportCsvCommand = new RelayCommand(_ => ImportFromCsv());
             ImportItemsCommand = new RelayCommand(_ => ImportItemsFromCsv());
-
-            // Other Charges Commands
             AddOtherChargeCommand = new RelayCommand(_ => AddOtherCharge());
             RemoveOtherChargeCommand = new RelayCommand(param => RemoveOtherCharge(param as OtherChargeModel));
             CalculateOtherChargeCommand = new RelayCommand(_ => CalculateAllOtherCharges());
-
-            LoadSavedFiles();
+            ResetASPPriceCommand = new RelayCommand(_ => ResetASPPriceToAuto());
+            DebugCsvCommand = new RelayCommand(_ => DebugCsvImport());
+            TestCsvRoundTripCommand = new RelayCommand(_ => TestCsvRoundTrip());
         }
 
-        private bool CanIncludeInSpecification()
+        private void ResetASPPriceToAuto()
         {
-            return CalculatedPrice > 0 &&
-                   SelectedTargetSpecification != null &&
-                   Invoice?.Specifications?.Contains(SelectedTargetSpecification) == true;
+            IsASPPriceManual = false;
+            UpdateAirSpacerPrice();
         }
 
-        // ==================== MODULE SELECTION METHODS ====================
-        private void SelectSGU()
+        private void UpdateAirSpacerPrice()
         {
-            IsSGUSelected = true;
-            IsDGUSelected = false;
-            IsLAMSelected = false;
-        }
+            // Skip if in manual mode
+            if (_isASPPriceManual) return;
 
-        private void SelectDGU()
-        {
-            IsDGUSelected = true;
-            IsSGUSelected = false;
-            IsLAMSelected = false;
-        }
+            _isUpdatingASPPrice = true;
 
-        private void SelectLAM()
-        {
-            IsLAMSelected = true;
-            IsSGUSelected = false;
-            IsDGUSelected = false;
-        }
+            // Find matching option from the table
+            var option = AirSpacerOptions.FirstOrDefault(x =>
+                x.Thickness == _dGUAirSpacerThickness &&
+                x.Type == _dGUAirSpacerType);
 
-        // ==================== COLOR HISTORY ====================
-        private void AddToColorHistory(string color)
-        {
-            if (string.IsNullOrWhiteSpace(color)) return;
-            if (!ColorHistory.Contains(color))
+            if (option != null)
             {
-                ColorHistory.Add(color);
+                // Directly update the field and notify (bypass the setter logic)
+                _dGUASPPrice = option.Price;
+                OnPropertyChanged(nameof(DGUASPPrice));
             }
+
+            _isUpdatingASPPrice = false;
         }
 
-        // ==================== METHODS ====================
+        private void CreateNewInvoice()
+        {
+            Invoice = new ProformaInvoiceModel { InvoiceNo = GetNextSequentialInvoiceNo(), InvoiceDate = DateTime.Now, ValidUntil = DateTime.Now.AddDays(2) };
+            CurrentFileName = "Untitled";
+            AddSpecification();
+        }
 
         private void NewInvoice()
         {
             if (Invoice.IsDirty)
             {
-                var result = MessageBox.Show("Save changes before creating new invoice?",
-                    "Save Changes", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+                var result = MessageBox.Show("Save changes before creating new invoice?", "Save Changes", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
                 if (result == MessageBoxResult.Yes) SaveInvoice();
                 else if (result == MessageBoxResult.Cancel) return;
             }
-
-            // Create new invoice with auto-generated number (PI-2026-01 format)
-            Invoice = new ProformaInvoiceModel
-            {
-                InvoiceNo = GetNextInvoiceNo(),
-                InvoiceDate = DateTime.Now,
-                ValidUntil = DateTime.Now.AddDays(2)
-            };
-            CurrentFileName = "Untitled";
-
-            AddSpecification();
-
-            LoadSavedFiles();
+            CreateNewInvoice();
+            StatusMessage = "✅ New invoice created";
         }
 
         private void SaveInvoice()
         {
             try
             {
-                var dialog = new SaveFileDialog
-                {
-                    Filter = "JSON Files (*.json)|*.json",
-                    InitialDirectory = GetDataFolder(),
-                    FileName = $"{Invoice.InvoiceNo}.json"
-                };
-
+                var dialog = new SaveFileDialog { Filter = "JSON Files (*.json)|*.json", InitialDirectory = GetDataFolder(), FileName = $"{Invoice.InvoiceNo}.json" };
                 if (dialog.ShowDialog() == true)
                 {
                     Invoice.CalculateTotals();
@@ -829,100 +368,38 @@ namespace ProGlassAutomation.ViewModels
                     Invoice.IsDirty = false;
                     CurrentFileName = Path.GetFileNameWithoutExtension(dialog.FileName);
                     LoadSavedFiles();
-                    StatusMessage = $"✅ Invoice saved: {CurrentFileName}";
+                    StatusMessage = $"✅ Saved: {CurrentFileName}";
                 }
             }
-            catch (Exception ex)
-            {
-                StatusMessage = $"❌ Error: {ex.Message}";
-                MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            catch (Exception ex) { StatusMessage = $"❌ Error: {ex.Message}"; MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
         }
 
         private void OpenInvoice()
         {
             try
             {
-                var dialog = new OpenFileDialog
-                {
-                    Filter = "JSON Files (*.json)|*.json",
-                    InitialDirectory = GetDataFolder()
-                };
-
+                var dialog = new OpenFileDialog { Filter = "JSON Files (*.json)|*.json", InitialDirectory = GetDataFolder() };
                 if (dialog.ShowDialog() == true)
                 {
                     var json = File.ReadAllText(dialog.FileName);
                     var invoice = JsonConvert.DeserializeObject<ProformaInvoiceModel>(json);
-                    if (invoice != null)
-                    {
-                        Invoice = invoice;
-                        CurrentFileName = Path.GetFileNameWithoutExtension(dialog.FileName);
-                        Invoice.CalculateTotals();
-                        StatusMessage = $"✅ Opened: {CurrentFileName}";
-                    }
+                    if (invoice != null) { Invoice = invoice; CurrentFileName = Path.GetFileNameWithoutExtension(dialog.FileName); Invoice.CalculateTotals(); StatusMessage = $"✅ Opened: {CurrentFileName}"; }
                 }
             }
-            catch (Exception ex)
-            {
-                StatusMessage = $"❌ Error: {ex.Message}";
-                MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            catch (Exception ex) { StatusMessage = $"❌ Error: {ex.Message}"; MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
         }
 
         private void DeleteInvoice()
         {
-            try
+            var result = MessageBox.Show($"Delete '{CurrentFileName}'?\nThis cannot be undone.", "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (result == MessageBoxResult.Yes)
             {
-                var result = MessageBox.Show(
-                    $"Are you sure you want to delete '{CurrentFileName}'?\nThis action cannot be undone.",
-                    "Confirm Delete",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Warning);
-
-                if (result == MessageBoxResult.Yes)
+                try
                 {
                     string filePath = Path.Combine(GetDataFolder(), $"{CurrentFileName}.json");
-                    if (File.Exists(filePath))
-                    {
-                        File.Delete(filePath);
-                        LoadSavedFiles();
-                        StatusMessage = $"✅ Deleted: {CurrentFileName}";
-                        NewInvoice();
-                    }
+                    if (File.Exists(filePath)) { File.Delete(filePath); LoadSavedFiles(); StatusMessage = $"✅ Deleted: {CurrentFileName}"; CreateNewInvoice(); }
                 }
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"❌ Delete failed: {ex.Message}";
-                MessageBox.Show($"Delete failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        private void PrintInvoice()
-        {
-            try
-            {
-                var window = Application.Current.Windows.OfType<Window>()
-                    .FirstOrDefault(w => w.DataContext == this);
-
-                if (window != null)
-                {
-                    var printDialog = new System.Windows.Controls.PrintDialog();
-                    if (printDialog.ShowDialog() == true)
-                    {
-                        printDialog.PrintVisual(window.Content as System.Windows.Media.Visual, "ProForma Invoice");
-                        StatusMessage = "✅ Printed successfully";
-                    }
-                }
-                else
-                {
-                    StatusMessage = "❌ Cannot find window to print";
-                }
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"❌ Print failed: {ex.Message}";
-                MessageBox.Show($"Print failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                catch (Exception ex) { StatusMessage = $"❌ Delete failed: {ex.Message}"; }
             }
         }
 
@@ -937,78 +414,66 @@ namespace ProGlassAutomation.ViewModels
         {
             SavedFiles.Clear();
             string folder = GetDataFolder();
-
-            if (Directory.Exists(folder))
+            if (!Directory.Exists(folder)) return;
+            foreach (var file in Directory.GetFiles(folder, "*.json").OrderByDescending(f => new FileInfo(f).LastWriteTime))
             {
-                foreach (var file in Directory.GetFiles(folder, "*.json").OrderByDescending(f => new FileInfo(f).LastWriteTime))
+                try
                 {
-                    try
-                    {
-                        var json = File.ReadAllText(file);
-                        var invoice = JsonConvert.DeserializeObject<ProformaInvoiceModel>(json);
-                        if (invoice != null)
-                        {
-                            SavedFiles.Add(new FileListItem
-                            {
-                                FilePath = file,
-                                InvoiceNo = invoice.InvoiceNo,
-                                CustomerName = invoice.CustomerName,
-                                InvoiceDate = invoice.InvoiceDate
-                            });
-                        }
-                    }
-                    catch { }
+                    var json = File.ReadAllText(file);
+                    var invoice = JsonConvert.DeserializeObject<ProformaInvoiceModel>(json);
+                    if (invoice != null) SavedFiles.Add(new FileListItem { FilePath = file, InvoiceNo = invoice.InvoiceNo, CustomerName = invoice.CustomerName, InvoiceDate = invoice.InvoiceDate });
                 }
+                catch { }
             }
             OnPropertyChanged(nameof(HasSavedFiles));
         }
 
+        private void PrintInvoice()
+        {
+            try
+            {
+                var window = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.DataContext == this);
+                if (window?.Content is System.Windows.Media.Visual visual)
+                {
+                    var printDialog = new System.Windows.Controls.PrintDialog();
+                    if (printDialog.ShowDialog() == true) { printDialog.PrintVisual(visual, "ProForma Invoice"); StatusMessage = "✅ Printed successfully"; }
+                }
+                else { StatusMessage = "❌ Cannot find window to print"; }
+            }
+            catch (Exception ex) { StatusMessage = $"❌ Print failed: {ex.Message}"; }
+        }
+
         private void AddSpecification()
         {
-            var spec = new SpecificationModel
+            var spec = new SpecificationModel { SpecificationName = $"Specification {Invoice.Specifications.Count + 1}", Id = Invoice.Specifications.Count };
+            // Only add starter row for brand new invoice
+            if (spec.Items.Count == 0)
             {
-                SpecificationName = $"Specification {Invoice.Specifications.Count + 1}",
-                Id = Invoice.Specifications.Count
-            };
+                var firstItem = new InvoiceItemModel
+                {
+                    SrNo = 1,
+                    SurchargePercent = 20
+                };
 
-            var firstItem = new InvoiceItemModel
-            {
-                SrNo = 1,
-                SurchargePercent = 20
-            };
-            spec.Items.Add(firstItem);
-
+                spec.Items.Add(firstItem);
+            }
             Invoice.Specifications.Add(spec);
             SelectedTargetSpecification = spec;
-
             SubscribeToOtherChargeChanges();
         }
 
         private void RemoveSpecification()
         {
-            if (Invoice.Specifications.Count > 0)
-            {
-                Invoice.Specifications.RemoveAt(Invoice.Specifications.Count - 1);
-                if (Invoice.Specifications.Count > 0)
-                    SelectedTargetSpecification = Invoice.Specifications.Last();
-                else
-                    SelectedTargetSpecification = null;
-            }
+            if (Invoice.Specifications.Count <= 0) return;
+            Invoice.Specifications.RemoveAt(Invoice.Specifications.Count - 1);
+            SelectedTargetSpecification = Invoice.Specifications.LastOrDefault();
         }
 
         public void AddItemWithPrice(SpecificationModel spec)
         {
             if (spec == null) return;
-
             var newItem = new InvoiceItemModel { SrNo = spec.Items.Count + 1 };
-
-            if (spec.Items.Count > 0)
-            {
-                var firstRow = spec.Items[0];
-                newItem.Price = firstRow.Price;
-                newItem.SurchargePercent = firstRow.SurchargePercent;
-            }
-
+            if (spec.Items.Count > 0) { newItem.Price = spec.Items[0].Price; newItem.SurchargePercent = spec.Items[0].SurchargePercent; }
             spec.Items.Add(newItem);
             Invoice.IsDirty = true;
         }
@@ -1017,318 +482,45 @@ namespace ProGlassAutomation.ViewModels
         {
             if (item == null) return;
             var spec = Invoice.Specifications.FirstOrDefault(s => s.Items.Contains(item));
-            if (spec != null && spec.Items.Count > 1)
-            {
-                spec.Items.Remove(item);
-                for (int i = 0; i < spec.Items.Count; i++)
-                    spec.Items[i].SrNo = i + 1;
-                Invoice.IsDirty = true;
-            }
+            if (spec != null && spec.Items.Count > 1) { spec.Items.Remove(item); for (int i = 0; i < spec.Items.Count; i++) spec.Items[i].SrNo = i + 1; Invoice.IsDirty = true; }
         }
 
-        private void ToggleLM()
-        {
-            IsLMVisible = !IsLMVisible;
-        }
+        private void ToggleLM() => IsLMVisible = !IsLMVisible;
 
-        // ==================== OTHER CHARGES METHODS ====================
-        private void SubscribeToOtherChargeChanges()
-        {
-            if (Invoice?.Specifications == null) return;
-
-            foreach (var spec in Invoice.Specifications)
-            {
-                if (spec?.OtherCharges == null) continue;
-
-                foreach (var charge in spec.OtherCharges)
-                {
-                    if (charge != null)
-                    {
-                        charge.PropertyChanged -= OtherCharge_PropertyChanged;
-                        charge.PropertyChanged += OtherCharge_PropertyChanged;
-                    }
-                }
-            }
-        }
-
-        private void OtherCharge_PropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if (sender is not OtherChargeModel charge) return;
-
-            // When Type changes, recalculate Value
-            if (e.PropertyName == nameof(OtherChargeModel.Type))
-            {
-                UpdateChargeValue(charge);
-            }
-
-            // When LinkedSpecIndex changes, recalculate Value
-            if (e.PropertyName == nameof(OtherChargeModel.LinkedSpecIndex))
-            {
-                UpdateChargeValue(charge);
-            }
-
-            // Update totals when any property changes
-            if (SelectedTargetSpecification != null)
-            {
-                SelectedTargetSpecification.CalculateOtherChargesTotal();
-                Invoice.CalculateTotals();
-                Invoice.IsDirty = true;
-            }
-        }
-
-        private void AddOtherCharge()
-        {
-            if (SelectedTargetSpecification == null)
-            {
-                MessageBox.Show("Please select a specification first!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            var charge = new OtherChargeModel
-            {
-                Name = "New Charge",
-                Type = "amount",
-                Value = 1,
-                Rate = 0,
-                Amount = 0,
-                LmDimType = "w1h1",
-                LinkedSpecIndex = SelectedTargetSpecification.Id
-            };
-
-            SelectedTargetSpecification.OtherCharges.Add(charge);
-            Invoice.IsDirty = true;
-            OnPropertyChanged(nameof(SelectedSpecificationOtherCharges));
-
-            // Subscribe to property changes
-            charge.PropertyChanged += OtherCharge_PropertyChanged;
-
-            // Auto-calculate value based on type
-            UpdateChargeValue(charge);
-        }
-
-        private void RemoveOtherCharge(OtherChargeModel charge)
-        {
-            if (charge == null || SelectedTargetSpecification == null) return;
-
-            charge.PropertyChanged -= OtherCharge_PropertyChanged;
-            SelectedTargetSpecification.OtherCharges.Remove(charge);
-            Invoice.IsDirty = true;
-            SelectedTargetSpecification.CalculateOtherChargesTotal();
-            Invoice.CalculateTotals();
-            OnPropertyChanged(nameof(SelectedSpecificationOtherCharges));
-        }
-
-        private void CalculateAllOtherCharges()
-        {
-            if (SelectedTargetSpecification == null) return;
-
-            foreach (var charge in SelectedTargetSpecification.OtherCharges)
-            {
-                CalculateOtherChargeValue(charge, SelectedTargetSpecification);
-            }
-
-            SelectedTargetSpecification.CalculateOtherChargesTotal();
-            Invoice.CalculateTotals();
-            Invoice.IsDirty = true;
-        }
-
-        private void UpdateChargeValue(OtherChargeModel charge)
-        {
-            if (charge == null || SelectedTargetSpecification == null) return;
-
-            switch (charge.Type?.ToLower())
-            {
-                case "lm":
-                    charge.Value = CalculateLMValue(SelectedTargetSpecification, charge.LmDimType);
-                    break;
-                case "sqm":
-                    charge.Value = CalculateSQMValue(SelectedTargetSpecification);
-                    break;
-                case "qty":
-                    charge.Value = CalculateQtyValue(SelectedTargetSpecification);
-                    break;
-                case "holes":
-                    charge.Value = CalculateQtyValue(SelectedTargetSpecification) * 2;
-                    break;
-                case "cutout":
-                    charge.Value = CalculateQtyValue(SelectedTargetSpecification) * 2;
-                    break;
-                case "amount":
-                default:
-                    charge.Value = 1;
-                    break;
-            }
-        }
-
-        private void CalculateOtherChargeValue(OtherChargeModel charge, SpecificationModel spec)
-        {
-            if (charge == null || spec == null) return;
-
-            switch (charge.Type?.ToLower())
-            {
-                case "lm":
-                    charge.Value = CalculateLMValue(spec, charge.LmDimType);
-                    break;
-                case "sqm":
-                    charge.Value = CalculateSQMValue(spec);
-                    break;
-                case "qty":
-                    charge.Value = CalculateQtyValue(spec);
-                    break;
-                case "holes":
-                    charge.Value = CalculateQtyValue(spec) * 2;
-                    break;
-                case "cutout":
-                    charge.Value = CalculateQtyValue(spec) * 2;
-                    break;
-                case "amount":
-                default:
-                    charge.Value = 1;
-                    break;
-            }
-
-            charge.Amount = Math.Round(charge.Value * charge.Rate, 2);
-        }
-
-        private double CalculateLMValue(SpecificationModel spec, string dimType)
-        {
-            double totalLM = 0;
-            int multiplier = GetModuleMultiplier(spec.ModuleType);
-
-            foreach (var item in spec.Items)
-            {
-                double lm = CalculateRowLM(item, dimType);
-                totalLM += lm * item.Qty * multiplier;
-            }
-
-            return Math.Round(totalLM, 4);
-        }
-
-        private double CalculateRowLM(InvoiceItemModel item, string dimType)
-        {
-            double w1 = item.Width1 / 1000.0;
-            double h1 = item.Height1 / 1000.0;
-            double w2 = item.Width2 / 1000.0;
-            double h2 = item.Height2 / 1000.0;
-
-            return dimType switch
-            {
-                "w1h1" => 2 * (w1 + h1),
-                "4w1h1" => 4 * (w1 + h1),
-                "2w1" => 2 * w1,
-                "2h1" => 2 * h1,
-                "w1_only" => w1,
-                "h1_only" => h1,
-                "w2h2" => 2 * (w2 + h2),
-                "2w2" => 2 * w2,
-                "2h2" => 2 * h2,
-                "w2_only" => w2,
-                "h2_only" => h2,
-                _ => 2 * (w1 + h1)
-            };
-        }
-
-        private double CalculateSQMValue(SpecificationModel spec)
-        {
-            double totalSQM = 0;
-
-            foreach (var item in spec.Items)
-            {
-                totalSQM += item.TotalSQM;
-            }
-
-            return Math.Round(totalSQM, 4);
-        }
-
-        private double CalculateQtyValue(SpecificationModel spec)
-        {
-            int totalQty = 0;
-            int multiplier = GetModuleMultiplier(spec.ModuleType);
-
-            foreach (var item in spec.Items)
-            {
-                totalQty += item.Qty * multiplier;
-            }
-
-            return totalQty;
-        }
-
-        private int GetModuleMultiplier(string moduleType)
-        {
-            return moduleType switch
-            {
-                "DGU" => 2,
-                "LAM" => 2,
-                _ => 1
-            };
-        }
-
-        // ==================== CALCULATE PRICE ====================
         private void CalculatePrice()
         {
-            if (IsSGUSelected)
-                CalculateSGUPrice();
-            else if (IsDGUSelected)
-                CalculateDGUPrice();
-            else if (IsLAMSelected)
-                CalculateLAMPrice();
+            if (IsSGUSelected) CalculateSGUPrice();
+            else if (IsDGUSelected) CalculateDGUPrice();
+            else if (IsLAMSelected) CalculateLAMPrice();
         }
 
         private void CalculateSGUPrice()
         {
-            // Formula: ((SheetPrice / WasteFactor) + Cutting + Tempering) * (1 + Profit/100)
-            double step1 = SGUSheetPrice / SGUWasteFactor;
-            double step2 = step1 + SGUCutting;
-            double step3 = step2 + SGUTempering;
-            double final = step3 * (1 + SGUProfitPercent / 100);
-
-            CalculatedPrice = Math.Round(final, 2);
-            GeneratedDescription = $"{SelectedThickness}mm {SelectedColor} {WorkTypeText}";
-            PriceCalculationSummary = $"({SGUSheetPrice} / {SGUWasteFactor:F2}) + {SGUCutting} + {SGUTempering} = {step3:F2} × {1 + SGUProfitPercent / 100:F2} = {CalculatedPrice:F2}";
+            CalculatedPrice = _priceCalculator.CalculateSGU(SGUSheetPrice, SGUCutting, SGUTempering, SGUWasteFactor, SGUProfitPercent, SelectedThickness, SelectedColor, WorkTypeText, out string description, out string summary);
+            GeneratedDescription = description;
+            PriceCalculationSummary = summary;
         }
 
         private void CalculateDGUPrice()
         {
-            // Formula: ((OuterPrice + InnerPrice) / WasteFactor + ASPPrice) * (1 + Profit/100)
-            double glassTotal = DGUOuterPrice + DGUInnerPrice;
-            double step1 = glassTotal / DGUWasteFactor;
-            double step2 = step1 + DGUASPPrice;
-            double final = step2 * (1 + DGUProfitPercent / 100);
-
-            CalculatedPrice = Math.Round(final, 2);
-            string uInsertText = IsDGUIncludeInSpec ? "with U-Insert" : "";
-            string spacerDesc = $"{DGUAirSpacerThickness}mm {DGUAirSpacerType} ASP";
-            GeneratedDescription = $"{DGUOuterThickness}mm {DGUOuterColor} {DGUWorkTypeText} + {spacerDesc} {uInsertText} + {DGUInnerThickness}mm {DGUInnerColor} {DGUWorkTypeText}";
-            PriceCalculationSummary = $"(({DGUOuterPrice} + {DGUInnerPrice}) / {DGUWasteFactor:F2}) + {DGUASPPrice} = {step2:F2} × {1 + DGUProfitPercent / 100:F2} = {CalculatedPrice:F2}";
+            CalculatedPrice = _priceCalculator.CalculateDGU(DGUOuterPrice, DGUInnerPrice, DGUASPPrice, DGUWasteFactor, DGUProfitPercent, DGUOuterThickness, DGUOuterColor, DGUWorkTypeText, DGUAirSpacerThickness, DGUAirSpacerType, IsDGUIncludeInSpec, DGUInnerThickness, DGUInnerColor, out string description, out string summary);
+            GeneratedDescription = description;
+            PriceCalculationSummary = summary;
         }
 
         private void CalculateLAMPrice()
         {
-            // Formula: ((OuterPrice + PVBPrice + InnerPrice) / WasteFactor + Cutting + Tempering) * (1 + Profit/100)
-            double glassTotal = LAMOuterPrice + LAMPVBPrice + LAMInnerPrice;
-            double step1 = glassTotal / LAMWasteFactor;
-            double step2 = step1 + LAMCutting + LAMTempering;
-            double final = step2 * (1 + LAMProfitPercent / 100);
-
-            CalculatedPrice = Math.Round(final, 2);
-            GeneratedDescription = $"{LAMOuterThickness}mm {LAMOuterColor} {LAMWorkTypeText} + {LAMPVBThickness}mm PVB ({LAMPVBColor}) + {LAMInnerThickness}mm {LAMInnerColor} {LAMWorkTypeText}";
-            PriceCalculationSummary = $"({LAMOuterPrice} + {LAMPVBPrice} + {LAMInnerPrice}) / {LAMWasteFactor:F2} + {LAMCutting} + {LAMTempering} = {step2:F2} × {1 + LAMProfitPercent / 100:F2} = {CalculatedPrice:F2}";
+            CalculatedPrice = _priceCalculator.CalculateLAM(LAMOuterPrice, LAMPVBPrice, LAMInnerPrice, LAMCutting, LAMTempering, LAMWasteFactor, LAMProfitPercent, LAMOuterThickness, LAMOuterColor, LAMWorkTypeText, LAMPVBThickness, LAMPVBColor, LAMInnerThickness, LAMInnerColor, out string description, out string summary);
+            GeneratedDescription = description;
+            PriceCalculationSummary = summary;
         }
 
-        // ==================== INCLUDE IN SPECIFICATION ====================
+        private bool CanIncludeInSpecification() => CalculatedPrice > 0 && SelectedTargetSpecification != null;
+
         private void IncludeInSpecification()
         {
-            if (SelectedTargetSpecification == null)
-            {
-                MessageBox.Show("Please select a target specification!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            if (CalculatedPrice <= 0)
-            {
-                MessageBox.Show("Please calculate price first!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
+            if (SelectedTargetSpecification == null) { MessageBox.Show("Please select a target specification!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            if (CalculatedPrice <= 0) { MessageBox.Show("Please calculate price first!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
 
             if (IsSGUSelected)
             {
@@ -1369,116 +561,235 @@ namespace ProGlassAutomation.ViewModels
             SelectedTargetSpecification.SpecificationName = GeneratedDescription;
             SelectedTargetSpecification.BasePrice = CalculatedPrice;
 
+            // ✅ FIX: Update first item's price to match calculated price
             if (SelectedTargetSpecification.Items.Count > 0)
             {
                 SelectedTargetSpecification.SurchargePercent = SelectedTargetSpecification.Items[0].SurchargePercent;
+
+                // Update first item's price
+                SelectedTargetSpecification.Items[0].Price = CalculatedPrice;
+
+                // Also update all other items if they have 0 price
+                foreach (var item in SelectedTargetSpecification.Items)
+                {
+                    if (item.Price == 0)
+                    {
+                        item.Price = CalculatedPrice;
+                    }
+                }
             }
 
             Invoice.CalculateTotals();
             Invoice.IsDirty = true;
-
             StatusMessage = $"✅ Applied '{GeneratedDescription}' @ AED {CalculatedPrice:N2}";
         }
 
-        // ==================== IMPORT/EXPORT METHODS ====================
+        private void SubscribeToOtherChargeChanges()
+        {
+            if (Invoice?.Specifications == null) return;
+            foreach (var spec in Invoice.Specifications)
+            {
+                if (spec?.OtherCharges == null) continue;
+                foreach (var charge in spec.OtherCharges) if (charge != null) charge.PropertyChanged += OtherCharge_PropertyChanged;
+            }
+        }
+
+        private void OtherCharge_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (sender is not OtherChargeModel charge) return;
+            if (e.PropertyName == nameof(OtherChargeModel.Type)) UpdateChargeValue(charge);
+            if (e.PropertyName == nameof(OtherChargeModel.LinkedSpecIndex)) UpdateChargeValue(charge);
+            if (SelectedTargetSpecification != null) { SelectedTargetSpecification.CalculateOtherChargesTotal(); Invoice.CalculateTotals(); Invoice.IsDirty = true; }
+        }
+
+        private void AddOtherCharge()
+        {
+            if (SelectedTargetSpecification == null) { MessageBox.Show("Please select a specification first!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            var charge = new OtherChargeModel { Name = "New Charge", Type = "amount", Value = 1, Rate = 0, Amount = 0, LmDimType = "w1h1", LinkedSpecIndex = SelectedTargetSpecification.Id };
+            SelectedTargetSpecification.OtherCharges.Add(charge);
+            charge.PropertyChanged += OtherCharge_PropertyChanged;
+            Invoice.IsDirty = true;
+            OnPropertyChanged(nameof(SelectedSpecificationOtherCharges));
+            UpdateChargeValue(charge);
+        }
+
+        private void RemoveOtherCharge(OtherChargeModel? charge)
+        {
+            if (charge == null || SelectedTargetSpecification == null) return;
+            charge.PropertyChanged -= OtherCharge_PropertyChanged;
+            SelectedTargetSpecification.OtherCharges.Remove(charge);
+            SelectedTargetSpecification.CalculateOtherChargesTotal();
+            Invoice.CalculateTotals();
+            Invoice.IsDirty = true;
+            OnPropertyChanged(nameof(SelectedSpecificationOtherCharges));
+        }
+
+        private void CalculateAllOtherCharges()
+        {
+            if (SelectedTargetSpecification == null) return;
+            foreach (var charge in SelectedTargetSpecification.OtherCharges) CalculateOtherChargeValue(charge, SelectedTargetSpecification);
+            SelectedTargetSpecification.CalculateOtherChargesTotal();
+            Invoice.CalculateTotals();
+            Invoice.IsDirty = true;
+        }
+
+        private void UpdateChargeValue(OtherChargeModel charge)
+        {
+            if (charge == null || SelectedTargetSpecification == null) return;
+            switch (charge.Type?.ToLower())
+            {
+                case "lm": charge.Value = CalculateLMValue(SelectedTargetSpecification, charge.LmDimType); break;
+                case "sqm": charge.Value = CalculateSQMValue(SelectedTargetSpecification); break;
+                case "qty": charge.Value = CalculateQtyValue(SelectedTargetSpecification); break;
+                case "holes": charge.Value = CalculateQtyValue(SelectedTargetSpecification) * 2; break;
+                case "cutout": charge.Value = CalculateQtyValue(SelectedTargetSpecification) * 2; break;
+                default: charge.Value = 1; break;
+            }
+        }
+
+        private void CalculateOtherChargeValue(OtherChargeModel charge, SpecificationModel spec)
+        {
+            if (charge == null || spec == null) return;
+            switch (charge.Type?.ToLower())
+            {
+                case "lm": charge.Value = CalculateLMValue(spec, charge.LmDimType); break;
+                case "sqm": charge.Value = CalculateSQMValue(spec); break;
+                case "qty": charge.Value = CalculateQtyValue(spec); break;
+                case "holes": charge.Value = CalculateQtyValue(spec) * 2; break;
+                case "cutout": charge.Value = CalculateQtyValue(spec) * 2; break;
+                default: charge.Value = 1; break;
+            }
+            charge.Amount = Math.Round(charge.Value * charge.Rate, 2);
+        }
+
+        private double CalculateLMValue(SpecificationModel spec, string dimType)
+        {
+            double totalLM = 0;
+            int multiplier = GetModuleMultiplier(spec.ModuleType);
+            foreach (var item in spec.Items) totalLM += CalculateRowLM(item, dimType) * item.Qty * multiplier;
+            return Math.Round(totalLM, 4);
+        }
+
+        private double CalculateRowLM(InvoiceItemModel item, string dimType)
+        {
+            double w1 = item.Width1 / 1000.0, h1 = item.Height1 / 1000.0;
+            double w2 = item.Width2 / 1000.0, h2 = item.Height2 / 1000.0;
+            return dimType switch
+            {
+                "w1h1" => 2 * (w1 + h1),
+                "4w1h1" => 4 * (w1 + h1),
+                "2w1" => 2 * w1,
+                "2h1" => 2 * h1,
+                "w1_only" => w1,
+                "h1_only" => h1,
+                "w2h2" => 2 * (w2 + h2),
+                "2w2" => 2 * w2,
+                "2h2" => 2 * h2,
+                "w2_only" => w2,
+                "h2_only" => h2,
+                _ => 2 * (w1 + h1)
+            };
+        }
+
+        private double CalculateSQMValue(SpecificationModel spec) => Math.Round(spec.Items.Sum(i => i.TotalSQM), 4);
+
+        private double CalculateQtyValue(SpecificationModel spec)
+        {
+            int multiplier = GetModuleMultiplier(spec.ModuleType);
+            return spec.Items.Sum(i => i.Qty) * multiplier;
+        }
+
+        private int GetModuleMultiplier(string moduleType)
+        {
+            return moduleType switch { "DGU" => 2, "LAM" => 2, _ => 1 };
+        }
+
         private void ExportToCsv()
         {
-            if (Invoice == null || Invoice.Specifications.Count == 0)
-            {
-                StatusMessage = "❌ No invoice data to export";
-                MessageBox.Show("No invoice data to export!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            try
-            {
-                Invoice.CalculateTotals();
-                _excelCsvService.ExportToCsv(Invoice);
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"❌ CSV export failed: {ex.Message}";
-                Debug.WriteLine($"[Export Error] {ex}");
-            }
+            if (Invoice == null || Invoice.Specifications.Count == 0) { StatusMessage = "❌ No invoice data to export"; MessageBox.Show("No invoice data to export!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            try { Invoice.CalculateTotals(); _excelCsvService.ExportToCsv(Invoice); StatusMessage = "✅ Exported to CSV"; }
+            catch (Exception ex) { StatusMessage = $"❌ CSV export failed: {ex.Message}"; Debug.WriteLine($"[Export Error] {ex}"); }
         }
 
         private void ImportFromCsv()
         {
             try
             {
+                Debug.WriteLine("[ImportFromCsv] Starting import...");
+
                 var importedInvoice = _excelCsvService.ImportFromCsv();
 
-                if (importedInvoice != null)
+                if (importedInvoice == null)
                 {
-                    Invoice.Specifications.Clear();
+                    StatusMessage = "❌ Import returned null";
+                    Debug.WriteLine("[ImportFromCsv] Returned null");
+                    return;
+                }
 
-                    foreach (var spec in importedInvoice.Specifications)
+                Debug.WriteLine($"[ImportFromCsv] Imported invoice: {importedInvoice.InvoiceNo}");
+                Debug.WriteLine($"[ImportFromCsv] Specifications: {importedInvoice.Specifications.Count}");
+
+                int totalItems = importedInvoice.Specifications.Sum(s => s.Items.Count);
+                Debug.WriteLine($"[ImportFromCsv] Total items: {totalItems}");
+
+                // Fix any null collections
+                foreach (var spec in importedInvoice.Specifications)
+                {
+                    if (spec.Items == null)
                     {
-                        var newSpec = new SpecificationModel
-                        {
-                            SpecificationName = spec.SpecificationName,
-                            BasePrice = spec.BasePrice,
-                            ModuleType = spec.ModuleType,
-                            WorkType = spec.WorkType,
-                            IncludeInSpec = spec.IncludeInSpec,
-                            OuterThickness = spec.OuterThickness,
-                            OuterColor = spec.OuterColor,
-                            OuterPrice = spec.OuterPrice,
-                            SpacerThickness = spec.SpacerThickness,
-                            ASPPrice = spec.ASPPrice,
-                            InnerThickness = spec.InnerThickness,
-                            InnerColor = spec.InnerColor,
-                            InnerPrice = spec.InnerPrice,
-                            PVBThickness = spec.PVBThickness,
-                            PVBColor = spec.PVBColor,
-                            PVBPrice = spec.PVBPrice
-                        };
-
-                        foreach (var item in spec.Items)
-                        {
-                            var newItem = new InvoiceItemModel
-                            {
-                                SrNo = item.SrNo,
-                                GlassRef = item.GlassRef,
-                                Qty = item.Qty,
-                                Price = item.Price,
-                                SurchargePercent = item.SurchargePercent
-                            };
-
-                            newItem.Width1 = item.Width1;
-                            newItem.Height1 = item.Height1;
-                            newItem.Width2 = item.Width2;
-                            newItem.Height2 = item.Height2;
-
-                            newSpec.Items.Add(newItem);
-                        }
-
-                        Invoice.Specifications.Add(newSpec);
+                        spec.Items = new ObservableCollection<InvoiceItemModel>();
                     }
 
-                    Invoice.InvoiceNo = importedInvoice.InvoiceNo;
-                    Invoice.InvoiceDate = importedInvoice.InvoiceDate;
-                    Invoice.ValidUntil = importedInvoice.ValidUntil;
-                    Invoice.CustomerName = importedInvoice.CustomerName;
-                    Invoice.CustomerTRN = importedInvoice.CustomerTRN;
-                    Invoice.CustomerAddress = importedInvoice.CustomerAddress;
-                    Invoice.ProjectName = importedInvoice.ProjectName;
-                    Invoice.ProjectLocation = importedInvoice.ProjectLocation;
-                    Invoice.LPONo = importedInvoice.LPONo;
-                    Invoice.AttentionName = importedInvoice.AttentionName;
-                    Invoice.ContactNo = importedInvoice.ContactNo;
+                    // Ensure serial numbers are correct
+                    for (int i = 0; i < spec.Items.Count; i++)
+                    {
+                        spec.Items[i].SrNo = i + 1;
+                    }
 
-                    Invoice.CalculateTotals();
-                    Invoice.IsDirty = true;
-
-                    CurrentFileName = "Imported";
-                    StatusMessage = $"✅ Imported {importedInvoice.Specifications.Sum(s => s.Items.Count)} items";
+                    spec.CalculateTotals();
                 }
+
+                // ✅ Create new invoice with imported data
+                Invoice = new ProformaInvoiceModel
+                {
+                    InvoiceNo = importedInvoice.InvoiceNo,
+                    InvoiceDate = importedInvoice.InvoiceDate,
+                    CustomerName = importedInvoice.CustomerName,
+                    CustomerTRN = importedInvoice.CustomerTRN,
+                    ValidUntil = importedInvoice.ValidUntil,
+                    Specifications = importedInvoice.Specifications
+                };
+
+                // ✅ Subscribe to OtherCharge changes
+                SubscribeToOtherChargeChanges();
+
+                // Fix selection
+                SelectedTargetSpecification = Invoice.Specifications.FirstOrDefault();
+                SelectedSpecificationId = SelectedTargetSpecification?.Id ?? 0;
+
+                // Update file name
+                CurrentFileName = "Imported";
+
+                // ✅ Force UI refresh
+                OnPropertyChanged(nameof(Invoice));
+                OnPropertyChanged(nameof(SelectedTargetSpecification));
+                OnPropertyChanged(nameof(SelectedSpecificationId));
+
+                // Calculate totals and mark as dirty
+                Invoice.CalculateTotals();
+                Invoice.IsDirty = true;
+
+                StatusMessage = $"✅ Imported {totalItems} items from {importedInvoice.Specifications.Count} specification(s)";
+                Debug.WriteLine($"[ImportFromCsv] Complete - {totalItems} items");
+
+                // ✅ Show confirmation
+                MessageBox.Show($"Imported:\nSpecs: {Invoice.Specifications.Count}\nItems: {totalItems}", "Import Complete", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
                 StatusMessage = $"❌ Import failed: {ex.Message}";
-                MessageBox.Show($"Import failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Debug.WriteLine($"[ImportFromCsv] Error: {ex}");
+                MessageBox.Show($"Import failed: {ex.Message}\n{ex.StackTrace}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -1487,78 +798,45 @@ namespace ProGlassAutomation.ViewModels
             try
             {
                 var items = _excelCsvService.ImportItemsFromCsv();
-
-                if (items != null && items.Count > 0)
+                if (items == null || items.Count == 0) { StatusMessage = "❌ No items found in file"; return; }
+                if (Invoice.Specifications.Count == 0) AddSpecification();
+                var targetSpec = Invoice.Specifications[0];
+                int startSrNo = targetSpec.Items.Count + 1;
+                foreach (var item in items)
                 {
-                    if (Invoice.Specifications.Count == 0)
-                        AddSpecification();
-
-                    var targetSpec = Invoice.Specifications[0];
-                    int startSrNo = targetSpec.Items.Count + 1;
-
-                    foreach (var item in items)
+                    var newItem = new InvoiceItemModel { SrNo = startSrNo++, GlassRef = item.GlassRef, Qty = item.Qty, Price = item.Price, SurchargePercent = 20 };
+                    newItem.Width1 = item.Width1; newItem.Height1 = item.Height1; newItem.Width2 = item.Width2; newItem.Height2 = item.Height2;
+                    targetSpec.Items.Add(newItem);
+                    newItem.PropertyChanged += (s, e) =>
                     {
-                        var newItem = new InvoiceItemModel
-                        {
-                            SrNo = startSrNo++,
-                            GlassRef = item.GlassRef,
-                            Qty = item.Qty,
-                            Price = item.Price,
-                            SurchargePercent = 20
-                        };
-
-                        newItem.Width1 = item.Width1;
-                        newItem.Height1 = item.Height1;
-                        newItem.Width2 = item.Width2;
-                        newItem.Height2 = item.Height2;
-
-                        targetSpec.Items.Add(newItem);
-                    }
-
-                    Invoice.CalculateTotals();
-                    Invoice.IsDirty = true;
-
-                    StatusMessage = $"✅ Imported {items.Count} items";
+                        targetSpec.CalculateTotals();
+                        Invoice.CalculateTotals();
+                        Invoice.IsDirty = true;
+                    };
                 }
-                else
-                {
-                    StatusMessage = "❌ No items found in file";
-                }
+                Invoice.CalculateTotals();
+                Invoice.IsDirty = true;
+                StatusMessage = $"✅ Imported {items.Count} items";
             }
-            catch (Exception ex)
-            {
-                StatusMessage = $"❌ Item import failed: {ex.Message}";
-            }
+            catch (Exception ex) { StatusMessage = $"❌ Item import failed: {ex.Message}"; }
         }
 
-        // ==================== PASTE FROM EXCEL ====================
         private void PasteFromExcel()
         {
             try
             {
-                if (!Clipboard.ContainsText())
-                {
-                    StatusMessage = "❌ Clipboard is empty";
-                    return;
-                }
-
+                if (!Clipboard.ContainsText()) { StatusMessage = "❌ Clipboard is empty"; return; }
                 string clipboardText = Clipboard.GetText();
-                if (string.IsNullOrWhiteSpace(clipboardText))
-                {
-                    StatusMessage = "❌ No text data in clipboard";
-                    return;
-                }
+                if (string.IsNullOrWhiteSpace(clipboardText)) { StatusMessage = "❌ No text data in clipboard"; return; }
 
-                // Get selected specification
-                var spec = SelectedTargetSpecification;
+                var spec = SelectedTargetSpecification ?? (Invoice.Specifications.Count == 0 ? null : Invoice.Specifications[0]);
+
                 if (spec == null)
                 {
-                    if (Invoice.Specifications.Count == 0)
-                        AddSpecification();
-                    spec = SelectedTargetSpecification ?? Invoice.Specifications[0];
+                    AddSpecification();
+                    spec = SelectedTargetSpecification;
                 }
 
-                // Split clipboard by rows and columns
                 var rows = clipboardText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
                 if (rows.Length == 0)
@@ -1567,25 +845,25 @@ namespace ProGlassAutomation.ViewModels
                     return;
                 }
 
-                // Check if first row is header (contains GlassRef, W1, H1, etc.)
-                bool skipHeader = false;
-                var firstRowLower = rows[0].ToLower();
-                if (firstRowLower.Contains("glass") || firstRowLower.Contains("width") ||
-                    firstRowLower.Contains("height") || firstRowLower.Contains("qty") ||
-                    firstRowLower.Contains("ref"))
-                {
-                    skipHeader = true;
-                }
+                bool skipHeader =
+                    rows[0].ToLower().Contains("glass") ||
+                    rows[0].ToLower().Contains("width") ||
+                    rows[0].ToLower().Contains("height");
 
-                int startRow = spec.Items.Count > 0 ? spec.Items.Count : 0;
-                int itemsAdded = 0;
                 int startIndex = skipHeader ? 1 : 0;
 
-                // Get default values from first item if exists
-                double defaultWidth1 = 0, defaultHeight1 = 0, defaultWidth2 = 0, defaultHeight2 = 0, defaultPrice = 0, defaultSurcharge = 20;
+                // SAVE DEFAULT VALUES BEFORE CLEAR
+                double defaultWidth1 = 0;
+                double defaultHeight1 = 0;
+                double defaultWidth2 = 0;
+                double defaultHeight2 = 0;
+                double defaultPrice = 0;
+                double defaultSurcharge = 20;
+
                 if (spec.Items.Count > 0)
                 {
                     var firstItem = spec.Items[0];
+
                     defaultWidth1 = firstItem.Width1;
                     defaultHeight1 = firstItem.Height1;
                     defaultWidth2 = firstItem.Width2;
@@ -1594,72 +872,116 @@ namespace ProGlassAutomation.ViewModels
                     defaultSurcharge = firstItem.SurchargePercent;
                 }
 
+                // CLEAR ITEMS
+                spec.Items.Clear();
+
+                int itemsAdded = 0;
+
                 for (int i = startIndex; i < rows.Length; i++)
                 {
-                    var row = rows[i];
-                    var columns = row.Split('\t');
+                    var columns = rows[i]
+                        .Split('\t')
+                        .Select(c => c.Trim())
+                        .ToArray();
 
-                    if (columns.Length == 0 || string.IsNullOrWhiteSpace(string.Join("", columns).Replace("\t", "")))
+                    if (columns.Length < 6)
+                    {
+                        Debug.WriteLine($"[Import Skip] Invalid row: {rows[i]}");
+                        continue;
+                    }
+
+                    if (columns.Length == 0 || string.IsNullOrWhiteSpace(string.Join("", columns)))
                         continue;
 
                     var item = new InvoiceItemModel
                     {
-                        SrNo = startRow + itemsAdded + 1
+                        SrNo = itemsAdded + 1
                     };
 
-                    // Column 0: Glass Reference
                     if (columns.Length > 0)
                         item.GlassRef = columns[0].Trim();
 
-                    // Column 1: Width 1
-                    if (columns.Length > 1 && double.TryParse(columns[1].Trim().Replace(",", ""), out double w1))
-                        item.Width1 = w1;
+                    if (columns.Length > 1 && TryParseNumber(columns[1], out double w1))
+                        item.Width1 = Math.Max(0, w1);
                     else
                         item.Width1 = defaultWidth1;
 
-                    // Column 2: Height 1
-                    if (columns.Length > 2 && double.TryParse(columns[2].Trim().Replace(",", ""), out double h1))
-                        item.Height1 = h1;
+                    if (columns.Length > 2 && TryParseNumber(columns[2], out double h1))
+                        item.Height1 = Math.Max(0, h1);
                     else
                         item.Height1 = defaultHeight1;
 
-                    // Column 3: Width 2 (optional)
-                    if (columns.Length > 3 && double.TryParse(columns[3].Trim().Replace(",", ""), out double w2))
-                        item.Width2 = w2;
+                    if (columns.Length > 3 && TryParseNumber(columns[3], out double w2))
+                        item.Width2 = Math.Max(0, w2);
                     else
                         item.Width2 = defaultWidth2;
 
-                    // Column 4: Height 2 (optional)
-                    if (columns.Length > 4 && double.TryParse(columns[4].Trim().Replace(",", ""), out double h2))
-                        item.Height2 = h2;
+                    if (columns.Length > 4 && TryParseNumber(columns[4], out double h2))
+                        item.Height2 = Math.Max(0, h2);
                     else
                         item.Height2 = defaultHeight2;
 
-                    // Column 5: Quantity
                     if (columns.Length > 5 && int.TryParse(columns[5].Trim().Replace(",", ""), out int qty))
-                        item.Qty = qty;
+                        item.Qty = Math.Max(1, qty);
                     else
                         item.Qty = 1;
 
-                    // Column 6: Price (optional)
-                    if (columns.Length > 6 && double.TryParse(columns[6].Trim().Replace(",", ""), out double price))
-                        item.Price = price;
+                    if (columns.Length > 6 && TryParseNumber(columns[6], out double price))
+                        item.Price = Math.Max(0, price);
                     else
                         item.Price = defaultPrice;
 
-                    // Column 7: Surcharge % (optional)
-                    if (columns.Length > 7 && double.TryParse(columns[7].Trim().Replace(",", "").Replace("%", ""), out double surcharge))
-                        item.SurchargePercent = surcharge;
+                    if (columns.Length > 7 && TryParseNumber(columns[7].Replace("%", ""), out double surcharge))
+                        item.SurchargePercent = Math.Clamp(surcharge, 0, 100);
                     else
                         item.SurchargePercent = defaultSurcharge;
+
+                    item.PropertyChanged += (s, e) =>
+                    {
+                        spec.CalculateTotals();
+                        Invoice.CalculateTotals();
+
+                        OnPropertyChanged(nameof(Invoice));
+                        OnPropertyChanged(nameof(SelectedTargetSpecification));
+                        OnPropertyChanged(nameof(Invoice.Specifications));
+
+                        Invoice.IsDirty = true;
+                    };
 
                     spec.Items.Add(item);
                     itemsAdded++;
                 }
 
-                // Recalculate totals
+                // ADD DEFAULT ROW IF NOTHING IMPORTED
+                if (spec.Items.Count == 0)
+                {
+                    spec.Items.Add(new InvoiceItemModel
+                    {
+                        SrNo = 1,
+                        Qty = 1,
+                        SurchargePercent = defaultSurcharge,
+                        Price = defaultPrice,
+                        Width1 = defaultWidth1,
+                        Height1 = defaultHeight1,
+                        Width2 = defaultWidth2,
+                        Height2 = defaultHeight2
+                    });
+                }
+
+                // RECALCULATE SR NO
+                for (int i = 0; i < spec.Items.Count; i++)
+                {
+                    spec.Items[i].SrNo = i + 1;
+                }
+
                 spec.CalculateTotals();
                 Invoice.CalculateTotals();
+
+                OnPropertyChanged(nameof(Invoice));
+                OnPropertyChanged(nameof(SelectedTargetSpecification));
+                OnPropertyChanged(nameof(Invoice.Specifications));
+                OnPropertyChanged(nameof(SelectedSpecificationOtherCharges));
+
                 Invoice.IsDirty = true;
 
                 StatusMessage = $"✅ Pasted {itemsAdded} items from Excel";
@@ -1668,6 +990,182 @@ namespace ProGlassAutomation.ViewModels
             {
                 StatusMessage = $"❌ Paste failed: {ex.Message}";
                 Debug.WriteLine($"[Paste Error] {ex}");
+            }
+        }
+
+        private bool TryParseNumber(string input, out double result)
+        {
+            result = 0;
+
+            if (string.IsNullOrWhiteSpace(input))
+                return false;
+
+            string cleaned = input
+                .Trim()
+                .Replace(",", "")
+                .Replace("AED", "")
+                .Replace("%", "");
+
+            return double.TryParse(
+                cleaned,
+                System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out result);
+        }
+        private void AddToColorHistory(string color) { if (!string.IsNullOrWhiteSpace(color) && !ColorHistory.Contains(color)) ColorHistory.Add(color); }
+
+        private void TestRoundTrip()
+        {
+            try
+            {
+                // Step 1: Export current invoice
+                string testPath = @"C:\Temp\TestInvoice.csv";
+                _excelCsvService.ExportToCsv(Invoice, testPath);
+                StatusMessage = "✅ Exported to test file";
+
+                // Step 2: Read exported file
+                var lines = File.ReadAllLines(testPath);
+                string content = string.Join("\n", lines.Take(20));
+                MessageBox.Show($"Exported {lines.Length} lines:\n\n{content}", "Exported Content");
+
+                // Step 3: Modify one value in the file
+                var modifiedLines = File.ReadAllLines(testPath).ToList();
+
+                for (int i = 0; i < modifiedLines.Count; i++)
+                {
+                    if (modifiedLines[i].Contains(",1,") && modifiedLines[i].Contains("Clear"))
+                    {
+                        modifiedLines[i] = modifiedLines[i].Replace(",1,", ",99,");
+                        break;
+                    }
+                }
+
+                File.WriteAllLines(testPath, modifiedLines);
+                StatusMessage = "✅ Modified test file (changed Qty to 99)";
+
+                // Step 4: Re-import
+                var imported = _excelCsvService.ImportFromCsvFile(testPath);
+
+                if (imported != null)
+                {
+                    int totalItems = imported.Specifications.Sum(s => s.Items.Count);
+                    StatusMessage = $"✅ Imported: {totalItems} items";
+
+                    if (imported.Specifications.Count > 0 && imported.Specifications[0].Items.Count > 0)
+                    {
+                        var firstItem = imported.Specifications[0].Items[0];
+                        MessageBox.Show($"First item Qty: {firstItem.Qty}\n\nIf Qty = 99, import works!\nIf Qty = original value, import is broken.",
+                            "Test Result");
+                    }
+                }
+                else
+                {
+                    StatusMessage = "❌ Import returned null";
+                    MessageBox.Show("Import FAILED - returned null", "Error");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}", "Error");
+            }
+        }
+
+        private void DebugCsvImport()
+        {
+            try
+            {
+                var dialog = new OpenFileDialog
+                {
+                    Filter = "CSV Files (*.csv)|*.csv",
+                    Title = "Select CSV to Debug"
+                };
+
+                if (dialog.ShowDialog() != true) return;
+
+                string filePath = dialog.FileName;
+
+                var lines = File.ReadAllLines(filePath, System.Text.Encoding.UTF8);
+
+                string report = $"File: {Path.GetFileName(filePath)}\n";
+                report += $"Lines: {lines.Length}\n\n";
+                report += "=== RAW CONTENT ===\n";
+
+                for (int i = 0; i < Math.Min(lines.Length, 40); i++)
+                {
+                    report += $"[{i:D2}] {lines[i]}\n";
+                }
+
+                report += "\n=== IMPORT ATTEMPT ===\n";
+
+                var imported = _excelCsvService.ImportFromCsvFile(filePath);
+
+                if (imported == null)
+                {
+                    report += "RESULT: NULL returned\n";
+                }
+                else
+                {
+                    report += $"RESULT: {imported.Specifications.Count} specs\n";
+
+                    foreach (var spec in imported.Specifications)
+                    {
+                        report += $"\nSpec: {spec.SpecificationName}\n";
+                        report += $"  Items: {spec.Items.Count}\n";
+
+                        foreach (var item in spec.Items)
+                        {
+                            report += $"    SR:{item.SrNo}, Glass:{item.GlassRef}, W:{item.Width1}, H:{item.Height1}, Qty:{item.Qty}\n";
+                        }
+                    }
+                }
+
+                MessageBox.Show(report, "CSV Debug Report", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}\n{ex.StackTrace}", "Error");
+            }
+        }
+
+        private void TestCsvRoundTrip()
+        {
+            try
+            {
+                // Step 1: Export
+                string testPath = @"C:\Temp\TestInvoice.csv";
+                _excelCsvService.ExportToCsv(Invoice, testPath);
+
+                // Step 2: Read raw content
+                var lines = File.ReadAllLines(testPath, System.Text.Encoding.UTF8);
+
+                string rawContent = "=== EXPORTED CSV RAW CONTENT ===\n";
+                rawContent += $"File: {testPath}\n";
+                rawContent += $"Lines: {lines.Length}\n\n";
+
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    rawContent += $"[{i:D2}] {lines[i]}\n";
+                }
+
+                MessageBox.Show(rawContent, "RAW CSV Content", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                // Step 3: Try to import the SAME file (no editing)
+                var imported = _excelCsvService.ImportFromCsvFile(testPath);
+
+                if (imported == null)
+                {
+                    MessageBox.Show("❌ IMPORT FAILED - Service returned NULL\n\nThis means the service cannot parse the exported format!", "Test Result", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                else
+                {
+                    int specs = imported.Specifications.Count;
+                    int items = imported.Specifications.Sum(s => s.Items.Count);
+                    MessageBox.Show($"✅ IMPORT SUCCESS\n\nSpecs: {specs}\nItems: {items}", "Test Result", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}\n{ex.StackTrace}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

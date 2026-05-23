@@ -6,6 +6,9 @@ namespace ProGlassAutomation.Models
 {
     public class InvoiceItemModel : INotifyPropertyChanged
     {
+        private readonly object _calculationLock = new object();
+        private bool _isRecalculating;
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
@@ -16,72 +19,95 @@ namespace ProGlassAutomation.Models
         protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
         {
             if (Equals(field, value)) return false;
+
+            if (IsDimensionProperty(propertyName) && !ValidateDimension(value))
+            {
+                throw new ArgumentOutOfRangeException(propertyName, "Dimensions cannot be negative.");
+            }
+
             field = value;
             OnPropertyChanged(propertyName);
-            CalculateAll();
+
+            if (!_isRecalculating)
+            {
+                TriggerCalculationAsync();
+            }
+
             return true;
         }
 
-        private int _srNo = 1;
-        public int SrNo
+        private bool IsDimensionProperty(string propertyName)
         {
-            get => _srNo;
-            set => SetProperty(ref _srNo, value);
+            return propertyName is nameof(Width1) or nameof(Height1)
+                or nameof(Width2) or nameof(Height2) or nameof(Qty);
         }
+
+        private bool ValidateDimension<T>(T value)
+        {
+            if (value is double d) return d >= 0;
+            if (value is int i) return i >= 0;
+            return true;
+        }
+
+        private void TriggerCalculationAsync()
+        {
+            lock (_calculationLock)
+            {
+                if (_isRecalculating)
+                    return;
+
+                _isRecalculating = true;
+
+                try
+                {
+                    CalculateAll();
+                }
+                finally
+                {
+                    _isRecalculating = false;
+                }
+            }
+        }
+
+        private int _srNo = 1;
+        public int SrNo { get => _srNo; set => SetProperty(ref _srNo, value); }
 
         private string _glassRef = "";
-        public string GlassRef
-        {
-            get => _glassRef;
-            set => SetProperty(ref _glassRef, value);
-        }
+        public string GlassRef { get => _glassRef; set => SetProperty(ref _glassRef, value); }
 
         private double _width1 = 0;
-        public double Width1
-        {
-            get => _width1;
-            set => SetProperty(ref _width1, value);
-        }
+        public double Width1 { get => _width1; set => SetProperty(ref _width1, value); }
 
         private double _height1 = 0;
-        public double Height1
-        {
-            get => _height1;
-            set => SetProperty(ref _height1, value);
-        }
+        public double Height1 { get => _height1; set => SetProperty(ref _height1, value); }
 
         private double _width2 = 0;
-        public double Width2
-        {
-            get => _width2;
-            set => SetProperty(ref _width2, value);
-        }
+        public double Width2 { get => _width2; set => SetProperty(ref _width2, value); }
 
         private double _height2 = 0;
-        public double Height2
-        {
-            get => _height2;
-            set => SetProperty(ref _height2, value);
-        }
+        public double Height2 { get => _height2; set => SetProperty(ref _height2, value); }
 
         private int _qty = 1;
-        public int Qty
-        {
-            get => _qty;
-            set => SetProperty(ref _qty, value);
-        }
+        public int Qty { get => _qty; set => SetProperty(ref _qty, value); }
 
         private double _price = 0;
         public double Price
         {
             get => _price;
-            set => SetProperty(ref _price, value);
+            set
+            {
+                if (SetProperty(ref _price, value))
+                {
+                    TriggerCalculationAsync();
+                    OnPropertyChanged(nameof(BasePrice));
+                    OnPropertyChanged(nameof(UnitPrice));
+                    OnPropertyChanged(nameof(DisplayPrice));
+                    OnPropertyChanged(nameof(FinalPrice));
+                }
+            }
         }
 
-        public double BasePrice
-        {
-            get => _price;
-        }
+        public double BasePrice => _price;
 
         private double _surchargePercent = 20;
         public double SurchargePercent
@@ -89,170 +115,107 @@ namespace ProGlassAutomation.Models
             get => _surchargePercent;
             set
             {
-                if (SetProperty(ref _surchargePercent, value))
-                {
-                    OnPropertyChanged(nameof(DisplayPrice));
-                    OnPropertyChanged(nameof(FinalPrice));
-                    OnPropertyChanged(nameof(HasSurcharge));
-                }
+                if (value < 0 || value > 100)
+                    throw new ArgumentOutOfRangeException(nameof(SurchargePercent), "Surcharge must be between 0 and 100.");
+                SetProperty(ref _surchargePercent, value);
             }
         }
 
-        // Fixed threshold at 4 SQM
-        public double SurchargeThreshold => 4;
+        public const double SurchargeThreshold = 4;
+        private const double MinSQM = 0.5;
+        private const double MinLM = 0.5;
 
-        public double DisplayPrice
-        {
-            get
-            {
-                if (SQM >= 4 && _surchargePercent > 0)
-                {
-                    return Math.Round(_price * (1 + _surchargePercent / 100), 2);
-                }
-                return _price;
-            }
-        }
+        public bool HasSurcharge => SQM >= SurchargeThreshold && _surchargePercent > 0;
 
-        public double FinalPrice
-        {
-            get
-            {
-                if (SQM >= 4 && _surchargePercent > 0)
-                {
-                    return Math.Round(_price * (1 + _surchargePercent / 100), 2);
-                }
-                return _price;
-            }
-        }
+        public double UnitPrice => HasSurcharge
+            ? Math.Round(_price * (1 + _surchargePercent / 100.0), 2)
+            : _price;
+
+        public double DisplayPrice => UnitPrice;
+        public double FinalPrice => UnitPrice;
 
         private double _sqm = 0;
         public double SQM
         {
             get => _sqm;
-            private set
-            {
-                if (_sqm != value)
-                {
-                    _sqm = value;
-                    OnPropertyChanged(nameof(SQM));
-                    OnPropertyChanged(nameof(DisplayPrice));
-                    OnPropertyChanged(nameof(FinalPrice));
-                    OnPropertyChanged(nameof(HasSurcharge));
-                }
-            }
+            private set => SetProperty(ref _sqm, value);
         }
 
         private double _totalSQM = 0;
         public double TotalSQM
         {
             get => _totalSQM;
-            private set
-            {
-                if (_totalSQM != value)
-                {
-                    _totalSQM = value;
-                    OnPropertyChanged(nameof(TotalSQM));
-                }
-            }
+            private set => SetProperty(ref _totalSQM, value);
+        }
+
+        private double _totalAmount = 0;
+        public double TotalAmount
+        {
+            get => _totalAmount;
+            set => SetProperty(ref _totalAmount, value);
         }
 
         private double _lm = 0;
         public double LM
         {
             get => _lm;
-            private set
-            {
-                if (_lm != value)
-                {
-                    _lm = value;
-                    OnPropertyChanged(nameof(LM));
-                }
-            }
+            private set => SetProperty(ref _lm, value);
         }
 
         private double _totalLM = 0;
         public double TotalLM
         {
             get => _totalLM;
-            private set
-            {
-                if (_totalLM != value)
-                {
-                    _totalLM = value;
-                    OnPropertyChanged(nameof(TotalLM));
-                }
-            }
+            private set => SetProperty(ref _totalLM, value);
         }
 
         private double _totalPrice = 0;
         public double TotalPrice
         {
             get => _totalPrice;
-            private set
-            {
-                if (_totalPrice != value)
-                {
-                    _totalPrice = value;
-                    OnPropertyChanged(nameof(TotalPrice));
-                }
-            }
+            private set => SetProperty(ref _totalPrice, value);
         }
 
-        public bool HasSurcharge
-        {
-            get => SQM >= 4 && _surchargePercent > 0;
-        }
-
-        // ==================== CALCULATE ALL ====================
         public void CalculateAll()
         {
-            // Calculate SQM (Square Meters)
-            double sqm = 0;
-            if (_width1 > 0 && _height1 > 0)
-            {
-                sqm = (_width1 * _height1) / 1000000.0;
-                if (sqm < 0.5) sqm = 0.5;
-            }
-            if (_width2 > 0 && _height2 > 0)
-            {
-                double sqm2 = (_width2 * _height2) / 1000000.0;
-                if (sqm2 < 0.5) sqm2 = 0.5;
-                sqm += sqm2;
-            }
+            double sqm1 = CalculateSingleSQM(_width1, _height1);
+            double sqm2 = CalculateSingleSQM(_width2, _height2);
+            double sqm = sqm1 + sqm2;
+
             SQM = Math.Round(sqm, 4);
             TotalSQM = Math.Round(SQM * _qty, 4);
 
-            // Calculate LM (Linear Meters)
-            double lm = 0;
-            if (_width1 > 0 && _height1 > 0)
-            {
-                lm = ((_width1 + _height1) * 2) / 1000.0;
-                if (lm < 0.5) lm = 0.5;
-            }
-            if (_width2 > 0 && _height2 > 0)
-            {
-                double lm2 = ((_width2 + _height2) * 2) / 1000.0;
-                if (lm2 < 0.5) lm2 = 0.5;
-                lm += lm2;
-            }
+            double lm1 = CalculateSingleLM(_width1, _height1);
+            double lm2 = CalculateSingleLM(_width2, _height2);
+            double lm = lm1 + lm2;
+
             LM = Math.Round(lm, 4);
             TotalLM = Math.Round(LM * _qty, 4);
 
-            // Calculate Total Price
-            TotalPrice = Math.Round(FinalPrice * TotalSQM, 2);
+            double unitPrice = HasSurcharge
+                ? Math.Round(_price * (1 + _surchargePercent / 100.0), 2)
+                : _price;
+
+            TotalPrice = Math.Round(unitPrice * TotalSQM, 2);
+            TotalAmount = TotalPrice;
         }
 
-        // ==================== CALCULATE SQM (for compatibility) ====================
-        public void CalculateSQM()
+        private double CalculateSingleSQM(double width, double height)
         {
-            CalculateAll();
+            if (width <= 0 || height <= 0) return 0;
+            double sqm = (width * height) / 1_000_000.0;
+            return sqm < MinSQM ? MinSQM : sqm;
         }
 
-        // ==================== CALCULATE TOTAL PRICE (for compatibility) ====================
-        public void CalculateTotalPrice()
+        private double CalculateSingleLM(double width, double height)
         {
-            CalculateAll();
+            if (width <= 0 || height <= 0) return 0;
+            double lm = ((width + height) * 2) / 1000.0;
+            return lm < MinLM ? MinLM : lm;
         }
+
+        public void CalculateSQM() => CalculateAll();
+        public void CalculateTotalPrice() => CalculateAll();
 
         public InvoiceItemModel()
         {

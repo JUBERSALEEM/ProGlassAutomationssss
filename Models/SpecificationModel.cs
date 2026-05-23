@@ -107,7 +107,7 @@ namespace ProGlassAutomation.Models
             }
         }
 
-        public ObservableCollection<InvoiceItemModel> Items { get; }
+        public ObservableCollection<InvoiceItemModel> Items { get; set; } = new();
 
         // ==================== SPEC INDEX FOR COMBOBOX ====================
         public int SpecIndex => Id;
@@ -353,10 +353,6 @@ namespace ProGlassAutomation.Models
                 {
                     _surchargePercent = value;
                     OnPropertyChanged();
-                    foreach (var item in Items)
-                    {
-                        item.SurchargePercent = value;
-                    }
                 }
             }
         }

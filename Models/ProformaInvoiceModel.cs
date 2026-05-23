@@ -1,45 +1,136 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace ProGlassAutomation.Models
 {
-    public class ProformaInvoiceModel : INotifyPropertyChanged
+    public class ProformaInvoiceModel : INotifyPropertyChanged, IDisposable
     {
         public event PropertyChangedEventHandler PropertyChanged;
+        private bool _disposed;
 
+        // ==================== STATIC RANDOM (Thread-Safe) ====================
+        private static readonly object _invoiceLock = new object();
+        private static int _lastGeneratedNumber;
+
+        // ==================== CONSTRUCTOR ====================
         public ProformaInvoiceModel()
         {
-            Specifications = new ObservableCollection<SpecificationModel>();
-            Specifications.CollectionChanged += Specs_CollectionChanged;
+            // Use field directly - property setter handles subscription
+            _specifications = new ObservableCollection<SpecificationModel>();
+            _specifications.CollectionChanged += OnSpecificationsCollectionChanged;
             InvoiceNo = GenerateInvoiceNo();
         }
 
-        private void Specs_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        // ==================== DISPOSAL ====================
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed) return;
+
+            if (disposing)
+            {
+                Specifications.CollectionChanged -= OnSpecificationsCollectionChanged;
+
+                foreach (var spec in Specifications)
+                {
+                    UnsubscribeFromSpecification(spec);
+                }
+            }
+
+            _disposed = true;
+        }
+
+        // ==================== COLLECTION HANDLING ====================
+        private void OnSpecificationsCollectionChanged(object sender,
+            System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
             // Subscribe to new specs
             if (e.NewItems != null)
             {
                 foreach (SpecificationModel spec in e.NewItems)
                 {
-                    spec.PropertyChanged += Spec_PropertyChanged;
+                    SubscribeToSpecification(spec);
                 }
             }
+
             // Unsubscribe from old specs
             if (e.OldItems != null)
             {
                 foreach (SpecificationModel spec in e.OldItems)
                 {
-                    spec.PropertyChanged -= Spec_PropertyChanged;
+                    UnsubscribeFromSpecification(spec);
                 }
             }
+
             CalculateTotals();
         }
 
-        private void Spec_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void SubscribeToSpecification(SpecificationModel spec)
         {
-            // Recalculate totals when any spec totals change
+            if (spec == null) return;
+
+            spec.PropertyChanged += OnSpecificationPropertyChanged;
+
+            if (spec.OtherCharges != null)
+            {
+                spec.OtherCharges.CollectionChanged += OnOtherChargesCollectionChanged;
+
+                foreach (var charge in spec.OtherCharges)
+                {
+                    charge.PropertyChanged += OnOtherChargePropertyChanged;
+                }
+            }
+        }
+
+        private void UnsubscribeFromSpecification(SpecificationModel spec)
+        {
+            if (spec == null) return;
+
+            spec.PropertyChanged -= OnSpecificationPropertyChanged;
+
+            if (spec.OtherCharges != null)
+            {
+                spec.OtherCharges.CollectionChanged -= OnOtherChargesCollectionChanged;
+
+                foreach (var charge in spec.OtherCharges)
+                {
+                    charge.PropertyChanged -= OnOtherChargePropertyChanged;
+                }
+            }
+        }
+
+        private void OnOtherChargesCollectionChanged(object sender,
+            System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            if (e.NewItems != null)
+            {
+                foreach (OtherChargeModel charge in e.NewItems)
+                {
+                    charge.PropertyChanged += OnOtherChargePropertyChanged;
+                }
+            }
+
+            if (e.OldItems != null)
+            {
+                foreach (OtherChargeModel charge in e.OldItems)
+                {
+                    charge.PropertyChanged -= OnOtherChargePropertyChanged;
+                }
+            }
+
+            CalculateTotals();
+        }
+
+        private void OnSpecificationPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
             if (e.PropertyName == nameof(SpecificationModel.SpecTotalSQM) ||
                 e.PropertyName == nameof(SpecificationModel.SpecTotalLM) ||
                 e.PropertyName == nameof(SpecificationModel.SpecTotalQty) ||
@@ -50,159 +141,172 @@ namespace ProGlassAutomation.Models
             }
         }
 
+        private void OnOtherChargePropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            CalculateTotals();
+        }
+
+        // ==================== PROPERTY CHANGED ====================
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
+        protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
+        {
+            if (Equals(field, value)) return false;
+            field = value;
+            OnPropertyChanged(propertyName);
+            return true;
+        }
+
+        // ==================== INVOICE DETAILS ====================
         private string _invoiceNo = "";
         public string InvoiceNo
         {
             get => _invoiceNo;
-            set { _invoiceNo = value; OnPropertyChanged(); }
+            set => SetProperty(ref _invoiceNo, value);
         }
 
         private DateTime _invoiceDate = DateTime.Now;
         public DateTime InvoiceDate
         {
             get => _invoiceDate;
-            set { _invoiceDate = value; OnPropertyChanged(); }
+            set => SetProperty(ref _invoiceDate, value);
         }
 
         private DateTime _validUntil = DateTime.Now.AddDays(30);
         public DateTime ValidUntil
         {
             get => _validUntil;
-            set { _validUntil = value; OnPropertyChanged(); }
+            set => SetProperty(ref _validUntil, value);
         }
 
         private string _customerName = "";
         public string CustomerName
         {
             get => _customerName;
-            set { _customerName = value; OnPropertyChanged(); }
+            set => SetProperty(ref _customerName, value);
         }
 
         private string _customerTRN = "";
         public string CustomerTRN
         {
             get => _customerTRN;
-            set { _customerTRN = value; OnPropertyChanged(); }
+            set => SetProperty(ref _customerTRN, value);
         }
 
         private string _customerAddress = "";
         public string CustomerAddress
         {
             get => _customerAddress;
-            set { _customerAddress = value; OnPropertyChanged(); }
+            set => SetProperty(ref _customerAddress, value);
         }
 
         private string _projectName = "";
         public string ProjectName
         {
             get => _projectName;
-            set { _projectName = value; OnPropertyChanged(); }
+            set => SetProperty(ref _projectName, value);
         }
 
         private string _projectLocation = "";
         public string ProjectLocation
         {
             get => _projectLocation;
-            set { _projectLocation = value; OnPropertyChanged(); }
+            set => SetProperty(ref _projectLocation, value);
         }
 
         private string _lPONo = "";
         public string LPONo
         {
             get => _lPONo;
-            set { _lPONo = value; OnPropertyChanged(); }
+            set => SetProperty(ref _lPONo, value);
         }
 
         private string _attentionName = "";
         public string AttentionName
         {
             get => _attentionName;
-            set { _attentionName = value; OnPropertyChanged(); }
+            set => SetProperty(ref _attentionName, value);
         }
 
         private string _contactNo = "";
         public string ContactNo
         {
             get => _contactNo;
-            set { _contactNo = value; OnPropertyChanged(); }
+            set => SetProperty(ref _contactNo, value);
         }
 
-        public ObservableCollection<SpecificationModel> Specifications { get; }
+        private ObservableCollection<SpecificationModel> _specifications = new();
+        public ObservableCollection<SpecificationModel> Specifications
+        {
+            get => _specifications;
+            set
+            {
+                if (Equals(_specifications, value))
+                    return;
 
+                // UNSUBSCRIBE from old collection
+                if (_specifications != null)
+                {
+                    _specifications.CollectionChanged -= OnSpecificationsCollectionChanged;
+                    foreach (var spec in _specifications)
+                    {
+                        UnsubscribeFromSpecification(spec);
+                    }
+                }
+
+                _specifications = value;
+
+                // SUBSCRIBE to new collection
+                if (_specifications != null)
+                {
+                    _specifications.CollectionChanged += OnSpecificationsCollectionChanged;
+                    foreach (var spec in _specifications)
+                    {
+                        SubscribeToSpecification(spec);
+                    }
+                }
+
+                OnPropertyChanged();
+            }
+        }
+
+        // ==================== TOTALS ====================
         private double _totalSQM = 0;
         public double TotalSQM
         {
             get => _totalSQM;
-            private set
-            {
-                if (_totalSQM != value)
-                {
-                    _totalSQM = value;
-                    OnPropertyChanged();
-                }
-            }
+            private set => SetProperty(ref _totalSQM, value);
         }
 
         private double _totalLM = 0;
         public double TotalLM
         {
             get => _totalLM;
-            private set
-            {
-                if (_totalLM != value)
-                {
-                    _totalLM = value;
-                    OnPropertyChanged();
-                }
-            }
+            private set => SetProperty(ref _totalLM, value);
         }
 
         private int _totalQty = 0;
         public int TotalQty
         {
             get => _totalQty;
-            private set
-            {
-                if (_totalQty != value)
-                {
-                    _totalQty = value;
-                    OnPropertyChanged();
-                }
-            }
+            private set => SetProperty(ref _totalQty, value);
         }
 
         private double _grandTotal = 0;
         public double GrandTotal
         {
             get => _grandTotal;
-            private set
-            {
-                if (_grandTotal != value)
-                {
-                    _grandTotal = value;
-                    OnPropertyChanged();
-                }
-            }
+            private set => SetProperty(ref _grandTotal, value);
         }
 
-        // NEW: Other Charges Total
         private double _otherChargesTotal = 0;
         public double OtherChargesTotal
         {
             get => _otherChargesTotal;
-            private set
-            {
-                if (_otherChargesTotal != value)
-                {
-                    _otherChargesTotal = value;
-                    OnPropertyChanged();
-                }
-            }
+            private set => SetProperty(ref _otherChargesTotal, value);
         }
 
         private double _vatPercent = 5;
@@ -211,10 +315,10 @@ namespace ProGlassAutomation.Models
             get => _vatPercent;
             set
             {
-                if (_vatPercent != value)
+                if (value < 0 || value > 100)
+                    throw new ArgumentOutOfRangeException(nameof(VatPercent), "VAT must be between 0 and 100.");
+                if (SetProperty(ref _vatPercent, value))
                 {
-                    _vatPercent = value;
-                    OnPropertyChanged();
                     CalculateTotals();
                 }
             }
@@ -224,37 +328,24 @@ namespace ProGlassAutomation.Models
         public double VatAmount
         {
             get => _vatAmount;
-            private set
-            {
-                if (_vatAmount != value)
-                {
-                    _vatAmount = value;
-                    OnPropertyChanged();
-                }
-            }
+            private set => SetProperty(ref _vatAmount, value);
         }
 
         private double _netTotal = 0;
         public double NetTotal
         {
             get => _netTotal;
-            private set
-            {
-                if (_netTotal != value)
-                {
-                    _netTotal = value;
-                    OnPropertyChanged();
-                }
-            }
+            private set => SetProperty(ref _netTotal, value);
         }
 
         private bool _isDirty = false;
         public bool IsDirty
         {
             get => _isDirty;
-            set { _isDirty = value; OnPropertyChanged(); }
+            set => SetProperty(ref _isDirty, value);
         }
 
+        // ==================== CALCULATIONS ====================
         public void CalculateTotals()
         {
             double sqm = 0, lm = 0;
@@ -266,6 +357,7 @@ namespace ProGlassAutomation.Models
             {
                 spec.CalculateSpecTotals();
                 spec.CalculateOtherChargesTotal();
+
                 sqm += spec.SpecTotalSQM;
                 lm += spec.SpecTotalLM;
                 qty += spec.SpecTotalQty;
@@ -278,14 +370,33 @@ namespace ProGlassAutomation.Models
             TotalQty = qty;
             OtherChargesTotal = Math.Round(otherCharges, 2);
             GrandTotal = Math.Round(specTotal + otherCharges, 2);
-            VatAmount = Math.Round(GrandTotal * VatPercent / 100, 2);
+            VatAmount = Math.Round(GrandTotal * VatPercent / 100.0, 2);
             NetTotal = Math.Round(GrandTotal + VatAmount, 2);
             IsDirty = true;
         }
 
-        public string GenerateInvoiceNo()
+        // ==================== INVOICE NUMBER GENERATION ====================
+        public static string GenerateInvoiceNo()
         {
-            return $"PI-{DateTime.Now:yyyyMMdd}-{new Random().Next(1000, 9999)}";
+            lock (_invoiceLock)
+            {
+                int num;
+                var random = new Random();
+
+                // Ensure unique number within session
+                do
+                {
+                    num = random.Next(1000, 9999);
+                } while (num == _lastGeneratedNumber && random.Next(10) > 0);
+
+                _lastGeneratedNumber = num;
+                return $"PI-{DateTime.Now:yyyyMMdd}-{num}";
+            }
+        }
+
+        public static string GenerateSequentialInvoiceNo(int number)
+        {
+            return $"PI-{DateTime.Now:yyyyMMdd}-{number:D4}";
         }
     }
 }

@@ -5,25 +5,30 @@ namespace ProGlassAutomation.ViewModels
 {
     public class RelayCommand : ICommand
     {
-        private readonly Action<object> _exec;
-        private readonly Func<object, bool> _canExec;
+        private readonly Action<object?> _execute;
+        private readonly Func<object?, bool>? _canExecute;
 
-        public RelayCommand(Action<object> exec, Func<object, bool> canExec = null)
+        // Constructor for methods with no parameters
+        public RelayCommand(Action execute)
         {
-            _exec = exec ?? throw new ArgumentNullException(nameof(exec));
-            _canExec = canExec;
+            _execute = _ => execute();
+            _canExecute = null;
         }
 
-        public RelayCommand(Action exec, Func<bool> canExec = null)
-            : this(_ => exec(), canExec != null ? _ => canExec() : null) { }
+        // Constructor for methods with object parameter
+        public RelayCommand(Action<object?> execute, Func<object?, bool>? canExecute = null)
+        {
+            _execute = execute ?? throw new ArgumentNullException(nameof(execute));
+            _canExecute = canExecute;
+        }
 
-        public event EventHandler CanExecuteChanged
+        public bool CanExecute(object? parameter) => _canExecute?.Invoke(parameter) ?? true;
+        public void Execute(object? parameter) => _execute(parameter);
+
+        public event EventHandler? CanExecuteChanged
         {
             add => CommandManager.RequerySuggested += value;
             remove => CommandManager.RequerySuggested -= value;
         }
-
-        public bool CanExecute(object p) => _canExec?.Invoke(p) ?? true;
-        public void Execute(object p) => _exec(p);
     }
 }
