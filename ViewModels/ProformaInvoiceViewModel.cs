@@ -49,6 +49,20 @@ namespace ProGlassAutomation.ViewModels
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
+        // ==================== INVOICE NUMBER GENERATION ====================
+        private int _currentPINumber = 0;
+        public int CurrentPINumber
+        {
+            get => _currentPINumber;
+            set { _currentPINumber = value; OnPropertyChanged(); }
+        }
+
+        private string GetNextInvoiceNo()
+        {
+            CurrentPINumber++;
+            return $"PI-{DateTime.Now.Year}-{CurrentPINumber:D2}";
+        }
+
         private ProformaInvoiceModel _invoice = new();
         public ProformaInvoiceModel Invoice
         {
@@ -605,8 +619,13 @@ namespace ProGlassAutomation.ViewModels
                 Application.Current.Dispatcher.Invoke(() => StatusMessage = status);
             };
 
-            Invoice = new ProformaInvoiceModel();
-            Invoice.InvoiceNo = Invoice.GenerateInvoiceNo();
+            // Initialize with auto-generated invoice number (PI-2026-01 format)
+            Invoice = new ProformaInvoiceModel
+            {
+                InvoiceNo = GetNextInvoiceNo(),
+                InvoiceDate = DateTime.Now,
+                ValidUntil = DateTime.Now.AddDays(30)
+            };
 
             AddSpecification();
 
@@ -691,8 +710,13 @@ namespace ProGlassAutomation.ViewModels
                 else if (result == MessageBoxResult.Cancel) return;
             }
 
-            Invoice = new ProformaInvoiceModel();
-            Invoice.InvoiceNo = Invoice.GenerateInvoiceNo();
+            // Create new invoice with auto-generated number (PI-2026-01 format)
+            Invoice = new ProformaInvoiceModel
+            {
+                InvoiceNo = GetNextInvoiceNo(),
+                InvoiceDate = DateTime.Now,
+                ValidUntil = DateTime.Now.AddDays(30)
+            };
             CurrentFileName = "Untitled";
 
             AddSpecification();
