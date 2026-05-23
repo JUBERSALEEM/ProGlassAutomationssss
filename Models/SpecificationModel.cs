@@ -37,7 +37,6 @@ namespace ProGlassAutomation.Models
 
         private void Item_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            // Recalculate when any of these properties change
             if (e.PropertyName == nameof(InvoiceItemModel.SQM) ||
                 e.PropertyName == nameof(InvoiceItemModel.TotalSQM) ||
                 e.PropertyName == nameof(InvoiceItemModel.LM) ||
@@ -81,6 +80,219 @@ namespace ProGlassAutomation.Models
 
         public ObservableCollection<InvoiceItemModel> Items { get; }
 
+        // ==================== NEW: Module Type ====================
+        // SGU, DGU, LAM
+        private string _moduleType = "SGU";
+        public string ModuleType
+        {
+            get => _moduleType;
+            set
+            {
+                _moduleType = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(GeneratedDescription));
+            }
+        }
+
+        // ==================== NEW: Work Type ====================
+        // Annealed, FT Glass
+        private string _workType = "Annealed";
+        public string WorkType
+        {
+            get => _workType;
+            set
+            {
+                _workType = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(GeneratedDescription));
+            }
+        }
+
+        // ==================== NEW: U-Insert ====================
+        private bool _includeInSpec = true;
+        public bool IncludeInSpec
+        {
+            get => _includeInSpec;
+            set
+            {
+                _includeInSpec = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(GeneratedDescription));
+            }
+        }
+
+        // ==================== NEW: DGU Specific Properties ====================
+
+        // Outer Glass
+        private string _outerThickness = "6mm";
+        public string OuterThickness
+        {
+            get => _outerThickness;
+            set
+            {
+                _outerThickness = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(GeneratedDescription));
+            }
+        }
+
+        private string _outerColor = "Clear";
+        public string OuterColor
+        {
+            get => _outerColor;
+            set
+            {
+                _outerColor = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(GeneratedDescription));
+            }
+        }
+
+        private string _outerPrice = "0";
+        public string OuterPrice
+        {
+            get => _outerPrice;
+            set
+            {
+                _outerPrice = value;
+                OnPropertyChanged();
+            }
+        }
+
+        // Inner Glass
+        private string _innerThickness = "6mm";
+        public string InnerThickness
+        {
+            get => _innerThickness;
+            set
+            {
+                _innerThickness = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(GeneratedDescription));
+            }
+        }
+
+        private string _innerColor = "Clear";
+        public string InnerColor
+        {
+            get => _innerColor;
+            set
+            {
+                _innerColor = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(GeneratedDescription));
+            }
+        }
+
+        private string _innerPrice = "0";
+        public string InnerPrice
+        {
+            get => _innerPrice;
+            set
+            {
+                _innerPrice = value;
+                OnPropertyChanged();
+            }
+        }
+
+        // Air Spacer
+        private string _spacerThickness = "12mm";
+        public string SpacerThickness
+        {
+            get => _spacerThickness;
+            set
+            {
+                _spacerThickness = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(GeneratedDescription));
+            }
+        }
+
+        private string _aspPrice = "0";
+        public string ASPPrice
+        {
+            get => _aspPrice;
+            set
+            {
+                _aspPrice = value;
+                OnPropertyChanged();
+            }
+        }
+
+        // ==================== NEW: LAM Specific Properties ====================
+
+        // PVB Layer
+        private string _pvbThickness = "0.76mm";
+        public string PVBThickness
+        {
+            get => _pvbThickness;
+            set
+            {
+                _pvbThickness = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(GeneratedDescription));
+            }
+        }
+
+        private string _pvbColor = "Clear";
+        public string PVBColor
+        {
+            get => _pvbColor;
+            set
+            {
+                _pvbColor = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(GeneratedDescription));
+            }
+        }
+
+        private string _pvbPrice = "0";
+        public string PVBPrice
+        {
+            get => _pvbPrice;
+            set
+            {
+                _pvbPrice = value;
+                OnPropertyChanged();
+            }
+        }
+
+        // ==================== NEW: Generated Description ====================
+        public string GeneratedDescription
+        {
+            get
+            {
+                return ModuleType switch
+                {
+                    "DGU" => GenerateDGUDescription(),
+                    "LAM" => GenerateLAMDescription(),
+                    _ => GenerateSGUDescription()
+                };
+            }
+        }
+
+        private string GenerateDGUDescription()
+        {
+            string workTypeShort = WorkType == "FT Glass" ? "FT Glass" : "Annealed";
+            string uInsertText = IncludeInSpec ? "with U-Insert" : "";
+
+            return $"{OuterThickness} {OuterColor} {workTypeShort} + {SpacerThickness} ASP {uInsertText} + {InnerThickness} {InnerColor} {workTypeShort}";
+        }
+
+        private string GenerateLAMDescription()
+        {
+            string workTypeShort = WorkType == "FT Glass" ? "FT Glass" : "Annealed";
+
+            return $"{OuterThickness} {OuterColor} {workTypeShort} + {PVBThickness} PVB ({PVBColor}) + {InnerThickness} {InnerColor} {workTypeShort}";
+        }
+
+        private string GenerateSGUDescription()
+        {
+            string workTypeShort = WorkType == "FT Glass" ? "FT Glass" : "Annealed";
+
+            return $"{OuterThickness} {OuterColor} {workTypeShort}";
+        }
+
         // Base Price - updates all items when changed
         private double _basePrice = 0;
         public double BasePrice
@@ -93,7 +305,6 @@ namespace ProGlassAutomation.Models
                     _basePrice = value;
                     OnPropertyChanged();
 
-                    // Update all items with new base price
                     foreach (var item in Items)
                     {
                         item.Price = value;
@@ -114,7 +325,6 @@ namespace ProGlassAutomation.Models
                     _surchargePercent = value;
                     OnPropertyChanged();
 
-                    // Update all items with new surcharge percent
                     foreach (var item in Items)
                     {
                         item.SurchargePercent = value;
@@ -123,7 +333,6 @@ namespace ProGlassAutomation.Models
             }
         }
 
-        // Fixed threshold at 4 SQM
         public double SurchargeThreshold => 4;
 
         private double _specTotalSQM = 0;

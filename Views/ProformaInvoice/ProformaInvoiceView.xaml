@@ -787,47 +787,42 @@
         <!-- ==================== CENTER - SPECS & PRICE GENERATOR ==================== -->
         <Border Grid.Column="1" Background="#F1F5F9" BorderBrush="{StaticResource BorderLight}" BorderThickness="1,0,0,0">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <StackPanel Margin="10">
+                <StackPanel Margin="12">
 
-                    <!-- Module Selection Card -->
-                    <Border CornerRadius="10" Padding="10" Margin="0,0,0,8"
-                            BorderBrush="{StaticResource PrimaryBlue}" BorderThickness="1.5">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                <GradientStop Color="#DBEAFE" Offset="0"/>
-                                <GradientStop Color="#BFDBFE" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
+                    <!-- MODULE SELECTION CARD -->
+                    <Border Background="#FFFFFF" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="10" Padding="10" Margin="0,0,0,10">
                         <StackPanel>
-                            <Border Background="{StaticResource PrimaryBlueDark}" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left" Margin="0,0,0,10">
+                            <!-- Header -->
+                            <Border Background="#1E40AF" CornerRadius="6" Padding="8,6" HorizontalAlignment="Left" Margin="0,0,0,10">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="🧮" FontSize="10" Margin="0,0,4,0"/>
-                                    <TextBlock Text="SELECT MODULE" FontSize="9" FontWeight="Bold" Foreground="White"/>
+                                    <TextBlock Text="🧮" FontSize="10" Margin="0,0,6,0"/>
+                                    <TextBlock Text="MODULE SELECTION" FontSize="9" FontWeight="Bold" Foreground="White"/>
                                 </StackPanel>
                             </Border>
 
+                            <!-- Module Buttons -->
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="6"/>
+                                    <ColumnDefinition Width="8"/>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="6"/>
+                                    <ColumnDefinition Width="8"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
                                 <Button Grid.Column="0" Command="{Binding SelectSGUCommand}" Cursor="Hand" Padding="0">
                                     <Button.Template>
                                         <ControlTemplate TargetType="Button">
-                                            <Border x:Name="border" Background="White" CornerRadius="8" Padding="8,6" BorderThickness="1.5" BorderBrush="{StaticResource BorderLight}">
+                                            <Border x:Name="border" Background="White" CornerRadius="8" Padding="10" BorderThickness="1.5" BorderBrush="#E2E8F0">
                                                 <StackPanel HorizontalAlignment="Center">
-                                                    <TextBlock Text="SGU" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" Foreground="{StaticResource PrimaryBlueDark}"/>
-                                                    <TextBlock Text="Single" FontSize="7" Foreground="{StaticResource TextSecondary}" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                                    <TextBlock Text="SGU" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" Foreground="#1E40AF"/>
+                                                    <TextBlock Text="Single Glass Unit" FontSize="9" Foreground="#64748B" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                                                 </StackPanel>
                                             </Border>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
                                                     <Setter TargetName="border" Property="Background" Value="#EFF6FF"/>
-                                                    <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource PrimaryBlue}"/>
+                                                    <Setter TargetName="border" Property="BorderBrush" Value="#3B82F6"/>
                                                 </Trigger>
                                             </ControlTemplate.Triggers>
                                         </ControlTemplate>
@@ -837,16 +832,16 @@
                                 <Button Grid.Column="2" Command="{Binding SelectDGUCommand}" Cursor="Hand" Padding="0">
                                     <Button.Template>
                                         <ControlTemplate TargetType="Button">
-                                            <Border x:Name="border" Background="White" CornerRadius="8" Padding="8,6" BorderThickness="1.5" BorderBrush="{StaticResource BorderLight}">
+                                            <Border x:Name="border" Background="White" CornerRadius="8" Padding="10" BorderThickness="1.5" BorderBrush="#E2E8F0">
                                                 <StackPanel HorizontalAlignment="Center">
-                                                    <TextBlock Text="DGU" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" Foreground="{StaticResource PrimaryBlueDark}"/>
-                                                    <TextBlock Text="Double" FontSize="7" Foreground="{StaticResource TextSecondary}" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                                    <TextBlock Text="DGU" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" Foreground="#1E40AF"/>
+                                                    <TextBlock Text="Double Glass Unit" FontSize="9" Foreground="#64748B" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                                                 </StackPanel>
                                             </Border>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
                                                     <Setter TargetName="border" Property="Background" Value="#EFF6FF"/>
-                                                    <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource PrimaryBlue}"/>
+                                                    <Setter TargetName="border" Property="BorderBrush" Value="#3B82F6"/>
                                                 </Trigger>
                                             </ControlTemplate.Triggers>
                                         </ControlTemplate>
@@ -856,16 +851,16 @@
                                 <Button Grid.Column="4" Command="{Binding SelectLAMCommand}" Cursor="Hand" Padding="0">
                                     <Button.Template>
                                         <ControlTemplate TargetType="Button">
-                                            <Border x:Name="border" Background="White" CornerRadius="8" Padding="8,6" BorderThickness="1.5" BorderBrush="{StaticResource BorderLight}">
+                                            <Border x:Name="border" Background="White" CornerRadius="8" Padding="10" BorderThickness="1.5" BorderBrush="#E2E8F0">
                                                 <StackPanel HorizontalAlignment="Center">
-                                                    <TextBlock Text="LAM" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" Foreground="{StaticResource PrimaryBlueDark}"/>
-                                                    <TextBlock Text="Laminate" FontSize="7" Foreground="{StaticResource TextSecondary}" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                                    <TextBlock Text="LAM" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" Foreground="#1E40AF"/>
+                                                    <TextBlock Text="Laminated Glass" FontSize="9" Foreground="#64748B" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                                                 </StackPanel>
                                             </Border>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
                                                     <Setter TargetName="border" Property="Background" Value="#EFF6FF"/>
-                                                    <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource PrimaryBlue}"/>
+                                                    <Setter TargetName="border" Property="BorderBrush" Value="#3B82F6"/>
                                                 </Trigger>
                                             </ControlTemplate.Triggers>
                                         </ControlTemplate>
@@ -875,108 +870,93 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- SGU Input Card -->
-                    <Border CornerRadius="10" Padding="10" Margin="0,0,0,8"
-                            BorderBrush="{StaticResource PrimaryBlue}" BorderThickness="1.5"
-                            Visibility="{Binding IsSGUSelected, Converter={StaticResource BoolToVis}}">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                <GradientStop Color="#DBEAFE" Offset="0"/>
-                                <GradientStop Color="#BFDBFE" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
+                    <!-- SGU CONFIGURATION CARD -->
+                    <Border Background="#FFFFFF" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="10" Padding="10" Margin="0,0,0,10"
+                    Visibility="{Binding IsSGUSelected, Converter={StaticResource BoolToVis}}">
                         <StackPanel>
-                            <Border Background="{StaticResource PrimaryBlueDark}" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left" Margin="0,0,0,10">
+                            <!-- Header -->
+                            <Border Background="#1E40AF" CornerRadius="6" Padding="8,6" HorizontalAlignment="Left" Margin="0,0,0,10">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="📦" FontSize="10" Margin="0,0,4,0"/>
+                                    <TextBlock Text="📦" FontSize="10" Margin="0,0,6,0"/>
                                     <TextBlock Text="SGU CONFIGURATION" FontSize="9" FontWeight="Bold" Foreground="White"/>
                                 </StackPanel>
                             </Border>
 
-                            <Grid Margin="0,0,0,6">
+                            <!-- Thickness, Color, Work Type -->
+                            <Grid Margin="0,0,0,8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="6"/>
+                                    <ColumnDefinition Width="8"/>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="6"/>
+                                    <ColumnDefinition Width="8"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <Border Grid.Column="0" Background="White" CornerRadius="8" Padding="8" BorderThickness="1" BorderBrush="#93C5FD">
-                                    <StackPanel>
-                                        <TextBlock Text="THICKNESS" FontSize="7" FontWeight="SemiBold" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4"/>
-                                        <ComboBox ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding SelectedThickness}" Background="White" BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="6,4" FontSize="9"/>
-                                    </StackPanel>
-                                </Border>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="THICKNESS" FontSize="9" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,4"/>
+                                    <ComboBox ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding SelectedThickness}" Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="7" FontSize="11"/>
+                                </StackPanel>
 
-                                <Border Grid.Column="2" Background="White" CornerRadius="8" Padding="8" BorderThickness="1" BorderBrush="#93C5FD">
-                                    <StackPanel>
-                                        <TextBlock Text="COLOR" FontSize="7" FontWeight="SemiBold" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4"/>
-                                        <ComboBox IsEditable="True"
-                                                  ItemsSource="{Binding ColorHistory}"
-                                                  Text="{Binding SelectedColor, UpdateSourceTrigger=LostFocus}"
-                                                  Background="White" BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="6,4" FontSize="9"
-                                                  StaysOpenOnEdit="True"/>
-                                    </StackPanel>
-                                </Border>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="COLOR" FontSize="9" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,4"/>
+                                    <ComboBox IsEditable="True"
+                                      ItemsSource="{Binding ColorHistory}"
+                                      Text="{Binding SelectedColor, UpdateSourceTrigger=LostFocus}"
+                                      Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="7" FontSize="11"
+                                      StaysOpenOnEdit="True"/>
+                                </StackPanel>
 
-                                <Border Grid.Column="4" Background="White" CornerRadius="8" Padding="8" BorderThickness="1" BorderBrush="#93C5FD">
-                                    <StackPanel>
-                                        <TextBlock Text="WORK TYPE" FontSize="7" FontWeight="SemiBold" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4"/>
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="3"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="4">
+                                    <TextBlock Text="WORK TYPE" FontSize="9" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,4"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="4"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
 
-                                            <RadioButton Grid.Column="0" 
-                                                         IsChecked="{Binding IsAnnealedSelected}"
-                                                         Cursor="Hand">
-                                                <RadioButton.Template>
-                                                    <ControlTemplate TargetType="RadioButton">
-                                                        <Border x:Name="border" Background="#F8FAFC" CornerRadius="6" Padding="6,4" BorderThickness="1" BorderBrush="{StaticResource BorderLight}">
-                                                            <TextBlock Text="Annealed" FontSize="8" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="{StaticResource TextSecondary}"/>
-                                                        </Border>
-                                                        <ControlTemplate.Triggers>
-                                                            <Trigger Property="IsChecked" Value="True">
-                                                                <Setter TargetName="border" Property="Background" Value="{StaticResource SuccessGreen}"/>
-                                                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource SuccessGreen}"/>
-                                                            </Trigger>
-                                                        </ControlTemplate.Triggers>
-                                                    </ControlTemplate>
-                                                </RadioButton.Template>
-                                            </RadioButton>
+                                        <RadioButton Grid.Column="0" IsChecked="{Binding IsAnnealedSelected}" Cursor="Hand">
+                                            <RadioButton.Template>
+                                                <ControlTemplate TargetType="RadioButton">
+                                                    <Border x:Name="border" Background="#F8FAFC" CornerRadius="6" Padding="6,5" BorderThickness="1" BorderBrush="#E2E8F0">
+                                                        <TextBlock Text="Annealed" FontSize="9" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="#64748B"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsChecked" Value="True">
+                                                            <Setter TargetName="border" Property="Background" Value="#059669"/>
+                                                            <Setter TargetName="border" Property="BorderBrush" Value="#059669"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </RadioButton.Template>
+                                        </RadioButton>
 
-                                            <RadioButton Grid.Column="2" 
-                                                         IsChecked="{Binding IsFTSelected}"
-                                                         Cursor="Hand">
-                                                <RadioButton.Template>
-                                                    <ControlTemplate TargetType="RadioButton">
-                                                        <Border x:Name="border" Background="#F8FAFC" CornerRadius="6" Padding="6,4" BorderThickness="1" BorderBrush="{StaticResource BorderLight}">
-                                                            <TextBlock Text="FT Glass" FontSize="8" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="{StaticResource TextSecondary}"/>
-                                                        </Border>
-                                                        <ControlTemplate.Triggers>
-                                                            <Trigger Property="IsChecked" Value="True">
-                                                                <Setter TargetName="border" Property="Background" Value="{StaticResource SuccessGreen}"/>
-                                                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource SuccessGreen}"/>
-                                                            </Trigger>
-                                                        </ControlTemplate.Triggers>
-                                                    </ControlTemplate>
-                                                </RadioButton.Template>
-                                            </RadioButton>
-                                        </Grid>
-                                    </StackPanel>
-                                </Border>
+                                        <RadioButton Grid.Column="2" IsChecked="{Binding IsFTSelected}" Cursor="Hand">
+                                            <RadioButton.Template>
+                                                <ControlTemplate TargetType="RadioButton">
+                                                    <Border x:Name="border" Background="#F8FAFC" CornerRadius="6" Padding="6,5" BorderThickness="1" BorderBrush="#E2E8F0">
+                                                        <TextBlock Text="FT Glass" FontSize="9" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="#64748B"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsChecked" Value="True">
+                                                            <Setter TargetName="border" Property="Background" Value="#059669"/>
+                                                            <Setter TargetName="border" Property="BorderBrush" Value="#059669"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </RadioButton.Template>
+                                        </RadioButton>
+                                    </Grid>
+                                </StackPanel>
                             </Grid>
 
-                            <Border Background="White" CornerRadius="8" Padding="8" Margin="0,0,0,6" BorderThickness="1" BorderBrush="#93C5FD">
-                                <StackPanel>
-                                    <TextBlock Text="SHEET PRICE (AED)" FontSize="7" FontWeight="SemiBold" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4"/>
-                                    <TextBox Text="{Binding SGUSheetPrice, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="8,6" FontSize="12" FontWeight="Bold" TextAlignment="Center" Foreground="{StaticResource PrimaryBlueDark}"/>
-                                </StackPanel>
-                            </Border>
+                            <!-- Sheet Price -->
+                            <StackPanel Margin="0,0,0,8">
+                                <TextBlock Text="SHEET PRICE (AED)" FontSize="9" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding SGUSheetPrice, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="10,8" FontSize="14" FontWeight="Bold" TextAlignment="Center" Foreground="#1E40AF"/>
+                            </StackPanel>
 
+                            <!-- Cutting, Tempering, Waste, Profit -->
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -988,403 +968,469 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <Border Grid.Column="0" Background="White" CornerRadius="8" Padding="6" BorderThickness="1" BorderBrush="#93C5FD">
-                                    <StackPanel>
-                                        <TextBlock Text="CUTTING" FontSize="6" Foreground="{StaticResource TextMuted}" Margin="0,0,0,2"/>
-                                        <TextBox Text="{Binding SGUCutting, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="4,3" FontSize="9" TextAlignment="Center"/>
-                                    </StackPanel>
-                                </Border>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="CUTTING" FontSize="8" Foreground="#94A3B8" Margin="0,0,0,2"/>
+                                    <TextBox Text="{Binding SGUCutting, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="4,3" FontSize="10" TextAlignment="Center"/>
+                                </StackPanel>
 
-                                <Border Grid.Column="2" Background="White" CornerRadius="8" Padding="6" BorderThickness="1" BorderBrush="#93C5FD">
-                                    <StackPanel>
-                                        <TextBlock Text="TEMPERING" FontSize="6" Foreground="{StaticResource TextMuted}" Margin="0,0,0,2"/>
-                                        <TextBox Text="{Binding SGUTempering, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="4,3" FontSize="9" TextAlignment="Center"/>
-                                    </StackPanel>
-                                </Border>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="TEMPERING" FontSize="8" Foreground="#94A3B8" Margin="0,0,0,2"/>
+                                    <TextBox Text="{Binding SGUTempering, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="4,3" FontSize="10" TextAlignment="Center"/>
+                                </StackPanel>
 
-                                <Border Grid.Column="4" Background="White" CornerRadius="8" Padding="6" BorderThickness="1" BorderBrush="#93C5FD">
-                                    <StackPanel>
-                                        <TextBlock Text="WASTE" FontSize="6" Foreground="{StaticResource TextMuted}" Margin="0,0,0,2"/>
-                                        <TextBox Text="{Binding SGUWasteFactor, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="4,3" FontSize="9" TextAlignment="Center"/>
-                                    </StackPanel>
-                                </Border>
+                                <StackPanel Grid.Column="4">
+                                    <TextBlock Text="WASTE" FontSize="8" Foreground="#94A3B8" Margin="0,0,0,2"/>
+                                    <TextBox Text="{Binding SGUWasteFactor, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="4,3" FontSize="10" TextAlignment="Center"/>
+                                </StackPanel>
 
-                                <Border Grid.Column="6" Background="White" CornerRadius="8" Padding="6" BorderThickness="1" BorderBrush="#93C5FD">
-                                    <StackPanel>
-                                        <TextBlock Text="PROFIT %" FontSize="6" Foreground="{StaticResource TextMuted}" Margin="0,0,0,2"/>
-                                        <TextBox Text="{Binding SGUProfitPercent, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="4,3" FontSize="9" TextAlignment="Center"/>
-                                    </StackPanel>
-                                </Border>
+                                <StackPanel Grid.Column="6">
+                                    <TextBlock Text="PROFIT %" FontSize="8" Foreground="#94A3B8" Margin="0,0,0,2"/>
+                                    <TextBox Text="{Binding SGUProfitPercent, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="4,3" FontSize="10" TextAlignment="Center"/>
+                                </StackPanel>
                             </Grid>
                         </StackPanel>
                     </Border>
 
-                    <!-- DGU Input Card -->
-                    <Border CornerRadius="10" Padding="10" Margin="0,0,0,8"
-                            BorderBrush="{StaticResource SuccessGreen}" BorderThickness="1.5"
-                            Visibility="{Binding IsDGUSelected, Converter={StaticResource BoolToVis}}">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                <GradientStop Color="#D1FAE5" Offset="0"/>
-                                <GradientStop Color="#A7F3D0" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
+                    <!-- DGU CONFIGURATION CARD -->
+                    <Border Background="#FFFFFF" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="10" Padding="10" Margin="0,0,0,10"
+                    Visibility="{Binding IsDGUSelected, Converter={StaticResource BoolToVis}}">
                         <StackPanel>
-                            <Border Background="{StaticResource SuccessGreen}" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left" Margin="0,0,0,10">
+                            <!-- Header -->
+                            <Border Background="#059669" CornerRadius="6" Padding="8,6" HorizontalAlignment="Left" Margin="0,0,0,10">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="🪟" FontSize="10" Margin="0,0,4,0"/>
+                                    <TextBlock Text="🪟" FontSize="10" Margin="0,0,6,0"/>
                                     <TextBlock Text="DGU CONFIGURATION" FontSize="9" FontWeight="Bold" Foreground="White"/>
                                 </StackPanel>
                             </Border>
 
-                            <!-- Outer Glass -->
-                            <Border Background="White" CornerRadius="8" Padding="8" Margin="0,0,0,6" BorderThickness="1" BorderBrush="#6EE7B7">
-                                <StackPanel>
-                                    <TextBlock Text="OUTER GLASS" FontSize="7" FontWeight="SemiBold" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,6"/>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="6"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="6"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
+                            <!-- Section Title -->
+                            <TextBlock Text="OUTER GLASS" FontSize="9" FontWeight="Bold" Foreground="#1F2937" Margin="0,0,0,6"/>
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
 
-                                        <StackPanel Grid.Column="0">
-                                            <TextBlock Text="THICKNESS" FontSize="6" Foreground="{StaticResource TextMuted}" Margin="0,0,0,2"/>
-                                            <ComboBox ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding DGUOuterThickness}" Background="White" BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="6,4" FontSize="9"/>
-                                        </StackPanel>
-
-                                        <StackPanel Grid.Column="2">
-                                            <TextBlock Text="COLOR" FontSize="6" Foreground="{StaticResource TextMuted}" Margin="0,0,0,2"/>
-                                            <ComboBox IsEditable="True"
-                                                      ItemsSource="{Binding ColorHistory}"
-                                                      Text="{Binding DGUOuterColor, UpdateSourceTrigger=LostFocus}"
-                                                      Background="White" BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="6,4" FontSize="9"
-                                                      StaysOpenOnEdit="True"/>
-                                        </StackPanel>
-
-                                        <StackPanel Grid.Column="4">
-                                            <TextBlock Text="PRICE" FontSize="6" Foreground="{StaticResource TextMuted}" Margin="0,0,0,2"/>
-                                            <TextBox Text="{Binding DGUOuterPrice, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="6,4" FontSize="9" TextAlignment="Center"/>
-                                        </StackPanel>
-                                    </Grid>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="THICKNESS" FontSize="8" Foreground="#94A3B8" Margin="0,0,0,2"/>
+                                    <ComboBox ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding DGUOuterThickness}" Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="6,5" FontSize="10"/>
                                 </StackPanel>
-                            </Border>
 
-                            <!-- Air Space -->
-                            <Border Background="White" CornerRadius="8" Padding="8" Margin="0,0,0,6" BorderThickness="1" BorderBrush="#6EE7B7">
-                                <StackPanel>
-                                    <TextBlock Text="AIR SPACE" FontSize="7" FontWeight="SemiBold" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,6"/>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="6"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-
-                                        <StackPanel Grid.Column="0">
-                                            <TextBlock Text="SPACER" FontSize="6" Foreground="{StaticResource TextMuted}" Margin="0,0,0,2"/>
-                                            <ComboBox Background="White" BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="6,4" FontSize="9">
-                                                <ComboBoxItem Content="6mm" IsSelected="True"/>
-                                                <ComboBoxItem Content="8mm"/>
-                                                <ComboBoxItem Content="10mm"/>
-                                                <ComboBoxItem Content="12mm"/>
-                                            </ComboBox>
-                                        </StackPanel>
-
-                                        <StackPanel Grid.Column="2">
-                                            <TextBlock Text="ASP (AED)" FontSize="6" Foreground="{StaticResource TextMuted}" Margin="0,0,0,2"/>
-                                            <TextBox Text="{Binding DGUASPPrice, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="6,4" FontSize="9" TextAlignment="Center"/>
-                                        </StackPanel>
-                                    </Grid>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="COLOR" FontSize="8" Foreground="#94A3B8" Margin="0,0,0,2"/>
+                                    <ComboBox IsEditable="True"
+                                      ItemsSource="{Binding ColorHistory}"
+                                      Text="{Binding DGUOuterColor, UpdateSourceTrigger=LostFocus}"
+                                      Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="6,5" FontSize="10"
+                                      StaysOpenOnEdit="True"/>
                                 </StackPanel>
-                            </Border>
 
-                            <!-- Inner Glass -->
-                            <Border Background="White" CornerRadius="8" Padding="8" Margin="0,0,0,6" BorderThickness="1" BorderBrush="#6EE7B7">
-                                <StackPanel>
-                                    <TextBlock Text="INNER GLASS" FontSize="7" FontWeight="SemiBold" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,6"/>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="6"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="6"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-
-                                        <StackPanel Grid.Column="0">
-                                            <TextBlock Text="THICKNESS" FontSize="6" Foreground="{StaticResource TextMuted}" Margin="0,0,0,2"/>
-                                            <ComboBox ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding DGUInnerThickness}" Background="White" BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="6,4" FontSize="9"/>
-                                        </StackPanel>
-
-                                        <StackPanel Grid.Column="2">
-                                            <TextBlock Text="COLOR" FontSize="6" Foreground="{StaticResource TextMuted}" Margin="0,0,0,2"/>
-                                            <ComboBox IsEditable="True"
-                                                      ItemsSource="{Binding ColorHistory}"
-                                                      Text="{Binding DGUInnerColor, UpdateSourceTrigger=LostFocus}"
-                                                      Background="White" BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="6,4" FontSize="9"
-                                                      StaysOpenOnEdit="True"/>
-                                        </StackPanel>
-
-                                        <StackPanel Grid.Column="4">
-                                            <TextBlock Text="PRICE" FontSize="6" Foreground="{StaticResource TextMuted}" Margin="0,0,0,2"/>
-                                            <TextBox Text="{Binding DGUInnerPrice, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="6,4" FontSize="9" TextAlignment="Center"/>
-                                        </StackPanel>
-                                    </Grid>
+                                <StackPanel Grid.Column="4">
+                                    <TextBlock Text="PRICE" FontSize="8" Foreground="#94A3B8" Margin="0,0,0,2"/>
+                                    <TextBox Text="{Binding DGUOuterPrice, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="6,5" FontSize="10" TextAlignment="Center"/>
                                 </StackPanel>
-                            </Border>
+                            </Grid>
+
+                            <!-- Section Title - Work Type -->
+                            <TextBlock Text="WORK TYPE" FontSize="9" FontWeight="Bold" Foreground="#1F2937" Margin="0,0,0,6"/>
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <RadioButton Grid.Column="0" IsChecked="{Binding IsDGUAnnealedSelected}" Cursor="Hand">
+                                    <RadioButton.Template>
+                                        <ControlTemplate TargetType="RadioButton">
+                                            <Border x:Name="border" Background="#F8FAFC" CornerRadius="6" Padding="8,6" BorderThickness="1" BorderBrush="#E2E8F0">
+                                                <TextBlock Text="Annealed" FontSize="10" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="#64748B"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsChecked" Value="True">
+                                                    <Setter TargetName="border" Property="Background" Value="#059669"/>
+                                                    <Setter TargetName="border" Property="BorderBrush" Value="#059669"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </RadioButton.Template>
+                                </RadioButton>
+
+                                <RadioButton Grid.Column="2" IsChecked="{Binding IsDGUFTSelected}" Cursor="Hand">
+                                    <RadioButton.Template>
+                                        <ControlTemplate TargetType="RadioButton">
+                                            <Border x:Name="border" Background="#F8FAFC" CornerRadius="6" Padding="8,6" BorderThickness="1" BorderBrush="#E2E8F0">
+                                                <TextBlock Text="FT Glass" FontSize="10" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="#64748B"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsChecked" Value="True">
+                                                    <Setter TargetName="border" Property="Background" Value="#059669"/>
+                                                    <Setter TargetName="border" Property="BorderBrush" Value="#059669"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </RadioButton.Template>
+                                </RadioButton>
+                            </Grid>
+
+                            <!-- Section Title - Air Spacer -->
+                            <TextBlock Text="AIR SPACER (MANDATORY)" FontSize="9" FontWeight="Bold" Foreground="#1F2937" Margin="0,0,0,6"/>
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="SPACER" FontSize="8" Foreground="#94A3B8" Margin="0,0,0,2"/>
+                                    <ComboBox Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="6,5" FontSize="10">
+                                        <ComboBoxItem Content="6mm" IsSelected="True"/>
+                                        <ComboBoxItem Content="8mm"/>
+                                        <ComboBoxItem Content="10mm"/>
+                                        <ComboBoxItem Content="12mm"/>
+                                    </ComboBox>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="ASP PRICE (AED)" FontSize="8" Foreground="#94A3B8" Margin="0,0,0,2"/>
+                                    <TextBox Text="{Binding DGUASPPrice, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="6,5" FontSize="10" TextAlignment="Center"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Section Title - U-Insert -->
+                            <TextBlock Text="INCLUDE IN SPEC (U-INSERT)" FontSize="9" FontWeight="Bold" Foreground="#1F2937" Margin="0,0,0,6"/>
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <RadioButton Grid.Column="0" IsChecked="{Binding IsDGUIncludeInSpec}" Cursor="Hand">
+                                    <RadioButton.Template>
+                                        <ControlTemplate TargetType="RadioButton">
+                                            <Border x:Name="border" Background="#F8FAFC" CornerRadius="6" Padding="8,6" BorderThickness="1" BorderBrush="#E2E8F0">
+                                                <TextBlock Text="YES - Include" FontSize="10" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="#64748B"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsChecked" Value="True">
+                                                    <Setter TargetName="border" Property="Background" Value="#059669"/>
+                                                    <Setter TargetName="border" Property="BorderBrush" Value="#059669"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </RadioButton.Template>
+                                </RadioButton>
+
+                                <RadioButton Grid.Column="2" IsChecked="{Binding IsDGUInternalOnly}" Cursor="Hand">
+                                    <RadioButton.Template>
+                                        <ControlTemplate TargetType="RadioButton">
+                                            <Border x:Name="border" Background="#F8FAFC" CornerRadius="6" Padding="8,6" BorderThickness="1" BorderBrush="#E2E8F0">
+                                                <TextBlock Text="NO - Internal Only" FontSize="10" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="#64748B"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsChecked" Value="True">
+                                                    <Setter TargetName="border" Property="Background" Value="#EF4444"/>
+                                                    <Setter TargetName="border" Property="BorderBrush" Value="#EF4444"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </RadioButton.Template>
+                                </RadioButton>
+                            </Grid>
+
+                            <!-- Section Title - Inner Glass -->
+                            <TextBlock Text="INNER GLASS" FontSize="9" FontWeight="Bold" Foreground="#1F2937" Margin="0,0,0,6"/>
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="THICKNESS" FontSize="8" Foreground="#94A3B8" Margin="0,0,0,2"/>
+                                    <ComboBox ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding DGUInnerThickness}" Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="6,5" FontSize="10"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="COLOR" FontSize="8" Foreground="#94A3B8" Margin="0,0,0,2"/>
+                                    <ComboBox IsEditable="True"
+                                      ItemsSource="{Binding ColorHistory}"
+                                      Text="{Binding DGUInnerColor, UpdateSourceTrigger=LostFocus}"
+                                      Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="6,5" FontSize="10"
+                                      StaysOpenOnEdit="True"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="4">
+                                    <TextBlock Text="PRICE" FontSize="8" Foreground="#94A3B8" Margin="0,0,0,2"/>
+                                    <TextBox Text="{Binding DGUInnerPrice, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="6,5" FontSize="10" TextAlignment="Center"/>
+                                </StackPanel>
+                            </Grid>
 
                             <!-- Waste & Profit -->
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="6"/>
+                                    <ColumnDefinition Width="8"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <Border Grid.Column="0" Background="White" CornerRadius="8" Padding="6" BorderThickness="1" BorderBrush="#6EE7B7">
-                                    <StackPanel>
-                                        <TextBlock Text="WASTE" FontSize="6" Foreground="{StaticResource TextMuted}" Margin="0,0,0,2"/>
-                                        <TextBox Text="{Binding DGUWasteFactor, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="4,3" FontSize="9" TextAlignment="Center"/>
-                                    </StackPanel>
-                                </Border>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="WASTE" FontSize="8" Foreground="#94A3B8" Margin="0,0,0,2"/>
+                                    <TextBox Text="{Binding DGUWasteFactor, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="4,3" FontSize="10" TextAlignment="Center"/>
+                                </StackPanel>
 
-                                <Border Grid.Column="2" Background="White" CornerRadius="8" Padding="6" BorderThickness="1" BorderBrush="#6EE7B7">
-                                    <StackPanel>
-                                        <TextBlock Text="PROFIT %" FontSize="6" Foreground="{StaticResource TextMuted}" Margin="0,0,0,2"/>
-                                        <TextBox Text="{Binding DGUProfitPercent, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="4,3" FontSize="9" TextAlignment="Center"/>
-                                    </StackPanel>
-                                </Border>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="PROFIT %" FontSize="8" Foreground="#94A3B8" Margin="0,0,0,2"/>
+                                    <TextBox Text="{Binding DGUProfitPercent, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="4,3" FontSize="10" TextAlignment="Center"/>
+                                </StackPanel>
                             </Grid>
                         </StackPanel>
                     </Border>
 
-                    <!-- LAM Input Card -->
-                    <Border CornerRadius="10" Padding="10" Margin="0,0,0,8"
-                            BorderBrush="{StaticResource PurpleAccent}" BorderThickness="1.5"
-                            Visibility="{Binding IsLAMSelected, Converter={StaticResource BoolToVis}}">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                <GradientStop Color="#EDE9FE" Offset="0"/>
-                                <GradientStop Color="#DDD6FE" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
+                    <!-- LAM CONFIGURATION CARD -->
+                    <Border Background="#FFFFFF" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="10" Padding="10" Margin="0,0,0,10"
+                    Visibility="{Binding IsLAMSelected, Converter={StaticResource BoolToVis}}">
                         <StackPanel>
-                            <Border Background="{StaticResource PurpleAccent}" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left" Margin="0,0,0,10">
+                            <!-- Header -->
+                            <Border Background="#7C3AED" CornerRadius="6" Padding="8,6" HorizontalAlignment="Left" Margin="0,0,0,10">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="🔒" FontSize="10" Margin="0,0,4,0"/>
+                                    <TextBlock Text="🔒" FontSize="10" Margin="0,0,6,0"/>
                                     <TextBlock Text="LAM CONFIGURATION" FontSize="9" FontWeight="Bold" Foreground="White"/>
                                 </StackPanel>
                             </Border>
 
-                            <!-- Outer Glass -->
-                            <Border Background="White" CornerRadius="8" Padding="8" Margin="0,0,0,6" BorderThickness="1" BorderBrush="#C4B5FD">
-                                <StackPanel>
-                                    <TextBlock Text="OUTER GLASS" FontSize="7" FontWeight="SemiBold" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,6"/>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="6"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="6"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-
-                                        <StackPanel Grid.Column="0">
-                                            <TextBlock Text="THICKNESS" FontSize="6" Foreground="{StaticResource TextMuted}" Margin="0,0,0,2"/>
-                                            <ComboBox ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding LAMOuterThickness}" Background="White" BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="6,4" FontSize="9"/>
-                                        </StackPanel>
-
-                                        <StackPanel Grid.Column="2">
-                                            <TextBlock Text="COLOR" FontSize="6" Foreground="{StaticResource TextMuted}" Margin="0,0,0,2"/>
-                                            <ComboBox IsEditable="True"
-                                                      ItemsSource="{Binding ColorHistory}"
-                                                      Text="{Binding LAMOuterColor, UpdateSourceTrigger=LostFocus}"
-                                                      Background="White" BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="6,4" FontSize="9"
-                                                      StaysOpenOnEdit="True"/>
-                                        </StackPanel>
-
-                                        <StackPanel Grid.Column="4">
-                                            <TextBlock Text="PRICE" FontSize="6" Foreground="{StaticResource TextMuted}" Margin="0,0,0,2"/>
-                                            <TextBox Text="{Binding LAMOuterPrice, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="6,4" FontSize="9" TextAlignment="Center"/>
-                                        </StackPanel>
-                                    </Grid>
-                                </StackPanel>
-                            </Border>
-
-                            <!-- PVB Layer -->
-                            <Border Background="White" CornerRadius="8" Padding="8" Margin="0,0,0,6" BorderThickness="1" BorderBrush="#C4B5FD">
-                                <StackPanel>
-                                    <TextBlock Text="PVB LAYER" FontSize="7" FontWeight="SemiBold" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,6"/>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="6"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="6"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-
-                                        <StackPanel Grid.Column="0">
-                                            <TextBlock Text="PVB THICKNESS" FontSize="6" Foreground="{StaticResource TextMuted}" Margin="0,0,0,2"/>
-                                            <ComboBox Background="White" BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="6,4" FontSize="9">
-                                                <ComboBoxItem Content="0.76mm" IsSelected="True"/>
-                                                <ComboBoxItem Content="1.52mm"/>
-                                                <ComboBoxItem Content="2.28mm"/>
-                                            </ComboBox>
-                                        </StackPanel>
-
-                                        <StackPanel Grid.Column="2">
-                                            <TextBlock Text="PVB COLOR" FontSize="6" Foreground="{StaticResource TextMuted}" Margin="0,0,0,2"/>
-                                            <ComboBox Background="White" BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="6,4" FontSize="9">
-                                                <ComboBoxItem Content="Clear" IsSelected="True"/>
-                                                <ComboBoxItem Content="White"/>
-                                            </ComboBox>
-                                        </StackPanel>
-
-                                        <StackPanel Grid.Column="4">
-                                            <TextBlock Text="PVB PRICE" FontSize="6" Foreground="{StaticResource TextMuted}" Margin="0,0,0,2"/>
-                                            <TextBox Text="{Binding LAMPVBPrice, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="6,4" FontSize="9" TextAlignment="Center"/>
-                                        </StackPanel>
-                                    </Grid>
-                                </StackPanel>
-                            </Border>
-
-                            <!-- Inner Glass -->
-                            <Border Background="White" CornerRadius="8" Padding="8" Margin="0,0,0,6" BorderThickness="1" BorderBrush="#C4B5FD">
-                                <StackPanel>
-                                    <TextBlock Text="INNER GLASS" FontSize="7" FontWeight="SemiBold" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,6"/>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="6"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="6"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-
-                                        <StackPanel Grid.Column="0">
-                                            <TextBlock Text="THICKNESS" FontSize="6" Foreground="{StaticResource TextMuted}" Margin="0,0,0,2"/>
-                                            <ComboBox ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding LAMInnerThickness}" Background="White" BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="6,4" FontSize="9"/>
-                                        </StackPanel>
-
-                                        <StackPanel Grid.Column="2">
-                                            <TextBlock Text="COLOR" FontSize="6" Foreground="{StaticResource TextMuted}" Margin="0,0,0,2"/>
-                                            <ComboBox IsEditable="True"
-                                                      ItemsSource="{Binding ColorHistory}"
-                                                      Text="{Binding LAMInnerColor, UpdateSourceTrigger=LostFocus}"
-                                                      Background="White" BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="6,4" FontSize="9"
-                                                      StaysOpenOnEdit="True"/>
-                                        </StackPanel>
-
-                                        <StackPanel Grid.Column="4">
-                                            <TextBlock Text="PRICE" FontSize="6" Foreground="{StaticResource TextMuted}" Margin="0,0,0,2"/>
-                                            <TextBox Text="{Binding LAMInnerPrice, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="6,4" FontSize="9" TextAlignment="Center"/>
-                                        </StackPanel>
-                                    </Grid>
-                                </StackPanel>
-                            </Border>
-
-                            <!-- Cutting & Tempering -->
-                            <Grid Margin="0,0,0,6">
+                            <!-- Section Title - Outer Glass -->
+                            <TextBlock Text="OUTER GLASS" FontSize="9" FontWeight="Bold" Foreground="#1F2937" Margin="0,0,0,6"/>
+                            <Grid Margin="0,0,0,10">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="6"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <Border Grid.Column="0" Background="White" CornerRadius="8" Padding="6" BorderThickness="1" BorderBrush="#C4B5FD">
-                                    <StackPanel>
-                                        <TextBlock Text="CUTTING" FontSize="6" Foreground="{StaticResource TextMuted}" Margin="0,0,0,2"/>
-                                        <TextBox Text="{Binding LAMCutting, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="4,3" FontSize="9" TextAlignment="Center"/>
-                                    </StackPanel>
-                                </Border>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="THICKNESS" FontSize="8" Foreground="#94A3B8" Margin="0,0,0,2"/>
+                                    <ComboBox ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding LAMOuterThickness}" Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="6,5" FontSize="10"/>
+                                </StackPanel>
 
-                                <Border Grid.Column="2" Background="White" CornerRadius="8" Padding="6" BorderThickness="1" BorderBrush="#C4B5FD">
-                                    <StackPanel>
-                                        <TextBlock Text="TEMPERING" FontSize="6" Foreground="{StaticResource TextMuted}" Margin="0,0,0,2"/>
-                                        <TextBox Text="{Binding LAMTempering, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="4,3" FontSize="9" TextAlignment="Center"/>
-                                    </StackPanel>
-                                </Border>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="COLOR" FontSize="8" Foreground="#94A3B8" Margin="0,0,0,2"/>
+                                    <ComboBox IsEditable="True"
+                                      ItemsSource="{Binding ColorHistory}"
+                                      Text="{Binding LAMOuterColor, UpdateSourceTrigger=LostFocus}"
+                                      Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="6,5" FontSize="10"
+                                      StaysOpenOnEdit="True"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="4">
+                                    <TextBlock Text="PRICE" FontSize="8" Foreground="#94A3B8" Margin="0,0,0,2"/>
+                                    <TextBox Text="{Binding LAMOuterPrice, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="6,5" FontSize="10" TextAlignment="Center"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Section Title - Work Type -->
+                            <TextBlock Text="WORK TYPE" FontSize="9" FontWeight="Bold" Foreground="#1F2937" Margin="0,0,0,6"/>
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <RadioButton Grid.Column="0" IsChecked="{Binding IsLAMAnnealedSelected}" Cursor="Hand">
+                                    <RadioButton.Template>
+                                        <ControlTemplate TargetType="RadioButton">
+                                            <Border x:Name="border" Background="#F8FAFC" CornerRadius="6" Padding="8,6" BorderThickness="1" BorderBrush="#E2E8F0">
+                                                <TextBlock Text="Annealed" FontSize="10" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="#64748B"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsChecked" Value="True">
+                                                    <Setter TargetName="border" Property="Background" Value="#7C3AED"/>
+                                                    <Setter TargetName="border" Property="BorderBrush" Value="#7C3AED"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </RadioButton.Template>
+                                </RadioButton>
+
+                                <RadioButton Grid.Column="2" IsChecked="{Binding IsLAMFTSelected}" Cursor="Hand">
+                                    <RadioButton.Template>
+                                        <ControlTemplate TargetType="RadioButton">
+                                            <Border x:Name="border" Background="#F8FAFC" CornerRadius="6" Padding="8,6" BorderThickness="1" BorderBrush="#E2E8F0">
+                                                <TextBlock Text="FT Glass" FontSize="10" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="#64748B"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsChecked" Value="True">
+                                                    <Setter TargetName="border" Property="Background" Value="#7C3AED"/>
+                                                    <Setter TargetName="border" Property="BorderBrush" Value="#7C3AED"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </RadioButton.Template>
+                                </RadioButton>
+                            </Grid>
+
+                            <!-- Section Title - PVB Layer -->
+                            <TextBlock Text="PVB LAYER" FontSize="9" FontWeight="Bold" Foreground="#1F2937" Margin="0,0,0,6"/>
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="PVB THICKNESS" FontSize="8" Foreground="#94A3B8" Margin="0,0,0,2"/>
+                                    <ComboBox Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="6,5" FontSize="10">
+                                        <ComboBoxItem Content="0.76mm" IsSelected="True"/>
+                                        <ComboBoxItem Content="1.52mm"/>
+                                        <ComboBoxItem Content="2.28mm"/>
+                                    </ComboBox>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="PVB COLOR" FontSize="8" Foreground="#94A3B8" Margin="0,0,0,2"/>
+                                    <ComboBox Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="6,5" FontSize="10">
+                                        <ComboBoxItem Content="Clear" IsSelected="True"/>
+                                        <ComboBoxItem Content="White"/>
+                                    </ComboBox>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="4">
+                                    <TextBlock Text="PVB PRICE" FontSize="8" Foreground="#94A3B8" Margin="0,0,0,2"/>
+                                    <TextBox Text="{Binding LAMPVBPrice, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="6,5" FontSize="10" TextAlignment="Center"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Section Title - Inner Glass -->
+                            <TextBlock Text="INNER GLASS" FontSize="9" FontWeight="Bold" Foreground="#1F2937" Margin="0,0,0,6"/>
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="THICKNESS" FontSize="8" Foreground="#94A3B8" Margin="0,0,0,2"/>
+                                    <ComboBox ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding LAMInnerThickness}" Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="6,5" FontSize="10"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="COLOR" FontSize="8" Foreground="#94A3B8" Margin="0,0,0,2"/>
+                                    <ComboBox IsEditable="True"
+                                      ItemsSource="{Binding ColorHistory}"
+                                      Text="{Binding LAMInnerColor, UpdateSourceTrigger=LostFocus}"
+                                      Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="6,5" FontSize="10"
+                                      StaysOpenOnEdit="True"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="4">
+                                    <TextBlock Text="PRICE" FontSize="8" Foreground="#94A3B8" Margin="0,0,0,2"/>
+                                    <TextBox Text="{Binding LAMInnerPrice, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="6,5" FontSize="10" TextAlignment="Center"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Cutting & Tempering -->
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="CUTTING" FontSize="8" Foreground="#94A3B8" Margin="0,0,0,2"/>
+                                    <TextBox Text="{Binding LAMCutting, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="4,3" FontSize="10" TextAlignment="Center"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="TEMPERING" FontSize="8" Foreground="#94A3B8" Margin="0,0,0,2"/>
+                                    <TextBox Text="{Binding LAMTempering, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="4,3" FontSize="10" TextAlignment="Center"/>
+                                </StackPanel>
                             </Grid>
 
                             <!-- Waste & Profit -->
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="6"/>
+                                    <ColumnDefinition Width="8"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <Border Grid.Column="0" Background="White" CornerRadius="8" Padding="6" BorderThickness="1" BorderBrush="#C4B5FD">
-                                    <StackPanel>
-                                        <TextBlock Text="WASTE" FontSize="6" Foreground="{StaticResource TextMuted}" Margin="0,0,0,2"/>
-                                        <TextBox Text="{Binding LAMWasteFactor, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="4,3" FontSize="9" TextAlignment="Center"/>
-                                    </StackPanel>
-                                </Border>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="WASTE" FontSize="8" Foreground="#94A3B8" Margin="0,0,0,2"/>
+                                    <TextBox Text="{Binding LAMWasteFactor, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="4,3" FontSize="10" TextAlignment="Center"/>
+                                </StackPanel>
 
-                                <Border Grid.Column="2" Background="White" CornerRadius="8" Padding="6" BorderThickness="1" BorderBrush="#C4B5FD">
-                                    <StackPanel>
-                                        <TextBlock Text="PROFIT %" FontSize="6" Foreground="{StaticResource TextMuted}" Margin="0,0,0,2"/>
-                                        <TextBox Text="{Binding LAMProfitPercent, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="4,3" FontSize="9" TextAlignment="Center"/>
-                                    </StackPanel>
-                                </Border>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="PROFIT %" FontSize="8" Foreground="#94A3B8" Margin="0,0,0,2"/>
+                                    <TextBox Text="{Binding LAMProfitPercent, UpdateSourceTrigger=PropertyChanged}" Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="4,3" FontSize="10" TextAlignment="Center"/>
+                                </StackPanel>
                             </Grid>
                         </StackPanel>
                     </Border>
 
-                    <!-- Generated Output Card -->
-                    <Border CornerRadius="10" Padding="10" Margin="0,0,0,8"
-                            BorderBrush="{StaticResource SuccessGreen}" BorderThickness="1.5">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                <GradientStop Color="#D1FAE5" Offset="0"/>
-                                <GradientStop Color="#A7F3D0" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
+                    <!-- CALCULATED RESULT CARD -->
+                    <Border Background="#FFFFFF" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="10" Padding="10" Margin="0,0,0,10">
                         <StackPanel>
-                            <Border Background="{StaticResource SuccessGreen}" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left" Margin="0,0,0,10">
+                            <!-- Header -->
+                            <Border Background="#059669" CornerRadius="6" Padding="8,6" HorizontalAlignment="Left" Margin="0,0,0,10">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="✨" FontSize="10" Margin="0,0,4,0"/>
+                                    <TextBlock Text="✨" FontSize="10" Margin="0,0,6,0"/>
                                     <TextBlock Text="CALCULATED RESULT" FontSize="9" FontWeight="Bold" Foreground="White"/>
                                 </StackPanel>
                             </Border>
 
-                            <Border Background="White" CornerRadius="8" Padding="8" Margin="0,0,0,6" BorderThickness="1" BorderBrush="#6EE7B7">
-                                <StackPanel>
-                                    <TextBlock Text="DESCRIPTION" FontSize="7" FontWeight="SemiBold" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4"/>
-                                    <TextBox Text="{Binding GeneratedDescription, Mode=OneWay}" IsReadOnly="True" Background="#F0FDF4" BorderBrush="#6EE7B7" BorderThickness="1" Padding="8,6" FontSize="9" FontWeight="SemiBold" Foreground="{StaticResource SuccessGreen}" TextWrapping="Wrap"/>
-                                </StackPanel>
-                            </Border>
+                            <!-- Description -->
+                            <StackPanel Margin="0,0,0,8">
+                                <TextBlock Text="DESCRIPTION" FontSize="8" Foreground="#94A3B8" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding GeneratedDescription, Mode=OneWay}" IsReadOnly="True" Background="#F0FDF4" BorderBrush="#6EE7B7" BorderThickness="1" Padding="8,6" FontSize="10" FontWeight="SemiBold" Foreground="#059669" TextWrapping="Wrap"/>
+                            </StackPanel>
 
-                            <Border Background="{StaticResource SuccessGreen}" CornerRadius="8" Padding="12,10" Margin="0,0,0,6">
+                            <!-- Price Box -->
+                            <Border Background="#059669" CornerRadius="10" Padding="14,12" Margin="0,0,0,10">
                                 <StackPanel HorizontalAlignment="Center">
-                                    <TextBlock Text="CALCULATED PRICE" FontSize="7" FontWeight="SemiBold" Foreground="{StaticResource TextMuted}" HorizontalAlignment="Center" Margin="0,0,0,2"/>
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                        <TextBlock Text="AED" FontSize="10" FontWeight="Bold" Foreground="White" VerticalAlignment="Bottom" Margin="0,0,4,1"/>
-                                        <TextBlock Text="{Binding CalculatedPrice, Mode=OneWay, StringFormat=N2}" FontSize="18" FontWeight="Bold" Foreground="White"/>
+                                    <TextBlock Text="TOTAL PRICE" FontSize="9" FontWeight="SemiBold" Foreground="White" Opacity="0.9" HorizontalAlignment="Center"/>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0">
+                                        <TextBlock Text="AED" FontSize="12" FontWeight="Bold" Foreground="White" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                        <TextBlock Text="{Binding CalculatedPrice, Mode=OneWay, StringFormat=N2}" FontSize="24" FontWeight="ExtraBold" Foreground="White"/>
                                     </StackPanel>
                                 </StackPanel>
                             </Border>
 
-                            <Border Background="White" CornerRadius="8" Padding="8,6" Margin="0,0,0,6" BorderThickness="1" BorderBrush="#6EE7B7">
-                                <TextBlock Text="{Binding PriceCalculationSummary, Mode=OneWay}" FontSize="7" Foreground="{StaticResource TextSecondary}" FontFamily="Consolas" TextWrapping="Wrap" HorizontalAlignment="Center"/>
+                            <!-- Calculation Summary -->
+                            <Border Background="#F0FDF4" CornerRadius="8" Padding="8,6" Margin="0,0,0,10" BorderThickness="1" BorderBrush="#6EE7B7">
+                                <TextBlock Text="{Binding PriceCalculationSummary, Mode=OneWay}" FontSize="9" Foreground="#64748B" FontFamily="Consolas" TextWrapping="Wrap" HorizontalAlignment="Center"/>
                             </Border>
 
+                            <!-- Generate Button -->
                             <Button Command="{Binding CalculatePriceCommand}" Cursor="Hand" Padding="0">
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">
-                                        <Border x:Name="border" Background="{StaticResource SuccessGreen}" CornerRadius="8" Padding="10,8">
+                                        <Border x:Name="border" Background="#1E40AF" CornerRadius="8" Padding="10,8">
                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                <TextBlock Text="🧮" FontSize="11" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                                <TextBlock Text="GENERATE PRICE" FontSize="10" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                                                <TextBlock Text="🧮" FontSize="12" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                                <TextBlock Text="GENERATE PRICE" FontSize="11" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </Border>
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="border" Property="Background" Value="#059669"/>
+                                                <Setter TargetName="border" Property="Background" Value="#1D4ED8"/>
                                             </Trigger>
                                         </ControlTemplate.Triggers>
                                     </ControlTemplate>
@@ -1393,40 +1439,34 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Target Specification Card -->
-                    <Border CornerRadius="10" Padding="10" Margin="0,0,0,8"
-                            BorderBrush="{StaticResource PurpleAccent}" BorderThickness="1.5">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                <GradientStop Color="#EDE9FE" Offset="0"/>
-                                <GradientStop Color="#DDD6FE" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
+                    <!-- TARGET SPECIFICATION CARD -->
+                    <Border Background="#FFFFFF" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="10" Padding="10" Margin="0,0,0,10">
                         <StackPanel>
-                            <Border Background="{StaticResource PurpleAccent}" CornerRadius="6" Padding="8,4" HorizontalAlignment="Left" Margin="0,0,0,10">
+                            <!-- Header -->
+                            <Border Background="#7C3AED" CornerRadius="6" Padding="8,6" HorizontalAlignment="Left" Margin="0,0,0,10">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="🎯" FontSize="10" Margin="0,0,4,0"/>
+                                    <TextBlock Text="🎯" FontSize="10" Margin="0,0,6,0"/>
                                     <TextBlock Text="TARGET SPECIFICATION" FontSize="9" FontWeight="Bold" Foreground="White"/>
                                 </StackPanel>
                             </Border>
 
-                            <Border Background="White" CornerRadius="8" Padding="8" Margin="0,0,0,6" BorderThickness="1" BorderBrush="#C4B5FD">
-                                <StackPanel>
-                                    <TextBlock Text="Select spec to apply price" FontSize="7" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4"/>
-                                    <ComboBox ItemsSource="{Binding Invoice.Specifications}" 
-                                              SelectedItem="{Binding SelectedTargetSpecification}"
-                                              DisplayMemberPath="SpecificationName" 
-                                              Background="White" BorderBrush="{StaticResource BorderLight}" BorderThickness="1" Padding="8,6" FontSize="9"/>
-                                </StackPanel>
-                            </Border>
+                            <!-- Select Spec -->
+                            <StackPanel Margin="0,0,0,10">
+                                <TextBlock Text="Select spec to apply price" FontSize="8" Foreground="#94A3B8" Margin="0,0,0,4"/>
+                                <ComboBox ItemsSource="{Binding Invoice.Specifications}" 
+                                  SelectedItem="{Binding SelectedTargetSpecification}"
+                                  DisplayMemberPath="SpecificationName" 
+                                  Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Padding="8,6" FontSize="10"/>
+                            </StackPanel>
 
+                            <!-- Include Button -->
                             <Button Command="{Binding IncludeInSpecificationCommand}" Cursor="Hand" Padding="0">
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">
-                                        <Border x:Name="border" Background="{StaticResource PurpleAccent}" CornerRadius="8" Padding="10,8">
+                                        <Border x:Name="border" Background="#7C3AED" CornerRadius="8" Padding="10,8">
                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                <TextBlock Text="✅" FontSize="11" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                                <TextBlock Text="INCLUDE IN SPEC" FontSize="10" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                                                <TextBlock Text="✅" FontSize="12" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                                <TextBlock Text="INCLUDE IN SPEC" FontSize="11" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </Border>
                                         <ControlTemplate.Triggers>

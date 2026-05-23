@@ -42,7 +42,6 @@ namespace ProGlassAutomation.ViewModels
             set { _savedFiles = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasSavedFiles)); }
         }
 
-        // ==================== PATCH 1: HasSavedFiles Property ====================
         public bool HasSavedFiles => SavedFiles?.Any() == true;
 
         private string _currentFileName = "Untitled";
@@ -217,6 +216,60 @@ namespace ProGlassAutomation.ViewModels
         }
 
         // ==================== DGU FIELDS ====================
+
+        // NEW: DGU Work Type
+        private bool _isDGUAnnealedSelected = true;
+        public bool IsDGUAnnealedSelected
+        {
+            get => _isDGUAnnealedSelected;
+            set
+            {
+                _isDGUAnnealedSelected = value;
+                OnPropertyChanged();
+                if (value) IsDGUFTSelected = false;
+            }
+        }
+
+        private bool _isDGUFTSelected;
+        public bool IsDGUFTSelected
+        {
+            get => _isDGUFTSelected;
+            set
+            {
+                _isDGUFTSelected = value;
+                OnPropertyChanged();
+                if (value) IsDGUAnnealedSelected = false;
+            }
+        }
+
+        public string DGUWorkTypeText => IsDGUFTSelected ? "FT Glass" : "Annealed";
+
+        // NEW: DGU U-Insert
+        private bool _isDGUIncludeInSpec = true;
+        public bool IsDGUIncludeInSpec
+        {
+            get => _isDGUIncludeInSpec;
+            set
+            {
+                _isDGUIncludeInSpec = value;
+                OnPropertyChanged();
+                if (value) IsDGUInternalOnly = false;
+            }
+        }
+
+        private bool _isDGUInternalOnly;
+        public bool IsDGUInternalOnly
+        {
+            get => _isDGUInternalOnly;
+            set
+            {
+                _isDGUInternalOnly = value;
+                OnPropertyChanged();
+                if (value) IsDGUIncludeInSpec = false;
+            }
+        }
+
+        // Outer Glass
         private string _dGUOuterThickness = "6";
         public string DGUOuterThickness
         {
@@ -238,11 +291,12 @@ namespace ProGlassAutomation.ViewModels
             set { _dGUOuterPrice = value; OnPropertyChanged(); }
         }
 
-        private string _dGUAirSpace = "6";
-        public string DGUAirSpace
+        // Air Space (Spacer)
+        private string _dGUSpacerThickness = "12";
+        public string DGUSpacerThickness
         {
-            get => _dGUAirSpace;
-            set { _dGUAirSpace = value; OnPropertyChanged(); }
+            get => _dGUSpacerThickness;
+            set { _dGUSpacerThickness = value; OnPropertyChanged(); }
         }
 
         private double _dGUASPPrice = 15;
@@ -252,6 +306,7 @@ namespace ProGlassAutomation.ViewModels
             set { _dGUASPPrice = value; OnPropertyChanged(); }
         }
 
+        // Inner Glass
         private string _dGUInnerThickness = "6";
         public string DGUInnerThickness
         {
@@ -288,6 +343,35 @@ namespace ProGlassAutomation.ViewModels
         }
 
         // ==================== LAM FIELDS ====================
+
+        // NEW: LAM Work Type
+        private bool _isLAMAnnealedSelected = true;
+        public bool IsLAMAnnealedSelected
+        {
+            get => _isLAMAnnealedSelected;
+            set
+            {
+                _isLAMAnnealedSelected = value;
+                OnPropertyChanged();
+                if (value) IsLAMFTSelected = false;
+            }
+        }
+
+        private bool _isLAMFTSelected;
+        public bool IsLAMFTSelected
+        {
+            get => _isLAMFTSelected;
+            set
+            {
+                _isLAMFTSelected = value;
+                OnPropertyChanged();
+                if (value) IsLAMAnnealedSelected = false;
+            }
+        }
+
+        public string LAMWorkTypeText => IsLAMFTSelected ? "FT Glass" : "Annealed";
+
+        // Outer Glass
         private string _lAMOuterThickness = "6";
         public string LAMOuterThickness
         {
@@ -309,7 +393,8 @@ namespace ProGlassAutomation.ViewModels
             set { _lAMOuterPrice = value; OnPropertyChanged(); }
         }
 
-        private string _lAMPVBThickness = "1.52";
+        // PVB Layer
+        private string _lAMPVBThickness = "0.76";
         public string LAMPVBThickness
         {
             get => _lAMPVBThickness;
@@ -330,6 +415,7 @@ namespace ProGlassAutomation.ViewModels
             set { _lAMPVBPrice = value; OnPropertyChanged(); }
         }
 
+        // Inner Glass
         private string _lAMInnerThickness = "6";
         public string LAMInnerThickness
         {
@@ -409,7 +495,6 @@ namespace ProGlassAutomation.ViewModels
             set { _selectedTargetSpecification = value; OnPropertyChanged(); }
         }
 
-        // PATCH 7: Sync SelectedSpecificationId with SelectedTargetSpecification
         private int _selectedSpecificationId;
         public int SelectedSpecificationId
         {
@@ -419,7 +504,6 @@ namespace ProGlassAutomation.ViewModels
                 _selectedSpecificationId = value;
                 OnPropertyChanged();
 
-                // Sync with SelectedTargetSpecification
                 if (Invoice?.Specifications != null)
                 {
                     SelectedTargetSpecification = Invoice.Specifications
@@ -432,13 +516,13 @@ namespace ProGlassAutomation.ViewModels
         public ICommand NewInvoiceCommand { get; }
         public ICommand SaveInvoiceCommand { get; }
         public ICommand OpenInvoiceCommand { get; }
-        public ICommand DeleteInvoiceCommand { get; }  // PATCH 2: Added
+        public ICommand DeleteInvoiceCommand { get; }
         public ICommand AddSpecificationCommand { get; }
         public ICommand RemoveSpecificationCommand { get; }
         public ICommand ToggleLMCommand { get; }
         public ICommand CalculatePriceCommand { get; }
         public ICommand IncludeInSpecificationCommand { get; }
-        public ICommand PrintCommand { get; }  // PATCH 2: Added
+        public ICommand PrintCommand { get; }
 
         // Module Selection Commands
         public ICommand SelectSGUCommand { get; }
@@ -468,13 +552,13 @@ namespace ProGlassAutomation.ViewModels
             NewInvoiceCommand = new RelayCommand(_ => NewInvoice());
             SaveInvoiceCommand = new RelayCommand(_ => SaveInvoice());
             OpenInvoiceCommand = new RelayCommand(_ => OpenInvoice());
-            DeleteInvoiceCommand = new RelayCommand(_ => DeleteInvoice());  // PATCH 2: Added
+            DeleteInvoiceCommand = new RelayCommand(_ => DeleteInvoice());
             AddSpecificationCommand = new RelayCommand(_ => AddSpecification());
             RemoveSpecificationCommand = new RelayCommand(_ => RemoveSpecification(), _ => Invoice.Specifications.Count > 0);
             ToggleLMCommand = new RelayCommand(_ => ToggleLM());
             CalculatePriceCommand = new RelayCommand(_ => CalculatePrice());
             IncludeInSpecificationCommand = new RelayCommand(_ => IncludeInSpecification(), _ => CanIncludeInSpecification());
-            PrintCommand = new RelayCommand(_ => PrintInvoice());  // PATCH 2: Added
+            PrintCommand = new RelayCommand(_ => PrintInvoice());
 
             // Module Selection Commands
             SelectSGUCommand = new RelayCommand(_ => SelectSGU());
@@ -608,7 +692,6 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // PATCH 2: DeleteInvoice method
         private void DeleteInvoice()
         {
             try
@@ -638,12 +721,10 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // PATCH 2: PrintInvoice method
         private void PrintInvoice()
         {
             try
             {
-                // Find the window containing this view model
                 var window = Application.Current.Windows.OfType<Window>()
                     .FirstOrDefault(w => w.DataContext == this);
 
@@ -735,7 +816,6 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // Add item with price copied from first row
         public void AddItemWithPrice(SpecificationModel spec)
         {
             if (spec == null) return;
@@ -803,14 +883,21 @@ namespace ProGlassAutomation.ViewModels
 
         private void CalculateDGUPrice()
         {
-            // Formula: ((Outer + ASP + Inner) / WasteFactor) * ProfitFactor
-            double glassTotal = DGUOuterPrice + DGUASPPrice + DGUInnerPrice;
+            // Formula: ((Outer + Inner) / WasteFactor) + ASP) * ProfitFactor
+            double glassTotal = DGUOuterPrice + DGUInnerPrice;
             double step1 = glassTotal / DGUWasteFactor;
-            double final = step1 * (1 + DGUProfitPercent / 100);
+            double step2 = step1 + DGUASPPrice;
+            double final = step2 * (1 + DGUProfitPercent / 100);
 
             CalculatedPrice = Math.Round(final, 2);
-            GeneratedDescription = $"{DGUOuterThickness}mm {DGUOuterColor} + {DGUAirSpace}mm ASP + {DGUInnerThickness}mm {DGUInnerColor}";
-            PriceCalculationSummary = $"({DGUOuterPrice} + {DGUASPPrice} + {DGUInnerPrice}) / {DGUWasteFactor:F2} = {step1:F2} × {1 + DGUProfitPercent / 100:F2} = {CalculatedPrice:F2}";
+
+            // Generate description with Work Type and U-Insert
+            string workTypeText = DGUWorkTypeText;
+            string uInsertText = IsDGUIncludeInSpec ? "with U-Insert" : "";
+
+            GeneratedDescription = $"{DGUOuterThickness}mm {DGUOuterColor} {workTypeText} + {DGUSpacerThickness}mm ASP {uInsertText} + {DGUInnerThickness}mm {DGUInnerColor} {workTypeText}";
+
+            PriceCalculationSummary = $"(({DGUOuterPrice} + {DGUInnerPrice}) / {DGUWasteFactor:F2}) + {DGUASPPrice} = {step1:F2} + {DGUASPPrice} = {step2:F2} × {1 + DGUProfitPercent / 100:F2} = {CalculatedPrice:F2}";
         }
 
         private void CalculateLAMPrice()
@@ -822,7 +909,11 @@ namespace ProGlassAutomation.ViewModels
             double final = step2 * (1 + LAMProfitPercent / 100);
 
             CalculatedPrice = Math.Round(final, 2);
-            GeneratedDescription = $"{LAMOuterThickness}mm {LAMOuterColor} + {LAMPVBThickness}mm PVB + {LAMInnerThickness}mm {LAMInnerColor}";
+
+            // Generate description with Work Type
+            string workTypeText = LAMWorkTypeText;
+            GeneratedDescription = $"{LAMOuterThickness}mm {LAMOuterColor} {workTypeText} + {LAMPVBThickness}mm PVB ({LAMPVBColor}) + {LAMInnerThickness}mm {LAMInnerColor} {workTypeText}";
+
             PriceCalculationSummary = $"({LAMOuterPrice} + {LAMPVBPrice} + {LAMInnerPrice}) / {LAMWasteFactor:F2} + {LAMCutting} + {LAMTempering} = {step2:F2} × {1 + LAMProfitPercent / 100:F2} = {CalculatedPrice:F2}";
         }
 
@@ -839,6 +930,43 @@ namespace ProGlassAutomation.ViewModels
             {
                 MessageBox.Show("Please calculate price first!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
+            }
+
+            // Set Module Type
+            if (IsSGUSelected)
+            {
+                SelectedTargetSpecification.ModuleType = "SGU";
+                SelectedTargetSpecification.WorkType = WorkTypeText;
+                SelectedTargetSpecification.OuterThickness = SelectedThickness;
+                SelectedTargetSpecification.OuterColor = SelectedColor;
+            }
+            else if (IsDGUSelected)
+            {
+                SelectedTargetSpecification.ModuleType = "DGU";
+                SelectedTargetSpecification.WorkType = DGUWorkTypeText;
+                SelectedTargetSpecification.IncludeInSpec = IsDGUIncludeInSpec;
+                SelectedTargetSpecification.OuterThickness = DGUOuterThickness;
+                SelectedTargetSpecification.OuterColor = DGUOuterColor;
+                SelectedTargetSpecification.OuterPrice = DGUOuterPrice.ToString();
+                SelectedTargetSpecification.SpacerThickness = DGUSpacerThickness;
+                SelectedTargetSpecification.ASPPrice = DGUASPPrice.ToString();
+                SelectedTargetSpecification.InnerThickness = DGUInnerThickness;
+                SelectedTargetSpecification.InnerColor = DGUInnerColor;
+                SelectedTargetSpecification.InnerPrice = DGUInnerPrice.ToString();
+            }
+            else if (IsLAMSelected)
+            {
+                SelectedTargetSpecification.ModuleType = "LAM";
+                SelectedTargetSpecification.WorkType = LAMWorkTypeText;
+                SelectedTargetSpecification.OuterThickness = LAMOuterThickness;
+                SelectedTargetSpecification.OuterColor = LAMOuterColor;
+                SelectedTargetSpecification.OuterPrice = LAMOuterPrice.ToString();
+                SelectedTargetSpecification.PVBThickness = LAMPVBThickness;
+                SelectedTargetSpecification.PVBColor = LAMPVBColor;
+                SelectedTargetSpecification.PVBPrice = LAMPVBPrice.ToString();
+                SelectedTargetSpecification.InnerThickness = LAMInnerThickness;
+                SelectedTargetSpecification.InnerColor = LAMInnerColor;
+                SelectedTargetSpecification.InnerPrice = LAMInnerPrice.ToString();
             }
 
             // Update specification name with generated description
@@ -905,7 +1033,21 @@ namespace ProGlassAutomation.ViewModels
                         var newSpec = new SpecificationModel
                         {
                             SpecificationName = spec.SpecificationName,
-                            BasePrice = spec.BasePrice
+                            BasePrice = spec.BasePrice,
+                            ModuleType = spec.ModuleType,
+                            WorkType = spec.WorkType,
+                            IncludeInSpec = spec.IncludeInSpec,
+                            OuterThickness = spec.OuterThickness,
+                            OuterColor = spec.OuterColor,
+                            OuterPrice = spec.OuterPrice,
+                            SpacerThickness = spec.SpacerThickness,
+                            ASPPrice = spec.ASPPrice,
+                            InnerThickness = spec.InnerThickness,
+                            InnerColor = spec.InnerColor,
+                            InnerPrice = spec.InnerPrice,
+                            PVBThickness = spec.PVBThickness,
+                            PVBColor = spec.PVBColor,
+                            PVBPrice = spec.PVBPrice
                         };
 
                         foreach (var item in spec.Items)
