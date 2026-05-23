@@ -624,7 +624,7 @@ namespace ProGlassAutomation.ViewModels
             {
                 InvoiceNo = GetNextInvoiceNo(),
                 InvoiceDate = DateTime.Now,
-                ValidUntil = DateTime.Now.AddDays(30)
+                ValidUntil = DateTime.Now.AddDays(2)
             };
 
             AddSpecification();
@@ -715,7 +715,7 @@ namespace ProGlassAutomation.ViewModels
             {
                 InvoiceNo = GetNextInvoiceNo(),
                 InvoiceDate = DateTime.Now,
-                ValidUntil = DateTime.Now.AddDays(30)
+                ValidUntil = DateTime.Now.AddDays(2)
             };
             CurrentFileName = "Untitled";
 
