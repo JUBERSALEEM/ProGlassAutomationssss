@@ -346,31 +346,31 @@
                     <!-- SPECIFICATIONS -->
                     <Border Background="#FFFFFF" BorderBrush="#0077B6" BorderThickness="1" Margin="0,0,0,6" CornerRadius="4">
                         <StackPanel>
-                            <Border Background="#023E8A" Padding="8,5" CornerRadius="4,4,0,0">
+                            <Border Background="#023E8A" Padding="10,6" CornerRadius="4,4,0,0">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="📋" FontSize="12" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                        <TextBlock Text="SPECIFICATIONS" FontSize="11" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center" FontFamily="{StaticResource IndustrialFont}"/>
+                                        <TextBlock Text="📋" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBlock Text="SPECIFICATIONS" FontSize="13" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center" FontFamily="{StaticResource IndustrialFont}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                        <Button Content="+ ADD" Style="{StaticResource IndButtonSuccess}" Command="{Binding AddSpecificationCommand}" Padding="10,4" Margin="0,0,4,0"/>
-                                        <Button Content="- REMOVE" Style="{StaticResource IndButtonDanger}" Command="{Binding RemoveSpecificationCommand}" Padding="10,4"/>
+                                        <Button Content="+ ADD" Style="{StaticResource IndButtonSuccess}" Command="{Binding AddSpecificationCommand}" Padding="12,5" Margin="0,0,6,0"/>
+                                        <Button Content="- REMOVE" Style="{StaticResource IndButtonDanger}" Command="{Binding RemoveSpecificationCommand}" Padding="12,5"/>
                                     </StackPanel>
                                 </Grid>
                             </Border>
 
                             <!-- Specifications List -->
-                            <ItemsControl ItemsSource="{Binding Invoice.Specifications}" Margin="8">
+                            <ItemsControl ItemsSource="{Binding Invoice.Specifications}" Margin="10">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border BorderBrush="#00B4D8" BorderThickness="1" Margin="0,0,0,8" CornerRadius="4">
+                                        <Border BorderBrush="#00B4D8" BorderThickness="2" Margin="0,0,0,10" CornerRadius="6" Background="#FFFFFF">
                                             <StackPanel>
-                                                <!-- Spec Header -->
-                                                <Border Background="#E8F4F8" Padding="8,6" CornerRadius="4,4,0,0">
+                                                <!-- Spec Header - CORRECTED -->
+                                                <Border Background="#E8F4F8" Padding="10,8" CornerRadius="6,6,0,0">
                                                     <Grid>
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="Auto"/>
@@ -379,55 +379,91 @@
                                                             <ColumnDefinition Width="Auto"/>
                                                             <ColumnDefinition Width="Auto"/>
                                                         </Grid.ColumnDefinitions>
-                                                        <TextBlock Grid.Column="0" Text="SPEC:" FontSize="10" FontWeight="Bold" Foreground="#023E8A" VerticalAlignment="Center" Margin="0,0,6,0" FontFamily="{StaticResource IndustrialFont}"/>
-                                                        <TextBox Grid.Column="1" Text="{Binding SpecificationName, UpdateSourceTrigger=PropertyChanged}" Background="#FFFFFF" FontSize="11" FontWeight="SemiBold" MinWidth="100" Padding="6,4" VerticalAlignment="Center" BorderBrush="#0077B6" FontFamily="{StaticResource IndustrialFont}"/>
+                                                        <TextBlock Grid.Column="0" Text="SPEC:" FontSize="12" FontWeight="Bold" Foreground="#023E8A" VerticalAlignment="Center" Margin="0,0,8,0" FontFamily="{StaticResource IndustrialFont}"/>
 
-                                                        <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="12,0">
-                                                            <TextBlock Text="BASE:" FontSize="10" FontWeight="Bold" Foreground="#023E8A" VerticalAlignment="Center" Margin="0,0,4,0" FontFamily="{StaticResource IndustrialFont}"/>
-                                                            <TextBox Text="{Binding BasePrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}" Width="80" Padding="6,4" FontSize="11" Background="#E8F4F8" FontWeight="Bold" BorderBrush="#0077B6" GotFocus="TextBox_GotFocus" MouseLeftButtonDown="TextBox_PreviewMouseDown" FontFamily="{StaticResource IndustrialFont}"/>
+                                                        <!-- TextBox WITHOUT CornerRadius -->
+                                                        <TextBox Grid.Column="1" 
+                 Text="{Binding SpecificationName, UpdateSourceTrigger=PropertyChanged}" 
+                 Background="#FFFFFF" 
+                 FontSize="13" 
+                 FontWeight="SemiBold" 
+                 MinWidth="120" 
+                 Padding="8,6" 
+                 VerticalAlignment="Center" 
+                 BorderBrush="#0077B6" 
+                 BorderThickness="1"
+                 FontFamily="{StaticResource IndustrialFont}"/>
+
+                                                        <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="16,0">
+                                                            <TextBlock Text="BASE:" FontSize="12" FontWeight="Bold" Foreground="#023E8A" VerticalAlignment="Center" Margin="0,0,6,0" FontFamily="{StaticResource IndustrialFont}"/>
+
+                                                            <!-- TextBox WITHOUT CornerRadius -->
+                                                            <TextBox Text="{Binding BasePrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}" 
+                     Width="90" 
+                     Padding="8,6" 
+                     FontSize="13" 
+                     Background="#E8F4F8" 
+                     FontWeight="Bold" 
+                     BorderBrush="#0077B6" 
+                     BorderThickness="1"
+                     GotFocus="TextBox_GotFocus" 
+                     MouseLeftButtonDown="TextBox_PreviewMouseDown" 
+                     FontFamily="{StaticResource IndustrialFont}"/>
                                                         </StackPanel>
 
-                                                        <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="0,0,8,0">
-                                                            <TextBlock Text="SUR%:" FontSize="10" FontWeight="Bold" Foreground="#023E8A" VerticalAlignment="Center" Margin="0,0,4,0" FontFamily="{StaticResource IndustrialFont}"/>
-                                                            <TextBox Text="{Binding SurchargePercent, UpdateSourceTrigger=PropertyChanged, StringFormat=N1}" Width="60" Padding="6,4" FontSize="11" Background="#E8F4F8" FontWeight="Bold" BorderBrush="#0077B6" GotFocus="TextBox_GotFocus" MouseLeftButtonDown="TextBox_PreviewMouseDown" FontFamily="{StaticResource IndustrialFont}"/>
+                                                        <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="0,0,12,0">
+                                                            <TextBlock Text="SUR%:" FontSize="12" FontWeight="Bold" Foreground="#023E8A" VerticalAlignment="Center" Margin="0,0,6,0" FontFamily="{StaticResource IndustrialFont}"/>
+
+                                                            <!-- TextBox WITHOUT CornerRadius -->
+                                                            <TextBox Text="{Binding SurchargePercent, UpdateSourceTrigger=PropertyChanged, StringFormat=N1}" 
+                     Width="70" 
+                     Padding="8,6" 
+                     FontSize="13" 
+                     Background="#E8F4F8" 
+                     FontWeight="Bold" 
+                     BorderBrush="#0077B6" 
+                     BorderThickness="1"
+                     GotFocus="TextBox_GotFocus" 
+                     MouseLeftButtonDown="TextBox_PreviewMouseDown" 
+                     FontFamily="{StaticResource IndustrialFont}"/>
                                                         </StackPanel>
 
-                                                        <Button Grid.Column="4" Content="+ ROW" Style="{StaticResource IndButton}" Click="AddRow_Click" Tag="{Binding}" Padding="10,4"/>
+                                                        <Button Grid.Column="4" Content="+ ROW" Style="{StaticResource IndButtonPrimary}" Click="AddRow_Click" Tag="{Binding}" Padding="12,6"/>
                                                     </Grid>
                                                 </Border>
 
                                                 <!-- DataGrid -->
                                                 <DataGrid ItemsSource="{Binding Items}" 
-                                                          AutoGenerateColumns="False" 
-                                                          CanUserAddRows="False" 
-                                                          CanUserDeleteRows="False" 
-                                                          BorderThickness="0" 
-                                                          Background="#FFFFFF" 
-                                                          Margin="0" 
-                                                          Padding="0"
-                                                          ColumnHeaderStyle="{StaticResource IndDataGridHeader}" 
-                                                          CellStyle="{StaticResource IndDataGridCell}" 
-                                                          RowStyle="{StaticResource IndDataGridRow}" 
-                                                          GridLinesVisibility="All" 
-                                                          HorizontalGridLinesBrush="#ADE8F4" 
-                                                          VerticalGridLinesBrush="#ADE8F4" 
-                                                          HeadersVisibility="Column" 
-                                                          RowHeight="28" 
-                                                          MinHeight="56" 
-                                                          SelectionUnit="Cell" 
-                                                          AlternationCount="2" 
-                                                          FocusVisualStyle="{x:Null}" 
-                                                          PreviewKeyDown="DataGrid_PreviewKeyDown"
-                                                          HorizontalScrollBarVisibility="Disabled">
+                                      AutoGenerateColumns="False" 
+                                      CanUserAddRows="False" 
+                                      CanUserDeleteRows="False" 
+                                      BorderThickness="0" 
+                                      Background="#FFFFFF" 
+                                      Margin="0" 
+                                      Padding="0"
+                                      ColumnHeaderStyle="{StaticResource IndDataGridHeader}" 
+                                      CellStyle="{StaticResource IndDataGridCell}" 
+                                      RowStyle="{StaticResource IndDataGridRow}" 
+                                      GridLinesVisibility="All" 
+                                      HorizontalGridLinesBrush="#ADE8F4" 
+                                      VerticalGridLinesBrush="#ADE8F4" 
+                                      HeadersVisibility="Column" 
+                                      RowHeight="32" 
+                                      MinHeight="64" 
+                                      SelectionUnit="Cell" 
+                                      AlternationCount="2" 
+                                      FocusVisualStyle="{x:Null}" 
+                                      PreviewKeyDown="DataGrid_PreviewKeyDown"
+                                      HorizontalScrollBarVisibility="Disabled">
                                                     <DataGrid.Columns>
-                                                        <DataGridTextColumn Header="SR" Binding="{Binding SrNo}" Width="45" IsReadOnly="True">
+                                                        <DataGridTextColumn Header="SR" Binding="{Binding SrNo}" Width="50" IsReadOnly="True">
                                                             <DataGridTextColumn.ElementStyle>
                                                                 <Style TargetType="TextBlock">
                                                                     <Setter Property="HorizontalAlignment" Value="Center"/>
                                                                     <Setter Property="VerticalAlignment" Value="Center"/>
                                                                     <Setter Property="FontWeight" Value="Bold"/>
                                                                     <Setter Property="Background" Value="#E8F4F8"/>
-                                                                    <Setter Property="FontSize" Value="10"/>
+                                                                    <Setter Property="FontSize" Value="12"/>
                                                                     <Setter Property="FontFamily" Value="{StaticResource IndustrialFont}"/>
                                                                 </Style>
                                                             </DataGridTextColumn.ElementStyle>
@@ -437,28 +473,28 @@
                                                             <DataGridTextColumn.ElementStyle>
                                                                 <Style TargetType="TextBlock">
                                                                     <Setter Property="VerticalAlignment" Value="Center"/>
-                                                                    <Setter Property="Padding" Value="6,0"/>
-                                                                    <Setter Property="FontSize" Value="11"/>
+                                                                    <Setter Property="Padding" Value="8,0"/>
+                                                                    <Setter Property="FontSize" Value="12"/>
                                                                     <Setter Property="FontWeight" Value="SemiBold"/>
                                                                     <Setter Property="FontFamily" Value="{StaticResource IndustrialFont}"/>
                                                                 </Style>
                                                             </DataGridTextColumn.ElementStyle>
                                                             <DataGridTextColumn.EditingElementStyle>
                                                                 <Style TargetType="TextBox">
-                                                                    <Setter Property="Padding" Value="4,0"/>
+                                                                    <Setter Property="Padding" Value="6,0"/>
                                                                     <Setter Property="VerticalContentAlignment" Value="Center"/>
-                                                                    <Setter Property="FontSize" Value="11"/>
+                                                                    <Setter Property="FontSize" Value="12"/>
                                                                     <Setter Property="FontFamily" Value="{StaticResource IndustrialFont}"/>
                                                                 </Style>
                                                             </DataGridTextColumn.EditingElementStyle>
                                                         </DataGridTextColumn>
 
-                                                        <DataGridTextColumn Header="W1" Binding="{Binding Width1, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="65">
+                                                        <DataGridTextColumn Header="W1" Binding="{Binding Width1, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="70">
                                                             <DataGridTextColumn.ElementStyle>
                                                                 <Style TargetType="TextBlock">
                                                                     <Setter Property="HorizontalAlignment" Value="Center"/>
                                                                     <Setter Property="VerticalAlignment" Value="Center"/>
-                                                                    <Setter Property="FontSize" Value="10"/>
+                                                                    <Setter Property="FontSize" Value="12"/>
                                                                     <Setter Property="FontFamily" Value="{StaticResource IndustrialFont}"/>
                                                                 </Style>
                                                             </DataGridTextColumn.ElementStyle>
@@ -466,17 +502,18 @@
                                                                 <Style TargetType="TextBox">
                                                                     <Setter Property="TextAlignment" Value="Center"/>
                                                                     <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                                                    <Setter Property="FontSize" Value="12"/>
                                                                     <Setter Property="FontFamily" Value="{StaticResource IndustrialFont}"/>
                                                                 </Style>
                                                             </DataGridTextColumn.EditingElementStyle>
                                                         </DataGridTextColumn>
 
-                                                        <DataGridTextColumn Header="H1" Binding="{Binding Height1, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="65">
+                                                        <DataGridTextColumn Header="H1" Binding="{Binding Height1, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="70">
                                                             <DataGridTextColumn.ElementStyle>
                                                                 <Style TargetType="TextBlock">
                                                                     <Setter Property="HorizontalAlignment" Value="Center"/>
                                                                     <Setter Property="VerticalAlignment" Value="Center"/>
-                                                                    <Setter Property="FontSize" Value="10"/>
+                                                                    <Setter Property="FontSize" Value="12"/>
                                                                     <Setter Property="FontFamily" Value="{StaticResource IndustrialFont}"/>
                                                                 </Style>
                                                             </DataGridTextColumn.ElementStyle>
@@ -484,17 +521,18 @@
                                                                 <Style TargetType="TextBox">
                                                                     <Setter Property="TextAlignment" Value="Center"/>
                                                                     <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                                                    <Setter Property="FontSize" Value="12"/>
                                                                     <Setter Property="FontFamily" Value="{StaticResource IndustrialFont}"/>
                                                                 </Style>
                                                             </DataGridTextColumn.EditingElementStyle>
                                                         </DataGridTextColumn>
 
-                                                        <DataGridTextColumn Header="W2" Binding="{Binding Width2, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="65">
+                                                        <DataGridTextColumn Header="W2" Binding="{Binding Width2, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="70">
                                                             <DataGridTextColumn.ElementStyle>
                                                                 <Style TargetType="TextBlock">
                                                                     <Setter Property="HorizontalAlignment" Value="Center"/>
                                                                     <Setter Property="VerticalAlignment" Value="Center"/>
-                                                                    <Setter Property="FontSize" Value="10"/>
+                                                                    <Setter Property="FontSize" Value="12"/>
                                                                     <Setter Property="FontFamily" Value="{StaticResource IndustrialFont}"/>
                                                                 </Style>
                                                             </DataGridTextColumn.ElementStyle>
@@ -502,17 +540,18 @@
                                                                 <Style TargetType="TextBox">
                                                                     <Setter Property="TextAlignment" Value="Center"/>
                                                                     <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                                                    <Setter Property="FontSize" Value="12"/>
                                                                     <Setter Property="FontFamily" Value="{StaticResource IndustrialFont}"/>
                                                                 </Style>
                                                             </DataGridTextColumn.EditingElementStyle>
                                                         </DataGridTextColumn>
 
-                                                        <DataGridTextColumn Header="H2" Binding="{Binding Height2, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="65">
+                                                        <DataGridTextColumn Header="H2" Binding="{Binding Height2, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="70">
                                                             <DataGridTextColumn.ElementStyle>
                                                                 <Style TargetType="TextBlock">
                                                                     <Setter Property="HorizontalAlignment" Value="Center"/>
                                                                     <Setter Property="VerticalAlignment" Value="Center"/>
-                                                                    <Setter Property="FontSize" Value="10"/>
+                                                                    <Setter Property="FontSize" Value="12"/>
                                                                     <Setter Property="FontFamily" Value="{StaticResource IndustrialFont}"/>
                                                                 </Style>
                                                             </DataGridTextColumn.ElementStyle>
@@ -520,17 +559,18 @@
                                                                 <Style TargetType="TextBox">
                                                                     <Setter Property="TextAlignment" Value="Center"/>
                                                                     <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                                                    <Setter Property="FontSize" Value="12"/>
                                                                     <Setter Property="FontFamily" Value="{StaticResource IndustrialFont}"/>
                                                                 </Style>
                                                             </DataGridTextColumn.EditingElementStyle>
                                                         </DataGridTextColumn>
 
-                                                        <DataGridTextColumn Header="QTY" Binding="{Binding Qty, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="55">
+                                                        <DataGridTextColumn Header="QTY" Binding="{Binding Qty, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="60">
                                                             <DataGridTextColumn.ElementStyle>
                                                                 <Style TargetType="TextBlock">
                                                                     <Setter Property="HorizontalAlignment" Value="Center"/>
                                                                     <Setter Property="VerticalAlignment" Value="Center"/>
-                                                                    <Setter Property="FontSize" Value="10"/>
+                                                                    <Setter Property="FontSize" Value="12"/>
                                                                     <Setter Property="FontFamily" Value="{StaticResource IndustrialFont}"/>
                                                                 </Style>
                                                             </DataGridTextColumn.ElementStyle>
@@ -538,82 +578,84 @@
                                                                 <Style TargetType="TextBox">
                                                                     <Setter Property="TextAlignment" Value="Center"/>
                                                                     <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                                                    <Setter Property="FontSize" Value="12"/>
                                                                     <Setter Property="FontFamily" Value="{StaticResource IndustrialFont}"/>
                                                                 </Style>
                                                             </DataGridTextColumn.EditingElementStyle>
                                                         </DataGridTextColumn>
 
-                                                        <DataGridTextColumn Header="SQM" Binding="{Binding SQM, Mode=OneWay, StringFormat=N4}" Width="80" IsReadOnly="True">
+                                                        <DataGridTextColumn Header="SQM" Binding="{Binding SQM, Mode=OneWay, StringFormat=N4}" Width="85" IsReadOnly="True">
                                                             <DataGridTextColumn.ElementStyle>
                                                                 <Style TargetType="TextBlock">
                                                                     <Setter Property="HorizontalAlignment" Value="Center"/>
                                                                     <Setter Property="VerticalAlignment" Value="Center"/>
                                                                     <Setter Property="Background" Value="#90E0EF"/>
                                                                     <Setter Property="FontWeight" Value="SemiBold"/>
-                                                                    <Setter Property="FontSize" Value="10"/>
+                                                                    <Setter Property="FontSize" Value="12"/>
                                                                     <Setter Property="FontFamily" Value="{StaticResource IndustrialFont}"/>
                                                                 </Style>
                                                             </DataGridTextColumn.ElementStyle>
                                                         </DataGridTextColumn>
 
-                                                        <DataGridTextColumn Header="TOTAL SQM" Binding="{Binding TotalSQM, Mode=OneWay, StringFormat=N4}" Width="90" IsReadOnly="True">
+                                                        <DataGridTextColumn Header="TOTAL SQM" Binding="{Binding TotalSQM, Mode=OneWay, StringFormat=N4}" Width="95" IsReadOnly="True">
                                                             <DataGridTextColumn.ElementStyle>
                                                                 <Style TargetType="TextBlock">
                                                                     <Setter Property="HorizontalAlignment" Value="Center"/>
                                                                     <Setter Property="VerticalAlignment" Value="Center"/>
                                                                     <Setter Property="Background" Value="#00B4D8"/>
                                                                     <Setter Property="FontWeight" Value="Bold"/>
-                                                                    <Setter Property="FontSize" Value="10"/>
+                                                                    <Setter Property="Foreground" Value="#FFFFFF"/>
+                                                                    <Setter Property="FontSize" Value="12"/>
                                                                     <Setter Property="FontFamily" Value="{StaticResource IndustrialFont}"/>
                                                                 </Style>
                                                             </DataGridTextColumn.ElementStyle>
                                                         </DataGridTextColumn>
 
-                                                        <DataGridTextColumn Header="PRICE" Binding="{Binding DisplayPrice, Mode=OneWay, StringFormat=N2}" Width="80" IsReadOnly="True">
+                                                        <DataGridTextColumn Header="PRICE" Binding="{Binding DisplayPrice, Mode=OneWay, StringFormat=N2}" Width="90" IsReadOnly="True">
                                                             <DataGridTextColumn.ElementStyle>
                                                                 <Style TargetType="TextBlock">
                                                                     <Setter Property="HorizontalAlignment" Value="Right"/>
                                                                     <Setter Property="VerticalAlignment" Value="Center"/>
-                                                                    <Setter Property="Padding" Value="0,0,4,0"/>
+                                                                    <Setter Property="Padding" Value="0,0,6,0"/>
                                                                     <Setter Property="FontWeight" Value="Bold"/>
                                                                     <Setter Property="Foreground" Value="#023E8A"/>
-                                                                    <Setter Property="FontSize" Value="10"/>
+                                                                    <Setter Property="FontSize" Value="12"/>
                                                                     <Setter Property="FontFamily" Value="{StaticResource IndustrialFont}"/>
                                                                 </Style>
                                                             </DataGridTextColumn.ElementStyle>
                                                         </DataGridTextColumn>
 
-                                                        <DataGridTextColumn Header="TOTAL" Binding="{Binding TotalPrice, Mode=OneWay, StringFormat=N2}" Width="90" IsReadOnly="True">
+                                                        <DataGridTextColumn Header="TOTAL" Binding="{Binding TotalPrice, Mode=OneWay, StringFormat=N2}" Width="100" IsReadOnly="True">
                                                             <DataGridTextColumn.ElementStyle>
                                                                 <Style TargetType="TextBlock">
                                                                     <Setter Property="HorizontalAlignment" Value="Right"/>
                                                                     <Setter Property="VerticalAlignment" Value="Center"/>
                                                                     <Setter Property="FontWeight" Value="Bold"/>
-                                                                    <Setter Property="Padding" Value="0,0,4,0"/>
+                                                                    <Setter Property="Padding" Value="0,0,6,0"/>
                                                                     <Setter Property="Background" Value="#90E0EF"/>
-                                                                    <Setter Property="FontSize" Value="10"/>
+                                                                    <Setter Property="FontSize" Value="12"/>
                                                                     <Setter Property="FontFamily" Value="{StaticResource IndustrialFont}"/>
                                                                 </Style>
                                                             </DataGridTextColumn.ElementStyle>
                                                         </DataGridTextColumn>
 
-                                                        <DataGridTemplateColumn Header="" Width="40">
+                                                        <DataGridTemplateColumn Header="" Width="45">
                                                             <DataGridTemplateColumn.CellTemplate>
                                                                 <DataTemplate>
                                                                     <Button Content="✕" 
-                                                                            FontSize="11" 
-                                                                            FontWeight="Bold" 
-                                                                            Foreground="#D62828" 
-                                                                            Background="Transparent" 
-                                                                            BorderThickness="0" 
-                                                                            Cursor="Hand" 
-                                                                            Padding="0" 
-                                                                            Click="DeleteRow_Click" 
-                                                                            Tag="{Binding}" 
-                                                                            HorizontalAlignment="Center" 
-                                                                            VerticalAlignment="Center" 
-                                                                            Focusable="False"
-                                                                            FontFamily="{StaticResource IndustrialFont}"/>
+                                                        FontSize="13" 
+                                                        FontWeight="Bold" 
+                                                        Foreground="#D62828" 
+                                                        Background="Transparent" 
+                                                        BorderThickness="0" 
+                                                        Cursor="Hand" 
+                                                        Padding="0" 
+                                                        Click="DeleteRow_Click" 
+                                                        Tag="{Binding}" 
+                                                        HorizontalAlignment="Center" 
+                                                        VerticalAlignment="Center" 
+                                                        Focusable="False"
+                                                        FontFamily="{StaticResource IndustrialFont}"/>
                                                                 </DataTemplate>
                                                             </DataGridTemplateColumn.CellTemplate>
                                                         </DataGridTemplateColumn>
@@ -621,7 +663,7 @@
                                                 </DataGrid>
 
                                                 <!-- Spec Totals -->
-                                                <Border Background="#023E8A" Padding="10,6" CornerRadius="0,0,4,4">
+                                                <Border Background="#023E8A" Padding="12,8" CornerRadius="0,0,6,6">
                                                     <Grid>
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="*"/>
@@ -631,26 +673,26 @@
                                                             <ColumnDefinition Width="Auto"/>
                                                         </Grid.ColumnDefinitions>
 
-                                                        <TextBlock Grid.Column="0" Text="SPEC TOTAL" FontSize="10" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center" FontFamily="{StaticResource IndustrialFont}"/>
+                                                        <TextBlock Grid.Column="0" Text="SPEC TOTAL" FontSize="12" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center" FontFamily="{StaticResource IndustrialFont}"/>
 
-                                                        <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,0,16,0">
-                                                            <TextBlock Text="Qty:" FontSize="10" Foreground="#90E0EF" Margin="0,0,4,0" VerticalAlignment="Center" FontFamily="{StaticResource IndustrialFont}"/>
-                                                            <TextBlock Text="{Binding SpecTotalQty, Mode=OneWay}" FontSize="10" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center" FontFamily="{StaticResource IndustrialFont}"/>
+                                                        <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,0,20,0">
+                                                            <TextBlock Text="Qty:" FontSize="12" Foreground="#90E0EF" Margin="0,0,6,0" VerticalAlignment="Center" FontFamily="{StaticResource IndustrialFont}"/>
+                                                            <TextBlock Text="{Binding SpecTotalQty, Mode=OneWay}" FontSize="12" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center" FontFamily="{StaticResource IndustrialFont}"/>
                                                         </StackPanel>
 
-                                                        <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="0,0,16,0">
-                                                            <TextBlock Text="SQM:" FontSize="10" Foreground="#90E0EF" Margin="0,0,4,0" VerticalAlignment="Center" FontFamily="{StaticResource IndustrialFont}"/>
-                                                            <TextBlock Text="{Binding SpecTotalSQM, Mode=OneWay, StringFormat=N4}" FontSize="10" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center" FontFamily="{StaticResource IndustrialFont}"/>
+                                                        <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="0,0,20,0">
+                                                            <TextBlock Text="SQM:" FontSize="12" Foreground="#90E0EF" Margin="0,0,6,0" VerticalAlignment="Center" FontFamily="{StaticResource IndustrialFont}"/>
+                                                            <TextBlock Text="{Binding SpecTotalSQM, Mode=OneWay, StringFormat=N4}" FontSize="12" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center" FontFamily="{StaticResource IndustrialFont}"/>
                                                         </StackPanel>
 
-                                                        <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="0,0,16,0">
-                                                            <TextBlock Text="LM:" FontSize="10" Foreground="#90E0EF" Margin="0,0,4,0" VerticalAlignment="Center" FontFamily="{StaticResource IndustrialFont}"/>
-                                                            <TextBlock Text="{Binding SpecTotalLM, Mode=OneWay, StringFormat=N4}" FontSize="10" FontWeight="Bold" Foreground="#00B4D8" VerticalAlignment="Center" FontFamily="{StaticResource IndustrialFont}"/>
+                                                        <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="0,0,20,0">
+                                                            <TextBlock Text="LM:" FontSize="12" Foreground="#90E0EF" Margin="0,0,6,0" VerticalAlignment="Center" FontFamily="{StaticResource IndustrialFont}"/>
+                                                            <TextBlock Text="{Binding SpecTotalLM, Mode=OneWay, StringFormat=N4}" FontSize="12" FontWeight="Bold" Foreground="#00B4D8" VerticalAlignment="Center" FontFamily="{StaticResource IndustrialFont}"/>
                                                         </StackPanel>
 
                                                         <StackPanel Grid.Column="4" Orientation="Horizontal">
-                                                            <TextBlock Text="AED:" FontSize="10" Foreground="#90E0EF" Margin="0,0,4,0" VerticalAlignment="Center" FontFamily="{StaticResource IndustrialFont}"/>
-                                                            <TextBlock Text="{Binding SpecTotalPrice, Mode=OneWay, StringFormat=N2}" FontSize="11" FontWeight="Bold" Foreground="#00B4D8" VerticalAlignment="Center" FontFamily="{StaticResource IndustrialFont}"/>
+                                                            <TextBlock Text="AED:" FontSize="12" Foreground="#90E0EF" Margin="0,0,6,0" VerticalAlignment="Center" FontFamily="{StaticResource IndustrialFont}"/>
+                                                            <TextBlock Text="{Binding SpecTotalPrice, Mode=OneWay, StringFormat=N2}" FontSize="13" FontWeight="Bold" Foreground="#00B4D8" VerticalAlignment="Center" FontFamily="{StaticResource IndustrialFont}"/>
                                                         </StackPanel>
                                                     </Grid>
                                                 </Border>
@@ -665,72 +707,72 @@
                     <!-- OTHER CHARGES -->
                     <Border Background="#FFFFFF" BorderBrush="#0077B6" BorderThickness="1" Margin="0,0,0,6" CornerRadius="4">
                         <StackPanel>
-                            <Border Background="#0077B6" Padding="8,5" CornerRadius="4,4,0,0">
+                            <Border Background="#0077B6" Padding="10,6" CornerRadius="4,4,0,0">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="💰" FontSize="12" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                        <TextBlock Text="OTHER CHARGES" FontSize="11" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center" FontFamily="{StaticResource IndustrialFont}"/>
+                                        <TextBlock Text="💰" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBlock Text="OTHER CHARGES" FontSize="13" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center" FontFamily="{StaticResource IndustrialFont}"/>
                                     </StackPanel>
-                                    <Button Grid.Column="1" Content="+ ADD CHARGE" Style="{StaticResource IndButtonSuccess}" Command="{Binding AddOtherChargeCommand}" Padding="10,4"/>
+                                    <Button Grid.Column="1" Content="+ ADD CHARGE" Style="{StaticResource IndButtonSuccess}" Command="{Binding AddOtherChargeCommand}" Padding="12,5"/>
                                 </Grid>
                             </Border>
 
                             <!-- Charges Header -->
-                            <Grid Margin="10,8,10,0">
+                            <Grid Margin="12,10,12,0">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="120"/>
-                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="130"/>
+                                    <ColumnDefinition Width="90"/>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="80"/>
-                                    <ColumnDefinition Width="80"/>
-                                    <ColumnDefinition Width="80"/>
-                                    <ColumnDefinition Width="30"/>
+                                    <ColumnDefinition Width="90"/>
+                                    <ColumnDefinition Width="90"/>
+                                    <ColumnDefinition Width="90"/>
+                                    <ColumnDefinition Width="35"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="CHARGE" FontSize="9" FontWeight="Bold" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}"/>
-                                <TextBlock Grid.Column="1" Text="TYPE" FontSize="9" FontWeight="Bold" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}"/>
-                                <TextBlock Grid.Column="2" Text="SPEC" FontSize="9" FontWeight="Bold" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}"/>
-                                <TextBlock Grid.Column="3" Text="VALUE" FontSize="9" FontWeight="Bold" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}" HorizontalAlignment="Center"/>
-                                <TextBlock Grid.Column="4" Text="RATE" FontSize="9" FontWeight="Bold" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}" HorizontalAlignment="Center"/>
-                                <TextBlock Grid.Column="5" Text="AMOUNT" FontSize="9" FontWeight="Bold" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}" HorizontalAlignment="Center"/>
+                                <TextBlock Grid.Column="0" Text="CHARGE" FontSize="12" FontWeight="Bold" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="TYPE" FontSize="12" FontWeight="Bold" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="2" Text="SPEC" FontSize="12" FontWeight="Bold" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="3" Text="VALUE" FontSize="12" FontWeight="Bold" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="4" Text="RATE" FontSize="12" FontWeight="Bold" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="5" Text="AMOUNT" FontSize="12" FontWeight="Bold" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Grid>
 
                             <!-- Charges List -->
-                            <ItemsControl ItemsSource="{Binding SelectedSpecificationOtherCharges}" Margin="8,0,8,8">
+                            <ItemsControl ItemsSource="{Binding SelectedSpecificationOtherCharges}" Margin="10,0,10,10">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border BorderBrush="#00B4D8" BorderThickness="1" Padding="6,4" Margin="0,0,0,4" Background="#E8F4F8" CornerRadius="4">
+                                        <Border BorderBrush="#00B4D8" BorderThickness="2" Padding="10,6" Margin="0,0,0,6" Background="#E8F4F8" CornerRadius="6">
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="120"/>
-                                                    <ColumnDefinition Width="80"/>
+                                                    <ColumnDefinition Width="130"/>
+                                                    <ColumnDefinition Width="90"/>
                                                     <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="80"/>
-                                                    <ColumnDefinition Width="80"/>
-                                                    <ColumnDefinition Width="80"/>
-                                                    <ColumnDefinition Width="30"/>
+                                                    <ColumnDefinition Width="90"/>
+                                                    <ColumnDefinition Width="90"/>
+                                                    <ColumnDefinition Width="90"/>
+                                                    <ColumnDefinition Width="35"/>
                                                 </Grid.ColumnDefinitions>
 
-                                                <TextBox Grid.Column="0" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource IndTextBox}" Margin="0,0,4,0" Padding="4,3" FontSize="10" GotFocus="TextBox_GotFocus" MouseLeftButtonDown="TextBox_PreviewMouseDown" FontFamily="{StaticResource IndustrialFont}"/>
+                                                <TextBox Grid.Column="0" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource IndTextBox}" Margin="0,0,6,0" Padding="8,6" FontSize="12" GotFocus="TextBox_GotFocus" MouseLeftButtonDown="TextBox_PreviewMouseDown" FontFamily="{StaticResource IndustrialFont}"/>
 
-                                                <ComboBox Grid.Column="1" ItemsSource="{Binding DataContext.ChargeTypeOptions, RelativeSource={RelativeSource AncestorType=UserControl}}" SelectedValue="{Binding Type, UpdateSourceTrigger=PropertyChanged}" SelectedValuePath="Value" DisplayMemberPath="Label" Style="{StaticResource IndComboBox}" Margin="0,0,4,0" FontSize="10" FontFamily="{StaticResource IndustrialFont}"/>
+                                                <ComboBox Grid.Column="1" ItemsSource="{Binding DataContext.ChargeTypeOptions, RelativeSource={RelativeSource AncestorType=UserControl}}" SelectedValue="{Binding Type, UpdateSourceTrigger=PropertyChanged}" SelectedValuePath="Value" DisplayMemberPath="Label" Style="{StaticResource IndComboBox}" Margin="0,0,6,0" FontSize="12" FontFamily="{StaticResource IndustrialFont}"/>
 
-                                                <ComboBox Grid.Column="2" ItemsSource="{Binding DataContext.Invoice.Specifications, RelativeSource={RelativeSource AncestorType=UserControl}}" SelectedValue="{Binding LinkedSpecIndex, UpdateSourceTrigger=PropertyChanged}" SelectedValuePath="SpecIndex" DisplayMemberPath="SpecificationName" Style="{StaticResource IndComboBox}" Margin="0,0,4,0" FontSize="10" FontFamily="{StaticResource IndustrialFont}"/>
+                                                <ComboBox Grid.Column="2" ItemsSource="{Binding DataContext.Invoice.Specifications, RelativeSource={RelativeSource AncestorType=UserControl}}" SelectedValue="{Binding LinkedSpecIndex, UpdateSourceTrigger=PropertyChanged}" SelectedValuePath="SpecIndex" DisplayMemberPath="SpecificationName" Style="{StaticResource IndComboBox}" Margin="0,0,6,0" FontSize="12" FontFamily="{StaticResource IndustrialFont}"/>
 
-                                                <Border Grid.Column="3" Background="#90E0EF" Padding="4,3" Margin="0,0,4,0" CornerRadius="2">
-                                                    <TextBlock Text="{Binding ValueDisplay}" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="{StaticResource IndustrialFont}"/>
+                                                <Border Grid.Column="3" Background="#90E0EF" Padding="8,6" Margin="0,0,6,0" CornerRadius="4">
+                                                    <TextBlock Text="{Binding ValueDisplay}" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="{StaticResource IndustrialFont}"/>
                                                 </Border>
 
-                                                <TextBox Grid.Column="4" Text="{Binding Rate, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource IndTextBox}" Margin="0,0,4,0" Padding="4,3" FontSize="10" TextAlignment="Center" GotFocus="TextBox_GotFocus" MouseLeftButtonDown="TextBox_PreviewMouseDown" FontFamily="{StaticResource IndustrialFont}"/>
+                                                <TextBox Grid.Column="4" Text="{Binding Rate, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource IndTextBox}" Margin="0,0,6,0" Padding="8,6" FontSize="12" TextAlignment="Center" GotFocus="TextBox_GotFocus" MouseLeftButtonDown="TextBox_PreviewMouseDown" FontFamily="{StaticResource IndustrialFont}"/>
 
-                                                <Border Grid.Column="5" Background="#023E8A" Padding="4,3" CornerRadius="2">
-                                                    <TextBlock Text="{Binding AmountDisplay}" FontSize="10" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="{StaticResource IndustrialFont}"/>
+                                                <Border Grid.Column="5" Background="#023E8A" Padding="8,6" CornerRadius="4">
+                                                    <TextBlock Text="{Binding AmountDisplay}" FontSize="12" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="{StaticResource IndustrialFont}"/>
                                                 </Border>
 
-                                                <Button Grid.Column="6" Content="✕" FontSize="11" FontWeight="Bold" Foreground="#D62828" Background="Transparent" BorderThickness="0" Cursor="Hand" Padding="2" VerticalAlignment="Center" Command="{Binding DataContext.RemoveOtherChargeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" FontFamily="{StaticResource IndustrialFont}"/>
+                                                <Button Grid.Column="6" Content="✕" FontSize="13" FontWeight="Bold" Foreground="#D62828" Background="Transparent" BorderThickness="0" Cursor="Hand" Padding="4" VerticalAlignment="Center" Command="{Binding DataContext.RemoveOtherChargeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" FontFamily="{StaticResource IndustrialFont}"/>
                                             </Grid>
                                         </Border>
                                     </DataTemplate>
