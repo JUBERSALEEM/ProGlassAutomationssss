@@ -1014,7 +1014,7 @@
                                     </Grid.ColumnDefinitions>
 
                                     <StackPanel Grid.Column="0">
-                                        <TextBlock Text="CUTTING" FontSize="9" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}"/>
+                                        <TextBlock Text="CUTTING (AED)" FontSize="9" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}"/>
                                         <TextBox Text="{Binding SGUCutting, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource IndTextBox}" Padding="4,3" FontSize="10" GotFocus="TextBox_GotFocus" MouseLeftButtonDown="TextBox_PreviewMouseDown" FontFamily="{StaticResource IndustrialFont}"/>
                                     </StackPanel>
 
@@ -1024,7 +1024,7 @@
                                     </StackPanel>
 
                                     <StackPanel Grid.Column="4">
-                                        <TextBlock Text="WASTE" FontSize="9" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}"/>
+                                        <TextBlock Text="WASTE (0.85)" FontSize="9" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}"/>
                                         <TextBox Text="{Binding SGUWasteFactor, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource IndTextBox}" Padding="4,3" FontSize="10" GotFocus="TextBox_GotFocus" MouseLeftButtonDown="TextBox_PreviewMouseDown" FontFamily="{StaticResource IndustrialFont}"/>
                                     </StackPanel>
 
@@ -1085,18 +1085,32 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="4"/>
                                         <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="4"/>
+                                        <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0">
-                                        <TextBlock Text="SPACER" FontSize="8" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}"/>
-                                        <ComboBox Style="{StaticResource IndComboBox}" FontFamily="{StaticResource IndustrialFont}">
-                                            <ComboBoxItem Content="6mm" IsSelected="True"/>
-                                            <ComboBoxItem Content="8mm"/>
-                                            <ComboBoxItem Content="10mm"/>
-                                            <ComboBoxItem Content="12mm"/>
-                                        </ComboBox>
+                                        <TextBlock Text="THICKNESS" FontSize="8" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}"/>
+                                        <ComboBox ItemsSource="{Binding AirSpacerThicknessOptions}" SelectedItem="{Binding DGUAirSpacerThickness}" Style="{StaticResource IndComboBox}" FontFamily="{StaticResource IndustrialFont}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
-                                        <TextBlock Text="ASP PRICE" FontSize="8" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}"/>
+                                        <TextBlock Text="TYPE" FontSize="8" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}"/>
+                                        <ComboBox ItemsSource="{Binding AirSpacerTypeOptions}" SelectedItem="{Binding DGUAirSpacerType}" Style="{StaticResource IndComboBox}" FontFamily="{StaticResource IndustrialFont}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="4">
+                                        <TextBlock Text="AUTO PRICE" FontSize="8" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}"/>
+                                        <TextBox Text="{Binding DGUASPPrice, Mode=OneWay}" IsReadOnly="True" Background="#90E0EF" BorderBrush="#0077B6" BorderThickness="1" Padding="4,3" FontSize="10" FontWeight="Bold" FontFamily="{StaticResource IndustrialFont}"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- Manual Override -->
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <CheckBox Grid.Column="0" IsChecked="{Binding IsASPPriceManual}" Content="Manual" VerticalAlignment="Center" Margin="0,0,8,0" FontFamily="{StaticResource IndustrialFont}"/>
+                                    <StackPanel Grid.Column="1" IsEnabled="{Binding IsASPPriceManual}">
+                                        <TextBlock Text="MANUAL PRICE" FontSize="8" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}"/>
                                         <TextBox Text="{Binding DGUASPPrice, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource IndTextBox}" Padding="4,3" FontSize="10" GotFocus="TextBox_GotFocus" MouseLeftButtonDown="TextBox_PreviewMouseDown" FontFamily="{StaticResource IndustrialFont}"/>
                                     </StackPanel>
                                 </Grid>

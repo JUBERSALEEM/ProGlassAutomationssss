@@ -92,6 +92,7 @@ namespace ProGlassAutomation.Models
             {
                 _id = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(SpecIndex));
             }
         }
 
@@ -107,6 +108,9 @@ namespace ProGlassAutomation.Models
         }
 
         public ObservableCollection<InvoiceItemModel> Items { get; }
+
+        // ==================== SPEC INDEX FOR COMBOBOX ====================
+        public int SpecIndex => Id;
 
         // ==================== MODULE TYPE ====================
         private string _moduleType = "SGU";
@@ -417,6 +421,7 @@ namespace ProGlassAutomation.Models
             }
         }
 
+        // ==================== CALCULATE SPEC TOTALS ====================
         public void CalculateSpecTotals()
         {
             double sqm = 0, lm = 0;
@@ -435,6 +440,13 @@ namespace ProGlassAutomation.Models
             SpecTotalLM = Math.Round(lm, 4);
             SpecTotalQty = qty;
             SpecTotalPrice = Math.Round(price, 2);
+        }
+
+        // ==================== CALCULATE TOTALS (Wrapper for ViewModel compatibility) ====================
+        public void CalculateTotals()
+        {
+            CalculateSpecTotals();
+            CalculateOtherChargesTotal();
         }
     }
 }

@@ -27,6 +27,14 @@ namespace ProGlassAutomation.ViewModels
         public string Label { get; set; }
     }
 
+    public class AirSpacerOption
+    {
+        public string Thickness { get; set; }
+        public string Type { get; set; }
+        public double Price { get; set; }
+        public string Display => $"{Thickness}mm {Type} - AED {Price:F2}";
+    }
+
     // ==================== FILE LIST ITEM ====================
     public class FileListItem
     {
@@ -189,6 +197,43 @@ namespace ProGlassAutomation.ViewModels
             set { _colorHistory = value; OnPropertyChanged(); }
         }
 
+        // ==================== AIR SPACER OPTIONS ====================
+        public ObservableCollection<AirSpacerOption> AirSpacerOptions { get; } = new ObservableCollection<AirSpacerOption>
+        {
+            // Normal Air Spacer
+            new AirSpacerOption { Thickness = "6", Type = "Normal", Price = 8 },
+            new AirSpacerOption { Thickness = "8", Type = "Normal", Price = 10 },
+            new AirSpacerOption { Thickness = "10", Type = "Normal", Price = 12 },
+            new AirSpacerOption { Thickness = "12", Type = "Normal", Price = 15 },
+            new AirSpacerOption { Thickness = "14", Type = "Normal", Price = 18 },
+            new AirSpacerOption { Thickness = "16", Type = "Normal", Price = 20 },
+            new AirSpacerOption { Thickness = "18", Type = "Normal", Price = 22 },
+            new AirSpacerOption { Thickness = "20", Type = "Normal", Price = 25 },
+            new AirSpacerOption { Thickness = "22", Type = "Normal", Price = 28 },
+            new AirSpacerOption { Thickness = "24", Type = "Normal", Price = 30 },
+            // Black Air Spacer
+            new AirSpacerOption { Thickness = "6", Type = "Black", Price = 12 },
+            new AirSpacerOption { Thickness = "8", Type = "Black", Price = 15 },
+            new AirSpacerOption { Thickness = "10", Type = "Black", Price = 18 },
+            new AirSpacerOption { Thickness = "12", Type = "Black", Price = 22 },
+            new AirSpacerOption { Thickness = "14", Type = "Black", Price = 26 },
+            new AirSpacerOption { Thickness = "16", Type = "Black", Price = 30 },
+            new AirSpacerOption { Thickness = "18", Type = "Black", Price = 34 },
+            new AirSpacerOption { Thickness = "20", Type = "Black", Price = 38 },
+            new AirSpacerOption { Thickness = "22", Type = "Black", Price = 42 },
+            new AirSpacerOption { Thickness = "24", Type = "Black", Price = 45 }
+        };
+
+        public ObservableCollection<string> AirSpacerThicknessOptions { get; } = new ObservableCollection<string>
+        {
+            "6", "8", "10", "12", "14", "16", "18", "20", "22", "24"
+        };
+
+        public ObservableCollection<string> AirSpacerTypeOptions { get; } = new ObservableCollection<string>
+        {
+            "Normal", "Black"
+        };
+
         // ==================== LM DIMENSION OPTIONS ====================
         public ObservableCollection<DimensionOption> LMDimensionOptions { get; } = new ObservableCollection<DimensionOption>
         {
@@ -254,7 +299,7 @@ namespace ProGlassAutomation.ViewModels
             set { _sGUSheetPrice = value; OnPropertyChanged(); }
         }
 
-        private double _sGUCutting = 5;
+        private double _sGUCutting = 10;
         public double SGUCutting
         {
             get => _sGUCutting;
@@ -268,7 +313,7 @@ namespace ProGlassAutomation.ViewModels
             set { _sGUTempering = value; OnPropertyChanged(); }
         }
 
-        private double _sGUWasteFactor = 1.1;
+        private double _sGUWasteFactor = 0.85;
         public double SGUWasteFactor
         {
             get => _sGUWasteFactor;
@@ -354,11 +399,29 @@ namespace ProGlassAutomation.ViewModels
             set { _dGUOuterPrice = value; OnPropertyChanged(); }
         }
 
-        private string _dGUSpacerThickness = "12";
-        public string DGUSpacerThickness
+        // ==================== AIR SPACER FIELDS ====================
+        private string _dGUAirSpacerThickness = "12";
+        public string DGUAirSpacerThickness
         {
-            get => _dGUSpacerThickness;
-            set { _dGUSpacerThickness = value; OnPropertyChanged(); }
+            get => _dGUAirSpacerThickness;
+            set
+            {
+                _dGUAirSpacerThickness = value;
+                OnPropertyChanged();
+                UpdateAirSpacerPrice();
+            }
+        }
+
+        private string _dGUAirSpacerType = "Normal";
+        public string DGUAirSpacerType
+        {
+            get => _dGUAirSpacerType;
+            set
+            {
+                _dGUAirSpacerType = value;
+                OnPropertyChanged();
+                UpdateAirSpacerPrice();
+            }
         }
 
         private double _dGUASPPrice = 15;
@@ -366,6 +429,27 @@ namespace ProGlassAutomation.ViewModels
         {
             get => _dGUASPPrice;
             set { _dGUASPPrice = value; OnPropertyChanged(); }
+        }
+
+        private bool _isASPPriceManual = false;
+        public bool IsASPPriceManual
+        {
+            get => _isASPPriceManual;
+            set { _isASPPriceManual = value; OnPropertyChanged(); }
+        }
+
+        private void UpdateAirSpacerPrice()
+        {
+            if (IsASPPriceManual) return;
+
+            var option = AirSpacerOptions.FirstOrDefault(x =>
+                x.Thickness == DGUAirSpacerThickness &&
+                x.Type == DGUAirSpacerType);
+
+            if (option != null)
+            {
+                DGUASPPrice = option.Price;
+            }
         }
 
         private string _dGUInnerThickness = "6";
@@ -389,7 +473,7 @@ namespace ProGlassAutomation.ViewModels
             set { _dGUInnerPrice = value; OnPropertyChanged(); }
         }
 
-        private double _dGUWasteFactor = 1.1;
+        private double _dGUWasteFactor = 0.85;
         public double DGUWasteFactor
         {
             get => _dGUWasteFactor;
@@ -493,7 +577,7 @@ namespace ProGlassAutomation.ViewModels
             set { _lAMInnerPrice = value; OnPropertyChanged(); }
         }
 
-        private double _lAMCutting = 5;
+        private double _lAMCutting = 10;
         public double LAMCutting
         {
             get => _lAMCutting;
@@ -507,7 +591,7 @@ namespace ProGlassAutomation.ViewModels
             set { _lAMTempering = value; OnPropertyChanged(); }
         }
 
-        private double _lAMWasteFactor = 1.1;
+        private double _lAMWasteFactor = 0.85;
         public double LAMWasteFactor
         {
             get => _lAMWasteFactor;
@@ -594,6 +678,7 @@ namespace ProGlassAutomation.ViewModels
         public ICommand CalculatePriceCommand { get; }
         public ICommand IncludeInSpecificationCommand { get; }
         public ICommand PrintCommand { get; }
+        public ICommand PasteFromExcelCommand { get; }
 
         // Module Selection Commands
         public ICommand SelectSGUCommand { get; }
@@ -640,6 +725,7 @@ namespace ProGlassAutomation.ViewModels
             CalculatePriceCommand = new RelayCommand(_ => CalculatePrice());
             IncludeInSpecificationCommand = new RelayCommand(_ => IncludeInSpecification(), _ => CanIncludeInSpecification());
             PrintCommand = new RelayCommand(_ => PrintInvoice());
+            PasteFromExcelCommand = new RelayCommand(_ => PasteFromExcel());
 
             // Module Selection Commands
             SelectSGUCommand = new RelayCommand(_ => SelectSGU());
@@ -1190,6 +1276,7 @@ namespace ProGlassAutomation.ViewModels
 
         private void CalculateSGUPrice()
         {
+            // Formula: ((SheetPrice / WasteFactor) + Cutting + Tempering) * (1 + Profit/100)
             double step1 = SGUSheetPrice / SGUWasteFactor;
             double step2 = step1 + SGUCutting;
             double step3 = step2 + SGUTempering;
@@ -1197,11 +1284,12 @@ namespace ProGlassAutomation.ViewModels
 
             CalculatedPrice = Math.Round(final, 2);
             GeneratedDescription = $"{SelectedThickness}mm {SelectedColor} {WorkTypeText}";
-            PriceCalculationSummary = $"({SGUSheetPrice} / {SGUWasteFactor:F2}) + {SGUCutting} + {SGUTempering} = {final:F2} × {1 + SGUProfitPercent / 100:F2} = {CalculatedPrice:F2}";
+            PriceCalculationSummary = $"({SGUSheetPrice} / {SGUWasteFactor:F2}) + {SGUCutting} + {SGUTempering} = {step3:F2} × {1 + SGUProfitPercent / 100:F2} = {CalculatedPrice:F2}";
         }
 
         private void CalculateDGUPrice()
         {
+            // Formula: ((OuterPrice + InnerPrice) / WasteFactor + ASPPrice) * (1 + Profit/100)
             double glassTotal = DGUOuterPrice + DGUInnerPrice;
             double step1 = glassTotal / DGUWasteFactor;
             double step2 = step1 + DGUASPPrice;
@@ -1209,12 +1297,14 @@ namespace ProGlassAutomation.ViewModels
 
             CalculatedPrice = Math.Round(final, 2);
             string uInsertText = IsDGUIncludeInSpec ? "with U-Insert" : "";
-            GeneratedDescription = $"{DGUOuterThickness}mm {DGUOuterColor} {DGUWorkTypeText} + {DGUSpacerThickness}mm ASP {uInsertText} + {DGUInnerThickness}mm {DGUInnerColor} {DGUWorkTypeText}";
+            string spacerDesc = $"{DGUAirSpacerThickness}mm {DGUAirSpacerType} ASP";
+            GeneratedDescription = $"{DGUOuterThickness}mm {DGUOuterColor} {DGUWorkTypeText} + {spacerDesc} {uInsertText} + {DGUInnerThickness}mm {DGUInnerColor} {DGUWorkTypeText}";
             PriceCalculationSummary = $"(({DGUOuterPrice} + {DGUInnerPrice}) / {DGUWasteFactor:F2}) + {DGUASPPrice} = {step2:F2} × {1 + DGUProfitPercent / 100:F2} = {CalculatedPrice:F2}";
         }
 
         private void CalculateLAMPrice()
         {
+            // Formula: ((OuterPrice + PVBPrice + InnerPrice) / WasteFactor + Cutting + Tempering) * (1 + Profit/100)
             double glassTotal = LAMOuterPrice + LAMPVBPrice + LAMInnerPrice;
             double step1 = glassTotal / LAMWasteFactor;
             double step2 = step1 + LAMCutting + LAMTempering;
@@ -1255,7 +1345,7 @@ namespace ProGlassAutomation.ViewModels
                 SelectedTargetSpecification.OuterThickness = DGUOuterThickness;
                 SelectedTargetSpecification.OuterColor = DGUOuterColor;
                 SelectedTargetSpecification.OuterPrice = DGUOuterPrice.ToString();
-                SelectedTargetSpecification.SpacerThickness = DGUSpacerThickness;
+                SelectedTargetSpecification.SpacerThickness = $"{DGUAirSpacerThickness}mm {DGUAirSpacerType}";
                 SelectedTargetSpecification.ASPPrice = DGUASPPrice.ToString();
                 SelectedTargetSpecification.InnerThickness = DGUInnerThickness;
                 SelectedTargetSpecification.InnerColor = DGUInnerColor;
@@ -1438,6 +1528,146 @@ namespace ProGlassAutomation.ViewModels
             catch (Exception ex)
             {
                 StatusMessage = $"❌ Item import failed: {ex.Message}";
+            }
+        }
+
+        // ==================== PASTE FROM EXCEL ====================
+        private void PasteFromExcel()
+        {
+            try
+            {
+                if (!Clipboard.ContainsText())
+                {
+                    StatusMessage = "❌ Clipboard is empty";
+                    return;
+                }
+
+                string clipboardText = Clipboard.GetText();
+                if (string.IsNullOrWhiteSpace(clipboardText))
+                {
+                    StatusMessage = "❌ No text data in clipboard";
+                    return;
+                }
+
+                // Get selected specification
+                var spec = SelectedTargetSpecification;
+                if (spec == null)
+                {
+                    if (Invoice.Specifications.Count == 0)
+                        AddSpecification();
+                    spec = SelectedTargetSpecification ?? Invoice.Specifications[0];
+                }
+
+                // Split clipboard by rows and columns
+                var rows = clipboardText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+                if (rows.Length == 0)
+                {
+                    StatusMessage = "❌ No data to paste";
+                    return;
+                }
+
+                // Check if first row is header (contains GlassRef, W1, H1, etc.)
+                bool skipHeader = false;
+                var firstRowLower = rows[0].ToLower();
+                if (firstRowLower.Contains("glass") || firstRowLower.Contains("width") ||
+                    firstRowLower.Contains("height") || firstRowLower.Contains("qty") ||
+                    firstRowLower.Contains("ref"))
+                {
+                    skipHeader = true;
+                }
+
+                int startRow = spec.Items.Count > 0 ? spec.Items.Count : 0;
+                int itemsAdded = 0;
+                int startIndex = skipHeader ? 1 : 0;
+
+                // Get default values from first item if exists
+                double defaultWidth1 = 0, defaultHeight1 = 0, defaultWidth2 = 0, defaultHeight2 = 0, defaultPrice = 0, defaultSurcharge = 20;
+                if (spec.Items.Count > 0)
+                {
+                    var firstItem = spec.Items[0];
+                    defaultWidth1 = firstItem.Width1;
+                    defaultHeight1 = firstItem.Height1;
+                    defaultWidth2 = firstItem.Width2;
+                    defaultHeight2 = firstItem.Height2;
+                    defaultPrice = firstItem.Price;
+                    defaultSurcharge = firstItem.SurchargePercent;
+                }
+
+                for (int i = startIndex; i < rows.Length; i++)
+                {
+                    var row = rows[i];
+                    var columns = row.Split('\t');
+
+                    if (columns.Length == 0 || string.IsNullOrWhiteSpace(string.Join("", columns).Replace("\t", "")))
+                        continue;
+
+                    var item = new InvoiceItemModel
+                    {
+                        SrNo = startRow + itemsAdded + 1
+                    };
+
+                    // Column 0: Glass Reference
+                    if (columns.Length > 0)
+                        item.GlassRef = columns[0].Trim();
+
+                    // Column 1: Width 1
+                    if (columns.Length > 1 && double.TryParse(columns[1].Trim().Replace(",", ""), out double w1))
+                        item.Width1 = w1;
+                    else
+                        item.Width1 = defaultWidth1;
+
+                    // Column 2: Height 1
+                    if (columns.Length > 2 && double.TryParse(columns[2].Trim().Replace(",", ""), out double h1))
+                        item.Height1 = h1;
+                    else
+                        item.Height1 = defaultHeight1;
+
+                    // Column 3: Width 2 (optional)
+                    if (columns.Length > 3 && double.TryParse(columns[3].Trim().Replace(",", ""), out double w2))
+                        item.Width2 = w2;
+                    else
+                        item.Width2 = defaultWidth2;
+
+                    // Column 4: Height 2 (optional)
+                    if (columns.Length > 4 && double.TryParse(columns[4].Trim().Replace(",", ""), out double h2))
+                        item.Height2 = h2;
+                    else
+                        item.Height2 = defaultHeight2;
+
+                    // Column 5: Quantity
+                    if (columns.Length > 5 && int.TryParse(columns[5].Trim().Replace(",", ""), out int qty))
+                        item.Qty = qty;
+                    else
+                        item.Qty = 1;
+
+                    // Column 6: Price (optional)
+                    if (columns.Length > 6 && double.TryParse(columns[6].Trim().Replace(",", ""), out double price))
+                        item.Price = price;
+                    else
+                        item.Price = defaultPrice;
+
+                    // Column 7: Surcharge % (optional)
+                    if (columns.Length > 7 && double.TryParse(columns[7].Trim().Replace(",", "").Replace("%", ""), out double surcharge))
+                        item.SurchargePercent = surcharge;
+                    else
+                        item.SurchargePercent = defaultSurcharge;
+
+                    spec.Items.Add(item);
+                    itemsAdded++;
+                }
+
+                // Recalculate totals
+                spec.CalculateTotals();
+                Invoice.CalculateTotals();
+                Invoice.IsDirty = true;
+
+                StatusMessage = $"✅ Pasted {itemsAdded} items from Excel";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"❌ Paste failed: {ex.Message}";
+                Debug.WriteLine($"[Paste Error] {ex}");
             }
         }
     }

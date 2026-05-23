@@ -92,6 +92,8 @@ namespace ProGlassAutomation.Models
                 if (SetProperty(ref _surchargePercent, value))
                 {
                     OnPropertyChanged(nameof(DisplayPrice));
+                    OnPropertyChanged(nameof(FinalPrice));
+                    OnPropertyChanged(nameof(HasSurcharge));
                 }
             }
         }
@@ -100,6 +102,18 @@ namespace ProGlassAutomation.Models
         public double SurchargeThreshold => 4;
 
         public double DisplayPrice
+        {
+            get
+            {
+                if (SQM >= 4 && _surchargePercent > 0)
+                {
+                    return Math.Round(_price * (1 + _surchargePercent / 100), 2);
+                }
+                return _price;
+            }
+        }
+
+        public double FinalPrice
         {
             get
             {
@@ -122,6 +136,8 @@ namespace ProGlassAutomation.Models
                     _sqm = value;
                     OnPropertyChanged(nameof(SQM));
                     OnPropertyChanged(nameof(DisplayPrice));
+                    OnPropertyChanged(nameof(FinalPrice));
+                    OnPropertyChanged(nameof(HasSurcharge));
                 }
             }
         }
@@ -187,19 +203,8 @@ namespace ProGlassAutomation.Models
             get => SQM >= 4 && _surchargePercent > 0;
         }
 
-        public double FinalPrice
-        {
-            get
-            {
-                if (SQM >= 4 && _surchargePercent > 0)
-                {
-                    return Math.Round(_price * (1 + _surchargePercent / 100), 2);
-                }
-                return _price;
-            }
-        }
-
-        private void CalculateAll()
+        // ==================== CALCULATE ALL ====================
+        public void CalculateAll()
         {
             // Calculate SQM (Square Meters)
             double sqm = 0;
@@ -235,10 +240,18 @@ namespace ProGlassAutomation.Models
 
             // Calculate Total Price
             TotalPrice = Math.Round(FinalPrice * TotalSQM, 2);
+        }
 
-            OnPropertyChanged(nameof(HasSurcharge));
-            OnPropertyChanged(nameof(FinalPrice));
-            OnPropertyChanged(nameof(DisplayPrice));
+        // ==================== CALCULATE SQM (for compatibility) ====================
+        public void CalculateSQM()
+        {
+            CalculateAll();
+        }
+
+        // ==================== CALCULATE TOTAL PRICE (for compatibility) ====================
+        public void CalculateTotalPrice()
+        {
+            CalculateAll();
         }
 
         public InvoiceItemModel()
