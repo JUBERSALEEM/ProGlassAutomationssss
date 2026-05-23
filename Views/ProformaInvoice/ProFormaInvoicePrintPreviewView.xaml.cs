@@ -17,6 +17,11 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         public ProformaInvoicePrintPreviewView()
         {
             InitializeComponent();
+            Loaded += ProformaInvoicePrintPreviewView_Loaded;
+        }
+
+        private void ProformaInvoicePrintPreviewView_Loaded(object sender, RoutedEventArgs e)
+        {
             UpdatePreview();
         }
 
@@ -31,6 +36,8 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         {
             try
             {
+                if (PreviewPage == null) return;
+
                 if (_isLandscape)
                 {
                     PreviewPage.Width = A4_HEIGHT_PX;
@@ -43,6 +50,8 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     PreviewPage.Height = A4_HEIGHT_PX;
                     StatusText.Text = "Portrait | A4 | Margins: T/B 0.75in, L/R 0.7in";
                 }
+
+                PrintArea.UpdateLayout();
             }
             catch { }
         }
@@ -85,6 +94,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 printDialog.PrintVisual(PrintArea, "ProForma Invoice");
 
                 PrintArea.LayoutTransform = null;
+                PrintArea.UpdateLayout();
             }
             catch (System.Exception ex)
             {
@@ -97,8 +107,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             try
             {
                 Window window = Window.GetWindow(this);
-                if (window != null)
-                    window.Close();
+                window?.Close();
             }
             catch { }
         }

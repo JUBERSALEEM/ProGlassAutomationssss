@@ -59,9 +59,16 @@
                                 </Grid.ColumnDefinitions>
 
                                 <StackPanel Grid.Column="0">
-                                    <TextBlock Text="PROGLASS AUTOMATION" FontSize="16" FontWeight="Bold" Foreground="#1E40AF"/>
-                                    <TextBlock Text="TRN: 100458979400003" FontSize="8" Foreground="#64748B" Margin="0,2,0,0"/>
-                                    <TextBlock Text="Dubai, UAE | Tel: +971 50 123 4567" FontSize="8" Foreground="#64748B"/>
+                                    <TextBlock Text="{Binding CompanyName}" FontSize="16" FontWeight="Bold" Foreground="#1E40AF"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="TRN: " FontSize="8" Foreground="#64748B"/>
+                                        <TextBlock Text="{Binding CompanyTRN}" FontSize="8" Foreground="#64748B"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding CompanyLocation}" FontSize="8" Foreground="#64748B"/>
+                                        <TextBlock Text=" | " FontSize="8" Foreground="#64748B"/>
+                                        <TextBlock Text="Tel: +971 50 123 4567" FontSize="8" Foreground="#64748B"/>
+                                    </StackPanel>
                                 </StackPanel>
 
                                 <StackPanel Grid.Column="1" HorizontalAlignment="Right">
@@ -79,8 +86,8 @@
                         <!-- Invoice Info -->
                         <Grid Grid.Row="1" Margin="0,0,0,8">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="140"/>
                                 <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
                             <StackPanel Grid.Column="0">
@@ -90,7 +97,14 @@
 
                             <StackPanel Grid.Column="1" HorizontalAlignment="Right">
                                 <TextBlock Text="{Binding Invoice.CustomerName}" FontSize="10" FontWeight="Bold"/>
-                                <TextBlock Text="{Binding Invoice.CustomerTRN}" FontSize="8" Foreground="#64748B"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="TRN: " FontSize="8" Foreground="#64748B"/>
+                                    <TextBlock Text="{Binding Invoice.CustomerTRN}" FontSize="8" Foreground="#64748B"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                    <TextBlock Text="Address: " FontSize="8" Foreground="#64748B"/>
+                                    <TextBlock Text="{Binding Invoice.CustomerAddress}" FontSize="8" Foreground="#64748B" TextWrapping="Wrap" MaxWidth="200"/>
+                                </StackPanel>
                             </StackPanel>
                         </Grid>
 
@@ -101,11 +115,16 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="80"/>
                                     <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="100"/>
                                 </Grid.ColumnDefinitions>
 
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="PROJECT" FontSize="8" FontWeight="Bold" Foreground="#1E40AF"/>
                                     <TextBlock Text="{Binding Invoice.ProjectName}" FontSize="8"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                        <TextBlock Text="Location: " FontSize="7" Foreground="#64748B"/>
+                                        <TextBlock Text="{Binding Invoice.ProjectLocation}" FontSize="7" Foreground="#64748B"/>
+                                    </StackPanel>
                                 </StackPanel>
 
                                 <StackPanel Grid.Column="1">
@@ -116,6 +135,11 @@
                                 <StackPanel Grid.Column="2">
                                     <TextBlock Text="ATTENTION" FontSize="8" FontWeight="Bold" Foreground="#1E40AF"/>
                                     <TextBlock Text="{Binding Invoice.AttentionName}" FontSize="8"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="3">
+                                    <TextBlock Text="CONTACT" FontSize="8" FontWeight="Bold" Foreground="#1E40AF"/>
+                                    <TextBlock Text="{Binding Invoice.ContactNo}" FontSize="8"/>
                                 </StackPanel>
                             </Grid>
                         </Border>
@@ -342,7 +366,7 @@
                             </Border>
                         </Grid>
 
-                                                <!-- Net Total -->
+                        <!-- Net Total -->
                         <Border Grid.Row="5" Background="#1E40AF" Padding="10,8" Margin="0,0,0,8">
                             <Grid>
                                 <Grid.ColumnDefinitions>

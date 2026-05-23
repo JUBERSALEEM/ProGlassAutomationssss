@@ -87,6 +87,88 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             }
         }
 
+        // ==================== PRINT HANDLERS ====================
+
+        private void PrintInvoice_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Create print preview window
+                var printPreview = new ProformaInvoicePrintPreviewView
+                {
+                    DataContext = DataContext
+                };
+
+                // Setup print dialog
+                var printDialog = new PrintDialog();
+                if (printDialog.ShowDialog() == true)
+                {
+                    // Get the content to print
+                    var content = printPreview.Content as FrameworkElement;
+                    if (content != null)
+                    {
+                        // Calculate scaling to fit on one page
+                        var pageWidth = printDialog.PrintableAreaWidth;
+                        var pageHeight = printDialog.PrintableAreaHeight;
+                        var contentWidth = content.ActualWidth;
+                        var contentHeight = content.ActualHeight;
+
+                        if (contentWidth > 0 && contentHeight > 0)
+                        {
+                            var scaleX = pageWidth / contentWidth;
+                            var scaleY = pageHeight / contentHeight;
+                            var scale = Math.Min(scaleX, scaleY);
+
+                            content.LayoutTransform = new System.Windows.Media.ScaleTransform(scale, scale);
+                        }
+
+                        // Print
+                        printDialog.PrintVisual(content, "ProForma Invoice");
+
+                        // Reset transform
+                        content.LayoutTransform = null;
+                    }
+                }
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show($"Error printing invoice: {ex.Message}", "Print Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void PrintPreview_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var printPreview = new ProformaInvoicePrintPreviewView
+                {
+                    DataContext = DataContext
+                };
+
+                var scrollViewer = new ScrollViewer
+                {
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                    HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+                    Content = printPreview
+                };
+
+                var window = new Window
+                {
+                    Content = scrollViewer,
+                    Title = "Print Preview - ProForma Invoice",
+                    Width = 1100,
+                    Height = 800,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen
+                };
+
+                window.Show();
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show($"Error opening print preview: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         // KEY HANDLER - Handle Enter, Tab, and Arrow keys
         private void DataGrid_PreviewKeyDown(object sender, KeyEventArgs e)
         {
@@ -240,39 +322,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 }
             }
             return null;
-        }
-
-        private void PrintPreview_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var printPreview = new ProformaInvoicePrintPreviewView
-                {
-                    DataContext = DataContext
-                };
-
-                var scrollViewer = new ScrollViewer
-                {
-                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                    HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
-                    Content = printPreview
-                };
-
-                var window = new Window
-                {
-                    Content = scrollViewer,
-                    Title = "Print Preview - ProForma Invoice",
-                    Width = 1100,
-                    Height = 800,
-                    WindowStartupLocation = WindowStartupLocation.CenterScreen
-                };
-
-                window.Show();
-            }
-            catch (System.Exception ex)
-            {
-                MessageBox.Show($"Error opening print preview: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
         }
     }
 }
