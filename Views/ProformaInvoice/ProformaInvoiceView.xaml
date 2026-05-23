@@ -717,62 +717,142 @@
                                         <TextBlock Text="💰" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                         <TextBlock Text="OTHER CHARGES" FontSize="13" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center" FontFamily="{StaticResource IndustrialFont}"/>
                                     </StackPanel>
-                                    <Button Grid.Column="1" Content="+ ADD CHARGE" Style="{StaticResource IndButtonSuccess}" Command="{Binding AddOtherChargeCommand}" Padding="12,5"/>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                        <Button Content="+ ADD" Style="{StaticResource IndButtonSuccess}" Command="{Binding AddOtherChargeCommand}" Padding="8,4" Margin="0,0,4,0" ToolTip="Add new charge to selected spec"/>
+                                        <Button Content="+ SPEC" Style="{StaticResource IndButton}" Command="{Binding AddSpecToChargeCommand}" Padding="8,4" Margin="0,0,4,0" ToolTip="Add spec to selected charge"/>
+                                        <Button Content="- SPEC" Style="{StaticResource IndButton}" Command="{Binding RemoveSpecFromChargeCommand}" Padding="8,4" Margin="0,0,4,0" ToolTip="Remove spec from selected charge"/>
+                                        <Button Content="⟳ TOGGLE" Style="{StaticResource IndButton}" Command="{Binding ToggleSpecForChargeCommand}" Padding="8,4" ToolTip="Toggle specs for selected charge"/>
+                                    </StackPanel>
                                 </Grid>
                             </Border>
 
                             <!-- Charges Header -->
                             <Grid Margin="12,10,12,0">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="130"/>
+                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="100"/>
                                     <ColumnDefinition Width="90"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="90"/>
-                                    <ColumnDefinition Width="90"/>
-                                    <ColumnDefinition Width="90"/>
+                                    <ColumnDefinition Width="70"/>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="70"/>
+                                    <ColumnDefinition Width="70"/>
                                     <ColumnDefinition Width="35"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="CHARGE" FontSize="12" FontWeight="Bold" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="1" Text="TYPE" FontSize="12" FontWeight="Bold" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="2" Text="SPEC" FontSize="12" FontWeight="Bold" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="3" Text="VALUE" FontSize="12" FontWeight="Bold" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="4" Text="RATE" FontSize="12" FontWeight="Bold" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="5" Text="AMOUNT" FontSize="12" FontWeight="Bold" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="0" Text="CHARGE" FontSize="10" FontWeight="Bold" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="TYPE" FontSize="10" FontWeight="Bold" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="2" Text="LINKED SPECS" FontSize="9" FontWeight="Bold" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}" HorizontalAlignment="Center" VerticalAlignment="Center" ToolTip="Comma-separated spec indices"/>
+                                <TextBlock Grid.Column="3" Text="SPEC" FontSize="10" FontWeight="Bold" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="4" Text="VALUE" FontSize="10" FontWeight="Bold" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="5" Text="RATE" FontSize="10" FontWeight="Bold" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="6" Text="AMOUNT" FontSize="10" FontWeight="Bold" Foreground="#0077B6" FontFamily="{StaticResource IndustrialFont}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Grid>
 
                             <!-- Charges List -->
                             <ItemsControl ItemsSource="{Binding SelectedSpecificationOtherCharges}" Margin="10,0,10,10">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border BorderBrush="#00B4D8" BorderThickness="2" Padding="10,6" Margin="0,0,0,6" Background="#E8F4F8" CornerRadius="6">
+                                        <Border BorderBrush="#00B4D8" BorderThickness="1" Padding="6,4" Margin="0,0,0,4" Background="#F0F9FF" CornerRadius="4">
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="130"/>
+                                                    <ColumnDefinition Width="100"/>
+                                                    <ColumnDefinition Width="100"/>
                                                     <ColumnDefinition Width="90"/>
+                                                    <ColumnDefinition Width="70"/>
+                                                    <ColumnDefinition Width="80"/>
+                                                    <ColumnDefinition Width="70"/>
                                                     <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="90"/>
-                                                    <ColumnDefinition Width="90"/>
-                                                    <ColumnDefinition Width="90"/>
-                                                    <ColumnDefinition Width="35"/>
+                                                    <ColumnDefinition Width="30"/>
                                                 </Grid.ColumnDefinitions>
 
-                                                <TextBox Grid.Column="0" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource IndTextBox}" Margin="0,0,6,0" Padding="8,6" FontSize="12" GotFocus="TextBox_GotFocus" MouseLeftButtonDown="TextBox_PreviewMouseDown" FontFamily="{StaticResource IndustrialFont}"/>
+                                                <!-- Charge Name -->
+                                                <TextBox Grid.Column="0" 
+             Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" 
+             Style="{StaticResource IndTextBox}" 
+             Margin="0,0,3,0" 
+             Padding="4,3" 
+             FontSize="9" 
+             GotFocus="TextBox_GotFocus" 
+             MouseLeftButtonDown="TextBox_PreviewMouseDown" 
+             FontFamily="{StaticResource IndustrialFont}"/>
 
-                                                <ComboBox Grid.Column="1" ItemsSource="{Binding DataContext.ChargeTypeOptions, RelativeSource={RelativeSource AncestorType=UserControl}}" SelectedValue="{Binding Type, UpdateSourceTrigger=PropertyChanged}" SelectedValuePath="Value" DisplayMemberPath="Label" Style="{StaticResource IndComboBox}" Margin="0,0,6,0" FontSize="12" FontFamily="{StaticResource IndustrialFont}"/>
+                                                <!-- Charge Type Dropdown -->
+                                                <ComboBox Grid.Column="1" 
+              ItemsSource="{Binding DataContext.ChargeTypeOptions, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+              SelectedValue="{Binding Type, UpdateSourceTrigger=PropertyChanged}" 
+              SelectedValuePath="Value" 
+              DisplayMemberPath="Label" 
+              Style="{StaticResource IndComboBox}" 
+              Margin="0,0,3,0" 
+              FontSize="9" 
+              FontFamily="{StaticResource IndustrialFont}"/>
 
-                                                <ComboBox Grid.Column="2" ItemsSource="{Binding DataContext.Invoice.Specifications, RelativeSource={RelativeSource AncestorType=UserControl}}" SelectedValue="{Binding LinkedSpecIndex, UpdateSourceTrigger=PropertyChanged}" SelectedValuePath="SpecIndex" DisplayMemberPath="SpecificationName" Style="{StaticResource IndComboBox}" Margin="0,0,6,0" FontSize="12" FontFamily="{StaticResource IndustrialFont}"/>
-
-                                                <Border Grid.Column="3" Background="#90E0EF" Padding="8,6" Margin="0,0,6,0" CornerRadius="4">
-                                                    <TextBlock Text="{Binding ValueDisplay}" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="{StaticResource IndustrialFont}"/>
+                                                <!-- Linked Specs (comma-separated indices) -->
+                                                <Border Grid.Column="2" Background="#E8F4F8" BorderBrush="#0077B6" BorderThickness="1" Padding="4,2" Margin="0,0,3,0" CornerRadius="2">
+                                                    <TextBox Text="{Binding LinkedSpecIndices, UpdateSourceTrigger=PropertyChanged}" 
+                 Background="Transparent" 
+                 BorderThickness="0" 
+                 FontSize="9" 
+                 FontWeight="Bold" 
+                 Foreground="#023E8A" 
+                 HorizontalAlignment="Center" 
+                 VerticalAlignment="Center" 
+                 GotFocus="TextBox_GotFocus"
+                 ToolTip="Enter comma-separated spec indices (e.g., 0,1,2)"
+                 FontFamily="{StaticResource IndustrialFont}"/>
                                                 </Border>
 
-                                                <TextBox Grid.Column="4" Text="{Binding Rate, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource IndTextBox}" Margin="0,0,6,0" Padding="8,6" FontSize="12" TextAlignment="Center" GotFocus="TextBox_GotFocus" MouseLeftButtonDown="TextBox_PreviewMouseDown" FontFamily="{StaticResource IndustrialFont}"/>
+                                                <!-- Spec Dropdown (Short Names) -->
+                                                <ComboBox Grid.Column="3" 
+              ItemsSource="{Binding DataContext.Invoice.Specifications, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+              SelectedValue="{Binding LinkedSpecIndex, UpdateSourceTrigger=PropertyChanged}" 
+              SelectedValuePath="SpecIndex" 
+              Style="{StaticResource IndComboBox}" 
+              Margin="0,0,3,0" 
+              FontSize="9" 
+              FontFamily="{StaticResource IndustrialFont}">
+                                                    <ComboBox.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <TextBlock Text="{Binding ShortName}" FontSize="9" FontFamily="{StaticResource IndustrialFont}"/>
+                                                        </DataTemplate>
+                                                    </ComboBox.ItemTemplate>
+                                                </ComboBox>
 
-                                                <Border Grid.Column="5" Background="#023E8A" Padding="8,6" CornerRadius="4">
-                                                    <TextBlock Text="{Binding AmountDisplay}" FontSize="12" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="{StaticResource IndustrialFont}"/>
+                                                <!-- Value Display -->
+                                                <Border Grid.Column="4" Background="#90E0EF" Padding="3,2" Margin="0,0,3,0" CornerRadius="2">
+                                                    <TextBlock Text="{Binding ValueDisplay}" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="{StaticResource IndustrialFont}"/>
                                                 </Border>
 
-                                                <Button Grid.Column="6" Content="✕" FontSize="13" FontWeight="Bold" Foreground="#D62828" Background="Transparent" BorderThickness="0" Cursor="Hand" Padding="4" VerticalAlignment="Center" Command="{Binding DataContext.RemoveOtherChargeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" FontFamily="{StaticResource IndustrialFont}"/>
+                                                <!-- Rate Input -->
+                                                <TextBox Grid.Column="5" 
+             Text="{Binding Rate, UpdateSourceTrigger=PropertyChanged}" 
+             Style="{StaticResource IndTextBox}" 
+             Margin="0,0,3,0" 
+             Padding="3,2" 
+             FontSize="10" 
+             TextAlignment="Center" 
+             GotFocus="TextBox_GotFocus" 
+             MouseLeftButtonDown="TextBox_PreviewMouseDown" 
+             FontFamily="{StaticResource IndustrialFont}"/>
+
+                                                <!-- Amount Display -->
+                                                <Border Grid.Column="6" Background="#023E8A" Padding="4,2" CornerRadius="2">
+                                                    <TextBlock Text="{Binding AmountDisplay}" FontSize="10" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="{StaticResource IndustrialFont}"/>
+                                                </Border>
+
+                                                <!-- Delete Button -->
+                                                <Button Grid.Column="7" 
+            Content="✕" 
+            FontSize="11" 
+            FontWeight="Bold" 
+            Foreground="#D62828" 
+            Background="Transparent" 
+            BorderThickness="0" 
+            Cursor="Hand" 
+            Padding="2" 
+            VerticalAlignment="Center" 
+            Command="{Binding DataContext.RemoveOtherChargeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+            CommandParameter="{Binding}" 
+            FontFamily="{StaticResource IndustrialFont}"/>
                                             </Grid>
                                         </Border>
                                     </DataTemplate>

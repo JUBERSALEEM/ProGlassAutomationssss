@@ -84,6 +84,10 @@ namespace ProGlassAutomation.Models
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
+        // ==================== PARENT INVOICE REFERENCE ====================
+        public ProformaInvoiceModel? Invoice { get; set; }
+
+        // ==================== ID & INDEX ====================
         private int _id = 0;
         public int Id
         {
@@ -93,6 +97,7 @@ namespace ProGlassAutomation.Models
                 _id = value;
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(SpecIndex));
+                OnPropertyChanged(nameof(ShortName));
             }
         }
 
@@ -104,6 +109,7 @@ namespace ProGlassAutomation.Models
             {
                 _specificationName = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(ShortName));
             }
         }
 
@@ -111,6 +117,31 @@ namespace ProGlassAutomation.Models
 
         // ==================== SPEC INDEX FOR COMBOBOX ====================
         public int SpecIndex => Id;
+
+        // ==================== SHORT NAME FOR UI ====================
+        public string ShortName
+        {
+            get
+            {
+                // Try to find index in parent invoice
+                if (Invoice?.Specifications != null)
+                {
+                    int index = Invoice.Specifications.IndexOf(this);
+                    if (index >= 0)
+                    {
+                        return $"Spec {index + 1}";
+                    }
+                }
+                // Fallback: extract number from SpecificationName
+                if (!string.IsNullOrEmpty(SpecificationName))
+                {
+                    var match = System.Text.RegularExpressions.Regex.Match(SpecificationName, @"(\d+)");
+                    if (match.Success)
+                        return $"Spec {match.Groups[1].Value}";
+                }
+                return "Spec";
+            }
+        }
 
         // ==================== MODULE TYPE ====================
         private string _moduleType = "SGU";
