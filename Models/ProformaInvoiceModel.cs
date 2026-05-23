@@ -43,7 +43,8 @@ namespace ProGlassAutomation.Models
             if (e.PropertyName == nameof(SpecificationModel.SpecTotalSQM) ||
                 e.PropertyName == nameof(SpecificationModel.SpecTotalLM) ||
                 e.PropertyName == nameof(SpecificationModel.SpecTotalQty) ||
-                e.PropertyName == nameof(SpecificationModel.SpecTotalPrice))
+                e.PropertyName == nameof(SpecificationModel.SpecTotalPrice) ||
+                e.PropertyName == nameof(SpecificationModel.OtherChargesTotal))
             {
                 CalculateTotals();
             }
@@ -189,6 +190,21 @@ namespace ProGlassAutomation.Models
             }
         }
 
+        // NEW: Other Charges Total
+        private double _otherChargesTotal = 0;
+        public double OtherChargesTotal
+        {
+            get => _otherChargesTotal;
+            private set
+            {
+                if (_otherChargesTotal != value)
+                {
+                    _otherChargesTotal = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
         private double _vatPercent = 5;
         public double VatPercent
         {
@@ -243,21 +259,25 @@ namespace ProGlassAutomation.Models
         {
             double sqm = 0, lm = 0;
             int qty = 0;
-            double price = 0;
+            double specTotal = 0;
+            double otherCharges = 0;
 
             foreach (var spec in Specifications)
             {
                 spec.CalculateSpecTotals();
+                spec.CalculateOtherChargesTotal();
                 sqm += spec.SpecTotalSQM;
                 lm += spec.SpecTotalLM;
                 qty += spec.SpecTotalQty;
-                price += spec.SpecTotalPrice;
+                specTotal += spec.SpecTotalPrice;
+                otherCharges += spec.OtherChargesTotal;
             }
 
             TotalSQM = Math.Round(sqm, 4);
             TotalLM = Math.Round(lm, 4);
             TotalQty = qty;
-            GrandTotal = Math.Round(price, 2);
+            OtherChargesTotal = Math.Round(otherCharges, 2);
+            GrandTotal = Math.Round(specTotal + otherCharges, 2);
             VatAmount = Math.Round(GrandTotal * VatPercent / 100, 2);
             NetTotal = Math.Round(GrandTotal + VatAmount, 2);
             IsDirty = true;

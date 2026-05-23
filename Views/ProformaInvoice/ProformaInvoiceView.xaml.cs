@@ -28,6 +28,18 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             }
         }
 
+        private void TextBox_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is TextBox tb)
+            {
+                if (!tb.IsFocused)
+                {
+                    tb.Focus();
+                    e.Handled = true;
+                }
+            }
+        }
+
         private void ComboBox_GotFocus(object sender, RoutedEventArgs e)
         {
             if (sender is ComboBox cb)
@@ -93,21 +105,17 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         {
             try
             {
-                // Create print preview window
                 var printPreview = new ProformaInvoicePrintPreviewView
                 {
                     DataContext = DataContext
                 };
 
-                // Setup print dialog
                 var printDialog = new PrintDialog();
                 if (printDialog.ShowDialog() == true)
                 {
-                    // Get the content to print
                     var content = printPreview.Content as FrameworkElement;
                     if (content != null)
                     {
-                        // Calculate scaling to fit on one page
                         var pageWidth = printDialog.PrintableAreaWidth;
                         var pageHeight = printDialog.PrintableAreaHeight;
                         var contentWidth = content.ActualWidth;
@@ -122,10 +130,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                             content.LayoutTransform = new System.Windows.Media.ScaleTransform(scale, scale);
                         }
 
-                        // Print
                         printDialog.PrintVisual(content, "ProForma Invoice");
-
-                        // Reset transform
                         content.LayoutTransform = null;
                     }
                 }

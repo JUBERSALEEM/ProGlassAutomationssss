@@ -14,6 +14,31 @@ using System.Windows.Input;
 
 namespace ProGlassAutomation.ViewModels
 {
+    // ==================== HELPER CLASSES ====================
+    public class DimensionOption
+    {
+        public string Value { get; set; }
+        public string Label { get; set; }
+    }
+
+    public class ChargeTypeOption
+    {
+        public string Value { get; set; }
+        public string Label { get; set; }
+    }
+
+    // ==================== FILE LIST ITEM ====================
+    public class FileListItem
+    {
+        public string FilePath { get; set; }
+        public string InvoiceNo { get; set; }
+        public string CustomerName { get; set; }
+        public DateTime InvoiceDate { get; set; }
+        public string FileName => Path.GetFileNameWithoutExtension(FilePath);
+        public string DateDisplay => InvoiceDate.ToString("dd MMM yyyy");
+    }
+
+    // ==================== MAIN VIEWMODEL ====================
     public class ProformaInvoiceViewModel : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
@@ -32,6 +57,7 @@ namespace ProGlassAutomation.ViewModels
             {
                 _invoice = value;
                 OnPropertyChanged();
+                SubscribeToOtherChargeChanges();
             }
         }
 
@@ -149,6 +175,33 @@ namespace ProGlassAutomation.ViewModels
             set { _colorHistory = value; OnPropertyChanged(); }
         }
 
+        // ==================== LM DIMENSION OPTIONS ====================
+        public ObservableCollection<DimensionOption> LMDimensionOptions { get; } = new ObservableCollection<DimensionOption>
+        {
+            new DimensionOption { Value = "w1h1", Label = "2×(W1+H1) — Single Glass Polish" },
+            new DimensionOption { Value = "4w1h1", Label = "4×(W1+H1) — DGU/LAM Polish" },
+            new DimensionOption { Value = "2w1", Label = "2×W1 — Both Widths" },
+            new DimensionOption { Value = "2h1", Label = "2×H1 — Both Heights" },
+            new DimensionOption { Value = "w1_only", Label = "1×W1 — One Width" },
+            new DimensionOption { Value = "h1_only", Label = "1×H1 — One Height" },
+            new DimensionOption { Value = "w2h2", Label = "2×(W2+H2) — W2/H2 Perimeter" },
+            new DimensionOption { Value = "2w2", Label = "2×W2" },
+            new DimensionOption { Value = "2h2", Label = "2×H2" },
+            new DimensionOption { Value = "w2_only", Label = "1×W2" },
+            new DimensionOption { Value = "h2_only", Label = "1×H2" }
+        };
+
+        // ==================== CHARGE TYPE OPTIONS ====================
+        public ObservableCollection<ChargeTypeOption> ChargeTypeOptions { get; } = new ObservableCollection<ChargeTypeOption>
+        {
+            new ChargeTypeOption { Value = "amount", Label = "amount" },
+            new ChargeTypeOption { Value = "lm", Label = "lm" },
+            new ChargeTypeOption { Value = "sqm", Label = "sqm" },
+            new ChargeTypeOption { Value = "qty", Label = "qty" },
+            new ChargeTypeOption { Value = "holes", Label = "holes (2X)" },
+            new ChargeTypeOption { Value = "cutout", Label = "cutout (2X)" }
+        };
+
         // ==================== SGU FIELDS ====================
         private string _selectedThickness = "6";
         public string SelectedThickness
@@ -216,8 +269,6 @@ namespace ProGlassAutomation.ViewModels
         }
 
         // ==================== DGU FIELDS ====================
-
-        // NEW: DGU Work Type
         private bool _isDGUAnnealedSelected = true;
         public bool IsDGUAnnealedSelected
         {
@@ -244,7 +295,6 @@ namespace ProGlassAutomation.ViewModels
 
         public string DGUWorkTypeText => IsDGUFTSelected ? "FT Glass" : "Annealed";
 
-        // NEW: DGU U-Insert
         private bool _isDGUIncludeInSpec = true;
         public bool IsDGUIncludeInSpec
         {
@@ -269,7 +319,6 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // Outer Glass
         private string _dGUOuterThickness = "6";
         public string DGUOuterThickness
         {
@@ -291,7 +340,6 @@ namespace ProGlassAutomation.ViewModels
             set { _dGUOuterPrice = value; OnPropertyChanged(); }
         }
 
-        // Air Space (Spacer)
         private string _dGUSpacerThickness = "12";
         public string DGUSpacerThickness
         {
@@ -306,7 +354,6 @@ namespace ProGlassAutomation.ViewModels
             set { _dGUASPPrice = value; OnPropertyChanged(); }
         }
 
-        // Inner Glass
         private string _dGUInnerThickness = "6";
         public string DGUInnerThickness
         {
@@ -343,8 +390,6 @@ namespace ProGlassAutomation.ViewModels
         }
 
         // ==================== LAM FIELDS ====================
-
-        // NEW: LAM Work Type
         private bool _isLAMAnnealedSelected = true;
         public bool IsLAMAnnealedSelected
         {
@@ -371,7 +416,6 @@ namespace ProGlassAutomation.ViewModels
 
         public string LAMWorkTypeText => IsLAMFTSelected ? "FT Glass" : "Annealed";
 
-        // Outer Glass
         private string _lAMOuterThickness = "6";
         public string LAMOuterThickness
         {
@@ -393,7 +437,6 @@ namespace ProGlassAutomation.ViewModels
             set { _lAMOuterPrice = value; OnPropertyChanged(); }
         }
 
-        // PVB Layer
         private string _lAMPVBThickness = "0.76";
         public string LAMPVBThickness
         {
@@ -415,7 +458,6 @@ namespace ProGlassAutomation.ViewModels
             set { _lAMPVBPrice = value; OnPropertyChanged(); }
         }
 
-        // Inner Glass
         private string _lAMInnerThickness = "6";
         public string LAMInnerThickness
         {
@@ -492,7 +534,22 @@ namespace ProGlassAutomation.ViewModels
         public SpecificationModel SelectedTargetSpecification
         {
             get => _selectedTargetSpecification;
-            set { _selectedTargetSpecification = value; OnPropertyChanged(); }
+            set
+            {
+                _selectedTargetSpecification = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(SelectedSpecificationOtherCharges));
+            }
+        }
+
+        public ObservableCollection<OtherChargeModel> SelectedSpecificationOtherCharges
+        {
+            get
+            {
+                if (SelectedTargetSpecification?.OtherCharges == null)
+                    return new ObservableCollection<OtherChargeModel>();
+                return SelectedTargetSpecification.OtherCharges;
+            }
         }
 
         private int _selectedSpecificationId;
@@ -534,6 +591,11 @@ namespace ProGlassAutomation.ViewModels
         public ICommand ImportCsvCommand { get; }
         public ICommand ImportItemsCommand { get; }
 
+        // ==================== OTHER CHARGES COMMANDS ====================
+        public ICommand AddOtherChargeCommand { get; }
+        public ICommand RemoveOtherChargeCommand { get; }
+        public ICommand CalculateOtherChargeCommand { get; }
+
         // Constructor
         public ProformaInvoiceViewModel()
         {
@@ -569,6 +631,11 @@ namespace ProGlassAutomation.ViewModels
             ExportCsvCommand = new RelayCommand(_ => ExportToCsv());
             ImportCsvCommand = new RelayCommand(_ => ImportFromCsv());
             ImportItemsCommand = new RelayCommand(_ => ImportItemsFromCsv());
+
+            // Other Charges Commands
+            AddOtherChargeCommand = new RelayCommand(_ => AddOtherCharge());
+            RemoveOtherChargeCommand = new RelayCommand(param => RemoveOtherCharge(param as OtherChargeModel));
+            CalculateOtherChargeCommand = new RelayCommand(_ => CalculateAllOtherCharges());
 
             LoadSavedFiles();
         }
@@ -790,7 +857,8 @@ namespace ProGlassAutomation.ViewModels
         {
             var spec = new SpecificationModel
             {
-                SpecificationName = $"Specification {Invoice.Specifications.Count + 1}"
+                SpecificationName = $"Specification {Invoice.Specifications.Count + 1}",
+                Id = Invoice.Specifications.Count
             };
 
             var firstItem = new InvoiceItemModel
@@ -802,6 +870,8 @@ namespace ProGlassAutomation.ViewModels
 
             Invoice.Specifications.Add(spec);
             SelectedTargetSpecification = spec;
+
+            SubscribeToOtherChargeChanges();
         }
 
         private void RemoveSpecification()
@@ -851,26 +921,251 @@ namespace ProGlassAutomation.ViewModels
             IsLMVisible = !IsLMVisible;
         }
 
+        // ==================== OTHER CHARGES METHODS ====================
+        private void SubscribeToOtherChargeChanges()
+        {
+            if (Invoice?.Specifications == null) return;
+
+            foreach (var spec in Invoice.Specifications)
+            {
+                if (spec?.OtherCharges == null) continue;
+
+                foreach (var charge in spec.OtherCharges)
+                {
+                    if (charge != null)
+                    {
+                        charge.PropertyChanged -= OtherCharge_PropertyChanged;
+                        charge.PropertyChanged += OtherCharge_PropertyChanged;
+                    }
+                }
+            }
+        }
+
+        private void OtherCharge_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (sender is not OtherChargeModel charge) return;
+
+            // When Type changes, recalculate Value
+            if (e.PropertyName == nameof(OtherChargeModel.Type))
+            {
+                UpdateChargeValue(charge);
+            }
+
+            // When LinkedSpecIndex changes, recalculate Value
+            if (e.PropertyName == nameof(OtherChargeModel.LinkedSpecIndex))
+            {
+                UpdateChargeValue(charge);
+            }
+
+            // Update totals when any property changes
+            if (SelectedTargetSpecification != null)
+            {
+                SelectedTargetSpecification.CalculateOtherChargesTotal();
+                Invoice.CalculateTotals();
+                Invoice.IsDirty = true;
+            }
+        }
+
+        private void AddOtherCharge()
+        {
+            if (SelectedTargetSpecification == null)
+            {
+                MessageBox.Show("Please select a specification first!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var charge = new OtherChargeModel
+            {
+                Name = "New Charge",
+                Type = "amount",
+                Value = 1,
+                Rate = 0,
+                Amount = 0,
+                LmDimType = "w1h1",
+                LinkedSpecIndex = SelectedTargetSpecification.Id
+            };
+
+            SelectedTargetSpecification.OtherCharges.Add(charge);
+            Invoice.IsDirty = true;
+            OnPropertyChanged(nameof(SelectedSpecificationOtherCharges));
+
+            // Subscribe to property changes
+            charge.PropertyChanged += OtherCharge_PropertyChanged;
+
+            // Auto-calculate value based on type
+            UpdateChargeValue(charge);
+        }
+
+        private void RemoveOtherCharge(OtherChargeModel charge)
+        {
+            if (charge == null || SelectedTargetSpecification == null) return;
+
+            charge.PropertyChanged -= OtherCharge_PropertyChanged;
+            SelectedTargetSpecification.OtherCharges.Remove(charge);
+            Invoice.IsDirty = true;
+            SelectedTargetSpecification.CalculateOtherChargesTotal();
+            Invoice.CalculateTotals();
+            OnPropertyChanged(nameof(SelectedSpecificationOtherCharges));
+        }
+
+        private void CalculateAllOtherCharges()
+        {
+            if (SelectedTargetSpecification == null) return;
+
+            foreach (var charge in SelectedTargetSpecification.OtherCharges)
+            {
+                CalculateOtherChargeValue(charge, SelectedTargetSpecification);
+            }
+
+            SelectedTargetSpecification.CalculateOtherChargesTotal();
+            Invoice.CalculateTotals();
+            Invoice.IsDirty = true;
+        }
+
+        private void UpdateChargeValue(OtherChargeModel charge)
+        {
+            if (charge == null || SelectedTargetSpecification == null) return;
+
+            switch (charge.Type?.ToLower())
+            {
+                case "lm":
+                    charge.Value = CalculateLMValue(SelectedTargetSpecification, charge.LmDimType);
+                    break;
+                case "sqm":
+                    charge.Value = CalculateSQMValue(SelectedTargetSpecification);
+                    break;
+                case "qty":
+                    charge.Value = CalculateQtyValue(SelectedTargetSpecification);
+                    break;
+                case "holes":
+                    charge.Value = CalculateQtyValue(SelectedTargetSpecification) * 2;
+                    break;
+                case "cutout":
+                    charge.Value = CalculateQtyValue(SelectedTargetSpecification) * 2;
+                    break;
+                case "amount":
+                default:
+                    charge.Value = 1;
+                    break;
+            }
+        }
+
+        private void CalculateOtherChargeValue(OtherChargeModel charge, SpecificationModel spec)
+        {
+            if (charge == null || spec == null) return;
+
+            switch (charge.Type?.ToLower())
+            {
+                case "lm":
+                    charge.Value = CalculateLMValue(spec, charge.LmDimType);
+                    break;
+                case "sqm":
+                    charge.Value = CalculateSQMValue(spec);
+                    break;
+                case "qty":
+                    charge.Value = CalculateQtyValue(spec);
+                    break;
+                case "holes":
+                    charge.Value = CalculateQtyValue(spec) * 2;
+                    break;
+                case "cutout":
+                    charge.Value = CalculateQtyValue(spec) * 2;
+                    break;
+                case "amount":
+                default:
+                    charge.Value = 1;
+                    break;
+            }
+
+            charge.Amount = Math.Round(charge.Value * charge.Rate, 2);
+        }
+
+        private double CalculateLMValue(SpecificationModel spec, string dimType)
+        {
+            double totalLM = 0;
+            int multiplier = GetModuleMultiplier(spec.ModuleType);
+
+            foreach (var item in spec.Items)
+            {
+                double lm = CalculateRowLM(item, dimType);
+                totalLM += lm * item.Qty * multiplier;
+            }
+
+            return Math.Round(totalLM, 4);
+        }
+
+        private double CalculateRowLM(InvoiceItemModel item, string dimType)
+        {
+            double w1 = item.Width1 / 1000.0;
+            double h1 = item.Height1 / 1000.0;
+            double w2 = item.Width2 / 1000.0;
+            double h2 = item.Height2 / 1000.0;
+
+            return dimType switch
+            {
+                "w1h1" => 2 * (w1 + h1),
+                "4w1h1" => 4 * (w1 + h1),
+                "2w1" => 2 * w1,
+                "2h1" => 2 * h1,
+                "w1_only" => w1,
+                "h1_only" => h1,
+                "w2h2" => 2 * (w2 + h2),
+                "2w2" => 2 * w2,
+                "2h2" => 2 * h2,
+                "w2_only" => w2,
+                "h2_only" => h2,
+                _ => 2 * (w1 + h1)
+            };
+        }
+
+        private double CalculateSQMValue(SpecificationModel spec)
+        {
+            double totalSQM = 0;
+
+            foreach (var item in spec.Items)
+            {
+                totalSQM += item.TotalSQM;
+            }
+
+            return Math.Round(totalSQM, 4);
+        }
+
+        private double CalculateQtyValue(SpecificationModel spec)
+        {
+            int totalQty = 0;
+            int multiplier = GetModuleMultiplier(spec.ModuleType);
+
+            foreach (var item in spec.Items)
+            {
+                totalQty += item.Qty * multiplier;
+            }
+
+            return totalQty;
+        }
+
+        private int GetModuleMultiplier(string moduleType)
+        {
+            return moduleType switch
+            {
+                "DGU" => 2,
+                "LAM" => 2,
+                _ => 1
+            };
+        }
+
         // ==================== CALCULATE PRICE ====================
         private void CalculatePrice()
         {
             if (IsSGUSelected)
-            {
                 CalculateSGUPrice();
-            }
             else if (IsDGUSelected)
-            {
                 CalculateDGUPrice();
-            }
             else if (IsLAMSelected)
-            {
                 CalculateLAMPrice();
-            }
         }
 
         private void CalculateSGUPrice()
         {
-            // Formula: (SheetPrice / WasteFactor + Cutting + Tempering) * ProfitFactor
             double step1 = SGUSheetPrice / SGUWasteFactor;
             double step2 = step1 + SGUCutting;
             double step3 = step2 + SGUTempering;
@@ -883,37 +1178,26 @@ namespace ProGlassAutomation.ViewModels
 
         private void CalculateDGUPrice()
         {
-            // Formula: ((Outer + Inner) / WasteFactor) + ASP) * ProfitFactor
             double glassTotal = DGUOuterPrice + DGUInnerPrice;
             double step1 = glassTotal / DGUWasteFactor;
             double step2 = step1 + DGUASPPrice;
             double final = step2 * (1 + DGUProfitPercent / 100);
 
             CalculatedPrice = Math.Round(final, 2);
-
-            // Generate description with Work Type and U-Insert
-            string workTypeText = DGUWorkTypeText;
             string uInsertText = IsDGUIncludeInSpec ? "with U-Insert" : "";
-
-            GeneratedDescription = $"{DGUOuterThickness}mm {DGUOuterColor} {workTypeText} + {DGUSpacerThickness}mm ASP {uInsertText} + {DGUInnerThickness}mm {DGUInnerColor} {workTypeText}";
-
-            PriceCalculationSummary = $"(({DGUOuterPrice} + {DGUInnerPrice}) / {DGUWasteFactor:F2}) + {DGUASPPrice} = {step1:F2} + {DGUASPPrice} = {step2:F2} × {1 + DGUProfitPercent / 100:F2} = {CalculatedPrice:F2}";
+            GeneratedDescription = $"{DGUOuterThickness}mm {DGUOuterColor} {DGUWorkTypeText} + {DGUSpacerThickness}mm ASP {uInsertText} + {DGUInnerThickness}mm {DGUInnerColor} {DGUWorkTypeText}";
+            PriceCalculationSummary = $"(({DGUOuterPrice} + {DGUInnerPrice}) / {DGUWasteFactor:F2}) + {DGUASPPrice} = {step2:F2} × {1 + DGUProfitPercent / 100:F2} = {CalculatedPrice:F2}";
         }
 
         private void CalculateLAMPrice()
         {
-            // Formula: ((Outer + PVB + Inner) / WasteFactor + Cutting + Tempering) * ProfitFactor
             double glassTotal = LAMOuterPrice + LAMPVBPrice + LAMInnerPrice;
             double step1 = glassTotal / LAMWasteFactor;
             double step2 = step1 + LAMCutting + LAMTempering;
             double final = step2 * (1 + LAMProfitPercent / 100);
 
             CalculatedPrice = Math.Round(final, 2);
-
-            // Generate description with Work Type
-            string workTypeText = LAMWorkTypeText;
-            GeneratedDescription = $"{LAMOuterThickness}mm {LAMOuterColor} {workTypeText} + {LAMPVBThickness}mm PVB ({LAMPVBColor}) + {LAMInnerThickness}mm {LAMInnerColor} {workTypeText}";
-
+            GeneratedDescription = $"{LAMOuterThickness}mm {LAMOuterColor} {LAMWorkTypeText} + {LAMPVBThickness}mm PVB ({LAMPVBColor}) + {LAMInnerThickness}mm {LAMInnerColor} {LAMWorkTypeText}";
             PriceCalculationSummary = $"({LAMOuterPrice} + {LAMPVBPrice} + {LAMInnerPrice}) / {LAMWasteFactor:F2} + {LAMCutting} + {LAMTempering} = {step2:F2} × {1 + LAMProfitPercent / 100:F2} = {CalculatedPrice:F2}";
         }
 
@@ -932,7 +1216,6 @@ namespace ProGlassAutomation.ViewModels
                 return;
             }
 
-            // Set Module Type
             if (IsSGUSelected)
             {
                 SelectedTargetSpecification.ModuleType = "SGU";
@@ -969,13 +1252,9 @@ namespace ProGlassAutomation.ViewModels
                 SelectedTargetSpecification.InnerPrice = LAMInnerPrice.ToString();
             }
 
-            // Update specification name with generated description
             SelectedTargetSpecification.SpecificationName = GeneratedDescription;
-
-            // Update base price for all items in this specification
             SelectedTargetSpecification.BasePrice = CalculatedPrice;
 
-            // Update surcharge from first item if exists
             if (SelectedTargetSpecification.Items.Count > 0)
             {
                 SelectedTargetSpecification.SurchargePercent = SelectedTargetSpecification.Items[0].SurchargePercent;
@@ -988,7 +1267,6 @@ namespace ProGlassAutomation.ViewModels
         }
 
         // ==================== IMPORT/EXPORT METHODS ====================
-
         private void ExportToCsv()
         {
             if (Invoice == null || Invoice.Specifications.Count == 0)
@@ -1014,18 +1292,10 @@ namespace ProGlassAutomation.ViewModels
         {
             try
             {
-                Debug.WriteLine("[ImportFromCsv] Starting import...");
-
                 var importedInvoice = _excelCsvService.ImportFromCsv();
 
                 if (importedInvoice != null)
                 {
-                    Debug.WriteLine($"[ImportFromCsv] Imported invoice: {importedInvoice.InvoiceNo}");
-                    Debug.WriteLine($"[ImportFromCsv] Specifications: {importedInvoice.Specifications.Count}");
-
-                    int totalItems = importedInvoice.Specifications.Sum(s => s.Items.Count);
-                    Debug.WriteLine($"[ImportFromCsv] Total items: {totalItems}");
-
                     Invoice.Specifications.Clear();
 
                     foreach (var spec in importedInvoice.Specifications)
@@ -1067,7 +1337,6 @@ namespace ProGlassAutomation.ViewModels
                             newItem.Height2 = item.Height2;
 
                             newSpec.Items.Add(newItem);
-                            Debug.WriteLine($"[ImportFromCsv] Item: {newItem.GlassRef}, W={newItem.Width1}, H={newItem.Height1}, SQM={newItem.SQM}");
                         }
 
                         Invoice.Specifications.Add(newSpec);
@@ -1089,19 +1358,12 @@ namespace ProGlassAutomation.ViewModels
                     Invoice.IsDirty = true;
 
                     CurrentFileName = "Imported";
-                    StatusMessage = $"✅ Imported {totalItems} items";
-                    Debug.WriteLine($"[ImportFromCsv] Complete - {totalItems} items");
-                }
-                else
-                {
-                    StatusMessage = "❌ Import returned null";
-                    Debug.WriteLine("[ImportFromCsv] Returned null");
+                    StatusMessage = $"✅ Imported {importedInvoice.Specifications.Sum(s => s.Items.Count)} items";
                 }
             }
             catch (Exception ex)
             {
                 StatusMessage = $"❌ Import failed: {ex.Message}";
-                Debug.WriteLine($"[ImportFromCsv] Error: {ex}");
                 MessageBox.Show($"Import failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -1110,18 +1372,12 @@ namespace ProGlassAutomation.ViewModels
         {
             try
             {
-                Debug.WriteLine("[ImportItemsFromCsv] Starting import...");
-
                 var items = _excelCsvService.ImportItemsFromCsv();
 
                 if (items != null && items.Count > 0)
                 {
-                    Debug.WriteLine($"[ImportItemsFromCsv] Found {items.Count} items");
-
                     if (Invoice.Specifications.Count == 0)
-                    {
                         AddSpecification();
-                    }
 
                     var targetSpec = Invoice.Specifications[0];
                     int startSrNo = targetSpec.Items.Count + 1;
@@ -1143,37 +1399,22 @@ namespace ProGlassAutomation.ViewModels
                         newItem.Height2 = item.Height2;
 
                         targetSpec.Items.Add(newItem);
-                        Debug.WriteLine($"[ImportItemsFromCsv] Added: {newItem.GlassRef}, W={newItem.Width1}, H={newItem.Height1}, SQM={newItem.SQM}");
                     }
 
                     Invoice.CalculateTotals();
                     Invoice.IsDirty = true;
 
                     StatusMessage = $"✅ Imported {items.Count} items";
-                    Debug.WriteLine($"[ImportItemsFromCsv] Complete");
                 }
                 else
                 {
                     StatusMessage = "❌ No items found in file";
-                    Debug.WriteLine("[ImportItemsFromCsv] No items found");
                 }
             }
             catch (Exception ex)
             {
                 StatusMessage = $"❌ Item import failed: {ex.Message}";
-                Debug.WriteLine($"[ImportItemsFromCsv] Error: {ex}");
             }
         }
-    }
-
-    // ==================== FILE LIST ITEM ====================
-    public class FileListItem
-    {
-        public string FilePath { get; set; }
-        public string InvoiceNo { get; set; }
-        public string CustomerName { get; set; }
-        public DateTime InvoiceDate { get; set; }
-        public string FileName => Path.GetFileNameWithoutExtension(FilePath);
-        public string DateDisplay => InvoiceDate.ToString("dd MMM yyyy");
     }
 }

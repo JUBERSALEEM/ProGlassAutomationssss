@@ -13,7 +13,9 @@ namespace ProGlassAutomation.Models
         public SpecificationModel()
         {
             Items = new ObservableCollection<InvoiceItemModel>();
+            OtherCharges = new ObservableCollection<OtherChargeModel>();
             Items.CollectionChanged += Items_CollectionChanged;
+            OtherCharges.CollectionChanged += OtherCharges_CollectionChanged;
         }
 
         private void Items_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
@@ -50,12 +52,38 @@ namespace ProGlassAutomation.Models
             }
         }
 
+        private void OtherCharges_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            if (e.NewItems != null)
+            {
+                foreach (OtherChargeModel charge in e.NewItems)
+                {
+                    charge.PropertyChanged += Charge_PropertyChanged;
+                }
+            }
+            if (e.OldItems != null)
+            {
+                foreach (OtherChargeModel charge in e.OldItems)
+                {
+                    charge.PropertyChanged -= Charge_PropertyChanged;
+                }
+            }
+            CalculateOtherChargesTotal();
+        }
+
+        private void Charge_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(OtherChargeModel.Amount))
+            {
+                CalculateOtherChargesTotal();
+            }
+        }
+
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        // ==================== PATCH 7: Added Id Property ====================
         private int _id = 0;
         public int Id
         {
@@ -80,8 +108,7 @@ namespace ProGlassAutomation.Models
 
         public ObservableCollection<InvoiceItemModel> Items { get; }
 
-        // ==================== NEW: Module Type ====================
-        // SGU, DGU, LAM
+        // ==================== MODULE TYPE ====================
         private string _moduleType = "SGU";
         public string ModuleType
         {
@@ -94,8 +121,7 @@ namespace ProGlassAutomation.Models
             }
         }
 
-        // ==================== NEW: Work Type ====================
-        // Annealed, FT Glass
+        // ==================== WORK TYPE ====================
         private string _workType = "Annealed";
         public string WorkType
         {
@@ -108,7 +134,7 @@ namespace ProGlassAutomation.Models
             }
         }
 
-        // ==================== NEW: U-Insert ====================
+        // ==================== U-INSERT ====================
         private bool _includeInSpec = true;
         public bool IncludeInSpec
         {
@@ -121,9 +147,7 @@ namespace ProGlassAutomation.Models
             }
         }
 
-        // ==================== NEW: DGU Specific Properties ====================
-
-        // Outer Glass
+        // ==================== DGU PROPERTIES ====================
         private string _outerThickness = "6mm";
         public string OuterThickness
         {
@@ -152,14 +176,9 @@ namespace ProGlassAutomation.Models
         public string OuterPrice
         {
             get => _outerPrice;
-            set
-            {
-                _outerPrice = value;
-                OnPropertyChanged();
-            }
+            set { _outerPrice = value; OnPropertyChanged(); }
         }
 
-        // Inner Glass
         private string _innerThickness = "6mm";
         public string InnerThickness
         {
@@ -188,14 +207,9 @@ namespace ProGlassAutomation.Models
         public string InnerPrice
         {
             get => _innerPrice;
-            set
-            {
-                _innerPrice = value;
-                OnPropertyChanged();
-            }
+            set { _innerPrice = value; OnPropertyChanged(); }
         }
 
-        // Air Spacer
         private string _spacerThickness = "12mm";
         public string SpacerThickness
         {
@@ -212,16 +226,10 @@ namespace ProGlassAutomation.Models
         public string ASPPrice
         {
             get => _aspPrice;
-            set
-            {
-                _aspPrice = value;
-                OnPropertyChanged();
-            }
+            set { _aspPrice = value; OnPropertyChanged(); }
         }
 
-        // ==================== NEW: LAM Specific Properties ====================
-
-        // PVB Layer
+        // ==================== LAM PROPERTIES ====================
         private string _pvbThickness = "0.76mm";
         public string PVBThickness
         {
@@ -250,14 +258,36 @@ namespace ProGlassAutomation.Models
         public string PVBPrice
         {
             get => _pvbPrice;
-            set
+            set { _pvbPrice = value; OnPropertyChanged(); }
+        }
+
+        // ==================== OTHER CHARGES ====================
+        public ObservableCollection<OtherChargeModel> OtherCharges { get; }
+
+        private double _otherChargesTotal = 0;
+        public double OtherChargesTotal
+        {
+            get => _otherChargesTotal;
+            private set
             {
-                _pvbPrice = value;
-                OnPropertyChanged();
+                if (_otherChargesTotal != value)
+                {
+                    _otherChargesTotal = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(SpecTotalPriceWithOtherCharges));
+                }
             }
         }
 
-        // ==================== NEW: Generated Description ====================
+        public double SpecTotalPriceWithOtherCharges => Math.Round(SpecTotalPrice + OtherChargesTotal, 2);
+
+        public void CalculateOtherChargesTotal()
+        {
+            double total = OtherCharges.Sum(c => c.Amount);
+            OtherChargesTotal = Math.Round(total, 2);
+        }
+
+        // ==================== GENERATED DESCRIPTION ====================
         public string GeneratedDescription
         {
             get
@@ -275,25 +305,22 @@ namespace ProGlassAutomation.Models
         {
             string workTypeShort = WorkType == "FT Glass" ? "FT Glass" : "Annealed";
             string uInsertText = IncludeInSpec ? "with U-Insert" : "";
-
             return $"{OuterThickness} {OuterColor} {workTypeShort} + {SpacerThickness} ASP {uInsertText} + {InnerThickness} {InnerColor} {workTypeShort}";
         }
 
         private string GenerateLAMDescription()
         {
             string workTypeShort = WorkType == "FT Glass" ? "FT Glass" : "Annealed";
-
             return $"{OuterThickness} {OuterColor} {workTypeShort} + {PVBThickness} PVB ({PVBColor}) + {InnerThickness} {InnerColor} {workTypeShort}";
         }
 
         private string GenerateSGUDescription()
         {
             string workTypeShort = WorkType == "FT Glass" ? "FT Glass" : "Annealed";
-
             return $"{OuterThickness} {OuterColor} {workTypeShort}";
         }
 
-        // Base Price - updates all items when changed
+        // ==================== BASE PRICE ====================
         private double _basePrice = 0;
         public double BasePrice
         {
@@ -304,7 +331,6 @@ namespace ProGlassAutomation.Models
                 {
                     _basePrice = value;
                     OnPropertyChanged();
-
                     foreach (var item in Items)
                     {
                         item.Price = value;
@@ -313,7 +339,6 @@ namespace ProGlassAutomation.Models
             }
         }
 
-        // Surcharge Percent - updates all items when changed
         private double _surchargePercent = 20;
         public double SurchargePercent
         {
@@ -324,7 +349,6 @@ namespace ProGlassAutomation.Models
                 {
                     _surchargePercent = value;
                     OnPropertyChanged();
-
                     foreach (var item in Items)
                     {
                         item.SurchargePercent = value;
@@ -335,6 +359,7 @@ namespace ProGlassAutomation.Models
 
         public double SurchargeThreshold => 4;
 
+        // ==================== TOTALS ====================
         private double _specTotalSQM = 0;
         public double SpecTotalSQM
         {
@@ -387,6 +412,7 @@ namespace ProGlassAutomation.Models
                 {
                     _specTotalPrice = value;
                     OnPropertyChanged();
+                    OnPropertyChanged(nameof(SpecTotalPriceWithOtherCharges));
                 }
             }
         }
