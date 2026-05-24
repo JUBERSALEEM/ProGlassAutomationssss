@@ -998,6 +998,18 @@
                                     <TextBox Text="{Binding DGUASPPrice, Mode=OneWay}" IsReadOnly="True" Background="#DBEAFE" BorderBrush="#D1D5DB" BorderThickness="1" Padding="6,4" FontSize="11" FontWeight="SemiBold"/>
                                 </StackPanel>
                             </Grid>
+                            <!-- ✅ U-INSERT SECTION - ADD THIS -->
+                            <Border Background="#E8F4FD" BorderBrush="#B3D7F5" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                        <CheckBox IsChecked="{Binding IsDGUIncludeInSpec}" Content="Include U-Insert" FontSize="11" FontWeight="SemiBold" Foreground="#1E3A5F" VerticalContentAlignment="Center"/>
+                                        <TextBlock Text="(Warm Edge Technology)" FontSize="10" Foreground="#6B7280" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                    </StackPanel>
+                                    <TextBlock Text="U-Insert improves thermal insulation by reducing heat transfer through the spacer." FontSize="9" Foreground="#6B7280" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+                            <!-- ✅ END U-INSERT SECTION -->
+
                             <TextBlock Text="Inner Glass" Style="{StaticResource FieldLabel}"/>
                             <Grid Margin="0,0,0,10">
                                 <Grid.ColumnDefinitions>
