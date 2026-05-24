@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace ProGlassAutomation.Models
@@ -13,6 +15,8 @@ namespace ProGlassAutomation.Models
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
+        // ==================== BASIC PROPERTIES ====================
+
         private string _name = "New Charge";
         public string Name
         {
@@ -20,7 +24,7 @@ namespace ProGlassAutomation.Models
             set { _name = value; OnPropertyChanged(); }
         }
 
-        private string _type = "polish";  // lm, sqm, qty, polish, mitring, silicon, holes, fanhole, cutout, overlap, argon, amount
+        private string _type = "lm";
         public string Type
         {
             get => _type;
@@ -28,11 +32,11 @@ namespace ProGlassAutomation.Models
             {
                 _type = value;
                 OnPropertyChanged();
-                OnPropertyChanged(nameof(IsHoleOrCutout));
                 OnPropertyChanged(nameof(TypeDisplay));
                 OnPropertyChanged(nameof(ValueDisplay));
                 OnPropertyChanged(nameof(UnitDisplay));
-                OnPropertyChanged(nameof(IsLMType));
+                OnPropertyChanged(nameof(IsLMBased));
+                OnPropertyChanged(nameof(IsHoleType));
             }
         }
 
@@ -40,84 +44,65 @@ namespace ProGlassAutomation.Models
         public double Value
         {
             get => _value;
-            set
-            {
-                _value = value;
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(ValueDisplay));
-                CalculateAmount();
-            }
+            set { _value = value; OnPropertyChanged(); OnPropertyChanged(nameof(ValueDisplay)); CalculateAmount(); }
         }
 
         private double _rate = 0;
         public double Rate
         {
             get => _rate;
-            set
-            {
-                _rate = value;
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(RateDisplay));
-                CalculateAmount();
-            }
+            set { _rate = value; OnPropertyChanged(); OnPropertyChanged(nameof(RateDisplay)); CalculateAmount(); }
         }
 
         private double _amount = 0;
         public double Amount
         {
             get => _amount;
-            set
-            {
-                _amount = value;
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(AmountDisplay));
-            }
+            set { _amount = value; OnPropertyChanged(); OnPropertyChanged(nameof(AmountDisplay)); }
+        }
+
+        private string _lmDimType = "w1h1";
+        public string LmDimType
+        {
+            get => _lmDimType;
+            set { _lmDimType = value; OnPropertyChanged(); }
         }
 
         // ==================== DISPLAY PROPERTIES ====================
 
-        // Value display with unit based on type
         public string ValueDisplay
         {
             get
             {
                 return Type?.ToLower() switch
                 {
-                    "lm" or "polish" or "mitring" or "silicon" => $"{Value:F2} LM",
+                    "lm" => $"{Value:F2} LM",
                     "sqm" => $"{Value:F2} SQM",
-                    "qty" or "holes" or "cutout" or "overlap" => $"{Value:F0} pcs",
-                    "fanhole" => $"{Value:F0} pcs (2X)",
-                    "argon" => $"{Value:F0} %",
-                    "amount" => "—",
+                    "qty" => $"{Value:F0} pcs",
+                    "1x" => $"{Value:F0} pcs",
+                    "2x" => $"{Value:F0} pcs (2X)",
                     _ => $"{Value:F2}"
                 };
             }
         }
 
-        // Unit display for Rate column
         public string UnitDisplay
         {
             get
             {
                 return Type?.ToLower() switch
                 {
-                    "lm" or "polish" or "mitring" or "silicon" => "AED/LM",
+                    "lm" => "AED/LM",
                     "sqm" => "AED/SQM",
-                    "qty" or "holes" or "cutout" or "overlap" or "fanhole" => "AED/pc",
-                    "argon" => "AED/%",
-                    "amount" => "AED",
+                    "qty" or "1x" or "2x" => "AED/pc",
                     _ => "AED"
                 };
             }
         }
 
-        // Rate display
         public string RateDisplay => Rate == 0 ? "0" : $"{Rate:F2}";
-
-        // Amount display with currency
         public string AmountDisplay => $"AED {Amount:N2}";
 
-        // Type display (friendly name)
         public string TypeDisplay
         {
             get
@@ -126,74 +111,150 @@ namespace ProGlassAutomation.Models
                 {
                     "lm" => "LM",
                     "sqm" => "SQM",
-                    "qty" => "Qty",
-                    "polish" => "Polish",
-                    "mitring" => "Mitring",
-                    "silicon" => "Silicon Bed",
-                    "holes" => "Holes",
-                    "fanhole" => "Fan Hole",
-                    "cutout" => "Cutout",
-                    "overlap" => "Overlap",
-                    "argon" => "Argon Gas",
-                    "amount" => "Fixed",
+                    "qty" => "QTY",
+                    "1x" => "1X",
+                    "2x" => "2X",
                     _ => Type?.ToUpper() ?? ""
                 };
             }
         }
 
-        public bool IsHoleOrCutout => Type == "holes" || Type == "fanhole" || Type == "cutout" || Type == "overlap";
-        public bool IsLMType => Type == "lm" || Type == "sqm" || Type == "polish" || Type == "mitring" || Type == "silicon";
+        public bool IsLMBased => Type == "lm" || Type == "sqm";
+        public bool IsHoleType => Type == "1x" || Type == "2x";
 
-        // For LM type - which dimension to use
-        private string _lmDimType = "w1h1";
-        public string LmDimType
-        {
-            get => _lmDimType;
-            set { _lmDimType = value; OnPropertyChanged(); }
-        }
-
-        // ==================== SPEC TARGETING ====================
-
-        // Linked spec index for single spec
-        private int _linkedSpecIndex = -1;
-        public int LinkedSpecIndex
-        {
-            get => _linkedSpecIndex;
-            set
-            {
-                _linkedSpecIndex = value;
-                OnPropertyChanged();
-            }
-        }
-
-        // Multi-spec support - comma-separated indices (e.g., "0,1,2")
-        private string _linkedSpecIndices = "";
-        public string LinkedSpecIndices
-        {
-            get => _linkedSpecIndices;
-            set { _linkedSpecIndices = value; OnPropertyChanged(); OnPropertyChanged(nameof(LinkedSpecsDisplay)); }
-        }
-
-        // Display text for linked specs
-        public string LinkedSpecsDisplay
-        {
-            get
-            {
-                if (string.IsNullOrEmpty(LinkedSpecIndices))
-                    return "Single Spec";
-
-                var indices = LinkedSpecIndices.Split(',')
-                    .Where(s => !string.IsNullOrWhiteSpace(s))
-                    .Select(s => $"Spec {int.Parse(s.Trim()) + 1}");
-
-                return string.Join(", ", indices);
-            }
-        }
+        // ==================== CALCULATE AMOUNT ====================
 
         private void CalculateAmount()
         {
             Amount = Math.Round(Value * Rate, 2);
         }
+
+        // ==================== SPEC TARGETING ====================
+
+        private int _linkedSpecIndex = -1;
+        public int LinkedSpecIndex
+        {
+            get => _linkedSpecIndex;
+            set { _linkedSpecIndex = value; OnPropertyChanged(); }
+        }
+
+        private string _linkedSpecIndices = "";
+        public string LinkedSpecIndices
+        {
+            get => _linkedSpecIndices;
+            set
+            {
+                _linkedSpecIndices = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(LinkedSpecsDisplay));
+                OnPropertyChanged(nameof(TargetsAllSpecs));
+            }
+        }
+
+        private bool _targetsAllSpecs = true;
+        public bool TargetsAllSpecs
+        {
+            get => _targetsAllSpecs;
+            set
+            {
+                if (_targetsAllSpecs != value)
+                {
+                    _targetsAllSpecs = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(LinkedSpecsDisplay));
+                    if (value)
+                    {
+                        LinkedSpecIndices = "";
+                    }
+                }
+            }
+        }
+
+        public string LinkedSpecsDisplay
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(_linkedSpecIndices))
+                    return "All Specs";
+
+                var indices = SpecIndexList;
+                if (indices.Count == 0)
+                    return "All Specs";
+
+                return string.Join(" + ", indices.Select(i => $"Spec {i + 1}"));
+            }
+        }
+
+        public List<int> SpecIndexList
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(_linkedSpecIndices))
+                    return new List<int>();
+
+                return _linkedSpecIndices
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(s => int.TryParse(s.Trim(), out int i) ? i : -1)
+                    .Where(i => i >= 0)
+                    .ToList();
+            }
+        }
+
+        // ==================== AUTO VALUE ====================
+
+        private List<SpecificationModel> _boundSpecs = new List<SpecificationModel>();
+        public List<SpecificationModel> BoundSpecs
+        {
+            get => _boundSpecs;
+            set { _boundSpecs = value ?? new List<SpecificationModel>(); }
+        }
+
+        private bool _isManualOverride = false;
+        public bool IsManualOverride
+        {
+            get => _isManualOverride;
+            set { _isManualOverride = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsAutoMode)); }
+        }
+
+        public bool IsAutoMode => !_isManualOverride;
+
+        // ==================== SPEC INDEX MANAGEMENT ====================
+
+        public void AddSpec(int index)
+        {
+            var indices = SpecIndexList;
+            if (!indices.Contains(index))
+            {
+                indices.Add(index);
+                indices.Sort();
+                LinkedSpecIndices = string.Join(",", indices);
+            }
+        }
+
+        public void RemoveSpec(int index)
+        {
+            var indices = SpecIndexList;
+            if (indices.Contains(index))
+            {
+                indices.Remove(index);
+                LinkedSpecIndices = indices.Count > 0 ? string.Join(",", indices) : "";
+            }
+        }
+
+        public void ToggleSpec(int index)
+        {
+            if (SpecIndexList.Contains(index))
+                RemoveSpec(index);
+            else
+                AddSpec(index);
+        }
+
+        public void SetAllSpecs()
+        {
+            LinkedSpecIndices = "";
+        }
+
+        // ==================== CLONE ====================
 
         public OtherChargeModel Clone()
         {
@@ -206,7 +267,8 @@ namespace ProGlassAutomation.Models
                 Amount = Amount,
                 LmDimType = LmDimType,
                 LinkedSpecIndex = LinkedSpecIndex,
-                LinkedSpecIndices = LinkedSpecIndices
+                LinkedSpecIndices = LinkedSpecIndices,
+                IsManualOverride = IsManualOverride
             };
         }
     }

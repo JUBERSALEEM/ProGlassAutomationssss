@@ -116,10 +116,10 @@ namespace ProGlassAutomation.Converters
             if (value is bool boolValue)
             {
                 return boolValue
-                    ? new SolidColorBrush(Color.FromRgb(16, 185, 129))   // Green #10B981
-                    : new SolidColorBrush(Color.FromRgb(239, 68, 68));   // Red #EF4444
+                    ? new SolidColorBrush(Color.FromRgb(16, 185, 129))
+                    : new SolidColorBrush(Color.FromRgb(239, 68, 68));
             }
-            return new SolidColorBrush(Color.FromRgb(100, 116, 139));    // Gray #64748B
+            return new SolidColorBrush(Color.FromRgb(100, 116, 139));
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
@@ -138,15 +138,15 @@ namespace ProGlassAutomation.Converters
             var status = value as string;
             return status switch
             {
-                "Release" => new SolidColorBrush(Color.FromRgb(16, 185, 129)),    // Green
-                "Hold" => new SolidColorBrush(Color.FromRgb(245, 158, 11)),       // Orange
-                "Cancel" => new SolidColorBrush(Color.FromRgb(239, 68, 68)),      // Red
-                "Completed" => new SolidColorBrush(Color.FromRgb(16, 185, 129)),  // Green
-                "In Progress" => new SolidColorBrush(Color.FromRgb(59, 130, 246)),// Blue
-                "Pending" => new SolidColorBrush(Color.FromRgb(245, 158, 11)),    // Orange
-                "Active" => new SolidColorBrush(Color.FromRgb(16, 185, 129)),    // Green
-                "Inactive" => new SolidColorBrush(Color.FromRgb(100, 116, 139)), // Gray
-                _ => new SolidColorBrush(Color.FromRgb(100, 116, 139))           // Gray
+                "Release" => new SolidColorBrush(Color.FromRgb(16, 185, 129)),
+                "Hold" => new SolidColorBrush(Color.FromRgb(245, 158, 11)),
+                "Cancel" => new SolidColorBrush(Color.FromRgb(239, 68, 68)),
+                "Completed" => new SolidColorBrush(Color.FromRgb(16, 185, 129)),
+                "In Progress" => new SolidColorBrush(Color.FromRgb(59, 130, 246)),
+                "Pending" => new SolidColorBrush(Color.FromRgb(245, 158, 11)),
+                "Active" => new SolidColorBrush(Color.FromRgb(16, 185, 129)),
+                "Inactive" => new SolidColorBrush(Color.FromRgb(100, 116, 139)),
+                _ => new SolidColorBrush(Color.FromRgb(100, 116, 139))
             };
         }
 
@@ -155,8 +155,6 @@ namespace ProGlassAutomation.Converters
             throw new NotImplementedException();
         }
     }
-
-    // ==================== GREEN COLOR CONVERTERS ====================
 
     /// <summary>
     /// Converts Boolean to Green Color (True = #059669, False = #64748B)
@@ -168,8 +166,8 @@ namespace ProGlassAutomation.Converters
             if (value is bool boolValue)
             {
                 return boolValue
-                    ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#059669"))   // Green Dark
-                    : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#64748B")); // Gray
+                    ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#059669"))
+                    : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#64748B"));
             }
             return new SolidColorBrush((Color)ColorConverter.ConvertFromString("#64748B"));
         }
@@ -190,7 +188,7 @@ namespace ProGlassAutomation.Converters
             if (value is bool boolValue)
             {
                 return boolValue
-                    ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#ECFDF5"))  // Light Green #ECFDF5
+                    ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#ECFDF5"))
                     : new SolidColorBrush(Colors.White);
             }
             return new SolidColorBrush(Colors.White);
@@ -212,8 +210,8 @@ namespace ProGlassAutomation.Converters
             if (value is bool boolValue)
             {
                 return boolValue
-                    ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"))   // Green #10B981
-                    : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E2E8F0")); // Light Gray
+                    ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"))
+                    : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E2E8F0"));
             }
             return new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E2E8F0"));
         }
@@ -251,6 +249,7 @@ namespace ProGlassAutomation.Converters
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
+            // Returns Visible when value is NOT null, Collapsed when null
             return value != null ? Visibility.Visible : Visibility.Collapsed;
         }
 
@@ -400,6 +399,130 @@ namespace ProGlassAutomation.Converters
                 return result;
             }
             return DateTime.Now;
+        }
+    }
+
+    // ==================== OTHER CHARGES CONVERTERS ====================
+
+    /// <summary>
+    /// Converts ObservableCollection of OtherChargeModel to Total Amount
+    /// </summary>
+    public class ChargesTotalConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is System.Collections.ObjectModel.ObservableCollection<ProGlassAutomation.Models.OtherChargeModel> charges)
+            {
+                double total = 0;
+                foreach (var charge in charges)
+                {
+                    total += charge.Amount;
+                }
+                return $"AED {total:N2}";
+            }
+            return "AED 0.00";
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    /// <summary>
+    /// Converts ObservableCollection of OtherChargeModel to Total Amount (numeric)
+    /// </summary>
+    public class ChargesTotalNumericConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is System.Collections.ObjectModel.ObservableCollection<ProGlassAutomation.Models.OtherChargeModel> charges)
+            {
+                double total = 0;
+                foreach (var charge in charges)
+                {
+                    total += charge.Amount;
+                }
+                return total;
+            }
+            return 0.0;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    /// <summary>
+    /// Checks if TargetsAllSpecs is true/false and returns appropriate text
+    /// </summary>
+    public class SpecLinkTextConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is bool targetsAll)
+            {
+                return targetsAll ? "All Specs" : "Selected";
+            }
+            return "All Specs";
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    /// <summary>
+    /// Converts charge type to display text
+    /// </summary>
+    public class ChargeTypeDisplayConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var type = value as string;
+            return type?.ToLower() switch
+            {
+                "lm" => "LM",
+                "sqm" => "SQM",
+                "qty" => "QTY",
+                "1x" => "1X",
+                "2x" => "2X",
+                "percent" => "%",
+                "amount" => "Fixed",
+                _ => type?.ToUpper() ?? ""
+            };
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    /// <summary>
+    /// Converts charge type to unit display (AED/LM, AED/SQM, etc.)
+    /// </summary>
+    public class ChargeUnitDisplayConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var type = value as string;
+            return type?.ToLower() switch
+            {
+                "lm" => "AED/LM",
+                "sqm" => "AED/SQM",
+                "qty" or "1x" or "2x" => "AED/pc",
+                "percent" => "AED/%",
+                "amount" => "AED",
+                _ => "AED"
+            };
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
         }
     }
 }

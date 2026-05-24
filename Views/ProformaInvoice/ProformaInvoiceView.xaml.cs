@@ -12,7 +12,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
     public partial class ProformaInvoiceView : UserControl
     {
         private ProformaInvoiceViewModel _viewModel;
-        private const double SCROLL_SPEED = 0.3; // Adjust: 0.1 = slow, 1.0 = fast
+        private const double SCROLL_SPEED = 0.3;
 
         public ProformaInvoiceView()
         {
@@ -87,14 +87,9 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 var scrollViewer = GetScrollViewer(dataGrid);
                 if (scrollViewer != null)
                 {
-                    // Calculate scroll amount based on mouse wheel delta
                     double scrollAmount = e.Delta * SCROLL_SPEED;
-
-                    // Clamp to valid range
                     double newOffset = scrollViewer.VerticalOffset - scrollAmount;
                     newOffset = Math.Max(0, Math.Min(newOffset, scrollViewer.ScrollableHeight));
-
-                    // Smooth scroll animation
                     AnimateScroll(scrollViewer, newOffset);
                 }
             }
@@ -108,7 +103,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 Duration = TimeSpan.FromMilliseconds(150),
                 EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
             };
-
             scrollViewer.BeginAnimation(ScrollViewerBehavior.VerticalOffsetProperty, animation);
         }
 
@@ -172,7 +166,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     return;
                 }
 
-                // Get selected specification
                 var spec = _viewModel.SelectedTargetSpecification;
                 if (spec == null)
                 {
@@ -181,7 +174,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     spec = _viewModel.SelectedTargetSpecification ?? _viewModel.Invoice.Specifications[0];
                 }
 
-                // Split clipboard by rows and columns
                 var rows = clipboardText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
                 if (rows.Length == 0)
@@ -190,7 +182,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     return;
                 }
 
-                // Check if first row is header (contains GlassRef, W1, H1, etc.)
                 bool skipHeader = false;
                 var firstRowLower = rows[0].ToLower();
                 if (firstRowLower.Contains("glass") || firstRowLower.Contains("width") ||
@@ -204,7 +195,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 int itemsAdded = 0;
                 int startIndex = skipHeader ? 1 : 0;
 
-                // Get default values from first item if exists
                 double defaultWidth1 = 0, defaultHeight1 = 0, defaultWidth2 = 0, defaultHeight2 = 0, defaultPrice = 0, defaultSurcharge = 20;
                 if (spec.Items.Count > 0)
                 {
@@ -230,47 +220,39 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                         SrNo = startRow + itemsAdded + 1
                     };
 
-                    // Column 0: Glass Reference
                     if (columns.Length > 0)
                         item.GlassRef = columns[0].Trim();
 
-                    // Column 1: Width 1
                     if (columns.Length > 1 && double.TryParse(columns[1].Trim().Replace(",", ""), out double w1))
                         item.Width1 = w1;
                     else
                         item.Width1 = defaultWidth1;
 
-                    // Column 2: Height 1
                     if (columns.Length > 2 && double.TryParse(columns[2].Trim().Replace(",", ""), out double h1))
                         item.Height1 = h1;
                     else
                         item.Height1 = defaultHeight1;
 
-                    // Column 3: Width 2 (optional)
                     if (columns.Length > 3 && double.TryParse(columns[3].Trim().Replace(",", ""), out double w2))
                         item.Width2 = w2;
                     else
                         item.Width2 = defaultWidth2;
 
-                    // Column 4: Height 2 (optional)
                     if (columns.Length > 4 && double.TryParse(columns[4].Trim().Replace(",", ""), out double h2))
                         item.Height2 = h2;
                     else
                         item.Height2 = defaultHeight2;
 
-                    // Column 5: Quantity
                     if (columns.Length > 5 && int.TryParse(columns[5].Trim().Replace(",", ""), out int qty))
                         item.Qty = qty;
                     else
                         item.Qty = 1;
 
-                    // Column 6: Price (optional)
                     if (columns.Length > 6 && double.TryParse(columns[6].Trim().Replace(",", ""), out double price))
                         item.Price = price;
                     else
                         item.Price = defaultPrice;
 
-                    // Column 7: Surcharge % (optional)
                     if (columns.Length > 7 && double.TryParse(columns[7].Trim().Replace(",", "").Replace("%", ""), out double surcharge))
                         item.SurchargePercent = surcharge;
                     else
@@ -280,7 +262,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     itemsAdded++;
                 }
 
-                // Recalculate totals
                 spec.CalculateTotals();
                 _viewModel.Invoice.CalculateTotals();
                 _viewModel.Invoice.IsDirty = true;
@@ -326,7 +307,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                             var scaleX = pageWidth / contentWidth;
                             var scaleY = pageHeight / contentHeight;
                             var scale = Math.Min(scaleX, scaleY);
-
                             content.LayoutTransform = new System.Windows.Media.ScaleTransform(scale, scale);
                         }
 
@@ -374,7 +354,8 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             }
         }
 
-        // KEY HANDLER - Handle Enter, Tab, and Arrow keys
+        // ==================== KEY HANDLERS ====================
+
         private void DataGrid_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (sender is not DataGrid dataGrid) return;
@@ -384,7 +365,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 var cell = dataGrid.CurrentCell;
                 if (!cell.IsValid || cell.Column == null) return;
 
-                // ENTER KEY - Move to next row or create new row if on last row
                 if (e.Key == Key.Enter)
                 {
                     e.Handled = true;
@@ -392,7 +372,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     return;
                 }
 
-                // TAB KEY - Move to next row when at last columns
                 if (e.Key == Key.Tab && Keyboard.Modifiers != ModifierKeys.Shift)
                 {
                     int currentColumnIndex = cell.Column.DisplayIndex;
@@ -525,6 +504,205 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 {
                     return spec;
                 }
+            }
+            return null;
+        }
+
+        // ==================== OTHER CHARGES HANDLERS ====================
+
+        private void SpecCheckBox_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is ProformaInvoiceViewModel vm)
+            {
+                vm.RefreshAllChargeAutoValues();
+            }
+        }
+
+        private void SpecDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (DataContext is ProformaInvoiceViewModel vm)
+            {
+                vm.RefreshAllChargeAutoValues();
+            }
+        }
+
+        private void ChargeSpecToggle_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.Primitives.ToggleButton toggle)
+            {
+                var charge = FindChargeFromToggle(toggle);
+                if (charge != null)
+                {
+                    charge.TargetsAllSpecs = toggle.IsChecked == true;
+                    if (toggle.IsChecked == true)
+                    {
+                        charge.SetAllSpecs();
+                    }
+
+                    if (DataContext is ProformaInvoiceViewModel vm)
+                    {
+                        vm.RefreshAllChargeAutoValues();
+                    }
+                }
+            }
+        }
+
+        private void OpenSpecSelector_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button)
+            {
+                var charge = FindChargeFromButton(button);
+                if (charge != null && DataContext is ProformaInvoiceViewModel vm)
+                {
+                    ShowSpecSelectionDialog(charge, vm);
+                }
+            }
+        }
+
+        private void SpecSelectorBorder_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (sender is Border border && border.DataContext is OtherChargeModel charge)
+            {
+                if (DataContext is ProformaInvoiceViewModel vm)
+                {
+                    // If clicked on toggle, let the toggle handle it
+                    if (e.OriginalSource is System.Windows.Controls.Primitives.ToggleButton)
+                        return;
+
+                    // Otherwise open the spec selection dialog
+                    charge.TargetsAllSpecs = false;
+                    ShowSpecSelectionDialog(charge, vm);
+                }
+            }
+        }
+
+        private void ShowSpecSelectionDialog(OtherChargeModel charge, ProformaInvoiceViewModel vm)
+        {
+            var specs = vm.Invoice.Specifications;
+            if (specs.Count == 0)
+            {
+                MessageBox.Show("No specifications available.\nAdd at least one specification first.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var dialog = new Window
+            {
+                Title = "Select Specifications for " + charge.Name,
+                Width = 400,
+                Height = Math.Min(specs.Count * 40 + 120, 500),
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                ResizeMode = ResizeMode.NoResize,
+                Background = new SolidColorBrush(Colors.White),
+                ShowInTaskbar = true,
+                Topmost = false
+            };
+
+            var mainPanel = new StackPanel { Margin = new Thickness(15) };
+
+            var headerText = new TextBlock
+            {
+                Text = "Select which specifications this charge applies to:",
+                FontSize = 12,
+                Foreground = new SolidColorBrush(Color.FromRgb(75, 85, 99)),
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+            mainPanel.Children.Add(headerText);
+
+            var checkBoxPanel = new StackPanel();
+
+            for (int i = 0; i < specs.Count; i++)
+            {
+                var spec = specs[i];
+                var specIndex = i;
+                var checkBox = new CheckBox
+                {
+                    Content = $"Spec {i + 1}: {spec.SpecificationName}",
+                    Margin = new Thickness(0, 4, 0, 4),
+                    FontSize = 11,
+                    IsChecked = charge.SpecIndexList.Contains(i)
+                };
+                checkBox.Tag = specIndex;
+                checkBox.Checked += (s, ev) =>
+                {
+                    charge.AddSpec(specIndex);
+                };
+                checkBox.Unchecked += (s, ev) =>
+                {
+                    charge.RemoveSpec(specIndex);
+                };
+                checkBoxPanel.Children.Add(checkBox);
+            }
+            mainPanel.Children.Add(checkBoxPanel);
+
+            var buttonPanel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 15, 0, 0)
+            };
+
+            var selectAllButton = new Button
+            {
+                Content = "All",
+                Width = 60,
+                Margin = new Thickness(0, 0, 10, 0),
+                Padding = new Thickness(5, 3, 5, 3)
+            };
+            selectAllButton.Click += (s, ev) =>
+            {
+                charge.SetAllSpecs();
+                charge.TargetsAllSpecs = true;
+                dialog.Close();
+                if (DataContext is ProformaInvoiceViewModel vm2)
+                    vm2.RefreshAllChargeAutoValues();
+            };
+            buttonPanel.Children.Add(selectAllButton);
+
+            var doneButton = new Button
+            {
+                Content = "Done",
+                Width = 80,
+                Padding = new Thickness(5, 3, 5, 3)
+            };
+            doneButton.Click += (s, ev) =>
+            {
+                dialog.Close();
+                if (DataContext is ProformaInvoiceViewModel vm2)
+                    vm2.RefreshAllChargeAutoValues();
+            };
+            buttonPanel.Children.Add(doneButton);
+
+            mainPanel.Children.Add(buttonPanel);
+            dialog.Content = mainPanel;
+            dialog.ShowDialog();
+        }
+
+        private OtherChargeModel? FindChargeFromToggle(System.Windows.Controls.Primitives.ToggleButton toggle)
+        {
+            var parent = toggle.Parent;
+            while (parent != null)
+            {
+                if (parent is FrameworkElement fe && fe.DataContext is OtherChargeModel charge)
+                    return charge;
+                if (parent is FrameworkElement f)
+                    parent = f.Parent;
+                else
+                    break;
+            }
+            return null;
+        }
+
+        private OtherChargeModel? FindChargeFromButton(Button button)
+        {
+            var parent = button.Parent;
+            while (parent != null)
+            {
+                if (parent is FrameworkElement fe && fe.DataContext is OtherChargeModel charge)
+                    return charge;
+                if (parent is FrameworkElement f)
+                    parent = f.Parent;
+                else
+                    break;
             }
             return null;
         }

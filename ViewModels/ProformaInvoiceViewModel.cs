@@ -136,20 +136,13 @@ namespace ProGlassAutomation.ViewModels
             new() { Value = "2h2", Label = "2×H2" }
         };
         public ObservableCollection<ChargeTypeOption> ChargeTypeOptions { get; } = new()
-        {
-            new() { Value = "lm", Label = "LM" },
-            new() { Value = "sqm", Label = "SQM" },
-            new() { Value = "qty", Label = "Qty" },
-            new() { Value = "polish", Label = "Polish" },
-            new() { Value = "mitring", Label = "Mitring" },
-            new() { Value = "silicon", Label = "Silicon Bed" },
-            new() { Value = "holes", Label = "Holes" },
-            new() { Value = "fanhole", Label = "Fan Hole (2X)" },
-            new() { Value = "cutout", Label = "Cutout" },
-            new() { Value = "overlap", Label = "Overlap" },
-            new() { Value = "argon", Label = "Argon Gas" },
-            new() { Value = "amount", Label = "Fixed Amount" }
-        };
+{
+    new() { Value = "lm", Label = "LM" },
+    new() { Value = "sqm", Label = "SQM" },
+    new() { Value = "qty", Label = "QTY" },
+    new() { Value = "1x", Label = "1X" },
+    new() { Value = "2x", Label = "2X" }
+};
 
         private string _selectedThickness = "6";
         public string SelectedThickness
@@ -335,9 +328,7 @@ namespace ProGlassAutomation.ViewModels
             ResetASPPriceCommand = new RelayCommand(_ => ResetASPPriceToAuto());
             DebugCsvCommand = new RelayCommand(_ => DebugCsvImport());
             TestCsvRoundTripCommand = new RelayCommand(_ => TestCsvRoundTrip());
-            AddSpecToChargeCommand = new RelayCommand(param => AddSpecToCharge(param));
-            RemoveSpecFromChargeCommand = new RelayCommand(_ => RemoveSpecFromCharge());
-            ToggleSpecForChargeCommand = new RelayCommand(param => ToggleSpecForCharge(param));
+            RefreshChargesCommand = new RelayCommand(_ => RefreshAllChargeAutoValues());
         }
 
         private void ResetASPPriceToAuto()
@@ -483,6 +474,7 @@ namespace ProGlassAutomation.ViewModels
             Invoice.Specifications.Add(spec);
             SelectedTargetSpecification = spec;
             SubscribeToOtherChargeChanges();
+            RefreshAllChargeAutoValues();
         }
 
         private void RemoveSpecification()
@@ -490,6 +482,28 @@ namespace ProGlassAutomation.ViewModels
             if (Invoice.Specifications.Count <= 0) return;
             Invoice.Specifications.RemoveAt(Invoice.Specifications.Count - 1);
             SelectedTargetSpecification = Invoice.Specifications.LastOrDefault();
+            RefreshAllChargeAutoValues();
+        }
+
+        public void RefreshAllChargeAutoValues()
+        {
+            if (Invoice?.Specifications == null) return;
+
+            foreach (var spec in Invoice.Specifications)
+            {
+                if (spec?.OtherCharges == null) continue;
+
+                foreach (var charge in spec.OtherCharges)
+                {
+                    if (charge != null)
+                    {
+                        charge.BoundSpecs = Invoice.Specifications.ToList();
+                        UpdateChargeValue(charge);
+                    }
+                }
+            }
+
+            Invoice.CalculateTotals();
         }
 
         public void AddItemWithPrice(SpecificationModel spec)
@@ -612,18 +626,35 @@ namespace ProGlassAutomation.ViewModels
             foreach (var spec in Invoice.Specifications)
             {
                 if (spec?.OtherCharges == null) continue;
-                foreach (var charge in spec.OtherCharges) if (charge != null) charge.PropertyChanged += OtherCharge_PropertyChanged;
+                foreach (var charge in spec.OtherCharges)
+                {
+                    if (charge != null)
+                    {
+                        charge.PropertyChanged += OtherCharge_PropertyChanged;
+                        charge.BoundSpecs = Invoice.Specifications.ToList();
+                    }
+                }
             }
         }
 
         private void OtherCharge_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (sender is not OtherChargeModel charge) return;
-            if (e.PropertyName == nameof(OtherChargeModel.Type)) UpdateChargeValue(charge);
-            if (e.PropertyName == nameof(OtherChargeModel.LinkedSpecIndex)) UpdateChargeValue(charge);
-            if (e.PropertyName == nameof(OtherChargeModel.LinkedSpecIndices)) UpdateChargeValue(charge);
-            if (e.PropertyName == nameof(OtherChargeModel.Rate)) CalculateOtherChargeValue(charge, null);
-            if (SelectedTargetSpecification != null) { SelectedTargetSpecification.CalculateOtherChargesTotal(); Invoice.CalculateTotals(); Invoice.IsDirty = true; }
+
+            if (e.PropertyName == nameof(OtherChargeModel.Type) ||
+                e.PropertyName == nameof(OtherChargeModel.LinkedSpecIndices) ||
+                e.PropertyName == nameof(OtherChargeModel.Rate))
+            {
+                UpdateChargeValue(charge);
+                CalculateOtherChargeValue(charge, null);
+            }
+
+            if (SelectedTargetSpecification != null)
+            {
+                SelectedTargetSpecification.CalculateOtherChargesTotal();
+                Invoice.CalculateTotals();
+                Invoice.IsDirty = true;
+            }
         }
 
         private void AddOtherCharge()
@@ -634,20 +665,22 @@ namespace ProGlassAutomation.ViewModels
             var charge = new OtherChargeModel
             {
                 Name = "New Charge",
-                Type = "polish",
+                Type = "lm",
                 Value = 0,
                 Rate = 0,
                 Amount = 0,
-                LmDimType = "w1h1",
                 LinkedSpecIndex = specIndex,
-                LinkedSpecIndices = specIndex.ToString()  // Multi-spec: start with single spec
+                LinkedSpecIndices = specIndex.ToString()
             };
+
+            // Bind specs for auto-calculation
+            charge.BoundSpecs = Invoice.Specifications.ToList();
+
             SelectedTargetSpecification.OtherCharges.Add(charge);
             charge.PropertyChanged += OtherCharge_PropertyChanged;
             Invoice.IsDirty = true;
             OnPropertyChanged(nameof(SelectedSpecificationOtherCharges));
 
-            // Select this charge for multi-spec editing
             SelectedCharge = charge;
 
             UpdateChargeValue(charge);
@@ -689,29 +722,17 @@ namespace ProGlassAutomation.ViewModels
             switch (charge.Type?.ToLower())
             {
                 case "lm":
-                    charge.Value = CalculateTotalLMValue(linkedSpecs, charge.LmDimType);
+                    charge.Value = CalculateTotalLMValue(linkedSpecs, "w1h1");
                     break;
                 case "sqm":
                     charge.Value = CalculateTotalSQMValue(linkedSpecs);
                     break;
                 case "qty":
+                case "1x":
                     charge.Value = CalculateTotalQtyValue(linkedSpecs);
                     break;
-                case "polish":
-                case "mitring":
-                case "silicon":
-                    charge.Value = CalculateTotalLMValue(linkedSpecs, "w1h1");
-                    break;
-                case "holes":
-                case "cutout":
-                case "overlap":
-                    charge.Value = CalculateTotalQtyValue(linkedSpecs);
-                    break;
-                case "fanhole":
+                case "2x":
                     charge.Value = CalculateTotalQtyValue(linkedSpecs) * 2;
-                    break;
-                case "argon":
-                    charge.Value = 100;
                     break;
                 default:
                     charge.Value = 0;
@@ -729,36 +750,11 @@ namespace ProGlassAutomation.ViewModels
             switch (charge.Type?.ToLower())
             {
                 case "lm":
-                case "polish":
-                case "mitring":
-                case "silicon":
-                    charge.Value = CalculateTotalLMValue(linkedSpecs, charge.LmDimType);
-                    charge.Amount = Math.Round(charge.Value * charge.Rate, 2);
-                    break;
                 case "sqm":
-                    charge.Value = CalculateTotalSQMValue(linkedSpecs);
-                    charge.Amount = Math.Round(charge.Value * charge.Rate, 2);
-                    break;
                 case "qty":
-                    charge.Value = CalculateTotalQtyValue(linkedSpecs);
+                case "1x":
+                case "2x":
                     charge.Amount = Math.Round(charge.Value * charge.Rate, 2);
-                    break;
-                case "holes":
-                case "cutout":
-                case "overlap":
-                    charge.Value = CalculateTotalQtyValue(linkedSpecs);
-                    charge.Amount = Math.Round(charge.Value * charge.Rate, 2);
-                    break;
-                case "fanhole":
-                    charge.Value = CalculateTotalQtyValue(linkedSpecs) * 2;
-                    charge.Amount = Math.Round(charge.Value * charge.Rate, 2);
-                    break;
-                case "argon":
-                    double totalGlassCost = linkedSpecs.Sum(s => s.SpecTotalPrice);
-                    charge.Amount = Math.Round(totalGlassCost * charge.Value / 100.0, 2);
-                    break;
-                case "amount":
-                    charge.Amount = Math.Round(charge.Rate, 2);
                     break;
                 default:
                     charge.Amount = 0;
@@ -819,12 +815,9 @@ namespace ProGlassAutomation.ViewModels
 
         private double CalculateTotalQtyValue(List<SpecificationModel> specs)
         {
-            int totalQty = 0;
+            double totalQty = 0;
             foreach (var spec in specs)
-            {
-                int multiplier = GetModuleMultiplier(spec.ModuleType);
-                totalQty += spec.SpecTotalQty * multiplier;
-            }
+                totalQty += spec.SpecTotalQty;
             return totalQty;
         }
 
@@ -1004,6 +997,8 @@ namespace ProGlassAutomation.ViewModels
             Invoice.CalculateTotals();
         }
 
+        public ICommand RefreshChargesCommand { get; private set; } = null!;
+
         // ==================== CSV IMPORT/EXPORT ====================
 
         private void ExportToCsv()
@@ -1148,6 +1143,9 @@ namespace ProGlassAutomation.ViewModels
 
                 Invoice.IsDirty = true;
                 StatusMessage = $"✅ Pasted {itemsAdded} items from Excel";
+
+                // Refresh auto-values for all charges
+                RefreshAllChargeAutoValues();
             }
             catch (Exception ex) { StatusMessage = $"❌ Paste failed: {ex.Message}"; Debug.WriteLine($"[Paste Error] {ex}"); }
         }
