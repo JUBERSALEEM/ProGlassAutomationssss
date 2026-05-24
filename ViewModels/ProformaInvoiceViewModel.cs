@@ -477,7 +477,7 @@ namespace ProGlassAutomation.ViewModels
             };
             if (spec.Items.Count == 0)
             {
-                var firstItem = new InvoiceItemModel { SrNo = 1, SurchargePercent = 20 };
+                var firstItem = new InvoiceItemModel { SrNo = 1, SurchargePercent = 20, Specification = spec };
                 spec.Items.Add(firstItem);
             }
             Invoice.Specifications.Add(spec);
@@ -495,8 +495,15 @@ namespace ProGlassAutomation.ViewModels
         public void AddItemWithPrice(SpecificationModel spec)
         {
             if (spec == null) return;
-            var newItem = new InvoiceItemModel { SrNo = spec.Items.Count + 1 };
-            if (spec.Items.Count > 0) { newItem.Price = spec.Items[0].Price; newItem.SurchargePercent = spec.Items[0].SurchargePercent; }
+
+            var newItem = new InvoiceItemModel
+            {
+                SrNo = spec.Items.Count + 1,
+                Specification = spec,
+                // ✅ Set raw BasePrice only (no surcharge in backing field)
+                Price = spec.BasePrice
+            };
+
             spec.Items.Add(newItem);
             Invoice.IsDirty = true;
         }
@@ -1062,7 +1069,7 @@ namespace ProGlassAutomation.ViewModels
                 int startSrNo = targetSpec.Items.Count + 1;
                 foreach (var item in items)
                 {
-                    var newItem = new InvoiceItemModel { SrNo = startSrNo++, GlassRef = item.GlassRef, Qty = item.Qty, Price = item.Price, SurchargePercent = 20 };
+                    var newItem = new InvoiceItemModel { SrNo = startSrNo++, GlassRef = item.GlassRef, Qty = item.Qty, Price = item.Price, SurchargePercent = 20, Specification = targetSpec };
                     newItem.Width1 = item.Width1; newItem.Height1 = item.Height1; newItem.Width2 = item.Width2; newItem.Height2 = item.Height2;
                     targetSpec.Items.Add(newItem);
                     newItem.PropertyChanged += (s, e) => { targetSpec.CalculateTotals(); Invoice.CalculateTotals(); Invoice.IsDirty = true; };
@@ -1109,7 +1116,7 @@ namespace ProGlassAutomation.ViewModels
                     if (columns.Length < 6) { Debug.WriteLine($"[Import Skip] Invalid row: {rows[i]}"); continue; }
                     if (columns.Length == 0 || string.IsNullOrWhiteSpace(string.Join("", columns))) continue;
 
-                    var item = new InvoiceItemModel { SrNo = itemsAdded + 1 };
+                    var item = new InvoiceItemModel { SrNo = itemsAdded + 1, Specification = spec };
                     if (columns.Length > 0) item.GlassRef = columns[0].Trim();
                     if (columns.Length > 1 && TryParseNumber(columns[1], out double w1)) item.Width1 = Math.Max(0, w1); else item.Width1 = defaultWidth1;
                     if (columns.Length > 2 && TryParseNumber(columns[2], out double h1)) item.Height1 = Math.Max(0, h1); else item.Height1 = defaultHeight1;

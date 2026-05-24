@@ -374,6 +374,7 @@ namespace ProGlassAutomation.Models
             }
         }
 
+        // ==================== SURCHARGE PERCENT (FIXED) ====================
         private double _surchargePercent = 20;
         public double SurchargePercent
         {
@@ -384,8 +385,21 @@ namespace ProGlassAutomation.Models
                 {
                     _surchargePercent = value;
                     OnPropertyChanged();
+                    // ✅ FIX: Recalculate all items when surcharge changes
+                    RecalculateAllItems();
                 }
             }
+        }
+
+        // ✅ NEW: Method to recalculate all items when surcharge changes
+        private void RecalculateAllItems()
+        {
+            foreach (var item in Items)
+            {
+                item.Specification = this;  // Ensure link
+                item.NotifySurchargeChanged();
+            }
+            CalculateSpecTotals();
         }
 
         public double SurchargeThreshold => 4;
@@ -467,6 +481,18 @@ namespace ProGlassAutomation.Models
             SpecTotalLM = Math.Round(lm, 4);
             SpecTotalQty = qty;
             SpecTotalPrice = Math.Round(price, 2);
+        }
+
+        // ==================== ADD ITEM METHOD ====================
+        public InvoiceItemModel AddItem()
+        {
+            var item = new InvoiceItemModel
+            {
+                Specification = this,  // ✅ Link to parent spec
+                SrNo = Items.Count + 1
+            };
+            Items.Add(item);
+            return item;
         }
 
         // ==================== CALCULATE TOTALS (Wrapper for ViewModel compatibility) ====================

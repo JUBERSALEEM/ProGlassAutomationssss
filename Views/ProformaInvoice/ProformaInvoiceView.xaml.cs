@@ -2,6 +2,8 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
 using ProGlassAutomation.Models;
 using ProGlassAutomation.ViewModels;
 
@@ -10,6 +12,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
     public partial class ProformaInvoiceView : UserControl
     {
         private ProformaInvoiceViewModel _viewModel;
+        private const double SCROLL_SPEED = 0.3; // Adjust: 0.1 = slow, 1.0 = fast
 
         public ProformaInvoiceView()
         {
@@ -71,6 +74,57 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             {
                 tb.Text = "";
             }
+        }
+
+        // ==================== SMOOTH SCROLLING ====================
+
+        private void DataGrid_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (sender is DataGrid dataGrid)
+            {
+                e.Handled = true;
+
+                var scrollViewer = GetScrollViewer(dataGrid);
+                if (scrollViewer != null)
+                {
+                    // Calculate scroll amount based on mouse wheel delta
+                    double scrollAmount = e.Delta * SCROLL_SPEED;
+
+                    // Clamp to valid range
+                    double newOffset = scrollViewer.VerticalOffset - scrollAmount;
+                    newOffset = Math.Max(0, Math.Min(newOffset, scrollViewer.ScrollableHeight));
+
+                    // Smooth scroll animation
+                    AnimateScroll(scrollViewer, newOffset);
+                }
+            }
+        }
+
+        private void AnimateScroll(ScrollViewer scrollViewer, double targetOffset)
+        {
+            var animation = new DoubleAnimation
+            {
+                To = targetOffset,
+                Duration = TimeSpan.FromMilliseconds(150),
+                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
+            };
+
+            scrollViewer.BeginAnimation(ScrollViewerBehavior.VerticalOffsetProperty, animation);
+        }
+
+        private ScrollViewer? GetScrollViewer(DependencyObject obj)
+        {
+            if (obj is ScrollViewer scrollViewer)
+                return scrollViewer;
+
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(obj); i++)
+            {
+                var child = VisualTreeHelper.GetChild(obj, i);
+                var result = GetScrollViewer(child);
+                if (result != null)
+                    return result;
+            }
+            return null;
         }
 
         // ==================== EXISTING HANDLERS ====================
@@ -461,7 +515,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             catch { }
         }
 
-        private SpecificationModel FindSpecification(InvoiceItemModel item)
+        private SpecificationModel? FindSpecification(InvoiceItemModel item)
         {
             if (_viewModel?.Invoice == null) return null;
 
@@ -473,6 +527,25 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 }
             }
             return null;
+        }
+    }
+
+    // ==================== SCROLL BEHAVIOR HELPER ====================
+    public static class ScrollViewerBehavior
+    {
+        public static readonly DependencyProperty VerticalOffsetProperty =
+            DependencyProperty.RegisterAttached("VerticalOffset", typeof(double), typeof(ScrollViewerBehavior),
+                new FrameworkPropertyMetadata(0.0, OnVerticalOffsetChanged));
+
+        public static void SetVerticalOffset(DependencyObject target, double value) => target.SetValue(VerticalOffsetProperty, value);
+        public static double GetVerticalOffset(DependencyObject target) => (double)target.GetValue(VerticalOffsetProperty);
+
+        private static void OnVerticalOffsetChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is ScrollViewer scrollViewer)
+            {
+                scrollViewer.ScrollToVerticalOffset((double)e.NewValue);
+            }
         }
     }
 }

@@ -69,6 +69,27 @@ namespace ProGlassAutomation.Models
             }
         }
 
+        // ==================== PARENT SPECIFICATION REFERENCE ====================
+        private SpecificationModel? _specification;
+        public SpecificationModel? Specification
+        {
+            get => _specification;
+            set
+            {
+                if (_specification != value)
+                {
+                    _specification = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(Price));
+                    OnPropertyChanged(nameof(BasePrice));
+                    OnPropertyChanged(nameof(SurchargePercent));
+                    OnPropertyChanged(nameof(UnitPrice));
+                    OnPropertyChanged(nameof(DisplayPrice));
+                    CalculateAll();
+                }
+            }
+        }
+
         private int _srNo = 1;
         public int SrNo { get => _srNo; set => SetProperty(ref _srNo, value); }
 
@@ -91,46 +112,68 @@ namespace ProGlassAutomation.Models
         public int Qty { get => _qty; set => SetProperty(ref _qty, value); }
 
         private double _price = 0;
+
+        // ✅ Price = BasePrice + Surcharge ONLY when W1×H1 >= 4 sqm (W2×H2 not included)
         public double Price
         {
-            get => _price;
+            get
+            {
+                double baseP = _specification?.BasePrice ?? _price;
+
+                if (_specification != null)
+                {
+                    double primarySQM = CalculateSingleSQM(_width1, _height1);
+                    if (primarySQM >= SurchargeThreshold)
+                    {
+                        double surcharge = _specification.SurchargePercent;
+                        return baseP * (1 + surcharge / 100.0);
+                    }
+                }
+                return baseP;
+            }
             set
             {
                 if (SetProperty(ref _price, value))
                 {
-                    TriggerCalculationAsync();
                     OnPropertyChanged(nameof(BasePrice));
                     OnPropertyChanged(nameof(UnitPrice));
                     OnPropertyChanged(nameof(DisplayPrice));
-                    OnPropertyChanged(nameof(FinalPrice));
                 }
             }
         }
 
-        public double BasePrice => _price;
+        public double BasePrice => _specification?.BasePrice ?? _price;
 
-        private double _surchargePercent = 20;
+        private double _surchargePercent = 0;
+
         public double SurchargePercent
         {
-            get => _surchargePercent;
+            get => _specification?.SurchargePercent ?? _surchargePercent;
             set
             {
                 if (value < 0 || value > 100)
                     throw new ArgumentOutOfRangeException(nameof(SurchargePercent), "Surcharge must be between 0 and 100.");
-                SetProperty(ref _surchargePercent, value);
+                if (SetProperty(ref _surchargePercent, value))
+                {
+                    OnPropertyChanged(nameof(HasSurcharge));
+                }
             }
         }
 
         public const double SurchargeThreshold = 4;
-        private const double MinSQM = 0.5;
-        private const double MinLM = 0.5;
 
-        public bool HasSurcharge => SQM >= SurchargeThreshold && _surchargePercent > 0;
+        // ✅ HasSurcharge = true when W1×H1 >= 4 sqm AND surcharge > 0
+        public bool HasSurcharge
+        {
+            get
+            {
+                if (_specification == null) return false;
+                double primarySQM = CalculateSingleSQM(_width1, _height1);
+                return primarySQM >= SurchargeThreshold && _specification.SurchargePercent > 0;
+            }
+        }
 
-        public double UnitPrice => HasSurcharge
-            ? Math.Round(_price * (1 + _surchargePercent / 100.0), 2)
-            : _price;
-
+        public double UnitPrice => Math.Round(Price, 2);
         public double DisplayPrice => UnitPrice;
         public double FinalPrice => UnitPrice;
 
@@ -176,42 +219,62 @@ namespace ProGlassAutomation.Models
             private set => SetProperty(ref _totalPrice, value);
         }
 
+        // ==================== CALCULATE ALL ====================
         public void CalculateAll()
         {
-            double sqm1 = CalculateSingleSQM(_width1, _height1);
-            double sqm2 = CalculateSingleSQM(_width2, _height2);
-            double sqm = sqm1 + sqm2;
+            // ✅ SQM (for display) = W1×H1
+            double primarySQM = CalculateSingleSQM(_width1, _height1);
+            SQM = Math.Round(primarySQM, 4);
 
-            SQM = Math.Round(sqm, 4);
-            TotalSQM = Math.Round(SQM * _qty, 4);
+            // ✅ TotalSQM = (W1×H1 + W2×H2) × Qty
+            double secondarySQM = CalculateSingleSQM(_width2, _height2);
+            TotalSQM = Math.Round((primarySQM + secondarySQM) * _qty, 4);
 
+            // Calculate LM for each pane
             double lm1 = CalculateSingleLM(_width1, _height1);
             double lm2 = CalculateSingleLM(_width2, _height2);
             double lm = lm1 + lm2;
 
             LM = Math.Round(lm, 4);
-            TotalLM = Math.Round(LM * _qty, 4);
+            TotalLM = Math.Round(lm * _qty, 4);
 
-            double unitPrice = HasSurcharge
-                ? Math.Round(_price * (1 + _surchargePercent / 100.0), 2)
-                : _price;
+            // ✅ Price = BasePrice + Surcharge ONLY when W1×H1 >= 4 sqm
+            double unitPrice = Math.Round(Price, 2);
 
+            // ✅ TotalPrice = UnitPrice × TotalSQM
             TotalPrice = Math.Round(unitPrice * TotalSQM, 2);
             TotalAmount = TotalPrice;
+
+            // ✅ Notify price properties
+            OnPropertyChanged(nameof(Price));
+            OnPropertyChanged(nameof(UnitPrice));
+            OnPropertyChanged(nameof(DisplayPrice));
+            OnPropertyChanged(nameof(TotalPrice));
+            OnPropertyChanged(nameof(HasSurcharge));
         }
 
         private double CalculateSingleSQM(double width, double height)
         {
             if (width <= 0 || height <= 0) return 0;
             double sqm = (width * height) / 1_000_000.0;
-            return sqm < MinSQM ? MinSQM : sqm;
+            return sqm < 0.5 ? 0.5 : sqm;
         }
 
         private double CalculateSingleLM(double width, double height)
         {
             if (width <= 0 || height <= 0) return 0;
             double lm = ((width + height) * 2) / 1000.0;
-            return lm < MinLM ? MinLM : lm;
+            return lm < 0.5 ? 0.5 : lm;
+        }
+
+        public void NotifySurchargeChanged()
+        {
+            OnPropertyChanged(nameof(SurchargePercent));
+            OnPropertyChanged(nameof(Price));
+            OnPropertyChanged(nameof(BasePrice));
+            OnPropertyChanged(nameof(UnitPrice));
+            OnPropertyChanged(nameof(DisplayPrice));
+            CalculateAll();
         }
 
         public void CalculateSQM() => CalculateAll();
