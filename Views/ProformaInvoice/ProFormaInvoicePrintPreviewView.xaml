@@ -227,11 +227,11 @@
                                             </Grid.RowDefinitions>
 
                                             <!-- Spec Header -->
-                                            <Border Grid.Row="0" Background="#1E3A5F" Padding="6,4" CornerRadius="3,3,0,0">
-                                                <TextBlock Text="{Binding SpecificationName}" Style="{StaticResource SpecHeader}"/>
+                                            <Border Grid.Row="0" Background="#F3F4F6" BorderBrush="#D1D5DB" BorderThickness="0,0,0,1" Padding="6,4" CornerRadius="3,3,0,0">
+                                                <TextBlock Text="{Binding SpecificationName}" FontSize="9" FontWeight="Bold" Foreground="#1F2937" FontFamily="{StaticResource PrimaryFont}"/>
                                             </Border>
 
-                                            <!-- Data Grid - OPTIMIZED COLUMN WIDTHS -->
+                                            <!-- Data Grid - WHITE BACKGROUND, BLACK TEXT -->
                                             <DataGrid Grid.Row="1" ItemsSource="{Binding Items}" 
                                                       AutoGenerateColumns="False" 
                                                       IsReadOnly="True" 
@@ -264,15 +264,13 @@
                                                         <Setter Property="Padding" Value="1,0"/>
                                                         <Setter Property="VerticalContentAlignment" Value="Center"/>
                                                         <Setter Property="FontSize" Value="8"/>
+                                                        <Setter Property="Background" Value="White"/>
+                                                        <Setter Property="Foreground" Value="Black"/>
                                                     </Style>
                                                 </DataGrid.CellStyle>
                                                 <DataGrid.RowStyle>
                                                     <Style TargetType="DataGridRow">
-                                                        <Style.Triggers>
-                                                            <Trigger Property="AlternationIndex" Value="1">
-                                                                <Setter Property="Background" Value="#F9FAFB"/>
-                                                            </Trigger>
-                                                        </Style.Triggers>
+                                                        <Setter Property="Background" Value="White"/>
                                                     </Style>
                                                 </DataGrid.RowStyle>
 
@@ -284,18 +282,21 @@
                                                                 <Setter Property="HorizontalAlignment" Value="Center"/>
                                                                 <Setter Property="VerticalAlignment" Value="Center"/>
                                                                 <Setter Property="FontWeight" Value="Bold"/>
-                                                                <Setter Property="Background" Value="#F1F5F9"/>
+                                                                <Setter Property="Background" Value="White"/>
+                                                                <Setter Property="Foreground" Value="Black"/>
                                                                 <Setter Property="FontSize" Value="8"/>
                                                             </Style>
                                                         </DataGridTextColumn.ElementStyle>
                                                     </DataGridTextColumn>
 
-                                                    <!-- Glass Ref - 130 (EXPANDED) -->
-                                                    <DataGridTextColumn Header="Glass Ref" Binding="{Binding GlassRef}" Width="130">
+                                                    <!-- Glass Ref - Flexible (takes remaining width) -->
+                                                    <DataGridTextColumn Header="Glass Ref" Binding="{Binding GlassRef}" Width="*">
                                                         <DataGridTextColumn.ElementStyle>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="HorizontalAlignment" Value="Center"/>
                                                                 <Setter Property="VerticalAlignment" Value="Center"/>
+                                                                <Setter Property="Background" Value="White"/>
+                                                                <Setter Property="Foreground" Value="Black"/>
                                                                 <Setter Property="FontSize" Value="8"/>
                                                                 <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
                                                             </Style>
@@ -308,6 +309,8 @@
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="HorizontalAlignment" Value="Center"/>
                                                                 <Setter Property="VerticalAlignment" Value="Center"/>
+                                                                <Setter Property="Background" Value="White"/>
+                                                                <Setter Property="Foreground" Value="Black"/>
                                                                 <Setter Property="FontSize" Value="8"/>
                                                             </Style>
                                                         </DataGridTextColumn.ElementStyle>
@@ -319,6 +322,8 @@
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="HorizontalAlignment" Value="Center"/>
                                                                 <Setter Property="VerticalAlignment" Value="Center"/>
+                                                                <Setter Property="Background" Value="White"/>
+                                                                <Setter Property="Foreground" Value="Black"/>
                                                                 <Setter Property="FontSize" Value="8"/>
                                                             </Style>
                                                         </DataGridTextColumn.ElementStyle>
@@ -330,6 +335,8 @@
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="HorizontalAlignment" Value="Center"/>
                                                                 <Setter Property="VerticalAlignment" Value="Center"/>
+                                                                <Setter Property="Background" Value="White"/>
+                                                                <Setter Property="Foreground" Value="Black"/>
                                                                 <Setter Property="FontSize" Value="8"/>
                                                             </Style>
                                                         </DataGridTextColumn.ElementStyle>
@@ -341,6 +348,8 @@
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="HorizontalAlignment" Value="Center"/>
                                                                 <Setter Property="VerticalAlignment" Value="Center"/>
+                                                                <Setter Property="Background" Value="White"/>
+                                                                <Setter Property="Foreground" Value="Black"/>
                                                                 <Setter Property="FontSize" Value="8"/>
                                                             </Style>
                                                         </DataGridTextColumn.ElementStyle>
@@ -352,47 +361,51 @@
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="HorizontalAlignment" Value="Center"/>
                                                                 <Setter Property="VerticalAlignment" Value="Center"/>
+                                                                <Setter Property="Background" Value="White"/>
+                                                                <Setter Property="Foreground" Value="Black"/>
                                                                 <Setter Property="FontSize" Value="8"/>
                                                             </Style>
                                                         </DataGridTextColumn.ElementStyle>
                                                     </DataGridTextColumn>
 
-                                                    <!-- SQM - 55 (2 decimals) -->
-                                                    <DataGridTextColumn Header="SQM" Binding="{Binding SQM, StringFormat=N2}" Width="55">
+                                                    <!-- SQM - 50 -->
+                                                    <DataGridTextColumn Header="SQM" Binding="{Binding SQM, StringFormat=N2}" Width="50">
                                                         <DataGridTextColumn.ElementStyle>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="HorizontalAlignment" Value="Center"/>
                                                                 <Setter Property="VerticalAlignment" Value="Center"/>
-                                                                <Setter Property="Background" Value="#DBEAFE"/>
+                                                                <Setter Property="Background" Value="White"/>
+                                                                <Setter Property="Foreground" Value="Black"/>
                                                                 <Setter Property="FontWeight" Value="SemiBold"/>
                                                                 <Setter Property="FontSize" Value="8"/>
                                                             </Style>
                                                         </DataGridTextColumn.ElementStyle>
                                                     </DataGridTextColumn>
 
-                                                    <!-- Total SQM - 60 (2 decimals) -->
-                                                    <DataGridTextColumn Header="Total SQM" Binding="{Binding TotalSQM, StringFormat=N2}" Width="60">
+                                                    <!-- Total SQM - 50 -->
+                                                    <DataGridTextColumn Header="Total SQM" Binding="{Binding TotalSQM, StringFormat=N2}" Width="50">
                                                         <DataGridTextColumn.ElementStyle>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="HorizontalAlignment" Value="Center"/>
                                                                 <Setter Property="VerticalAlignment" Value="Center"/>
-                                                                <Setter Property="Background" Value="#1E3A5F"/>
+                                                                <Setter Property="Background" Value="White"/>
+                                                                <Setter Property="Foreground" Value="Black"/>
                                                                 <Setter Property="FontWeight" Value="Bold"/>
-                                                                <Setter Property="Foreground" Value="White"/>
                                                                 <Setter Property="FontSize" Value="8"/>
                                                             </Style>
                                                         </DataGridTextColumn.ElementStyle>
                                                     </DataGridTextColumn>
 
-                                                    <!-- Price - 55 -->
-                                                    <DataGridTextColumn Header="Price" Binding="{Binding DisplayPrice, StringFormat=N2}" Width="55">
+                                                    <!-- Price - 50 -->
+                                                    <DataGridTextColumn Header="Price" Binding="{Binding DisplayPrice, StringFormat=N2}" Width="50">
                                                         <DataGridTextColumn.ElementStyle>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="HorizontalAlignment" Value="Right"/>
                                                                 <Setter Property="VerticalAlignment" Value="Center"/>
                                                                 <Setter Property="Padding" Value="0,0,2,0"/>
+                                                                <Setter Property="Background" Value="White"/>
+                                                                <Setter Property="Foreground" Value="Black"/>
                                                                 <Setter Property="FontWeight" Value="Bold"/>
-                                                                <Setter Property="Foreground" Value="#1E3A5F"/>
                                                                 <Setter Property="FontSize" Value="8"/>
                                                             </Style>
                                                         </DataGridTextColumn.ElementStyle>
@@ -404,9 +417,10 @@
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="HorizontalAlignment" Value="Right"/>
                                                                 <Setter Property="VerticalAlignment" Value="Center"/>
+                                                                <Setter Property="Background" Value="White"/>
+                                                                <Setter Property="Foreground" Value="Black"/>
                                                                 <Setter Property="FontWeight" Value="Bold"/>
                                                                 <Setter Property="Padding" Value="0,0,2,0"/>
-                                                                <Setter Property="Background" Value="#DBEAFE"/>
                                                                 <Setter Property="FontSize" Value="8"/>
                                                             </Style>
                                                         </DataGridTextColumn.ElementStyle>
@@ -415,7 +429,7 @@
                                             </DataGrid>
 
                                             <!-- Spec Footer -->
-                                            <Border Grid.Row="2" Background="#1E3A5F" Padding="6,4" CornerRadius="0,0,3,3">
+                                            <Border Grid.Row="2" Background="#F3F4F6" BorderBrush="#D1D5DB" BorderThickness="0,1,0,0" Padding="6,4" CornerRadius="0,0,3,3">
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="*"/>
@@ -426,30 +440,30 @@
                                                     </Grid.ColumnDefinitions>
 
                                                     <TextBlock Grid.Column="0" Text="SPEC TOTAL" FontSize="7" FontWeight="Bold" 
-                                                               Foreground="White" VerticalAlignment="Center" FontFamily="{StaticResource PrimaryFont}"/>
+                                                               Foreground="#1F2937" VerticalAlignment="Center" FontFamily="{StaticResource PrimaryFont}"/>
 
                                                     <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,0,12,0">
-                                                        <TextBlock Text="Qty:" FontSize="6" Foreground="#9CA3AF" VerticalAlignment="Center" FontFamily="{StaticResource PrimaryFont}"/>
+                                                        <TextBlock Text="Qty:" FontSize="6" Foreground="#6B7280" VerticalAlignment="Center" FontFamily="{StaticResource PrimaryFont}"/>
                                                         <TextBlock Text="{Binding SpecTotalQty}" FontSize="7" FontWeight="SemiBold" 
-                                                                   Foreground="White" VerticalAlignment="Center" Margin="2,0,0,0" FontFamily="{StaticResource PrimaryFont}"/>
+                                                                   Foreground="#1F2937" VerticalAlignment="Center" Margin="2,0,0,0" FontFamily="{StaticResource PrimaryFont}"/>
                                                     </StackPanel>
 
                                                     <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="0,0,12,0">
-                                                        <TextBlock Text="SQM:" FontSize="6" Foreground="#9CA3AF" VerticalAlignment="Center" FontFamily="{StaticResource PrimaryFont}"/>
+                                                        <TextBlock Text="SQM:" FontSize="6" Foreground="#6B7280" VerticalAlignment="Center" FontFamily="{StaticResource PrimaryFont}"/>
                                                         <TextBlock Text="{Binding SpecTotalSQM, StringFormat=N2}" FontSize="7" FontWeight="SemiBold" 
-                                                                   Foreground="White" VerticalAlignment="Center" Margin="2,0,0,0" FontFamily="{StaticResource PrimaryFont}"/>
+                                                                   Foreground="#1F2937" VerticalAlignment="Center" Margin="2,0,0,0" FontFamily="{StaticResource PrimaryFont}"/>
                                                     </StackPanel>
 
                                                     <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="0,0,12,0">
-                                                        <TextBlock Text="LM:" FontSize="6" Foreground="#9CA3AF" VerticalAlignment="Center" FontFamily="{StaticResource PrimaryFont}"/>
+                                                        <TextBlock Text="LM:" FontSize="6" Foreground="#6B7280" VerticalAlignment="Center" FontFamily="{StaticResource PrimaryFont}"/>
                                                         <TextBlock Text="{Binding SpecTotalLM, StringFormat=N2}" FontSize="7" FontWeight="SemiBold" 
-                                                                   Foreground="#60A5FA" VerticalAlignment="Center" Margin="2,0,0,0" FontFamily="{StaticResource PrimaryFont}"/>
+                                                                   Foreground="#1F2937" VerticalAlignment="Center" Margin="2,0,0,0" FontFamily="{StaticResource PrimaryFont}"/>
                                                     </StackPanel>
 
                                                     <StackPanel Grid.Column="4" Orientation="Horizontal">
-                                                        <TextBlock Text="AED:" FontSize="6" Foreground="#9CA3AF" VerticalAlignment="Center" FontFamily="{StaticResource PrimaryFont}"/>
+                                                        <TextBlock Text="AED:" FontSize="6" Foreground="#6B7280" VerticalAlignment="Center" FontFamily="{StaticResource PrimaryFont}"/>
                                                         <TextBlock Text="{Binding SpecTotalPrice, StringFormat=N2}" FontSize="8" FontWeight="Bold" 
-                                                                   Foreground="#60A5FA" VerticalAlignment="Center" Margin="2,0,0,0" FontFamily="{StaticResource PrimaryFont}"/>
+                                                                   Foreground="#1F2937" VerticalAlignment="Center" Margin="2,0,0,0" FontFamily="{StaticResource PrimaryFont}"/>
                                                     </StackPanel>
                                                 </Grid>
                                             </Border>
