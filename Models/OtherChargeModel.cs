@@ -78,6 +78,8 @@ namespace ProGlassAutomation.Models
                 {
                     "lm" => $"{Value:F2} LM",
                     "sqm" => $"{Value:F2} SQM",
+                    "sqm1" => $"{Value:F2} SQM1",
+                    "sqm2" => $"{Value:F2} SQM2",
                     "qty" => $"{Value:F0} pcs",
                     "1x" => $"{Value:F0} pcs",
                     "2x" => $"{Value:F0} pcs (2X)",
@@ -93,7 +95,7 @@ namespace ProGlassAutomation.Models
                 return Type?.ToLower() switch
                 {
                     "lm" => "AED/LM",
-                    "sqm" => "AED/SQM",
+                    "sqm" or "sqm1" or "sqm2" => "AED/SQM",
                     "qty" or "1x" or "2x" => "AED/pc",
                     _ => "AED"
                 };
@@ -111,6 +113,8 @@ namespace ProGlassAutomation.Models
                 {
                     "lm" => "LM",
                     "sqm" => "SQM",
+                    "sqm1" => "SQM1",
+                    "sqm2" => "SQM2",
                     "qty" => "QTY",
                     "1x" => "1X",
                     "2x" => "2X",
@@ -119,7 +123,7 @@ namespace ProGlassAutomation.Models
             }
         }
 
-        public bool IsLMBased => Type == "lm" || Type == "sqm";
+        public bool IsLMBased => Type == "lm" || Type == "sqm" || Type == "sqm1" || Type == "sqm2";
         public bool IsHoleType => Type == "1x" || Type == "2x";
 
         // ==================== CALCULATE AMOUNT ====================
