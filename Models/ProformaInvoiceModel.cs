@@ -274,6 +274,20 @@ namespace ProGlassAutomation.Models
         }
 
         // ==================== TOTALS ====================
+        private double _totalSQM1 = 0;
+        public double TotalSQM1
+        {
+            get => _totalSQM1;
+            private set => SetProperty(ref _totalSQM1, value);
+        }
+
+        private double _totalSQM2 = 0;
+        public double TotalSQM2
+        {
+            get => _totalSQM2;
+            private set => SetProperty(ref _totalSQM2, value);
+        }
+
         private double _totalSQM = 0;
         public double TotalSQM
         {
@@ -348,7 +362,7 @@ namespace ProGlassAutomation.Models
         // ==================== CALCULATIONS ====================
         public void CalculateTotals()
         {
-            double sqm = 0, lm = 0;
+            double sqm1 = 0, sqm2 = 0, sqm = 0, lm = 0;
             int qty = 0;
             double specTotal = 0;
             double otherCharges = 0;
@@ -358,6 +372,8 @@ namespace ProGlassAutomation.Models
                 spec.CalculateSpecTotals();
                 spec.CalculateOtherChargesTotal();
 
+                sqm1 += spec.SpecTotalSQM1;
+                sqm2 += spec.SpecTotalSQM2;
                 sqm += spec.SpecTotalSQM;
                 lm += spec.SpecTotalLM;
                 qty += spec.SpecTotalQty;
@@ -365,6 +381,8 @@ namespace ProGlassAutomation.Models
                 otherCharges += spec.OtherChargesTotal;
             }
 
+            TotalSQM1 = Math.Round(sqm1, 4);
+            TotalSQM2 = Math.Round(sqm2, 4);
             TotalSQM = Math.Round(sqm, 4);
             TotalLM = Math.Round(lm, 4);
             TotalQty = qty;

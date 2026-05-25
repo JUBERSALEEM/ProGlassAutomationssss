@@ -18,6 +18,20 @@ namespace ProGlassAutomation.Models
             OtherCharges.CollectionChanged += OtherCharges_CollectionChanged;
         }
 
+        // ==================== PROPERTY CHANGED ====================
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
+        {
+            if (Equals(field, value)) return false;
+            field = value;
+            OnPropertyChanged(propertyName);
+            return true;
+        }
+
         private void Items_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
             if (e.NewItems != null)
@@ -35,7 +49,6 @@ namespace ProGlassAutomation.Models
                 }
             }
             CalculateSpecTotals();
-            // ✅ Renumber SR when items change
             RenumberItems();
         }
 
@@ -84,11 +97,6 @@ namespace ProGlassAutomation.Models
             }
         }
 
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
         // ==================== PARENT INVOICE REFERENCE ====================
         public ProformaInvoiceModel? Invoice { get; set; }
 
@@ -120,15 +128,12 @@ namespace ProGlassAutomation.Models
 
         public ObservableCollection<InvoiceItemModel> Items { get; set; } = new();
 
-        // ==================== SPEC INDEX FOR COMBOBOX ====================
         public int SpecIndex => Id;
 
-        // ==================== SHORT NAME FOR UI ====================
         public string ShortName
         {
             get
             {
-                // Try to find index in parent invoice
                 if (Invoice?.Specifications != null)
                 {
                     int index = Invoice.Specifications.IndexOf(this);
@@ -137,7 +142,6 @@ namespace ProGlassAutomation.Models
                         return $"Spec {index + 1}";
                     }
                 }
-                // Fallback: extract number from SpecificationName
                 if (!string.IsNullOrEmpty(SpecificationName))
                 {
                     var match = System.Text.RegularExpressions.Regex.Match(SpecificationName, @"(\d+)");
@@ -379,7 +383,7 @@ namespace ProGlassAutomation.Models
             }
         }
 
-        // ==================== SURCHARGE PERCENT (FIXED) ====================
+        // ==================== SURCHARGE PERCENT ====================
         private double _surchargePercent = 20;
         public double SurchargePercent
         {
@@ -390,18 +394,16 @@ namespace ProGlassAutomation.Models
                 {
                     _surchargePercent = value;
                     OnPropertyChanged();
-                    // ✅ FIX: Recalculate all items when surcharge changes
                     RecalculateAllItems();
                 }
             }
         }
 
-        // ✅ NEW: Method to recalculate all items when surcharge changes
         private void RecalculateAllItems()
         {
             foreach (var item in Items)
             {
-                item.Specification = this;  // Ensure link
+                item.Specification = this;
                 item.NotifySurchargeChanged();
             }
             CalculateSpecTotals();
@@ -466,7 +468,6 @@ namespace ProGlassAutomation.Models
             }
         }
 
-        // ✅ LM1 Total = Sum of (LM1 × Qty) for all items
         private double _specTotalLM1 = 0;
         public double SpecTotalLM1
         {
@@ -481,7 +482,6 @@ namespace ProGlassAutomation.Models
             }
         }
 
-        // ✅ LM2 Total = Sum of (LM2 × Qty) for all items
         private double _specTotalLM2 = 0;
         public double SpecTotalLM2
         {
@@ -593,7 +593,7 @@ namespace ProGlassAutomation.Models
             }
         }
 
-        // ==================== CALCULATE TOTALS (Wrapper for ViewModel compatibility) ====================
+        // ==================== CALCULATE TOTALS ====================
         public void CalculateTotals()
         {
             CalculateSpecTotals();

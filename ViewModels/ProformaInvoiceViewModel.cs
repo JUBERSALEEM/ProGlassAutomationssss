@@ -152,6 +152,8 @@ namespace ProGlassAutomation.ViewModels
 {
     new() { Value = "lm", Label = "LM" },
     new() { Value = "sqm", Label = "SQM" },
+    new() { Value = "sqm1", Label = "SQM1" },
+    new() { Value = "sqm2", Label = "SQM2" },
     new() { Value = "qty", Label = "QTY" },
     new() { Value = "1x", Label = "1X" },
     new() { Value = "2x", Label = "2X" }
@@ -778,6 +780,12 @@ namespace ProGlassAutomation.ViewModels
                 case "sqm":
                     charge.Value = CalculateTotalSQMValue(linkedSpecs);
                     break;
+                case "sqm1":
+                    charge.Value = CalculateTotalSQM1Value(linkedSpecs);
+                    break;
+                case "sqm2":
+                    charge.Value = CalculateTotalSQM2Value(linkedSpecs);
+                    break;
                 case "qty":
                 case "1x":
                     charge.Value = CalculateTotalQtyValue(linkedSpecs);
@@ -870,6 +878,22 @@ namespace ProGlassAutomation.ViewModels
             foreach (var spec in specs)
                 totalQty += spec.SpecTotalQty;
             return totalQty;
+        }
+
+        private double CalculateTotalSQM1Value(List<SpecificationModel> specs)
+        {
+            double totalSQM1 = 0;
+            foreach (var spec in specs)
+                totalSQM1 += spec.SpecTotalSQM1;
+            return Math.Round(totalSQM1, 4);
+        }
+
+        private double CalculateTotalSQM2Value(List<SpecificationModel> specs)
+        {
+            double totalSQM2 = 0;
+            foreach (var spec in specs)
+                totalSQM2 += spec.SpecTotalSQM2;
+            return Math.Round(totalSQM2, 4);
         }
 
         private double CalculateRowLM(InvoiceItemModel item, string dimType)

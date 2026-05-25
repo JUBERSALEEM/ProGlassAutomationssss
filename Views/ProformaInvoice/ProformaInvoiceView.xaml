@@ -520,7 +520,7 @@
                                                         <ColumnDefinition Width="55"/>
                                                         <ColumnDefinition Width="45"/>
                                                         <ColumnDefinition Width="65"/>
-                                                        <ColumnDefinition Width="75"/>
+                                                        <ColumnDefinition Width="65"/>
                                                         <ColumnDefinition Width="70"/>
                                                         <ColumnDefinition Width="80"/>
                                                         <ColumnDefinition Width="30"/>
@@ -556,7 +556,7 @@
 
                                                     <TextBlock Grid.Column="4" Text="" FontSize="8" Foreground="#FFFFFF"/>
 
-                                                    <TextBlock Grid.Column="5" Text="" FontSize="8" Foreground="#FFFFFF"/>
+                                                    <TextBlock Grid.Column="5" Text="{Binding SpecTotalSQM2, Mode=OneWay, StringFormat=N4}" FontSize="9" FontWeight="Bold" Foreground="#FCD34D" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
                                                     <TextBlock Grid.Column="6" Text="{Binding SpecTotalQty, Mode=OneWay, StringFormat=N0}" FontSize="9" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
@@ -642,6 +642,8 @@
                                             <ComboBox Grid.Column="1" SelectedValue="{Binding Type, UpdateSourceTrigger=PropertyChanged}" SelectedValuePath="Tag" Margin="0,0,4,0" FontSize="9" Padding="4,2" Background="White">
                                                 <ComboBoxItem Content="LM" Tag="lm"/>
                                                 <ComboBoxItem Content="SQM" Tag="sqm"/>
+                                                <ComboBoxItem Content="SQM1" Tag="sqm1"/>
+                                                <ComboBoxItem Content="SQM2" Tag="sqm2"/>
                                                 <ComboBoxItem Content="QTY" Tag="qty"/>
                                                 <ComboBoxItem Content="1X" Tag="1x"/>
                                                 <ComboBoxItem Content="2X" Tag="2x"/>
