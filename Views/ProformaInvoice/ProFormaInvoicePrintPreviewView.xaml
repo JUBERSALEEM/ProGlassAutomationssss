@@ -411,8 +411,8 @@
                                                                 </DataGridTextColumn.ElementStyle>
                                                             </DataGridTextColumn>
 
-                                                            <!-- SQM - 55 -->
-                                                            <DataGridTextColumn Header="SQM" Binding="{Binding SQM, StringFormat=N4}" Width="55">
+                                                            <!-- SQM1 - 50 -->
+                                                            <DataGridTextColumn Header="SQM1" Binding="{Binding SQM1, StringFormat=N4}" Width="50">
                                                                 <DataGridTextColumn.ElementStyle>
                                                                     <Style TargetType="TextBlock">
                                                                         <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -424,8 +424,21 @@
                                                                 </DataGridTextColumn.ElementStyle>
                                                             </DataGridTextColumn>
 
-                                                            <!-- Total SQM - 55 -->
-                                                            <DataGridTextColumn Header="T.SQM" Binding="{Binding TotalSQM, StringFormat=N4}" Width="55">
+                                                            <!-- SQM2 - 50 -->
+                                                            <DataGridTextColumn Header="SQM2" Binding="{Binding SQM2, StringFormat=N4}" Width="50">
+                                                                <DataGridTextColumn.ElementStyle>
+                                                                    <Style TargetType="TextBlock">
+                                                                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                                                        <Setter Property="Background" Value="White"/>
+                                                                        <Setter Property="Foreground" Value="Black"/>
+                                                                        <Setter Property="FontSize" Value="9"/>
+                                                                    </Style>
+                                                                </DataGridTextColumn.ElementStyle>
+                                                            </DataGridTextColumn>
+
+                                                            <!-- Total SQM - 50 -->
+                                                            <DataGridTextColumn Header="T.SQM" Binding="{Binding TotalSQM, StringFormat=N4}" Width="50">
                                                                 <DataGridTextColumn.ElementStyle>
                                                                     <Style TargetType="TextBlock">
                                                                         <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -480,8 +493,9 @@
                                                                 <ColumnDefinition Width="45"/>
                                                                 <ColumnDefinition Width="45"/>
                                                                 <ColumnDefinition Width="40"/>
-                                                                <ColumnDefinition Width="55"/>
-                                                                <ColumnDefinition Width="55"/>
+                                                                <ColumnDefinition Width="50"/>
+                                                                <ColumnDefinition Width="50"/>
+                                                                <ColumnDefinition Width="50"/>
                                                                 <ColumnDefinition Width="55"/>
                                                                 <ColumnDefinition Width="65"/>
                                                             </Grid.ColumnDefinitions>
@@ -507,17 +521,20 @@
                                                             <!-- Qty - 40 -->
                                                             <TextBlock Grid.Column="6" Text="{Binding SpecTotalQty, StringFormat=N0}" FontSize="9" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
-                                                            <!-- SQM - 55 -->
-                                                            <TextBlock Grid.Column="7" Text="" FontSize="8" Foreground="Black"/>
+                                                            <!-- SQM1 - 50 -->
+                                                            <TextBlock Grid.Column="7" Text="{Binding SpecTotalSQM1, StringFormat=N4}" FontSize="9" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
-                                                            <!-- T.SQM - 55 (Total SQM) -->
-                                                            <TextBlock Grid.Column="8" Text="{Binding SpecTotalSQM, StringFormat=N4}" FontSize="9" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            <!-- SQM2 - 50 -->
+                                                            <TextBlock Grid.Column="8" Text="{Binding SpecTotalSQM2, StringFormat=N4}" FontSize="9" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                                                            <!-- T.SQM - 50 (Total SQM) -->
+                                                            <TextBlock Grid.Column="9" Text="{Binding SpecTotalSQM, StringFormat=N4}" FontSize="9" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
                                                             <!-- Price - 55 -->
-                                                            <TextBlock Grid.Column="9" Text="" FontSize="8" Foreground="Black"/>
+                                                            <TextBlock Grid.Column="10" Text="" FontSize="8" Foreground="Black"/>
 
                                                             <!-- Total - 65 (Gross Total) -->
-                                                            <TextBlock Grid.Column="10" Text="{Binding SpecTotalPrice, StringFormat=N2}" FontSize="9" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                            <TextBlock Grid.Column="11" Text="{Binding SpecTotalPrice, StringFormat=N2}" FontSize="9" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,4,0"/>
                                                         </Grid>
                                                     </Border>
                                                 </Grid>

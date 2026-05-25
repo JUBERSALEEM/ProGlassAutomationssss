@@ -75,7 +75,20 @@ namespace ProGlassAutomation.ViewModels
 
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = null) { if (Equals(field, value)) return false; field = value; OnPropertyChanged(propertyName); return true; }
-        private void OnInvoicePropertyChanged(object? sender, PropertyChangedEventArgs e) { if (e.PropertyName == nameof(ProformaInvoiceModel.IsDirty)) OnPropertyChanged(nameof(HasUnsavedChanges)); }
+        private void OnInvoicePropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(ProformaInvoiceModel.IsDirty))
+                OnPropertyChanged(nameof(HasUnsavedChanges));
+
+            if (e.PropertyName == nameof(SpecificationModel.SpecTotalSQM) ||
+                e.PropertyName == nameof(SpecificationModel.SpecTotalQty) ||
+                e.PropertyName == nameof(SpecificationModel.SpecTotalSQM1) ||
+                e.PropertyName == nameof(SpecificationModel.SpecTotalSQM2))
+            {
+                OnPropertyChanged(nameof(SpecTotalLM1));
+                OnPropertyChanged(nameof(SpecTotalLM2));
+            }
+        }
         private string GetNextSequentialInvoiceNo() { _currentPINumber++; return $"PI-{DateTime.Now.Year}-{_currentPINumber:D2}"; }
 
         private ProformaInvoiceModel _invoice = new();
@@ -460,6 +473,7 @@ namespace ProGlassAutomation.ViewModels
 
         private void AddSpecification()
         {
+            int nextSrNo = GetNextSrNo();
             var spec = new SpecificationModel
             {
                 SpecificationName = $"Specification {Invoice.Specifications.Count + 1}",
@@ -468,7 +482,7 @@ namespace ProGlassAutomation.ViewModels
             };
             if (spec.Items.Count == 0)
             {
-                var firstItem = new InvoiceItemModel { SrNo = 1, SurchargePercent = 20, Specification = spec };
+                var firstItem = new InvoiceItemModel { SrNo = nextSrNo, SurchargePercent = 20, Specification = spec };
                 spec.Items.Add(firstItem);
             }
             Invoice.Specifications.Add(spec);
@@ -482,7 +496,41 @@ namespace ProGlassAutomation.ViewModels
             if (Invoice.Specifications.Count <= 0) return;
             Invoice.Specifications.RemoveAt(Invoice.Specifications.Count - 1);
             SelectedTargetSpecification = Invoice.Specifications.LastOrDefault();
+            RenumberAllSrNumbers();
             RefreshAllChargeAutoValues();
+        }
+
+        // ==================== SR NUMBERING ====================
+
+        public int GetNextSrNo()
+        {
+            int maxSr = 0;
+            if (Invoice?.Specifications == null) return 1;
+
+            foreach (var spec in Invoice.Specifications)
+            {
+                foreach (var item in spec.Items)
+                {
+                    if (item.SrNo > maxSr)
+                        maxSr = item.SrNo;
+                }
+            }
+            return maxSr + 1;
+        }
+
+        public void RenumberAllSrNumbers()
+        {
+            if (Invoice?.Specifications == null) return;
+
+            int srNo = 1;
+            foreach (var spec in Invoice.Specifications)
+            {
+                foreach (var item in spec.Items)
+                {
+                    item.SrNo = srNo;
+                    srNo++;
+                }
+            }
         }
 
         public void RefreshAllChargeAutoValues()
@@ -510,9 +558,10 @@ namespace ProGlassAutomation.ViewModels
         {
             if (spec == null) return;
 
+            int nextSrNo = GetNextSrNo();
             var newItem = new InvoiceItemModel
             {
-                SrNo = spec.Items.Count + 1,
+                SrNo = nextSrNo,
                 Specification = spec,
                 // ✅ Set raw BasePrice only (no surcharge in backing field)
                 Price = spec.BasePrice
@@ -526,7 +575,12 @@ namespace ProGlassAutomation.ViewModels
         {
             if (item == null) return;
             var spec = Invoice.Specifications.FirstOrDefault(s => s.Items.Contains(item));
-            if (spec != null && spec.Items.Count > 1) { spec.Items.Remove(item); for (int i = 0; i < spec.Items.Count; i++) spec.Items[i].SrNo = i + 1; Invoice.IsDirty = true; }
+            if (spec != null && spec.Items.Count > 1)
+            {
+                spec.Items.Remove(item);
+                RenumberAllSrNumbers();
+                Invoice.IsDirty = true;
+            }
         }
 
         private void ToggleLM() => IsLMVisible = !IsLMVisible;
@@ -999,6 +1053,10 @@ namespace ProGlassAutomation.ViewModels
 
         public ICommand RefreshChargesCommand { get; private set; } = null!;
 
+        // ==================== LM TOTALS ====================
+        public double SpecTotalLM1 => SelectedTargetSpecification?.Items?.Sum(x => x.LM1 * x.Qty) ?? 0;
+        public double SpecTotalLM2 => SelectedTargetSpecification?.Items?.Sum(x => x.LM2 * x.Qty) ?? 0;
+
         // ==================== CSV IMPORT/EXPORT ====================
 
         private void ExportToCsv()
@@ -1018,9 +1076,9 @@ namespace ProGlassAutomation.ViewModels
                 foreach (var spec in importedInvoice.Specifications)
                 {
                     if (spec.Items == null) spec.Items = new ObservableCollection<InvoiceItemModel>();
-                    for (int i = 0; i < spec.Items.Count; i++) spec.Items[i].SrNo = i + 1;
                     spec.CalculateTotals();
                 }
+                RenumberAllSrNumbers();
 
                 Invoice = new ProformaInvoiceModel
                 {
@@ -1061,7 +1119,7 @@ namespace ProGlassAutomation.ViewModels
                 if (items == null || items.Count == 0) { StatusMessage = "❌ No items found in file"; return; }
                 if (Invoice.Specifications.Count == 0) AddSpecification();
                 var targetSpec = Invoice.Specifications[0];
-                int startSrNo = targetSpec.Items.Count + 1;
+                int startSrNo = GetNextSrNo();
                 foreach (var item in items)
                 {
                     var newItem = new InvoiceItemModel { SrNo = startSrNo++, GlassRef = item.GlassRef, Qty = item.Qty, Price = item.Price, SurchargePercent = 20, Specification = targetSpec };
@@ -1069,6 +1127,7 @@ namespace ProGlassAutomation.ViewModels
                     targetSpec.Items.Add(newItem);
                     newItem.PropertyChanged += (s, e) => { targetSpec.CalculateTotals(); Invoice.CalculateTotals(); Invoice.IsDirty = true; };
                 }
+                RenumberAllSrNumbers();
                 Invoice.CalculateTotals();
                 Invoice.IsDirty = true;
                 StatusMessage = $"✅ Imported {items.Count} items";
@@ -1128,10 +1187,11 @@ namespace ProGlassAutomation.ViewModels
 
                 if (spec.Items.Count == 0)
                 {
-                    spec.Items.Add(new InvoiceItemModel { SrNo = 1, Qty = 1, SurchargePercent = defaultSurcharge, Price = defaultPrice, Width1 = defaultWidth1, Height1 = defaultHeight1, Width2 = defaultWidth2, Height2 = defaultHeight2 });
+                    int nextSr = GetNextSrNo();
+                    spec.Items.Add(new InvoiceItemModel { SrNo = nextSr, Qty = 1, SurchargePercent = defaultSurcharge, Price = defaultPrice, Width1 = defaultWidth1, Height1 = defaultHeight1, Width2 = defaultWidth2, Height2 = defaultHeight2 });
                 }
 
-                for (int i = 0; i < spec.Items.Count; i++) spec.Items[i].SrNo = i + 1;
+                RenumberAllSrNumbers();
 
                 spec.CalculateTotals();
                 Invoice.CalculateTotals();

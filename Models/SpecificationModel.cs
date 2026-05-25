@@ -35,14 +35,19 @@ namespace ProGlassAutomation.Models
                 }
             }
             CalculateSpecTotals();
+            // ✅ Renumber SR when items change
+            RenumberItems();
         }
 
         private void Item_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(InvoiceItemModel.SQM) ||
+            if (e.PropertyName == nameof(InvoiceItemModel.SQM1) ||
+                e.PropertyName == nameof(InvoiceItemModel.SQM2) ||
                 e.PropertyName == nameof(InvoiceItemModel.TotalSQM) ||
                 e.PropertyName == nameof(InvoiceItemModel.LM) ||
                 e.PropertyName == nameof(InvoiceItemModel.TotalLM) ||
+                e.PropertyName == nameof(InvoiceItemModel.LM1) ||
+                e.PropertyName == nameof(InvoiceItemModel.LM2) ||
                 e.PropertyName == nameof(InvoiceItemModel.TotalPrice) ||
                 e.PropertyName == nameof(InvoiceItemModel.Qty) ||
                 e.PropertyName == nameof(InvoiceItemModel.DisplayPrice) ||
@@ -405,6 +410,34 @@ namespace ProGlassAutomation.Models
         public double SurchargeThreshold => 4;
 
         // ==================== TOTALS ====================
+        private double _specTotalSQM1 = 0;
+        public double SpecTotalSQM1
+        {
+            get => _specTotalSQM1;
+            private set
+            {
+                if (_specTotalSQM1 != value)
+                {
+                    _specTotalSQM1 = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private double _specTotalSQM2 = 0;
+        public double SpecTotalSQM2
+        {
+            get => _specTotalSQM2;
+            private set
+            {
+                if (_specTotalSQM2 != value)
+                {
+                    _specTotalSQM2 = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
         private double _specTotalSQM = 0;
         public double SpecTotalSQM
         {
@@ -428,6 +461,36 @@ namespace ProGlassAutomation.Models
                 if (_specTotalLM != value)
                 {
                     _specTotalLM = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        // ✅ LM1 Total = Sum of (LM1 × Qty) for all items
+        private double _specTotalLM1 = 0;
+        public double SpecTotalLM1
+        {
+            get => _specTotalLM1;
+            private set
+            {
+                if (_specTotalLM1 != value)
+                {
+                    _specTotalLM1 = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        // ✅ LM2 Total = Sum of (LM2 × Qty) for all items
+        private double _specTotalLM2 = 0;
+        public double SpecTotalLM2
+        {
+            get => _specTotalLM2;
+            private set
+            {
+                if (_specTotalLM2 != value)
+                {
+                    _specTotalLM2 = value;
                     OnPropertyChanged();
                 }
             }
@@ -465,34 +528,60 @@ namespace ProGlassAutomation.Models
         // ==================== CALCULATE SPEC TOTALS ====================
         public void CalculateSpecTotals()
         {
-            double sqm = 0, lm = 0;
+            double sqm1 = 0, sqm2 = 0, sqm = 0, lm = 0, lm1 = 0, lm2 = 0;
             int qty = 0;
             double price = 0;
 
             foreach (var item in Items)
             {
+                sqm1 += item.SQM1 * item.Qty;
+                sqm2 += item.SQM2 * item.Qty;
                 sqm += item.TotalSQM;
                 lm += item.TotalLM;
+                lm1 += item.LM1 * item.Qty;
+                lm2 += item.LM2 * item.Qty;
                 qty += item.Qty;
                 price += item.TotalPrice;
             }
 
+            SpecTotalSQM1 = Math.Round(sqm1, 4);
+            SpecTotalSQM2 = Math.Round(sqm2, 4);
             SpecTotalSQM = Math.Round(sqm, 4);
             SpecTotalLM = Math.Round(lm, 4);
+            SpecTotalLM1 = Math.Round(lm1, 4);
+            SpecTotalLM2 = Math.Round(lm2, 4);
             SpecTotalQty = qty;
             SpecTotalPrice = Math.Round(price, 2);
         }
 
+        // ==================== RENUMBER ITEMS (Called from Invoice) ====================
+        public void RenumberItems()
+        {
+            // This method is called by the parent invoice to renumber all items across all specs
+            // Individual spec items don't need local SR numbers
+        }
+
         // ==================== ADD ITEM METHOD ====================
-        public InvoiceItemModel AddItem()
+        public InvoiceItemModel AddItem(int nextSrNo)
         {
             var item = new InvoiceItemModel
             {
-                Specification = this,  // ✅ Link to parent spec
-                SrNo = Items.Count + 1
+                Specification = this,
+                SrNo = nextSrNo
             };
             Items.Add(item);
             return item;
+        }
+
+        // ==================== REMOVE ITEM METHOD ====================
+        public void RemoveItem(InvoiceItemModel item)
+        {
+            if (Items.Contains(item))
+            {
+                item.PropertyChanged -= Item_PropertyChanged;
+                Items.Remove(item);
+                CalculateSpecTotals();
+            }
         }
 
         // ==================== CALCULATE TOTALS (Wrapper for ViewModel compatibility) ====================
