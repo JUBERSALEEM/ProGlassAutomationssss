@@ -488,7 +488,13 @@ namespace ProGlassAutomation.ViewModels
                 spec.Items.Add(firstItem);
             }
             Invoice.Specifications.Add(spec);
-            SelectedTargetSpecification = spec;
+
+            // Keep Other Charges section visible - only auto-select if no spec was selected
+            if (SelectedTargetSpecification == null)
+            {
+                SelectedTargetSpecification = spec;
+            }
+
             SubscribeToOtherChargeChanges();
             RefreshAllChargeAutoValues();
         }
