@@ -559,15 +559,12 @@ namespace ProGlassAutomation.ViewModels
             if (spec == null) return;
 
             int nextSrNo = GetNextSrNo();
-            var newItem = new InvoiceItemModel
-            {
-                SrNo = nextSrNo,
-                Specification = spec,
-                // ✅ Set raw BasePrice only (no surcharge in backing field)
-                Price = spec.BasePrice
-            };
+            var newItem = spec.AddItem(nextSrNo);
+            newItem.Price = spec.BasePrice;
+            newItem.SurchargePercent = spec.SurchargePercent;
 
-            spec.Items.Add(newItem);
+            // ✅ Trigger automatic renumbering of all specs
+            spec.RenumberItems();
             Invoice.IsDirty = true;
         }
 
@@ -1073,13 +1070,6 @@ namespace ProGlassAutomation.ViewModels
                 var importedInvoice = _excelCsvService.ImportFromCsv();
                 if (importedInvoice == null) { StatusMessage = "❌ Import returned null"; return; }
 
-                foreach (var spec in importedInvoice.Specifications)
-                {
-                    if (spec.Items == null) spec.Items = new ObservableCollection<InvoiceItemModel>();
-                    spec.CalculateTotals();
-                }
-                RenumberAllSrNumbers();
-
                 Invoice = new ProformaInvoiceModel
                 {
                     InvoiceNo = importedInvoice.InvoiceNo,
@@ -1090,7 +1080,21 @@ namespace ProGlassAutomation.ViewModels
                     Specifications = importedInvoice.Specifications
                 };
 
-                foreach (var spec in Invoice.Specifications) spec.Invoice = Invoice;
+                // ✅ Ensure all specs are properly linked to Invoice BEFORE renumbering
+                foreach (var spec in Invoice.Specifications)
+                {
+                    spec.Invoice = Invoice;
+                    // ✅ Reset SrNo to 0 so RenumberAllSrNumbers can set proper values
+                    foreach (var item in spec.Items)
+                    {
+                        item.SrNo = 0;
+                    }
+                    spec.CalculateTotals();
+                }
+
+                // ✅ Now renumber all SRs in sequence
+                RenumberAllSrNumbers();
+
                 SubscribeToOtherChargeChanges();
 
                 SelectedTargetSpecification = Invoice.Specifications.FirstOrDefault();

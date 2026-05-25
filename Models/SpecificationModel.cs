@@ -554,11 +554,20 @@ namespace ProGlassAutomation.Models
             SpecTotalPrice = Math.Round(price, 2);
         }
 
-        // ==================== RENUMBER ITEMS (Called from Invoice) ====================
+        // ==================== RENUMBER ITEMS ====================
         public void RenumberItems()
         {
-            // This method is called by the parent invoice to renumber all items across all specs
-            // Individual spec items don't need local SR numbers
+            if (Invoice?.Specifications == null) return;
+
+            int srNo = 1;
+            foreach (var spec in Invoice.Specifications)
+            {
+                foreach (var item in spec.Items)
+                {
+                    item.SrNo = srNo;
+                    srNo++;
+                }
+            }
         }
 
         // ==================== ADD ITEM METHOD ====================
