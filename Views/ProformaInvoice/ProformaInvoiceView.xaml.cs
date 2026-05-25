@@ -286,33 +286,27 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         {
             try
             {
-                var printPreview = new ProformaInvoicePrintPreviewView
-                {
-                    DataContext = DataContext
-                };
+                var previewWindow = new ProformaInvoicePrintPreviewView();
+                previewWindow.DataContext = DataContext;
 
                 var printDialog = new PrintDialog();
                 if (printDialog.ShowDialog() == true)
                 {
-                    var content = printPreview.Content as FrameworkElement;
-                    if (content != null)
+                    var pageWidth = printDialog.PrintableAreaWidth;
+                    var pageHeight = printDialog.PrintableAreaHeight;
+                    var contentWidth = previewWindow.ActualWidth;
+                    var contentHeight = previewWindow.ActualHeight;
+
+                    if (contentWidth > 0 && contentHeight > 0)
                     {
-                        var pageWidth = printDialog.PrintableAreaWidth;
-                        var pageHeight = printDialog.PrintableAreaHeight;
-                        var contentWidth = content.ActualWidth;
-                        var contentHeight = content.ActualHeight;
-
-                        if (contentWidth > 0 && contentHeight > 0)
-                        {
-                            var scaleX = pageWidth / contentWidth;
-                            var scaleY = pageHeight / contentHeight;
-                            var scale = Math.Min(scaleX, scaleY);
-                            content.LayoutTransform = new System.Windows.Media.ScaleTransform(scale, scale);
-                        }
-
-                        printDialog.PrintVisual(content, "ProForma Invoice");
-                        content.LayoutTransform = null;
+                        var scaleX = pageWidth / contentWidth;
+                        var scaleY = pageHeight / contentHeight;
+                        var scale = Math.Min(scaleX, scaleY);
+                        previewWindow.LayoutTransform = new System.Windows.Media.ScaleTransform(scale, scale);
                     }
+
+                    printDialog.PrintVisual(previewWindow, "ProForma Invoice");
+                    previewWindow.LayoutTransform = null;
                 }
             }
             catch (System.Exception ex)
@@ -325,28 +319,19 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         {
             try
             {
-                var printPreview = new ProformaInvoicePrintPreviewView
-                {
-                    DataContext = DataContext
-                };
-
-                var scrollViewer = new ScrollViewer
-                {
-                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                    HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
-                    Content = printPreview
-                };
+                var previewWindow = new ProformaInvoicePrintPreviewView();
+                previewWindow.DataContext = DataContext;
 
                 var window = new Window
                 {
-                    Content = scrollViewer,
+                    Content = previewWindow,
                     Title = "Print Preview - ProForma Invoice",
                     Width = 1100,
                     Height = 800,
                     WindowStartupLocation = WindowStartupLocation.CenterScreen
                 };
 
-                window.Show();
+                window.ShowDialog();
             }
             catch (System.Exception ex)
             {
