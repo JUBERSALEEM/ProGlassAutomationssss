@@ -3,9 +3,11 @@ using ProGlassAutomation.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace ProGlassAutomation.Views.ProformaInvoice
 {
@@ -38,11 +40,10 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             set => SetValue(HasOtherChargesProperty, value);
         }
 
-        // A4 Page dimensions at 96 DPI
         private const double A4_WIDTH_PX = 794;
         private const double A4_HEIGHT_PX = 1123;
-        private const double MARGIN_LEFT_RIGHT = 67;   // ~0.7 inch
-        private const double MARGIN_TOP_BOTTOM = 29;   // ~0.3 inch
+        private const double MARGIN_LEFT_RIGHT = 67;
+        private const double MARGIN_TOP_BOTTOM = 29;
 
         private bool _isLandscape = false;
         private ObservableCollection<PageModel> _pages = new ObservableCollection<PageModel>();
@@ -146,82 +147,288 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 if (specs.Count == 0)
                     specs.Add(new SpecificationModel { SpecificationName = "No Items", Items = new ObservableCollection<InvoiceItemModel>() });
 
-                // ============================================
-                // PAGE HEIGHT CALCULATIONS (Updated for compact design)
-                // ============================================
-                double pageHeight = 1065;
-                double firstPageHeader = 200;   // Header + Invoice info + Project details
-                double continuationHeader = 40; // Minimal header for continuation pages
-                double lastPageFooter = 200;    // Other charges + Summary + Net Total + Footer
-                double otherPageFooter = 25;     // Just footer for non-last pages
-                double specHeaderHeight = 20;   // Spec title bar
-                double specFooterHeight = 20;   // Spec total bar
-                double rowHeight = 18;          // Data grid row
-
-                // Calculate available height per page
-                double firstPageAvailable = pageHeight - firstPageHeader - otherPageFooter;
-                double continuationAvailable = pageHeight - continuationHeader - otherPageFooter;
-
-                // ============================================
-                // SPLIT SPECS INTO PAGES
-                // ============================================
-                var pages = new List<List<SpecificationModel>>();
-                var currentPageSpecs = new List<SpecificationModel>();
-                double currentHeight = 0;
-                bool isFirstPage = true;
-
+                var allItems = new List<ItemWithSpec>();
                 foreach (var spec in specs)
                 {
-                    int itemCount = spec.Items?.Count ?? 0;
-                    double specTotalHeight = specHeaderHeight + (itemCount * rowHeight) + specFooterHeight;
-
-                    double available = isFirstPage ? firstPageAvailable : continuationAvailable;
-
-                    if (currentHeight + specTotalHeight > available && currentPageSpecs.Count > 0)
+                    var items = spec.Items?.ToList() ?? new List<InvoiceItemModel>();
+                    if (items.Count == 0)
                     {
-                        // Move to next page
-                        pages.Add(currentPageSpecs);
-                        currentPageSpecs = new List<SpecificationModel>();
-                        currentHeight = 0;
-                        isFirstPage = false;
+                        items.Add(new InvoiceItemModel { SrNo = 1, GlassRef = "No items", Qty = 1 });
                     }
-
-                    currentPageSpecs.Add(spec);
-                    currentHeight += specTotalHeight;
+                    foreach (var item in items)
+                    {
+                        allItems.Add(new ItemWithSpec { Spec = spec, Item = item });
+                    }
                 }
 
-                // Add last page
+                double pageContentHeight = 1065;
+                double pageBadgeHeight = 24;
+                double footerHeight = 24;
+                double netTotalHeight = 40;
+                double summaryHeight = 60;
+                double otherChargesHeight = 80;
+                double firstPageHeaderHeight = 160;
+                double continuationHeaderHeight = 32;
+                double bfRowHeight = 36;
+                double specHeaderHeight = 26;
+                double specFooterHeight = 26;
+                double rowHeight = 18;
+                double specMargin = 3;
+                double specBorderPadding = 6;
+
+                double firstPageAvailable = pageContentHeight - pageBadgeHeight - firstPageHeaderHeight - summaryHeight - netTotalHeight - otherChargesHeight - footerHeight;
+                double continuationPageAvailable = pageContentHeight - pageBadgeHeight - continuationHeaderHeight - bfRowHeight - footerHeight;
+                double lastPageAvailable = pageContentHeight - pageBadgeHeight - continuationHeaderHeight - bfRowHeight - summaryHeight - netTotalHeight - otherChargesHeight - footerHeight;
+
+                double safetyBuffer = rowHeight * 3;
+                firstPageAvailable -= safetyBuffer;
+                continuationPageAvailable -= safetyBuffer;
+                lastPageAvailable -= safetyBuffer;
+
+                if (firstPageAvailable < 50) firstPageAvailable = 50;
+                if (continuationPageAvailable < 50) continuationPageAvailable = 50;
+                if (lastPageAvailable < 50) lastPageAvailable = 50;
+
+                var pageContents = new List<PageContent>();
+                var currentPageSpecs = new List<SpecWithItems>();
+                double currentPageHeight = 0;
+                bool isFirstPage = true;
+                int currentSpecId = -1;
+                var itemsForCurrentSpec = new List<InvoiceItemModel>();
+                int specContinuationCount = 0;
+
+                foreach (var itemWithSpec in allItems)
+                {
+                    var spec = itemWithSpec.Spec;
+                    var item = itemWithSpec.Item;
+
+                    double available = isFirstPage ? firstPageAvailable : continuationPageAvailable;
+
+                    if (spec.Id != currentSpecId)
+                    {
+                        if (itemsForCurrentSpec.Count > 0 && currentSpecId >= 0)
+                        {
+                            var prevSpec = specs.FirstOrDefault(s => s.Id == currentSpecId);
+                            if (prevSpec != null)
+                            {
+                                double specBlockHeight = specHeaderHeight + (itemsForCurrentSpec.Count * rowHeight) + specFooterHeight + specMargin + specBorderPadding;
+
+                                if (currentPageHeight + specBlockHeight > available && currentPageSpecs.Count > 0)
+                                {
+                                    pageContents.Add(new PageContent
+                                    {
+                                        IsFirstPage = isFirstPage,
+                                        IsLastPage = false,
+                                        Specs = new List<SpecWithItems>(currentPageSpecs)
+                                    });
+                                    currentPageSpecs.Clear();
+                                    currentPageHeight = 0;
+                                    isFirstPage = false;
+                                    available = continuationPageAvailable;
+                                    specContinuationCount = 0;
+                                }
+
+                                currentPageSpecs.Add(new SpecWithItems
+                                {
+                                    Specification = prevSpec,
+                                    Items = new List<InvoiceItemModel>(itemsForCurrentSpec),
+                                    IsContinuation = false,
+                                    ContinuationCount = 0
+                                });
+                                currentPageHeight += specBlockHeight;
+                            }
+                            itemsForCurrentSpec.Clear();
+                        }
+
+                        double minSpecHeight = specHeaderHeight + specFooterHeight + specMargin + specBorderPadding;
+                        if (currentPageHeight + minSpecHeight > available && currentPageSpecs.Count > 0)
+                        {
+                            pageContents.Add(new PageContent
+                            {
+                                IsFirstPage = isFirstPage,
+                                IsLastPage = false,
+                                Specs = new List<SpecWithItems>(currentPageSpecs)
+                            });
+                            currentPageSpecs.Clear();
+                            currentPageHeight = 0;
+                            isFirstPage = false;
+                            available = continuationPageAvailable;
+                            specContinuationCount = 0;
+                        }
+
+                        currentSpecId = spec.Id;
+                        specContinuationCount = 0;
+                    }
+
+                    double currentSpecHeight = specHeaderHeight + ((itemsForCurrentSpec.Count + 1) * rowHeight) + specFooterHeight + specMargin + specBorderPadding;
+                    double potentialPageHeight = currentPageHeight + currentSpecHeight;
+
+                    if (potentialPageHeight > available && itemsForCurrentSpec.Count > 0)
+                    {
+                        var currentSpec = specs.FirstOrDefault(s => s.Id == currentSpecId);
+                        if (currentSpec != null)
+                        {
+                            double currentSpecBlockHeight = specHeaderHeight + (itemsForCurrentSpec.Count * rowHeight) + specFooterHeight + specMargin + specBorderPadding;
+
+                            currentPageSpecs.Add(new SpecWithItems
+                            {
+                                Specification = currentSpec,
+                                Items = new List<InvoiceItemModel>(itemsForCurrentSpec),
+                                IsContinuation = specContinuationCount > 0,
+                                ContinuationCount = specContinuationCount
+                            });
+                            currentPageHeight += currentSpecBlockHeight;
+                        }
+
+                        itemsForCurrentSpec.Clear();
+                        itemsForCurrentSpec.Add(item);
+                        specContinuationCount++;
+
+                        double newSpecHeight = specHeaderHeight + rowHeight + specFooterHeight + specMargin + specBorderPadding;
+                        if (currentPageHeight + newSpecHeight > available)
+                        {
+                            pageContents.Add(new PageContent
+                            {
+                                IsFirstPage = isFirstPage,
+                                IsLastPage = false,
+                                Specs = new List<SpecWithItems>(currentPageSpecs)
+                            });
+                            currentPageSpecs.Clear();
+                            currentPageHeight = 0;
+                            isFirstPage = false;
+                            available = continuationPageAvailable;
+                            specContinuationCount = 0;
+
+                            var continuationSpec = specs.FirstOrDefault(s => s.Id == currentSpecId);
+                            if (continuationSpec != null)
+                            {
+                                currentPageSpecs.Add(new SpecWithItems
+                                {
+                                    Specification = continuationSpec,
+                                    Items = new List<InvoiceItemModel>(itemsForCurrentSpec),
+                                    IsContinuation = true,
+                                    ContinuationCount = 1
+                                });
+                                currentPageHeight = specHeaderHeight + rowHeight + specFooterHeight + specMargin + specBorderPadding;
+                            }
+                            itemsForCurrentSpec.Clear();
+                        }
+                    }
+                    else
+                    {
+                        itemsForCurrentSpec.Add(item);
+                    }
+                }
+
+                if (itemsForCurrentSpec.Count > 0)
+                {
+                    var lastSpec = specs.FirstOrDefault(s => s.Id == currentSpecId);
+                    if (lastSpec != null)
+                    {
+                        double lastSpecBlockHeight = specHeaderHeight + (itemsForCurrentSpec.Count * rowHeight) + specFooterHeight + specMargin + specBorderPadding;
+
+                        if (currentPageHeight + lastSpecBlockHeight > continuationPageAvailable && currentPageSpecs.Count > 0)
+                        {
+                            pageContents.Add(new PageContent
+                            {
+                                IsFirstPage = isFirstPage,
+                                IsLastPage = false,
+                                Specs = new List<SpecWithItems>(currentPageSpecs)
+                            });
+                            currentPageSpecs.Clear();
+                            currentPageHeight = 0;
+                            isFirstPage = false;
+                        }
+
+                        currentPageSpecs.Add(new SpecWithItems
+                        {
+                            Specification = lastSpec,
+                            Items = new List<InvoiceItemModel>(itemsForCurrentSpec),
+                            IsContinuation = specContinuationCount > 0,
+                            ContinuationCount = specContinuationCount
+                        });
+                        currentPageHeight += lastSpecBlockHeight;
+                    }
+                }
+
                 if (currentPageSpecs.Count > 0)
                 {
-                    pages.Add(currentPageSpecs);
+                    double lastPageSectionsHeight = summaryHeight + netTotalHeight + otherChargesHeight + footerHeight + pageBadgeHeight + continuationHeaderHeight + bfRowHeight + safetyBuffer;
+                    double remainingHeight = continuationPageAvailable - currentPageHeight;
+
+                    if (remainingHeight >= lastPageSectionsHeight)
+                    {
+                        pageContents.Add(new PageContent
+                        {
+                            IsFirstPage = isFirstPage,
+                            IsLastPage = true,
+                            Specs = new List<SpecWithItems>(currentPageSpecs)
+                        });
+                    }
+                    else
+                    {
+                        pageContents.Add(new PageContent
+                        {
+                            IsFirstPage = isFirstPage,
+                            IsLastPage = false,
+                            Specs = new List<SpecWithItems>(currentPageSpecs)
+                        });
+
+                        pageContents.Add(new PageContent
+                        {
+                            IsFirstPage = false,
+                            IsLastPage = true,
+                            Specs = new List<SpecWithItems>()
+                        });
+                    }
                 }
 
-                // Ensure at least one page
-                if (pages.Count == 0)
-                    pages.Add(new List<SpecificationModel>());
+                if (pageContents.Count == 0)
+                    pageContents.Add(new PageContent { IsFirstPage = true, IsLastPage = true, Specs = new List<SpecWithItems>() });
 
-                // ============================================
-                // CREATE PAGE MODELS WITH CUMULATIVE BALANCES
-                // ============================================
-                int totalPages = pages.Count;
+                if (pageContents.Count > 0)
+                {
+                    for (int i = 0; i < pageContents.Count - 1; i++)
+                        pageContents[i].IsLastPage = false;
+                    pageContents[pageContents.Count - 1].IsLastPage = true;
+                }
+
+                int totalPages = pageContents.Count;
                 double cumQty = 0, cumSQM = 0, cumLM = 0, cumPrice = 0;
 
-                for (int i = 0; i < pages.Count; i++)
+                for (int i = 0; i < pageContents.Count; i++)
                 {
                     bool isFirst = i == 0;
-                    bool isLast = i == pages.Count - 1;
+                    bool isLast = pageContents[i].IsLastPage;
 
-                    // Calculate page totals
                     double pageQty = 0, pageSQM = 0, pageLM = 0, pagePrice = 0;
-                    foreach (var spec in pages[i])
+                    var specsForPage = new List<SpecificationModel>();
+
+                    foreach (var specItem in pageContents[i].Specs)
                     {
-                        pageQty += spec.SpecTotalQty;
-                        pageSQM += spec.SpecTotalSQM;
-                        pageLM += spec.SpecTotalLM;
-                        pagePrice += spec.SpecTotalPrice;
+                        var spec = specItem.Specification;
+
+                        var specCopy = new SpecificationModel
+                        {
+                            Id = spec.Id,
+                            SpecificationName = spec.SpecificationName + (specItem.IsContinuation ? " (Cont.)" : ""),
+                            ModuleType = spec.ModuleType,
+                            WorkType = spec.WorkType,
+                            BasePrice = spec.BasePrice,
+                            SurchargePercent = spec.SurchargePercent,
+                            Items = new ObservableCollection<InvoiceItemModel>(specItem.Items)
+                        };
+
+                        specCopy.CalculateSpecTotals();
+
+                        pageQty += specCopy.SpecTotalQty;
+                        pageSQM += specCopy.SpecTotalSQM;
+                        pageLM += specCopy.SpecTotalLM;
+                        pagePrice += specCopy.SpecTotalPrice;
+
+                        specsForPage.Add(specCopy);
                     }
 
-                    // Update cumulative
                     cumQty += pageQty;
                     cumSQM += pageSQM;
                     cumLM += pageLM;
@@ -234,9 +441,8 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                         IsFirstPage = isFirst,
                         IsLastPage = isLast,
                         PreviousPageNo = i,
-                        Specifications = new ObservableCollection<SpecificationModel>(pages[i]),
+                        Specifications = new ObservableCollection<SpecificationModel>(specsForPage),
 
-                        // Header data
                         CompanyName = vm.CompanyName,
                         CompanyTRN = vm.CompanyTRN,
                         CompanyLocation = vm.CompanyLocation,
@@ -252,13 +458,11 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                         AttentionName = invoice.AttentionName,
                         ContactNo = invoice.ContactNo,
 
-                        // Balance C/F (cumulative after this page)
                         PageTotalQty = cumQty,
                         PageTotalSQM = cumSQM,
                         PageTotalLM = cumLM,
                         PageTotalPrice = cumPrice,
 
-                        // Grand totals (always show full totals)
                         TotalSQM = invoice.TotalSQM,
                         TotalLM = invoice.TotalLM,
                         TotalQty = invoice.TotalQty,
@@ -276,7 +480,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"GeneratePages error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"GeneratePages error: {ex.Message}\n{ex.StackTrace}");
             }
         }
 
@@ -287,13 +491,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 var printDialog = new PrintDialog();
                 if (printDialog == null || !printDialog.ShowDialog().GetValueOrDefault()) return;
 
-                double contentWidth = A4_WIDTH_PX - (MARGIN_LEFT_RIGHT * 2);
-                double contentHeight = A4_HEIGHT_PX - (MARGIN_TOP_BOTTOM * 2);
-
-                double scaleX = printDialog.PrintableAreaWidth / contentWidth;
-                double scaleY = printDialog.PrintableAreaHeight / contentHeight;
-                double scale = Math.Min(scaleX, scaleY);
-                scale = Math.Min(scale, 1.0);
+                Dispatcher.Invoke(new Action(() => { }), System.Windows.Threading.DispatcherPriority.Render);
 
                 foreach (var page in _pages)
                 {
@@ -303,9 +501,29 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                         var border = FindChild<Border>(container, "PreviewPage");
                         if (border != null)
                         {
-                            border.LayoutTransform = new ScaleTransform(scale, scale);
-                            printDialog.PrintVisual(border, $"ProForma Invoice - Page {page.PageNumber}");
-                            border.LayoutTransform = null;
+                            border.UpdateLayout();
+                            border.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+                            border.Arrange(new Rect(border.DesiredSize));
+
+                            int pixelWidth = (int)Math.Ceiling(border.ActualWidth * 96 / 96);
+                            int pixelHeight = (int)Math.Ceiling(border.ActualHeight * 96 / 96);
+
+                            if (pixelWidth <= 0) pixelWidth = 794;
+                            if (pixelHeight <= 0) pixelHeight = 1123;
+
+                            var renderBitmap = new RenderTargetBitmap(
+                                pixelWidth,
+                                pixelHeight,
+                                96, 96, PixelFormats.Pbgra32);
+
+                            renderBitmap.Render(border);
+
+                            var visual = new Image();
+                            visual.Source = renderBitmap;
+                            visual.Width = border.ActualWidth;
+                            visual.Height = border.ActualHeight;
+
+                            printDialog.PrintVisual(visual, $"ProForma Invoice - Page {page.PageNumber}");
                         }
                     }
                 }
@@ -363,13 +581,11 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         public string AttentionName { get; set; }
         public string ContactNo { get; set; }
 
-        // Balance C/F (cumulative after this page)
         public double PageTotalQty { get; set; }
         public double PageTotalSQM { get; set; }
         public double PageTotalLM { get; set; }
         public double PageTotalPrice { get; set; }
 
-        // Grand totals
         public double TotalSQM { get; set; }
         public double TotalLM { get; set; }
         public int TotalQty { get; set; }
@@ -389,5 +605,26 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         public string ValueDisplay { get; set; }
         public double Rate { get; set; }
         public string AmountDisplay { get; set; }
+    }
+
+    public class PageContent
+    {
+        public bool IsFirstPage { get; set; }
+        public bool IsLastPage { get; set; }
+        public List<SpecWithItems> Specs { get; set; } = new List<SpecWithItems>();
+    }
+
+    public class SpecWithItems
+    {
+        public SpecificationModel Specification { get; set; }
+        public List<InvoiceItemModel> Items { get; set; } = new List<InvoiceItemModel>();
+        public bool IsContinuation { get; set; }
+        public int ContinuationCount { get; set; }
+    }
+
+    public class ItemWithSpec
+    {
+        public SpecificationModel Spec { get; set; }
+        public InvoiceItemModel Item { get; set; }
     }
 }

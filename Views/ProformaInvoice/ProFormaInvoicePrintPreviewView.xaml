@@ -93,635 +93,588 @@
         </Border>
 
         <!-- Preview Area -->
-        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" PanningMode="Both" Background="#94A3B8">
-            <ItemsControl x:Name="PagesContainer" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="16">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <!-- A4 Page: 794px wide x 1123px tall -->
-                        <Border x:Name="PreviewPage" Background="White" BorderBrush="#64748B" BorderThickness="1" Margin="0,0,0,16" Width="794" Height="1123">
-                            <Grid Margin="67,29,67,29">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
+        <Grid Grid.Row="1" x:Name="PrintAreaContainer">
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" PanningMode="Both" Background="#94A3B8">
+                <ItemsControl x:Name="PagesContainer" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="16">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border x:Name="PreviewPage" Background="White" BorderBrush="#64748B" BorderThickness="1" Margin="0,0,0,16" Width="794" Height="1123">
+                                <Grid Margin="67,29,67,29">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="40"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
 
-                                <!-- Page Badge -->
-                                <Border Grid.Row="0" Background="#1E3A5F" Padding="6,2" CornerRadius="2" HorizontalAlignment="Right" Margin="0,0,0,4">
-                                    <TextBlock FontSize="7" FontWeight="Bold" Foreground="White" FontFamily="{StaticResource PrimaryFont}">
-                                        <Run Text="PAGE "/><Run Text="{Binding PageNumber}"/><Run Text=" OF "/><Run Text="{Binding TotalPages}"/>
-                                    </TextBlock>
-                                </Border>
+                                    <!-- Page Badge -->
+                                    <Border Grid.Row="0" Background="#1E3A5F" Padding="6,2" CornerRadius="2" HorizontalAlignment="Right" Margin="0,0,0,4">
+                                        <TextBlock FontSize="7" FontWeight="Bold" Foreground="White" FontFamily="{StaticResource PrimaryFont}">
+                                            <Run Text="PAGE "/><Run Text="{Binding PageNumber}"/><Run Text=" OF "/><Run Text="{Binding TotalPages}"/>
+                                        </TextBlock>
+                                    </Border>
 
-                                <!-- ============================================ -->
-                                <!-- FIRST PAGE HEADER (Company + Invoice Info) -->
-                                <!-- ============================================ -->
-                                <StackPanel Grid.Row="1" Visibility="{Binding IsFirstPage, Converter={StaticResource BoolToVis}}">
-                                    <!-- Company Header -->
-                                    <Border BorderBrush="#1E3A5F" BorderThickness="0,0,0,2" Padding="0,0,0,6" Margin="0,0,0,6">
+                                    <!-- FIRST PAGE HEADER -->
+                                    <StackPanel Grid.Row="1" Visibility="{Binding IsFirstPage, Converter={StaticResource BoolToVis}}">
+                                        <Border BorderBrush="#1E3A5F" BorderThickness="0,0,0,2" Padding="0,0,0,6" Margin="0,0,0,6">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <StackPanel Grid.Column="0">
+                                                    <TextBlock Text="{Binding CompanyName}" Style="{StaticResource HeaderText}"/>
+                                                    <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                                        <TextBlock Text="TRN: " Style="{StaticResource LabelText}"/>
+                                                        <TextBlock Text="{Binding CompanyTRN}" Style="{StaticResource ValueText}"/>
+                                                        <TextBlock Text="  |  " Style="{StaticResource LabelText}"/>
+                                                        <TextBlock Text="{Binding CompanyLocation}" Style="{StaticResource ValueText}"/>
+                                                    </StackPanel>
+                                                </StackPanel>
+
+                                                <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                                                    <TextBlock Text="PROFORMA INVOICE" Style="{StaticResource TitleText}"/>
+                                                    <StackPanel Orientation="Horizontal" Margin="0,3,0,0" HorizontalAlignment="Right">
+                                                        <TextBlock Text="Date: " Style="{StaticResource LabelText}"/>
+                                                        <TextBlock Text="{Binding InvoiceDate, StringFormat='dd MMM yyyy'}" Style="{StaticResource ValueText}"/>
+                                                        <TextBlock Text="  |  " Style="{StaticResource LabelText}"/>
+                                                        <TextBlock Text="Valid: " Style="{StaticResource LabelText}"/>
+                                                        <TextBlock Text="{Binding ValidUntil, StringFormat='dd MMM yyyy'}" Style="{StaticResource ValueText}"/>
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+
+                                        <Border BorderBrush="#E5E7EB" BorderThickness="1" Background="#F8FAFC" Padding="6,4" Margin="0,0,0,6" CornerRadius="2">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <StackPanel Grid.Column="0">
+                                                    <TextBlock Text="INVOICE NUMBER" Style="{StaticResource LabelText}"/>
+                                                    <TextBlock Text="{Binding InvoiceNo}" FontSize="9" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,2,0,0"/>
+                                                </StackPanel>
+
+                                                <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                                                    <TextBlock Text="BILL TO" Style="{StaticResource LabelText}" HorizontalAlignment="Right"/>
+                                                    <TextBlock Text="{Binding CustomerName}" FontSize="9" FontWeight="SemiBold" Foreground="#1F2937" HorizontalAlignment="Right" Margin="0,2,0,0"/>
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,1,0,0">
+                                                        <TextBlock Text="TRN: " Style="{StaticResource LabelText}"/>
+                                                        <TextBlock Text="{Binding CustomerTRN}" Style="{StaticResource LabelText}"/>
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+
+                                        <Border Background="#EEF2F7" Padding="6,4" Margin="0,0,0,6" CornerRadius="2">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="70"/>
+                                                    <ColumnDefinition Width="70"/>
+                                                    <ColumnDefinition Width="70"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <StackPanel Grid.Column="0">
+                                                    <TextBlock Text="PROJECT" Style="{StaticResource LabelText}"/>
+                                                    <TextBlock Text="{Binding ProjectName}" FontSize="9" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,2,0,0"/>
+                                                    <StackPanel Orientation="Horizontal" Margin="0,1,0,0">
+                                                        <TextBlock Text="Loc: " Style="{StaticResource LabelText}"/>
+                                                        <TextBlock Text="{Binding ProjectLocation}" Style="{StaticResource ValueText}"/>
+                                                    </StackPanel>
+                                                </StackPanel>
+
+                                                <StackPanel Grid.Column="1">
+                                                    <TextBlock Text="LPO" Style="{StaticResource LabelText}"/>
+                                                    <TextBlock Text="{Binding LPONo}" FontSize="9" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,2,0,0"/>
+                                                </StackPanel>
+
+                                                <StackPanel Grid.Column="2">
+                                                    <TextBlock Text="ATTN" Style="{StaticResource LabelText}"/>
+                                                    <TextBlock Text="{Binding AttentionName}" FontSize="9" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,2,0,0"/>
+                                                </StackPanel>
+
+                                                <StackPanel Grid.Column="3">
+                                                    <TextBlock Text="CONTACT" Style="{StaticResource LabelText}"/>
+                                                    <TextBlock Text="{Binding ContactNo}" FontSize="9" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,2,0,0"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <!-- CONTINUATION PAGE HEADER -->
+                                    <Border Grid.Row="1" Background="#F8FAFC" Padding="6,4" Margin="0,0,0,6" CornerRadius="2"
+                                            BorderBrush="#E5E7EB" BorderThickness="1"
+                                            Visibility="{Binding IsFirstPage, Converter={StaticResource InverseBoolToVis}}">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
 
-                                            <StackPanel Grid.Column="0">
-                                                <TextBlock Text="{Binding CompanyName}" Style="{StaticResource HeaderText}"/>
-                                                <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
-                                                    <TextBlock Text="TRN: " Style="{StaticResource LabelText}"/>
-                                                    <TextBlock Text="{Binding CompanyTRN}" Style="{StaticResource ValueText}"/>
-                                                    <TextBlock Text="  |  " Style="{StaticResource LabelText}"/>
-                                                    <TextBlock Text="{Binding CompanyLocation}" Style="{StaticResource ValueText}"/>
-                                                </StackPanel>
+                                            <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                                <TextBlock Text="PROFORMA INVOICE" FontSize="10" FontWeight="Bold" Foreground="#1E3A5F" VerticalAlignment="Center"/>
+                                                <TextBlock Text=" - " FontSize="10" Foreground="#6B7280" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding InvoiceNo}" FontSize="10" Foreground="#6B7280" VerticalAlignment="Center"/>
                                             </StackPanel>
 
-                                            <StackPanel Grid.Column="1" HorizontalAlignment="Right">
-                                                <TextBlock Text="PROFORMA INVOICE" Style="{StaticResource TitleText}"/>
-                                                <StackPanel Orientation="Horizontal" Margin="0,3,0,0" HorizontalAlignment="Right">
-                                                    <TextBlock Text="Date: " Style="{StaticResource LabelText}"/>
-                                                    <TextBlock Text="{Binding InvoiceDate, StringFormat='dd MMM yyyy'}" Style="{StaticResource ValueText}"/>
-                                                    <TextBlock Text="  |  " Style="{StaticResource LabelText}"/>
-                                                    <TextBlock Text="Valid: " Style="{StaticResource LabelText}"/>
-                                                    <TextBlock Text="{Binding ValidUntil, StringFormat='dd MMM yyyy'}" Style="{StaticResource ValueText}"/>
-                                                </StackPanel>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                                <TextBlock Text="Continued from Page " FontSize="8" Foreground="#6B7280" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding PreviousPageNo}" FontSize="8" FontWeight="Bold" Foreground="#1E3A5F" VerticalAlignment="Center" Margin="4,0,0,0"/>
                                             </StackPanel>
                                         </Grid>
                                     </Border>
 
-                                    <!-- Invoice & Customer Info -->
-                                    <Border BorderBrush="#E5E7EB" BorderThickness="1" Background="#F8FAFC" Padding="6,4" Margin="0,0,0,6" CornerRadius="2">
+                                    <!-- BALANCE BROUGHT FORWARD -->
+                                    <Border Grid.Row="2" BorderBrush="#000000" BorderThickness="1" Background="#F8FAFC" Padding="8,5" CornerRadius="2" Margin="0,0,0,6"
+                                            Visibility="{Binding IsFirstPage, Converter={StaticResource InverseBoolToVis}}">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
 
-                                            <StackPanel Grid.Column="0">
-                                                <TextBlock Text="INVOICE NUMBER" Style="{StaticResource LabelText}"/>
-                                                <TextBlock Text="{Binding InvoiceNo}" FontSize="9" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,2,0,0"/>
+                                            <TextBlock Grid.Column="0" Text="BALANCE BROUGHT FORWARD (B/F)" FontSize="9" FontWeight="Bold" Foreground="Black" VerticalAlignment="Center"/>
+
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="20,0,0,0" VerticalAlignment="Center">
+                                                <TextBlock Text="Qty:" FontSize="8" Foreground="#374151" Margin="0,0,4,0"/>
+                                                <TextBlock Text="{Binding PageTotalQty, StringFormat=N0}" FontSize="9" FontWeight="Bold" Foreground="Black"/>
                                             </StackPanel>
 
-                                            <StackPanel Grid.Column="1" HorizontalAlignment="Right">
-                                                <TextBlock Text="BILL TO" Style="{StaticResource LabelText}" HorizontalAlignment="Right"/>
-                                                <TextBlock Text="{Binding CustomerName}" FontSize="9" FontWeight="SemiBold" Foreground="#1F2937" HorizontalAlignment="Right" Margin="0,2,0,0"/>
-                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,1,0,0">
-                                                    <TextBlock Text="TRN: " Style="{StaticResource LabelText}"/>
-                                                    <TextBlock Text="{Binding CustomerTRN}" Style="{StaticResource LabelText}"/>
-                                                </StackPanel>
+                                            <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="20,0,0,0" VerticalAlignment="Center">
+                                                <TextBlock Text="SQM:" FontSize="8" Foreground="#374151" Margin="0,0,4,0"/>
+                                                <TextBlock Text="{Binding PageTotalSQM, StringFormat=N4}" FontSize="9" FontWeight="Bold" Foreground="Black"/>
+                                            </StackPanel>
+
+                                            <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="20,0,0,0" VerticalAlignment="Center">
+                                                <TextBlock Text="LM:" FontSize="8" Foreground="#374151" Margin="0,0,4,0"/>
+                                                <TextBlock Text="{Binding PageTotalLM, StringFormat=N2}" FontSize="9" FontWeight="Bold" Foreground="Black"/>
+                                            </StackPanel>
+
+                                            <StackPanel Grid.Column="4" Orientation="Horizontal" Margin="20,0,0,0" VerticalAlignment="Center">
+                                                <TextBlock Text="AED:" FontSize="8" Foreground="#374151" Margin="0,0,4,0"/>
+                                                <TextBlock Text="{Binding PageTotalPrice, StringFormat=N2}" FontSize="9" FontWeight="Bold" Foreground="Black"/>
                                             </StackPanel>
                                         </Grid>
                                     </Border>
 
-                                    <!-- Project Details -->
-                                    <Border Background="#EEF2F7" Padding="6,4" Margin="0,0,0,6" CornerRadius="2">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="70"/>
-                                                <ColumnDefinition Width="70"/>
-                                                <ColumnDefinition Width="70"/>
-                                            </Grid.ColumnDefinitions>
+                                    <!-- SPECIFICATIONS DATA -->
+                                    <ItemsControl Grid.Row="3" ItemsSource="{Binding Specifications}" Margin="0,0,0,4">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border BorderBrush="#000000" BorderThickness="1" Margin="0,0,0,3" CornerRadius="2" Background="White">
+                                                    <Grid>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="Auto"/>
+                                                            <RowDefinition Height="Auto"/>
+                                                            <RowDefinition Height="Auto"/>
+                                                        </Grid.RowDefinitions>
 
-                                            <StackPanel Grid.Column="0">
-                                                <TextBlock Text="PROJECT" Style="{StaticResource LabelText}"/>
-                                                <TextBlock Text="{Binding ProjectName}" FontSize="9" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,2,0,0"/>
-                                                <StackPanel Orientation="Horizontal" Margin="0,1,0,0">
-                                                    <TextBlock Text="Loc: " Style="{StaticResource LabelText}"/>
-                                                    <TextBlock Text="{Binding ProjectLocation}" Style="{StaticResource ValueText}"/>
-                                                </StackPanel>
-                                            </StackPanel>
+                                                        <!-- Spec Header -->
+                                                        <Border Grid.Row="0" Background="White" BorderBrush="#000000" BorderThickness="0,0,0,1" Padding="5,3" CornerRadius="2,2,0,0">
+                                                            <TextBlock Text="{Binding SpecificationName}" FontSize="9" FontWeight="Bold" Foreground="Black" FontFamily="{StaticResource PrimaryFont}"/>
+                                                        </Border>
 
-                                            <StackPanel Grid.Column="1">
-                                                <TextBlock Text="LPO" Style="{StaticResource LabelText}"/>
-                                                <TextBlock Text="{Binding LPONo}" FontSize="9" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,2,0,0"/>
-                                            </StackPanel>
+                                                        <!-- DataGrid - PATCH 1: Virtualization DISABLED -->
+                                                        <DataGrid Grid.Row="1" 
+                                                                  ItemsSource="{Binding Items}" 
+                                                                  AutoGenerateColumns="False" 
+                                                                  IsReadOnly="True" 
+                                                                  BorderThickness="0" 
+                                                                  Background="White" 
+                                                                  GridLinesVisibility="All" 
+                                                                  HorizontalGridLinesBrush="#000000" 
+                                                                  VerticalGridLinesBrush="#000000" 
+                                                                  HeadersVisibility="Column" 
+                                                                  CanUserAddRows="False" 
+                                                                  FontSize="9" 
+                                                                  RowHeight="18"
+                                                                  FontFamily="{StaticResource PrimaryFont}"
+                                                                  EnableRowVirtualization="False"
+                                                                  EnableColumnVirtualization="False"
+                                                                  VirtualizingPanel.IsVirtualizing="False"
+                                                                  VirtualizingPanel.VirtualizationMode="Standard"
+                                                                  ScrollViewer.CanContentScroll="False">
 
-                                            <StackPanel Grid.Column="2">
-                                                <TextBlock Text="ATTN" Style="{StaticResource LabelText}"/>
-                                                <TextBlock Text="{Binding AttentionName}" FontSize="9" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,2,0,0"/>
-                                            </StackPanel>
+                                                            <DataGrid.ColumnHeaderStyle>
+                                                                <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource GridHeader}"/>
+                                                            </DataGrid.ColumnHeaderStyle>
+                                                            <DataGrid.CellStyle>
+                                                                <Style TargetType="DataGridCell" BasedOn="{StaticResource GridCell}"/>
+                                                            </DataGrid.CellStyle>
 
-                                            <StackPanel Grid.Column="3">
-                                                <TextBlock Text="CONTACT" Style="{StaticResource LabelText}"/>
-                                                <TextBlock Text="{Binding ContactNo}" FontSize="9" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,2,0,0"/>
-                                            </StackPanel>
-                                        </Grid>
-                                    </Border>
-                                </StackPanel>
+                                                            <DataGrid.Columns>
+                                                                <DataGridTextColumn Header="SR" Binding="{Binding SrNo}" Width="30">
+                                                                    <DataGridTextColumn.ElementStyle>
+                                                                        <Style TargetType="TextBlock">
+                                                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                                            <Setter Property="Background" Value="#F3F4F6"/>
+                                                                            <Setter Property="Foreground" Value="Black"/>
+                                                                            <Setter Property="FontSize" Value="9"/>
+                                                                        </Style>
+                                                                    </DataGridTextColumn.ElementStyle>
+                                                                </DataGridTextColumn>
 
-                                <!-- ============================================ -->
-                                <!-- CONTINUATION PAGE HEADER -->
-                                <!-- ============================================ -->
-                                <Border Grid.Row="1" Background="#F8FAFC" Padding="6,4" Margin="0,0,0,6" CornerRadius="2"
-                                        BorderBrush="#E5E7EB" BorderThickness="1"
-                                        Visibility="{Binding IsFirstPage, Converter={StaticResource InverseBoolToVis}}">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
+                                                                <!-- PATCH 2: Glass Ref - Fixed Width 140 (was *) -->
+                                                                <DataGridTextColumn Header="Glass Ref" Binding="{Binding GlassRef}" Width="140">
+                                                                    <DataGridTextColumn.ElementStyle>
+                                                                        <Style TargetType="TextBlock">
+                                                                            <Setter Property="HorizontalAlignment" Value="Left"/>
+                                                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                                                            <Setter Property="Background" Value="White"/>
+                                                                            <Setter Property="Foreground" Value="Black"/>
+                                                                            <Setter Property="FontSize" Value="9"/>
+                                                                            <Setter Property="Padding" Value="4,0"/>
+                                                                        </Style>
+                                                                    </DataGridTextColumn.ElementStyle>
+                                                                </DataGridTextColumn>
 
-                                        <StackPanel Grid.Column="0" Orientation="Horizontal">
-                                            <TextBlock Text="PROFORMA INVOICE" FontSize="10" FontWeight="Bold" Foreground="#1E3A5F" VerticalAlignment="Center"/>
-                                            <TextBlock Text=" - " FontSize="10" Foreground="#6B7280" VerticalAlignment="Center"/>
-                                            <TextBlock Text="{Binding InvoiceNo}" FontSize="10" Foreground="#6B7280" VerticalAlignment="Center"/>
-                                        </StackPanel>
+                                                                <DataGridTextColumn Header="W1" Binding="{Binding Width1, StringFormat=N0}" Width="45">
+                                                                    <DataGridTextColumn.ElementStyle>
+                                                                        <Style TargetType="TextBlock">
+                                                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                                                            <Setter Property="Background" Value="White"/>
+                                                                            <Setter Property="Foreground" Value="Black"/>
+                                                                            <Setter Property="FontSize" Value="9"/>
+                                                                        </Style>
+                                                                    </DataGridTextColumn.ElementStyle>
+                                                                </DataGridTextColumn>
 
-                                        <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                            <TextBlock Text="Continued from Page " FontSize="8" Foreground="#6B7280" VerticalAlignment="Center"/>
-                                            <TextBlock Text="{Binding PreviousPageNo}" FontSize="8" FontWeight="Bold" Foreground="#1E3A5F" VerticalAlignment="Center" Margin="4,0,0,0"/>
-                                        </StackPanel>
-                                    </Grid>
-                                </Border>
+                                                                <DataGridTextColumn Header="H1" Binding="{Binding Height1, StringFormat=N0}" Width="45">
+                                                                    <DataGridTextColumn.ElementStyle>
+                                                                        <Style TargetType="TextBlock">
+                                                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                                                            <Setter Property="Background" Value="White"/>
+                                                                            <Setter Property="Foreground" Value="Black"/>
+                                                                            <Setter Property="FontSize" Value="9"/>
+                                                                        </Style>
+                                                                    </DataGridTextColumn.ElementStyle>
+                                                                </DataGridTextColumn>
 
-                                <!-- ============================================ -->
-                                <!-- BALANCE BROUGHT FORWARD (Continuation Pages) -->
-                                <!-- ============================================ -->
-                                <Border Grid.Row="2" BorderBrush="#000000" BorderThickness="1" Background="#F8FAFC" Padding="8,5" CornerRadius="2" Margin="0,0,0,6"
-                                        Visibility="{Binding IsFirstPage, Converter={StaticResource InverseBoolToVis}}">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
+                                                                <DataGridTextColumn Header="W2" Binding="{Binding Width2, StringFormat=N0}" Width="45">
+                                                                    <DataGridTextColumn.ElementStyle>
+                                                                        <Style TargetType="TextBlock">
+                                                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                                                            <Setter Property="Background" Value="White"/>
+                                                                            <Setter Property="Foreground" Value="Black"/>
+                                                                            <Setter Property="FontSize" Value="9"/>
+                                                                        </Style>
+                                                                    </DataGridTextColumn.ElementStyle>
+                                                                </DataGridTextColumn>
 
-                                        <TextBlock Grid.Column="0" Text="BALANCE BROUGHT FORWARD (B/F)" FontSize="9" FontWeight="Bold" Foreground="Black" VerticalAlignment="Center"/>
+                                                                <DataGridTextColumn Header="H2" Binding="{Binding Height2, StringFormat=N0}" Width="45">
+                                                                    <DataGridTextColumn.ElementStyle>
+                                                                        <Style TargetType="TextBlock">
+                                                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                                                            <Setter Property="Background" Value="White"/>
+                                                                            <Setter Property="Foreground" Value="Black"/>
+                                                                            <Setter Property="FontSize" Value="9"/>
+                                                                        </Style>
+                                                                    </DataGridTextColumn.ElementStyle>
+                                                                </DataGridTextColumn>
 
-                                        <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="20,0,0,0" VerticalAlignment="Center">
-                                            <TextBlock Text="Qty:" FontSize="8" Foreground="#374151" Margin="0,0,4,0"/>
-                                            <TextBlock Text="{Binding PageTotalQty, StringFormat=N0}" FontSize="9" FontWeight="Bold" Foreground="Black"/>
-                                        </StackPanel>
+                                                                <DataGridTextColumn Header="Qty" Binding="{Binding Qty, StringFormat=N0}" Width="40">
+                                                                    <DataGridTextColumn.ElementStyle>
+                                                                        <Style TargetType="TextBlock">
+                                                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                                                            <Setter Property="Background" Value="White"/>
+                                                                            <Setter Property="Foreground" Value="Black"/>
+                                                                            <Setter Property="FontSize" Value="9"/>
+                                                                        </Style>
+                                                                    </DataGridTextColumn.ElementStyle>
+                                                                </DataGridTextColumn>
 
-                                        <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="20,0,0,0" VerticalAlignment="Center">
-                                            <TextBlock Text="SQM:" FontSize="8" Foreground="#374151" Margin="0,0,4,0"/>
-                                            <TextBlock Text="{Binding PageTotalSQM, StringFormat=N4}" FontSize="9" FontWeight="Bold" Foreground="Black"/>
-                                        </StackPanel>
+                                                                <DataGridTextColumn Header="SQM1" Binding="{Binding SQM1, StringFormat=N4}" Width="50">
+                                                                    <DataGridTextColumn.ElementStyle>
+                                                                        <Style TargetType="TextBlock">
+                                                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                                                            <Setter Property="Background" Value="White"/>
+                                                                            <Setter Property="Foreground" Value="Black"/>
+                                                                            <Setter Property="FontSize" Value="9"/>
+                                                                        </Style>
+                                                                    </DataGridTextColumn.ElementStyle>
+                                                                </DataGridTextColumn>
 
-                                        <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="20,0,0,0" VerticalAlignment="Center">
-                                            <TextBlock Text="LM:" FontSize="8" Foreground="#374151" Margin="0,0,4,0"/>
-                                            <TextBlock Text="{Binding PageTotalLM, StringFormat=N2}" FontSize="9" FontWeight="Bold" Foreground="Black"/>
-                                        </StackPanel>
+                                                                <DataGridTextColumn Header="SQM2" Binding="{Binding SQM2, StringFormat=N4}" Width="50">
+                                                                    <DataGridTextColumn.ElementStyle>
+                                                                        <Style TargetType="TextBlock">
+                                                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                                                            <Setter Property="Background" Value="White"/>
+                                                                            <Setter Property="Foreground" Value="Black"/>
+                                                                            <Setter Property="FontSize" Value="9"/>
+                                                                        </Style>
+                                                                    </DataGridTextColumn.ElementStyle>
+                                                                </DataGridTextColumn>
 
-                                        <StackPanel Grid.Column="4" Orientation="Horizontal" Margin="20,0,0,0" VerticalAlignment="Center">
-                                            <TextBlock Text="AED:" FontSize="8" Foreground="#374151" Margin="0,0,4,0"/>
-                                            <TextBlock Text="{Binding PageTotalPrice, StringFormat=N2}" FontSize="9" FontWeight="Bold" Foreground="Black"/>
-                                        </StackPanel>
-                                    </Grid>
-                                </Border>
+                                                                <DataGridTextColumn Header="T.SQM" Binding="{Binding TotalSQM, StringFormat=N4}" Width="50">
+                                                                    <DataGridTextColumn.ElementStyle>
+                                                                        <Style TargetType="TextBlock">
+                                                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                                                            <Setter Property="Background" Value="White"/>
+                                                                            <Setter Property="Foreground" Value="Black"/>
+                                                                            <Setter Property="FontWeight" Value="Bold"/>
+                                                                            <Setter Property="FontSize" Value="9"/>
+                                                                        </Style>
+                                                                    </DataGridTextColumn.ElementStyle>
+                                                                </DataGridTextColumn>
 
-                                <!-- ============================================ -->
-                                <!-- SPECIFICATIONS DATA -->
-                                <!-- ============================================ -->
-                                <ItemsControl Grid.Row="3" ItemsSource="{Binding Specifications}" Margin="0,0,0,4">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Border BorderBrush="#000000" BorderThickness="1" Margin="0,0,0,3" CornerRadius="2" Background="White">
-                                                <Grid>
-                                                    <Grid.RowDefinitions>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="Auto"/>
-                                                    </Grid.RowDefinitions>
+                                                                <DataGridTextColumn Header="Price" Binding="{Binding DisplayPrice, StringFormat=N2}" Width="55">
+                                                                    <DataGridTextColumn.ElementStyle>
+                                                                        <Style TargetType="TextBlock">
+                                                                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                                                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                                                            <Setter Property="Padding" Value="0,0,4,0"/>
+                                                                            <Setter Property="Background" Value="White"/>
+                                                                            <Setter Property="Foreground" Value="Black"/>
+                                                                            <Setter Property="FontSize" Value="9"/>
+                                                                        </Style>
+                                                                    </DataGridTextColumn.ElementStyle>
+                                                                </DataGridTextColumn>
 
-                                                    <!-- Spec Header -->
-                                                    <Border Grid.Row="0" Background="White" BorderBrush="#000000" BorderThickness="0,0,0,1" Padding="5,3" CornerRadius="2,2,0,0">
-                                                        <TextBlock Text="{Binding SpecificationName}" FontSize="9" FontWeight="Bold" Foreground="Black" FontFamily="{StaticResource PrimaryFont}"/>
-                                                    </Border>
+                                                                <DataGridTextColumn Header="Total" Binding="{Binding TotalPrice, StringFormat=N2}" Width="65">
+                                                                    <DataGridTextColumn.ElementStyle>
+                                                                        <Style TargetType="TextBlock">
+                                                                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                                                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                                                            <Setter Property="Background" Value="White"/>
+                                                                            <Setter Property="Foreground" Value="Black"/>
+                                                                            <Setter Property="FontWeight" Value="Bold"/>
+                                                                            <Setter Property="Padding" Value="0,0,4,0"/>
+                                                                            <Setter Property="FontSize" Value="9"/>
+                                                                        </Style>
+                                                                    </DataGridTextColumn.ElementStyle>
+                                                                </DataGridTextColumn>
+                                                            </DataGrid.Columns>
+                                                        </DataGrid>
 
-                                                    <!-- Data Grid -->
-                                                    <DataGrid Grid.Row="1" ItemsSource="{Binding Items}" 
-                                                              AutoGenerateColumns="False" 
-                                                              IsReadOnly="True" 
-                                                              BorderThickness="0" 
-                                                              Background="White" 
-                                                              GridLinesVisibility="All" 
-                                                              HorizontalGridLinesBrush="#000000" 
-                                                              VerticalGridLinesBrush="#000000" 
-                                                              HeadersVisibility="Column" 
-                                                              CanUserAddRows="False" 
-                                                              FontSize="9" 
-                                                              RowHeight="18"
-                                                              FontFamily="{StaticResource PrimaryFont}">
-                                                        <DataGrid.ColumnHeaderStyle>
-                                                            <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource GridHeader}"/>
-                                                        </DataGrid.ColumnHeaderStyle>
-                                                        <DataGrid.CellStyle>
-                                                            <Style TargetType="DataGridCell" BasedOn="{StaticResource GridCell}"/>
-                                                        </DataGrid.CellStyle>
+                                                        <!-- Spec Footer - PATCH 2: Fixed Width 140 -->
+                                                        <Border Grid.Row="2" Background="White" BorderBrush="#000000" BorderThickness="0,1,0,0" Padding="5,3" CornerRadius="0,0,2,2">
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="30"/>
+                                                                    <ColumnDefinition Width="140"/>
+                                                                    <ColumnDefinition Width="45"/>
+                                                                    <ColumnDefinition Width="45"/>
+                                                                    <ColumnDefinition Width="45"/>
+                                                                    <ColumnDefinition Width="45"/>
+                                                                    <ColumnDefinition Width="40"/>
+                                                                    <ColumnDefinition Width="50"/>
+                                                                    <ColumnDefinition Width="50"/>
+                                                                    <ColumnDefinition Width="50"/>
+                                                                    <ColumnDefinition Width="55"/>
+                                                                    <ColumnDefinition Width="65"/>
+                                                                </Grid.ColumnDefinitions>
 
-                                                        <DataGrid.Columns>
-                                                            <!-- SR - 30 -->
-                                                            <DataGridTextColumn Header="SR" Binding="{Binding SrNo}" Width="30">
-                                                                <DataGridTextColumn.ElementStyle>
-                                                                    <Style TargetType="TextBlock">
-                                                                        <Setter Property="HorizontalAlignment" Value="Center"/>
-                                                                        <Setter Property="VerticalAlignment" Value="Center"/>
-                                                                        <Setter Property="FontWeight" Value="SemiBold"/>
-                                                                        <Setter Property="Background" Value="#F3F4F6"/>
-                                                                        <Setter Property="Foreground" Value="Black"/>
-                                                                        <Setter Property="FontSize" Value="9"/>
-                                                                    </Style>
-                                                                </DataGridTextColumn.ElementStyle>
-                                                            </DataGridTextColumn>
+                                                                <TextBlock Grid.Column="0" Text="" FontSize="8" Foreground="Black"/>
+                                                                <TextBlock Grid.Column="1" Text="TOTAL" FontSize="9" FontWeight="Bold" Foreground="Black" VerticalAlignment="Center"/>
+                                                                <TextBlock Grid.Column="2" Text="" FontSize="8" Foreground="Black"/>
+                                                                <TextBlock Grid.Column="3" Text="" FontSize="8" Foreground="Black"/>
+                                                                <TextBlock Grid.Column="4" Text="" FontSize="8" Foreground="Black"/>
+                                                                <TextBlock Grid.Column="5" Text="" FontSize="8" Foreground="Black"/>
+                                                                <TextBlock Grid.Column="6" Text="{Binding SpecTotalQty, StringFormat=N0}" FontSize="9" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                <TextBlock Grid.Column="7" Text="{Binding SpecTotalSQM1, StringFormat=N4}" FontSize="9" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                <TextBlock Grid.Column="8" Text="{Binding SpecTotalSQM2, StringFormat=N4}" FontSize="9" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                <TextBlock Grid.Column="9" Text="{Binding SpecTotalSQM, StringFormat=N4}" FontSize="9" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                <TextBlock Grid.Column="10" Text="" FontSize="8" Foreground="Black"/>
+                                                                <TextBlock Grid.Column="11" Text="{Binding SpecTotalPrice, StringFormat=N2}" FontSize="9" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                            </Grid>
+                                                        </Border>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
 
-                                                            <!-- Glass Ref - * (fills remaining space) -->
-                                                            <DataGridTextColumn Header="Glass Ref" Binding="{Binding GlassRef}" Width="*">
-                                                                <DataGridTextColumn.ElementStyle>
-                                                                    <Style TargetType="TextBlock">
-                                                                        <Setter Property="HorizontalAlignment" Value="Left"/>
-                                                                        <Setter Property="VerticalAlignment" Value="Center"/>
-                                                                        <Setter Property="Background" Value="White"/>
-                                                                        <Setter Property="Foreground" Value="Black"/>
-                                                                        <Setter Property="FontSize" Value="9"/>
-                                                                        <Setter Property="Padding" Value="4,0"/>
-                                                                    </Style>
-                                                                </DataGridTextColumn.ElementStyle>
-                                                            </DataGridTextColumn>
-
-                                                            <!-- W1 - 45 -->
-                                                            <DataGridTextColumn Header="W1" Binding="{Binding Width1, StringFormat=N0}" Width="45">
-                                                                <DataGridTextColumn.ElementStyle>
-                                                                    <Style TargetType="TextBlock">
-                                                                        <Setter Property="HorizontalAlignment" Value="Center"/>
-                                                                        <Setter Property="VerticalAlignment" Value="Center"/>
-                                                                        <Setter Property="Background" Value="White"/>
-                                                                        <Setter Property="Foreground" Value="Black"/>
-                                                                        <Setter Property="FontSize" Value="9"/>
-                                                                    </Style>
-                                                                </DataGridTextColumn.ElementStyle>
-                                                            </DataGridTextColumn>
-
-                                                            <!-- H1 - 45 -->
-                                                            <DataGridTextColumn Header="H1" Binding="{Binding Height1, StringFormat=N0}" Width="45">
-                                                                <DataGridTextColumn.ElementStyle>
-                                                                    <Style TargetType="TextBlock">
-                                                                        <Setter Property="HorizontalAlignment" Value="Center"/>
-                                                                        <Setter Property="VerticalAlignment" Value="Center"/>
-                                                                        <Setter Property="Background" Value="White"/>
-                                                                        <Setter Property="Foreground" Value="Black"/>
-                                                                        <Setter Property="FontSize" Value="9"/>
-                                                                    </Style>
-                                                                </DataGridTextColumn.ElementStyle>
-                                                            </DataGridTextColumn>
-
-                                                            <!-- W2 - 45 -->
-                                                            <DataGridTextColumn Header="W2" Binding="{Binding Width2, StringFormat=N0}" Width="45">
-                                                                <DataGridTextColumn.ElementStyle>
-                                                                    <Style TargetType="TextBlock">
-                                                                        <Setter Property="HorizontalAlignment" Value="Center"/>
-                                                                        <Setter Property="VerticalAlignment" Value="Center"/>
-                                                                        <Setter Property="Background" Value="White"/>
-                                                                        <Setter Property="Foreground" Value="Black"/>
-                                                                        <Setter Property="FontSize" Value="9"/>
-                                                                    </Style>
-                                                                </DataGridTextColumn.ElementStyle>
-                                                            </DataGridTextColumn>
-
-                                                            <!-- H2 - 45 -->
-                                                            <DataGridTextColumn Header="H2" Binding="{Binding Height2, StringFormat=N0}" Width="45">
-                                                                <DataGridTextColumn.ElementStyle>
-                                                                    <Style TargetType="TextBlock">
-                                                                        <Setter Property="HorizontalAlignment" Value="Center"/>
-                                                                        <Setter Property="VerticalAlignment" Value="Center"/>
-                                                                        <Setter Property="Background" Value="White"/>
-                                                                        <Setter Property="Foreground" Value="Black"/>
-                                                                        <Setter Property="FontSize" Value="9"/>
-                                                                    </Style>
-                                                                </DataGridTextColumn.ElementStyle>
-                                                            </DataGridTextColumn>
-
-                                                            <!-- Qty - 40 -->
-                                                            <DataGridTextColumn Header="Qty" Binding="{Binding Qty, StringFormat=N0}" Width="40">
-                                                                <DataGridTextColumn.ElementStyle>
-                                                                    <Style TargetType="TextBlock">
-                                                                        <Setter Property="HorizontalAlignment" Value="Center"/>
-                                                                        <Setter Property="VerticalAlignment" Value="Center"/>
-                                                                        <Setter Property="Background" Value="White"/>
-                                                                        <Setter Property="Foreground" Value="Black"/>
-                                                                        <Setter Property="FontSize" Value="9"/>
-                                                                    </Style>
-                                                                </DataGridTextColumn.ElementStyle>
-                                                            </DataGridTextColumn>
-
-                                                            <!-- SQM1 - 50 -->
-                                                            <DataGridTextColumn Header="SQM1" Binding="{Binding SQM1, StringFormat=N4}" Width="50">
-                                                                <DataGridTextColumn.ElementStyle>
-                                                                    <Style TargetType="TextBlock">
-                                                                        <Setter Property="HorizontalAlignment" Value="Center"/>
-                                                                        <Setter Property="VerticalAlignment" Value="Center"/>
-                                                                        <Setter Property="Background" Value="White"/>
-                                                                        <Setter Property="Foreground" Value="Black"/>
-                                                                        <Setter Property="FontSize" Value="9"/>
-                                                                    </Style>
-                                                                </DataGridTextColumn.ElementStyle>
-                                                            </DataGridTextColumn>
-
-                                                            <!-- SQM2 - 50 -->
-                                                            <DataGridTextColumn Header="SQM2" Binding="{Binding SQM2, StringFormat=N4}" Width="50">
-                                                                <DataGridTextColumn.ElementStyle>
-                                                                    <Style TargetType="TextBlock">
-                                                                        <Setter Property="HorizontalAlignment" Value="Center"/>
-                                                                        <Setter Property="VerticalAlignment" Value="Center"/>
-                                                                        <Setter Property="Background" Value="White"/>
-                                                                        <Setter Property="Foreground" Value="Black"/>
-                                                                        <Setter Property="FontSize" Value="9"/>
-                                                                    </Style>
-                                                                </DataGridTextColumn.ElementStyle>
-                                                            </DataGridTextColumn>
-
-                                                            <!-- Total SQM - 50 -->
-                                                            <DataGridTextColumn Header="T.SQM" Binding="{Binding TotalSQM, StringFormat=N4}" Width="50">
-                                                                <DataGridTextColumn.ElementStyle>
-                                                                    <Style TargetType="TextBlock">
-                                                                        <Setter Property="HorizontalAlignment" Value="Center"/>
-                                                                        <Setter Property="VerticalAlignment" Value="Center"/>
-                                                                        <Setter Property="Background" Value="White"/>
-                                                                        <Setter Property="Foreground" Value="Black"/>
-                                                                        <Setter Property="FontWeight" Value="Bold"/>
-                                                                        <Setter Property="FontSize" Value="9"/>
-                                                                    </Style>
-                                                                </DataGridTextColumn.ElementStyle>
-                                                            </DataGridTextColumn>
-
-                                                            <!-- Price - 55 -->
-                                                            <DataGridTextColumn Header="Price" Binding="{Binding DisplayPrice, StringFormat=N2}" Width="55">
-                                                                <DataGridTextColumn.ElementStyle>
-                                                                    <Style TargetType="TextBlock">
-                                                                        <Setter Property="HorizontalAlignment" Value="Right"/>
-                                                                        <Setter Property="VerticalAlignment" Value="Center"/>
-                                                                        <Setter Property="Padding" Value="0,0,4,0"/>
-                                                                        <Setter Property="Background" Value="White"/>
-                                                                        <Setter Property="Foreground" Value="Black"/>
-                                                                        <Setter Property="FontSize" Value="9"/>
-                                                                    </Style>
-                                                                </DataGridTextColumn.ElementStyle>
-                                                            </DataGridTextColumn>
-
-                                                            <!-- Total - 65 -->
-                                                            <DataGridTextColumn Header="Total" Binding="{Binding TotalPrice, StringFormat=N2}" Width="65">
-                                                                <DataGridTextColumn.ElementStyle>
-                                                                    <Style TargetType="TextBlock">
-                                                                        <Setter Property="HorizontalAlignment" Value="Right"/>
-                                                                        <Setter Property="VerticalAlignment" Value="Center"/>
-                                                                        <Setter Property="Background" Value="White"/>
-                                                                        <Setter Property="Foreground" Value="Black"/>
-                                                                        <Setter Property="FontWeight" Value="Bold"/>
-                                                                        <Setter Property="Padding" Value="0,0,4,0"/>
-                                                                        <Setter Property="FontSize" Value="9"/>
-                                                                    </Style>
-                                                                </DataGridTextColumn.ElementStyle>
-                                                            </DataGridTextColumn>
-                                                        </DataGrid.Columns>
-                                                    </DataGrid>
-
-                                                    <!-- Spec Footer - Total Row -->
-                                                    <Border Grid.Row="2" Background="White" BorderBrush="#000000" BorderThickness="0,1,0,0" Padding="5,3" CornerRadius="0,0,2,2">
-                                                        <Grid>
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="30"/>
-                                                                <ColumnDefinition Width="*"/>
-                                                                <ColumnDefinition Width="45"/>
-                                                                <ColumnDefinition Width="45"/>
-                                                                <ColumnDefinition Width="45"/>
-                                                                <ColumnDefinition Width="45"/>
-                                                                <ColumnDefinition Width="40"/>
-                                                                <ColumnDefinition Width="50"/>
-                                                                <ColumnDefinition Width="50"/>
-                                                                <ColumnDefinition Width="50"/>
-                                                                <ColumnDefinition Width="55"/>
-                                                                <ColumnDefinition Width="65"/>
-                                                            </Grid.ColumnDefinitions>
-
-                                                            <!-- SR - 30 -->
-                                                            <TextBlock Grid.Column="0" Text="" FontSize="8" Foreground="Black"/>
-
-                                                            <!-- Glass Ref - * (TOTAL label) -->
-                                                            <TextBlock Grid.Column="1" Text="TOTAL" FontSize="9" FontWeight="Bold" Foreground="Black" VerticalAlignment="Center"/>
-
-                                                            <!-- W1 - 45 -->
-                                                            <TextBlock Grid.Column="2" Text="" FontSize="8" Foreground="Black"/>
-
-                                                            <!-- H1 - 45 -->
-                                                            <TextBlock Grid.Column="3" Text="" FontSize="8" Foreground="Black"/>
-
-                                                            <!-- W2 - 45 -->
-                                                            <TextBlock Grid.Column="4" Text="" FontSize="8" Foreground="Black"/>
-
-                                                            <!-- H2 - 45 -->
-                                                            <TextBlock Grid.Column="5" Text="" FontSize="8" Foreground="Black"/>
-
-                                                            <!-- Qty - 40 -->
-                                                            <TextBlock Grid.Column="6" Text="{Binding SpecTotalQty, StringFormat=N0}" FontSize="9" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-
-                                                            <!-- SQM1 - 50 -->
-                                                            <TextBlock Grid.Column="7" Text="{Binding SpecTotalSQM1, StringFormat=N4}" FontSize="9" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-
-                                                            <!-- SQM2 - 50 -->
-                                                            <TextBlock Grid.Column="8" Text="{Binding SpecTotalSQM2, StringFormat=N4}" FontSize="9" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-
-                                                            <!-- T.SQM - 50 (Total SQM) -->
-                                                            <TextBlock Grid.Column="9" Text="{Binding SpecTotalSQM, StringFormat=N4}" FontSize="9" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-
-                                                            <!-- Price - 55 -->
-                                                            <TextBlock Grid.Column="10" Text="" FontSize="8" Foreground="Black"/>
-
-                                                            <!-- Total - 65 (Gross Total) -->
-                                                            <TextBlock Grid.Column="11" Text="{Binding SpecTotalPrice, StringFormat=N2}" FontSize="9" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                                        </Grid>
-                                                    </Border>
-                                                </Grid>
-                                            </Border>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-
-                                <!-- ============================================ -->
-                                <!-- OTHER CHARGES (Last Page Only) -->
-                                <!-- ============================================ -->
-                                <Border Grid.Row="4" BorderBrush="#000000" BorderThickness="1" Background="#F8FAFC" 
-                                        Padding="6,4" Margin="0,0,0,4" CornerRadius="2"
-                                        Visibility="{Binding IsLastPage, Converter={StaticResource BoolToVis}}">
-                                    <StackPanel>
-                                        <TextBlock Text="OTHER CHARGES" Style="{StaticResource LabelText}" Margin="0,0,0,3"/>
-
-                                        <Grid Margin="0,0,0,2">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="55"/>
-                                                <ColumnDefinition Width="60"/>
-                                                <ColumnDefinition Width="60"/>
-                                                <ColumnDefinition Width="45"/>
-                                                <ColumnDefinition Width="65"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Text="Charge" FontSize="7" FontWeight="Bold" Foreground="Black"/>
-                                            <TextBlock Grid.Column="1" Text="Type" FontSize="7" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Center"/>
-                                            <TextBlock Grid.Column="2" Text="Specs" FontSize="7" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Center"/>
-                                            <TextBlock Grid.Column="3" Text="Value" FontSize="7" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Center"/>
-                                            <TextBlock Grid.Column="4" Text="Rate" FontSize="7" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Center"/>
-                                            <TextBlock Grid.Column="5" Text="Amount" FontSize="7" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Right"/>
-                                        </Grid>
-
-                                        <ItemsControl ItemsSource="{Binding AllOtherCharges}">
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
-                                                    <Border BorderBrush="#000000" BorderThickness="1" Padding="4,2" Margin="0,0,0,1" Background="White" CornerRadius="2">
-                                                        <Grid>
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="*"/>
-                                                                <ColumnDefinition Width="55"/>
-                                                                <ColumnDefinition Width="60"/>
-                                                                <ColumnDefinition Width="60"/>
-                                                                <ColumnDefinition Width="45"/>
-                                                                <ColumnDefinition Width="65"/>
-                                                            </Grid.ColumnDefinitions>
-
-                                                            <TextBlock Grid.Column="0" Text="{Binding Name}" FontSize="8" FontWeight="Medium" Foreground="Black" VerticalAlignment="Center"/>
-                                                            <TextBlock Grid.Column="1" Text="{Binding TypeDisplay}" FontSize="7" Foreground="Black" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                            <TextBlock Grid.Column="2" Text="{Binding LinkedSpecsDisplay}" FontSize="7" Foreground="Black" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                            <TextBlock Grid.Column="3" Text="{Binding ValueDisplay}" FontSize="8" FontWeight="SemiBold" Foreground="Black" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                            <TextBlock Grid.Column="4" Text="{Binding Rate, StringFormat=N2}" FontSize="8" Foreground="Black" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                            <TextBlock Grid.Column="5" Text="{Binding AmountDisplay}" FontSize="8" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-                                                        </Grid>
-                                                    </Border>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-
-                                        <Border Background="#1E3A5F" Padding="4,2" CornerRadius="2" Margin="0,2,0,0">
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Text="TOTAL OTHER CHARGES" FontSize="7" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
-                                                <TextBlock Grid.Column="1" Text="{Binding TotalOtherCharges, StringFormat='AED {0:N2}'}" FontSize="8" FontWeight="Bold" Foreground="White"/>
-                                            </Grid>
-                                        </Border>
-                                    </StackPanel>
-                                </Border>
-
-                                <!-- ============================================ -->
-                                <!-- INVOICE SUMMARY (Last Page Only) -->
-                                <!-- ============================================ -->
-                                <Grid Grid.Row="5" Margin="0,0,0,4"
-                                      Visibility="{Binding IsLastPage, Converter={StaticResource BoolToVis}}">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="160"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <!-- Terms and Conditions -->
-                                    <Border Grid.Column="0" BorderBrush="#000000" BorderThickness="1" Padding="6,4" CornerRadius="2">
+                                    <!-- OTHER CHARGES (Last Page Only) -->
+                                    <Border Grid.Row="4" BorderBrush="#000000" BorderThickness="1" Background="#F8FAFC" 
+                                            Padding="6,4" Margin="0,0,0,4" CornerRadius="2"
+                                            Visibility="{Binding IsLastPage, Converter={StaticResource BoolToVis}}">
                                         <StackPanel>
-                                            <TextBlock Text="TERMS AND CONDITIONS" Style="{StaticResource LabelText}"/>
-                                            <TextBlock Text="- Prices in AED (UAE Dirhams)" FontSize="7" Foreground="Black" Margin="0,2,0,0" FontFamily="{StaticResource PrimaryFont}"/>
-                                            <TextBlock Text="- Quote valid for 30 days from invoice date" FontSize="7" Foreground="Black" FontFamily="{StaticResource PrimaryFont}"/>
-                                            <TextBlock Text="- 5% VAT included in all prices" FontSize="7" Foreground="Black" FontFamily="{StaticResource PrimaryFont}"/>
-                                        </StackPanel>
-                                    </Border>
+                                            <TextBlock Text="OTHER CHARGES" Style="{StaticResource LabelText}" Margin="0,0,0,3"/>
 
-                                    <!-- Summary Box -->
-                                    <Border Grid.Column="1" BorderBrush="#000000" BorderThickness="1" Background="#F8FAFC" Padding="6,4" Margin="6,0,0,0">
-                                        <StackPanel>
-                                            <Grid>
+                                            <Grid Margin="0,0,0,2">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="55"/>
+                                                    <ColumnDefinition Width="60"/>
+                                                    <ColumnDefinition Width="60"/>
+                                                    <ColumnDefinition Width="45"/>
+                                                    <ColumnDefinition Width="65"/>
                                                 </Grid.ColumnDefinitions>
-                                                <TextBlock Text="Total SQM:" FontSize="8" Foreground="Black" FontFamily="{StaticResource PrimaryFont}"/>
-                                                <TextBlock Grid.Column="1" Text="{Binding TotalSQM, StringFormat=N4}" FontSize="9" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Right" FontFamily="{StaticResource PrimaryFont}"/>
+                                                <TextBlock Grid.Column="0" Text="Charge" FontSize="7" FontWeight="Bold" Foreground="Black"/>
+                                                <TextBlock Grid.Column="1" Text="Type" FontSize="7" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Center"/>
+                                                <TextBlock Grid.Column="2" Text="Specs" FontSize="7" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Center"/>
+                                                <TextBlock Grid.Column="3" Text="Value" FontSize="7" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Center"/>
+                                                <TextBlock Grid.Column="4" Text="Rate" FontSize="7" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Center"/>
+                                                <TextBlock Grid.Column="5" Text="Amount" FontSize="7" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Right"/>
                                             </Grid>
-                                            <Grid Margin="0,2,0,0">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Text="Total LM:" FontSize="8" Foreground="Black" FontFamily="{StaticResource PrimaryFont}"/>
-                                                <TextBlock Grid.Column="1" Text="{Binding TotalLM, StringFormat=N2}" FontSize="9" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Right" FontFamily="{StaticResource PrimaryFont}"/>
-                                            </Grid>
-                                            <Grid Margin="0,2,0,0">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Text="Total Qty:" FontSize="8" Foreground="Black" FontFamily="{StaticResource PrimaryFont}"/>
-                                                <TextBlock Grid.Column="1" Text="{Binding TotalQty}" FontSize="9" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Right" FontFamily="{StaticResource PrimaryFont}"/>
-                                            </Grid>
-                                            <Border BorderBrush="#000000" BorderThickness="0,1,0,0" Margin="0,3,0,0" Padding="0,3,0,0">
+
+                                            <ItemsControl ItemsSource="{Binding AllOtherCharges}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border BorderBrush="#000000" BorderThickness="1" Padding="4,2" Margin="0,0,0,1" Background="White" CornerRadius="2">
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                    <ColumnDefinition Width="55"/>
+                                                                    <ColumnDefinition Width="60"/>
+                                                                    <ColumnDefinition Width="60"/>
+                                                                    <ColumnDefinition Width="45"/>
+                                                                    <ColumnDefinition Width="65"/>
+                                                                </Grid.ColumnDefinitions>
+
+                                                                <TextBlock Grid.Column="0" Text="{Binding Name}" FontSize="8" FontWeight="Medium" Foreground="Black" VerticalAlignment="Center"/>
+                                                                <TextBlock Grid.Column="1" Text="{Binding TypeDisplay}" FontSize="7" Foreground="Black" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                <TextBlock Grid.Column="2" Text="{Binding LinkedSpecsDisplay}" FontSize="7" Foreground="Black" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                <TextBlock Grid.Column="3" Text="{Binding ValueDisplay}" FontSize="8" FontWeight="SemiBold" Foreground="Black" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                <TextBlock Grid.Column="4" Text="{Binding Rate, StringFormat=N2}" FontSize="8" Foreground="Black" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                <TextBlock Grid.Column="5" Text="{Binding AmountDisplay}" FontSize="8" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                                            </Grid>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+
+                                            <Border Background="#1E3A5F" Padding="4,2" CornerRadius="2" Margin="0,2,0,0">
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="*"/>
                                                         <ColumnDefinition Width="Auto"/>
                                                     </Grid.ColumnDefinitions>
-                                                    <TextBlock Text="Sub Total:" FontSize="9" FontWeight="Bold" Foreground="Black" FontFamily="{StaticResource PrimaryFont}"/>
-                                                    <TextBlock Grid.Column="1" Text="{Binding GrandTotal, StringFormat=N2}" FontSize="9" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Right" FontFamily="{StaticResource PrimaryFont}"/>
+                                                    <TextBlock Text="TOTAL OTHER CHARGES" FontSize="7" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding TotalOtherCharges, StringFormat='AED {0:N2}'}" FontSize="8" FontWeight="Bold" Foreground="White"/>
                                                 </Grid>
                                             </Border>
-                                            <Grid Margin="0,2,0,0">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Text="VAT (5%):" FontSize="8" Foreground="Black" FontFamily="{StaticResource PrimaryFont}"/>
-                                                <TextBlock Grid.Column="1" Text="{Binding VatAmount, StringFormat=N2}" FontSize="8" Foreground="Black" HorizontalAlignment="Right" FontFamily="{StaticResource PrimaryFont}"/>
-                                            </Grid>
                                         </StackPanel>
                                     </Border>
+
+                                    <!-- INVOICE SUMMARY (Last Page Only) -->
+                                    <Grid Grid.Row="5" Margin="0,0,0,4"
+                                          Visibility="{Binding IsLastPage, Converter={StaticResource BoolToVis}}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="160"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <Border Grid.Column="0" BorderBrush="#000000" BorderThickness="1" Padding="6,4" CornerRadius="2">
+                                            <StackPanel>
+                                                <TextBlock Text="TERMS AND CONDITIONS" Style="{StaticResource LabelText}"/>
+                                                <TextBlock Text="- Prices in AED (UAE Dirhams)" FontSize="7" Foreground="Black" Margin="0,2,0,0" FontFamily="{StaticResource PrimaryFont}"/>
+                                                <TextBlock Text="- Quote valid for 30 days from invoice date" FontSize="7" Foreground="Black" FontFamily="{StaticResource PrimaryFont}"/>
+                                                <TextBlock Text="- 5% VAT included in all prices" FontSize="7" Foreground="Black" FontFamily="{StaticResource PrimaryFont}"/>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <Border Grid.Column="1" BorderBrush="#000000" BorderThickness="1" Background="#F8FAFC" Padding="6,4" Margin="6,0,0,0">
+                                            <StackPanel>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="Total SQM:" FontSize="8" Foreground="Black" FontFamily="{StaticResource PrimaryFont}"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding TotalSQM, StringFormat=N4}" FontSize="9" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Right" FontFamily="{StaticResource PrimaryFont}"/>
+                                                </Grid>
+                                                <Grid Margin="0,2,0,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="Total LM:" FontSize="8" Foreground="Black" FontFamily="{StaticResource PrimaryFont}"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding TotalLM, StringFormat=N2}" FontSize="9" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Right" FontFamily="{StaticResource PrimaryFont}"/>
+                                                </Grid>
+                                                <Grid Margin="0,2,0,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="Total Qty:" FontSize="8" Foreground="Black" FontFamily="{StaticResource PrimaryFont}"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding TotalQty}" FontSize="9" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Right" FontFamily="{StaticResource PrimaryFont}"/>
+                                                </Grid>
+                                                <Border BorderBrush="#000000" BorderThickness="0,1,0,0" Margin="0,3,0,0" Padding="0,3,0,0">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Text="Sub Total:" FontSize="9" FontWeight="Bold" Foreground="Black" FontFamily="{StaticResource PrimaryFont}"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding GrandTotal, StringFormat=N2}" FontSize="9" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Right" FontFamily="{StaticResource PrimaryFont}"/>
+                                                    </Grid>
+                                                </Border>
+                                                <Grid Margin="0,2,0,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="VAT (5%):" FontSize="8" Foreground="Black" FontFamily="{StaticResource PrimaryFont}"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding VatAmount, StringFormat=N2}" FontSize="8" Foreground="Black" HorizontalAlignment="Right" FontFamily="{StaticResource PrimaryFont}"/>
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+
+                                    <!-- NET TOTAL (Last Page Only) -->
+                                    <Border Grid.Row="6" Background="#1E3A5F" Padding="10,6" CornerRadius="2" Margin="0,0,0,4"
+                                            Visibility="{Binding IsLastPage, Converter={StaticResource BoolToVis}}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="NET TOTAL (AED):" FontSize="12" FontWeight="Bold" Foreground="White" FontFamily="{StaticResource PrimaryFont}"/>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="1" Text="{Binding NetTotal, StringFormat=N2}" FontSize="14" FontWeight="Bold" Foreground="White" FontFamily="{StaticResource PrimaryFont}"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- FOOTER (All Pages) -->
+                                    <Border Grid.Row="7" BorderBrush="#000000" BorderThickness="0,1,0,0" Padding="0,4,0,0"
+                                            Margin="0,4,0,0">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                                <TextBlock Text="Thank you for your business!" FontSize="8" Foreground="Black" FontFamily="{StaticResource PrimaryFont}"/>
+                                            </StackPanel>
+
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                                                <TextBlock Text="PROGLASS AUTOMATION" FontSize="7" FontWeight="Bold" Foreground="Black" FontFamily="{StaticResource PrimaryFont}"/>
+                                                <TextBlock Text=" | Dubai, UAE" FontSize="7" Foreground="Black" FontFamily="{StaticResource PrimaryFont}" Margin="4,0,0,0"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
                                 </Grid>
-
-                                <!-- ============================================ -->
-                                <!-- NET TOTAL (Last Page Only) -->
-                                <!-- ============================================ -->
-                                <Border Grid.Row="6" Background="#1E3A5F" Padding="10,6" CornerRadius="2" Margin="0,0,0,4"
-                                        Visibility="{Binding IsLastPage, Converter={StaticResource BoolToVis}}">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="NET TOTAL (AED):" FontSize="12" FontWeight="Bold" Foreground="White" FontFamily="{StaticResource PrimaryFont}"/>
-                                        </StackPanel>
-                                        <TextBlock Grid.Column="1" Text="{Binding NetTotal, StringFormat=N2}" FontSize="14" FontWeight="Bold" Foreground="White" FontFamily="{StaticResource PrimaryFont}"/>
-                                    </Grid>
-                                </Border>
-
-                                <!-- ============================================ -->
-                                <!-- FOOTER (All Pages) -->
-                                <!-- ============================================ -->
-                                <Border Grid.Row="7" BorderBrush="#000000" BorderThickness="0,1,0,0" Padding="0,4,0,0"
-                                        Margin="0,4,0,0">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-
-                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                                            <TextBlock Text="Thank you for your business!" FontSize="8" Foreground="Black" FontFamily="{StaticResource PrimaryFont}"/>
-                                        </StackPanel>
-
-                                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                                            <TextBlock Text="PROGLASS AUTOMATION" FontSize="7" FontWeight="Bold" Foreground="Black" FontFamily="{StaticResource PrimaryFont}"/>
-                                            <TextBlock Text=" | Dubai, UAE" FontSize="7" Foreground="Black" FontFamily="{StaticResource PrimaryFont}" Margin="4,0,0,0"/>
-                                        </StackPanel>
-                                    </Grid>
-                                </Border>
-                            </Grid>
-                        </Border>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </ScrollViewer>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
 
         <!-- Status Bar -->
         <Border Grid.Row="2" Background="White" BorderBrush="#E2E8F0" BorderThickness="0,1,0,0" Padding="12,5">
