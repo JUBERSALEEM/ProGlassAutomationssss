@@ -739,7 +739,7 @@
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="Total LM" FontSize="12" Foreground="#6B7280"/>
-                                        <TextBlock Grid.Column="1" Text="{Binding Invoice.TotalLM, Mode=OneWay, StringFormat=N4}" FontSize="12" FontWeight="SemiBold" Foreground="#4A6FA5"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Invoice.TotalLM1, Mode=OneWay, StringFormat=N4}" FontSize="12" FontWeight="SemiBold" Foreground="#4A6FA5"/>
                                     </Grid>
                                     <Grid>
                                         <Grid.ColumnDefinitions>

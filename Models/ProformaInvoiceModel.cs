@@ -302,6 +302,13 @@ namespace ProGlassAutomation.Models
             private set => SetProperty(ref _totalLM, value);
         }
 
+        private double _totalLM1 = 0;
+        public double TotalLM1
+        {
+            get => _totalLM1;
+            private set => SetProperty(ref _totalLM1, value);
+        }
+
         private int _totalQty = 0;
         public int TotalQty
         {
@@ -375,7 +382,7 @@ namespace ProGlassAutomation.Models
                 sqm1 += spec.SpecTotalSQM1;
                 sqm2 += spec.SpecTotalSQM2;
                 sqm += spec.SpecTotalSQM;
-                lm += spec.SpecTotalLM;
+                lm += spec.SpecTotalLM1;  // ✅ Changed: TotalLM = LM1 only (not LM1+LM2)
                 qty += spec.SpecTotalQty;
                 specTotal += spec.SpecTotalPrice;
                 otherCharges += spec.OtherChargesTotal;
@@ -385,6 +392,7 @@ namespace ProGlassAutomation.Models
             TotalSQM2 = Math.Round(sqm2, 4);
             TotalSQM = Math.Round(sqm, 4);
             TotalLM = Math.Round(lm, 4);
+            TotalLM1 = Math.Round(lm, 4);  // ✅ Added: TotalLM1 for Invoice Summary
             TotalQty = qty;
             OtherChargesTotal = Math.Round(otherCharges, 2);
             GrandTotal = Math.Round(specTotal + otherCharges, 2);

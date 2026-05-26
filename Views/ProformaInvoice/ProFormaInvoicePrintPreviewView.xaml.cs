@@ -465,6 +465,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
                         TotalSQM = invoice.TotalSQM,
                         TotalLM = invoice.TotalLM,
+                        TotalLM1 = invoice.TotalLM,
                         TotalQty = invoice.TotalQty,
                         GrandTotal = invoice.GrandTotal,
                         VatAmount = invoice.VatAmount,
@@ -588,6 +589,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
         public double TotalSQM { get; set; }
         public double TotalLM { get; set; }
+        public double TotalLM1 { get; set; }
         public int TotalQty { get; set; }
         public double GrandTotal { get; set; }
         public double VatAmount { get; set; }

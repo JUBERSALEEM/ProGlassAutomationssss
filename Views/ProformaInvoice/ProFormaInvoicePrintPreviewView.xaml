@@ -244,7 +244,7 @@
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
 
-                                            <TextBlock Grid.Column="0" Text="BALANCE BROUGHT FORWARD (B/F)" FontSize="9" FontWeight="Bold" Foreground="Black" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="0" Text="TOTAL" FontSize="9" FontWeight="Bold" Foreground="Black" VerticalAlignment="Center"/>
 
                                             <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="20,0,0,0" VerticalAlignment="Center">
                                                 <TextBlock Text="Qty:" FontSize="8" Foreground="#374151" Margin="0,0,4,0"/>
@@ -570,7 +570,7 @@
 
                                     <!-- INVOICE SUMMARY (Last Page Only) -->
                                     <Grid Grid.Row="5" Margin="0,0,0,4"
-                                          Visibility="{Binding IsLastPage, Converter={StaticResource BoolToVis}}">
+      Visibility="{Binding IsLastPage, Converter={StaticResource BoolToVis}}">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="160"/>
@@ -601,7 +601,7 @@
                                                         <ColumnDefinition Width="Auto"/>
                                                     </Grid.ColumnDefinitions>
                                                     <TextBlock Text="Total LM:" FontSize="8" Foreground="Black" FontFamily="{StaticResource PrimaryFont}"/>
-                                                    <TextBlock Grid.Column="1" Text="{Binding TotalLM, StringFormat=N2}" FontSize="9" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Right" FontFamily="{StaticResource PrimaryFont}"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding TotalLM1, StringFormat=N2}" FontSize="9" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Right" FontFamily="{StaticResource PrimaryFont}"/>
                                                 </Grid>
                                                 <Grid Margin="0,2,0,0">
                                                     <Grid.ColumnDefinitions>
