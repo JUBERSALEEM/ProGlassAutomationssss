@@ -203,11 +203,32 @@ namespace ProGlassAutomation.Models
             set => SetProperty(ref _customerAddress, value);
         }
 
+        private string _customerReference = "";
+        public string CustomerReference
+        {
+            get => _customerReference;
+            set => SetProperty(ref _customerReference, value);
+        }
+
+        private string _salesman = "";
+        public string Salesman
+        {
+            get => _salesman;
+            set => SetProperty(ref _salesman, value);
+        }
+
         private string _projectName = "";
         public string ProjectName
         {
             get => _projectName;
             set => SetProperty(ref _projectName, value);
+        }
+
+        private string _projectNo = "";
+        public string ProjectNo
+        {
+            get => _projectNo;
+            set => SetProperty(ref _projectNo, value);
         }
 
         private string _projectLocation = "";
@@ -236,6 +257,20 @@ namespace ProGlassAutomation.Models
         {
             get => _contactNo;
             set => SetProperty(ref _contactNo, value);
+        }
+
+        private string _color = "";
+        public string Color
+        {
+            get => _color;
+            set => SetProperty(ref _color, value);
+        }
+
+        private string _notes = "";
+        public string Notes
+        {
+            get => _notes;
+            set => SetProperty(ref _notes, value);
         }
 
         private ObservableCollection<SpecificationModel> _specifications = new();

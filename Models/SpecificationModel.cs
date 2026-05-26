@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Newtonsoft.Json;
 
 namespace ProGlassAutomation.Models
 {
@@ -98,6 +99,7 @@ namespace ProGlassAutomation.Models
         }
 
         // ==================== PARENT INVOICE REFERENCE ====================
+        [JsonIgnore]
         public ProformaInvoiceModel? Invoice { get; set; }
 
         // ==================== ID & INDEX ====================

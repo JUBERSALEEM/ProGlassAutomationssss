@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Newtonsoft.Json;
 
 namespace ProGlassAutomation.Models
 {
@@ -71,6 +72,7 @@ namespace ProGlassAutomation.Models
 
         // ==================== PARENT SPECIFICATION REFERENCE ====================
         private SpecificationModel? _specification;
+        [JsonIgnore]
         public SpecificationModel? Specification
         {
             get => _specification;

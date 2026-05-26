@@ -3,6 +3,7 @@ using ProGlassAutomation.Models;
 
 // Add this alias to disambiguate:
 using DbDailyWork = ProGlassAutomation.Data.Database.DailyWork;
+using InvoiceModel = ProGlassAutomation.Models.ProformaInvoiceModel;
 
 using System;
 using System.Collections.ObjectModel;
@@ -51,6 +52,17 @@ namespace ProGlassAutomation.ViewModels
         public ObservableCollection<string> PINumberOptions { get; } = new();
         public ObservableCollection<string> CustomerReferenceOptions { get; } = new();
         public ObservableCollection<string> NotesOptions { get; } = new();
+
+        // Proforma Invoice connection
+        private ViewModels.ProformaInvoiceViewModel _proformaInvoiceVM;
+        public ViewModels.ProformaInvoiceViewModel ProformaInvoiceVM
+        {
+            get => _proformaInvoiceVM;
+            set => SetProperty(ref _proformaInvoiceVM, value);
+        }
+
+        // Navigation event to trigger view switch
+        public event Action? RequestNavigateToInvoice;
 
         // Current selected values (for editing)
         private string _selectedTypeOfWork = "";
@@ -232,6 +244,10 @@ namespace ProGlassAutomation.ViewModels
             DuplicateRowCommand = new RelayCommand(ExecuteDuplicateRow, CanExecuteDuplicateRow);
             DeleteSelectedCommand = new RelayCommand(ExecuteDeleteSelected, CanExecuteDeleteSelected);
             PrintCommand = new RelayCommand(ExecutePrint);
+            LoadToInvoiceCommand = new RelayCommand(ExecuteLoadToInvoice);
+
+            // Subscribe to ProformaInvoice save event
+            SharedViewModels.ProformaInvoiceVM.InvoiceSaved += OnProformaInvoiceSaved;
 
             LoadFromDatabase();
             LoadOptionsFromDatabase();
@@ -610,6 +626,159 @@ namespace ProGlassAutomation.ViewModels
         public ICommand DeleteSelectedCommand { get; }
         public ICommand PrintCommand { get; }
 
+        // Event handler for ProformaInvoice save event
+        public void OnProformaInvoiceSaved(InvoiceModel invoice)
+        {
+            System.Diagnostics.Debug.WriteLine($"[DailyWork] ✅ Received InvoiceSaved event for: {invoice?.InvoiceNo}");
+            if (invoice != null)
+            {
+                UpdateFromProformaInvoice(invoice);
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("[DailyWork] ❌ Invoice is NULL!");
+            }
+        }
+
+        // Method to update DailyWorks from ProformaInvoice
+        private void UpdateFromProformaInvoice(InvoiceModel invoice)
+        {
+            if (invoice == null)
+            {
+                System.Diagnostics.Debug.WriteLine("[DailyWork] ❌ UpdateFromProformaInvoice: invoice is NULL");
+                return;
+            }
+
+            System.Diagnostics.Debug.WriteLine($"[DailyWork] Updating from ProformaInvoice: {invoice.InvoiceNo}");
+            System.Diagnostics.Debug.WriteLine($"[DailyWork]   ProjectNo: {invoice.ProjectNo}");
+            System.Diagnostics.Debug.WriteLine($"[DailyWork]   CustomerName: {invoice.CustomerName}");
+            System.Diagnostics.Debug.WriteLine($"[DailyWork]   Salesman: {invoice.Salesman}");
+            System.Diagnostics.Debug.WriteLine($"[DailyWork]   Color: {invoice.Color}");
+
+            // Calculate totals from specifications
+            double totalSQM = 0;
+            int totalQty = 0;
+            if (invoice.Specifications != null)
+            {
+                foreach (var spec in invoice.Specifications)
+                {
+                    totalSQM += spec.SpecTotalSQM;
+                    totalQty += spec.SpecTotalQty;
+                }
+            }
+
+            System.Diagnostics.Debug.WriteLine($"[DailyWork]   Calculated SQM: {totalSQM}, Qty: {totalQty}");
+
+            // Collect colors from all specifications
+            var colorsFromSpecs = new List<string>();
+            if (invoice.Specifications != null)
+            {
+                foreach (var spec in invoice.Specifications)
+                {
+                    var specColor = ExtractColorFromSpecification(spec);
+                    if (!string.IsNullOrEmpty(specColor))
+                    {
+                        colorsFromSpecs.Add(specColor);
+                    }
+                }
+            }
+
+            // Determine final color
+            string finalColor;
+            if (colorsFromSpecs.Count > 0)
+            {
+                // Join all spec colors with " | " separator
+                finalColor = string.Join(" | ", colorsFromSpecs);
+            }
+            else if (!string.IsNullOrEmpty(invoice.Color))
+            {
+                finalColor = invoice.Color;
+            }
+            else
+            {
+                finalColor = "";
+            }
+
+            System.Diagnostics.Debug.WriteLine($"[DailyWork]   Colors from specs: {finalColor}");
+
+            // Find matching DailyWork by PINumber = ProjectNo
+            var matchingWork = DailyWorks?.FirstOrDefault(w =>
+                !string.IsNullOrEmpty(w.PINumber) &&
+                !string.IsNullOrEmpty(invoice.ProjectNo) &&
+                w.PINumber.Equals(invoice.ProjectNo, StringComparison.OrdinalIgnoreCase));
+
+            // If not found by ProjectNo, try by Customer Reference
+            if (matchingWork == null && !string.IsNullOrEmpty(invoice.CustomerName))
+            {
+                matchingWork = DailyWorks?.FirstOrDefault(w =>
+                    !string.IsNullOrEmpty(w.CustomerReference) &&
+                    w.CustomerReference.Equals(invoice.CustomerName, StringComparison.OrdinalIgnoreCase));
+            }
+
+            bool isNewRecord = false;
+
+            if (matchingWork != null)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DailyWork] ✅ Found existing record ID: {matchingWork.Id}");
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"[DailyWork] ➕ Creating new DailyWork record");
+
+                // Create new DailyWork
+                matchingWork = new DbDailyWork
+                {
+                    Id = DailyWorks.Count > 0 ? DailyWorks.Max(w => w.Id) + 1 : 1,
+                    Date = DateTime.Today,
+                    CreatedDate = DateTime.Now
+                };
+                isNewRecord = true;
+            }
+
+            // Update all fields from ProformaInvoice
+            // PINumber = InvoiceNo (the final PI number)
+            matchingWork.PINumber = invoice.InvoiceNo ?? matchingWork.PINumber ?? "";
+            matchingWork.Company = invoice.CustomerName ?? matchingWork.Company ?? "";
+            matchingWork.CustomerReference = invoice.CustomerName ?? matchingWork.CustomerReference ?? "";
+            matchingWork.Salesman = invoice.Salesman ?? matchingWork.Salesman ?? "";
+            matchingWork.Color = finalColor;
+            matchingWork.Notes = invoice.Notes ?? matchingWork.Notes ?? "";
+            matchingWork.UpdateDate = DateTime.Today;
+            matchingWork.SQM = totalSQM;
+            matchingWork.Qty = totalQty;
+
+            // Add to options if new values
+            if (!string.IsNullOrEmpty(matchingWork.PINumber) && !PINumberOptions.Contains(matchingWork.PINumber))
+                PINumberOptions.Add(matchingWork.PINumber);
+            if (!string.IsNullOrEmpty(matchingWork.Company) && !CompanyOptions.Contains(matchingWork.Company))
+                CompanyOptions.Add(matchingWork.Company);
+            if (!string.IsNullOrEmpty(matchingWork.Salesman) && !SalesmanOptions.Contains(matchingWork.Salesman))
+                SalesmanOptions.Add(matchingWork.Salesman);
+            if (!string.IsNullOrEmpty(matchingWork.Color) && !ColorOptions.Contains(matchingWork.Color))
+                ColorOptions.Add(matchingWork.Color);
+            if (!string.IsNullOrEmpty(matchingWork.CustomerReference) && !CustomerReferenceOptions.Contains(matchingWork.CustomerReference))
+                CustomerReferenceOptions.Add(matchingWork.CustomerReference);
+
+            // Save to database
+            if (isNewRecord)
+            {
+                DbHelper.SaveDailyWork(matchingWork);
+                DailyWorks.Add(matchingWork);
+                System.Diagnostics.Debug.WriteLine($"[DailyWork] ✅ Created new DailyWork ID: {matchingWork.Id}");
+            }
+            else
+            {
+                DbHelper.UpdateDailyWork(matchingWork);
+                System.Diagnostics.Debug.WriteLine($"[DailyWork] ✅ Updated DailyWork ID: {matchingWork.Id}");
+            }
+
+            // Refresh the DataGrid
+            RefreshDataView();
+            UpdateStatistics();
+            System.Diagnostics.Debug.WriteLine("[DailyWork] ✅ Refresh complete");
+        }
+        public ICommand LoadToInvoiceCommand { get; }
+
         #endregion
 
         #region DataView
@@ -654,17 +823,32 @@ namespace ProGlassAutomation.ViewModels
                 dataTable.Rows.Add(row);
             }
 
-            FilteredDataView = dataTable.DefaultView;
+            var newView = dataTable.DefaultView;
+            System.Diagnostics.Debug.WriteLine($"[DailyWork] CreateDataView - new view row count: {newView.Count}");
+            FilteredDataView = newView;
+            OnPropertyChanged(nameof(FilteredDataView));
         }
 
         private void RefreshDataView()
         {
-            if (FilteredDataView == null) return;
-            var currentSort = FilteredDataView.Sort;
-            var currentFilter = FilteredDataView.RowFilter;
+            System.Diagnostics.Debug.WriteLine($"[DailyWork] RefreshDataView called. Current records: {DailyWorks?.Count ?? 0}");
+
+            // Store current state
+            string currentSort = FilteredDataView?.Sort ?? "";
+            string currentFilter = FilteredDataView?.RowFilter ?? "";
+
+            // Recreate DataView
             CreateDataView();
-            if (!string.IsNullOrEmpty(currentSort)) FilteredDataView.Sort = currentSort;
-            if (!string.IsNullOrEmpty(currentFilter)) FilteredDataView.RowFilter = currentFilter;
+
+            // Restore state
+            if (!string.IsNullOrEmpty(currentSort) && FilteredDataView != null)
+                FilteredDataView.Sort = currentSort;
+            if (!string.IsNullOrEmpty(currentFilter) && FilteredDataView != null)
+                FilteredDataView.RowFilter = currentFilter;
+
+            System.Diagnostics.Debug.WriteLine($"[DailyWork] DataView recreated. Filtered count: {FilteredDataView?.Count ?? 0}");
+
+            UpdateStatistics();
         }
 
         #endregion
@@ -936,6 +1120,7 @@ namespace ProGlassAutomation.ViewModels
                 System.Diagnostics.Debug.WriteLine($"[DailyWork] Saved new ID: {EditingWork.Id}");
 
                 DailyWorks.Add(EditingWork);
+                System.Diagnostics.Debug.WriteLine($"[DailyWork] DailyWorks count after add: {DailyWorks.Count}");
             }
             else
             {
@@ -980,8 +1165,63 @@ namespace ProGlassAutomation.ViewModels
             EditingWork = null;
             IsDuplicateWarning = false;
             DuplicateMessage = "";
-            RefreshDataView();
-            UpdateStatistics();
+
+            System.Diagnostics.Debug.WriteLine("[DailyWork] Save complete, refreshing view...");
+
+            // CRITICAL: Reset the view reference to force UI update
+            System.Diagnostics.Debug.WriteLine($"[DailyWork] Before refresh - DailyWorks count: {DailyWorks.Count}");
+
+            // Create a fresh DataView from current DailyWorks
+            var newDataTable = new System.Data.DataTable("DailyWorks");
+            newDataTable.Columns.Add("Id", typeof(int));
+            newDataTable.Columns.Add("Date", typeof(DateTime));
+            newDataTable.Columns.Add("UpdateDate", typeof(DateTime));
+            newDataTable.Columns.Add("Company", typeof(string));
+            newDataTable.Columns.Add("PINumber", typeof(string));
+            newDataTable.Columns.Add("CustomerReference", typeof(string));
+            newDataTable.Columns.Add("TypeOfWork", typeof(string));
+            newDataTable.Columns.Add("ProductionStatus", typeof(string));
+            newDataTable.Columns.Add("DailyReportStatus", typeof(string));
+            newDataTable.Columns.Add("Qty", typeof(int));
+            newDataTable.Columns.Add("SQM", typeof(double));
+            newDataTable.Columns.Add("Status", typeof(string));
+            newDataTable.Columns.Add("Salesman", typeof(string));
+            newDataTable.Columns.Add("Color", typeof(string));
+            newDataTable.Columns.Add("Notes", typeof(string));
+
+            foreach (var work in DailyWorks)
+            {
+                var row = newDataTable.NewRow();
+                row["Id"] = work.Id;
+                row["Date"] = work.Date;
+                row["UpdateDate"] = work.UpdateDate;
+                row["Company"] = work.Company ?? "";
+                row["PINumber"] = work.PINumber ?? "";
+                row["CustomerReference"] = work.CustomerReference ?? "";
+                row["TypeOfWork"] = work.TypeOfWork ?? "";
+                row["ProductionStatus"] = work.ProductionStatus ?? "";
+                row["DailyReportStatus"] = work.DailyReportStatus ?? "";
+                row["Qty"] = work.Qty;
+                row["SQM"] = work.SQM;
+                row["Status"] = work.Status ?? "";
+                row["Salesman"] = work.Salesman ?? "";
+                row["Color"] = work.Color ?? "";
+                row["Notes"] = work.Notes ?? "";
+                newDataTable.Rows.Add(row);
+                System.Diagnostics.Debug.WriteLine($"[DailyWork] Added row for: {work.PINumber}");
+            }
+
+            // Assign new view and force notification
+            _filteredDataView = newDataTable.DefaultView;
+            OnPropertyChanged(nameof(FilteredDataView));
+
+            // Also update statistics
+            OnPropertyChanged(nameof(TotalRecords));
+            OnPropertyChanged(nameof(FilteredRecords));
+            OnPropertyChanged(nameof(TotalQty));
+            OnPropertyChanged(nameof(TotalSQM));
+
+            System.Diagnostics.Debug.WriteLine($"[DailyWork] After refresh - FilteredDataView count: {_filteredDataView?.Count ?? 0}");
         }
 
         private bool CanExecuteSave(object parameter) => EditingWork != null;
@@ -1295,6 +1535,176 @@ namespace ProGlassAutomation.ViewModels
         private bool CanExecuteDeleteSelected(object parameter)
         {
             return _selectedCount > 0;
+        }
+
+        private void ExecuteLoadToInvoice(object parameter)
+        {
+            System.Diagnostics.Debug.WriteLine($"[DailyWork] ExecuteLoadToInvoice called. SelectedDataRowView={(SelectedDataRowView != null)}");
+
+            DbDailyWork workToLoad = null;
+
+            // First try: Get from SelectedDataRowView (bound from XAML)
+            if (SelectedDataRowView != null)
+            {
+                System.Diagnostics.Debug.WriteLine("[DailyWork] Using SelectedDataRowView");
+                int id = Convert.ToInt32(SelectedDataRowView["Id"]);
+                workToLoad = DailyWorks.FirstOrDefault(w => w.Id == id);
+            }
+            // Second try: Get from SelectedWork
+            else if (SelectedWork != null)
+            {
+                System.Diagnostics.Debug.WriteLine("[DailyWork] Using SelectedWork");
+                workToLoad = SelectedWork;
+            }
+            // Third try: Get from DataGrid parameter
+            else if (parameter is System.Windows.Controls.DataGrid dg)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DailyWork] DataGrid param - SelectedItem={(dg.SelectedItem != null)}");
+                if (dg.SelectedItem is DataRowView drv)
+                {
+                    int id = Convert.ToInt32(drv["Id"]);
+                    workToLoad = DailyWorks.FirstOrDefault(w => w.Id == id);
+                }
+            }
+
+            if (workToLoad != null && ProformaInvoiceVM != null)
+            {
+                ProformaInvoiceVM.LoadFromDailyWork(workToLoad);
+                System.Diagnostics.Debug.WriteLine($"[DailyWork] Loaded to Invoice: {workToLoad.PINumber}");
+
+                // Trigger navigation to Proforma Invoice view
+                RequestNavigateToInvoice?.Invoke();
+            }
+            else if (workToLoad != null)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DailyWork] ProformaInvoiceVM is NULL");
+                MessageBox.Show("ProformaInvoiceVM not connected.\nPlease set ProformaInvoiceVM in MainWindow.",
+                    "Connection Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("[DailyWork] No workToLoad found");
+                MessageBox.Show("Please select a record first, or open Proforma Invoice page.",
+                    "No Selection", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        private bool CanExecuteLoadToInvoice(object parameter)
+        {
+            // For testing - always return true (remove this after testing)
+            return true;
+        }
+
+        // Helper method to extract colors from specification
+        private string ExtractColorFromSpecification(SpecificationModel spec)
+        {
+            if (spec == null) return "";
+
+            // Get specification name (contains the glass description)
+            var specName = spec.SpecificationName ?? "";
+
+            // Known color keywords (order matters - longer/more specific first)
+            var knownColors = new[]
+            {
+                "HD Grey", "HD Blue", "HD Green", "HD Bronze", "HD Black", "HD White",
+                "Grey", "Green", "Blue", "Bronze", "Black", "Brown", "Yellow", "Red", "Orange", "Clear", "White",
+                "Teal", "Navy", "Rose", "Amber", "Violet", "Pink", "Purple", "Champagne", "Gold", "Silver"
+            };
+
+            // Split by "+" to handle DGU/LAM specs with multiple glass layers
+            var layers = specName.Split('+');
+            var colors = new List<string>();
+
+            foreach (var layer in layers)
+            {
+                var layerTrimmed = layer.Trim();
+                bool foundColor = false;
+
+                // Find the first color match in this layer
+                foreach (var color in knownColors)
+                {
+                    if (layerTrimmed.Contains(color, StringComparison.OrdinalIgnoreCase))
+                    {
+                        colors.Add(color);
+                        foundColor = true;
+                        break; // Only take first color per layer
+                    }
+                }
+
+                // If no known color found, try to extract any word before "Glass"
+                if (!foundColor)
+                {
+                    var colorPattern = ExtractColorFromPattern(layerTrimmed);
+                    if (!string.IsNullOrEmpty(colorPattern))
+                    {
+                        colors.Add(colorPattern);
+                    }
+                }
+            }
+
+            if (colors.Count > 0)
+            {
+                return string.Join(" + ", colors);
+            }
+
+            return "";
+        }
+
+        // Helper to extract any color-like word from text
+        private string ExtractColorFromPattern(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return "";
+
+            // Remove common glass type words
+            var cleanText = text
+                .Replace("FT Glass", "")
+                .Replace("Annealed", "")
+                .Replace("Tempered", "")
+                .Replace("Glass", "")
+                .Replace("ASP", "");
+
+            // Try to find any common color word pattern
+            var words = cleanText.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+            // Known color patterns to look for
+            var colorKeywords = new[] { "HD", "Grey", "Gray", "Green", "Blue", "Bronze", "Black", "Brown", "Yellow", "Red", "Orange", "Clear", "White", "Teal", "Navy", "Rose", "Amber", "Violet", "Pink", "Purple", "Champagne", "Gold", "Silver" };
+
+            // Find consecutive color words
+            var colorWords = new List<string>();
+            bool lastWasColor = false;
+
+            foreach (var word in words)
+            {
+                if (colorKeywords.Any(c => word.Equals(c, StringComparison.OrdinalIgnoreCase)))
+                {
+                    colorWords.Add(word);
+                    lastWasColor = true;
+                }
+                else if (lastWasColor && IsColorDescriptor(word))
+                {
+                    // Keep the descriptor but don't add it separately
+                    lastWasColor = false;
+                }
+                else
+                {
+                    lastWasColor = false;
+                }
+            }
+
+            if (colorWords.Count > 0)
+            {
+                return string.Join(" ", colorWords);
+            }
+
+            return "";
+        }
+
+        // Check if word is a color descriptor
+        private bool IsColorDescriptor(string word)
+        {
+            if (string.IsNullOrEmpty(word)) return false;
+            var descriptors = new[] { "Tinted", "Reflective", "Mirror", "LowE", "Solar" };
+            return descriptors.Any(d => word.Contains(d, StringComparison.OrdinalIgnoreCase));
         }
 
         #endregion

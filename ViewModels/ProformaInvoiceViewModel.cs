@@ -301,6 +301,9 @@ namespace ProGlassAutomation.ViewModels
         public ICommand CalculatePriceCommand { get; private set; } = null!;
         public ICommand IncludeInSpecificationCommand { get; private set; } = null!;
         public ICommand PrintCommand { get; private set; } = null!;
+
+        // Event raised when invoice is saved
+        public event Action<ProformaInvoiceModel>? InvoiceSaved;
         public ICommand PasteFromExcelCommand { get; private set; } = null!;
         public ICommand SelectSGUCommand { get; private set; } = null!;
         public ICommand SelectDGUCommand { get; private set; } = null!;
@@ -399,6 +402,11 @@ namespace ProGlassAutomation.ViewModels
                     CurrentFileName = Path.GetFileNameWithoutExtension(dialog.FileName);
                     LoadSavedFiles();
                     StatusMessage = $"✅ Saved: {CurrentFileName}";
+
+                    // Raise event for other views to update
+                    System.Diagnostics.Debug.WriteLine($"[ProformaInvoice] About to raise InvoiceSaved event. InvoiceNo={Invoice?.InvoiceNo}");
+                    InvoiceSaved?.Invoke(Invoice);
+                    System.Diagnostics.Debug.WriteLine($"[ProformaInvoice] InvoiceSaved event raised");
                 }
             }
             catch (Exception ex) { StatusMessage = $"❌ Error: {ex.Message}"; MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
@@ -1344,6 +1352,42 @@ namespace ProGlassAutomation.ViewModels
                 }
             }
             catch (Exception ex) { MessageBox.Show($"Error: {ex.Message}\n{ex.StackTrace}", "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
+        }
+
+        // ==================== LOAD FROM DAILY WORK ====================
+
+        public void LoadFromDailyWork(Data.Database.DailyWork dailyWork)
+        {
+            if (dailyWork == null) return;
+
+            Invoice.InvoiceNo = $"PI-{DateTime.Now:yyyyMMdd}-{dailyWork.Id:D4}";
+            Invoice.InvoiceDate = DateTime.Now;
+            Invoice.ValidUntil = DateTime.Now.AddDays(30);
+            Invoice.CustomerName = dailyWork.CustomerReference;
+            Invoice.CustomerReference = dailyWork.CustomerReference;
+            Invoice.Salesman = dailyWork.Salesman;
+            Invoice.ProjectName = ExtractProjectName(dailyWork.Notes);
+            Invoice.ProjectNo = dailyWork.PINumber;
+            Invoice.ProjectLocation = "";
+            Invoice.LPONo = "";
+            Invoice.AttentionName = "";
+            Invoice.ContactNo = "";
+            Invoice.Color = dailyWork.Color;
+            Invoice.Notes = dailyWork.Notes;
+
+            Invoice.IsDirty = true;
+            OnPropertyChanged(nameof(Invoice));
+        }
+
+        private string ExtractProjectName(string notes)
+        {
+            if (string.IsNullOrEmpty(notes)) return "";
+            if (notes.Contains("Project:"))
+            {
+                var parts = notes.Split(new[] { "Project:", "|" }, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length > 0) return parts[0].Trim();
+            }
+            return notes;
         }
     }
 }

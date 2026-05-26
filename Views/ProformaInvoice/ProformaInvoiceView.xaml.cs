@@ -17,8 +17,12 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         public ProformaInvoiceView()
         {
             InitializeComponent();
-            _viewModel = new ProformaInvoiceViewModel();
+
+            // Use shared ProformaInvoiceViewModel (SAME instance as DailyWorks)
+            _viewModel = SharedViewModels.ProformaInvoiceVM;
             DataContext = _viewModel;
+
+            System.Diagnostics.Debug.WriteLine("[ProformaInvoiceView] Using SharedViewModels.ProformaInvoiceVM");
         }
 
         // ==================== TEXT SELECTION ON FOCUS ====================

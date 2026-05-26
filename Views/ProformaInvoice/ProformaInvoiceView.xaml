@@ -277,6 +277,7 @@
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -291,7 +292,15 @@
                                     <TextBlock Text="TRN Number" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
                                     <TextBox Text="{Binding Invoice.CustomerTRN, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
                                 </StackPanel>
-                                <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3">
+                                <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,0,6">
+                                    <TextBlock Text="Customer Reference" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
+                                    <TextBox Text="{Binding Invoice.CustomerReference, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                </StackPanel>
+                                <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,6">
+                                    <TextBlock Text="Salesman" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
+                                    <TextBox Text="{Binding Invoice.Salesman, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                </StackPanel>
+                                <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3">
                                     <TextBlock Text="Address" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
                                     <TextBox Text="{Binding Invoice.CustomerAddress, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF" TextWrapping="Wrap" Height="28"/>
                                 </StackPanel>
@@ -305,6 +314,10 @@
                             <StackPanel Margin="0,0,0,6">
                                 <TextBlock Text="Project Name *" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
                                 <TextBox Text="{Binding Invoice.ProjectName, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                            </StackPanel>
+                            <StackPanel Margin="0,0,0,6">
+                                <TextBlock Text="Project No." FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
+                                <TextBox Text="{Binding Invoice.ProjectNo, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
                             </StackPanel>
                             <StackPanel>
                                 <TextBlock Text="Location *" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>

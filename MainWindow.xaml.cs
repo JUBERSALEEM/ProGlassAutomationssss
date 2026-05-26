@@ -29,6 +29,9 @@ namespace ProGlassAutomation
             _viewModel = new MainViewModel();
             DataContext = _viewModel;
             StartClock();
+
+            // Find DailyWorksView and connect navigation event
+            this.Loaded += MainWindow_Loaded;
             UpdateLicenseStatus();
             CreateScreenshotPopup();
 
@@ -607,6 +610,38 @@ namespace ProGlassAutomation
                 return false;
             }
             return true;
+        }
+
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            // Find DailyWorksView and connect navigation
+            var dailyWorksView = FindChildByName(this, "DailyWorksViewContent") as Views.DailyWorksView;
+            if (dailyWorksView != null)
+            {
+                dailyWorksView.NavigateToInvoice += () =>
+                {
+                    Dispatcher.Invoke(() =>
+                    {
+                        _viewModel.ShowProformaInvoice();
+                    });
+                };
+                System.Diagnostics.Debug.WriteLine("[MainWindow] Connected DailyWorksView navigation");
+            }
+        }
+
+        private FrameworkElement? FindChildByName(DependencyObject parent, string name)
+        {
+            for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i);
+
+                if (child is FrameworkElement fe && fe.Name == name)
+                    return fe;
+
+                var result = FindChildByName(child, name);
+                if (result != null) return result;
+            }
+            return null;
         }
     }
 }
