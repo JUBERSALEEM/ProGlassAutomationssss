@@ -511,136 +511,6 @@
                                                 </DataGrid.Columns>
                                             </DataGrid>
 
-                                            <!-- Other Charges (After All Specifications) -->
-                                            <Border Background="#FFFFFF" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,12">
-                                                <StackPanel>
-                                                    <Grid Margin="0,0,0,10">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="*"/>
-                                                            <ColumnDefinition Width="Auto"/>
-                                                        </Grid.ColumnDefinitions>
-                                                        <TextBlock Grid.Column="0" Text="Other Charges" FontSize="12" FontWeight="SemiBold" Foreground="#1F2937" Margin="0"/>
-                                                        <Button Grid.Column="1" Content="+ Add Charge" 
-                                    Command="{Binding AddOtherChargeCommand}"
-                                    Padding="12,6" FontSize="11" Background="#1E3A5F" Foreground="White" BorderThickness="0" Cursor="Hand"/>
-                                                    </Grid>
-
-                                                    <!-- Other Charges Header -->
-                                                    <Grid Background="#F3F4F6" Margin="0,0,0,4">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="40"/>
-                                                            <ColumnDefinition Width="150"/>
-                                                            <ColumnDefinition Width="80"/>
-                                                            <ColumnDefinition Width="100"/>
-                                                            <ColumnDefinition Width="100"/>
-                                                            <ColumnDefinition Width="120"/>
-                                                            <ColumnDefinition Width="*"/>
-                                                            <ColumnDefinition Width="40"/>
-                                                        </Grid.ColumnDefinitions>
-                                                        <TextBlock Grid.Column="0" Text="#" FontSize="10" FontWeight="SemiBold" Foreground="#1E3A5F" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                        <TextBlock Grid.Column="1" Text="Charge Name" FontSize="10" FontWeight="SemiBold" Foreground="#1E3A5F" VerticalAlignment="Center" Margin="8,0"/>
-                                                        <TextBlock Grid.Column="2" Text="Type" FontSize="10" FontWeight="SemiBold" Foreground="#1E3A5F" VerticalAlignment="Center" HorizontalAlignment="Center"/>
-                                                        <TextBlock Grid.Column="3" Text="Value" FontSize="10" FontWeight="SemiBold" Foreground="#1E3A5F" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="8,0"/>
-                                                        <TextBlock Grid.Column="4" Text="Rate" FontSize="10" FontWeight="SemiBold" Foreground="#1E3A5F" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="8,0"/>
-                                                        <TextBlock Grid.Column="5" Text="Amount" FontSize="10" FontWeight="SemiBold" Foreground="#1E3A5F" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="8,0"/>
-                                                        <TextBlock Grid.Column="6" Text="Linked Specs" FontSize="10" FontWeight="SemiBold" Foreground="#1E3A5F" VerticalAlignment="Center" Margin="8,0"/>
-                                                        <TextBlock Grid.Column="7" Text="" VerticalAlignment="Center"/>
-                                                    </Grid>
-
-                                                    <!-- Other Charges Items -->
-                                                    <ItemsControl ItemsSource="{Binding AllOtherCharges}">
-                                                        <ItemsControl.ItemTemplate>
-                                                            <DataTemplate>
-                                                                <Border BorderBrush="#E5E7EB" BorderThickness="1" Margin="0,2" Padding="8" Background="White" CornerRadius="4">
-                                                                    <Grid>
-                                                                        <Grid.ColumnDefinitions>
-                                                                            <ColumnDefinition Width="40"/>
-                                                                            <ColumnDefinition Width="150"/>
-                                                                            <ColumnDefinition Width="80"/>
-                                                                            <ColumnDefinition Width="100"/>
-                                                                            <ColumnDefinition Width="100"/>
-                                                                            <ColumnDefinition Width="120"/>
-                                                                            <ColumnDefinition Width="*"/>
-                                                                            <ColumnDefinition Width="40"/>
-                                                                        </Grid.ColumnDefinitions>
-
-                                                                        <!-- Sr No -->
-                                                                        <TextBlock Grid.Column="0" 
-                                                       Text="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=(ItemsControl.AlternationIndex), StringFormat={}{0}}"
-                                                       VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="11" Foreground="#9CA3AF"/>
-
-                                                                        <!-- Name -->
-                                                                        <TextBox Grid.Column="1" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" 
-                                                     FontSize="11" Padding="8,6" Margin="4,0" VerticalAlignment="Center"
-                                                     BorderBrush="#D1D5DB" BorderThickness="1"/>
-
-                                                                        <!-- Type -->
-                                                                        <ComboBox Grid.Column="2" SelectedValue="{Binding Type, UpdateSourceTrigger=PropertyChanged}" 
-                                                      SelectedValuePath="Tag" FontSize="11" Padding="8,6" Margin="4,0" VerticalAlignment="Center"
-                                                      HorizontalContentAlignment="Center">
-                                                                            <ComboBoxItem Content="LM" Tag="lm"/>
-                                                                            <ComboBoxItem Content="SQM" Tag="sqm"/>
-                                                                            <ComboBoxItem Content="SQM1" Tag="sqm1"/>
-                                                                            <ComboBoxItem Content="SQM2" Tag="sqm2"/>
-                                                                            <ComboBoxItem Content="QTY" Tag="qty"/>
-                                                                            <ComboBoxItem Content="1X" Tag="1x"/>
-                                                                            <ComboBoxItem Content="2X" Tag="2x"/>
-                                                                        </ComboBox>
-
-                                                                        <!-- Value -->
-                                                                        <TextBox Grid.Column="3" Text="{Binding Value, StringFormat={}{0:F2}, UpdateSourceTrigger=PropertyChanged}" 
-                                                     FontSize="11" Padding="8,6" Margin="4,0" VerticalAlignment="Center" 
-                                                     HorizontalContentAlignment="Right" BorderBrush="#D1D5DB" BorderThickness="1"/>
-
-                                                                        <!-- Rate -->
-                                                                        <TextBox Grid.Column="4" Text="{Binding Rate, StringFormat={}{0:F2}, UpdateSourceTrigger=PropertyChanged}" 
-                                                     FontSize="11" Padding="8,6" Margin="4,0" VerticalAlignment="Center" 
-                                                     HorizontalContentAlignment="Right" BorderBrush="#D1D5DB" BorderThickness="1"/>
-
-                                                                        <!-- Amount (ReadOnly) -->
-                                                                        <TextBox Grid.Column="5" Text="{Binding AmountDisplay, Mode=OneWay}" 
-                                                     FontSize="11" Padding="8,6" Margin="4,0" VerticalAlignment="Center" 
-                                                     HorizontalContentAlignment="Right" IsReadOnly="True" Background="#F3F4F6" 
-                                                     BorderBrush="#D1D5DB" BorderThickness="1" FontWeight="SemiBold"/>
-
-                                                                        <!-- Linked Specs -->
-                                                                        <StackPanel Grid.Column="6" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0">
-                                                                            <CheckBox Content="All Specs" IsChecked="{Binding TargetsAllSpecs}" FontSize="10" VerticalAlignment="Center"/>
-                                                                        </StackPanel>
-
-                                                                        <!-- Delete Button -->
-                                                                        <Button Grid.Column="7" Content="X" 
-                                                    Command="{Binding DataContext.DeleteOtherChargeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                    CommandParameter="{Binding}"
-                                                    Width="28" Height="28" FontSize="11" FontWeight="Bold"
-                                                    Background="#DC2626" Foreground="White" BorderThickness="0" 
-                                                    Cursor="Hand" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                                    </Grid>
-                                                                </Border>
-                                                            </DataTemplate>
-                                                        </ItemsControl.ItemTemplate>
-                                                    </ItemsControl>
-
-                                                    <!-- No Charges Message -->
-                                                    <TextBlock Text="No other charges added" FontSize="11" Foreground="#9CA3AF" 
-                                   FontStyle="Italic" Margin="8,12" HorizontalAlignment="Center"
-                                   Visibility="{Binding AllOtherCharges.Count, Converter={StaticResource InverseBoolToVis}}"/>
-
-                                                    <!-- Other Charges Total -->
-                                                    <Border Background="#1E3A5F" Padding="12,8" CornerRadius="4" Margin="0,8,0,0"
-                                Visibility="{Binding AllOtherCharges.Count, Converter={StaticResource BoolToVis}}">
-                                                        <Grid>
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="*"/>
-                                                                <ColumnDefinition Width="Auto"/>
-                                                            </Grid.ColumnDefinitions>
-                                                            <TextBlock Text="Total Other Charges" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" VerticalAlignment="Center"/>
-                                                            <TextBlock Grid.Column="1" Text="{Binding AllOtherChargesTotal, StringFormat='AED {0:N2}'}" FontSize="14" FontWeight="Bold" Foreground="#60A5FA" VerticalAlignment="Center"/>
-                                                        </Grid>
-                                                    </Border>
-                                                </StackPanel>
-                                            </Border>
-
                                             <!-- Spec Footer -->
                                             <Border Background="#1E3A5F" Padding="5,4" CornerRadius="0,0,4,4">
                                                 <Grid>
@@ -670,7 +540,7 @@
 
                                                     <TextBlock Grid.Column="7" Text="{Binding TotalSQM, Mode=OneWay, StringFormat=N4}" FontSize="9" FontWeight="Bold" Foreground="#60A5FA" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
-                                                    <TextBlock Grid.Column="8" Text="{Binding Items, Mode=OneWay, Converter={StaticResource NullToVis}}" FontSize="9" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="8" Text="{Binding TotalSQM, Mode=OneWay, StringFormat=N4}" FontSize="9" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                 </Grid>
                                             </Border>
                                         </StackPanel>
@@ -678,6 +548,155 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <!-- Other Charges (AFTER ALL SPECIFICATIONS) -->
+                <Border Background="#FFFFFF" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,12">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Other Charges" FontSize="12" FontWeight="SemiBold" Foreground="#1F2937" Margin="0"/>
+                            <Button Grid.Column="1" Content="+ Add Charge" 
+                                    Command="{Binding AddOtherChargeCommand}"
+                                    Padding="12,6" FontSize="11" Background="#1E3A5F" Foreground="White" BorderThickness="0" Cursor="Hand"/>
+                        </Grid>
+
+                        <!-- Other Charges Header -->
+                        <Grid Background="#F3F4F6" Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="40"/>
+                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition Width="80"/>
+                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="120"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="40"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="#" FontSize="10" FontWeight="SemiBold" Foreground="#1E3A5F" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="Charge Name" FontSize="10" FontWeight="SemiBold" Foreground="#1E3A5F" VerticalAlignment="Center" Margin="8,0"/>
+                            <TextBlock Grid.Column="2" Text="Type" FontSize="10" FontWeight="SemiBold" Foreground="#1E3A5F" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                            <TextBlock Grid.Column="3" Text="Value" FontSize="10" FontWeight="SemiBold" Foreground="#1E3A5F" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="8,0"/>
+                            <TextBlock Grid.Column="4" Text="Rate" FontSize="10" FontWeight="SemiBold" Foreground="#1E3A5F" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="8,0"/>
+                            <TextBlock Grid.Column="5" Text="Amount" FontSize="10" FontWeight="SemiBold" Foreground="#1E3A5F" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="8,0"/>
+                            <TextBlock Grid.Column="6" Text="Linked Specs" FontSize="10" FontWeight="SemiBold" Foreground="#1E3A5F" VerticalAlignment="Center" Margin="8,0"/>
+                            <TextBlock Grid.Column="7" Text="" VerticalAlignment="Center"/>
+                        </Grid>
+
+                        <!-- Other Charges Items -->
+                        <ItemsControl ItemsSource="{Binding AllOtherCharges}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="#E5E7EB" BorderThickness="1" Margin="0,2" Padding="8" Background="White" CornerRadius="4">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="40"/>
+                                                <ColumnDefinition Width="150"/>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="100"/>
+                                                <ColumnDefinition Width="100"/>
+                                                <ColumnDefinition Width="120"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="40"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Sr No -->
+                                            <TextBlock Grid.Column="0" 
+                                                       Text="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=(ItemsControl.AlternationIndex), StringFormat={}{0}}"
+                                                       VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="11" Foreground="#9CA3AF"/>
+
+                                            <!-- Name -->
+                                            <TextBox Grid.Column="1" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" 
+                                                     FontSize="11" Padding="8,6" Margin="4,0" VerticalAlignment="Center"
+                                                     BorderBrush="#D1D5DB" BorderThickness="1"/>
+
+                                            <!-- Type -->
+                                            <ComboBox Grid.Column="2" SelectedValue="{Binding Type, UpdateSourceTrigger=PropertyChanged}" 
+                                                      SelectedValuePath="Tag" FontSize="11" Padding="8,6" Margin="4,0" VerticalAlignment="Center"
+                                                      HorizontalContentAlignment="Center">
+                                                <ComboBoxItem Content="LM" Tag="lm"/>
+                                                <ComboBoxItem Content="SQM" Tag="sqm"/>
+                                                <ComboBoxItem Content="SQM1" Tag="sqm1"/>
+                                                <ComboBoxItem Content="SQM2" Tag="sqm2"/>
+                                                <ComboBoxItem Content="QTY" Tag="qty"/>
+                                                <ComboBoxItem Content="1X" Tag="1x"/>
+                                                <ComboBoxItem Content="2X" Tag="2x"/>
+                                            </ComboBox>
+
+                                            <!-- Value -->
+                                            <TextBox Grid.Column="3" Text="{Binding Value, StringFormat={}{0:F2}, UpdateSourceTrigger=PropertyChanged}" 
+                                                     FontSize="11" Padding="8,6" Margin="4,0" VerticalAlignment="Center" 
+                                                     HorizontalContentAlignment="Right" BorderBrush="#D1D5DB" BorderThickness="1"/>
+
+                                            <!-- Rate -->
+                                            <TextBox Grid.Column="4" Text="{Binding Rate, StringFormat={}{0:F2}, UpdateSourceTrigger=PropertyChanged}" 
+                                                     FontSize="11" Padding="8,6" Margin="4,0" VerticalAlignment="Center" 
+                                                     HorizontalContentAlignment="Right" BorderBrush="#D1D5DB" BorderThickness="1"/>
+
+                                            <!-- Amount (ReadOnly) -->
+                                            <TextBox Grid.Column="5" Text="{Binding AmountDisplay, Mode=OneWay}" 
+                                                     FontSize="11" Padding="8,6" Margin="4,0" VerticalAlignment="Center" 
+                                                     HorizontalContentAlignment="Right" IsReadOnly="True" Background="#F3F4F6" 
+                                                     BorderBrush="#D1D5DB" BorderThickness="1" FontWeight="SemiBold"/>
+
+                                            <!-- Linked Specs -->
+                                            <StackPanel Grid.Column="6" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0">
+                                                <CheckBox Content="All Specs" IsChecked="{Binding TargetsAllSpecs}" FontSize="10" VerticalAlignment="Center"/>
+                                            </StackPanel>
+
+                                            <!-- Delete Button -->
+                                            <Button Grid.Column="7" Content="X" 
+                                                    Command="{Binding DataContext.DeleteOtherChargeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    Width="28" Height="28" FontSize="11" FontWeight="Bold"
+                                                    Background="#DC2626" Foreground="White" BorderThickness="0" 
+                                                    Cursor="Hand" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- No Charges Message -->
+                        <TextBlock Text="No other charges added" FontSize="11" Foreground="#9CA3AF" 
+                                   FontStyle="Italic" Margin="8,12" HorizontalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding AllOtherCharges.Count}" Value="0">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <!-- Other Charges Total -->
+                        <Border Background="#1E3A5F" Padding="12,8" CornerRadius="4" Margin="0,8,0,0">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding AllOtherCharges.Count}" Value="0">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Total Other Charges" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="{Binding AllOtherChargesTotal, StringFormat='AED {0:N2}'}" FontSize="14" FontWeight="Bold" Foreground="#60A5FA" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
                     </StackPanel>
                 </Border>
 
