@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -9,6 +10,8 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using ProGlassAutomation.Data.Database;
+using ProGlassAutomation.Models;
 using ProGlassAutomation.ViewModels;
 
 namespace ProGlassAutomation
@@ -197,6 +200,12 @@ namespace ProGlassAutomation
             _viewModel.ShowProformaInvoice();
         }
 
+        private void MenuItem_JobOrders_Click(object sender, RoutedEventArgs e)
+        {
+            CloseCurrentDropdown();
+            _viewModel.ShowJobOrders();
+        }
+
         // ==================== LICENSING DROPDOWN ====================
 
         private void MenuItem_ActivateLicense_Click(object sender, RoutedEventArgs e)
@@ -336,20 +345,11 @@ namespace ProGlassAutomation
             aboutDialog.ShowDialog();
         }
 
-        // ==================== DASHBOARD DROPDOWN - ADDITIONAL ====================
-
-        private void MenuItem_JobOrders_Click(object sender, RoutedEventArgs e)
-        {
-            CloseCurrentDropdown();
-            _viewModel.ShowJobOrders();
-        }
-
         // ==================== SETTINGS DROPDOWN ====================
 
         private void MenuItem_Settings_Click(object sender, RoutedEventArgs e)
         {
             CloseCurrentDropdown();
-            // Settings functionality - placeholder
             MessageBox.Show("Settings module coming soon!", "Settings", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
@@ -649,7 +649,7 @@ namespace ProGlassAutomation
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            // Find DailyWorksView and connect navigation
+            // Find DailyWorksView and connect navigation event
             var dailyWorksView = FindChildByName(this, "DailyWorksViewContent") as Views.DailyWorksView;
             if (dailyWorksView != null)
             {

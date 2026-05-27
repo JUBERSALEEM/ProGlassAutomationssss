@@ -1519,5 +1519,114 @@ namespace ProGlassAutomation.ViewModels
                 }
             }
         }
+
+        // ═══════════════════════════════════════════════════════
+        // LOAD FROM EXISTING PROFORMA INVOICE
+        // ═══════════════════════════════════════════════════════
+
+        public void LoadFromProformaInvoice(ProformaInvoiceModel pi)
+        {
+            if (pi == null) return;
+
+            System.Diagnostics.Debug.WriteLine($"[PIViewModel] LoadFromProformaInvoice: {pi.InvoiceNo}");
+
+            try
+            {
+                // Copy all properties from the loaded PI
+                Invoice.InvoiceNo = pi.InvoiceNo;
+                Invoice.InvoiceDate = pi.InvoiceDate;
+                Invoice.ValidUntil = pi.ValidUntil;
+                Invoice.CustomerName = pi.CustomerName ?? "";
+                Invoice.CustomerTRN = pi.CustomerTRN ?? "";
+                Invoice.CustomerReference = pi.CustomerReference ?? "";
+                Invoice.Salesman = pi.Salesman ?? "";
+                Invoice.CustomerAddress = pi.CustomerAddress ?? "";
+                Invoice.ProjectName = pi.ProjectName ?? "";
+                Invoice.ProjectNo = pi.ProjectNo ?? "";
+                Invoice.ProjectLocation = pi.ProjectLocation ?? "";
+                Invoice.LPONo = pi.LPONo ?? "";
+                Invoice.AttentionName = pi.AttentionName ?? "";
+                Invoice.ContactNo = pi.ContactNo ?? "";
+                Invoice.Color = pi.Color ?? "";
+                Invoice.Notes = pi.Notes ?? "";
+                Invoice.Status = pi.Status ?? "Pending";
+
+                // Copy specifications
+                Invoice.Specifications.Clear();
+                if (pi.Specifications != null)
+                {
+                    foreach (var piSpec in pi.Specifications)
+                    {
+                        var newSpec = new SpecificationModel
+                        {
+                            Id = piSpec.Id,
+                            SpecificationName = piSpec.SpecificationName ?? "",
+                            ModuleType = piSpec.ModuleType ?? "SGU",
+                            WorkType = piSpec.WorkType ?? "Annealed",
+                            IncludeInSpec = piSpec.IncludeInSpec,
+                            OuterThickness = piSpec.OuterThickness ?? "6mm",
+                            OuterColor = piSpec.OuterColor ?? "Clear",
+                            OuterPrice = piSpec.OuterPrice ?? "0",
+                            SpacerThickness = piSpec.SpacerThickness ?? "12mm",
+                            PVBThickness = piSpec.PVBThickness ?? "0.76mm",
+                            PVBColor = piSpec.PVBColor ?? "Clear",
+                            PVBPrice = piSpec.PVBPrice ?? "0",
+                            InnerThickness = piSpec.InnerThickness ?? "6mm",
+                            InnerColor = piSpec.InnerColor ?? "Clear",
+                            InnerPrice = piSpec.InnerPrice ?? "0",
+                            BasePrice = piSpec.BasePrice,
+                            SurchargePercent = piSpec.SurchargePercent,
+                            ASPPrice = piSpec.ASPPrice ?? "0",
+                            Invoice = Invoice
+                        };
+
+                        // Copy items
+                        if (piSpec.Items != null)
+                        {
+                            foreach (var piItem in piSpec.Items)
+                            {
+                                var newItem = new InvoiceItemModel
+                                {
+                                    SrNo = piItem.SrNo,
+                                    GlassRef = piItem.GlassRef ?? "",
+                                    Width1 = piItem.Width1,
+                                    Height1 = piItem.Height1,
+                                    Width2 = piItem.Width2,
+                                    Height2 = piItem.Height2,
+                                    Qty = piItem.Qty,
+                                    Price = piItem.Price,
+                                    SurchargePercent = piItem.SurchargePercent,
+                                    Specification = newSpec
+                                };
+                                newSpec.Items.Add(newItem);
+                            }
+                        }
+
+                        newSpec.CalculateTotals();
+                        Invoice.Specifications.Add(newSpec);
+                    }
+                }
+
+                // Subscribe to charge changes
+                SubscribeToOtherChargeChanges();
+                RefreshAllChargeAutoValues();
+
+                // Set first spec as selected
+                SelectedTargetSpecification = Invoice.Specifications.FirstOrDefault();
+                SelectedSpecificationId = SelectedTargetSpecification?.Id ?? 0;
+
+                Invoice.CalculateTotals();
+                Invoice.IsDirty = false;
+                CurrentFileName = pi.InvoiceNo ?? "Loaded Invoice";
+
+                System.Diagnostics.Debug.WriteLine($"[PIViewModel] Loaded {Invoice.Specifications.Count} specs");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[PIViewModel] LoadFromProformaInvoice ERROR: {ex.Message}");
+                MessageBox.Show($"Error loading invoice: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
     }
 }

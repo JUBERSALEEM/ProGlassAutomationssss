@@ -741,5 +741,165 @@ namespace ProGlassAutomation.ViewModels
         }
 
         #endregion
+
+        // ═══════════════════════════════════════════════════════
+        // LOAD FROM EXISTING JOB ORDER
+        // ═══════════════════════════════════════════════════════
+
+        public void LoadFromExistingJobOrder(JobOrder jo)
+        {
+            if (jo == null) return;
+
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"[JobOrderVM] LoadFromExistingJobOrder: {jo.JobNumber}");
+
+                // STEP 1: Copy basic properties
+                JobOrderNumber = jo.JobNumber ?? "";
+                CustomerName = jo.CustomerName ?? "";
+                CustomerTRN = "";
+                CustomerReference = "";
+                Salesman = jo.Salesman ?? "";
+                CustomerAddress = "";
+                ProjectName = jo.ProjectName ?? "";
+                ProjectNo = "";
+                ProjectLocation = jo.ProjectLocation ?? "";
+                LPONo = "";
+                AttentionName = "";
+                ContactNo = "";
+                PINumber = jo.PINumber ?? "";
+                Notes = jo.Notes ?? "";
+                Status = jo.Status ?? "Pending";
+                JobOrderDate = jo.Date;
+                RequiredDate = jo.RequiredDate;
+
+                // STEP 2: Copy specifications and items
+                Specifications.Clear();
+
+                if (jo.Specifications != null && jo.Specifications.Count > 0)
+                {
+                    int specIndex = 0;
+                    foreach (var joSpec in jo.Specifications)
+                    {
+                        specIndex++;
+
+                        var newSpec = new JobOrderSpecification
+                        {
+                            Id = specIndex,
+                            SpecificationName = joSpec.SpecificationName ?? $"Specification {specIndex}",
+                            ModuleType = joSpec.ModuleType ?? "SGU",
+                            WorkType = joSpec.WorkType ?? "Annealed",
+                            OuterThickness = joSpec.OuterThickness ?? "6mm",
+                            OuterColor = joSpec.OuterColor ?? "Clear",
+                            InnerThickness = joSpec.InnerThickness ?? "6mm",
+                            InnerColor = joSpec.InnerColor ?? "Clear",
+                            SpacerThickness = joSpec.SpacerThickness ?? "12mm",
+                            PVBThickness = joSpec.PVBThickness ?? "0.76mm",
+                            PVBColor = joSpec.PVBColor ?? "Clear",
+                            IncludeInSpec = joSpec.IncludeInSpec,
+                            BasePrice = joSpec.BasePrice,
+                            SurchargePercent = joSpec.SurchargePercent
+                        };
+
+                        // Copy items
+                        if (joSpec.Items != null && joSpec.Items.Count > 0)
+                        {
+                            int itemIndex = 0;
+                            foreach (var joItem in joSpec.Items)
+                            {
+                                itemIndex++;
+
+                                var newItem = new JobOrderItem
+                                {
+                                    Id = itemIndex,
+                                    SrNo = itemIndex,
+                                    GlassRef = joItem.GlassRef ?? "",
+                                    Width1 = joItem.Width1,
+                                    Height1 = joItem.Height1,
+                                    Width2 = joItem.Width2,
+                                    Height2 = joItem.Height2,
+                                    Qty = joItem.Qty > 0 ? joItem.Qty : 1,
+                                    DeliveredQty = joItem.DeliveredQty,
+                                    Price = joItem.Price
+                                };
+
+                                newItem.Recalculate();
+                                newSpec.Items.Add(newItem);
+                            }
+
+                            newSpec.CalculateTotals();
+                        }
+
+                        // Copy Other Charges
+                        if (joSpec.OtherCharges != null && joSpec.OtherCharges.Count > 0)
+                        {
+                            foreach (var joCharge in joSpec.OtherCharges)
+                            {
+                                var newCharge = new JobOrderOtherCharge
+                                {
+                                    Name = joCharge.Name ?? $"Charge {newSpec.OtherCharges.Count + 1}",
+                                    Type = joCharge.Type ?? "lm",
+                                    Value = joCharge.Value,
+                                    Rate = joCharge.Rate,
+                                    Amount = joCharge.Amount,
+                                    TargetsAllSpecs = true,
+                                    LinkedSpecIndices = joCharge.LinkedSpecIndices ?? ""
+                                };
+                                newSpec.OtherCharges.Add(newCharge);
+                            }
+
+                            newSpec.CalculateTotals();
+                        }
+
+                        Specifications.Add(newSpec);
+                    }
+                }
+                else
+                {
+                    Specifications.Add(new JobOrderSpecification { Id = 1, SpecificationName = "Specification 1" });
+                }
+
+                System.Diagnostics.Debug.WriteLine($"[JobOrderVM] Loaded {Specifications.Count} specs from existing JO");
+
+                // Notify property changes
+                OnPropertyChanged(nameof(TotalQty));
+                OnPropertyChanged(nameof(TotalSQM));
+                OnPropertyChanged(nameof(TotalAmount));
+                OnPropertyChanged(nameof(TotalLM1));
+                OnPropertyChanged(nameof(TotalLM2));
+                OnPropertyChanged(nameof(Specifications));
+                OnPropertyChanged(nameof(AllOtherCharges));
+                OnPropertyChanged(nameof(AllOtherChargesTotal));
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[JobOrderVM] LoadFromExistingJobOrder ERROR: {ex.Message}");
+                MessageBox.Show($"Error loading Job Order: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // CLEAR FOR NEW JOB ORDER
+        // ═══════════════════════════════════════════════════════
+
+        public void ClearForNewJobOrder()
+        {
+            ClearAll();
+
+            // Generate new job order number
+            JobOrderNumber = DbHelper.GenerateNextJONumber();
+            JobOrderDate = DateTime.Today;
+            RequiredDate = DateTime.Today.AddDays(7);
+            Status = "Pending";
+            PINumber = "";
+
+            // Reset company info
+            CompanyName = "PROGLASS AUTOMATION";
+            CompanyTRN = "100458979400003";
+            CompanyLocation = "Dubai, UAE";
+
+            System.Diagnostics.Debug.WriteLine($"[JobOrderVM] ClearForNewJobOrder: New JO Number = {JobOrderNumber}");
+        }
     }
 }
