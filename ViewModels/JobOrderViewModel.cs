@@ -1,11 +1,12 @@
-﻿using System;
+﻿using ProGlassAutomation.Data.Database;
+using ProGlassAutomation.Models;
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
-using ProGlassAutomation.Data.Database;
-using ProGlassAutomation.Models;
 
 namespace ProGlassAutomation.ViewModels
 {
@@ -47,6 +48,25 @@ namespace ProGlassAutomation.ViewModels
             AddOtherChargeCommand = new RelayCommand(o => ExecuteAddOtherCharge(o));
             DeleteOtherChargeCommand = new RelayCommand(o => ExecuteDeleteOtherCharge(o));
         }
+
+        #region INotifyPropertyChanged Support
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
+        {
+            if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+            field = value;
+            OnPropertyChanged(propertyName);
+            return true;
+        }
+
+        #endregion
 
         #region Properties
 
@@ -152,9 +172,26 @@ namespace ProGlassAutomation.ViewModels
             set => SetProperty(ref _status, value);
         }
 
-        public string CompanyName { get; set; } = "PROGLASS AUTOMATION";
-        public string CompanyTRN { get; set; } = "100458979400003";
-        public string CompanyLocation { get; set; } = "Dubai, UAE";
+        private string _companyName = "PROGLASS AUTOMATION";
+        public string CompanyName
+        {
+            get => _companyName;
+            set => SetProperty(ref _companyName, value);
+        }
+
+        private string _companyTRN = "100458979400003";
+        public string CompanyTRN
+        {
+            get => _companyTRN;
+            set => SetProperty(ref _companyTRN, value);
+        }
+
+        private string _companyLocation = "Dubai, UAE";
+        public string CompanyLocation
+        {
+            get => _companyLocation;
+            set => SetProperty(ref _companyLocation, value);
+        }
 
         public ObservableCollection<JobOrderSpecification> Specifications
 
@@ -209,6 +246,8 @@ namespace ProGlassAutomation.ViewModels
                 targetSpec.OtherCharges.Add(newCharge);
                 targetSpec.CalculateTotals();
                 OnPropertyChanged(nameof(TotalAmount));
+                OnPropertyChanged(nameof(AllOtherCharges));
+                OnPropertyChanged(nameof(AllOtherChargesTotal));
             }
         }
 
@@ -223,6 +262,8 @@ namespace ProGlassAutomation.ViewModels
                         spec.OtherCharges.Remove(charge);
                         spec.CalculateTotals();
                         OnPropertyChanged(nameof(TotalAmount));
+                        OnPropertyChanged(nameof(AllOtherCharges));
+                        OnPropertyChanged(nameof(AllOtherChargesTotal));
                         break;
                     }
                 }
@@ -387,13 +428,26 @@ namespace ProGlassAutomation.ViewModels
                 System.Diagnostics.Debug.WriteLine($"[JobOrderVM] Total Amount: {TotalAmount:F2}");
                 System.Diagnostics.Debug.WriteLine("[JobOrderVM] LoadFromProformaInvoice END");
 
-                // Notify property changes for totals and company info
+                // Notify ALL property changes for UI to refresh
                 OnPropertyChanged(nameof(CompanyName));
                 OnPropertyChanged(nameof(CompanyTRN));
                 OnPropertyChanged(nameof(CompanyLocation));
                 OnPropertyChanged(nameof(TotalQty));
                 OnPropertyChanged(nameof(TotalSQM));
                 OnPropertyChanged(nameof(TotalAmount));
+                OnPropertyChanged(nameof(TotalLM1));
+                OnPropertyChanged(nameof(TotalLM2));
+                OnPropertyChanged(nameof(Specifications));
+                OnPropertyChanged(nameof(AllOtherCharges));
+                OnPropertyChanged(nameof(AllOtherChargesTotal));
+
+                // Notify each spec so UI refreshes
+                foreach (var spec in Specifications)
+                {
+                    OnPropertyChanged("TotalSQM");
+                    OnPropertyChanged("TotalLM1");
+                    OnPropertyChanged("TotalLM2");
+                }
             }
             catch (Exception ex)
             {
@@ -428,22 +482,29 @@ namespace ProGlassAutomation.ViewModels
             OnPropertyChanged(nameof(TotalQty));
             OnPropertyChanged(nameof(TotalSQM));
             OnPropertyChanged(nameof(TotalAmount));
+            OnPropertyChanged(nameof(TotalLM1));
+            OnPropertyChanged(nameof(TotalLM2));
         }
 
-        // Added this property
+        // Cached collection for Other Charges
+        private ObservableCollection<JobOrderOtherCharge> _allOtherCharges;
+
         public ObservableCollection<JobOrderOtherCharge> AllOtherCharges
         {
             get
             {
-                var all = new ObservableCollection<JobOrderOtherCharge>();
+                if (_allOtherCharges == null)
+                    _allOtherCharges = new ObservableCollection<JobOrderOtherCharge>();
+
+                _allOtherCharges.Clear();
                 foreach (var spec in Specifications)
                 {
                     foreach (var charge in spec.OtherCharges)
                     {
-                        all.Add(charge);
+                        _allOtherCharges.Add(charge);
                     }
                 }
-                return all;
+                return _allOtherCharges;
             }
         }
 
@@ -473,6 +534,8 @@ namespace ProGlassAutomation.ViewModels
             OnPropertyChanged(nameof(TotalQty));
             OnPropertyChanged(nameof(TotalSQM));
             OnPropertyChanged(nameof(TotalAmount));
+            OnPropertyChanged(nameof(TotalLM1));
+            OnPropertyChanged(nameof(TotalLM2));
         }
 
         private void ExecuteAddItem(object parameter)
@@ -493,6 +556,12 @@ namespace ProGlassAutomation.ViewModels
                 WorkType = "Annealed",
                 SurchargePercent = 20
             });
+
+            OnPropertyChanged(nameof(TotalQty));
+            OnPropertyChanged(nameof(TotalSQM));
+            OnPropertyChanged(nameof(TotalAmount));
+            OnPropertyChanged(nameof(TotalLM1));
+            OnPropertyChanged(nameof(TotalLM2));
         }
 
         public void RemoveSpecification()
@@ -503,6 +572,8 @@ namespace ProGlassAutomation.ViewModels
                 OnPropertyChanged(nameof(TotalQty));
                 OnPropertyChanged(nameof(TotalSQM));
                 OnPropertyChanged(nameof(TotalAmount));
+                OnPropertyChanged(nameof(TotalLM1));
+                OnPropertyChanged(nameof(TotalLM2));
             }
         }
 
@@ -629,6 +700,8 @@ namespace ProGlassAutomation.ViewModels
                 OnPropertyChanged(nameof(TotalQty));
                 OnPropertyChanged(nameof(TotalSQM));
                 OnPropertyChanged(nameof(TotalAmount));
+                OnPropertyChanged(nameof(AllOtherCharges));
+                OnPropertyChanged(nameof(AllOtherChargesTotal));
             }
         }
 
@@ -663,6 +736,8 @@ namespace ProGlassAutomation.ViewModels
             OnPropertyChanged(nameof(TotalQty));
             OnPropertyChanged(nameof(TotalSQM));
             OnPropertyChanged(nameof(TotalAmount));
+            OnPropertyChanged(nameof(AllOtherCharges));
+            OnPropertyChanged(nameof(AllOtherChargesTotal));
         }
 
         #endregion

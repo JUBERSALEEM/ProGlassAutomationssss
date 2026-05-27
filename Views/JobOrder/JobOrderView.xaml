@@ -569,11 +569,9 @@
                         <Grid Background="#F3F4F6" Margin="0,0,0,4">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="40"/>
-                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition Width="200"/>
                                 <ColumnDefinition Width="80"/>
                                 <ColumnDefinition Width="100"/>
-                                <ColumnDefinition Width="100"/>
-                                <ColumnDefinition Width="120"/>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="40"/>
                             </Grid.ColumnDefinitions>
@@ -581,10 +579,8 @@
                             <TextBlock Grid.Column="1" Text="Charge Name" FontSize="10" FontWeight="SemiBold" Foreground="#1E3A5F" VerticalAlignment="Center" Margin="8,0"/>
                             <TextBlock Grid.Column="2" Text="Type" FontSize="10" FontWeight="SemiBold" Foreground="#1E3A5F" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                             <TextBlock Grid.Column="3" Text="Value" FontSize="10" FontWeight="SemiBold" Foreground="#1E3A5F" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="8,0"/>
-                            <TextBlock Grid.Column="4" Text="Rate" FontSize="10" FontWeight="SemiBold" Foreground="#1E3A5F" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="8,0"/>
-                            <TextBlock Grid.Column="5" Text="Amount" FontSize="10" FontWeight="SemiBold" Foreground="#1E3A5F" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="8,0"/>
-                            <TextBlock Grid.Column="6" Text="Linked Specs" FontSize="10" FontWeight="SemiBold" Foreground="#1E3A5F" VerticalAlignment="Center" Margin="8,0"/>
-                            <TextBlock Grid.Column="7" Text="" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="4" Text="Linked Specs" FontSize="10" FontWeight="SemiBold" Foreground="#1E3A5F" VerticalAlignment="Center" Margin="8,0"/>
+                            <TextBlock Grid.Column="5" Text="" VerticalAlignment="Center"/>
                         </Grid>
 
                         <!-- Other Charges Items -->
@@ -595,11 +591,9 @@
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="40"/>
-                                                <ColumnDefinition Width="150"/>
+                                                <ColumnDefinition Width="200"/>
                                                 <ColumnDefinition Width="80"/>
                                                 <ColumnDefinition Width="100"/>
-                                                <ColumnDefinition Width="100"/>
-                                                <ColumnDefinition Width="120"/>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="40"/>
                                             </Grid.ColumnDefinitions>
@@ -632,24 +626,13 @@
                                                      FontSize="11" Padding="8,6" Margin="4,0" VerticalAlignment="Center" 
                                                      HorizontalContentAlignment="Right" BorderBrush="#D1D5DB" BorderThickness="1"/>
 
-                                            <!-- Rate -->
-                                            <TextBox Grid.Column="4" Text="{Binding Rate, StringFormat={}{0:F2}, UpdateSourceTrigger=PropertyChanged}" 
-                                                     FontSize="11" Padding="8,6" Margin="4,0" VerticalAlignment="Center" 
-                                                     HorizontalContentAlignment="Right" BorderBrush="#D1D5DB" BorderThickness="1"/>
-
-                                            <!-- Amount (ReadOnly) -->
-                                            <TextBox Grid.Column="5" Text="{Binding AmountDisplay, Mode=OneWay}" 
-                                                     FontSize="11" Padding="8,6" Margin="4,0" VerticalAlignment="Center" 
-                                                     HorizontalContentAlignment="Right" IsReadOnly="True" Background="#F3F4F6" 
-                                                     BorderBrush="#D1D5DB" BorderThickness="1" FontWeight="SemiBold"/>
-
                                             <!-- Linked Specs -->
-                                            <StackPanel Grid.Column="6" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0">
+                                            <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0">
                                                 <CheckBox Content="All Specs" IsChecked="{Binding TargetsAllSpecs}" FontSize="10" VerticalAlignment="Center"/>
                                             </StackPanel>
 
                                             <!-- Delete Button -->
-                                            <Button Grid.Column="7" Content="X" 
+                                            <Button Grid.Column="5" Content="X" 
                                                     Command="{Binding DataContext.DeleteOtherChargeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                     CommandParameter="{Binding}"
                                                     Width="28" Height="28" FontSize="11" FontWeight="Bold"
