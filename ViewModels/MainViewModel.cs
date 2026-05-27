@@ -7,6 +7,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using ProGlassAutomation.Views;
+using ProGlassAutomation.Models;
+using ProGlassAutomation.Data.Database;
+using System.Collections.ObjectModel;
 
 namespace ProGlassAutomation.ViewModels
 {
@@ -33,6 +36,18 @@ namespace ProGlassAutomation.ViewModels
         // ═══════════════════════════════════════════════════════
         private readonly Dictionary<string, UserControl> _viewCache = new();
 
+        // Job Order ViewModel - shared across views
+        private JobOrderViewModel _jobOrderVM;
+        public JobOrderViewModel JobOrderVM
+        {
+            get
+            {
+                if (_jobOrderVM == null)
+                    _jobOrderVM = new JobOrderViewModel();
+                return _jobOrderVM;
+            }
+        }
+
         private UserControl GetOrCreateView(string viewName)
         {
             if (_viewCache.TryGetValue(viewName, out var cached))
@@ -53,6 +68,8 @@ namespace ProGlassAutomation.ViewModels
                 "Profile" => new Views.Profile.ProfileView(),
                 "Users" => CreatePlaceholder("Users - Coming Soon!"),
                 "ProformaInvoice" => new Views.ProformaInvoice.ProformaInvoiceView(),
+                "JobOrders" => CreateJobOrdersView(),
+                "JobOrderDetails" => new Views.JobOrder.JobOrderDetailsView(),
                 _ => null
             };
 
@@ -78,6 +95,13 @@ namespace ProGlassAutomation.ViewModels
             grid.Children.Add(textBlock);
             var placeholder = new UserControl { Content = grid };
             return placeholder;
+        }
+
+        private UserControl CreateJobOrdersView()
+        {
+            var view = new Views.JobOrder.JobOrderView();
+            view.DataContext = JobOrderVM;  // Use shared VM
+            return view;
         }
 
         // ═══════════════════════════════════════════════════════
@@ -112,13 +136,10 @@ namespace ProGlassAutomation.ViewModels
                 return;
             }
 
-            // Clear cache for fresh instance
-            // intentionally preserved cache for fast navigation
-
             // Get cached view and inject
             var newView = GetOrCreateView(viewName);
 
-            // prevent reloading same module
+            // Prevent reloading same module
             if (CurrentView == newView)
             {
                 // TOGGLE OFF (close module)
@@ -266,7 +287,7 @@ namespace ProGlassAutomation.ViewModels
         }
 
         // ═══════════════════════════════════════════════════════
-        // PUBLIC NAVIGATION HELPERS - ✅ Made Public
+        // PUBLIC NAVIGATION HELPERS
         // ═══════════════════════════════════════════════════════
 
         public void ShowDashboard() => Navigate("Dashboard");
@@ -278,13 +299,87 @@ namespace ProGlassAutomation.ViewModels
         public void ShowUsers() => Navigate("Users");
         public void ShowBalanceReports() => Navigate("BalanceReports");
         public void ShowProformaInvoice() => Navigate("ProformaInvoice");
+        public void ShowJobOrders() => Navigate("JobOrders");
 
-        // ✅ Calculator methods - changed from private to public
+        // ═══════════════════════════════════════════════════════
+        // PROFORMA INVOICE TO JOB ORDER CONVERSION
+        // ═══════════════════════════════════════════════════════
+
+        public void CreateJobOrderFromProformaInvoice(Models.ProformaInvoiceModel invoice)
+        {
+            try
+            {
+                if (invoice == null)
+                {
+                    MessageBox.Show("Invoice is null. Cannot create job order.", "Error",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                System.Diagnostics.Debug.WriteLine($"[MainVM] CreateJobOrderFromProformaInvoice: {invoice.InvoiceNo}");
+
+                // Navigate to Job Orders view
+                Navigate("JobOrders");
+
+                // Load data into shared Job Order VM
+                JobOrderVM.LoadFromProformaInvoice(invoice);
+
+                System.Diagnostics.Debug.WriteLine($"[MainVM] Job Order loaded successfully");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainVM] CreateJobOrderFromProformaInvoice ERROR: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack: {ex.StackTrace}");
+                MessageBox.Show($"Failed to create job order: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        public void ShowJobOrderDetails(int jobOrderId)
+        {
+            // Clear cache to get fresh instance
+            _viewCache.Remove("JobOrderDetails");
+
+            // Create view and set the job order ID
+            var view = new Views.JobOrder.JobOrderDetailsView();
+            var vm = new ViewModels.JobOrderDetailsViewModel();
+            vm.LoadJobOrder(jobOrderId);
+            view.DataContext = vm;
+
+            CurrentView = view;
+            CurrentViewName = "JobOrderDetails";
+        }
+
+        // Calculator methods
         public void ShowSGUCalculator() => Navigate("SGU");
         public void ShowDGUCalculator() => Navigate("DGU");
         public void ShowLaminationCalculator() => Navigate("Lamination");
         public void ShowDGULaminationCalculator() => Navigate("DguLam");
         public void ShowGlassOptimization() => Navigate("Optimization");
+
+        // ═══════════════════════════════════════════════════════
+        // JOB ORDER TO DELIVERY CONVERSION
+        // ═══════════════════════════════════════════════════════
+
+        public void CreateDeliveryFromJobOrder(JobOrder jobOrder)
+        {
+            if (jobOrder == null) return;
+
+            // Clear cache to get fresh instance
+            _viewCache.Remove("Deliveries");
+
+            // Navigate to deliveries view
+            Navigate("Deliveries");
+
+            // Get the delivery view and set up from job order
+            if (GetOrCreateView("Deliveries") is Views.Delivery.DeliveryView deliveryView)
+            {
+                if (deliveryView.DataContext is ViewModels.DeliveryViewModel deliveryVM)
+                {
+                    deliveryVM.CreateFromJobOrder(jobOrder);
+                }
+            }
+        }
 
         // ═══════════════════════════════════════════════════════
         // CLICK COMMANDS
@@ -329,6 +424,11 @@ namespace ProGlassAutomation.ViewModels
         public ICommand ProfileCommand => new RelayCommand(o => ShowProfile());
         public ICommand UsersCommand => new RelayCommand(o => ShowUsers());
         public ICommand ProformaInvoiceCommand => new RelayCommand(o => ShowProformaInvoice());
+        public ICommand JobOrdersCommand => new RelayCommand(o => ShowJobOrders());
+        public ICommand JobOrderDetailsCommand => new RelayCommand(o =>
+        {
+            if (o is int jobOrderId)
+                ShowJobOrderDetails(jobOrderId);
+        });
     }
-
 }

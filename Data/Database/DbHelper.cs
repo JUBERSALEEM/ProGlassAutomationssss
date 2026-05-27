@@ -18,7 +18,7 @@ namespace ProGlassAutomation.Data.Database
             "ProGlassAutomation", "glass.db");
 
         private static readonly string ConnStr = $"Data Source={DbPath};Cache=Shared";
-        private static readonly int LatestVersion = 9;
+        private static readonly int LatestVersion = 10;
 
         private static SqliteConnection CreateConnection()
         {
@@ -196,6 +196,16 @@ CREATE INDEX IF NOT EXISTS idx_pi_date ON ProformaInvoices(PIDate);
 CREATE INDEX IF NOT EXISTS idx_jo_date ON JobOrders(JODate);
 CREATE INDEX IF NOT EXISTS idx_do_date ON DeliveryOrders(DODate);
 CREATE INDEX IF NOT EXISTS idx_ti_date ON TaxInvoices(InvoiceDate);";
+                        cmd.ExecuteNonQuery();
+                    }
+                    break;
+                case 10:
+                    // Ensure all tables exist (for databases that might be missing them)
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"
+CREATE TABLE IF NOT EXISTS JobOrders (Id INTEGER PRIMARY KEY AUTOINCREMENT, JONumber TEXT NOT NULL UNIQUE, ProformaInvoiceId INTEGER, ClientName TEXT, ProjectName TEXT, ProjectLocation TEXT, JODate TEXT, RequiredDate TEXT, Status TEXT DEFAULT 'Pending', TotalQty INTEGER DEFAULT 0, ReleasedQty INTEGER DEFAULT 0, BalanceQty INTEGER DEFAULT 0, TotalAmount REAL DEFAULT 0, Notes TEXT, CreatedDate TEXT, UpdatedDate TEXT);
+CREATE TABLE IF NOT EXISTS JobOrderItems (Id INTEGER PRIMARY KEY AUTOINCREMENT, JobOrderId INTEGER NOT NULL, SrNo INTEGER, GlassRef TEXT, Width REAL, Height REAL, OrderedQty INTEGER DEFAULT 0, ReleasedQty INTEGER DEFAULT 0, BalanceQty INTEGER DEFAULT 0, Price REAL DEFAULT 0, TotalAmount REAL DEFAULT 0);";
                         cmd.ExecuteNonQuery();
                     }
                     break;
@@ -1932,30 +1942,37 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
             });
         }
 
-        private static List<JobOrderItemModel> GetJobOrderItems(int joId, SqliteConnection conn)
+        public static List<JobOrderItemModel> GetJobOrderItems(int joId, SqliteConnection? existingConnection = null)
         {
-            var items = new List<JobOrderItemModel>();
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = "SELECT * FROM JobOrderItems WHERE JobOrderId = $id ORDER BY SrNo";
-            cmd.Parameters.AddWithValue("$id", joId);
-            using var r = cmd.ExecuteReader();
-            while (r.Read())
+            if (existingConnection != null)
             {
-                items.Add(new JobOrderItemModel
+                // Use existing connection (internal use)
+                var items = new List<JobOrderItemModel>();
+                using var cmd = existingConnection.CreateCommand();
+                cmd.CommandText = "SELECT * FROM JobOrderItems WHERE JobOrderId = $id ORDER BY SrNo";
+                cmd.Parameters.AddWithValue("$id", joId);
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
                 {
-                    Id = r.GetInt32(0),
-                    SrNo = r.GetInt32(2),
-                    GlassRef = r.IsDBNull(3) ? "" : r.GetString(3),
-                    Width = r.GetDouble(4),
-                    Height = r.GetDouble(5),
-                    OrderedQty = r.GetInt32(6),
-                    ReleasedQty = r.GetInt32(7),
-                    BalanceQty = r.GetInt32(8),
-                    Price = r.GetDouble(9),
-                    TotalAmount = r.GetDouble(10)
-                });
+                    items.Add(new JobOrderItemModel
+                    {
+                        Id = r.GetInt32(0),
+                        SrNo = r.GetInt32(2),
+                        GlassRef = r.IsDBNull(3) ? "" : r.GetString(3),
+                        Width = r.GetDouble(4),
+                        Height = r.GetDouble(5),
+                        OrderedQty = r.GetInt32(6),
+                        ReleasedQty = r.GetInt32(7),
+                        BalanceQty = r.GetInt32(8),
+                        Price = r.GetDouble(9),
+                        TotalAmount = r.GetDouble(10)
+                    });
+                }
+                return items;
             }
-            return items;
+
+            // Create new connection for public access
+            return Execute(conn => GetJobOrderItems(joId, conn));
         }
 
         public static void DeleteJobOrder(int id)

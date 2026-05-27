@@ -273,6 +273,20 @@ namespace ProGlassAutomation.Models
             set => SetProperty(ref _notes, value);
         }
 
+        private string _status = "Draft";
+        public string Status
+        {
+            get => _status;
+            set => SetProperty(ref _status, value);
+        }
+
+        private bool _isConvertedToJobOrder;
+        public bool IsConvertedToJobOrder
+        {
+            get => _isConvertedToJobOrder;
+            set => SetProperty(ref _isConvertedToJobOrder, value);
+        }
+
         private ObservableCollection<SpecificationModel> _specifications = new();
         public ObservableCollection<SpecificationModel> Specifications
         {

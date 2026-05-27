@@ -1,12 +1,13 @@
 ﻿    using ProGlassAutomation.Data.Database;
     using ProGlassAutomation.Models;
 
-    // Add these aliases to disambiguate:
-    using DbDelivery = ProGlassAutomation.Data.Database.Delivery;
-    using DbDeliveryItem = ProGlassAutomation.Data.Database.DeliveryItem;
-    using DbDailyWork = ProGlassAutomation.Data.Database.DailyWork;
+// Add these aliases to disambiguate:
+using DbDelivery = ProGlassAutomation.Data.Database.Delivery;
+using DbDeliveryItem = ProGlassAutomation.Data.Database.DeliveryItem;
+using DbDailyWork = ProGlassAutomation.Data.Database.DailyWork;
+using JobOrder = ProGlassAutomation.Models.JobOrder;
 
-    using System;
+using System;
     using System.Collections.ObjectModel;
     using System.Collections.Generic;
     using System.ComponentModel;
@@ -1757,42 +1758,128 @@
                 }
             }
 
-            #endregion
+        #endregion
 
-            #region Row Selection Handler
+        #region Helper Methods
 
-            public void OnDataGridSelectionChanged(DataRowView rowView)
+        #endregion
+
+        #region Row Selection Handler
+
+        public void OnDataGridSelectionChanged(DataRowView rowView)
+        {
+            SelectedDataRowView = rowView;
+        }
+
+        public void OnDataGridSelectionChanged(int selectedCount, List<int> selectedIds)
+        {
+            SetSelectedCount(selectedCount);
+            UpdateSelectedIds(selectedIds);
+        }
+
+        #endregion
+
+        #region Selection Tracking
+
+        private void TrackDataGridSelection(System.Windows.Controls.DataGrid dataGrid)
+        {
+            if (dataGrid == null) return;
+
+            var selectedIds = new List<int>();
+            foreach (var item in dataGrid.SelectedItems)
             {
-                SelectedDataRowView = rowView;
-            }
-
-            public void OnDataGridSelectionChanged(int selectedCount, List<int> selectedIds)
-            {
-                SetSelectedCount(selectedCount);
-                UpdateSelectedIds(selectedIds);
-            }
-
-            #endregion
-
-            #region Selection Tracking
-
-            private void TrackDataGridSelection(System.Windows.Controls.DataGrid dataGrid)
-            {
-                if (dataGrid == null) return;
-
-                var selectedIds = new List<int>();
-                foreach (var item in dataGrid.SelectedItems)
+                if (item is DataRowView rowView)
                 {
-                    if (item is DataRowView rowView)
+                    selectedIds.Add(Convert.ToInt32(rowView["Id"]));
+                }
+            }
+
+            SetSelectedCount(selectedIds.Count);
+            UpdateSelectedIds(selectedIds);
+        }
+
+        #endregion
+
+        #region Create from JobOrder
+
+        public void CreateFromJobOrder(JobOrder jobOrder)
+        {
+            if (jobOrder == null) return;
+
+            try
+            {
+                var newDelivery = new DbDelivery
+                {
+                    Id = DeliveryOrders.Count > 0 ? DeliveryOrders.Max(d => d.Id) + 1 : 1,
+                    SourceId = jobOrder.Id,
+                    Date = DateTime.Today,
+                    Company = jobOrder.CustomerName ?? "",
+                    PINumber = jobOrder.JobNumber ?? "",
+                    TypeOfWork = "Glass",  // Default value
+                    OrderQty = jobOrder.TotalQty,
+                    OrderSQM = jobOrder.TotalSQM,
+                    Salesman = jobOrder.Salesman ?? "",
+                    Color = jobOrder.Color ?? "",
+                    Status = "Pending",
+                    Notes = $"Created from Job Order: {jobOrder.JobNumber}\n{jobOrder.Notes ?? ""}",
+                    CreatedDate = DateTime.Now,
+                    UpdatedDate = DateTime.Now,
+                    DeliveryItems = new ObservableCollection<DbDeliveryItem>()
+                };
+
+                // Copy items from job order specifications
+                int itemId = 1;
+                foreach (var spec in jobOrder.Specifications)
+                {
+                    foreach (var item in spec.Items)
                     {
-                        selectedIds.Add(Convert.ToInt32(rowView["Id"]));
+                        var deliveryItem = new DbDeliveryItem
+                        {
+                            Id = itemId,
+                            OrderId = newDelivery.Id,
+                            DeliveredQty = 0,
+                            ReturnedQty = 0,
+                            DeliveredSQM = 0,
+                            ReturnedSQM = 0,
+                            Driver = "",
+                            Vehicle = "",
+                            DeliveryDate = DateTime.Today,
+                            CreatedDate = DateTime.Today
+                        };
+                        newDelivery.DeliveryItems.Add(deliveryItem);
+                        itemId++;
                     }
                 }
 
-                SetSelectedCount(selectedIds.Count);
-                UpdateSelectedIds(selectedIds);
-            }
+                // Save to database
+                DbHelper.SaveDelivery(newDelivery);
 
-            #endregion
+                // Add to collection
+                DeliveryOrders.Add(newDelivery);
+
+                // Add to options if new
+                AddToOptionsIfNew(CompanyOptions, newDelivery.Company);
+                AddToOptionsIfNew(SalesmanOptions, newDelivery.Salesman);
+                AddToOptionsIfNew(TypeOfWorkOptions, newDelivery.TypeOfWork);
+                AddToOptionsIfNew(ColorOptions, newDelivery.Color);
+
+                // Refresh views
+                RefreshDataView();
+                UpdateAllStats();
+
+                // Select the new delivery
+                SelectedOrder = newDelivery;
+
+                System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Created from Job Order: {jobOrder.JobNumber} -> DO Id: {newDelivery.Id}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] CreateFromJobOrder error: {ex.Message}");
+                MessageBox.Show($"Failed to create delivery from Job Order: {ex.Message}",
+                    "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
+
+        #endregion
     }
+}

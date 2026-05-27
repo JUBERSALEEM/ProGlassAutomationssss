@@ -106,6 +106,40 @@ namespace ProGlassAutomation.ViewModels
         public string IsLMToggleText => IsLMVisible ? "HIDE LM" : "SHOW LM";
 
         public string CompanyName { get; set; } = "PROGLASS AUTOMATION";
+
+        // ==================== JOB ORDER CONVERSION ====================
+
+        private bool _isJobOrder;
+        public bool IsJobOrder
+        {
+            get => _isJobOrder;
+            set
+            {
+                if (SetProperty(ref _isJobOrder, value))
+                {
+                    OnPropertyChanged(nameof(FormTitle));
+                    OnPropertyChanged(nameof(InvoiceNoLabel));
+                    OnPropertyChanged(nameof(IsPriceColumnVisible));
+                    OnPropertyChanged(nameof(IsTotalPriceColumnVisible));
+                    OnPropertyChanged(nameof(IsVatSectionVisible));
+                    OnPropertyChanged(nameof(IsNetTotalVisible));
+                }
+            }
+        }
+
+        public string FormTitle => IsJobOrder ? "Job Order" : "Proforma Invoice";
+        public string InvoiceNoLabel => IsJobOrder ? "Job Number" : "Invoice No";
+        public System.Windows.Visibility IsPriceColumnVisible => IsJobOrder ? System.Windows.Visibility.Collapsed : System.Windows.Visibility.Visible;
+        public System.Windows.Visibility IsTotalPriceColumnVisible => IsJobOrder ? System.Windows.Visibility.Collapsed : System.Windows.Visibility.Visible;
+        public System.Windows.Visibility IsVatSectionVisible => IsJobOrder ? System.Windows.Visibility.Collapsed : System.Windows.Visibility.Visible;
+        public System.Windows.Visibility IsNetTotalVisible => IsJobOrder ? System.Windows.Visibility.Collapsed : System.Windows.Visibility.Visible;
+
+        private JobOrderViewModel _jobOrderVM;
+        public JobOrderViewModel JobOrderVM
+        {
+            get => _jobOrderVM;
+            set => SetProperty(ref _jobOrderVM, value);
+        }
         public string CompanyTRN { get; set; } = "100458979400003";
         public string CompanyLocation { get; set; } = "Dubai, UAE";
         public string CompanyPhone { get; set; } = "+971-50-123-4567";
@@ -291,9 +325,10 @@ namespace ProGlassAutomation.ViewModels
             set { SetProperty(ref _selectedCharge, value); }
         }
 
-        public ICommand NewInvoiceCommand { get; private set; } = null!;
-        public ICommand SaveInvoiceCommand { get; private set; } = null!;
-        public ICommand OpenInvoiceCommand { get; private set; } = null!;
+        public ICommand NewInvoiceCommand { get; set; }
+        public ICommand SaveInvoiceCommand { get; set; }
+        public ICommand OpenInvoiceCommand { get; set; }
+        public ICommand CreateJobOrderCommand { get; set; }
         public ICommand DeleteInvoiceCommand { get; private set; } = null!;
         public ICommand AddSpecificationCommand { get; private set; } = null!;
         public ICommand RemoveSpecificationCommand { get; private set; } = null!;
@@ -324,8 +359,9 @@ namespace ProGlassAutomation.ViewModels
         private void InitializeCommands()
         {
             NewInvoiceCommand = new RelayCommand(_ => NewInvoice());
-            SaveInvoiceCommand = new RelayCommand(_ => SaveInvoice());
+            SaveInvoiceCommand = new RelayCommand(_ => SaveInvoice(), _ => CanExecuteSaveInvoice());
             OpenInvoiceCommand = new RelayCommand(_ => OpenInvoice());
+            CreateJobOrderCommand = new RelayCommand(_ => ExecuteCreateJobOrder());
             DeleteInvoiceCommand = new RelayCommand(_ => DeleteInvoice());
             AddSpecificationCommand = new RelayCommand(_ => AddSpecification());
             RemoveSpecificationCommand = new RelayCommand(_ => RemoveSpecification(), _ => Invoice?.Specifications?.Count > 0);
@@ -353,6 +389,60 @@ namespace ProGlassAutomation.ViewModels
         {
             IsASPPriceManual = false;
             UpdateAirSpacerPrice();
+        }
+
+        private bool CanExecuteSaveInvoice()
+        {
+            return Invoice != null && !string.IsNullOrWhiteSpace(Invoice.CustomerName);
+        }
+
+        private void ExecuteCreateJobOrder()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("[PIViewModel] ExecuteCreateJobOrder called");
+
+                if (Invoice == null)
+                {
+                    MessageBox.Show("Please create or load an invoice first.", "No Invoice",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                if (Invoice.Specifications == null || Invoice.Specifications.Count == 0)
+                {
+                    MessageBox.Show("Please add at least one specification before creating job order.",
+                        "No Specifications", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // Set default customer name if empty
+                if (string.IsNullOrWhiteSpace(Invoice.CustomerName))
+                {
+                    Invoice.CustomerName = "New Customer";
+                }
+
+                // Navigate to Job Order and create from PI
+                var mainWindow = Application.Current.MainWindow;
+                if (mainWindow?.DataContext is MainViewModel mainVM)
+                {
+                    System.Diagnostics.Debug.WriteLine("[PIViewModel] Calling mainVM.CreateJobOrderFromProformaInvoice");
+                    mainVM.CreateJobOrderFromProformaInvoice(Invoice);
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("[PIViewModel] MainWindow or DataContext is null!");
+                    MessageBox.Show($"Creating Job Order from PI: {Invoice.InvoiceNo}\nCustomer: {Invoice.CustomerName}",
+                        "Create Job Order", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[PIViewModel] CreateJobOrder error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack: {ex.StackTrace}");
+                MessageBox.Show($"Failed to create job order: {ex.Message}\n\n{ex.StackTrace}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void UpdateAirSpacerPrice()
@@ -407,6 +497,9 @@ namespace ProGlassAutomation.ViewModels
                     System.Diagnostics.Debug.WriteLine($"[ProformaInvoice] About to raise InvoiceSaved event. InvoiceNo={Invoice?.InvoiceNo}");
                     InvoiceSaved?.Invoke(Invoice);
                     System.Diagnostics.Debug.WriteLine($"[ProformaInvoice] InvoiceSaved event raised");
+
+                    // Check and convert to Job Order if status is Confirmed
+                    CheckAndConvertToJobOrder();
                 }
             }
             catch (Exception ex) { StatusMessage = $"❌ Error: {ex.Message}"; MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
@@ -1388,6 +1481,43 @@ namespace ProGlassAutomation.ViewModels
                 if (parts.Length > 0) return parts[0].Trim();
             }
             return notes;
+        }
+
+        // ==================== JOB ORDER CONVERSION ====================
+
+        public void CheckAndConvertToJobOrder()
+        {
+            // Check if status is "Confirmed" and not already converted
+            if (Invoice != null &&
+                Invoice.Status == "Confirmed" &&
+                !IsJobOrder &&
+                !string.IsNullOrEmpty(Invoice.InvoiceNo))
+            {
+                // Check if already converted (prevent double conversion)
+                if (Invoice.IsConvertedToJobOrder)
+                {
+                    System.Diagnostics.Debug.WriteLine("[ProformaInvoice] Already converted to Job Order");
+                    return;
+                }
+
+                // Mark as converted
+                Invoice.IsConvertedToJobOrder = true;
+
+                // Create Job Order
+                if (_jobOrderVM != null)
+                {
+                    // Job Order creation is handled via MainViewModel.CreateJobOrderFromProformaInvoice
+
+                    // Update UI to Job Order mode
+                    IsJobOrder = true;
+
+                    System.Diagnostics.Debug.WriteLine($"[ProformaInvoice] ✅ Converted to Job Order: {Invoice.InvoiceNo}");
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("[ProformaInvoice] ❌ JobOrderVM not set!");
+                }
+            }
         }
     }
 }

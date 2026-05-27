@@ -18,6 +18,11 @@ namespace ProGlassAutomation
 
             base.OnStartup(e);
 
+            // Add global exception handlers FIRST
+            AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
+            DispatcherUnhandledException += OnDispatcherUnhandledException;
+            TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+
             // INITIALIZE DATABASE AT STARTUP
             try
             {
@@ -35,6 +40,55 @@ namespace ProGlassAutomation
                     MessageBoxImage.Error);
                 Environment.Exit(1);
             }
+        }
+
+        private void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            var ex = e.ExceptionObject as Exception;
+            string message = $"FATAL ERROR (UnhandledException):\n\n{ex?.Message}\n\n{ex?.StackTrace}";
+
+            System.Diagnostics.Debug.WriteLine(message);
+            MessageBox.Show(message, "CRASH!", MessageBoxButton.OK, MessageBoxImage.Error);
+
+            if (e.IsTerminating)
+            {
+                Environment.Exit(1);
+            }
+        }
+
+        private void OnDispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
+        {
+            string message = $"UI ERROR (DispatcherUnhandledException):\n\n{e.Exception.Message}\n\n{e.Exception.StackTrace}";
+
+            System.Diagnostics.Debug.WriteLine(message);
+
+            // Also log to file for crash reports
+            LogErrorToFile(message);
+
+            MessageBox.Show(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            e.Handled = true; // Prevent app from crashing
+        }
+
+        private void OnUnobservedTaskException(object sender, UnobservedTaskExceptionEventArgs e)
+        {
+            string message = $"TASK ERROR (UnobservedTaskException):\n\n{e.Exception?.Message}\n\n{e.Exception?.StackTrace}";
+
+            System.Diagnostics.Debug.WriteLine(message);
+            LogErrorToFile(message);
+
+            MessageBox.Show(message, "Task Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            e.SetObserved(); // Prevent app from crashing
+        }
+
+        private void LogErrorToFile(string message)
+        {
+            try
+            {
+                string logFile = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "error.log");
+                string logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}\n\n";
+                System.IO.File.AppendAllText(logFile, logEntry);
+            }
+            catch { }
         }
     }
 }

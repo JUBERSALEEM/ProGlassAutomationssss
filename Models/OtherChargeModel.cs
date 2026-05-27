@@ -21,7 +21,7 @@ namespace ProGlassAutomation.Models
         public string Name
         {
             get => _name;
-            set { _name = value; OnPropertyChanged(); }
+            set { _name = value ?? ""; OnPropertyChanged(); }
         }
 
         private string _type = "lm";
@@ -30,7 +30,7 @@ namespace ProGlassAutomation.Models
             get => _type;
             set
             {
-                _type = value;
+                _type = value ?? "lm";
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(TypeDisplay));
                 OnPropertyChanged(nameof(ValueDisplay));
@@ -65,7 +65,7 @@ namespace ProGlassAutomation.Models
         public string LmDimType
         {
             get => _lmDimType;
-            set { _lmDimType = value; OnPropertyChanged(); }
+            set { _lmDimType = value ?? "w1h1"; OnPropertyChanged(); }
         }
 
         // ==================== DISPLAY PROPERTIES ====================
@@ -148,7 +148,7 @@ namespace ProGlassAutomation.Models
             get => _linkedSpecIndices;
             set
             {
-                _linkedSpecIndices = value;
+                _linkedSpecIndices = value ?? "";
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(LinkedSpecsDisplay));
                 OnPropertyChanged(nameof(TargetsAllSpecs));

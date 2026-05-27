@@ -326,6 +326,41 @@ namespace ProGlassAutomation
             _viewModel.ShowDashboard();
         }
 
+        // ==================== LOGO CLICK ====================
+
+        private void Logo_Click(object sender, MouseButtonEventArgs e)
+        {
+            CloseCurrentDropdown();
+            var aboutDialog = new Views.About.AboutDialog();
+            aboutDialog.Owner = this;
+            aboutDialog.ShowDialog();
+        }
+
+        // ==================== DASHBOARD DROPDOWN - ADDITIONAL ====================
+
+        private void MenuItem_JobOrders_Click(object sender, RoutedEventArgs e)
+        {
+            CloseCurrentDropdown();
+            _viewModel.ShowJobOrders();
+        }
+
+        // ==================== SETTINGS DROPDOWN ====================
+
+        private void MenuItem_Settings_Click(object sender, RoutedEventArgs e)
+        {
+            CloseCurrentDropdown();
+            // Settings functionality - placeholder
+            MessageBox.Show("Settings module coming soon!", "Settings", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void MenuItem_About_Click(object sender, RoutedEventArgs e)
+        {
+            CloseCurrentDropdown();
+            var aboutDialog = new Views.About.AboutDialog();
+            aboutDialog.Owner = this;
+            aboutDialog.ShowDialog();
+        }
+
         // ==================== SCREENSHOT ====================
 
         private void CreateScreenshotPopup()
