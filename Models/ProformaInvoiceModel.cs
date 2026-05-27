@@ -273,6 +273,27 @@ namespace ProGlassAutomation.Models
             set => SetProperty(ref _notes, value);
         }
 
+        private string _companyName = "PROGLASS AUTOMATION";
+        public string CompanyName
+        {
+            get => _companyName;
+            set => SetProperty(ref _companyName, value);
+        }
+
+        private string _companyTRN = "100458979400003";
+        public string CompanyTRN
+        {
+            get => _companyTRN;
+            set => SetProperty(ref _companyTRN, value);
+        }
+
+        private string _companyLocation = "Dubai, UAE";
+        public string CompanyLocation
+        {
+            get => _companyLocation;
+            set => SetProperty(ref _companyLocation, value);
+        }
+
         private string _status = "Draft";
         public string Status
         {

@@ -251,7 +251,7 @@ namespace ProGlassAutomation.Models
 
         public double TotalAmount => Math.Round(TotalSQM * _price, 2);
 
-        private void Recalculate()
+        public void Recalculate()
         {
             _sqm1 = CalculateSQM(_width1, _height1);
             SQM1 = _sqm1;

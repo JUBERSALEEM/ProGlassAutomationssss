@@ -152,7 +152,12 @@ namespace ProGlassAutomation.ViewModels
             set => SetProperty(ref _status, value);
         }
 
+        public string CompanyName { get; set; } = "PROGLASS AUTOMATION";
+        public string CompanyTRN { get; set; } = "100458979400003";
+        public string CompanyLocation { get; set; } = "Dubai, UAE";
+
         public ObservableCollection<JobOrderSpecification> Specifications
+
         {
             get => _specifications;
             set => SetProperty(ref _specifications, value);
@@ -163,6 +168,9 @@ namespace ProGlassAutomation.ViewModels
         public double TotalSQM => Specifications.Sum(s => s.TotalSQM);
 
         public double TotalAmount => Specifications.Sum(s => s.TotalAmount);
+
+        public double TotalLM1 => Specifications.Sum(s => s.TotalLM1);
+        public double TotalLM2 => Specifications.Sum(s => s.TotalLM2);
 
         #endregion
 
@@ -238,6 +246,11 @@ namespace ProGlassAutomation.ViewModels
 
             try
             {
+                // STEP 0: Import Company Info
+                CompanyName = pi.CompanyName ?? "PROGLASS AUTOMATION";
+                CompanyTRN = pi.CompanyTRN ?? "100458979400003";
+                CompanyLocation = pi.CompanyLocation ?? "Dubai, UAE";
+
                 // STEP 1: Copy basic properties
                 CustomerName = pi.CustomerName ?? "";
                 CustomerTRN = pi.CustomerTRN ?? "";
@@ -317,6 +330,9 @@ namespace ProGlassAutomation.ViewModels
                                     Price = piItem.Price
                                 };
 
+                                // Recalculate SQM after properties are set (object initializer runs after constructor)
+                                newItem.Recalculate();
+
                                 newSpec.Items.Add(newItem);
 
                                 System.Diagnostics.Debug.WriteLine($"[JobOrderVM]   Item {itemIndex}: GlassRef={newItem.GlassRef}, W1={newItem.Width1}, H1={newItem.Height1}, Qty={newItem.Qty}, Price={newItem.Price}");
@@ -339,12 +355,13 @@ namespace ProGlassAutomation.ViewModels
                             {
                                 var newCharge = new JobOrderOtherCharge
                                 {
-                                    Name = $"Charge {newSpec.OtherCharges.Count + 1}",
-                                    Type = "lm",
-                                    Value = 0,
-                                    Rate = 0,
-                                    Amount = 0,
-                                    TargetsAllSpecs = true
+                                    Name = piCharge.Name ?? $"Charge {newSpec.OtherCharges.Count + 1}",
+                                    Type = piCharge.Type ?? "lm",
+                                    Value = piCharge.Value,
+                                    Rate = piCharge.Rate,
+                                    Amount = piCharge.Amount,
+                                    TargetsAllSpecs = true,
+                                    LinkedSpecIndices = piCharge.LinkedSpecIndices ?? ""
                                 };
                                 newSpec.OtherCharges.Add(newCharge);
                             }
@@ -370,7 +387,10 @@ namespace ProGlassAutomation.ViewModels
                 System.Diagnostics.Debug.WriteLine($"[JobOrderVM] Total Amount: {TotalAmount:F2}");
                 System.Diagnostics.Debug.WriteLine("[JobOrderVM] LoadFromProformaInvoice END");
 
-                // Notify property changes for totals
+                // Notify property changes for totals and company info
+                OnPropertyChanged(nameof(CompanyName));
+                OnPropertyChanged(nameof(CompanyTRN));
+                OnPropertyChanged(nameof(CompanyLocation));
                 OnPropertyChanged(nameof(TotalQty));
                 OnPropertyChanged(nameof(TotalSQM));
                 OnPropertyChanged(nameof(TotalAmount));

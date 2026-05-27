@@ -476,7 +476,7 @@
                                                         </DataGridTextColumn.ElementStyle>
                                                     </DataGridTextColumn>
 
-                                                    <DataGridTextColumn Header="SQM" Binding="{Binding SQM, Mode=OneWay, StringFormat=N4}" Width="65" IsReadOnly="True">
+                                                    <DataGridTextColumn Header="SQM" Binding="{Binding SQM1, Mode=OneWay, StringFormat=N4}" Width="65" IsReadOnly="True">
                                                         <DataGridTextColumn.ElementStyle>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -700,7 +700,7 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Summary -->
+                                <!-- Summary -->
                 <Border Background="#FFFFFF" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="8" Padding="20" Margin="0,0,0,16">
                     <StackPanel>
                         <TextBlock Text="Job Order Summary" Style="{StaticResource SectionHeader}"/>
