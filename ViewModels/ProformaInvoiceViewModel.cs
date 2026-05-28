@@ -891,6 +891,16 @@ namespace ProGlassAutomation.ViewModels
 
             GeneratedDescription = description;
             PriceCalculationSummary = summary;
+
+            // Update selected spec's generated description immediately
+            if (SelectedTargetSpecification != null && IsLAMSelected)
+            {
+                SelectedTargetSpecification.PVBThickness = LAMPVBThickness;
+                SelectedTargetSpecification.PVBColor = LAMPVBColor;
+                SelectedTargetSpecification.PVBPrice = LAMPVBPrice.ToString();
+                SelectedTargetSpecification.SpecificationName = description;
+                OnPropertyChanged(nameof(GeneratedDescription));
+            }
         }
 
         private bool CanIncludeInSpecification() => CalculatedPrice > 0 && SelectedTargetSpecification != null;
@@ -937,12 +947,17 @@ namespace ProGlassAutomation.ViewModels
                 SelectedTargetSpecification.OuterThickness = LAMOuterThickness;
                 SelectedTargetSpecification.OuterColor = LAMOuterColor;
                 SelectedTargetSpecification.OuterPrice = LAMOuterPrice.ToString();
-                SelectedTargetSpecification.PVBThickness = LAMPVBThickness;
-                SelectedTargetSpecification.PVBColor = LAMPVBColor;
-                SelectedTargetSpecification.PVBPrice = LAMPVBPrice.ToString();
                 SelectedTargetSpecification.InnerThickness = LAMInnerThickness;
                 SelectedTargetSpecification.InnerColor = LAMInnerColor;
                 SelectedTargetSpecification.InnerPrice = LAMInnerPrice.ToString();
+
+                // PVB Layer - critical for Lamination
+                SelectedTargetSpecification.PVBThickness = LAMPVBThickness;
+                SelectedTargetSpecification.PVBColor = LAMPVBColor;
+                SelectedTargetSpecification.PVBPrice = LAMPVBPrice.ToString();
+
+                // Trigger recalculation of GeneratedDescription for LAM
+                OnPropertyChanged(nameof(GeneratedDescription));
             }
 
             SelectedTargetSpecification.SpecificationName = GeneratedDescription;

@@ -1183,17 +1183,33 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="PVB Thickness" FontSize="10" Foreground="#6B7280"/>
-                                    <ComboBox Style="{StaticResource FormComboBox}">
-                                        <ComboBoxItem Content="0.76mm" IsSelected="True"/>
-                                        <ComboBoxItem Content="1.52mm"/>
-                                        <ComboBoxItem Content="2.28mm"/>
+                                    <ComboBox SelectedValue="{Binding LAMPVBThickness}" SelectedValuePath="Content" Style="{StaticResource FormComboBox}">
+                                        <ComboBoxItem Content="0.38"/>
+                                        <ComboBoxItem Content="0.76"/>
+                                        <ComboBoxItem Content="1.14"/>
+                                        <ComboBoxItem Content="1.52"/>
+                                        <ComboBoxItem Content="2.28"/>
+                                        <ComboBoxItem Content="3.04"/>
+                                        <ComboBoxItem Content="Acoustic 0.76"/>
+                                        <ComboBoxItem Content="Acoustic 1.52"/>
                                     </ComboBox>
                                 </StackPanel>
                                 <StackPanel Grid.Column="2">
                                     <TextBlock Text="PVB Color" FontSize="10" Foreground="#6B7280"/>
-                                    <ComboBox Style="{StaticResource FormComboBox}">
-                                        <ComboBoxItem Content="Clear" IsSelected="True"/>
+                                    <ComboBox SelectedValue="{Binding LAMPVBColor}" SelectedValuePath="Content" Style="{StaticResource FormComboBox}">
+                                        <ComboBoxItem Content="Clear"/>
                                         <ComboBoxItem Content="White"/>
+                                        <ComboBoxItem Content="Black"/>
+                                        <ComboBoxItem Content="Grey"/>
+                                        <ComboBoxItem Content="Brown"/>
+                                        <ComboBoxItem Content="Blue"/>
+                                        <ComboBoxItem Content="Green"/>
+                                        <ComboBoxItem Content="Red"/>
+                                        <ComboBoxItem Content="EVA Clear"/>
+                                        <ComboBoxItem Content="EVA White"/>
+                                        <ComboBoxItem Content="EVA Black"/>
+                                        <ComboBoxItem Content="Acoustic Clear"/>
+                                        <ComboBoxItem Content="Acoustic White"/>
                                     </ComboBox>
                                 </StackPanel>
                                 <StackPanel Grid.Column="4">
