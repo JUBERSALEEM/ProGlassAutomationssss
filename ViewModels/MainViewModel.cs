@@ -1,17 +1,18 @@
-﻿using System;
+﻿using DocumentFormat.OpenXml.Wordprocessing;
+using Newtonsoft.Json;
+using ProGlassAutomation.Data.Database;
+using ProGlassAutomation.Models;
+using ProGlassAutomation.Views;
+using ProGlassAutomation.Views.ProformaInvoice;
+using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using Newtonsoft.Json;
-using ProGlassAutomation.Views;
-using ProGlassAutomation.Models;
-using ProGlassAutomation.Data.Database;
-using System.Collections.ObjectModel;
-using ProGlassAutomation.Views.ProformaInvoice;
 
 namespace ProGlassAutomation.ViewModels
 {
@@ -61,6 +62,10 @@ namespace ProGlassAutomation.ViewModels
                 return _jobOrderListVM;
             }
         }
+
+        // Proforma Invoice Main ViewModel - for save on exit
+        private ProformaInvoiceMainViewModel _proformaInvoiceMainVM;
+        public ProformaInvoiceMainViewModel ProformaInvoiceMainViewModel => _proformaInvoiceMainVM;
 
         private UserControl GetOrCreateView(string viewName)
         {
@@ -250,6 +255,14 @@ namespace ProGlassAutomation.ViewModels
         public bool CalculatorsEnabled => _isLicensed;
         public bool IsLocked => !_isLicensed;
 
+        // PATCH: Track if data needs saving
+        private bool _isDirty = false;
+        public bool IsDirty
+        {
+            get => _isDirty;
+            set => Set(ref _isDirty, value);
+        }
+
         // ═══════════════════════════════════════════════════════
         // INIT
         // ═══════════════════════════════════════════════════════
@@ -369,18 +382,42 @@ namespace ProGlassAutomation.ViewModels
         public void ShowProformaInvoice()
         {
             var mainView = new Views.ProformaInvoice.ProformaInvoiceMainView();
-            var mainViewModel = new ProformaInvoiceMainViewModel(null);
+            _proformaInvoiceMainVM = new ProformaInvoiceMainViewModel(null);
 
-            mainViewModel.OpenPIEditor += invoice =>
+            _proformaInvoiceMainVM.OpenPIEditor += invoice =>
             {
                 var editorViewModel = new ProformaInvoiceViewModel();
+
+                // PATCH: Subscribe to save event from editor
+                editorViewModel.InvoiceToBeAdded += _proformaInvoiceMainVM.OnInvoiceToBeAdded;
+
                 editorViewModel.LoadFromProformaInvoice(invoice);
                 CurrentView = new Views.ProformaInvoice.ProformaInvoiceView { DataContext = editorViewModel };
             };
 
-            mainView.DataContext = mainViewModel;
+            mainView.DataContext = _proformaInvoiceMainVM;
             CurrentView = mainView;
             CurrentViewName = "ProformaInvoice";
+        }
+
+        // PATCH: Handle invoice being saved
+        public void OnInvoiceToBeAdded(Models.ProformaInvoiceModel invoice)
+        {
+            if (invoice == null) return;
+
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainVM] OnInvoiceToBeAdded: {invoice.InvoiceNo}");
+
+                // Tell MainViewModel to save on exit
+                IsDirty = true;
+
+                System.Diagnostics.Debug.WriteLine($"[MainVM] Marked as dirty for save");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainVM] OnInvoiceToBeAdded error: {ex.Message}");
+            }
         }
         public void ShowJobOrders() => Navigate("JobOrders");
 
@@ -563,5 +600,33 @@ namespace ProGlassAutomation.ViewModels
             if (o is int jobOrderId)
                 ShowJobOrderDetails(jobOrderId);
         });
+
+        // ═══════════════════════════════════════════════════════
+        // SAVE ALL DATA (FOR APP CLOSE)
+        // ═══════════════════════════════════════════════════════
+
+        public void SaveAllData()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("[MainViewModel] SaveAllData called");
+
+                // Save ProformaInvoice data
+                if (_proformaInvoiceMainVM != null)
+                {
+                    _proformaInvoiceMainVM.SaveOnExit();
+                    System.Diagnostics.Debug.WriteLine("[MainViewModel] ProformaInvoice data saved");
+                }
+
+                // Add other ViewModels to save as needed
+                // if (_jobOrderListVM != null) _jobOrderListVM.SaveOnExit();
+
+                System.Diagnostics.Debug.WriteLine("[MainViewModel] All data saved successfully");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainViewModel] Error saving data: {ex.Message}");
+            }
+        }
     }
 }

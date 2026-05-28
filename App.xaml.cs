@@ -42,6 +42,26 @@ namespace ProGlassAutomation
             }
         }
 
+        // ==================== ADD THIS METHOD ====================
+        protected override void OnExit(ExitEventArgs e)
+        {
+            // Save all ViewModels before exit
+            try
+            {
+                if (MainWindow?.DataContext is ViewModels.ProformaInvoiceMainViewModel mainVm)
+                {
+                    mainVm.SaveOnExit();
+                    System.Diagnostics.Debug.WriteLine("[App] ProformaInvoice data saved on exit");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[App] Error saving on exit: {ex.Message}");
+            }
+
+            base.OnExit(e);
+        }
+
         private void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             var ex = e.ExceptionObject as Exception;

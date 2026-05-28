@@ -283,7 +283,7 @@ namespace ProGlassAutomation.Models
                 return ModuleType switch
                 {
                     "DGU" => $"{OuterThickness} {OuterColor} {(WorkType == "FT Glass" ? "FT Glass" : "Annealed")} + {SpacerThickness} ASP {(IncludeInSpec ? "with U-Insert" : "")} + {InnerThickness} {InnerColor} {(WorkType == "FT Glass" ? "FT Glass" : "Annealed")}",
-                    "LAM" => $"{OuterThickness} {OuterColor} {(WorkType == "FT Glass" ? "FT Glass" : "Annealed")} + {PVBThickness} PVB ({PVBColor}) + {InnerThickness} {InnerColor} {(WorkType == "FT Glass" ? "FT Glass" : "Annealed")}",
+                    "LAM" => $"{OuterThickness} {OuterColor} {(WorkType == "FT Glass" ? "FT Glass" : "Annealed")} + {PVBThickness} PVB ({PVBColor}) + {PVBThickness}/{InnerThickness} {InnerColor} {(WorkType == "FT Glass" ? "FT Glass" : "Annealed")}",
                     _ => $"{OuterThickness} {OuterColor} {(WorkType == "FT Glass" ? "FT Glass" : "Annealed")}"
                 };
             }
@@ -324,7 +324,6 @@ namespace ProGlassAutomation.Models
             }
         }
 
-        // PATCH 5: Fixed - removed redundant item.Specification = this
         private void RecalculateAllItems()
         {
             foreach (var item in Items)
@@ -518,7 +517,7 @@ namespace ProGlassAutomation.Models
             return new SpecBulkUpdateScope(this);
         }
 
-        private class SpecBulkUpdateScope : BulkUpdateScope
+        private class SpecBulkUpdateScope : IDisposable
         {
             private readonly SpecificationModel _spec;
 
@@ -528,7 +527,7 @@ namespace ProGlassAutomation.Models
                 _spec.BeginBulkUpdate();
             }
 
-            protected override void OnDispose()
+            public void Dispose()
             {
                 _spec.EndBulkUpdate();
             }

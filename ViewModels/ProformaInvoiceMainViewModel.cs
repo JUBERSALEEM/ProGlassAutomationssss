@@ -1,4 +1,6 @@
-﻿using ProGlassAutomation.Models;
+﻿// File: ViewModels/ProformaInvoiceMainViewModel.cs
+using ProGlassAutomation.Models;
+using ProGlassAutomation.Services;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -13,6 +15,8 @@ namespace ProGlassAutomation.ViewModels
     public class ProformaInvoiceMainViewModel : INotifyPropertyChanged
     {
         private readonly ProformaInvoiceViewModel _editorViewModel;
+        private readonly DataService _dataService;
+        private bool _isDirty = false;
 
         public event PropertyChangedEventHandler PropertyChanged;
         public event Action<ProformaInvoiceModel> OpenPIEditor;
@@ -22,6 +26,7 @@ namespace ProGlassAutomation.ViewModels
         public ProformaInvoiceMainViewModel(ProformaInvoiceViewModel editorViewModel)
         {
             _editorViewModel = editorViewModel;
+            _dataService = new DataService();
 
             // Initialize commands
             CreateNewPICommand = new RelayCommand(CreateNewPI);
@@ -33,6 +38,7 @@ namespace ProGlassAutomation.ViewModels
             ClearFiltersCommand = new RelayCommand(ClearFilters);
             ExportReportCommand = new RelayCommand(ExportReport);
             ChangeStatusCommand = new RelayCommand(ChangeStatus);
+            SaveCommand = new RelayCommand(SaveData);
 
             // Initialize collections
             ProformaInvoices = new ObservableCollection<ProformaInvoiceModel>();
@@ -42,6 +48,12 @@ namespace ProGlassAutomation.ViewModels
             // Initialize dates
             FromDate = DateTime.Now.AddMonths(-1);
             ToDate = DateTime.Now;
+
+            // PATCH: Subscribe to editor events
+            if (_editorViewModel != null)
+            {
+                _editorViewModel.InvoiceToBeAdded += OnInvoiceToBeAdded;
+            }
 
             // Load data
             LoadData();
@@ -168,6 +180,12 @@ namespace ProGlassAutomation.ViewModels
 
         public bool HasNoRecords => !IsLoading && FilteredProformaInvoices.Count == 0;
 
+        public bool IsDirty
+        {
+            get => _isDirty;
+            set => SetProperty(ref _isDirty, value);
+        }
+
         // ==================== COMMANDS ====================
         public ICommand CreateNewPICommand { get; }
         public ICommand ViewPICommand { get; }
@@ -178,6 +196,7 @@ namespace ProGlassAutomation.ViewModels
         public ICommand ClearFiltersCommand { get; }
         public ICommand ExportReportCommand { get; }
         public ICommand ChangeStatusCommand { get; }
+        public ICommand SaveCommand { get; }
 
         // ==================== COMMAND IMPLEMENTATIONS ====================
         private void CreateNewPI()
@@ -199,10 +218,15 @@ namespace ProGlassAutomation.ViewModels
                 });
 
                 ProformaInvoices.Add(newInvoice);
+                IsDirty = true;
+
                 UpdateSummaryCounts();
                 ApplyFilters();
                 OpenPIEditor?.Invoke(newInvoice);
                 StatusChanged?.Invoke($"✅ Created new PI: {newInvoice.InvoiceNo}");
+
+                // Auto-save after creating
+                SaveData();
             }
             catch (Exception ex)
             {
@@ -239,9 +263,14 @@ namespace ProGlassAutomation.ViewModels
             if (result == MessageBoxResult.Yes)
             {
                 ProformaInvoices.Remove(invoice);
+                IsDirty = true;
+
                 UpdateSummaryCounts();
                 ApplyFilters();
                 StatusChanged?.Invoke($"🗑️ Deleted PI: {invoice.InvoiceNo}");
+
+                // Save after deleting
+                SaveData();
             }
             else
             {
@@ -267,9 +296,14 @@ namespace ProGlassAutomation.ViewModels
                 {
                     var oldStatus = existingInvoice.Status;
                     existingInvoice.Status = newStatus;
+                    IsDirty = true;
+
                     UpdateSummaryCounts();
                     ApplyFilters();
                     StatusChanged?.Invoke($"✅ Status changed from '{oldStatus}' to '{newStatus}' for PI: {existingInvoice.InvoiceNo}");
+
+                    // Save after status change
+                    SaveData();
                 }
             }
         }
@@ -279,80 +313,48 @@ namespace ProGlassAutomation.ViewModels
             StatusChanged?.Invoke($"📊 Exporting report...");
         }
 
+        // ==================== LOAD DATA ====================
         private void LoadData()
         {
             IsLoading = true;
 
             try
             {
-                if (ProformaInvoices.Count == 0)
+                // Load from saved file
+                var savedInvoices = _dataService.LoadInvoices();
+
+                ProformaInvoices.Clear();
+
+                if (savedInvoices.Count == 0)
                 {
-                    var sampleInvoice = new ProformaInvoiceModel
+                    CreateSampleData();
+                }
+                else
+                {
+                    foreach (var invoice in savedInvoices)
                     {
-                        InvoiceNo = "PI-2026-0012",
-                        CustomerName = "Al Noor Glass",
-                        ProjectName = "Dubai Marina Tower",
-                        Salesman = "Ahmed",
-                        GrandTotal = 14250.00,
-                        Status = "Confirmed",
-                        InvoiceDate = DateTime.Now.AddDays(-5),
-                        JobOrderRef = ""
-                    };
-                    sampleInvoice.Specifications.Add(new SpecificationModel { SpecificationName = "Main Glass", Invoice = sampleInvoice });
-                    ProformaInvoices.Add(sampleInvoice);
-
-                    var sampleInvoice2 = new ProformaInvoiceModel
-                    {
-                        InvoiceNo = "PI-2026-0013",
-                        CustomerName = "Modern Facade LLC",
-                        ProjectName = "Business Bay Office",
-                        Salesman = "John",
-                        GrandTotal = 22800.00,
-                        Status = "Revised",
-                        InvoiceDate = DateTime.Now.AddDays(-10),
-                        JobOrderRef = "JO-2026-0041"
-                    };
-                    sampleInvoice2.Specifications.Add(new SpecificationModel { SpecificationName = "Facade Glass", Invoice = sampleInvoice2 });
-                    ProformaInvoices.Add(sampleInvoice2);
-
-                    var sampleInvoice3 = new ProformaInvoiceModel
-                    {
-                        InvoiceNo = "PI-2026-0014",
-                        CustomerName = "Skyline Interiors",
-                        ProjectName = "Villa Partition Work",
-                        Salesman = "David",
-                        GrandTotal = 8750.00,
-                        Status = "Hold",
-                        InvoiceDate = DateTime.Now.AddDays(-15),
-                        JobOrderRef = ""
-                    };
-                    sampleInvoice3.Specifications.Add(new SpecificationModel { SpecificationName = "Interior Glass", Invoice = sampleInvoice3 });
-                    ProformaInvoices.Add(sampleInvoice3);
-
-                    var sampleInvoice4 = new ProformaInvoiceModel
-                    {
-                        InvoiceNo = "PI-2026-0015",
-                        CustomerName = "Elite Glazing",
-                        ProjectName = "Hotel Lobby Glass",
-                        Salesman = "Ahmed",
-                        GrandTotal = 18950.00,
-                        Status = "Sent",
-                        InvoiceDate = DateTime.Now.AddDays(-20),
-                        JobOrderRef = ""
-                    };
-                    sampleInvoice4.Specifications.Add(new SpecificationModel { SpecificationName = "Lobby Glass", Invoice = sampleInvoice4 });
-                    ProformaInvoices.Add(sampleInvoice4);
+                        // PATCH 10: Rebuild relationships after loading
+                        RebuildInvoiceRelationships(invoice);
+                        ProformaInvoices.Add(invoice);
+                    }
+                    StatusChanged?.Invoke($"📂 Loaded {savedInvoices.Count} invoices from storage");
                 }
 
+                // Rebuild salesman list
                 SalesmanList.Clear();
                 SalesmanList.Add(new SalesmanItem { Name = "All Salesmen" });
-                foreach (var salesman in ProformaInvoices.Where(p => !string.IsNullOrEmpty(p.Salesman)).Select(p => p.Salesman).Distinct().OrderBy(s => s))
+                foreach (var salesman in ProformaInvoices
+                    .Where(p => !string.IsNullOrEmpty(p.Salesman))
+                    .Select(p => p.Salesman)
+                    .Distinct()
+                    .OrderBy(s => s))
                 {
                     SalesmanList.Add(new SalesmanItem { Name = salesman });
                 }
 
                 UpdateSummaryCounts();
                 ApplyFilters();
+                IsDirty = false;
             }
             finally
             {
@@ -361,6 +363,202 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
+        // ==================== PATCH 10: REBUILD RELATIONSHIPS ====================
+        private void RebuildInvoiceRelationships(ProformaInvoiceModel invoice)
+        {
+            if (invoice == null) return;
+
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"[PIMainViewModel] Rebuilding relationships for {invoice.InvoiceNo}");
+
+                // Rebuild Invoice -> Specification relationships
+                foreach (var spec in invoice.Specifications)
+                {
+                    spec.Invoice = invoice;
+
+                    // Rebuild Specification -> Item relationships
+                    foreach (var item in spec.Items)
+                    {
+                        item.Specification = spec;
+                    }
+
+                    // Rebuild OtherCharge relationships
+                    foreach (var charge in spec.OtherCharges)
+                    {
+                        charge.BoundSpecs = invoice.Specifications.ToList();
+                    }
+                }
+
+                // Recalculate all totals
+                invoice.CalculateTotals();
+
+                System.Diagnostics.Debug.WriteLine($"[PIMainViewModel] Relationships rebuilt for {invoice.Specifications.Count} specs");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[PIMainViewModel] Rebuild error: {ex.Message}");
+            }
+        }
+
+        private void CreateSampleData()
+        {
+            var sampleInvoice = new ProformaInvoiceModel
+            {
+                InvoiceNo = "PI-2026-0012",
+                CustomerName = "Al Noor Glass",
+                ProjectName = "Dubai Marina Tower",
+                Salesman = "Ahmed",
+                GrandTotal = 14250.00,
+                Status = "Confirmed",
+                InvoiceDate = DateTime.Now.AddDays(-5),
+                JobOrderRef = ""
+            };
+            sampleInvoice.Specifications.Add(new SpecificationModel
+            {
+                SpecificationName = "Main Glass",
+                Invoice = sampleInvoice
+            });
+            ProformaInvoices.Add(sampleInvoice);
+
+            var sampleInvoice2 = new ProformaInvoiceModel
+            {
+                InvoiceNo = "PI-2026-0013",
+                CustomerName = "Modern Facade LLC",
+                ProjectName = "Business Bay Office",
+                Salesman = "John",
+                GrandTotal = 22800.00,
+                Status = "Revised",
+                InvoiceDate = DateTime.Now.AddDays(-10),
+                JobOrderRef = "JO-2026-0041"
+            };
+            sampleInvoice2.Specifications.Add(new SpecificationModel
+            {
+                SpecificationName = "Facade Glass",
+                Invoice = sampleInvoice2
+            });
+            ProformaInvoices.Add(sampleInvoice2);
+
+            var sampleInvoice3 = new ProformaInvoiceModel
+            {
+                InvoiceNo = "PI-2026-0014",
+                CustomerName = "Skyline Interiors",
+                ProjectName = "Villa Partition Work",
+                Salesman = "David",
+                GrandTotal = 8750.00,
+                Status = "Hold",
+                InvoiceDate = DateTime.Now.AddDays(-15),
+                JobOrderRef = ""
+            };
+            sampleInvoice3.Specifications.Add(new SpecificationModel
+            {
+                SpecificationName = "Interior Glass",
+                Invoice = sampleInvoice3
+            });
+            ProformaInvoices.Add(sampleInvoice3);
+
+            var sampleInvoice4 = new ProformaInvoiceModel
+            {
+                InvoiceNo = "PI-2026-0015",
+                CustomerName = "Elite Glazing",
+                ProjectName = "Hotel Lobby Glass",
+                Salesman = "Ahmed",
+                GrandTotal = 18950.00,
+                Status = "Sent",
+                InvoiceDate = DateTime.Now.AddDays(-20),
+                JobOrderRef = ""
+            };
+            sampleInvoice4.Specifications.Add(new SpecificationModel
+            {
+                SpecificationName = "Lobby Glass",
+                Invoice = sampleInvoice4
+            });
+            ProformaInvoices.Add(sampleInvoice4);
+
+            // Save sample data immediately
+            SaveData();
+        }
+
+        // ==================== SAVE DATA ====================
+        private void SaveData()
+        {
+            try
+            {
+                var invoicesList = ProformaInvoices.ToList();
+                _dataService.SaveInvoices(invoicesList);
+                IsDirty = false;
+                StatusChanged?.Invoke("💾 Data saved successfully");
+            }
+            catch (Exception ex)
+            {
+                StatusChanged?.Invoke($"❌ Error saving data: {ex.Message}");
+                MessageBox.Show($"Error saving data: {ex.Message}", "Save Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // ==================== SAVE ON EXIT ====================
+        public void SaveOnExit()
+        {
+            if (IsDirty)
+            {
+                try
+                {
+                    var invoicesList = ProformaInvoices.ToList();
+                    _dataService.SaveInvoices(invoicesList);
+                    System.Diagnostics.Debug.WriteLine("Data saved on exit");
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error saving on exit: {ex.Message}");
+                }
+            }
+        }
+
+        // ==================== PATCH: HANDLE INVOICE SAVE FROM EDITOR ====================
+        public void OnInvoiceToBeAdded(ProformaInvoiceModel invoice)
+        {
+            if (invoice == null) return;
+
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"[PIMainViewModel] OnInvoiceToBeAdded: {invoice.InvoiceNo}");
+
+                // Check if invoice already exists
+                var existing = ProformaInvoices.FirstOrDefault(p => p.InvoiceNo == invoice.InvoiceNo);
+
+                if (existing != null)
+                {
+                    // Update existing - replace with new data
+                    var index = ProformaInvoices.IndexOf(existing);
+                    ProformaInvoices[index] = invoice;
+                    System.Diagnostics.Debug.WriteLine($"[PIMainViewModel] Updated existing invoice: {invoice.InvoiceNo}");
+                }
+                else
+                {
+                    // Add new invoice
+                    ProformaInvoices.Add(invoice);
+                    System.Diagnostics.Debug.WriteLine($"[PIMainViewModel] Added new invoice: {invoice.InvoiceNo}");
+                }
+
+                // Mark as dirty and save
+                IsDirty = true;
+                SaveData();
+
+                // Update UI
+                UpdateSummaryCounts();
+                ApplyFilters();
+
+                System.Diagnostics.Debug.WriteLine($"[PIMainViewModel] ProformaInvoices count: {ProformaInvoices.Count}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[PIMainViewModel] OnInvoiceToBeAdded error: {ex.Message}");
+                StatusChanged?.Invoke($"❌ Error saving invoice: {ex.Message}");
+            }
+        }
+
+        // ==================== CLEAR FILTERS ====================
         private void ClearFilters()
         {
             SearchText = "";
@@ -370,8 +568,10 @@ namespace ProGlassAutomation.ViewModels
             FromDate = DateTime.Now.AddMonths(-1);
             ToDate = DateTime.Now;
             ApplyFilters();
+            StatusChanged?.Invoke("🔄 Filters cleared");
         }
 
+        // ==================== APPLY FILTERS ====================
         private void ApplyFilters()
         {
             var filtered = ProformaInvoices.AsEnumerable();
@@ -416,6 +616,7 @@ namespace ProGlassAutomation.ViewModels
             OnPropertyChanged(nameof(HasNoRecords));
         }
 
+        // ==================== UPDATE SUMMARY COUNTS ====================
         private void UpdateSummaryCounts()
         {
             OnPropertyChanged(nameof(TotalPICount));
@@ -432,7 +633,7 @@ namespace ProGlassAutomation.ViewModels
 
         protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
         {
-            if (Equals(field, value)) return false;
+            if (EqualityComparer<T>.Default.Equals(field, value)) return false;
             field = value;
             OnPropertyChanged(propertyName);
             return true;

@@ -42,6 +42,7 @@ namespace ProGlassAutomation
             _closeTimer.Tick += CloseTimer_Tick;
 
             this.Deactivated += MainWindow_Deactivated;
+            this.Closing += MainWindow_Closing;  // ← ADDED THIS LINE
 
             _viewModel.PropertyChanged += (s, e) =>
             {
@@ -677,6 +678,27 @@ namespace ProGlassAutomation
                 if (result != null) return result;
             }
             return null;
+        }
+
+        // ==================== SAVE ON CLOSE ====================
+        private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            try
+            {
+                if (DataContext is MainViewModel vm)
+                {
+                    System.Diagnostics.Debug.WriteLine("[MainWindow] Saving all data on close...");
+
+                    // Call SaveAllData method in MainViewModel
+                    vm.SaveAllData();
+
+                    System.Diagnostics.Debug.WriteLine("[MainWindow] All data saved successfully");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainWindow] Error during close: {ex.Message}");
+            }
         }
     }
 }

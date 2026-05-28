@@ -187,7 +187,7 @@ namespace ProGlassAutomation.Models
             return new ItemBulkUpdateScope(this);
         }
 
-        private class ItemBulkUpdateScope : BulkUpdateScope
+        private class ItemBulkUpdateScope : IDisposable
         {
             private readonly InvoiceItemModel _item;
 
@@ -197,7 +197,7 @@ namespace ProGlassAutomation.Models
                 _item.BeginBulkUpdate();
             }
 
-            protected override void OnDispose()
+            public void Dispose()
             {
                 _item.EndBulkUpdate();
             }

@@ -367,9 +367,11 @@ namespace ProGlassAutomation.Models
             {
                 if (_status != value)
                 {
-                    if (!IsValidStatusTransition(_status, value))
+                    // Skip validation during deserialization (when IsBulkUpdating)
+                    if (!IsBulkUpdating && !IsValidStatusTransition(_status, value))
                     {
-                        throw new InvalidOperationException($"Invalid status transition from '{_status}' to '{value}'");
+                        // Don't throw during load, just log it
+                        System.Diagnostics.Debug.WriteLine($"[PI] Invalid status transition from '{_status}' to '{value}'");
                     }
                     SetProperty(ref _status, value);
                     IsDirty = true;
@@ -531,6 +533,9 @@ namespace ProGlassAutomation.Models
         private double _totalLM1 = 0;
         public double TotalLM1 { get => _totalLM1; private set => SetProperty(ref _totalLM1, value); }
 
+        private double _totalLM2 = 0;
+        public double TotalLM2 { get => _totalLM2; private set => SetProperty(ref _totalLM2, value); }
+
         private int _totalQty = 0;
         public int TotalQty { get => _totalQty; private set => SetProperty(ref _totalQty, value); }
 
@@ -613,7 +618,7 @@ namespace ProGlassAutomation.Models
         {
             if (IsBulkUpdating) return;
 
-            double sqm1 = 0, sqm2 = 0, sqm = 0, lm = 0;
+            double sqm1 = 0, sqm2 = 0, sqm = 0, lm = 0, lm1 = 0, lm2 = 0;
             int qty = 0;
             double specTotal = 0;
             double otherCharges = 0;
@@ -628,7 +633,9 @@ namespace ProGlassAutomation.Models
                 sqm1 += spec.SpecTotalSQM1;
                 sqm2 += spec.SpecTotalSQM2;
                 sqm += spec.SpecTotalSQM;
-                lm += spec.SpecTotalLM1;
+                lm += spec.SpecTotalLM;
+                lm1 += spec.SpecTotalLM1;
+                lm2 += spec.SpecTotalLM2;
                 qty += spec.SpecTotalQty;
                 specTotal += spec.SpecTotalPrice;
                 otherCharges += spec.OtherChargesTotal;
@@ -638,7 +645,8 @@ namespace ProGlassAutomation.Models
             TotalSQM2 = Math.Round(sqm2, 4);
             TotalSQM = Math.Round(sqm, 4);
             TotalLM = Math.Round(lm, 4);
-            TotalLM1 = Math.Round(lm, 4);
+            TotalLM1 = Math.Round(lm1, 4);
+            TotalLM2 = Math.Round(lm2, 4);
             TotalQty = qty;
             OtherChargesTotal = Math.Round(otherCharges, 2);
             GrandTotal = Math.Round(specTotal + otherCharges, 2);
@@ -664,7 +672,7 @@ namespace ProGlassAutomation.Models
             return new ProformaBulkUpdateScope(this);
         }
 
-        private class ProformaBulkUpdateScope : BulkUpdateScope
+        private class ProformaBulkUpdateScope : IDisposable
         {
             private readonly ProformaInvoiceModel _invoice;
 
@@ -674,7 +682,7 @@ namespace ProGlassAutomation.Models
                 _invoice.BeginBulkUpdate();
             }
 
-            protected override void OnDispose()
+            public void Dispose()
             {
                 _invoice.EndBulkUpdate();
             }

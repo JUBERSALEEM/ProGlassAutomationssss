@@ -312,13 +312,13 @@ namespace ProGlassAutomation.Models
                 Type = Type,
                 Value = Value,
                 Rate = Rate,
-                // Amount will be recalculated
                 LmDimType = LmDimType,
                 LinkedSpecIndex = LinkedSpecIndex,
                 LinkedSpecIndices = LinkedSpecIndices,
                 IsManualOverride = IsManualOverride
             };
 
+            // Amount will be recalculated from Value * Rate when used
             clone.CalculateAmount();
             return clone;
         }

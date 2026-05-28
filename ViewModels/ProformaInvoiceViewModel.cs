@@ -419,6 +419,9 @@ namespace ProGlassAutomation.ViewModels
         // Event raised when invoice is saved
         public event Action<ProformaInvoiceModel>? InvoiceSaved;
 
+        // PATCH: Event for main view to subscribe
+        public event Action<ProformaInvoiceModel>? InvoiceToBeAdded;
+
         private void InitializeCommands()
         {
             NewInvoiceCommand = new RelayCommand(_ => NewInvoice());
@@ -584,6 +587,12 @@ namespace ProGlassAutomation.ViewModels
                     Invoice!.CustomerName = "New Customer";
                 }
 
+                Invoice.CalculateTotals();
+
+                // PATCH: Add to main view model's list FIRST
+                AddToMainViewModelList();
+
+                // Then save to individual file (optional - for backup)
                 var dialog = new SaveFileDialog
                 {
                     Filter = "JSON Files (*.json)|*.json",
@@ -593,27 +602,45 @@ namespace ProGlassAutomation.ViewModels
 
                 if (dialog.ShowDialog() == true)
                 {
-                    Invoice.CalculateTotals();
                     string json = JsonConvert.SerializeObject(Invoice, Formatting.Indented, _jsonSettings);
                     File.WriteAllText(dialog.FileName, json);
-                    Invoice.IsDirty = false;
                     CurrentFileName = Path.GetFileNameWithoutExtension(dialog.FileName);
                     LoadSavedFiles();
-                    StatusMessage = $"✅ Saved: {CurrentFileName}";
-
-                    // Raise event for other views to update
-                    System.Diagnostics.Debug.WriteLine($"[ProformaInvoice] About to raise InvoiceSaved event. InvoiceNo={Invoice?.InvoiceNo}");
-                    InvoiceSaved?.Invoke(Invoice);
-                    System.Diagnostics.Debug.WriteLine($"[ProformaInvoice] InvoiceSaved event raised");
-
-                    // Check and convert to Job Order if status is Confirmed
-                    CheckAndConvertToJobOrder();
                 }
+
+                Invoice.IsDirty = false;
+                StatusMessage = $"✅ Saved: {CurrentFileName}";
+
+                // Raise event for other views to update
+                System.Diagnostics.Debug.WriteLine($"[ProformaInvoice] About to raise InvoiceSaved event. InvoiceNo={Invoice?.InvoiceNo}");
+                InvoiceSaved?.Invoke(Invoice);
+                System.Diagnostics.Debug.WriteLine($"[ProformaInvoice] InvoiceSaved event raised");
+
+                // Check and convert to Job Order if status is Confirmed
+                CheckAndConvertToJobOrder();
             }
             catch (Exception ex)
             {
                 StatusMessage = $"❌ Error: {ex.Message}";
                 MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // PATCH: Add current invoice to main view model's list
+        private void AddToMainViewModelList()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"[PIViewModel] About to raise InvoiceToBeAdded event for: {Invoice?.InvoiceNo}");
+
+                // Raise event for main view to handle
+                InvoiceToBeAdded?.Invoke(Invoice);
+
+                System.Diagnostics.Debug.WriteLine($"[PIViewModel] InvoiceToBeAdded event raised");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[PIViewModel] AddToMainViewModelList error: {ex.Message}");
             }
         }
 
@@ -630,6 +657,13 @@ namespace ProGlassAutomation.ViewModels
                     {
                         Invoice = invoice;
                         CurrentFileName = Path.GetFileNameWithoutExtension(dialog.FileName);
+
+                        // PATCH: Add to main view model's list
+                        AddToMainViewModelList();
+
+                        // PATCH: Reconstruct after load
+                        ReconstructAfterLoad();
+
                         Invoice.CalculateTotals();
                         StatusMessage = $"✅ Opened: {CurrentFileName}";
                     }
@@ -820,6 +854,289 @@ namespace ProGlassAutomation.ViewModels
             }
 
             Invoice.CalculateTotals();
+        }
+
+        // ==================== PATCH 3: RECONSTRUCT AFTER LOAD ====================
+        public void ReconstructAfterLoad()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("[PIViewModel] Reconstructing after load...");
+
+                // 1. Rebuild Invoice-Specification relationships
+                if (Invoice?.Specifications != null)
+                {
+                    foreach (var spec in Invoice.Specifications)
+                    {
+                        spec.Invoice = Invoice;
+                    }
+                }
+
+                // 2. Rebuild Specification-Item relationships
+                if (Invoice?.Specifications != null)
+                {
+                    foreach (var spec in Invoice.Specifications)
+                    {
+                        foreach (var item in spec.Items)
+                        {
+                            item.Specification = spec;
+                        }
+                    }
+                }
+
+                // 3. Reattach event handlers
+                AttachAllEventHandlers();
+
+                // 4. Rebuild OtherCharge relationships
+                if (Invoice?.Specifications != null)
+                {
+                    foreach (var spec in Invoice.Specifications)
+                    {
+                        if (spec.OtherCharges != null)
+                        {
+                            foreach (var charge in spec.OtherCharges)
+                            {
+                                charge.BoundSpecs = Invoice.Specifications.ToList();
+                            }
+                        }
+                    }
+                }
+
+                // 5. Refresh charge auto values
+                RefreshAllChargeAutoValues();
+
+                // 6. Renumber SR numbers
+                RenumberAllSrNumbers();
+
+                // 7. Recalculate all totals
+                Invoice?.CalculateTotals();
+
+                System.Diagnostics.Debug.WriteLine("[PIViewModel] Reconstruction complete");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[PIViewModel] Reconstruction error: {ex.Message}");
+            }
+        }
+
+        // ==================== PATCH 6: ATTACH ALL HANDLERS ====================
+        private void AttachAllEventHandlers()
+        {
+            // Detach first to prevent duplicates
+            DetachAllEventHandlers();
+
+            if (Invoice == null) return;
+
+            // Attach to Invoice
+            Invoice.PropertyChanged -= OnInvoicePropertyChanged;
+            Invoice.PropertyChanged += OnInvoicePropertyChanged;
+
+            // Attach to Specifications
+            if (Invoice.Specifications != null)
+            {
+                foreach (var spec in Invoice.Specifications)
+                {
+                    AttachSpecificationHandlers(spec);
+                }
+
+                // Attach to Specification collection changes
+                Invoice.Specifications.CollectionChanged -= Specifications_CollectionChanged;
+                Invoice.Specifications.CollectionChanged += Specifications_CollectionChanged;
+            }
+        }
+
+        private void AttachSpecificationHandlers(SpecificationModel spec)
+        {
+            if (spec == null) return;
+
+            spec.PropertyChanged -= Spec_PropertyChanged;
+            spec.PropertyChanged += Spec_PropertyChanged;
+
+            // Items
+            if (spec.Items != null)
+            {
+                spec.Items.CollectionChanged -= SpecItems_CollectionChanged;
+                spec.Items.CollectionChanged += SpecItems_CollectionChanged;
+
+                foreach (var item in spec.Items)
+                {
+                    item.PropertyChanged -= Item_PropertyChanged;
+                    item.PropertyChanged += Item_PropertyChanged;
+                }
+            }
+
+            // Other Charges
+            if (spec.OtherCharges != null)
+            {
+                spec.OtherCharges.CollectionChanged -= OtherCharges_CollectionChanged;
+                spec.OtherCharges.CollectionChanged += OtherCharges_CollectionChanged;
+
+                foreach (var charge in spec.OtherCharges)
+                {
+                    charge.PropertyChanged -= Charge_PropertyChanged;
+                    charge.PropertyChanged += Charge_PropertyChanged;
+                }
+            }
+        }
+
+        private void DetachAllEventHandlers()
+        {
+            if (Invoice == null) return;
+
+            // Detach Invoice
+            Invoice.PropertyChanged -= OnInvoicePropertyChanged;
+
+            if (Invoice.Specifications != null)
+            {
+                Invoice.Specifications.CollectionChanged -= Specifications_CollectionChanged;
+
+                foreach (var spec in Invoice.Specifications)
+                {
+                    DetachSpecificationHandlers(spec);
+                }
+            }
+        }
+
+        private void DetachSpecificationHandlers(SpecificationModel spec)
+        {
+            if (spec == null) return;
+
+            spec.PropertyChanged -= Spec_PropertyChanged;
+
+            if (spec.Items != null)
+            {
+                spec.Items.CollectionChanged -= SpecItems_CollectionChanged;
+                foreach (var item in spec.Items)
+                {
+                    item.PropertyChanged -= Item_PropertyChanged;
+                }
+            }
+
+            if (spec.OtherCharges != null)
+            {
+                spec.OtherCharges.CollectionChanged -= OtherCharges_CollectionChanged;
+                foreach (var charge in spec.OtherCharges)
+                {
+                    charge.PropertyChanged -= Charge_PropertyChanged;
+                }
+            }
+        }
+
+        // ==================== PATCH 6: EVENT HANDLERS ====================
+        private void Specifications_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            if (e.NewItems != null)
+            {
+                foreach (SpecificationModel spec in e.NewItems)
+                {
+                    AttachSpecificationHandlers(spec);
+                }
+            }
+
+            if (e.OldItems != null)
+            {
+                foreach (SpecificationModel spec in e.OldItems)
+                {
+                    DetachSpecificationHandlers(spec);
+                }
+            }
+
+            Invoice?.CalculateTotals();
+            Invoice.IsDirty = true;
+        }
+
+        private void Spec_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (sender is SpecificationModel spec)
+            {
+                if (e.PropertyName == nameof(SpecificationModel.SpecTotalSQM) ||
+                    e.PropertyName == nameof(SpecificationModel.SpecTotalQty) ||
+                    e.PropertyName == nameof(SpecificationModel.SpecTotalSQM1) ||
+                    e.PropertyName == nameof(SpecificationModel.SpecTotalSQM2) ||
+                    e.PropertyName == nameof(SpecificationModel.SpecTotalLM) ||
+                    e.PropertyName == nameof(SpecificationModel.SpecTotalPrice) ||
+                    e.PropertyName == nameof(SpecificationModel.OtherChargesTotal))
+                {
+                    Invoice?.CalculateTotals();
+                    Invoice.IsDirty = true;
+                }
+            }
+        }
+
+        private void SpecItems_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            if (e.NewItems != null)
+            {
+                foreach (InvoiceItemModel item in e.NewItems)
+                {
+                    item.PropertyChanged += Item_PropertyChanged;
+                }
+            }
+
+            if (e.OldItems != null)
+            {
+                foreach (InvoiceItemModel item in e.OldItems)
+                {
+                    item.PropertyChanged -= Item_PropertyChanged;
+                }
+            }
+
+            Invoice?.CalculateTotals();
+            Invoice.IsDirty = true;
+        }
+
+        private void Item_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (sender is InvoiceItemModel item && item.Specification != null)
+            {
+                item.Specification.CalculateTotals();
+                Invoice?.CalculateTotals();
+                Invoice.IsDirty = true;
+            }
+        }
+
+        private void OtherCharges_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            if (e.NewItems != null)
+            {
+                foreach (OtherChargeModel charge in e.NewItems)
+                {
+                    charge.PropertyChanged += Charge_PropertyChanged;
+                }
+            }
+
+            if (e.OldItems != null)
+            {
+                foreach (OtherChargeModel charge in e.OldItems)
+                {
+                    charge.PropertyChanged -= Charge_PropertyChanged;
+                }
+            }
+
+            Invoice?.CalculateTotals();
+            Invoice.IsDirty = true;
+        }
+
+        private void Charge_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (sender is OtherChargeModel charge)
+            {
+                if (e.PropertyName == nameof(OtherChargeModel.Type) ||
+                    e.PropertyName == nameof(OtherChargeModel.Rate) ||
+                    e.PropertyName == nameof(OtherChargeModel.LinkedSpecIndices) ||
+                    e.PropertyName == nameof(OtherChargeModel.Value))
+                {
+                    UpdateChargeValue(charge);
+                    CalculateOtherChargeValue(charge, null);
+
+                    if (SelectedTargetSpecification != null)
+                    {
+                        SelectedTargetSpecification.CalculateOtherChargesTotal();
+                        Invoice?.CalculateTotals();
+                        Invoice.IsDirty = true;
+                    }
+                }
+            }
         }
 
         public void AddItemWithPrice(SpecificationModel spec)
@@ -1892,9 +2209,8 @@ namespace ProGlassAutomation.ViewModels
                     }
                 }
 
-                // Subscribe to charge changes
-                SubscribeToOtherChargeChanges();
-                RefreshAllChargeAutoValues();
+                // PATCH 3: Reconstruct after load (reattach handlers, rebuild relationships)
+                ReconstructAfterLoad();
 
                 // Set first spec as selected
                 SelectedTargetSpecification = Invoice.Specifications.FirstOrDefault();
@@ -1904,7 +2220,7 @@ namespace ProGlassAutomation.ViewModels
                 Invoice.IsDirty = false;
                 CurrentFileName = pi.InvoiceNo ?? "Loaded Invoice";
 
-                System.Diagnostics.Debug.WriteLine($"[PIViewModel] Loaded {Invoice.Specifications.Count} specs");
+                System.Diagnostics.Debug.WriteLine($"[PIViewModel] Loaded {Invoice.Specifications.Count} specs with full reconstruction");
             }
             catch (Exception ex)
             {
