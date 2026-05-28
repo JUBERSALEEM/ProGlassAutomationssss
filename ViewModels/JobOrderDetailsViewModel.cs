@@ -16,7 +16,6 @@ namespace ProGlassAutomation.ViewModels
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        // XAML binds to "CurrentJobOrder"
         public JobOrder CurrentJobOrder
         {
             get => _jobOrder;
@@ -118,13 +117,18 @@ namespace ProGlassAutomation.ViewModels
                         Id = dbJob.Id,
                         JobNumber = dbJob.JONumber,
                         CustomerName = dbJob.ClientName,
+                        CustomerTRN = dbJob.ClientTRN ?? "",
+                        CustomerAddress = dbJob.ClientAddress ?? "",
                         ProjectName = dbJob.ProjectName,
                         ProjectLocation = dbJob.ProjectLocation,
+                        LPONumber = dbJob.LPONumber ?? "",
                         Date = dbJob.JODate,
                         RequiredDate = dbJob.RequiredDate,
-                        Status = dbJob.Status,
-                        Notes = dbJob.Notes,
-                        TotalQty = dbJob.TotalQty
+                        Status = dbJob.Status ?? "Pending",
+                        Notes = dbJob.Notes ?? "",
+                        TotalQty = dbJob.TotalQty,
+                        TotalAmount = dbJob.TotalAmount,
+                        SpecificationsJson = dbJob.SpecificationsJson ?? ""
                     };
                     CurrentJobOrder = job;
                 }
@@ -132,6 +136,8 @@ namespace ProGlassAutomation.ViewModels
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[JobOrderDetails] LoadJobOrder Error: {ex.Message}");
+                MessageBox.Show($"Error loading Job Order: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -158,26 +164,37 @@ namespace ProGlassAutomation.ViewModels
                 var dbJob = new Data.Database.JobOrderModel
                 {
                     Id = CurrentJobOrder.Id,
-                    JONumber = CurrentJobOrder.JobNumber,
-                    ClientName = CurrentJobOrder.CustomerName,
-                    ProjectName = CurrentJobOrder.ProjectName,
-                    ProjectLocation = CurrentJobOrder.ProjectLocation,
-                    JODate = CurrentJobOrder.Date,
-                    RequiredDate = CurrentJobOrder.RequiredDate,
-                    Status = CurrentJobOrder.Status,
+                    JONumber = CurrentJobOrder.JobNumber ?? "",
+                    ClientName = CurrentJobOrder.CustomerName ?? "",
+                    ClientTRN = CurrentJobOrder.CustomerTRN ?? "",
+                    ClientAddress = CurrentJobOrder.CustomerAddress ?? "",
+                    ProjectName = CurrentJobOrder.ProjectName ?? "",
+                    ProjectLocation = CurrentJobOrder.ProjectLocation ?? "",
+                    LPONumber = CurrentJobOrder.LPONumber ?? "",
+                    JODate = CurrentJobOrder.Date == DateTime.MinValue ? DateTime.Today : CurrentJobOrder.Date,
+                    RequiredDate = CurrentJobOrder.RequiredDate == DateTime.MinValue ? DateTime.Today.AddDays(7) : CurrentJobOrder.RequiredDate,
+                    Status = CurrentJobOrder.Status ?? "Pending",
                     TotalQty = CurrentJobOrder.TotalQty,
-                    Notes = CurrentJobOrder.Notes
+                    TotalAmount = CurrentJobOrder.TotalAmount,
+                    Notes = CurrentJobOrder.Notes ?? "",
+                    SpecificationsJson = CurrentJobOrder.SpecificationsJson ?? ""
                 };
 
                 Data.Database.DbHelper.SaveJobOrder(dbJob);
 
+                // Update the local JobOrder with the new ID if it's new
+                if (CurrentJobOrder.Id == 0)
+                {
+                    CurrentJobOrder.Id = dbJob.Id;
+                }
+
                 IsEditing = false;
-                MessageBox.Show($"Job Order {CurrentJobOrder.JobNumber} saved!", "Success",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show($"Job Order {CurrentJobOrder.JobNumber} saved successfully!\n\nTotal: AED {CurrentJobOrder.TotalAmount:N2}",
+                    "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error saving: {ex.Message}", "Error",
+                MessageBox.Show($"Error saving: {ex.Message}\n\n{ex.StackTrace}", "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -192,7 +209,7 @@ namespace ProGlassAutomation.ViewModels
             if (CurrentJobOrder == null) return;
 
             var result = MessageBox.Show(
-                $"Delete Job Order {CurrentJobOrder.JobNumber}?",
+                $"Delete Job Order {CurrentJobOrder.JobNumber}?\n\nThis action cannot be undone.",
                 "Confirm Delete",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Warning);
@@ -216,14 +233,19 @@ namespace ProGlassAutomation.ViewModels
 
         private void ExecutePrint(object _)
         {
-            if (CurrentJobOrder == null) return;
+            if (CurrentJobOrder == null)
+            {
+                MessageBox.Show("Please load a Job Order first.", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
 
             try
             {
                 var printDialog = new System.Windows.Controls.PrintDialog();
                 if (printDialog.ShowDialog() == true)
                 {
-                    // Print logic here
+                    System.Diagnostics.Debug.WriteLine($"[JobOrderDetails] Printing Job Order: {CurrentJobOrder.JobNumber}");
                 }
             }
             catch (Exception ex)
@@ -235,7 +257,24 @@ namespace ProGlassAutomation.ViewModels
 
         private void ExecuteExport(object _)
         {
-            // Export logic
+            if (CurrentJobOrder == null)
+            {
+                MessageBox.Show("Please load a Job Order first.", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"[JobOrderDetails] Exporting Job Order: {CurrentJobOrder.JobNumber}");
+                MessageBox.Show("Export feature coming soon!", "Export",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error exporting: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void ExecuteConvertToDelivery(object _)
@@ -248,7 +287,10 @@ namespace ProGlassAutomation.ViewModels
             }
 
             var result = MessageBox.Show(
-                $"Convert Job Order {CurrentJobOrder.JobNumber} to Delivery?",
+                $"Convert Job Order {CurrentJobOrder.JobNumber} to Delivery Order?\n\n" +
+                $"Customer: {CurrentJobOrder.CustomerName}\n" +
+                $"Project: {CurrentJobOrder.ProjectName}\n" +
+                $"Qty: {CurrentJobOrder.TotalQty}",
                 "Convert to Delivery",
                 MessageBoxButton.YesNo, MessageBoxImage.Question);
 
@@ -263,7 +305,18 @@ namespace ProGlassAutomation.ViewModels
 
         private void ExecuteViewProforma(object _)
         {
-            // Navigate to PI details
+            if (RelatedProformaInvoice == null)
+            {
+                MessageBox.Show("No related Proforma Invoice found.", "Info",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            // Navigate to PI details - use InvoiceNo instead of Id
+            if (Application.Current.MainWindow?.DataContext is MainViewModel mainVM)
+            {
+                mainVM.ShowProformaInvoiceByNumber(RelatedProformaInvoice.InvoiceNo);
+            }
         }
 
         protected void OnPropertyChanged([CallerMemberName] string name = null)

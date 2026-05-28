@@ -8,6 +8,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Newtonsoft.Json;
 
 namespace ProGlassAutomation.Data.Database
 {
@@ -18,7 +19,7 @@ namespace ProGlassAutomation.Data.Database
             "ProGlassAutomation", "glass.db");
 
         private static readonly string ConnStr = $"Data Source={DbPath};Cache=Shared";
-        private static readonly int LatestVersion = 10;
+        private static readonly int LatestVersion = 12;
 
         private static SqliteConnection CreateConnection()
         {
@@ -206,6 +207,30 @@ CREATE INDEX IF NOT EXISTS idx_ti_date ON TaxInvoices(InvoiceDate);";
                         cmd.CommandText = @"
 CREATE TABLE IF NOT EXISTS JobOrders (Id INTEGER PRIMARY KEY AUTOINCREMENT, JONumber TEXT NOT NULL UNIQUE, ProformaInvoiceId INTEGER, ClientName TEXT, ProjectName TEXT, ProjectLocation TEXT, JODate TEXT, RequiredDate TEXT, Status TEXT DEFAULT 'Pending', TotalQty INTEGER DEFAULT 0, ReleasedQty INTEGER DEFAULT 0, BalanceQty INTEGER DEFAULT 0, TotalAmount REAL DEFAULT 0, Notes TEXT, CreatedDate TEXT, UpdatedDate TEXT);
 CREATE TABLE IF NOT EXISTS JobOrderItems (Id INTEGER PRIMARY KEY AUTOINCREMENT, JobOrderId INTEGER NOT NULL, SrNo INTEGER, GlassRef TEXT, Width REAL, Height REAL, OrderedQty INTEGER DEFAULT 0, ReleasedQty INTEGER DEFAULT 0, BalanceQty INTEGER DEFAULT 0, Price REAL DEFAULT 0, TotalAmount REAL DEFAULT 0);";
+                        cmd.ExecuteNonQuery();
+                    }
+                    break;
+
+                case 11:
+                    // Add new columns to JobOrders table for specifications JSON and additional fields
+                    ExecuteSafeAlter(conn, "ALTER TABLE JobOrders ADD COLUMN ClientTRN TEXT");
+                    ExecuteSafeAlter(conn, "ALTER TABLE JobOrders ADD COLUMN ClientAddress TEXT");
+                    ExecuteSafeAlter(conn, "ALTER TABLE JobOrders ADD COLUMN ContactPerson TEXT");
+                    ExecuteSafeAlter(conn, "ALTER TABLE JobOrders ADD COLUMN ContactNumber TEXT");
+                    ExecuteSafeAlter(conn, "ALTER TABLE JobOrders ADD COLUMN LPONumber TEXT");
+                    ExecuteSafeAlter(conn, "ALTER TABLE JobOrders ADD COLUMN VATAmount REAL DEFAULT 0");
+                    ExecuteSafeAlter(conn, "ALTER TABLE JobOrders ADD COLUMN DiscountAmount REAL DEFAULT 0");
+                    ExecuteSafeAlter(conn, "ALTER TABLE JobOrders ADD COLUMN NetAmount REAL DEFAULT 0");
+                    ExecuteSafeAlter(conn, "ALTER TABLE JobOrders ADD COLUMN SpecificationsJson TEXT");
+                    break;
+                case 12:
+                    // Ensure ProformaInvoices table exists (for databases that skipped migration 9)
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"
+CREATE TABLE IF NOT EXISTS ProformaInvoices (Id INTEGER PRIMARY KEY AUTOINCREMENT, PINumber TEXT NOT NULL UNIQUE, ClientName TEXT, ClientTRN TEXT, ClientAddress TEXT, ProjectName TEXT, ProjectLocation TEXT, LPONumber TEXT, Attention TEXT, ContactNo TEXT, PIDate TEXT, ValidUntil TEXT, Status TEXT DEFAULT 'Draft', TotalAmount REAL DEFAULT 0, VATPercent REAL DEFAULT 5, VATAmount REAL DEFAULT 0, NetAmount REAL DEFAULT 0, CompanyName TEXT, CompanyTRN TEXT, CompanyLocation TEXT, CompanyPhone TEXT, Notes TEXT, CreatedDate TEXT, UpdatedDate TEXT);
+CREATE TABLE IF NOT EXISTS ProformaInvoiceItems (Id INTEGER PRIMARY KEY AUTOINCREMENT, ProformaInvoiceId INTEGER NOT NULL, SrNo INTEGER, GlassRef TEXT, Width1 REAL, Height1 REAL, Width2 REAL, Height2 REAL, Qty INTEGER DEFAULT 1, SQM REAL DEFAULT 0, TotalSQM REAL DEFAULT 0, Price REAL DEFAULT 0, TotalPrice REAL DEFAULT 0, SurchargePercent REAL DEFAULT 0, SurchargeThreshold REAL DEFAULT 0, FOREIGN KEY (ProformaInvoiceId) REFERENCES ProformaInvoices(Id));
+CREATE INDEX IF NOT EXISTS idx_pi_date ON ProformaInvoices(PIDate);";
                         cmd.ExecuteNonQuery();
                     }
                     break;
@@ -1830,47 +1855,26 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
         {
             Execute(conn =>
             {
-            using var checkCmd = conn.CreateCommand();
-            checkCmd.CommandText = "SELECT Id FROM JobOrders WHERE JONumber = $jo";
-            checkCmd.Parameters.AddWithValue("$jo", jo.JONumber);
-            var existingId = checkCmd.ExecuteScalar();
+                using var checkCmd = conn.CreateCommand();
+                checkCmd.CommandText = "SELECT Id FROM JobOrders WHERE JONumber = $jo";
+                checkCmd.Parameters.AddWithValue("$jo", jo.JONumber);
+                var existingId = checkCmd.ExecuteScalar();
 
-            if (existingId != null)
-            {
-                jo.Id = Convert.ToInt32(existingId);
-                using var cmd = conn.CreateCommand();
-                cmd.CommandText = @"UPDATE JobOrders SET ProformaInvoiceId = $piId, ClientName = $cn, ProjectName = $pn, ProjectLocation = $pl, JODate = $jd, RequiredDate = $rd, Status = $st, TotalQty = $tq, ReleasedQty = $rq, BalanceQty = $bq, TotalAmount = $ta, Notes = $nt, UpdatedDate = $ud WHERE Id = $id";
-                cmd.Parameters.AddWithValue("$id", jo.Id);
-                cmd.Parameters.AddWithValue("$piId", jo.ProformaInvoiceId > 0 ? jo.ProformaInvoiceId : DBNull.Value);
-                cmd.Parameters.AddWithValue("$cn", jo.ClientName ?? "");
-                cmd.Parameters.AddWithValue("$pn", jo.ProjectName ?? "");
-                cmd.Parameters.AddWithValue("$pl", jo.ProjectLocation ?? "");
-                cmd.Parameters.AddWithValue("$jd", jo.JODate.ToString("yyyy-MM-dd"));
-                cmd.Parameters.AddWithValue("$rd", jo.RequiredDate.ToString("yyyy-MM-dd"));
-                cmd.Parameters.AddWithValue("$st", jo.Status ?? "Pending");
-                cmd.Parameters.AddWithValue("$tq", jo.TotalQty);
-                cmd.Parameters.AddWithValue("$rq", jo.ReleasedQty);
-                cmd.Parameters.AddWithValue("$bq", jo.BalanceQty);
-                cmd.Parameters.AddWithValue("$ta", jo.TotalAmount);
-                cmd.Parameters.AddWithValue("$nt", jo.Notes ?? "");
-                cmd.Parameters.AddWithValue("$ud", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
-                cmd.ExecuteNonQuery();
-
-                using var delCmd = conn.CreateCommand();
-                delCmd.CommandText = "DELETE FROM JobOrderItems WHERE JobOrderId = $id";
-                delCmd.Parameters.AddWithValue("$id", jo.Id);
-                delCmd.ExecuteNonQuery();
-            }
-            else
-            {
-                using var cmd = conn.CreateCommand();
-                cmd.CommandText = @"INSERT INTO JobOrders (JONumber, ProformaInvoiceId, ClientName, ProjectName, ProjectLocation, JODate, RequiredDate, Status, TotalQty, ReleasedQty, BalanceQty, TotalAmount, Notes, CreatedDate, UpdatedDate)
-                    VALUES ($jo, $piId, $cn, $pn, $pl, $jd, $rd, $st, $tq, $rq, $bq, $ta, $nt, $cd, $ud)";
-                    cmd.Parameters.AddWithValue("$jo", jo.JONumber);
+                if (existingId != null)
+                {
+                    jo.Id = Convert.ToInt32(existingId);
+                    using var cmd = conn.CreateCommand();
+                    cmd.CommandText = @"UPDATE JobOrders SET ProformaInvoiceId = $piId, ClientName = $cn, ClientTRN = $ctr, ClientAddress = $ca, ContactPerson = $cp, ContactNumber = $cno, ProjectName = $pn, ProjectLocation = $pl, LPONumber = $lp, JODate = $jd, RequiredDate = $rd, Status = $st, TotalQty = $tq, ReleasedQty = $rq, BalanceQty = $bq, TotalAmount = $ta, VATAmount = $va, DiscountAmount = $da, NetAmount = $na, Notes = $nt, SpecificationsJson = $specsJson, UpdatedDate = $ud WHERE Id = $id";
+                    cmd.Parameters.AddWithValue("$id", jo.Id);
                     cmd.Parameters.AddWithValue("$piId", jo.ProformaInvoiceId > 0 ? jo.ProformaInvoiceId : DBNull.Value);
                     cmd.Parameters.AddWithValue("$cn", jo.ClientName ?? "");
+                    cmd.Parameters.AddWithValue("$ctr", jo.ClientTRN ?? "");
+                    cmd.Parameters.AddWithValue("$ca", jo.ClientAddress ?? "");
+                    cmd.Parameters.AddWithValue("$cp", jo.ContactPerson ?? "");
+                    cmd.Parameters.AddWithValue("$cno", jo.ContactNumber ?? "");
                     cmd.Parameters.AddWithValue("$pn", jo.ProjectName ?? "");
                     cmd.Parameters.AddWithValue("$pl", jo.ProjectLocation ?? "");
+                    cmd.Parameters.AddWithValue("$lp", jo.LPONumber ?? "");
                     cmd.Parameters.AddWithValue("$jd", jo.JODate.ToString("yyyy-MM-dd"));
                     cmd.Parameters.AddWithValue("$rd", jo.RequiredDate.ToString("yyyy-MM-dd"));
                     cmd.Parameters.AddWithValue("$st", jo.Status ?? "Pending");
@@ -1878,7 +1882,47 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
                     cmd.Parameters.AddWithValue("$rq", jo.ReleasedQty);
                     cmd.Parameters.AddWithValue("$bq", jo.BalanceQty);
                     cmd.Parameters.AddWithValue("$ta", jo.TotalAmount);
+                    cmd.Parameters.AddWithValue("$va", jo.VATAmount);
+                    cmd.Parameters.AddWithValue("$da", jo.DiscountAmount);
+                    cmd.Parameters.AddWithValue("$na", jo.NetAmount);
                     cmd.Parameters.AddWithValue("$nt", jo.Notes ?? "");
+                    cmd.Parameters.AddWithValue("$specsJson", jo.SpecificationsJson ?? "");
+                    cmd.Parameters.AddWithValue("$ud", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
+                    cmd.ExecuteNonQuery();
+
+                    using var delCmd = conn.CreateCommand();
+                    delCmd.CommandText = "DELETE FROM JobOrderItems WHERE JobOrderId = $id";
+                    delCmd.Parameters.AddWithValue("$id", jo.Id);
+                    delCmd.ExecuteNonQuery();
+                }
+                else
+                {
+                    using var cmd = conn.CreateCommand();
+                    cmd.CommandText = @"INSERT INTO JobOrders (JONumber, ProformaInvoiceId, ClientName, ClientTRN, ClientAddress, ContactPerson, ContactNumber, ProjectName, ProjectLocation, LPONumber, JODate, RequiredDate, Status, TotalQty, ReleasedQty, BalanceQty, TotalAmount, VATAmount, DiscountAmount, NetAmount, Notes, SpecificationsJson, CreatedDate, UpdatedDate)
+                    VALUES ($jo, $piId, $cn, $ctr, $ca, $cp, $cno, $pn, $pl, $lp, $jd, $rd, $st, $tq, $rq, $bq, $ta, $va, $da, $na, $nt, $specsJson, $cd, $ud)";
+                    // Note: PINumber is derived from ProformaInvoiceId via JOIN, not stored directly
+                    cmd.Parameters.AddWithValue("$jo", jo.JONumber);
+                    cmd.Parameters.AddWithValue("$piId", jo.ProformaInvoiceId > 0 ? jo.ProformaInvoiceId : DBNull.Value);
+                    cmd.Parameters.AddWithValue("$cn", jo.ClientName ?? "");
+                    cmd.Parameters.AddWithValue("$ctr", jo.ClientTRN ?? "");
+                    cmd.Parameters.AddWithValue("$ca", jo.ClientAddress ?? "");
+                    cmd.Parameters.AddWithValue("$cp", jo.ContactPerson ?? "");
+                    cmd.Parameters.AddWithValue("$cno", jo.ContactNumber ?? "");
+                    cmd.Parameters.AddWithValue("$pn", jo.ProjectName ?? "");
+                    cmd.Parameters.AddWithValue("$pl", jo.ProjectLocation ?? "");
+                    cmd.Parameters.AddWithValue("$lp", jo.LPONumber ?? "");
+                    cmd.Parameters.AddWithValue("$jd", jo.JODate.ToString("yyyy-MM-dd"));
+                    cmd.Parameters.AddWithValue("$rd", jo.RequiredDate.ToString("yyyy-MM-dd"));
+                    cmd.Parameters.AddWithValue("$st", jo.Status ?? "Pending");
+                    cmd.Parameters.AddWithValue("$tq", jo.TotalQty);
+                    cmd.Parameters.AddWithValue("$rq", jo.ReleasedQty);
+                    cmd.Parameters.AddWithValue("$bq", jo.BalanceQty);
+                    cmd.Parameters.AddWithValue("$ta", jo.TotalAmount);
+                    cmd.Parameters.AddWithValue("$va", jo.VATAmount);
+                    cmd.Parameters.AddWithValue("$da", jo.DiscountAmount);
+                    cmd.Parameters.AddWithValue("$na", jo.NetAmount);
+                    cmd.Parameters.AddWithValue("$nt", jo.Notes ?? "");
+                    cmd.Parameters.AddWithValue("$specsJson", jo.SpecificationsJson ?? "");
                     cmd.Parameters.AddWithValue("$cd", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
                     cmd.Parameters.AddWithValue("$ud", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
                     cmd.ExecuteNonQuery();
@@ -1914,7 +1958,16 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
             {
                 var list = new List<JobOrderModel>();
                 using var cmd = conn.CreateCommand();
-                cmd.CommandText = "SELECT * FROM JobOrders ORDER BY Id DESC";
+                cmd.CommandText = @"SELECT 
+                    j.Id, j.JONumber, j.ProformaInvoiceId, j.ClientName, j.ProjectName, 
+                    j.ProjectLocation, j.JODate, j.RequiredDate, j.Status, j.TotalQty, 
+                    j.ReleasedQty, j.BalanceQty, j.TotalAmount, j.Notes, j.ClientTRN, 
+                    j.ClientAddress, j.ContactPerson, j.ContactNumber, j.LPONumber, 
+                    j.VATAmount, j.DiscountAmount, j.NetAmount, j.SpecificationsJson,
+                    COALESCE(p.PINumber, '') AS PINumber
+                    FROM JobOrders j
+                    LEFT JOIN ProformaInvoices p ON j.ProformaInvoiceId = p.Id
+                    ORDER BY j.Id DESC";
                 using var r = cmd.ExecuteReader();
                 while (r.Read())
                 {
@@ -1933,7 +1986,17 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
                         ReleasedQty = r.GetInt32(10),
                         BalanceQty = r.GetInt32(11),
                         TotalAmount = r.GetDouble(12),
-                        Notes = r.IsDBNull(13) ? "" : r.GetString(13)
+                        Notes = r.IsDBNull(13) ? "" : r.GetString(13),
+                        ClientTRN = r.IsDBNull(14) ? "" : r.GetString(14),
+                        ClientAddress = r.IsDBNull(15) ? "" : r.GetString(15),
+                        ContactPerson = r.IsDBNull(16) ? "" : r.GetString(16),
+                        ContactNumber = r.IsDBNull(17) ? "" : r.GetString(17),
+                        LPONumber = r.IsDBNull(18) ? "" : r.GetString(18),
+                        VATAmount = r.IsDBNull(19) ? 0 : r.GetDouble(19),
+                        DiscountAmount = r.IsDBNull(20) ? 0 : r.GetDouble(20),
+                        NetAmount = r.IsDBNull(21) ? 0 : r.GetDouble(21),
+                        SpecificationsJson = r.IsDBNull(22) ? "" : r.GetString(22),
+                        PINumber = r.IsDBNull(23) ? "" : r.GetString(23)
                     };
                     jo.Items = GetJobOrderItems(jo.Id, conn);
                     list.Add(jo);
@@ -1980,7 +2043,8 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
             Execute(conn =>
             {
                 using var cmd = conn.CreateCommand();
-                cmd.CommandText = "DELETE FROM JobOrderItems WHERE JobOrderId = $id";
+                cmd.CommandText = @"UPDATE JobOrders SET ProformaInvoiceId = $piId, ClientName = $cn, ClientTRN = $ctr, ClientAddress = $ca, ContactPerson = $cp, ContactNumber = $cno, ProjectName = $pn, ProjectLocation = $pl, LPONumber = $lp, JODate = $jd, RequiredDate = $rd, Status = $st, TotalQty = $tq, ReleasedQty = $rq, BalanceQty = $bq, TotalAmount = $ta, VATAmount = $va, DiscountAmount = $da, NetAmount = $na, Notes = $nt, SpecificationsJson = $specsJson, UpdatedDate = $ud WHERE Id = $id";
+                // Note: PINumber is derived from ProformaInvoiceId via JOIN, not stored directly
                 cmd.Parameters.AddWithValue("$id", id);
                 cmd.ExecuteNonQuery();
                 cmd.CommandText = "DELETE FROM JobOrders WHERE Id = $id";
@@ -2961,9 +3025,15 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
         public int Id { get; set; }
         public string JONumber { get; set; } = "";
         public int ProformaInvoiceId { get; set; }
+        public string PINumber { get; set; } = "";
         public string ClientName { get; set; } = "";
+        public string ClientTRN { get; set; } = "";
+        public string ClientAddress { get; set; } = "";
+        public string ContactPerson { get; set; } = "";
+        public string ContactNumber { get; set; } = "";
         public string ProjectName { get; set; } = "";
         public string ProjectLocation { get; set; } = "";
+        public string LPONumber { get; set; } = "";
         public DateTime JODate { get; set; } = DateTime.Now;
         public DateTime RequiredDate { get; set; } = DateTime.Now.AddDays(7);
         public string Status { get; set; } = "Pending";
@@ -2971,7 +3041,11 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
         public int ReleasedQty { get; set; }
         public int BalanceQty { get; set; }
         public double TotalAmount { get; set; }
+        public double VATAmount { get; set; }
+        public double DiscountAmount { get; set; }
+        public double NetAmount { get; set; }
         public string Notes { get; set; } = "";
+        public string SpecificationsJson { get; set; } = "";
         public List<JobOrderItemModel> Items { get; set; } = new();
     }
 

@@ -25,6 +25,32 @@
             </Setter>
         </Style>
 
+        <Style x:Key="LocalDeleteButton" TargetType="Button">
+            <Setter Property="Background" Value="#DC2626"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Width" Value="32"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#EF4444"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
         <Style x:Key="LocalSecondaryButton" TargetType="Button">
             <Setter Property="Background" Value="#374151"/>
             <Setter Property="Foreground" Value="White"/>
@@ -237,7 +263,19 @@
 
                     <DataGridTextColumn Header="PROJECT" Binding="{Binding ProjectName}" Width="*"/>
 
-                    <DataGridTextColumn Header="DATE" Binding="{Binding Date, StringFormat='{}{0:dd MMM yyyy}'}" Width="100"/>
+                    <!-- DATE & TIME COLUMN - Updated with time -->
+                    <DataGridTemplateColumn Header="DATE &amp; TIME" Width="160">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Date, StringFormat='{}{0:dd MMM yyyy}'}" 
+                                               Foreground="#E5E7EB" FontSize="12"/>
+                                    <TextBlock Text="{Binding Date, StringFormat='{}{0:hh:mm tt}'}" 
+                                               Foreground="#9CA3AF" FontSize="10" Margin="0,2,0,0"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
 
                     <DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="100">
                         <DataGridTextColumn.ElementStyle>
@@ -265,7 +303,7 @@
                         </DataGridTextColumn.ElementStyle>
                     </DataGridTextColumn>
 
-                    <DataGridTemplateColumn Header="ACTIONS" Width="120">
+                    <DataGridTemplateColumn Header="ACTIONS" Width="140">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
@@ -274,6 +312,12 @@
                                             Command="{Binding DataContext.OpenJobOrderCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                             CommandParameter="{Binding}"
                                             Margin="0,0,6,0"/>
+                                    <Button Content="🗑️" 
+                                            Style="{StaticResource LocalDeleteButton}"
+                                            Command="{Binding DataContext.DeleteJobOrderCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                            CommandParameter="{Binding}"
+                                            ToolTip="Delete Job Order"
+                                            Margin="0,0,0,0"/>
                                 </StackPanel>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>

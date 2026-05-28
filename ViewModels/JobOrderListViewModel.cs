@@ -126,12 +126,13 @@ namespace ProGlassAutomation.ViewModels
             LoadJobOrders();
         }
 
-        public void LoadJobOrders()
+        private void LoadJobOrders()
         {
             try
             {
-                IsLoading = true;
+                System.Diagnostics.Debug.WriteLine("[JobOrderListVM] Loading Job Orders from database...");
                 var dbOrders = DbHelper.GetAllJobOrders();
+                System.Diagnostics.Debug.WriteLine($"[JobOrderListVM] Found {dbOrders.Count} Job Orders in database");
 
                 var orders = new ObservableCollection<JobOrder>();
                 foreach (var db in dbOrders)
@@ -140,43 +141,37 @@ namespace ProGlassAutomation.ViewModels
                     {
                         Id = db.Id,
                         JobNumber = db.JONumber,
-                        PINumber = "",
-                        CustomerName = db.ClientName,
-                        ProjectName = db.ProjectName,
-                        ProjectLocation = db.ProjectLocation,
+                        PINumber = db.PINumber ?? "",
+                        CustomerName = db.ClientName ?? "",
+                        CustomerTRN = db.ClientTRN ?? "",
+                        CustomerAddress = db.ClientAddress ?? "",
+                        ProjectName = db.ProjectName ?? "",
+                        ProjectLocation = db.ProjectLocation ?? "",
+                        LPONumber = db.LPONumber ?? "",
                         Date = db.JODate,
                         RequiredDate = db.RequiredDate,
-                        Status = db.Status,
+                        Status = db.Status ?? "Pending",
                         TotalQty = db.TotalQty,
                         ReleasedQty = db.ReleasedQty,
                         BalanceQty = db.BalanceQty,
                         TotalAmount = db.TotalAmount,
-                        Notes = db.Notes,
+                        Notes = db.Notes ?? "",
+                        SpecificationsJson = db.SpecificationsJson ?? "",
                         CreatedDate = DateTime.Now
                     };
 
-                    // Get linked PI number
-                    if (db.ProformaInvoiceId > 0)
-                    {
-                        var allPIs = DbHelper.GetAllProformaInvoices();
-                        var pi = allPIs.FirstOrDefault(p => p.Id == db.ProformaInvoiceId);
-                        if (pi != null)
-                        {
-                            jo.PINumber = pi.InvoiceNo;
-                        }
-                    }
-
+                    System.Diagnostics.Debug.WriteLine($"[JobOrderListVM] Loaded JO: {jo.JobNumber}, JSON Length: {jo.SpecificationsJson?.Length ?? 0}");
                     orders.Add(jo);
                 }
 
                 JobOrders = orders;
-                System.Diagnostics.Debug.WriteLine($"[JobOrderListVM] Loaded {orders.Count} job orders");
+                OnPropertyChanged(nameof(FilteredJobOrders));
+                System.Diagnostics.Debug.WriteLine($"[JobOrderListVM] Loaded {JobOrders.Count} Job Orders into collection");
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[JobOrderListVM] Error: {ex.Message}");
-                MessageBox.Show($"Error loading Job Orders: {ex.Message}", "Error",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Error loading Job Orders: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {

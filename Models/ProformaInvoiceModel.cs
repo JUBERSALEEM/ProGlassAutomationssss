@@ -11,14 +11,46 @@ namespace ProGlassAutomation.Models
         public event PropertyChangedEventHandler PropertyChanged;
         private bool _disposed;
 
+        // ==================== ID (For DB Linkage) ====================
+        private int _id = 0;
+        public int Id
+        {
+            get => _id;
+            set
+            {
+                if (_id != value)
+                {
+                    _id = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
         // ==================== STATIC RANDOM (Thread-Safe) ====================
         private static readonly object _invoiceLock = new object();
         private static int _lastGeneratedNumber;
 
+        // ==================== BULK UPDATE MODE (PATCH 8) ====================
+        private bool _isBulkUpdating = false;
+        public bool IsBulkUpdating
+        {
+            get => _isBulkUpdating;
+            set
+            {
+                if (_isBulkUpdating != value)
+                {
+                    _isBulkUpdating = value;
+                    OnPropertyChanged();
+
+                    if (!value)
+                        CalculateTotals();
+                }
+            }
+        }
+
         // ==================== CONSTRUCTOR ====================
         public ProformaInvoiceModel()
         {
-            // Use field directly - property setter handles subscription
             _specifications = new ObservableCollection<SpecificationModel>();
             _specifications.CollectionChanged += OnSpecificationsCollectionChanged;
             InvoiceNo = GenerateInvoiceNo();
@@ -41,8 +73,10 @@ namespace ProGlassAutomation.Models
 
                 foreach (var spec in Specifications)
                 {
-                    UnsubscribeFromSpecification(spec);
+                    spec?.Dispose();
                 }
+
+                Specifications.Clear();
             }
 
             _disposed = true;
@@ -52,7 +86,8 @@ namespace ProGlassAutomation.Models
         private void OnSpecificationsCollectionChanged(object sender,
             System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
-            // Subscribe to new specs
+            if (IsBulkUpdating) return;
+
             if (e.NewItems != null)
             {
                 foreach (SpecificationModel spec in e.NewItems)
@@ -61,7 +96,6 @@ namespace ProGlassAutomation.Models
                 }
             }
 
-            // Unsubscribe from old specs
             if (e.OldItems != null)
             {
                 foreach (SpecificationModel spec in e.OldItems)
@@ -78,6 +112,7 @@ namespace ProGlassAutomation.Models
             if (spec == null) return;
 
             spec.PropertyChanged += OnSpecificationPropertyChanged;
+            spec.Items.CollectionChanged += OnItemsCollectionChanged;
 
             if (spec.OtherCharges != null)
             {
@@ -96,6 +131,11 @@ namespace ProGlassAutomation.Models
 
             spec.PropertyChanged -= OnSpecificationPropertyChanged;
 
+            if (spec.Items != null)
+            {
+                spec.Items.CollectionChanged -= OnItemsCollectionChanged;
+            }
+
             if (spec.OtherCharges != null)
             {
                 spec.OtherCharges.CollectionChanged -= OnOtherChargesCollectionChanged;
@@ -105,6 +145,13 @@ namespace ProGlassAutomation.Models
                     charge.PropertyChanged -= OnOtherChargePropertyChanged;
                 }
             }
+        }
+
+        private void OnItemsCollectionChanged(object sender,
+            System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            if (IsBulkUpdating) return;
+            CalculateTotals();
         }
 
         private void OnOtherChargesCollectionChanged(object sender,
@@ -126,11 +173,14 @@ namespace ProGlassAutomation.Models
                 }
             }
 
-            CalculateTotals();
+            if (!IsBulkUpdating)
+                CalculateTotals();
         }
 
         private void OnSpecificationPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
+            if (IsBulkUpdating) return;
+
             if (e.PropertyName == nameof(SpecificationModel.SpecTotalSQM) ||
                 e.PropertyName == nameof(SpecificationModel.SpecTotalLM) ||
                 e.PropertyName == nameof(SpecificationModel.SpecTotalQty) ||
@@ -143,6 +193,7 @@ namespace ProGlassAutomation.Models
 
         private void OnOtherChargePropertyChanged(object sender, PropertyChangedEventArgs e)
         {
+            if (IsBulkUpdating) return;
             CalculateTotals();
         }
 
@@ -157,6 +208,12 @@ namespace ProGlassAutomation.Models
             if (Equals(field, value)) return false;
             field = value;
             OnPropertyChanged(propertyName);
+
+            if (!IsBulkUpdating && propertyName != nameof(IsDirty) && propertyName != nameof(IsBulkUpdating))
+            {
+                IsDirty = true;
+            }
+
             return true;
         }
 
@@ -294,48 +351,141 @@ namespace ProGlassAutomation.Models
             set => SetProperty(ref _companyLocation, value);
         }
 
+        // ============ STATUS MANAGEMENT (PATCH 16) ============
         private string _status = "Draft";
         public string Status
         {
             get => _status;
-            set => SetProperty(ref _status, value);
+            set
+            {
+                if (_status != value)
+                {
+                    if (!IsValidStatusTransition(_status, value))
+                    {
+                        throw new InvalidOperationException($"Invalid status transition from '{_status}' to '{value}'");
+                    }
+                    SetProperty(ref _status, value);
+                    IsDirty = true;
+                }
+            }
         }
 
+        private static readonly Dictionary<string, string[]> _statusTransitions = new()
+        {
+            { "Draft", new[] { "Pending", "Confirmed", "Cancelled" } },
+            { "Pending", new[] { "Draft", "Confirmed", "In Progress", "Cancelled" } },
+            { "Confirmed", new[] { "In Progress", "Completed", "Cancelled" } },
+            { "In Progress", new[] { "Confirmed", "Completed", "Cancelled" } },
+            { "Completed", new[] { "In Progress", "Cancelled" } },
+            { "Cancelled", new[] { "Draft" } }
+        };
+
+        public static bool IsValidStatusTransition(string from, string to)
+        {
+            if (string.IsNullOrEmpty(from) || string.IsNullOrEmpty(to)) return false;
+            if (from == to) return true;
+            return _statusTransitions.TryGetValue(from, out var transitions) && transitions.Contains(to);
+        }
+
+        // ============ JOB ORDER TRACKING (PATCH 1) ============
         private bool _isConvertedToJobOrder;
         public bool IsConvertedToJobOrder
         {
             get => _isConvertedToJobOrder;
-            set => SetProperty(ref _isConvertedToJobOrder, value);
+            set
+            {
+                if (_isConvertedToJobOrder != value)
+                {
+                    _isConvertedToJobOrder = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(ConversionStatus));
+                    OnPropertyChanged(nameof(IsLocked));
+
+                    if (value && !_convertedDate.HasValue)
+                    {
+                        ConvertedDate = DateTime.Now;
+                        ConvertedBy = Environment.UserName;
+                    }
+
+                    IsDirty = true;
+                }
+            }
         }
 
+        public bool IsLocked => IsConvertedToJobOrder && !string.IsNullOrEmpty(_sourceJobOrderNo);
+
+        private string _jobOrderId = "";
+        public string JobOrderId
+        {
+            get => _jobOrderId;
+            set { if (_jobOrderId != value) { _jobOrderId = value; OnPropertyChanged(); OnPropertyChanged(nameof(ConversionStatus)); IsDirty = true; } }
+        }
+
+        private string _sourceJobOrderNo = "";
+        public string SourceJobOrderNo
+        {
+            get => _sourceJobOrderNo;
+            set { if (_sourceJobOrderNo != value) { _sourceJobOrderNo = value; OnPropertyChanged(); OnPropertyChanged(nameof(ConversionStatus)); OnPropertyChanged(nameof(IsLocked)); IsDirty = true; } }
+        }
+
+        private DateTime? _convertedDate;
+        public DateTime? ConvertedDate
+        {
+            get => _convertedDate;
+            set { if (_convertedDate != value) { _convertedDate = value; OnPropertyChanged(); OnPropertyChanged(nameof(ConversionStatus)); IsDirty = true; } }
+        }
+
+        private string _convertedBy = "";
+        public string ConvertedBy
+        {
+            get => _convertedBy;
+            set { if (_convertedBy != value) { _convertedBy = value; OnPropertyChanged(); OnPropertyChanged(nameof(ConversionStatus)); IsDirty = true; } }
+        }
+
+        private int _revision = 0;
+        public int Revision
+        {
+            get => _revision;
+            set => SetProperty(ref _revision, value);
+        }
+
+        public string ConversionStatus
+        {
+            get
+            {
+                if (!IsConvertedToJobOrder) return "";
+                var status = $"Converted to JO: {SourceJobOrderNo}";
+                if (!string.IsNullOrEmpty(SourceJobOrderNo) && Revision > 0)
+                    status += $" (Rev {Revision})";
+                if (ConvertedDate.HasValue)
+                    status += $" on {ConvertedDate:dd MMM yyyy}";
+                return status;
+            }
+        }
+
+        // ==================== SPECIFICATIONS ====================
         private ObservableCollection<SpecificationModel> _specifications = new();
         public ObservableCollection<SpecificationModel> Specifications
         {
             get => _specifications;
             set
             {
-                if (Equals(_specifications, value))
-                    return;
+                if (Equals(_specifications, value)) return;
 
-                // UNSUBSCRIBE from old collection
                 if (_specifications != null)
                 {
                     _specifications.CollectionChanged -= OnSpecificationsCollectionChanged;
-                    foreach (var spec in _specifications)
-                    {
-                        UnsubscribeFromSpecification(spec);
-                    }
+                    foreach (var spec in _specifications) { UnsubscribeFromSpecification(spec); spec?.Dispose(); }
                 }
 
                 _specifications = value;
 
-                // SUBSCRIBE to new collection
                 if (_specifications != null)
                 {
                     _specifications.CollectionChanged += OnSpecificationsCollectionChanged;
                     foreach (var spec in _specifications)
                     {
-                        SubscribeToSpecification(spec);
+                        if (spec != null) { spec.Invoice = this; SubscribeToSpecification(spec); }
                     }
                 }
 
@@ -345,60 +495,28 @@ namespace ProGlassAutomation.Models
 
         // ==================== TOTALS ====================
         private double _totalSQM1 = 0;
-        public double TotalSQM1
-        {
-            get => _totalSQM1;
-            private set => SetProperty(ref _totalSQM1, value);
-        }
+        public double TotalSQM1 { get => _totalSQM1; private set => SetProperty(ref _totalSQM1, value); }
 
         private double _totalSQM2 = 0;
-        public double TotalSQM2
-        {
-            get => _totalSQM2;
-            private set => SetProperty(ref _totalSQM2, value);
-        }
+        public double TotalSQM2 { get => _totalSQM2; private set => SetProperty(ref _totalSQM2, value); }
 
         private double _totalSQM = 0;
-        public double TotalSQM
-        {
-            get => _totalSQM;
-            private set => SetProperty(ref _totalSQM, value);
-        }
+        public double TotalSQM { get => _totalSQM; private set => SetProperty(ref _totalSQM, value); }
 
         private double _totalLM = 0;
-        public double TotalLM
-        {
-            get => _totalLM;
-            private set => SetProperty(ref _totalLM, value);
-        }
+        public double TotalLM { get => _totalLM; private set => SetProperty(ref _totalLM, value); }
 
         private double _totalLM1 = 0;
-        public double TotalLM1
-        {
-            get => _totalLM1;
-            private set => SetProperty(ref _totalLM1, value);
-        }
+        public double TotalLM1 { get => _totalLM1; private set => SetProperty(ref _totalLM1, value); }
 
         private int _totalQty = 0;
-        public int TotalQty
-        {
-            get => _totalQty;
-            private set => SetProperty(ref _totalQty, value);
-        }
+        public int TotalQty { get => _totalQty; private set => SetProperty(ref _totalQty, value); }
 
         private double _grandTotal = 0;
-        public double GrandTotal
-        {
-            get => _grandTotal;
-            private set => SetProperty(ref _grandTotal, value);
-        }
+        public double GrandTotal { get => _grandTotal; private set => SetProperty(ref _grandTotal, value); }
 
         private double _otherChargesTotal = 0;
-        public double OtherChargesTotal
-        {
-            get => _otherChargesTotal;
-            private set => SetProperty(ref _otherChargesTotal, value);
-        }
+        public double OtherChargesTotal { get => _otherChargesTotal; private set => SetProperty(ref _otherChargesTotal, value); }
 
         private double _vatPercent = 5;
         public double VatPercent
@@ -409,25 +527,15 @@ namespace ProGlassAutomation.Models
                 if (value < 0 || value > 100)
                     throw new ArgumentOutOfRangeException(nameof(VatPercent), "VAT must be between 0 and 100.");
                 if (SetProperty(ref _vatPercent, value))
-                {
                     CalculateTotals();
-                }
             }
         }
 
         private double _vatAmount = 0;
-        public double VatAmount
-        {
-            get => _vatAmount;
-            private set => SetProperty(ref _vatAmount, value);
-        }
+        public double VatAmount { get => _vatAmount; private set => SetProperty(ref _vatAmount, value); }
 
         private double _netTotal = 0;
-        public double NetTotal
-        {
-            get => _netTotal;
-            private set => SetProperty(ref _netTotal, value);
-        }
+        public double NetTotal { get => _netTotal; private set => SetProperty(ref _netTotal, value); }
 
         private bool _isDirty = false;
         public bool IsDirty
@@ -436,9 +544,53 @@ namespace ProGlassAutomation.Models
             set => SetProperty(ref _isDirty, value);
         }
 
+        // ==================== VALIDATION (PATCH 17) ====================
+        public ValidationResult Validate()
+        {
+            var result = new ValidationResult();
+
+            if (string.IsNullOrWhiteSpace(InvoiceNo))
+                result.AddError("InvoiceNo", "Invoice number is required");
+
+            if (string.IsNullOrWhiteSpace(CustomerName))
+                result.AddError("CustomerName", "Customer name is required");
+
+            if (InvoiceDate > ValidUntil)
+                result.AddError("ValidUntil", "Valid until date must be after invoice date");
+
+            if (VatPercent < 0 || VatPercent > 100)
+                result.AddError("VatPercent", "VAT percentage must be between 0 and 100");
+
+            if (Specifications == null || Specifications.Count == 0)
+            {
+                result.AddError("Specifications", "At least one specification is required");
+            }
+            else
+            {
+                for (int i = 0; i < Specifications.Count; i++)
+                {
+                    var spec = Specifications[i];
+                    if (spec == null)
+                    {
+                        result.AddError($"Specifications[{i}]", "Specification cannot be null");
+                        continue;
+                    }
+
+                    if (spec.Items == null || spec.Items.Count == 0)
+                        result.AddError($"Specifications[{i}].Items", $"Specification '{spec.SpecificationName}' has no items");
+                }
+            }
+
+            return result;
+        }
+
+        public bool IsValid => Validate().IsValid;
+
         // ==================== CALCULATIONS ====================
         public void CalculateTotals()
         {
+            if (IsBulkUpdating) return;
+
             double sqm1 = 0, sqm2 = 0, sqm = 0, lm = 0;
             int qty = 0;
             double specTotal = 0;
@@ -446,13 +598,15 @@ namespace ProGlassAutomation.Models
 
             foreach (var spec in Specifications)
             {
+                if (spec == null) continue;
+
                 spec.CalculateSpecTotals();
                 spec.CalculateOtherChargesTotal();
 
                 sqm1 += spec.SpecTotalSQM1;
                 sqm2 += spec.SpecTotalSQM2;
                 sqm += spec.SpecTotalSQM;
-                lm += spec.SpecTotalLM1;  // ✅ Changed: TotalLM = LM1 only (not LM1+LM2)
+                lm += spec.SpecTotalLM1;
                 qty += spec.SpecTotalQty;
                 specTotal += spec.SpecTotalPrice;
                 otherCharges += spec.OtherChargesTotal;
@@ -462,13 +616,94 @@ namespace ProGlassAutomation.Models
             TotalSQM2 = Math.Round(sqm2, 4);
             TotalSQM = Math.Round(sqm, 4);
             TotalLM = Math.Round(lm, 4);
-            TotalLM1 = Math.Round(lm, 4);  // ✅ Added: TotalLM1 for Invoice Summary
+            TotalLM1 = Math.Round(lm, 4);
             TotalQty = qty;
             OtherChargesTotal = Math.Round(otherCharges, 2);
             GrandTotal = Math.Round(specTotal + otherCharges, 2);
             VatAmount = Math.Round(GrandTotal * VatPercent / 100.0, 2);
             NetTotal = Math.Round(GrandTotal + VatAmount, 2);
             IsDirty = true;
+        }
+
+        // ==================== BULK OPERATIONS (PATCH 8) ====================
+        public void BeginBulkUpdate()
+        {
+            IsBulkUpdating = true;
+        }
+
+        public void EndBulkUpdate()
+        {
+            IsBulkUpdating = false;
+            CalculateTotals();
+        }
+
+        public IDisposable BulkUpdateScope()
+        {
+            return new ProformaBulkUpdateScope(this);
+        }
+
+        private class ProformaBulkUpdateScope : BulkUpdateScope
+        {
+            private readonly ProformaInvoiceModel _invoice;
+
+            public ProformaBulkUpdateScope(ProformaInvoiceModel invoice)
+            {
+                _invoice = invoice;
+                _invoice.BeginBulkUpdate();
+            }
+
+            protected override void OnDispose()
+            {
+                _invoice.EndBulkUpdate();
+            }
+        }
+
+        // ==================== DEEP CLONE (PATCH 15) ====================
+        public ProformaInvoiceModel DeepClone()
+        {
+            var clone = new ProformaInvoiceModel
+            {
+                InvoiceNo = InvoiceNo,
+                InvoiceDate = InvoiceDate,
+                ValidUntil = ValidUntil,
+                CustomerName = CustomerName,
+                CustomerTRN = CustomerTRN,
+                CustomerAddress = CustomerAddress,
+                CustomerReference = CustomerReference,
+                Salesman = Salesman,
+                ProjectName = ProjectName,
+                ProjectNo = ProjectNo,
+                ProjectLocation = ProjectLocation,
+                LPONo = LPONo,
+                AttentionName = AttentionName,
+                ContactNo = ContactNo,
+                Color = Color,
+                Notes = Notes,
+                CompanyName = CompanyName,
+                CompanyTRN = CompanyTRN,
+                CompanyLocation = CompanyLocation,
+                Status = Status,
+                VatPercent = VatPercent,
+                IsConvertedToJobOrder = IsConvertedToJobOrder,
+                JobOrderId = JobOrderId,
+                SourceJobOrderNo = SourceJobOrderNo,
+                ConvertedDate = ConvertedDate,
+                ConvertedBy = ConvertedBy,
+                Revision = Revision
+            };
+
+            // Clone specifications
+            foreach (var spec in Specifications)
+            {
+                var clonedSpec = spec.DeepClone();
+                clonedSpec.Invoice = clone;
+                clone.Specifications.Add(clonedSpec);
+            }
+
+            clone.CalculateTotals();
+            clone.IsDirty = false;
+
+            return clone;
         }
 
         // ==================== INVOICE NUMBER GENERATION ====================
@@ -479,7 +714,6 @@ namespace ProGlassAutomation.Models
                 int num;
                 var random = new Random();
 
-                // Ensure unique number within session
                 do
                 {
                     num = random.Next(1000, 9999);
@@ -493,6 +727,35 @@ namespace ProGlassAutomation.Models
         public static string GenerateSequentialInvoiceNo(int number)
         {
             return $"PI-{DateTime.Now:yyyyMMdd}-{number:D4}";
+        }
+
+        public string GenerateRevisionNumber()
+        {
+            Revision++;
+            return $"{InvoiceNo}-R{Revision:D2}";
+        }
+
+        // ==================== CAN CONVERT CHECK ====================
+        public bool CanConvertToJobOrder()
+        {
+            if (IsConvertedToJobOrder && !string.IsNullOrEmpty(JobOrderId))
+                return false;
+
+            if (Specifications == null || Specifications.Count == 0)
+                return false;
+
+            return Specifications.Any(s => s.Items != null && s.Items.Count > 0);
+        }
+
+        // ==================== RESET FOR NEW PI ====================
+        public void ResetConversionStatus()
+        {
+            IsConvertedToJobOrder = false;
+            JobOrderId = "";
+            SourceJobOrderNo = "";
+            ConvertedDate = null;
+            ConvertedBy = "";
+            Revision = 0;
         }
     }
 }

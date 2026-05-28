@@ -62,8 +62,29 @@ namespace ProGlassAutomation.ViewModels
         private readonly GlassPriceCalculator _priceCalculator = new GlassPriceCalculator();
         private static readonly object _invoiceLock = new object();
         private static int _lastGeneratedNumber;
+
+        private static readonly JsonSerializerSettings _jsonSettings = new JsonSerializerSettings
+        {
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+            NullValueHandling = NullValueHandling.Ignore
+        };
         private int _currentPINumber = 0;
         private bool _isUpdatingASPPrice = false;
+
+        // PATCH 8: Bulk update tracking
+        private bool _isBulkUpdating = false;
+        public bool IsBulkUpdating
+        {
+            get => _isBulkUpdating;
+            set
+            {
+                if (_isBulkUpdating != value)
+                {
+                    _isBulkUpdating = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         public ProformaInvoiceViewModel()
         {
@@ -75,6 +96,7 @@ namespace ProGlassAutomation.ViewModels
 
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = null) { if (Equals(field, value)) return false; field = value; OnPropertyChanged(propertyName); return true; }
+
         private void OnInvoicePropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(ProformaInvoiceModel.IsDirty))
@@ -89,11 +111,33 @@ namespace ProGlassAutomation.ViewModels
                 OnPropertyChanged(nameof(SpecTotalLM2));
             }
         }
+
         private string GetNextSequentialInvoiceNo() { _currentPINumber++; return $"PI-{DateTime.Now.Year}-{_currentPINumber:D2}"; }
 
         private ProformaInvoiceModel _invoice = new();
-        public ProformaInvoiceModel Invoice { get => _invoice; set { if (_invoice != null) _invoice.PropertyChanged -= OnInvoicePropertyChanged; SetProperty(ref _invoice, value); if (_invoice != null) { _invoice.PropertyChanged += OnInvoicePropertyChanged; SubscribeToOtherChargeChanges(); } } }
+        public ProformaInvoiceModel Invoice
+        {
+            get => _invoice;
+            set
+            {
+                if (_invoice != null)
+                    _invoice.PropertyChanged -= OnInvoicePropertyChanged;
+
+                SetProperty(ref _invoice, value);
+
+                if (_invoice != null)
+                {
+                    _invoice.PropertyChanged += OnInvoicePropertyChanged;
+                    SubscribeToOtherChargeChanges();
+                }
+            }
+        }
+
         public bool HasUnsavedChanges => Invoice?.IsDirty == true;
+
+        // PATCH 2: IsLocked property
+        public bool IsLocked => Invoice?.IsLocked == true;
+
         private ObservableCollection<FileListItem> _savedFiles = new();
         public ObservableCollection<FileListItem> SavedFiles { get => _savedFiles; set => SetProperty(ref _savedFiles, value); }
         public bool HasSavedFiles => SavedFiles?.Any() == true;
@@ -107,7 +151,7 @@ namespace ProGlassAutomation.ViewModels
 
         public string CompanyName { get; set; } = "PROGLASS AUTOMATION";
 
-        // ==================== JOB ORDER CONVERSION ====================
+        // ==================== JOB ORDER CONVERSION (PATCH 1) ====================
 
         private bool _isJobOrder;
         public bool IsJobOrder
@@ -140,6 +184,7 @@ namespace ProGlassAutomation.ViewModels
             get => _jobOrderVM;
             set => SetProperty(ref _jobOrderVM, value);
         }
+
         public string CompanyTRN { get; set; } = "100458979400003";
         public string CompanyLocation { get; set; } = "Dubai, UAE";
         public string CompanyPhone { get; set; } = "+971-50-123-4567";
@@ -183,22 +228,18 @@ namespace ProGlassAutomation.ViewModels
             new() { Value = "2h2", Label = "2×H2" }
         };
         public ObservableCollection<ChargeTypeOption> ChargeTypeOptions { get; } = new()
-{
-    new() { Value = "lm", Label = "LM" },
-    new() { Value = "sqm", Label = "SQM" },
-    new() { Value = "sqm1", Label = "SQM1" },
-    new() { Value = "sqm2", Label = "SQM2" },
-    new() { Value = "qty", Label = "QTY" },
-    new() { Value = "1x", Label = "1X" },
-    new() { Value = "2x", Label = "2X" }
-};
+        {
+            new() { Value = "lm", Label = "LM" },
+            new() { Value = "sqm", Label = "SQM" },
+            new() { Value = "sqm1", Label = "SQM1" },
+            new() { Value = "sqm2", Label = "SQM2" },
+            new() { Value = "qty", Label = "QTY" },
+            new() { Value = "1x", Label = "1X" },
+            new() { Value = "2x", Label = "2X" }
+        };
 
         private string _selectedThickness = "6";
-        public string SelectedThickness
-        {
-            get => _selectedThickness;
-            set => SetProperty(ref _selectedThickness, value);
-        }
+        public string SelectedThickness { get => _selectedThickness; set => SetProperty(ref _selectedThickness, value); }
         public string SelectedColor { get; set; } = "Clear";
         public bool IsAnnealedSelected { get; set; } = true;
         public bool IsFTSelected { get; set; }
@@ -312,19 +353,40 @@ namespace ProGlassAutomation.ViewModels
         public string PriceCalculationSummary { get => _priceCalculationSummary; set => SetProperty(ref _priceCalculationSummary, value); }
 
         private SpecificationModel _selectedTargetSpecification;
-        public SpecificationModel SelectedTargetSpecification { get => _selectedTargetSpecification; set { SetProperty(ref _selectedTargetSpecification, value); OnPropertyChanged(nameof(SelectedSpecificationOtherCharges)); } }
-        public ObservableCollection<OtherChargeModel> SelectedSpecificationOtherCharges => SelectedTargetSpecification?.OtherCharges ?? new ObservableCollection<OtherChargeModel>();
+        public SpecificationModel SelectedTargetSpecification
+        {
+            get => _selectedTargetSpecification;
+            set
+            {
+                SetProperty(ref _selectedTargetSpecification, value);
+                OnPropertyChanged(nameof(SelectedSpecificationOtherCharges));
+            }
+        }
+
+        public ObservableCollection<OtherChargeModel> SelectedSpecificationOtherCharges =>
+            SelectedTargetSpecification?.OtherCharges ?? new ObservableCollection<OtherChargeModel>();
+
         private int _selectedSpecificationId;
-        public int SelectedSpecificationId { get => _selectedSpecificationId; set { SetProperty(ref _selectedSpecificationId, value); if (Invoice?.Specifications != null) SelectedTargetSpecification = Invoice.Specifications.FirstOrDefault(s => s.Id == value); } }
+        public int SelectedSpecificationId
+        {
+            get => _selectedSpecificationId;
+            set
+            {
+                SetProperty(ref _selectedSpecificationId, value);
+                if (Invoice?.Specifications != null)
+                    SelectedTargetSpecification = Invoice.Specifications.FirstOrDefault(s => s.Id == value);
+            }
+        }
 
         // Currently selected charge for multi-spec editing
         private OtherChargeModel _selectedCharge;
         public OtherChargeModel SelectedCharge
         {
             get => _selectedCharge;
-            set { SetProperty(ref _selectedCharge, value); }
+            set => SetProperty(ref _selectedCharge, value);
         }
 
+        // ==================== COMMANDS ====================
         public ICommand NewInvoiceCommand { get; set; }
         public ICommand SaveInvoiceCommand { get; set; }
         public ICommand OpenInvoiceCommand { get; set; }
@@ -336,9 +398,6 @@ namespace ProGlassAutomation.ViewModels
         public ICommand CalculatePriceCommand { get; private set; } = null!;
         public ICommand IncludeInSpecificationCommand { get; private set; } = null!;
         public ICommand PrintCommand { get; private set; } = null!;
-
-        // Event raised when invoice is saved
-        public event Action<ProformaInvoiceModel>? InvoiceSaved;
         public ICommand PasteFromExcelCommand { get; private set; } = null!;
         public ICommand SelectSGUCommand { get; private set; } = null!;
         public ICommand SelectDGUCommand { get; private set; } = null!;
@@ -355,6 +414,10 @@ namespace ProGlassAutomation.ViewModels
         public ICommand AddSpecToChargeCommand { get; private set; } = null!;
         public ICommand RemoveSpecFromChargeCommand { get; private set; } = null!;
         public ICommand ToggleSpecForChargeCommand { get; private set; } = null!;
+        public ICommand RefreshChargesCommand { get; private set; } = null!;
+
+        // Event raised when invoice is saved
+        public event Action<ProformaInvoiceModel>? InvoiceSaved;
 
         private void InitializeCommands()
         {
@@ -385,6 +448,32 @@ namespace ProGlassAutomation.ViewModels
             RefreshChargesCommand = new RelayCommand(_ => RefreshAllChargeAutoValues());
         }
 
+        // ==================== BULK OPERATIONS (PATCH 8) ====================
+        public IDisposable BulkUpdateScope()
+        {
+            return new ViewModelBulkUpdateScope(this);
+        }
+
+        private class ViewModelBulkUpdateScope : IDisposable
+        {
+            private readonly ProformaInvoiceViewModel _vm;
+
+            public ViewModelBulkUpdateScope(ProformaInvoiceViewModel vm)
+            {
+                _vm = vm;
+                _vm.IsBulkUpdating = true;
+                _vm.Invoice?.BeginBulkUpdate();
+            }
+
+            public void Dispose()
+            {
+                _vm.Invoice?.EndBulkUpdate();
+                _vm.IsBulkUpdating = false;
+            }
+        }
+
+        // ==================== METHODS ====================
+
         private void ResetASPPriceToAuto()
         {
             IsASPPriceManual = false;
@@ -393,7 +482,7 @@ namespace ProGlassAutomation.ViewModels
 
         private bool CanExecuteSaveInvoice()
         {
-            return Invoice != null && !string.IsNullOrWhiteSpace(Invoice.CustomerName);
+            return Invoice != null;
         }
 
         private void ExecuteCreateJobOrder()
@@ -460,10 +549,16 @@ namespace ProGlassAutomation.ViewModels
 
         private void CreateNewInvoice()
         {
-            Invoice = new ProformaInvoiceModel { InvoiceNo = GetNextSequentialInvoiceNo(), InvoiceDate = DateTime.Now, ValidUntil = DateTime.Now.AddDays(2) };
+            Invoice = new ProformaInvoiceModel
+            {
+                InvoiceNo = GetNextSequentialInvoiceNo(),
+                InvoiceDate = DateTime.Now,
+                ValidUntil = DateTime.Now.AddDays(2)
+            };
             CurrentFileName = "Untitled";
             AddSpecification();
-            if (Invoice.Specifications.Count > 0) Invoice.Specifications[0].Invoice = Invoice;
+            if (Invoice.Specifications.Count > 0)
+                Invoice.Specifications[0].Invoice = Invoice;
         }
 
         private void NewInvoice()
@@ -482,11 +577,23 @@ namespace ProGlassAutomation.ViewModels
         {
             try
             {
-                var dialog = new SaveFileDialog { Filter = "JSON Files (*.json)|*.json", InitialDirectory = GetDataFolder(), FileName = $"{Invoice.InvoiceNo}.json" };
+                // Auto-set default customer if empty
+                if (string.IsNullOrWhiteSpace(Invoice?.CustomerName))
+                {
+                    Invoice!.CustomerName = "New Customer";
+                }
+
+                var dialog = new SaveFileDialog
+                {
+                    Filter = "JSON Files (*.json)|*.json",
+                    InitialDirectory = GetDataFolder(),
+                    FileName = $"{Invoice.InvoiceNo}.json"
+                };
+
                 if (dialog.ShowDialog() == true)
                 {
                     Invoice.CalculateTotals();
-                    string json = JsonConvert.SerializeObject(Invoice, Formatting.Indented);
+                    string json = JsonConvert.SerializeObject(Invoice, Formatting.Indented, _jsonSettings);
                     File.WriteAllText(dialog.FileName, json);
                     Invoice.IsDirty = false;
                     CurrentFileName = Path.GetFileNameWithoutExtension(dialog.FileName);
@@ -502,7 +609,11 @@ namespace ProGlassAutomation.ViewModels
                     CheckAndConvertToJobOrder();
                 }
             }
-            catch (Exception ex) { StatusMessage = $"❌ Error: {ex.Message}"; MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
+            catch (Exception ex)
+            {
+                StatusMessage = $"❌ Error: {ex.Message}";
+                MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void OpenInvoice()
@@ -513,11 +624,21 @@ namespace ProGlassAutomation.ViewModels
                 if (dialog.ShowDialog() == true)
                 {
                     var json = File.ReadAllText(dialog.FileName);
-                    var invoice = JsonConvert.DeserializeObject<ProformaInvoiceModel>(json);
-                    if (invoice != null) { Invoice = invoice; CurrentFileName = Path.GetFileNameWithoutExtension(dialog.FileName); Invoice.CalculateTotals(); StatusMessage = $"✅ Opened: {CurrentFileName}"; }
+                    var invoice = JsonConvert.DeserializeObject<ProformaInvoiceModel>(json, _jsonSettings);
+                    if (invoice != null)
+                    {
+                        Invoice = invoice;
+                        CurrentFileName = Path.GetFileNameWithoutExtension(dialog.FileName);
+                        Invoice.CalculateTotals();
+                        StatusMessage = $"✅ Opened: {CurrentFileName}";
+                    }
                 }
             }
-            catch (Exception ex) { StatusMessage = $"❌ Error: {ex.Message}"; MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
+            catch (Exception ex)
+            {
+                StatusMessage = $"❌ Error: {ex.Message}";
+                MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void DeleteInvoice()
@@ -528,16 +649,26 @@ namespace ProGlassAutomation.ViewModels
                 try
                 {
                     string filePath = Path.Combine(GetDataFolder(), $"{CurrentFileName}.json");
-                    if (File.Exists(filePath)) { File.Delete(filePath); LoadSavedFiles(); StatusMessage = $"✅ Deleted: {CurrentFileName}"; CreateNewInvoice(); }
+                    if (File.Exists(filePath))
+                    {
+                        File.Delete(filePath);
+                        LoadSavedFiles();
+                        StatusMessage = $"✅ Deleted: {CurrentFileName}";
+                        CreateNewInvoice();
+                    }
                 }
-                catch (Exception ex) { StatusMessage = $"❌ Delete failed: {ex.Message}"; }
+                catch (Exception ex)
+                {
+                    StatusMessage = $"❌ Delete failed: {ex.Message}";
+                }
             }
         }
 
         private string GetDataFolder()
         {
             string folder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data");
-            if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+            if (!Directory.Exists(folder))
+                Directory.CreateDirectory(folder);
             return folder;
         }
 
@@ -546,13 +677,21 @@ namespace ProGlassAutomation.ViewModels
             SavedFiles.Clear();
             string folder = GetDataFolder();
             if (!Directory.Exists(folder)) return;
+
             foreach (var file in Directory.GetFiles(folder, "*.json").OrderByDescending(f => new FileInfo(f).LastWriteTime))
             {
                 try
                 {
                     var json = File.ReadAllText(file);
-                    var invoice = JsonConvert.DeserializeObject<ProformaInvoiceModel>(json);
-                    if (invoice != null) SavedFiles.Add(new FileListItem { FilePath = file, InvoiceNo = invoice.InvoiceNo, CustomerName = invoice.CustomerName, InvoiceDate = invoice.InvoiceDate });
+                    var invoice = JsonConvert.DeserializeObject<ProformaInvoiceModel>(json, _jsonSettings);
+                    if (invoice != null)
+                        SavedFiles.Add(new FileListItem
+                        {
+                            FilePath = file,
+                            InvoiceNo = invoice.InvoiceNo,
+                            CustomerName = invoice.CustomerName,
+                            InvoiceDate = invoice.InvoiceDate
+                        });
                 }
                 catch { }
             }
@@ -567,12 +706,24 @@ namespace ProGlassAutomation.ViewModels
                 if (window?.Content is System.Windows.Media.Visual visual)
                 {
                     var printDialog = new System.Windows.Controls.PrintDialog();
-                    if (printDialog.ShowDialog() == true) { printDialog.PrintVisual(visual, "ProForma Invoice"); StatusMessage = "✅ Printed successfully"; }
+                    if (printDialog.ShowDialog() == true)
+                    {
+                        printDialog.PrintVisual(visual, "ProForma Invoice");
+                        StatusMessage = "✅ Printed successfully";
+                    }
                 }
-                else { StatusMessage = "❌ Cannot find window to print"; }
+                else
+                {
+                    StatusMessage = "❌ Cannot find window to print";
+                }
             }
-            catch (Exception ex) { StatusMessage = $"❌ Print failed: {ex.Message}"; }
+            catch (Exception ex)
+            {
+                StatusMessage = $"❌ Print failed: {ex.Message}";
+            }
         }
+
+        // ==================== SPECIFICATIONS ====================
 
         private void AddSpecification()
         {
@@ -583,11 +734,18 @@ namespace ProGlassAutomation.ViewModels
                 Id = Invoice.Specifications.Count,
                 Invoice = Invoice
             };
+
             if (spec.Items.Count == 0)
             {
-                var firstItem = new InvoiceItemModel { SrNo = nextSrNo, SurchargePercent = 20, Specification = spec };
+                var firstItem = new InvoiceItemModel
+                {
+                    SrNo = nextSrNo,
+                    SurchargePercent = 20,
+                    Specification = spec
+                };
                 spec.Items.Add(firstItem);
             }
+
             Invoice.Specifications.Add(spec);
 
             // Keep Other Charges section visible - only auto-select if no spec was selected
@@ -609,7 +767,7 @@ namespace ProGlassAutomation.ViewModels
             RefreshAllChargeAutoValues();
         }
 
-        // ==================== SR NUMBERING ====================
+        // ==================== SR NUMBERING (PATCH 9) ====================
 
         public int GetNextSrNo()
         {
@@ -672,7 +830,7 @@ namespace ProGlassAutomation.ViewModels
             newItem.Price = spec.BasePrice;
             newItem.SurchargePercent = spec.SurchargePercent;
 
-            // ✅ Trigger automatic renumbering of all specs
+            // PATCH 9: Trigger automatic renumbering of all specs
             spec.RenumberItems();
             Invoice.IsDirty = true;
         }
@@ -700,21 +858,37 @@ namespace ProGlassAutomation.ViewModels
 
         private void CalculateSGUPrice()
         {
-            CalculatedPrice = _priceCalculator.CalculateSGU(SGUSheetPrice, SGUCutting, SGUTempering, SGUWasteFactor, SGUProfitPercent, SelectedThickness, SelectedColor, WorkTypeText, out string description, out string summary);
+            CalculatedPrice = _priceCalculator.CalculateSGU(
+                SGUSheetPrice, SGUCutting, SGUTempering, SGUWasteFactor, SGUProfitPercent,
+                SelectedThickness, SelectedColor, WorkTypeText,
+                out string description, out string summary);
+
             GeneratedDescription = description;
             PriceCalculationSummary = summary;
         }
 
         private void CalculateDGUPrice()
         {
-            CalculatedPrice = _priceCalculator.CalculateDGU(DGUOuterPrice, DGUInnerPrice, DGUASPPrice, DGUWasteFactor, DGUProfitPercent, DGUOuterThickness, DGUOuterColor, DGUWorkTypeText, DGUAirSpacerThickness, DGUAirSpacerType, IsDGUIncludeInSpec, DGUInnerThickness, DGUInnerColor, out string description, out string summary);
+            CalculatedPrice = _priceCalculator.CalculateDGU(
+                DGUOuterPrice, DGUInnerPrice, DGUASPPrice, DGUWasteFactor, DGUProfitPercent,
+                DGUOuterThickness, DGUOuterColor, DGUWorkTypeText,
+                DGUAirSpacerThickness, DGUAirSpacerType, IsDGUIncludeInSpec,
+                DGUInnerThickness, DGUInnerColor,
+                out string description, out string summary);
+
             GeneratedDescription = description;
             PriceCalculationSummary = summary;
         }
 
         private void CalculateLAMPrice()
         {
-            CalculatedPrice = _priceCalculator.CalculateLAM(LAMOuterPrice, LAMPVBPrice, LAMInnerPrice, LAMCutting, LAMTempering, LAMWasteFactor, LAMProfitPercent, LAMOuterThickness, LAMOuterColor, LAMWorkTypeText, LAMPVBThickness, LAMPVBColor, LAMInnerThickness, LAMInnerColor, out string description, out string summary);
+            CalculatedPrice = _priceCalculator.CalculateLAM(
+                LAMOuterPrice, LAMPVBPrice, LAMInnerPrice, LAMCutting, LAMTempering,
+                LAMWasteFactor, LAMProfitPercent,
+                LAMOuterThickness, LAMOuterColor, LAMWorkTypeText,
+                LAMPVBThickness, LAMPVBColor, LAMInnerThickness, LAMInnerColor,
+                out string description, out string summary);
+
             GeneratedDescription = description;
             PriceCalculationSummary = summary;
         }
@@ -723,8 +897,17 @@ namespace ProGlassAutomation.ViewModels
 
         private void IncludeInSpecification()
         {
-            if (SelectedTargetSpecification == null) { MessageBox.Show("Please select a target specification!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
-            if (CalculatedPrice <= 0) { MessageBox.Show("Please calculate price first!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            if (SelectedTargetSpecification == null)
+            {
+                MessageBox.Show("Please select a target specification!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (CalculatedPrice <= 0)
+            {
+                MessageBox.Show("Please calculate price first!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
 
             if (IsSGUSelected)
             {
@@ -780,12 +963,16 @@ namespace ProGlassAutomation.ViewModels
             StatusMessage = $"✅ Applied '{GeneratedDescription}' @ AED {CalculatedPrice:N2}";
         }
 
+        // ==================== OTHER CHARGES ====================
+
         private void SubscribeToOtherChargeChanges()
         {
             if (Invoice?.Specifications == null) return;
+
             foreach (var spec in Invoice.Specifications)
             {
                 if (spec?.OtherCharges == null) continue;
+
                 foreach (var charge in spec.OtherCharges)
                 {
                     if (charge != null)
@@ -819,7 +1006,11 @@ namespace ProGlassAutomation.ViewModels
 
         private void AddOtherCharge()
         {
-            if (SelectedTargetSpecification == null) { MessageBox.Show("Please select a specification first!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            if (SelectedTargetSpecification == null)
+            {
+                MessageBox.Show("Please select a specification first!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
 
             int specIndex = Invoice.Specifications.IndexOf(SelectedTargetSpecification);
             var charge = new OtherChargeModel
@@ -842,13 +1033,13 @@ namespace ProGlassAutomation.ViewModels
             OnPropertyChanged(nameof(SelectedSpecificationOtherCharges));
 
             SelectedCharge = charge;
-
             UpdateChargeValue(charge);
         }
 
         private void RemoveOtherCharge(OtherChargeModel? charge)
         {
             if (charge == null || SelectedTargetSpecification == null) return;
+
             charge.PropertyChanged -= OtherCharge_PropertyChanged;
             SelectedTargetSpecification.OtherCharges.Remove(charge);
             SelectedTargetSpecification.CalculateOtherChargesTotal();
@@ -909,9 +1100,6 @@ namespace ProGlassAutomation.ViewModels
         private void CalculateOtherChargeValue(OtherChargeModel charge, SpecificationModel spec)
         {
             if (charge == null) return;
-
-            var linkedSpecs = GetLinkedSpecifications(charge);
-            if (linkedSpecs.Count == 0) return;
 
             switch (charge.Type?.ToLower())
             {
@@ -1007,6 +1195,7 @@ namespace ProGlassAutomation.ViewModels
         {
             double w1 = item.Width1 / 1000.0, h1 = item.Height1 / 1000.0;
             double w2 = item.Width2 / 1000.0, h2 = item.Height2 / 1000.0;
+
             return dimType switch
             {
                 "w1h1" => 2 * (w1 + h1),
@@ -1024,7 +1213,12 @@ namespace ProGlassAutomation.ViewModels
             };
         }
 
-        private int GetModuleMultiplier(string moduleType) => moduleType switch { "DGU" => 2, "LAM" => 2, _ => 1 };
+        private int GetModuleMultiplier(string moduleType) => moduleType switch
+        {
+            "DGU" => 2,
+            "LAM" => 2,
+            _ => 1
+        };
 
         // ==================== MULTI-SPEC CHARGE MANAGEMENT ====================
 
@@ -1179,8 +1373,6 @@ namespace ProGlassAutomation.ViewModels
             Invoice.CalculateTotals();
         }
 
-        public ICommand RefreshChargesCommand { get; private set; } = null!;
-
         // ==================== LM TOTALS ====================
         public double SpecTotalLM1 => SelectedTargetSpecification?.Items?.Sum(x => x.LM1 * x.Qty) ?? 0;
         public double SpecTotalLM2 => SelectedTargetSpecification?.Items?.Sum(x => x.LM2 * x.Qty) ?? 0;
@@ -1189,9 +1381,24 @@ namespace ProGlassAutomation.ViewModels
 
         private void ExportToCsv()
         {
-            if (Invoice == null || Invoice.Specifications.Count == 0) { StatusMessage = "❌ No invoice data to export"; MessageBox.Show("No invoice data to export!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
-            try { Invoice.CalculateTotals(); _excelCsvService.ExportToCsv(Invoice); StatusMessage = "✅ Exported to CSV"; }
-            catch (Exception ex) { StatusMessage = $"❌ CSV export failed: {ex.Message}"; Debug.WriteLine($"[Export Error] {ex}"); }
+            if (Invoice == null || Invoice.Specifications.Count == 0)
+            {
+                StatusMessage = "❌ No invoice data to export";
+                MessageBox.Show("No invoice data to export!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            try
+            {
+                Invoice.CalculateTotals();
+                _excelCsvService.ExportToCsv(Invoice);
+                StatusMessage = "✅ Exported to CSV";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"❌ CSV export failed: {ex.Message}";
+                Debug.WriteLine($"[Export Error] {ex}");
+            }
         }
 
         private void ImportFromCsv()
@@ -1199,7 +1406,11 @@ namespace ProGlassAutomation.ViewModels
             try
             {
                 var importedInvoice = _excelCsvService.ImportFromCsv();
-                if (importedInvoice == null) { StatusMessage = "❌ Import returned null"; return; }
+                if (importedInvoice == null)
+                {
+                    StatusMessage = "❌ Import returned null";
+                    return;
+                }
 
                 Invoice = new ProformaInvoiceModel
                 {
@@ -1211,11 +1422,11 @@ namespace ProGlassAutomation.ViewModels
                     Specifications = importedInvoice.Specifications
                 };
 
-                // ✅ Ensure all specs are properly linked to Invoice BEFORE renumbering
+                // PATCH 10: Ensure all specs are properly linked to Invoice BEFORE renumbering
                 foreach (var spec in Invoice.Specifications)
                 {
                     spec.Invoice = Invoice;
-                    // ✅ Reset SrNo to 0 so RenumberAllSrNumbers can set proper values
+                    // PATCH 9: Reset SrNo to 0 so RenumberAllSrNumbers can set proper values
                     foreach (var item in spec.Items)
                     {
                         item.SrNo = 0;
@@ -1223,7 +1434,7 @@ namespace ProGlassAutomation.ViewModels
                     spec.CalculateTotals();
                 }
 
-                // ✅ Now renumber all SRs in sequence
+                // PATCH 9: Now renumber all SRs in sequence
                 RenumberAllSrNumbers();
 
                 SubscribeToOtherChargeChanges();
@@ -1243,7 +1454,11 @@ namespace ProGlassAutomation.ViewModels
                 StatusMessage = $"✅ Imported {totalItems} items from {Invoice.Specifications.Count} specification(s)";
                 MessageBox.Show($"Imported:\nSpecs: {Invoice.Specifications.Count}\nItems: {totalItems}", "Import Complete", MessageBoxButton.OK, MessageBoxImage.Information);
             }
-            catch (Exception ex) { StatusMessage = $"❌ Import failed: {ex.Message}"; MessageBox.Show($"Import failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
+            catch (Exception ex)
+            {
+                StatusMessage = $"❌ Import failed: {ex.Message}";
+                MessageBox.Show($"Import failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void ImportItemsFromCsv()
@@ -1251,38 +1466,84 @@ namespace ProGlassAutomation.ViewModels
             try
             {
                 var items = _excelCsvService.ImportItemsFromCsv();
-                if (items == null || items.Count == 0) { StatusMessage = "❌ No items found in file"; return; }
-                if (Invoice.Specifications.Count == 0) AddSpecification();
+                if (items == null || items.Count == 0)
+                {
+                    StatusMessage = "❌ No items found in file";
+                    return;
+                }
+
+                if (Invoice.Specifications.Count == 0)
+                    AddSpecification();
+
                 var targetSpec = Invoice.Specifications[0];
                 int startSrNo = GetNextSrNo();
+
                 foreach (var item in items)
                 {
-                    var newItem = new InvoiceItemModel { SrNo = startSrNo++, GlassRef = item.GlassRef, Qty = item.Qty, Price = item.Price, SurchargePercent = 20, Specification = targetSpec };
-                    newItem.Width1 = item.Width1; newItem.Height1 = item.Height1; newItem.Width2 = item.Width2; newItem.Height2 = item.Height2;
+                    var newItem = new InvoiceItemModel
+                    {
+                        SrNo = startSrNo++,
+                        GlassRef = item.GlassRef,
+                        Qty = item.Qty,
+                        Price = item.Price,
+                        SurchargePercent = 20,
+                        Specification = targetSpec
+                    };
+                    newItem.Width1 = item.Width1;
+                    newItem.Height1 = item.Height1;
+                    newItem.Width2 = item.Width2;
+                    newItem.Height2 = item.Height2;
+
                     targetSpec.Items.Add(newItem);
-                    newItem.PropertyChanged += (s, e) => { targetSpec.CalculateTotals(); Invoice.CalculateTotals(); Invoice.IsDirty = true; };
+                    newItem.PropertyChanged += (s, e) =>
+                    {
+                        targetSpec.CalculateTotals();
+                        Invoice.CalculateTotals();
+                        Invoice.IsDirty = true;
+                    };
                 }
+
                 RenumberAllSrNumbers();
                 Invoice.CalculateTotals();
                 Invoice.IsDirty = true;
                 StatusMessage = $"✅ Imported {items.Count} items";
             }
-            catch (Exception ex) { StatusMessage = $"❌ Item import failed: {ex.Message}"; }
+            catch (Exception ex)
+            {
+                StatusMessage = $"❌ Item import failed: {ex.Message}";
+            }
         }
 
         private void PasteFromExcel()
         {
             try
             {
-                if (!Clipboard.ContainsText()) { StatusMessage = "❌ Clipboard is empty"; return; }
+                if (!Clipboard.ContainsText())
+                {
+                    StatusMessage = "❌ Clipboard is empty";
+                    return;
+                }
+
                 string clipboardText = Clipboard.GetText();
-                if (string.IsNullOrWhiteSpace(clipboardText)) { StatusMessage = "❌ No text data in clipboard"; return; }
+                if (string.IsNullOrWhiteSpace(clipboardText))
+                {
+                    StatusMessage = "❌ No text data in clipboard";
+                    return;
+                }
 
                 var spec = SelectedTargetSpecification ?? (Invoice.Specifications.Count == 0 ? null : Invoice.Specifications[0]);
-                if (spec == null) { AddSpecification(); spec = SelectedTargetSpecification; }
+                if (spec == null)
+                {
+                    AddSpecification();
+                    spec = SelectedTargetSpecification;
+                }
 
                 var rows = clipboardText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                if (rows.Length == 0) { StatusMessage = "❌ No data to paste"; return; }
+                if (rows.Length == 0)
+                {
+                    StatusMessage = "❌ No data to paste";
+                    return;
+                }
 
                 bool skipHeader = rows[0].ToLower().Contains("glass") || rows[0].ToLower().Contains("width") || rows[0].ToLower().Contains("height");
                 int startIndex = skipHeader ? 1 : 0;
@@ -1291,9 +1552,12 @@ namespace ProGlassAutomation.ViewModels
                 if (spec.Items.Count > 0)
                 {
                     var firstItem = spec.Items[0];
-                    defaultWidth1 = firstItem.Width1; defaultHeight1 = firstItem.Height1;
-                    defaultWidth2 = firstItem.Width2; defaultHeight2 = firstItem.Height2;
-                    defaultPrice = firstItem.Price; defaultSurcharge = firstItem.SurchargePercent;
+                    defaultWidth1 = firstItem.Width1;
+                    defaultHeight1 = firstItem.Height1;
+                    defaultWidth2 = firstItem.Width2;
+                    defaultHeight2 = firstItem.Height2;
+                    defaultPrice = firstItem.Price;
+                    defaultSurcharge = firstItem.SurchargePercent;
                 }
 
                 spec.Items.Clear();
@@ -1302,10 +1566,15 @@ namespace ProGlassAutomation.ViewModels
                 for (int i = startIndex; i < rows.Length; i++)
                 {
                     var columns = rows[i].Split('\t').Select(c => c.Trim()).ToArray();
-                    if (columns.Length < 6) { Debug.WriteLine($"[Import Skip] Invalid row: {rows[i]}"); continue; }
+                    if (columns.Length < 6)
+                    {
+                        Debug.WriteLine($"[Import Skip] Invalid row: {rows[i]}");
+                        continue;
+                    }
                     if (columns.Length == 0 || string.IsNullOrWhiteSpace(string.Join("", columns))) continue;
 
                     var item = new InvoiceItemModel { SrNo = itemsAdded + 1, Specification = spec };
+
                     if (columns.Length > 0) item.GlassRef = columns[0].Trim();
                     if (columns.Length > 1 && TryParseNumber(columns[1], out double w1)) item.Width1 = Math.Max(0, w1); else item.Width1 = defaultWidth1;
                     if (columns.Length > 2 && TryParseNumber(columns[2], out double h1)) item.Height1 = Math.Max(0, h1); else item.Height1 = defaultHeight1;
@@ -1315,7 +1584,16 @@ namespace ProGlassAutomation.ViewModels
                     if (columns.Length > 6 && TryParseNumber(columns[6], out double price)) item.Price = Math.Max(0, price); else item.Price = defaultPrice;
                     if (columns.Length > 7 && TryParseNumber(columns[7].Replace("%", ""), out double surcharge)) item.SurchargePercent = Math.Clamp(surcharge, 0, 100); else item.SurchargePercent = defaultSurcharge;
 
-                    item.PropertyChanged += (s, e) => { spec.CalculateTotals(); Invoice.CalculateTotals(); OnPropertyChanged(nameof(Invoice)); OnPropertyChanged(nameof(SelectedTargetSpecification)); OnPropertyChanged(nameof(Invoice.Specifications)); Invoice.IsDirty = true; };
+                    item.PropertyChanged += (s, e) =>
+                    {
+                        spec.CalculateTotals();
+                        Invoice.CalculateTotals();
+                        OnPropertyChanged(nameof(Invoice));
+                        OnPropertyChanged(nameof(SelectedTargetSpecification));
+                        OnPropertyChanged(nameof(Invoice.Specifications));
+                        Invoice.IsDirty = true;
+                    };
+
                     spec.Items.Add(item);
                     itemsAdded++;
                 }
@@ -1323,11 +1601,20 @@ namespace ProGlassAutomation.ViewModels
                 if (spec.Items.Count == 0)
                 {
                     int nextSr = GetNextSrNo();
-                    spec.Items.Add(new InvoiceItemModel { SrNo = nextSr, Qty = 1, SurchargePercent = defaultSurcharge, Price = defaultPrice, Width1 = defaultWidth1, Height1 = defaultHeight1, Width2 = defaultWidth2, Height2 = defaultHeight2 });
+                    spec.Items.Add(new InvoiceItemModel
+                    {
+                        SrNo = nextSr,
+                        Qty = 1,
+                        SurchargePercent = defaultSurcharge,
+                        Price = defaultPrice,
+                        Width1 = defaultWidth1,
+                        Height1 = defaultHeight1,
+                        Width2 = defaultWidth2,
+                        Height2 = defaultHeight2
+                    });
                 }
 
                 RenumberAllSrNumbers();
-
                 spec.CalculateTotals();
                 Invoice.CalculateTotals();
 
@@ -1342,7 +1629,11 @@ namespace ProGlassAutomation.ViewModels
                 // Refresh auto-values for all charges
                 RefreshAllChargeAutoValues();
             }
-            catch (Exception ex) { StatusMessage = $"❌ Paste failed: {ex.Message}"; Debug.WriteLine($"[Paste Error] {ex}"); }
+            catch (Exception ex)
+            {
+                StatusMessage = $"❌ Paste failed: {ex.Message}";
+                Debug.WriteLine($"[Paste Error] {ex}");
+            }
         }
 
         private bool TryParseNumber(string input, out double result)
@@ -1353,7 +1644,7 @@ namespace ProGlassAutomation.ViewModels
             return double.TryParse(cleaned, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out result);
         }
 
-        private void AddToColorHistory(string color) { if (!string.IsNullOrWhiteSpace(color) && !ColorHistory.Contains(color)) ColorHistory.Add(color); }
+        // ==================== DEBUG & TEST METHODS ====================
 
         private void TestRoundTrip()
         {
@@ -1386,9 +1677,13 @@ namespace ProGlassAutomation.ViewModels
                     if (imported.Specifications.Count > 0 && imported.Specifications[0].Items.Count > 0)
                         MessageBox.Show($"First item Qty: {imported.Specifications[0].Items[0].Qty}\n\nIf Qty = 99, import works!", "Test Result");
                 }
-                else MessageBox.Show("Import FAILED - returned null", "Error");
+                else
+                    MessageBox.Show("Import FAILED - returned null", "Error");
             }
-            catch (Exception ex) { MessageBox.Show($"Error: {ex.Message}", "Error"); }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}", "Error");
+            }
         }
 
         private void DebugCsvImport()
@@ -1402,11 +1697,13 @@ namespace ProGlassAutomation.ViewModels
                 var lines = File.ReadAllLines(filePath, System.Text.Encoding.UTF8);
 
                 string report = $"File: {Path.GetFileName(filePath)}\nLines: {lines.Length}\n\n=== RAW CONTENT ===\n";
-                for (int i = 0; i < Math.Min(lines.Length, 40); i++) report += $"[{i:D2}] {lines[i]}\n";
+                for (int i = 0; i < Math.Min(lines.Length, 40); i++)
+                    report += $"[{i:D2}] {lines[i]}\n";
                 report += "\n=== IMPORT ATTEMPT ===\n";
 
                 var imported = _excelCsvService.ImportFromCsvFile(filePath);
-                if (imported == null) report += "RESULT: NULL returned\n";
+                if (imported == null)
+                    report += "RESULT: NULL returned\n";
                 else
                 {
                     report += $"RESULT: {imported.Specifications.Count} specs\n";
@@ -1419,7 +1716,10 @@ namespace ProGlassAutomation.ViewModels
                 }
                 MessageBox.Show(report, "CSV Debug Report", MessageBoxButton.OK, MessageBoxImage.Information);
             }
-            catch (Exception ex) { MessageBox.Show($"Error: {ex.Message}\n{ex.StackTrace}", "Error"); }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}\n{ex.StackTrace}", "Error");
+            }
         }
 
         private void TestCsvRoundTrip()
@@ -1431,7 +1731,8 @@ namespace ProGlassAutomation.ViewModels
 
                 var lines = File.ReadAllLines(testPath, System.Text.Encoding.UTF8);
                 string rawContent = "=== EXPORTED CSV RAW CONTENT ===\n\n";
-                for (int i = 0; i < lines.Length; i++) rawContent += $"[{i:D2}] {lines[i]}\n";
+                for (int i = 0; i < lines.Length; i++)
+                    rawContent += $"[{i:D2}] {lines[i]}\n";
                 MessageBox.Show(rawContent, "RAW CSV Content", MessageBoxButton.OK, MessageBoxImage.Information);
 
                 var imported = _excelCsvService.ImportFromCsvFile(testPath);
@@ -1444,7 +1745,10 @@ namespace ProGlassAutomation.ViewModels
                     MessageBox.Show($"✅ IMPORT SUCCESS\n\nSpecs: {specs}\nItems: {items}", "Test Result", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
-            catch (Exception ex) { MessageBox.Show($"Error: {ex.Message}\n{ex.StackTrace}", "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}\n{ex.StackTrace}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         // ==================== LOAD FROM DAILY WORK ====================
@@ -1483,7 +1787,7 @@ namespace ProGlassAutomation.ViewModels
             return notes;
         }
 
-        // ==================== JOB ORDER CONVERSION ====================
+        // ==================== JOB ORDER CONVERSION (PATCH 1) ====================
 
         public void CheckAndConvertToJobOrder()
         {
@@ -1520,9 +1824,7 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // ═══════════════════════════════════════════════════════
-        // LOAD FROM EXISTING PROFORMA INVOICE
-        // ═══════════════════════════════════════════════════════
+        // ==================== LOAD FROM EXISTING PROFORMA INVOICE (PATCH 15) ====================
 
         public void LoadFromProformaInvoice(ProformaInvoiceModel pi)
         {
@@ -1532,78 +1834,45 @@ namespace ProGlassAutomation.ViewModels
 
             try
             {
-                // Copy all properties from the loaded PI
-                Invoice.InvoiceNo = pi.InvoiceNo;
-                Invoice.InvoiceDate = pi.InvoiceDate;
-                Invoice.ValidUntil = pi.ValidUntil;
-                Invoice.CustomerName = pi.CustomerName ?? "";
-                Invoice.CustomerTRN = pi.CustomerTRN ?? "";
-                Invoice.CustomerReference = pi.CustomerReference ?? "";
-                Invoice.Salesman = pi.Salesman ?? "";
-                Invoice.CustomerAddress = pi.CustomerAddress ?? "";
-                Invoice.ProjectName = pi.ProjectName ?? "";
-                Invoice.ProjectNo = pi.ProjectNo ?? "";
-                Invoice.ProjectLocation = pi.ProjectLocation ?? "";
-                Invoice.LPONo = pi.LPONo ?? "";
-                Invoice.AttentionName = pi.AttentionName ?? "";
-                Invoice.ContactNo = pi.ContactNo ?? "";
-                Invoice.Color = pi.Color ?? "";
-                Invoice.Notes = pi.Notes ?? "";
-                Invoice.Status = pi.Status ?? "Pending";
-
-                // Copy specifications
-                Invoice.Specifications.Clear();
-                if (pi.Specifications != null)
+                // PATCH 8: Use bulk update for better performance
+                using (BulkUpdateScope())
                 {
-                    foreach (var piSpec in pi.Specifications)
+                    // Copy all properties from the loaded PI
+                    Invoice.InvoiceNo = pi.InvoiceNo;
+                    Invoice.InvoiceDate = pi.InvoiceDate;
+                    Invoice.ValidUntil = pi.ValidUntil;
+                    Invoice.CustomerName = pi.CustomerName ?? "";
+                    Invoice.CustomerTRN = pi.CustomerTRN ?? "";
+                    Invoice.CustomerReference = pi.CustomerReference ?? "";
+                    Invoice.Salesman = pi.Salesman ?? "";
+                    Invoice.CustomerAddress = pi.CustomerAddress ?? "";
+                    Invoice.ProjectName = pi.ProjectName ?? "";
+                    Invoice.ProjectNo = pi.ProjectNo ?? "";
+                    Invoice.ProjectLocation = pi.ProjectLocation ?? "";
+                    Invoice.LPONo = pi.LPONo ?? "";
+                    Invoice.AttentionName = pi.AttentionName ?? "";
+                    Invoice.ContactNo = pi.ContactNo ?? "";
+                    Invoice.Color = pi.Color ?? "";
+                    Invoice.Notes = pi.Notes ?? "";
+                    Invoice.Status = pi.Status ?? "Pending";
+
+                    // Copy specifications using DeepClone (PATCH 15)
+                    Invoice.Specifications.Clear();
+                    if (pi.Specifications != null)
                     {
-                        var newSpec = new SpecificationModel
+                        foreach (var piSpec in pi.Specifications)
                         {
-                            Id = piSpec.Id,
-                            SpecificationName = piSpec.SpecificationName ?? "",
-                            ModuleType = piSpec.ModuleType ?? "SGU",
-                            WorkType = piSpec.WorkType ?? "Annealed",
-                            IncludeInSpec = piSpec.IncludeInSpec,
-                            OuterThickness = piSpec.OuterThickness ?? "6mm",
-                            OuterColor = piSpec.OuterColor ?? "Clear",
-                            OuterPrice = piSpec.OuterPrice ?? "0",
-                            SpacerThickness = piSpec.SpacerThickness ?? "12mm",
-                            PVBThickness = piSpec.PVBThickness ?? "0.76mm",
-                            PVBColor = piSpec.PVBColor ?? "Clear",
-                            PVBPrice = piSpec.PVBPrice ?? "0",
-                            InnerThickness = piSpec.InnerThickness ?? "6mm",
-                            InnerColor = piSpec.InnerColor ?? "Clear",
-                            InnerPrice = piSpec.InnerPrice ?? "0",
-                            BasePrice = piSpec.BasePrice,
-                            SurchargePercent = piSpec.SurchargePercent,
-                            ASPPrice = piSpec.ASPPrice ?? "0",
-                            Invoice = Invoice
-                        };
+                            var newSpec = piSpec.DeepClone();
+                            newSpec.Invoice = Invoice;
 
-                        // Copy items
-                        if (piSpec.Items != null)
-                        {
-                            foreach (var piItem in piSpec.Items)
+                            // PATCH 10: Ensure all items have proper parent reference
+                            foreach (var item in newSpec.Items)
                             {
-                                var newItem = new InvoiceItemModel
-                                {
-                                    SrNo = piItem.SrNo,
-                                    GlassRef = piItem.GlassRef ?? "",
-                                    Width1 = piItem.Width1,
-                                    Height1 = piItem.Height1,
-                                    Width2 = piItem.Width2,
-                                    Height2 = piItem.Height2,
-                                    Qty = piItem.Qty,
-                                    Price = piItem.Price,
-                                    SurchargePercent = piItem.SurchargePercent,
-                                    Specification = newSpec
-                                };
-                                newSpec.Items.Add(newItem);
+                                item.Specification = newSpec;
                             }
-                        }
 
-                        newSpec.CalculateTotals();
-                        Invoice.Specifications.Add(newSpec);
+                            Invoice.Specifications.Add(newSpec);
+                        }
                     }
                 }
 
@@ -1627,6 +1896,25 @@ namespace ProGlassAutomation.ViewModels
                 MessageBox.Show($"Error loading invoice: {ex.Message}", "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        // ==================== VALIDATION (PATCH 17) ====================
+
+        public ValidationResult ValidateInvoice()
+        {
+            return Invoice?.Validate() ?? new ValidationResult();
+        }
+
+        public bool CanSaveInvoice()
+        {
+            var result = ValidateInvoice();
+            return result.IsValid;
+        }
+
+        public string GetValidationSummary()
+        {
+            var result = ValidateInvoice();
+            return result.GetErrorSummary();
         }
     }
 }

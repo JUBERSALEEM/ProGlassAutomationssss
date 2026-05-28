@@ -1,7 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using ProGlassAutomation.Models;
-using ProGlassAutomation.ViewModels;
 
 namespace ProGlassAutomation.Views.JobOrder
 {
@@ -14,38 +13,22 @@ namespace ProGlassAutomation.Views.JobOrder
 
         private void AddRow_Click(object sender, RoutedEventArgs e)
         {
-            // Add item to last specification
-            if (DataContext is JobOrderViewModel vm && vm.Specifications.Count > 0)
+            if (sender is Button btn && btn.Tag is JobOrderSpecification spec)
             {
-                var spec = vm.Specifications[vm.Specifications.Count - 1];
-                spec.Items.Add(new JobOrderItem
+                if (DataContext is ViewModels.JobOrderViewModel vm)
                 {
-                    Id = spec.Items.Count + 1,
-                    SrNo = spec.Items.Count + 1,
-                    Qty = 1
-                });
+                    vm.AddItemToSpecification(spec);
+                }
             }
         }
 
         private void DeleteRow_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button button && button.Tag is JobOrderItem item)
+            if (sender is Button btn && btn.Tag is JobOrderItem item)
             {
-                if (DataContext is JobOrderViewModel vm)
+                if (DataContext is ViewModels.JobOrderViewModel vm)
                 {
-                    foreach (var spec in vm.Specifications)
-                    {
-                        if (spec.Items.Contains(item))
-                        {
-                            spec.Items.Remove(item);
-                            // Renumber
-                            for (int i = 0; i < spec.Items.Count; i++)
-                            {
-                                spec.Items[i].SrNo = i + 1;
-                            }
-                            break;
-                        }
-                    }
+                    vm.RemoveItemFromSpecification(item);
                 }
             }
         }

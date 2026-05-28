@@ -12,8 +12,11 @@ namespace ProGlassAutomation.Models
         private string _jobNumber = "";
         private string _piNumber = "";
         private string _customerName = "";
+        private string _customerTRN = "";
+        private string _customerAddress = "";
         private string _projectName = "";
         private string _projectLocation = "";
+        private string _lpoNumber = "";
         private DateTime _date = DateTime.Now;
         private DateTime _requiredDate = DateTime.Now.AddDays(7);
         private DateTime _createdDate = DateTime.Now;
@@ -29,13 +32,17 @@ namespace ProGlassAutomation.Models
         private double _totalSQM;
         private double _totalAmount;
         private ObservableCollection<JobOrderSpecification> _specifications = new ObservableCollection<JobOrderSpecification>();
+        private string _specificationsJson = "";
 
         public int Id { get => _id; set { _id = value; OnPropertyChanged(); } }
         public string JobNumber { get => _jobNumber; set { _jobNumber = value ?? ""; OnPropertyChanged(); } }
         public string PINumber { get => _piNumber; set { _piNumber = value ?? ""; OnPropertyChanged(); } }
         public string CustomerName { get => _customerName; set { _customerName = value ?? ""; OnPropertyChanged(); } }
+        public string CustomerTRN { get => _customerTRN; set { _customerTRN = value ?? ""; OnPropertyChanged(); } }
+        public string CustomerAddress { get => _customerAddress; set { _customerAddress = value ?? ""; OnPropertyChanged(); } }
         public string ProjectName { get => _projectName; set { _projectName = value ?? ""; OnPropertyChanged(); } }
         public string ProjectLocation { get => _projectLocation; set { _projectLocation = value ?? ""; OnPropertyChanged(); } }
+        public string LPONumber { get => _lpoNumber; set { _lpoNumber = value ?? ""; OnPropertyChanged(); } }
         public DateTime Date { get => _date; set { _date = value; OnPropertyChanged(); } }
         public DateTime RequiredDate { get => _requiredDate; set { _requiredDate = value; OnPropertyChanged(); } }
         public DateTime CreatedDate { get => _createdDate; set { _createdDate = value; OnPropertyChanged(); } }
@@ -51,6 +58,7 @@ namespace ProGlassAutomation.Models
         public double TotalSQM { get => _totalSQM; set { _totalSQM = value; OnPropertyChanged(); } }
         public double TotalAmount { get => _totalAmount; set { _totalAmount = value; OnPropertyChanged(); } }
         public ObservableCollection<JobOrderSpecification> Specifications { get => _specifications; set { _specifications = value; OnPropertyChanged(); } }
+        public string SpecificationsJson { get => _specificationsJson; set { _specificationsJson = value ?? ""; OnPropertyChanged(); } }
 
         public void CalculateTotals()
         {
@@ -399,14 +407,10 @@ namespace ProGlassAutomation.Models
 
         public bool IsAutoMode => !_isManualOverride;
 
-        // ==================== CALCULATE AMOUNT ====================
-
         private void CalculateAmount()
         {
             Amount = Math.Round(_value * _rate, 2);
         }
-
-        // ==================== DISPLAY PROPERTIES ====================
 
         public string ValueDisplay
         {
@@ -494,8 +498,6 @@ namespace ProGlassAutomation.Models
             }
         }
 
-        // ==================== SPEC INDEX MANAGEMENT ====================
-
         public void AddSpec(int index)
         {
             var indices = SpecIndexList;
@@ -529,8 +531,6 @@ namespace ProGlassAutomation.Models
         {
             LinkedSpecIndices = "";
         }
-
-        // ==================== CLONE ====================
 
         public JobOrderOtherCharge Clone()
         {

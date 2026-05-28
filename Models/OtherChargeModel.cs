@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using Newtonsoft.Json;
 using System.Runtime.CompilerServices;
 
 namespace ProGlassAutomation.Models
@@ -13,6 +14,14 @@ namespace ProGlassAutomation.Models
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
+        {
+            if (Equals(field, value)) return false;
+            field = value;
+            OnPropertyChanged(propertyName);
+            return true;
         }
 
         // ==================== BASIC PROPERTIES ====================
@@ -44,28 +53,42 @@ namespace ProGlassAutomation.Models
         public double Value
         {
             get => _value;
-            set { _value = value; OnPropertyChanged(); OnPropertyChanged(nameof(ValueDisplay)); CalculateAmount(); }
+            set
+            {
+                if (SetProperty(ref _value, value))
+                {
+                    OnPropertyChanged(nameof(ValueDisplay));
+                    CalculateAmount();
+                }
+            }
         }
 
         private double _rate = 0;
         public double Rate
         {
             get => _rate;
-            set { _rate = value; OnPropertyChanged(); OnPropertyChanged(nameof(RateDisplay)); CalculateAmount(); }
+            set
+            {
+                if (SetProperty(ref _rate, value))
+                {
+                    OnPropertyChanged(nameof(RateDisplay));
+                    CalculateAmount();
+                }
+            }
         }
 
         private double _amount = 0;
         public double Amount
         {
             get => _amount;
-            set { _amount = value; OnPropertyChanged(); OnPropertyChanged(nameof(AmountDisplay)); }
+            set => SetProperty(ref _amount, value);  // Made public
         }
 
         private string _lmDimType = "w1h1";
         public string LmDimType
         {
             get => _lmDimType;
-            set { _lmDimType = value ?? "w1h1"; OnPropertyChanged(); }
+            set => SetProperty(ref _lmDimType, value ?? "w1h1");
         }
 
         // ==================== DISPLAY PROPERTIES ====================
@@ -128,7 +151,7 @@ namespace ProGlassAutomation.Models
 
         // ==================== CALCULATE AMOUNT ====================
 
-        private void CalculateAmount()
+        public void CalculateAmount()
         {
             Amount = Math.Round(Value * Rate, 2);
         }
@@ -139,7 +162,7 @@ namespace ProGlassAutomation.Models
         public int LinkedSpecIndex
         {
             get => _linkedSpecIndex;
-            set { _linkedSpecIndex = value; OnPropertyChanged(); }
+            set => SetProperty(ref _linkedSpecIndex, value);
         }
 
         private string _linkedSpecIndices = "";
@@ -167,9 +190,7 @@ namespace ProGlassAutomation.Models
                     OnPropertyChanged();
                     OnPropertyChanged(nameof(LinkedSpecsDisplay));
                     if (value)
-                    {
                         LinkedSpecIndices = "";
-                    }
                 }
             }
         }
@@ -206,18 +227,24 @@ namespace ProGlassAutomation.Models
 
         // ==================== AUTO VALUE ====================
 
+        [JsonIgnore]
         private List<SpecificationModel> _boundSpecs = new List<SpecificationModel>();
+        [JsonIgnore]
         public List<SpecificationModel> BoundSpecs
         {
             get => _boundSpecs;
-            set { _boundSpecs = value ?? new List<SpecificationModel>(); }
+            set => _boundSpecs = value ?? new List<SpecificationModel>();
         }
 
         private bool _isManualOverride = false;
         public bool IsManualOverride
         {
             get => _isManualOverride;
-            set { _isManualOverride = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsAutoMode)); }
+            set
+            {
+                if (SetProperty(ref _isManualOverride, value))
+                    OnPropertyChanged(nameof(IsAutoMode));
+            }
         }
 
         public bool IsAutoMode => !_isManualOverride;
@@ -258,7 +285,7 @@ namespace ProGlassAutomation.Models
             LinkedSpecIndices = "";
         }
 
-        // ==================== CLONE ====================
+        // ==================== CLONE (PATCH 15) ====================
 
         public OtherChargeModel Clone()
         {
@@ -274,6 +301,43 @@ namespace ProGlassAutomation.Models
                 LinkedSpecIndices = LinkedSpecIndices,
                 IsManualOverride = IsManualOverride
             };
+        }
+
+        // PATCH 15: Deep clone for proper cloning
+        public OtherChargeModel DeepClone()
+        {
+            var clone = new OtherChargeModel
+            {
+                Name = Name,
+                Type = Type,
+                Value = Value,
+                Rate = Rate,
+                // Amount will be recalculated
+                LmDimType = LmDimType,
+                LinkedSpecIndex = LinkedSpecIndex,
+                LinkedSpecIndices = LinkedSpecIndices,
+                IsManualOverride = IsManualOverride
+            };
+
+            clone.CalculateAmount();
+            return clone;
+        }
+
+        // PATCH 15: Copy values from another charge
+        public void CopyFrom(OtherChargeModel other)
+        {
+            if (other == null) return;
+
+            Name = other.Name;
+            Type = other.Type;
+            Value = other.Value;
+            Rate = other.Rate;
+            LmDimType = other.LmDimType;
+            LinkedSpecIndex = other.LinkedSpecIndex;
+            LinkedSpecIndices = other.LinkedSpecIndices;
+            IsManualOverride = other.IsManualOverride;
+
+            CalculateAmount();
         }
     }
 }

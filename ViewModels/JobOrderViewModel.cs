@@ -1,4 +1,6 @@
-﻿using ProGlassAutomation.Data.Database;
+﻿using DocumentFormat.OpenXml.Wordprocessing;
+using Newtonsoft.Json;
+using ProGlassAutomation.Data.Database;
 using ProGlassAutomation.Models;
 using System;
 using System.Collections.ObjectModel;
@@ -26,7 +28,8 @@ namespace ProGlassAutomation.ViewModels
         private string _contactNo = "";
         private string _notes = "";
         private string _piNumber = "";
-        private DateTime _jobOrderDate = DateTime.Today;
+        private int _proformaInvoiceId = 0;
+        private DateTime _jobOrderDate = DateTime.Now;
         private DateTime _requiredDate = DateTime.Today.AddDays(7);
         private string _status = "Pending";
         private ObservableCollection<JobOrderSpecification> _specifications;
@@ -44,7 +47,6 @@ namespace ProGlassAutomation.ViewModels
             AddSpecificationCommand = new RelayCommand(_ => AddSpecification());
             RemoveSpecificationCommand = new RelayCommand(_ => RemoveSpecification());
 
-            // Other Charges Commands
             AddOtherChargeCommand = new RelayCommand(o => ExecuteAddOtherCharge(o));
             DeleteOtherChargeCommand = new RelayCommand(o => ExecuteDeleteOtherCharge(o));
         }
@@ -154,6 +156,12 @@ namespace ProGlassAutomation.ViewModels
             set => SetProperty(ref _piNumber, value);
         }
 
+        public int ProformaInvoiceId
+        {
+            get => _proformaInvoiceId;
+            set => SetProperty(ref _proformaInvoiceId, value);
+        }
+
         public DateTime JobOrderDate
         {
             get => _jobOrderDate;
@@ -194,18 +202,14 @@ namespace ProGlassAutomation.ViewModels
         }
 
         public ObservableCollection<JobOrderSpecification> Specifications
-
         {
             get => _specifications;
             set => SetProperty(ref _specifications, value);
         }
 
         public int TotalQty => Specifications.Sum(s => s.TotalQty);
-
         public double TotalSQM => Specifications.Sum(s => s.TotalSQM);
-
         public double TotalAmount => Specifications.Sum(s => s.TotalAmount);
-
         public double TotalLM1 => Specifications.Sum(s => s.TotalLM1);
         public double TotalLM2 => Specifications.Sum(s => s.TotalLM2);
 
@@ -270,6 +274,29 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
+        private ObservableCollection<JobOrderOtherCharge> _allOtherCharges = new ObservableCollection<JobOrderOtherCharge>();
+
+        public ObservableCollection<JobOrderOtherCharge> AllOtherCharges
+        {
+            get => _allOtherCharges;
+        }
+
+        public void RefreshAllOtherCharges()
+        {
+            _allOtherCharges.Clear();
+            foreach (var spec in Specifications)
+            {
+                foreach (var charge in spec.OtherCharges)
+                {
+                    _allOtherCharges.Add(charge);
+                }
+            }
+            OnPropertyChanged(nameof(AllOtherCharges));
+            OnPropertyChanged(nameof(AllOtherChargesTotal));
+        }
+
+        public double AllOtherChargesTotal => _allOtherCharges.Sum(c => c.Amount);
+
         #endregion
 
         #region Import from Proforma Invoice
@@ -287,12 +314,10 @@ namespace ProGlassAutomation.ViewModels
 
             try
             {
-                // STEP 0: Import Company Info
                 CompanyName = pi.CompanyName ?? "PROGLASS AUTOMATION";
                 CompanyTRN = pi.CompanyTRN ?? "100458979400003";
                 CompanyLocation = pi.CompanyLocation ?? "Dubai, UAE";
 
-                // STEP 1: Copy basic properties
                 CustomerName = pi.CustomerName ?? "";
                 CustomerTRN = pi.CustomerTRN ?? "";
                 CustomerReference = pi.CustomerReference ?? "";
@@ -305,31 +330,22 @@ namespace ProGlassAutomation.ViewModels
                 AttentionName = pi.AttentionName ?? "";
                 ContactNo = pi.ContactNo ?? "";
                 PINumber = pi.InvoiceNo ?? "";
+                _proformaInvoiceId = pi.Id; // Store for saving
                 Notes = pi.Notes ?? "";
                 Status = "Pending";
 
-                System.Diagnostics.Debug.WriteLine($"[JobOrderVM] CustomerName: {CustomerName}");
-                System.Diagnostics.Debug.WriteLine($"[JobOrderVM] ProjectNo: {ProjectNo}");
-
-                // Generate new job order number
                 JobOrderNumber = DbHelper.GenerateNextJONumber();
-                JobOrderDate = DateTime.Today;
+                JobOrderDate = DateTime.Now;
                 RequiredDate = DateTime.Today.AddDays(7);
 
-                // STEP 2: Copy specifications and items
                 Specifications.Clear();
 
                 if (pi.Specifications != null && pi.Specifications.Count > 0)
                 {
-                    System.Diagnostics.Debug.WriteLine($"[JobOrderVM] Found {pi.Specifications.Count} specifications");
-
                     int specIndex = 0;
                     foreach (var piSpec in pi.Specifications)
                     {
                         specIndex++;
-                        System.Diagnostics.Debug.WriteLine($"[JobOrderVM] Processing spec {specIndex}: {piSpec.SpecificationName}");
-
-                        // Create new JobOrderSpecification
                         var newSpec = new JobOrderSpecification
                         {
                             Id = specIndex,
@@ -348,16 +364,12 @@ namespace ProGlassAutomation.ViewModels
                             SurchargePercent = piSpec.SurchargePercent
                         };
 
-                        // Copy items
                         if (piSpec.Items != null && piSpec.Items.Count > 0)
                         {
-                            System.Diagnostics.Debug.WriteLine($"[JobOrderVM] Spec {specIndex} has {piSpec.Items.Count} items");
-
                             int itemIndex = 0;
                             foreach (var piItem in piSpec.Items)
                             {
                                 itemIndex++;
-
                                 var newItem = new JobOrderItem
                                 {
                                     Id = itemIndex,
@@ -370,28 +382,15 @@ namespace ProGlassAutomation.ViewModels
                                     Qty = piItem.Qty > 0 ? piItem.Qty : 1,
                                     Price = piItem.Price
                                 };
-
-                                // Recalculate SQM after properties are set (object initializer runs after constructor)
                                 newItem.Recalculate();
-
                                 newSpec.Items.Add(newItem);
-
-                                System.Diagnostics.Debug.WriteLine($"[JobOrderVM]   Item {itemIndex}: GlassRef={newItem.GlassRef}, W1={newItem.Width1}, H1={newItem.Height1}, Qty={newItem.Qty}, Price={newItem.Price}");
                             }
-
-                            // Calculate totals
                             newSpec.CalculateTotals();
                         }
-                        else
-                        {
-                            System.Diagnostics.Debug.WriteLine($"[JobOrderVM] Spec {specIndex} has NO items");
-                        }
 
-                        // Copy Other Charges
+                        // PATCH: Import other charges from PI
                         if (piSpec.OtherCharges != null && piSpec.OtherCharges.Count > 0)
                         {
-                            System.Diagnostics.Debug.WriteLine($"[JobOrderVM] Spec {specIndex} has {piSpec.OtherCharges.Count} other charges");
-
                             foreach (var piCharge in piSpec.OtherCharges)
                             {
                                 var newCharge = new JobOrderOtherCharge
@@ -402,12 +401,13 @@ namespace ProGlassAutomation.ViewModels
                                     Rate = piCharge.Rate,
                                     Amount = piCharge.Amount,
                                     TargetsAllSpecs = true,
-                                    LinkedSpecIndices = piCharge.LinkedSpecIndices ?? ""
+                                    LinkedSpecIndices = piCharge.LinkedSpecIndices ?? "",
+                                    LinkedSpecIndex = piCharge.LinkedSpecIndex,
+                                    LmDimType = piCharge.LmDimType ?? "w1h1",
+                                    IsManualOverride = piCharge.IsManualOverride
                                 };
                                 newSpec.OtherCharges.Add(newCharge);
                             }
-
-                            // Recalculate spec totals after adding charges
                             newSpec.CalculateTotals();
                         }
 
@@ -416,43 +416,16 @@ namespace ProGlassAutomation.ViewModels
                 }
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine("[JobOrderVM] No specifications found, creating default");
                     Specifications.Add(new JobOrderSpecification { Id = 1, SpecificationName = "Specification 1" });
                 }
 
-                System.Diagnostics.Debug.WriteLine($"[JobOrderVM] Loaded {Specifications.Count} specs");
-                System.Diagnostics.Debug.WriteLine($"[JobOrderVM] Total items: {Specifications.Sum(s => s.Items.Count)}");
-                System.Diagnostics.Debug.WriteLine($"[JobOrderVM] Total other charges: {Specifications.Sum(s => s.OtherCharges.Count)}");
-                System.Diagnostics.Debug.WriteLine($"[JobOrderVM] Total Qty: {TotalQty}");
-                System.Diagnostics.Debug.WriteLine($"[JobOrderVM] Total SQM: {TotalSQM:F4}");
-                System.Diagnostics.Debug.WriteLine($"[JobOrderVM] Total Amount: {TotalAmount:F2}");
-                System.Diagnostics.Debug.WriteLine("[JobOrderVM] LoadFromProformaInvoice END");
+                // PATCH: Refresh aggregated collections
+                RefreshAllOtherCharges();
 
-                // Notify ALL property changes for UI to refresh
-                OnPropertyChanged(nameof(CompanyName));
-                OnPropertyChanged(nameof(CompanyTRN));
-                OnPropertyChanged(nameof(CompanyLocation));
-                OnPropertyChanged(nameof(TotalQty));
-                OnPropertyChanged(nameof(TotalSQM));
-                OnPropertyChanged(nameof(TotalAmount));
-                OnPropertyChanged(nameof(TotalLM1));
-                OnPropertyChanged(nameof(TotalLM2));
-                OnPropertyChanged(nameof(Specifications));
-                OnPropertyChanged(nameof(AllOtherCharges));
-                OnPropertyChanged(nameof(AllOtherChargesTotal));
-
-                // Notify each spec so UI refreshes
-                foreach (var spec in Specifications)
-                {
-                    OnPropertyChanged("TotalSQM");
-                    OnPropertyChanged("TotalLM1");
-                    OnPropertyChanged("TotalLM2");
-                }
+                NotifyAllPropertiesChanged();
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[JobOrderVM] ERROR: {ex.Message}");
-                System.Diagnostics.Debug.WriteLine($"Stack: {ex.StackTrace}");
                 MessageBox.Show($"Error loading invoice: {ex.Message}\n\n{ex.StackTrace}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -479,36 +452,8 @@ namespace ProGlassAutomation.ViewModels
             });
 
             spec.CalculateTotals();
-            OnPropertyChanged(nameof(TotalQty));
-            OnPropertyChanged(nameof(TotalSQM));
-            OnPropertyChanged(nameof(TotalAmount));
-            OnPropertyChanged(nameof(TotalLM1));
-            OnPropertyChanged(nameof(TotalLM2));
+            NotifyTotalsChanged();
         }
-
-        // Cached collection for Other Charges
-        private ObservableCollection<JobOrderOtherCharge> _allOtherCharges;
-
-        public ObservableCollection<JobOrderOtherCharge> AllOtherCharges
-        {
-            get
-            {
-                if (_allOtherCharges == null)
-                    _allOtherCharges = new ObservableCollection<JobOrderOtherCharge>();
-
-                _allOtherCharges.Clear();
-                foreach (var spec in Specifications)
-                {
-                    foreach (var charge in spec.OtherCharges)
-                    {
-                        _allOtherCharges.Add(charge);
-                    }
-                }
-                return _allOtherCharges;
-            }
-        }
-
-        public double AllOtherChargesTotal => AllOtherCharges.Sum(c => c.Amount);
 
         public void RemoveItemFromSpecification(JobOrderItem item)
         {
@@ -520,7 +465,6 @@ namespace ProGlassAutomation.ViewModels
                 {
                     spec.Items.Remove(item);
 
-                    // Renumber items
                     for (int i = 0; i < spec.Items.Count; i++)
                     {
                         spec.Items[i].SrNo = i + 1;
@@ -531,11 +475,7 @@ namespace ProGlassAutomation.ViewModels
                 }
             }
 
-            OnPropertyChanged(nameof(TotalQty));
-            OnPropertyChanged(nameof(TotalSQM));
-            OnPropertyChanged(nameof(TotalAmount));
-            OnPropertyChanged(nameof(TotalLM1));
-            OnPropertyChanged(nameof(TotalLM2));
+            NotifyTotalsChanged();
         }
 
         private void ExecuteAddItem(object parameter)
@@ -557,11 +497,7 @@ namespace ProGlassAutomation.ViewModels
                 SurchargePercent = 20
             });
 
-            OnPropertyChanged(nameof(TotalQty));
-            OnPropertyChanged(nameof(TotalSQM));
-            OnPropertyChanged(nameof(TotalAmount));
-            OnPropertyChanged(nameof(TotalLM1));
-            OnPropertyChanged(nameof(TotalLM2));
+            NotifyTotalsChanged();
         }
 
         public void RemoveSpecification()
@@ -569,11 +505,7 @@ namespace ProGlassAutomation.ViewModels
             if (Specifications.Count > 1)
             {
                 Specifications.RemoveAt(Specifications.Count - 1);
-                OnPropertyChanged(nameof(TotalQty));
-                OnPropertyChanged(nameof(TotalSQM));
-                OnPropertyChanged(nameof(TotalAmount));
-                OnPropertyChanged(nameof(TotalLM1));
-                OnPropertyChanged(nameof(TotalLM2));
+                NotifyTotalsChanged();
             }
         }
 
@@ -590,6 +522,46 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
+        private void NotifyTotalsChanged()
+        {
+            OnPropertyChanged(nameof(TotalQty));
+            OnPropertyChanged(nameof(TotalSQM));
+            OnPropertyChanged(nameof(TotalAmount));
+            OnPropertyChanged(nameof(TotalLM1));
+            OnPropertyChanged(nameof(TotalLM2));
+            OnPropertyChanged(nameof(AllOtherCharges));
+            OnPropertyChanged(nameof(AllOtherChargesTotal));
+        }
+
+        private void NotifyAllPropertiesChanged()
+        {
+            OnPropertyChanged(nameof(CompanyName));
+            OnPropertyChanged(nameof(CompanyTRN));
+            OnPropertyChanged(nameof(CompanyLocation));
+            OnPropertyChanged(nameof(JobOrderNumber));
+            OnPropertyChanged(nameof(JobOrderDate));
+            OnPropertyChanged(nameof(RequiredDate));
+            OnPropertyChanged(nameof(CustomerName));
+            OnPropertyChanged(nameof(CustomerTRN));
+            OnPropertyChanged(nameof(CustomerAddress));
+            OnPropertyChanged(nameof(ProjectName));
+            OnPropertyChanged(nameof(ProjectLocation));
+            OnPropertyChanged(nameof(LPONo));
+            OnPropertyChanged(nameof(AttentionName));
+            OnPropertyChanged(nameof(ContactNo));
+            OnPropertyChanged(nameof(PINumber));
+            OnPropertyChanged(nameof(Notes));
+            OnPropertyChanged(nameof(Status));
+            OnPropertyChanged(nameof(Specifications));
+            OnPropertyChanged(nameof(TotalQty));
+            OnPropertyChanged(nameof(TotalSQM));
+            OnPropertyChanged(nameof(TotalAmount));
+            OnPropertyChanged(nameof(TotalLM1));
+            OnPropertyChanged(nameof(TotalLM2));
+            OnPropertyChanged(nameof(AllOtherCharges));
+            OnPropertyChanged(nameof(AllOtherChargesTotal));
+        }
+
         #endregion
 
         #region Save & Delete
@@ -601,16 +573,20 @@ namespace ProGlassAutomation.ViewModels
                 if (string.IsNullOrWhiteSpace(JobOrderNumber))
                     JobOrderNumber = DbHelper.GenerateNextJONumber();
 
-                // Renumber all items before saving
                 RenumberAllItems();
 
-                // Create JobOrderModel (Database model) from ViewModel data
                 var jobOrderModel = new JobOrderModel
                 {
                     JONumber = JobOrderNumber,
+                    ProformaInvoiceId = _proformaInvoiceId,
                     ClientName = CustomerName,
+                    ClientTRN = CustomerTRN,
+                    ClientAddress = CustomerAddress,
+                    ContactPerson = AttentionName,
+                    ContactNumber = ContactNo,
                     ProjectName = ProjectName,
                     ProjectLocation = ProjectLocation,
+                    LPONumber = LPONo,
                     JODate = JobOrderDate,
                     RequiredDate = RequiredDate,
                     Status = Status,
@@ -618,6 +594,62 @@ namespace ProGlassAutomation.ViewModels
                     TotalQty = TotalQty,
                     TotalAmount = TotalAmount
                 };
+
+                // Serialize specifications to JSON (PATCH: Include all charge properties)
+                try
+                {
+                    var specsToSave = Specifications.Select(spec => new
+                    {
+                        spec.Id,
+                        spec.SpecificationName,
+                        spec.ModuleType,
+                        spec.WorkType,
+                        spec.OuterThickness,
+                        spec.OuterColor,
+                        spec.InnerThickness,
+                        spec.InnerColor,
+                        spec.SpacerThickness,
+                        spec.PVBThickness,
+                        spec.PVBColor,
+                        spec.IncludeInSpec,
+                        spec.BasePrice,
+                        spec.SurchargePercent,
+                        Items = spec.Items.Select(item => new
+                        {
+                            item.Id,
+                            item.SrNo,
+                            item.GlassRef,
+                            item.Width1,
+                            item.Height1,
+                            item.Width2,
+                            item.Height2,
+                            item.Qty,
+                            item.DeliveredQty,
+                            item.Price
+                        }).ToList(),
+                        OtherCharges = spec.OtherCharges.Select(charge => new
+                        {
+                            charge.Name,
+                            charge.Type,
+                            charge.Value,
+                            charge.Rate,
+                            charge.Amount,
+                            charge.LinkedSpecIndices,
+                            charge.LinkedSpecIndex,
+                            charge.TargetsAllSpecs,
+                            charge.LmDimType,
+                            charge.IsManualOverride
+                        }).ToList()
+                    }).ToList();
+
+                    jobOrderModel.SpecificationsJson = JsonConvert.SerializeObject(specsToSave);
+                    System.Diagnostics.Debug.WriteLine($"[JobOrderVM] JSON Length: {jobOrderModel.SpecificationsJson.Length}");
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[JobOrderVM] JSON Serialize Error: {ex.Message}");
+                    jobOrderModel.SpecificationsJson = "";
+                }
 
                 // Copy items to database model
                 int srNo = 1;
@@ -650,68 +682,32 @@ namespace ProGlassAutomation.ViewModels
                     Id = jobOrderModel.Id,
                     JobNumber = jobOrderModel.JONumber,
                     CustomerName = jobOrderModel.ClientName,
+                    CustomerTRN = jobOrderModel.ClientTRN,
+                    CustomerAddress = jobOrderModel.ClientAddress,
                     ProjectName = jobOrderModel.ProjectName,
                     ProjectLocation = jobOrderModel.ProjectLocation,
+                    LPONumber = jobOrderModel.LPONumber,
                     Date = jobOrderModel.JODate,
                     RequiredDate = jobOrderModel.RequiredDate,
                     Status = jobOrderModel.Status,
                     Notes = jobOrderModel.Notes,
                     TotalQty = jobOrderModel.TotalQty,
-                    TotalAmount = jobOrderModel.TotalAmount
+                    TotalAmount = jobOrderModel.TotalAmount,
+                    SpecificationsJson = jobOrderModel.SpecificationsJson
                 };
 
-                // Add to local collection
                 JobOrders.Add(savedJob);
 
-                MessageBox.Show($"Job Order {JobOrderNumber} saved!\n\nTotal Items: {TotalQty}\nTotal SQM: {TotalSQM:F4}\nTotal Amount: AED {TotalAmount:N2}",
+                MessageBox.Show($"Job Order {JobOrderNumber} saved!\n\nDate: {JobOrderDate:dd MMM yyyy hh:mm:ss tt}\nTotal Items: {TotalQty}\nTotal SQM: {TotalSQM:F4}\nTotal Amount: AED {TotalAmount:N2}",
                     "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error saving: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Error saving: {ex.Message}\n\n{ex.StackTrace}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        private void DeleteJobOrder()
-        {
-            var result = MessageBox.Show($"Delete Job Order {JobOrderNumber}?\n\nThis will clear all data.", "Confirm Delete",
-                MessageBoxButton.YesNo, MessageBoxImage.Warning);
-
-            if (result == MessageBoxResult.Yes)
-            {
-                JobOrderNumber = "";
-                CustomerName = "";
-                CustomerTRN = "";
-                CustomerReference = "";
-                Salesman = "";
-                CustomerAddress = "";
-                ProjectName = "";
-                ProjectNo = "";
-                ProjectLocation = "";
-                LPONo = "";
-                AttentionName = "";
-                ContactNo = "";
-                Notes = "";
-                PINumber = "";
-                Status = "Pending";
-                Specifications.Clear();
-                Specifications.Add(new JobOrderSpecification { Id = 1, SpecificationName = "Specification 1" });
-
-                OnPropertyChanged(nameof(TotalQty));
-                OnPropertyChanged(nameof(TotalSQM));
-                OnPropertyChanged(nameof(TotalAmount));
-                OnPropertyChanged(nameof(AllOtherCharges));
-                OnPropertyChanged(nameof(AllOtherChargesTotal));
-            }
-        }
-
-        #endregion
-
-        #region Helper Methods
-
-        public JobOrder GetJobOrderById(int id) => JobOrders.FirstOrDefault(j => j.Id == id);
-
-        public void ClearAll()
+        public void ClearAll(bool notifyUI = true)
         {
             JobOrderNumber = "";
             CustomerName = "";
@@ -727,161 +723,203 @@ namespace ProGlassAutomation.ViewModels
             ContactNo = "";
             Notes = "";
             PINumber = "";
+            ProformaInvoiceId = 0;
             Status = "Pending";
-            JobOrderDate = DateTime.Today;
+            JobOrderDate = DateTime.Now;
             RequiredDate = DateTime.Today.AddDays(7);
             Specifications.Clear();
             Specifications.Add(new JobOrderSpecification { Id = 1, SpecificationName = "Specification 1" });
 
-            OnPropertyChanged(nameof(TotalQty));
-            OnPropertyChanged(nameof(TotalSQM));
-            OnPropertyChanged(nameof(TotalAmount));
-            OnPropertyChanged(nameof(AllOtherCharges));
-            OnPropertyChanged(nameof(AllOtherChargesTotal));
+            RefreshAllOtherCharges();
+
+            if (notifyUI)
+            {
+                NotifyAllPropertiesChanged();
+            }
         }
 
         #endregion
 
-        // ═══════════════════════════════════════════════════════
-        // LOAD FROM EXISTING JOB ORDER
-        // ═══════════════════════════════════════════════════════
+        #region Helper Methods
+
+        public JobOrder GetJobOrderById(int id) => JobOrders.FirstOrDefault(j => j.Id == id);
+
+        private void DeleteJobOrder()
+        {
+            var result = MessageBox.Show($"Delete Job Order {JobOrderNumber}?\n\nThis will clear all data.", "Confirm Delete",
+                MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                ClearAll();
+            }
+        }
+
+        #endregion
+
+        #region Load From Existing Job Order
 
         public void LoadFromExistingJobOrder(JobOrder jo)
         {
-            if (jo == null) return;
+            if (jo == null)
+            {
+                System.Diagnostics.Debug.WriteLine("[JobOrderVM] LoadFromExistingJobOrder: jo is NULL");
+                return;
+            }
+
+            System.Diagnostics.Debug.WriteLine($"[JobOrderVM] LoadFromExistingJobOrder: {jo.JobNumber}");
+            System.Diagnostics.Debug.WriteLine($"[JobOrderVM] Date: {jo.Date}");
+            System.Diagnostics.Debug.WriteLine($"[JobOrderVM] SpecificationsJson Length: {jo.SpecificationsJson?.Length ?? 0}");
 
             try
             {
-                System.Diagnostics.Debug.WriteLine($"[JobOrderVM] LoadFromExistingJobOrder: {jo.JobNumber}");
+                // Clear all fields first (don't notify UI yet)
+                ClearAll(notifyUI: false);
 
-                // STEP 1: Copy basic properties
+                // Load basic info
                 JobOrderNumber = jo.JobNumber ?? "";
-                CustomerName = jo.CustomerName ?? "";
-                CustomerTRN = "";
-                CustomerReference = "";
-                Salesman = jo.Salesman ?? "";
-                CustomerAddress = "";
-                ProjectName = jo.ProjectName ?? "";
-                ProjectNo = "";
-                ProjectLocation = jo.ProjectLocation ?? "";
-                LPONo = "";
-                AttentionName = "";
-                ContactNo = "";
-                PINumber = jo.PINumber ?? "";
-                Notes = jo.Notes ?? "";
+                JobOrderDate = jo.Date == DateTime.MinValue ? DateTime.Now : jo.Date;
+                RequiredDate = jo.RequiredDate == DateTime.MinValue ? DateTime.Today.AddDays(7) : jo.RequiredDate;
                 Status = jo.Status ?? "Pending";
-                JobOrderDate = jo.Date;
-                RequiredDate = jo.RequiredDate;
+                PINumber = jo.PINumber ?? "";
 
-                // STEP 2: Copy specifications and items
+                // Load customer info
+                CustomerName = jo.CustomerName ?? "";
+                CustomerTRN = jo.CustomerTRN ?? "";
+                CustomerAddress = jo.CustomerAddress ?? "";
+
+                // Load project info
+                ProjectName = jo.ProjectName ?? "";
+                ProjectLocation = jo.ProjectLocation ?? "";
+                LPONo = jo.LPONumber ?? "";
+
+                // Load notes
+                Notes = jo.Notes ?? "";
+
+                System.Diagnostics.Debug.WriteLine($"[JobOrderVM] Basic info loaded. Date: {JobOrderDate}");
+
+                // Load specifications from JSON
                 Specifications.Clear();
 
-                if (jo.Specifications != null && jo.Specifications.Count > 0)
+                if (!string.IsNullOrWhiteSpace(jo.SpecificationsJson) && jo.SpecificationsJson.Length > 10)
                 {
-                    int specIndex = 0;
-                    foreach (var joSpec in jo.Specifications)
+                    try
                     {
-                        specIndex++;
+                        var jsonSpecs = JsonConvert.DeserializeObject<List<JsonSpecModel>>(jo.SpecificationsJson);
 
-                        var newSpec = new JobOrderSpecification
+                        if (jsonSpecs != null && jsonSpecs.Count > 0)
                         {
-                            Id = specIndex,
-                            SpecificationName = joSpec.SpecificationName ?? $"Specification {specIndex}",
-                            ModuleType = joSpec.ModuleType ?? "SGU",
-                            WorkType = joSpec.WorkType ?? "Annealed",
-                            OuterThickness = joSpec.OuterThickness ?? "6mm",
-                            OuterColor = joSpec.OuterColor ?? "Clear",
-                            InnerThickness = joSpec.InnerThickness ?? "6mm",
-                            InnerColor = joSpec.InnerColor ?? "Clear",
-                            SpacerThickness = joSpec.SpacerThickness ?? "12mm",
-                            PVBThickness = joSpec.PVBThickness ?? "0.76mm",
-                            PVBColor = joSpec.PVBColor ?? "Clear",
-                            IncludeInSpec = joSpec.IncludeInSpec,
-                            BasePrice = joSpec.BasePrice,
-                            SurchargePercent = joSpec.SurchargePercent
-                        };
+                            System.Diagnostics.Debug.WriteLine($"[JobOrderVM] Found {jsonSpecs.Count} specs in JSON");
 
-                        // Copy items
-                        if (joSpec.Items != null && joSpec.Items.Count > 0)
-                        {
-                            int itemIndex = 0;
-                            foreach (var joItem in joSpec.Items)
+                            for (int specIndex = 0; specIndex < jsonSpecs.Count; specIndex++)
                             {
-                                itemIndex++;
+                                var js = jsonSpecs[specIndex];
 
-                                var newItem = new JobOrderItem
+                                var spec = new JobOrderSpecification
                                 {
-                                    Id = itemIndex,
-                                    SrNo = itemIndex,
-                                    GlassRef = joItem.GlassRef ?? "",
-                                    Width1 = joItem.Width1,
-                                    Height1 = joItem.Height1,
-                                    Width2 = joItem.Width2,
-                                    Height2 = joItem.Height2,
-                                    Qty = joItem.Qty > 0 ? joItem.Qty : 1,
-                                    DeliveredQty = joItem.DeliveredQty,
-                                    Price = joItem.Price
+                                    Id = js.Id > 0 ? js.Id : specIndex + 1,
+                                    SpecificationName = string.IsNullOrWhiteSpace(js.SpecificationName) ? $"Specification {specIndex + 1}" : js.SpecificationName,
+                                    ModuleType = js.ModuleType ?? "SGU",
+                                    WorkType = js.WorkType ?? "Annealed",
+                                    OuterThickness = js.OuterThickness ?? "6mm",
+                                    OuterColor = js.OuterColor ?? "Clear",
+                                    InnerThickness = js.InnerThickness ?? "6mm",
+                                    InnerColor = js.InnerColor ?? "Clear",
+                                    SpacerThickness = js.SpacerThickness ?? "12mm",
+                                    PVBThickness = js.PVBThickness ?? "0.76mm",
+                                    PVBColor = js.PVBColor ?? "Clear",
+                                    IncludeInSpec = js.IncludeInSpec,
+                                    BasePrice = js.BasePrice,
+                                    SurchargePercent = js.SurchargePercent
                                 };
 
-                                newItem.Recalculate();
-                                newSpec.Items.Add(newItem);
-                            }
-
-                            newSpec.CalculateTotals();
-                        }
-
-                        // Copy Other Charges
-                        if (joSpec.OtherCharges != null && joSpec.OtherCharges.Count > 0)
-                        {
-                            foreach (var joCharge in joSpec.OtherCharges)
-                            {
-                                var newCharge = new JobOrderOtherCharge
+                                // Load items for this specification
+                                if (js.Items != null && js.Items.Count > 0)
                                 {
-                                    Name = joCharge.Name ?? $"Charge {newSpec.OtherCharges.Count + 1}",
-                                    Type = joCharge.Type ?? "lm",
-                                    Value = joCharge.Value,
-                                    Rate = joCharge.Rate,
-                                    Amount = joCharge.Amount,
-                                    TargetsAllSpecs = true,
-                                    LinkedSpecIndices = joCharge.LinkedSpecIndices ?? ""
-                                };
-                                newSpec.OtherCharges.Add(newCharge);
+                                    for (int itemIndex = 0; itemIndex < js.Items.Count; itemIndex++)
+                                    {
+                                        var ji = js.Items[itemIndex];
+
+                                        var item = new JobOrderItem
+                                        {
+                                            Id = ji.Id > 0 ? ji.Id : itemIndex + 1,
+                                            SrNo = ji.SrNo > 0 ? ji.SrNo : itemIndex + 1,
+                                            GlassRef = ji.GlassRef ?? "",
+                                            Width1 = ji.Width1,
+                                            Height1 = ji.Height1,
+                                            Width2 = ji.Width2,
+                                            Height2 = ji.Height2,
+                                            Qty = ji.Qty > 0 ? ji.Qty : 1,
+                                            DeliveredQty = ji.DeliveredQty,
+                                            Price = ji.Price
+                                        };
+
+                                        item.Recalculate();
+                                        spec.Items.Add(item);
+                                    }
+                                }
+
+                                // PATCH: Load other charges for this specification
+                                if (js.OtherCharges != null && js.OtherCharges.Count > 0)
+                                {
+                                    foreach (var jc in js.OtherCharges)
+                                    {
+                                        var charge = new JobOrderOtherCharge
+                                        {
+                                            Name = jc.Name ?? "Charge",
+                                            Type = jc.Type ?? "lm",
+                                            Value = jc.Value,
+                                            Rate = jc.Rate,
+                                            Amount = jc.Amount,
+                                            TargetsAllSpecs = jc.TargetsAllSpecs,
+                                            LinkedSpecIndices = jc.LinkedSpecIndices ?? "",
+                                            LinkedSpecIndex = jc.LinkedSpecIndex,
+                                            LmDimType = jc.LmDimType ?? "w1h1",
+                                            IsManualOverride = jc.IsManualOverride
+                                        };
+                                        spec.OtherCharges.Add(charge);
+                                    }
+                                }
+
+                                // Recalculate spec totals
+                                spec.CalculateTotals();
+
+                                // Add spec to collection
+                                Specifications.Add(spec);
                             }
-
-                            newSpec.CalculateTotals();
                         }
-
-                        Specifications.Add(newSpec);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[JobOrderVM] Error parsing specs JSON: {ex.Message}");
                     }
                 }
-                else
+
+                // If no specs loaded, create empty spec
+                if (Specifications.Count == 0)
                 {
                     Specifications.Add(new JobOrderSpecification { Id = 1, SpecificationName = "Specification 1" });
                 }
 
-                System.Diagnostics.Debug.WriteLine($"[JobOrderVM] Loaded {Specifications.Count} specs from existing JO");
+                // PATCH: Refresh aggregated collections
+                RefreshAllOtherCharges();
 
-                // Notify property changes
-                OnPropertyChanged(nameof(TotalQty));
-                OnPropertyChanged(nameof(TotalSQM));
-                OnPropertyChanged(nameof(TotalAmount));
-                OnPropertyChanged(nameof(TotalLM1));
-                OnPropertyChanged(nameof(TotalLM2));
-                OnPropertyChanged(nameof(Specifications));
-                OnPropertyChanged(nameof(AllOtherCharges));
-                OnPropertyChanged(nameof(AllOtherChargesTotal));
+                // Notify ALL property changes for UI refresh
+                NotifyAllPropertiesChanged();
+
+                System.Diagnostics.Debug.WriteLine($"[JobOrderVM] Load complete. Date: {JobOrderDate:dd MMM yyyy hh:mm:ss tt}");
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[JobOrderVM] LoadFromExistingJobOrder ERROR: {ex.Message}");
-                MessageBox.Show($"Error loading Job Order: {ex.Message}", "Error",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Diagnostics.Debug.WriteLine($"[JobOrderVM] Stack: {ex.StackTrace}");
+                MessageBox.Show($"Error loading Job Order: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        // ═══════════════════════════════════════════════════════
-        // CLEAR FOR NEW JOB ORDER
-        // ═══════════════════════════════════════════════════════
+        #endregion
+
+        #region Clear For New Job Order
 
         public void ClearForNewJobOrder()
         {
@@ -889,17 +927,73 @@ namespace ProGlassAutomation.ViewModels
 
             // Generate new job order number
             JobOrderNumber = DbHelper.GenerateNextJONumber();
-            JobOrderDate = DateTime.Today;
+            JobOrderDate = DateTime.Now;
             RequiredDate = DateTime.Today.AddDays(7);
             Status = "Pending";
             PINumber = "";
+            ProformaInvoiceId = 0;
 
             // Reset company info
             CompanyName = "PROGLASS AUTOMATION";
             CompanyTRN = "100458979400003";
             CompanyLocation = "Dubai, UAE";
 
-            System.Diagnostics.Debug.WriteLine($"[JobOrderVM] ClearForNewJobOrder: New JO Number = {JobOrderNumber}");
+            NotifyAllPropertiesChanged();
         }
+
+        #endregion
+
+        #region JSON Helper Classes
+
+        public class JsonSpecModel
+        {
+            public int Id { get; set; }
+            public string SpecificationName { get; set; }
+            public string ModuleType { get; set; }
+            public string WorkType { get; set; }
+            public string OuterThickness { get; set; }
+            public string OuterColor { get; set; }
+            public string InnerThickness { get; set; }
+            public string InnerColor { get; set; }
+            public string SpacerThickness { get; set; }
+            public string PVBThickness { get; set; }
+            public string PVBColor { get; set; }
+            public bool IncludeInSpec { get; set; } = true;
+            public double BasePrice { get; set; }
+            public double SurchargePercent { get; set; }
+            public List<JsonItemModel> Items { get; set; }
+            public List<JsonChargeModel> OtherCharges { get; set; }
+        }
+
+        public class JsonItemModel
+        {
+            public int Id { get; set; }
+            public int SrNo { get; set; }
+            public string GlassRef { get; set; }
+            public double Width1 { get; set; }
+            public double Height1 { get; set; }
+            public double Width2 { get; set; }
+            public double Height2 { get; set; }
+            public int Qty { get; set; }
+            public int DeliveredQty { get; set; }
+            public double Price { get; set; }
+        }
+
+        // PATCH: Updated JsonChargeModel with all properties
+        public class JsonChargeModel
+        {
+            public string Name { get; set; }
+            public string Type { get; set; }
+            public double Value { get; set; }
+            public double Rate { get; set; }
+            public double Amount { get; set; }
+            public string LinkedSpecIndices { get; set; }
+            public int LinkedSpecIndex { get; set; }
+            public bool TargetsAllSpecs { get; set; }
+            public string LmDimType { get; set; }
+            public bool IsManualOverride { get; set; }
+        }
+
+        #endregion
     }
 }

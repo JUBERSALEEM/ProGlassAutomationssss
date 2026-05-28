@@ -81,8 +81,8 @@ namespace ProGlassAutomation.ViewModels
                 "Profile" => new Views.Profile.ProfileView(),
                 "Users" => CreatePlaceholder("Users - Coming Soon!"),
                 "ProformaInvoice" => new Views.ProformaInvoice.ProformaInvoiceView(),
-                "JobOrders" => CreateJobOrdersListView(),      // Changed to List View
-                "JobOrderEdit" => CreateJobOrderEditView(),     // Single Job Order Edit
+                "JobOrders" => CreateJobOrdersListView(),
+                "JobOrderEdit" => CreateJobOrderEditView(),
                 "JobOrderDetails" => new Views.JobOrder.JobOrderDetailsView(),
                 _ => null
             };
@@ -114,9 +114,8 @@ namespace ProGlassAutomation.ViewModels
         private UserControl CreateJobOrdersListView()
         {
             var view = new Views.JobOrderListView();
-            view.DataContext = JobOrderListVM;  // Use shared List VM
+            view.DataContext = JobOrderListVM;
 
-            // Connect events for navigation (only once)
             JobOrderListVM.OpenJobOrderRequested -= OnOpenJobOrderRequested;
             JobOrderListVM.OpenJobOrderRequested += OnOpenJobOrderRequested;
 
@@ -131,10 +130,8 @@ namespace ProGlassAutomation.ViewModels
 
         private UserControl CreateJobOrderEditView()
         {
-            // Check if JobOrderView exists in the Views folder
-            // If not, use JobOrder.JobOrderView (in the JobOrder subfolder)
             var view = new Views.JobOrder.JobOrderView();
-            view.DataContext = JobOrderVM;  // Use shared Edit VM
+            view.DataContext = JobOrderVM;
             return view;
         }
 
@@ -146,10 +143,7 @@ namespace ProGlassAutomation.ViewModels
         {
             try
             {
-                // Load the job order data into the edit VM
                 JobOrderVM.LoadFromExistingJobOrder(jo);
-
-                // Navigate to edit view
                 Navigate("JobOrderEdit");
             }
             catch (Exception ex)
@@ -170,43 +164,7 @@ namespace ProGlassAutomation.ViewModels
                     return;
                 }
 
-                var allPIs = DbHelper.GetAllProformaInvoices();
-                var pi = allPIs.FirstOrDefault(p => p.InvoiceNo == jo.PINumber);
-
-                if (pi != null)
-                {
-                    // Navigate to PI view and load
-                    Navigate("ProformaInvoice");
-
-                    if (GetOrCreateView("ProformaInvoice") is Views.ProformaInvoice.ProformaInvoiceView piView)
-                    {
-                        if (piView.DataContext is ProformaInvoiceViewModel piVm)
-                        {
-                            try
-                            {
-                                // Convert database model to JSON and back to UI model
-                                var json = Newtonsoft.Json.JsonConvert.SerializeObject(pi);
-                                var uiModel = Newtonsoft.Json.JsonConvert.DeserializeObject<Models.ProformaInvoiceModel>(json);
-
-                                if (uiModel != null)
-                                {
-                                    piVm.LoadFromProformaInvoice(uiModel);
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                System.Diagnostics.Debug.WriteLine($"[MainVM] Error loading PI: {ex.Message}");
-                                System.Windows.MessageBox.Show($"Error loading invoice: {ex.Message}", "Error",
-                                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    MessageBox.Show("Proforma Invoice not found.", "Info",
-                        MessageBoxButton.OK, MessageBoxImage.Information);
-                }
+                ShowProformaInvoiceByNumber(jo.PINumber);
             }
             catch (Exception ex)
             {
@@ -217,10 +175,7 @@ namespace ProGlassAutomation.ViewModels
 
         private void OnNewJobOrderRequested()
         {
-            // Clear the edit VM for new job order
             JobOrderVM.ClearForNewJobOrder();
-
-            // Navigate to edit view
             Navigate("JobOrderEdit");
         }
 
@@ -247,7 +202,6 @@ namespace ProGlassAutomation.ViewModels
         {
             if (string.IsNullOrEmpty(viewName)) return;
 
-            // Check license for calculators
             if (IsCalculatorView(viewName) && !IsLicensed)
             {
                 MessageBox.Show("Please activate your license to access calculators",
@@ -256,7 +210,6 @@ namespace ProGlassAutomation.ViewModels
                 return;
             }
 
-            // Special handling for Job Order Edit - don't cache
             if (viewName == "JobOrderEdit")
             {
                 var view = CreateJobOrderEditView();
@@ -265,13 +218,10 @@ namespace ProGlassAutomation.ViewModels
                 return;
             }
 
-            // Get cached view and inject
             var newView = GetOrCreateView(viewName);
 
-            // Prevent reloading same module
             if (CurrentView == newView)
             {
-                // TOGGLE OFF (close module)
                 CurrentView = null;
                 CurrentViewName = "";
                 return;
@@ -305,11 +255,7 @@ namespace ProGlassAutomation.ViewModels
         public MainViewModel()
         {
             NavigateCommand = new RelayCommand(o => Navigate(o?.ToString() ?? ""));
-
-            // Check existing activation
             CheckExistingActivation();
-
-            // Default view
             Navigate("Dashboard");
         }
 
@@ -378,20 +324,14 @@ namespace ProGlassAutomation.ViewModels
             catch { }
         }
 
-        // ═══════════════════════════════════════════════════════
-        // LICENSE CALLBACKS
-        // ═══════════════════════════════════════════════════════
-
         public void OnLicenseActivated(string key)
         {
             _currentKey = key;
             _isLicensed = true;
             SaveKey(key);
-
             Notify(nameof(IsLicensed));
             Notify(nameof(CalculatorsEnabled));
             Notify(nameof(IsLocked));
-
             InitializePages();
             ShowDashboard();
         }
@@ -401,11 +341,9 @@ namespace ProGlassAutomation.ViewModels
             _currentKey = "";
             _isLicensed = false;
             DeleteKey();
-
             Notify(nameof(IsLicensed));
             Notify(nameof(CalculatorsEnabled));
             Notify(nameof(IsLocked));
-
             InitializePages();
             ShowDashboard();
         }
@@ -431,6 +369,69 @@ namespace ProGlassAutomation.ViewModels
         public void ShowJobOrders() => Navigate("JobOrders");
 
         // ═══════════════════════════════════════════════════════
+        // PROFORMA INVOICE METHODS
+        // ═══════════════════════════════════════════════════════
+
+        public void ShowProformaInvoiceByNumber(string invoiceNo)
+        {
+            if (string.IsNullOrWhiteSpace(invoiceNo))
+            {
+                MessageBox.Show("Invoice number is empty.", "Info",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            try
+            {
+                var allPIs = DbHelper.GetAllProformaInvoices();
+                var pi = allPIs.FirstOrDefault(p => p.InvoiceNo == invoiceNo);
+
+                if (pi != null)
+                {
+                    Navigate("ProformaInvoice");
+
+                    if (GetOrCreateView("ProformaInvoice") is Views.ProformaInvoice.ProformaInvoiceView piView)
+                    {
+                        if (piView.DataContext is ProformaInvoiceViewModel piVm)
+                        {
+                            try
+                            {
+                                var settings = new Newtonsoft.Json.JsonSerializerSettings
+                                {
+                                    ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore,
+                                    NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore
+                                };
+                                var json = Newtonsoft.Json.JsonConvert.SerializeObject(pi, settings);
+                                var uiModel = Newtonsoft.Json.JsonConvert.DeserializeObject<Models.ProformaInvoiceModel>(json, settings);
+
+                                if (uiModel != null)
+                                {
+                                    piVm.LoadFromProformaInvoice(uiModel);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"[MainVM] Error loading PI: {ex.Message}");
+                                MessageBox.Show($"Error loading invoice: {ex.Message}", "Error",
+                                    MessageBoxButton.OK, MessageBoxImage.Error);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    MessageBox.Show($"Proforma Invoice '{invoiceNo}' not found.", "Info",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading Proforma Invoice: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════
         // PROFORMA INVOICE TO JOB ORDER CONVERSION
         // ═══════════════════════════════════════════════════════
 
@@ -447,10 +448,7 @@ namespace ProGlassAutomation.ViewModels
 
                 System.Diagnostics.Debug.WriteLine($"[MainVM] CreateJobOrderFromProformaInvoice: {invoice.InvoiceNo}");
 
-                // Load data into shared Job Order VM
                 JobOrderVM.LoadFromProformaInvoice(invoice);
-
-                // Navigate to edit view (not list)
                 Navigate("JobOrderEdit");
 
                 System.Diagnostics.Debug.WriteLine($"[MainVM] Job Order loaded successfully");
@@ -466,10 +464,8 @@ namespace ProGlassAutomation.ViewModels
 
         public void ShowJobOrderDetails(int jobOrderId)
         {
-            // Clear cache to get fresh instance
             _viewCache.Remove("JobOrderDetails");
 
-            // Create view and set the job order ID
             var view = new Views.JobOrder.JobOrderDetailsView();
             var vm = new ViewModels.JobOrderDetailsViewModel();
             vm.LoadJobOrder(jobOrderId);
@@ -494,13 +490,9 @@ namespace ProGlassAutomation.ViewModels
         {
             if (jobOrder == null) return;
 
-            // Clear cache to get fresh instance
             _viewCache.Remove("Deliveries");
-
-            // Navigate to deliveries view
             Navigate("Deliveries");
 
-            // Get the delivery view and set up from job order
             if (GetOrCreateView("Deliveries") is Views.Delivery.DeliveryView deliveryView)
             {
                 if (deliveryView.DataContext is ViewModels.DeliveryViewModel deliveryVM)
