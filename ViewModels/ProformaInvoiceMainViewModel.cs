@@ -168,7 +168,7 @@ namespace ProGlassAutomation.ViewModels
         public int TotalPICount => ProformaInvoices.Count;
         public int ConfirmedCount => ProformaInvoices.Count(p => p.Status == "Confirmed");
         public int ConvertedCount => ProformaInvoices.Count(p => p.Status == "Converted To JO");
-        public int PendingCount => ProformaInvoices.Count(p => p.Status == "Confirmed" && string.IsNullOrEmpty(p.JobOrderRef));
+        public int PendingCount => ProformaInvoices.Count(p => p.Status == "Pending" || p.Status == "Sent");
 
         // ==================== STATES ====================
         private bool _isLoading = false;
@@ -283,34 +283,118 @@ namespace ProGlassAutomation.ViewModels
             if (param is not ProformaInvoiceModel invoice) return;
             StatusChanged?.Invoke($"🔄 Converting PI to JO: {invoice.InvoiceNo}");
         }
-
         private void ChangeStatus(object param)
         {
-            var invoice = SelectedInvoice;
-            if (invoice == null) return;
-
-            if (param is string newStatus && !string.IsNullOrEmpty(newStatus))
+            // param is a Tuple<ProformaInvoiceModel, string> containing invoice and new status
+            if (param is System.Tuple<ProformaInvoiceModel, string> statusParams)
             {
-                var existingInvoice = ProformaInvoices.FirstOrDefault(p => p.InvoiceNo == invoice.InvoiceNo);
-                if (existingInvoice != null)
-                {
-                    var oldStatus = existingInvoice.Status;
-                    existingInvoice.Status = newStatus;
-                    IsDirty = true;
+                ChangeStatusWithParams(statusParams.Item1, statusParams.Item2);
+            }
+            else if (param is ProformaInvoiceModel invoice)
+            {
+                // Fallback: if only invoice is passed, use current status (no change)
+                return;
+            }
+        }
 
-                    UpdateSummaryCounts();
-                    ApplyFilters();
-                    StatusChanged?.Invoke($"✅ Status changed from '{oldStatus}' to '{newStatus}' for PI: {existingInvoice.InvoiceNo}");
+        private void ChangeStatusWithParams(ProformaInvoiceModel invoice, string newStatus)
+        {
+            if (invoice == null) return;
+            if (string.IsNullOrEmpty(newStatus)) return;
 
-                    // Save after status change
-                    SaveData();
-                }
+            var existingInvoice = ProformaInvoices.FirstOrDefault(p => p.InvoiceNo == invoice.InvoiceNo);
+            if (existingInvoice != null)
+            {
+                var oldStatus = existingInvoice.Status;
+
+                // Don't change if same status
+                if (oldStatus == newStatus) return;
+
+                existingInvoice.Status = newStatus;
+                IsDirty = true;
+
+                UpdateSummaryCounts();
+                ApplyFilters();
+                StatusChanged?.Invoke($"✅ Status changed from '{oldStatus}' to '{newStatus}' for PI: {existingInvoice.InvoiceNo}");
+
+                // Save after status change
+                SaveData();
             }
         }
 
         private void ExportReport()
         {
-            StatusChanged?.Invoke($"📊 Exporting report...");
+            try
+            {
+                StatusChanged?.Invoke($"📊 Preparing Excel report...");
+
+                if (FilteredProformaInvoices == null || FilteredProformaInvoices.Count == 0)
+                {
+                    MessageBox.Show("No invoices to export.", "Export",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                var desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                var filePath = System.IO.Path.Combine(
+                    desktopPath,
+                    $"ProformaInvoices_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx");
+
+                using (var workbook = new ClosedXML.Excel.XLWorkbook())
+                {
+                    var worksheet = workbook.Worksheets.Add("Proforma Invoices");
+
+                    // Header row
+                    worksheet.Cell(1, 1).Value = "PI No";
+                    worksheet.Cell(1, 2).Value = "Date";
+                    worksheet.Cell(1, 3).Value = "Customer";
+                    worksheet.Cell(1, 4).Value = "Project";
+                    worksheet.Cell(1, 5).Value = "Salesman";
+                    worksheet.Cell(1, 6).Value = "Total Amount";
+                    worksheet.Cell(1, 7).Value = "Status";
+                    worksheet.Cell(1, 8).Value = "JO Ref";
+
+                    // Style header
+                    worksheet.Range(1, 1, 1, 8).Style.Font.Bold = true;
+                    worksheet.Range(1, 1, 1, 8).Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.FromHtml("#1D4ED8");
+                    worksheet.Range(1, 1, 1, 8).Style.Font.FontColor = ClosedXML.Excel.XLColor.FromHtml("#FFFFFF");
+
+                    // Data rows
+                    int row = 2;
+                    foreach (var inv in FilteredProformaInvoices)
+                    {
+                        worksheet.Cell(row, 1).Value = inv.InvoiceNo;
+                        worksheet.Cell(row, 2).Value = inv.InvoiceDate;
+                        worksheet.Cell(row, 3).Value = inv.CustomerName;
+                        worksheet.Cell(row, 4).Value = inv.ProjectName;
+                        worksheet.Cell(row, 5).Value = inv.Salesman;
+                        worksheet.Cell(row, 6).Value = inv.GrandTotal;
+                        worksheet.Cell(row, 7).Value = inv.Status;
+                        worksheet.Cell(row, 8).Value = inv.JobOrderRef;
+                        row++;
+                    }
+
+                    // Auto-fit columns
+                    worksheet.Columns().AdjustToContents();
+
+                    workbook.SaveAs(filePath);
+                }
+
+                StatusChanged?.Invoke($"✅ Excel report saved to Desktop");
+
+                // Open the file
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = filePath,
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                StatusChanged?.Invoke($"❌ Export failed: {ex.Message}");
+                MessageBox.Show($"Export failed: {ex.Message}", "Export Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         // ==================== LOAD DATA ====================
@@ -571,7 +655,7 @@ namespace ProGlassAutomation.ViewModels
             StatusChanged?.Invoke("🔄 Filters cleared");
         }
 
-        // ==================== APPLY FILTERS ====================
+                // ==================== APPLY FILTERS ====================
         private void ApplyFilters()
         {
             var filtered = ProformaInvoices.AsEnumerable();
