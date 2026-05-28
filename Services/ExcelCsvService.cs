@@ -16,6 +16,12 @@ namespace ProGlassAutomation.Services
         {
             try
             {
+                if (invoice == null)
+                {
+                    StatusChanged?.Invoke("❌ No invoice to export");
+                    return;
+                }
+
                 if (string.IsNullOrEmpty(filePath))
                 {
                     var dialog = new SaveFileDialog
@@ -29,63 +35,146 @@ namespace ProGlassAutomation.Services
                     filePath = dialog.FileName;
                 }
 
-                var sb = new StringBuilder();
+                invoice.CalculateTotals();
 
-                // Invoice Header
-                sb.AppendLine("INVOICE");
-                sb.AppendLine($"Invoice No,{invoice.InvoiceNo}");
-                sb.AppendLine($"Invoice Date,{invoice.InvoiceDate:yyyy-MM-dd}");
-                sb.AppendLine($"Customer Name,{invoice.CustomerName}");
-                sb.AppendLine($"Customer TRN,{invoice.CustomerTRN}");
-                sb.AppendLine($"Valid Until,{invoice.ValidUntil:yyyy-MM-dd}");
-                sb.AppendLine();
+                var lines = new List<string>();
 
-                // Specifications with Items
-                sb.AppendLine("SPECIFICATIONS");
+                // ==================== VERSION ====================
+                lines.Add($"# Version: 1.0");
+                lines.Add($"# Generated: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+                lines.Add("");
 
-                // Handle null specifications
-                if (invoice.Specifications == null)
+                // ==================== COMPANY DETAILS ====================
+                lines.Add("[COMPANY DETAILS]");
+                lines.Add($"Company Name        : {invoice.CompanyName ?? "PROGLASS AUTOMATION"}");
+                lines.Add($"Company TRN         : {invoice.CompanyTRN ?? "100458979400003"}");
+                lines.Add($"Company Location    : {invoice.CompanyLocation ?? "Dubai, UAE"}");
+                lines.Add($"Company Phone       : +971-50-123-4567");
+                lines.Add("");
+
+                // ==================== INVOICE DETAILS ====================
+                lines.Add("[INVOICE DETAILS]");
+                lines.Add($"Invoice No          : {invoice.InvoiceNo ?? ""}");
+                lines.Add($"Invoice Date        : {invoice.InvoiceDate:yyyy-MM-dd}");
+                lines.Add($"Valid Until         : {invoice.ValidUntil:yyyy-MM-dd}");
+                lines.Add($"Status              : {invoice.Status ?? "Pending"}");
+                lines.Add("");
+
+                // ==================== CUSTOMER DETAILS ====================
+                lines.Add("[CUSTOMER DETAILS]");
+                lines.Add($"Customer Name       : {invoice.CustomerName ?? ""}");
+                lines.Add($"Customer TRN        : {invoice.CustomerTRN ?? ""}");
+                lines.Add($"Customer Reference  : {invoice.CustomerReference ?? ""}");
+                lines.Add($"Salesman            : {invoice.Salesman ?? ""}");
+                lines.Add($"Customer Address    : {invoice.CustomerAddress ?? ""}");
+                lines.Add("");
+
+                // ==================== PROJECT DETAILS ====================
+                lines.Add("[PROJECT DETAILS]");
+                lines.Add($"Project Name        : {invoice.ProjectName ?? ""}");
+                lines.Add($"Project No.         : {invoice.ProjectNo ?? ""}");
+                lines.Add($"Project Location    : {invoice.ProjectLocation ?? ""}");
+                lines.Add($"LPO No.             : {invoice.LPONo ?? ""}");
+                lines.Add($"Attention           : {invoice.AttentionName ?? ""}");
+                lines.Add($"Contact No.         : {invoice.ContactNo ?? ""}");
+                lines.Add("");
+
+                // ==================== ADDITIONAL INFO ====================
+                lines.Add("[ADDITIONAL INFO]");
+                lines.Add($"Color               : {invoice.Color ?? ""}");
+                lines.Add($"Notes               : {invoice.Notes ?? ""}");
+                lines.Add("");
+
+                // ==================== SPECIFICATIONS ====================
+                lines.Add("[SPECIFICATIONS]");
+                lines.Add("--------------------------------------------------------------------------------------------------------------------------");
+                lines.Add($"{"Spec No.",-8} {"Module Type",-8} {"Work Type",-15} {"Outer Glass",-20} {"Spacer",-25} {"Inner Glass",-20} {"PVB Layer",-25}");
+                lines.Add("--------------------------------------------------------------------------------------------------------------------------");
+
+                int specIndex = 1;
+                var specs = invoice.Specifications ?? new ObservableCollection<SpecificationModel>();
+
+                foreach (var spec in specs)
                 {
-                    invoice.Specifications = new ObservableCollection<SpecificationModel>();
+                    string outerGlass = $"{spec.OuterThickness ?? ""}mm {spec.OuterColor ?? ""}".Trim();
+                    string innerGlass = $"{spec.InnerThickness ?? ""}mm {spec.InnerColor ?? ""}".Trim();
+                    string spacer = !string.IsNullOrEmpty(spec.SpacerThickness) ? spec.SpacerThickness : "N/A";
+                    string pvbLayer = !string.IsNullOrEmpty(spec.PVBThickness)
+                        ? $"{spec.PVBThickness}mm {spec.PVBColor ?? ""}".Trim()
+                        : "N/A";
+
+                    lines.Add($"{specIndex,-8} {PadRight(spec.ModuleType ?? "", 8)} {PadRight(spec.WorkType ?? "", 15)} {PadRight(outerGlass, 20)} {PadRight(spacer, 25)} {PadRight(innerGlass, 20)} {PadRight(pvbLayer, 25)}");
+                    specIndex++;
                 }
+                lines.Add("--------------------------------------------------------------------------------------------------------------------------");
+                lines.Add("");
 
-                int totalItemsExported = 0;
+                // ==================== ITEMS ====================
+                lines.Add("[ITEMS]");
+                lines.Add("--------------------------------------------------------------------------------------------------------------------------------");
+                lines.Add($"{"Spec",-5} {"SR",-4} {"Glass Ref",-15} {"W1 (mm)",-10} {"H1 (mm)",-10} {"W2 (mm)",-10} {"H2 (mm)",-10} {"Qty",-6} {"SQM1",-12} {"SQM2",-12} {"Total SQM",-12} {"LM1",-12} {"LM2",-12}");
+                lines.Add("--------------------------------------------------------------------------------------------------------------------------------");
 
-                foreach (var spec in invoice.Specifications)
+                int itemSpecIndex = 1;
+                foreach (var spec in specs)
                 {
-                    // Handle null spec name
-                    string specName = spec?.SpecificationName ?? "Specification";
-                    sb.AppendLine($"Specification,{specName}");
-                    sb.AppendLine($"Base Price,{spec?.BasePrice ?? 0}");
-                    sb.AppendLine($"Surcharge %,{spec?.SurchargePercent ?? 0}");
-                    sb.AppendLine("Items Start");
-
-                    // Handle items properly
-                    if (spec?.Items != null && spec.Items.Count > 0)
+                    var items = spec.Items ?? new ObservableCollection<InvoiceItemModel>();
+                    foreach (var item in items)
                     {
-                        foreach (var item in spec.Items)
+                        lines.Add($"{itemSpecIndex,-5} {item.SrNo,-4} {PadRight(item.GlassRef ?? "", 15)} {item.Width1,10:F0} {item.Height1,10:F0} {item.Width2,10:F0} {item.Height2,10:F0} {item.Qty,6:F0} {item.SQM1,12:F4} {item.SQM2,12:F4} {item.TotalSQM,12:F4} {item.LM1,12:F4} {item.LM2,12:F4}");
+                    }
+                    itemSpecIndex++;
+                }
+                lines.Add("--------------------------------------------------------------------------------------------------------------------------------");
+                lines.Add("");
+
+                // ==================== OTHER CHARGES ====================
+                lines.Add("[OTHER CHARGES]");
+                lines.Add("--------------------------------------------------------------------------------------");
+                lines.Add($"{"Spec No.",-8} {"Charge Name",-20} {"Type",-8} {"Linked Specs",-15} {"Value",-15} {"Rate",-10} {"Amount",-12}");
+                lines.Add("--------------------------------------------------------------------------------------");
+
+                int chargeSpecIndex = 1;
+                bool hasCharges = false;
+
+                foreach (var spec in specs)
+                {
+                    var charges = spec.OtherCharges ?? new ObservableCollection<OtherChargeModel>();
+                    if (charges.Count > 0)
+                    {
+                        hasCharges = true;
+                        foreach (var charge in charges)
                         {
-                            string glassRef = item?.GlassRef ?? "";
-                            sb.AppendLine($"Item,{item.SrNo},{glassRef},{item.Width1},{item.Height1},{item.Width2},{item.Height2},{item.Qty},{item.Price},{item.SurchargePercent}");
-                            totalItemsExported++;
+                            lines.Add($"{chargeSpecIndex,-8} {PadRight(charge.Name ?? "", 20)} {(charge.Type ?? "lm").ToUpper(),-8} {PadRight(charge.LinkedSpecIndices ?? chargeSpecIndex.ToString(), 15)} {charge.Value,15:F4} {charge.Rate,10:F2} {charge.Amount,12:F2}");
                         }
                     }
-
-                    sb.AppendLine("Items End");
-                    sb.AppendLine();
+                    chargeSpecIndex++;
                 }
 
-                File.WriteAllText(filePath, sb.ToString(), Encoding.UTF8);
+                if (!hasCharges)
+                {
+                    lines.Add("No other charges defined");
+                }
+                lines.Add("--------------------------------------------------------------------------------------");
 
-                System.Diagnostics.Debug.WriteLine($"[Export] Total items exported: {totalItemsExported}");
-                StatusChanged?.Invoke($"✅ Exported {totalItemsExported} items");
+                File.WriteAllLines(filePath, lines, Encoding.UTF8);
+
+                int totalItems = specs.Sum(s => s.Items?.Count ?? 0);
+                StatusChanged?.Invoke($"✅ Exported to: {Path.GetFileName(filePath)}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[Export Error] {ex.Message}\n{ex.StackTrace}");
                 StatusChanged?.Invoke($"❌ Export failed: {ex.Message}");
-                throw;
+                System.Diagnostics.Debug.WriteLine($"[CSV Export Error] {ex}");
             }
+        }
+
+        private string PadRight(string value, int length)
+        {
+            if (string.IsNullOrEmpty(value)) value = "";
+            if (value.Length > length)
+                return value.Substring(0, length - 3) + "...";
+            return value.PadRight(length);
         }
 
         public ProformaInvoiceModel ImportFromCsv()
@@ -128,7 +217,17 @@ namespace ProGlassAutomation.Services
                     if (string.IsNullOrWhiteSpace(line))
                         continue;
 
+                    // Skip version and generated comments
+                    if (line.StartsWith("#"))
+                        continue;
+
+                    // Skip section headers and separators
+                    if (line.StartsWith("[") || line.StartsWith("---") || line.StartsWith("==="))
+                        continue;
+
                     var parts = line.Split(',').Select(p => p.Trim()).ToArray();
+                    if (parts.Length == 0) continue;
+
                     var firstCol = parts[0].ToUpper();
 
                     System.Diagnostics.Debug.WriteLine($"[Line {i}] {firstCol}");
@@ -158,12 +257,40 @@ namespace ProGlassAutomation.Services
                     {
                         if (DateTime.TryParse(parts[1], out var dt)) invoice.ValidUntil = dt;
                     }
+                    else if (firstCol == "STATUS" && parts.Length > 1)
+                    {
+                        invoice.Status = parts[1];
+                    }
+                    else if (firstCol == "SALESMAN" && parts.Length > 1)
+                    {
+                        invoice.Salesman = parts[1];
+                    }
+                    else if (firstCol == "PROJECT NAME" && parts.Length > 1)
+                    {
+                        invoice.ProjectName = parts[1];
+                    }
+                    else if (firstCol == "PROJECT NO." && parts.Length > 1)
+                    {
+                        invoice.ProjectNo = parts[1];
+                    }
+                    else if (firstCol == "PROJECT LOCATION" && parts.Length > 1)
+                    {
+                        invoice.ProjectLocation = parts[1];
+                    }
+                    else if (firstCol == "LPO NO." && parts.Length > 1)
+                    {
+                        invoice.LPONo = parts[1];
+                    }
+                    else if (firstCol == "ATTENTION" && parts.Length > 1)
+                    {
+                        invoice.AttentionName = parts[1];
+                    }
+                    else if (firstCol == "CONTACT NO." && parts.Length > 1)
+                    {
+                        invoice.ContactNo = parts[1];
+                    }
 
                     // Specifications Section
-                    else if (firstCol == "SPECIFICATIONS")
-                    {
-                        continue;
-                    }
                     else if (firstCol == "SPECIFICATION" && parts.Length > 1)
                     {
                         // Save previous spec
@@ -189,6 +316,42 @@ namespace ProGlassAutomation.Services
                         {
                             if (double.TryParse(parts[1], out var sp))
                                 currentSpec.SurchargePercent = sp;
+                        }
+                        else if (firstCol == "MODULE TYPE" && parts.Length > 1)
+                        {
+                            currentSpec.ModuleType = parts[1];
+                        }
+                        else if (firstCol == "WORK TYPE" && parts.Length > 1)
+                        {
+                            currentSpec.WorkType = parts[1];
+                        }
+                        else if (firstCol == "OUTER THICKNESS" && parts.Length > 1)
+                        {
+                            currentSpec.OuterThickness = parts[1];
+                        }
+                        else if (firstCol == "OUTER COLOR" && parts.Length > 1)
+                        {
+                            currentSpec.OuterColor = parts[1];
+                        }
+                        else if (firstCol == "INNER THICKNESS" && parts.Length > 1)
+                        {
+                            currentSpec.InnerThickness = parts[1];
+                        }
+                        else if (firstCol == "INNER COLOR" && parts.Length > 1)
+                        {
+                            currentSpec.InnerColor = parts[1];
+                        }
+                        else if (firstCol == "SPACER THICKNESS" && parts.Length > 1)
+                        {
+                            currentSpec.SpacerThickness = parts[1];
+                        }
+                        else if (firstCol == "PVB THICKNESS" && parts.Length > 1)
+                        {
+                            currentSpec.PVBThickness = parts[1];
+                        }
+                        else if (firstCol == "PVB COLOR" && parts.Length > 1)
+                        {
+                            currentSpec.PVBColor = parts[1];
                         }
                         else if (firstCol == "ITEMS START")
                         {

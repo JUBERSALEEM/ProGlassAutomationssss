@@ -556,6 +556,7 @@ namespace ProGlassAutomation.ViewModels
                 ValidUntil = DateTime.Now.AddDays(2)
             };
             CurrentFileName = "Untitled";
+
             AddSpecification();
             if (Invoice.Specifications.Count > 0)
                 Invoice.Specifications[0].Invoice = Invoice;

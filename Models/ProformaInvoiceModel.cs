@@ -351,6 +351,13 @@ namespace ProGlassAutomation.Models
             set => SetProperty(ref _companyLocation, value);
         }
 
+        private string _companyPhone = "+971-50-123-4567";
+        public string CompanyPhone
+        {
+            get => _companyPhone;
+            set => SetProperty(ref _companyPhone, value);
+        }
+
         // ============ STATUS MANAGEMENT (PATCH 16) ============
         private string _status = "Draft";
         public string Status
@@ -682,6 +689,7 @@ namespace ProGlassAutomation.Models
                 CompanyName = CompanyName,
                 CompanyTRN = CompanyTRN,
                 CompanyLocation = CompanyLocation,
+                CompanyPhone = CompanyPhone,
                 Status = Status,
                 VatPercent = VatPercent,
                 IsConvertedToJobOrder = IsConvertedToJobOrder,
