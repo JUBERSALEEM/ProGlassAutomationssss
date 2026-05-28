@@ -379,12 +379,20 @@ namespace ProGlassAutomation.Models
 
         private static readonly Dictionary<string, string[]> _statusTransitions = new()
         {
-            { "Draft", new[] { "Pending", "Confirmed", "Cancelled" } },
-            { "Pending", new[] { "Draft", "Confirmed", "In Progress", "Cancelled" } },
-            { "Confirmed", new[] { "In Progress", "Completed", "Cancelled" } },
-            { "In Progress", new[] { "Confirmed", "Completed", "Cancelled" } },
-            { "Completed", new[] { "In Progress", "Cancelled" } },
-            { "Cancelled", new[] { "Draft" } }
+            { "Draft", new[] { "Pending", "Sent", "Confirmed", "Hold", "Revised", "Converted To JO", "Partial Delivered", "Delivered", "Invoiced", "Cancelled", "Voided" } },
+            { "Sent", new[] { "Draft", "Pending", "Confirmed", "Hold", "Revised", "Cancelled" } },
+            { "Pending", new[] { "Draft", "Sent", "Confirmed", "Hold", "Revised", "Cancelled" } },
+            { "Hold", new[] { "Draft", "Sent", "Pending", "Confirmed", "Revised", "Cancelled" } },
+            { "Confirmed", new[] { "Sent", "Pending", "Hold", "Revised", "In Progress", "Converted To JO", "Partial Delivered", "Delivered", "Invoiced", "Cancelled" } },
+            { "Revised", new[] { "Draft", "Sent", "Pending", "Hold", "Confirmed", "In Progress", "Converted To JO", "Partial Delivered", "Delivered", "Invoiced", "Cancelled" } },
+            { "In Progress", new[] { "Confirmed", "Revised", "Partial Delivered", "Delivered", "Invoiced", "Completed", "Cancelled" } },
+            { "Converted To JO", new[] { "Partial Delivered", "Delivered", "Invoiced", "Completed", "Cancelled" } },
+            { "Partial Delivered", new[] { "In Progress", "Converted To JO", "Delivered", "Invoiced", "Completed", "Cancelled" } },
+            { "Delivered", new[] { "In Progress", "Converted To JO", "Partial Delivered", "Invoiced", "Completed", "Cancelled" } },
+            { "Invoiced", new[] { "In Progress", "Converted To JO", "Partial Delivered", "Delivered", "Completed", "Cancelled" } },
+            { "Completed", new[] { "In Progress", "Invoiced", "Cancelled" } },
+            { "Cancelled", new[] { "Draft", "Voided" } },
+            { "Voided", new[] { "Cancelled" } }
         };
 
         public static bool IsValidStatusTransition(string from, string to)
@@ -426,6 +434,13 @@ namespace ProGlassAutomation.Models
         {
             get => _jobOrderId;
             set { if (_jobOrderId != value) { _jobOrderId = value; OnPropertyChanged(); OnPropertyChanged(nameof(ConversionStatus)); IsDirty = true; } }
+        }
+
+        private string _jobOrderRef = "";
+        public string JobOrderRef
+        {
+            get => _jobOrderRef;
+            set { if (_jobOrderRef != value) { _jobOrderRef = value; OnPropertyChanged(); IsDirty = true; } }
         }
 
         private string _sourceJobOrderNo = "";
@@ -520,7 +535,7 @@ namespace ProGlassAutomation.Models
         public int TotalQty { get => _totalQty; private set => SetProperty(ref _totalQty, value); }
 
         private double _grandTotal = 0;
-        public double GrandTotal { get => _grandTotal; private set => SetProperty(ref _grandTotal, value); }
+        public double GrandTotal { get => _grandTotal; set => SetProperty(ref _grandTotal, value); }
 
         private double _otherChargesTotal = 0;
         public double OtherChargesTotal { get => _otherChargesTotal; private set => SetProperty(ref _otherChargesTotal, value); }
@@ -694,6 +709,7 @@ namespace ProGlassAutomation.Models
                 VatPercent = VatPercent,
                 IsConvertedToJobOrder = IsConvertedToJobOrder,
                 JobOrderId = JobOrderId,
+                JobOrderRef = JobOrderRef,
                 SourceJobOrderNo = SourceJobOrderNo,
                 ConvertedDate = ConvertedDate,
                 ConvertedBy = ConvertedBy,

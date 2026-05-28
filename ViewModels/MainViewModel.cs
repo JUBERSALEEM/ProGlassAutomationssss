@@ -11,6 +11,7 @@ using ProGlassAutomation.Views;
 using ProGlassAutomation.Models;
 using ProGlassAutomation.Data.Database;
 using System.Collections.ObjectModel;
+using ProGlassAutomation.Views.ProformaInvoice;
 
 namespace ProGlassAutomation.ViewModels
 {
@@ -80,7 +81,7 @@ namespace ProGlassAutomation.ViewModels
                 "Deliveries" => new Views.Delivery.DeliveryView(),
                 "Profile" => new Views.Profile.ProfileView(),
                 "Users" => CreatePlaceholder("Users - Coming Soon!"),
-                "ProformaInvoice" => new Views.ProformaInvoice.ProformaInvoiceView(),
+                "ProformaInvoice" => new Views.ProformaInvoice.ProformaInvoiceMainView(),
                 "JobOrders" => CreateJobOrdersListView(),
                 "JobOrderEdit" => CreateJobOrderEditView(),
                 "JobOrderDetails" => new Views.JobOrder.JobOrderDetailsView(),
@@ -365,7 +366,22 @@ namespace ProGlassAutomation.ViewModels
         public void ShowProfile() => Navigate("Profile");
         public void ShowUsers() => Navigate("Users");
         public void ShowBalanceReports() => Navigate("BalanceReports");
-        public void ShowProformaInvoice() => Navigate("ProformaInvoice");
+        public void ShowProformaInvoice()
+        {
+            var mainView = new Views.ProformaInvoice.ProformaInvoiceMainView();
+            var mainViewModel = new ProformaInvoiceMainViewModel(null);
+
+            mainViewModel.OpenPIEditor += invoice =>
+            {
+                var editorViewModel = new ProformaInvoiceViewModel();
+                editorViewModel.LoadFromProformaInvoice(invoice);
+                CurrentView = new Views.ProformaInvoice.ProformaInvoiceView { DataContext = editorViewModel };
+            };
+
+            mainView.DataContext = mainViewModel;
+            CurrentView = mainView;
+            CurrentViewName = "ProformaInvoice";
+        }
         public void ShowJobOrders() => Navigate("JobOrders");
 
         // ═══════════════════════════════════════════════════════
@@ -388,34 +404,30 @@ namespace ProGlassAutomation.ViewModels
 
                 if (pi != null)
                 {
-                    Navigate("ProformaInvoice");
+                    var editorViewModel = new ProformaInvoiceViewModel();
 
-                    if (GetOrCreateView("ProformaInvoice") is Views.ProformaInvoice.ProformaInvoiceView piView)
+                    try
                     {
-                        if (piView.DataContext is ProformaInvoiceViewModel piVm)
+                        var settings = new Newtonsoft.Json.JsonSerializerSettings
                         {
-                            try
-                            {
-                                var settings = new Newtonsoft.Json.JsonSerializerSettings
-                                {
-                                    ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore,
-                                    NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore
-                                };
-                                var json = Newtonsoft.Json.JsonConvert.SerializeObject(pi, settings);
-                                var uiModel = Newtonsoft.Json.JsonConvert.DeserializeObject<Models.ProformaInvoiceModel>(json, settings);
+                            ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore,
+                            NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore
+                        };
+                        var json = Newtonsoft.Json.JsonConvert.SerializeObject(pi, settings);
+                        var uiModel = Newtonsoft.Json.JsonConvert.DeserializeObject<Models.ProformaInvoiceModel>(json, settings);
 
-                                if (uiModel != null)
-                                {
-                                    piVm.LoadFromProformaInvoice(uiModel);
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                System.Diagnostics.Debug.WriteLine($"[MainVM] Error loading PI: {ex.Message}");
-                                MessageBox.Show($"Error loading invoice: {ex.Message}", "Error",
-                                    MessageBoxButton.OK, MessageBoxImage.Error);
-                            }
+                        if (uiModel != null)
+                        {
+                            editorViewModel.LoadFromProformaInvoice(uiModel);
+                            CurrentView = new Views.ProformaInvoice.ProformaInvoiceView { DataContext = editorViewModel };
+                            CurrentViewName = "ProformaInvoice";
                         }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[MainVM] Error loading PI: {ex.Message}");
+                        MessageBox.Show($"Error loading invoice: {ex.Message}", "Error",
+                            MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
                 else
