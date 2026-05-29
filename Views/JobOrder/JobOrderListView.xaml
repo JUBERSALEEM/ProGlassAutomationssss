@@ -275,9 +275,9 @@
                             <DataTemplate>
                                 <StackPanel>
                                     <TextBlock Text="{Binding Date, StringFormat='{}{0:dd MMM yyyy}'}" 
-                                               Foreground="#334155" FontSize="12"/>
-                                    <TextBlock Text="{Binding Date, StringFormat='{}{0:hh:mm tt}'}" 
-                                               Foreground="#94A3B8" FontSize="10" Margin="0,2,0,0"/>
+                           Foreground="#334155" FontSize="12"/>
+                                    <TextBlock Text="{Binding Date, StringFormat='{}{0:HH:mm}'}" 
+                           Foreground="#94A3B8" FontSize="10" Margin="0,2,0,0"/>
                                 </StackPanel>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
