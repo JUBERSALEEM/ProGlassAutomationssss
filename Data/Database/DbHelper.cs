@@ -19,7 +19,7 @@ namespace ProGlassAutomation.Data.Database
             "ProGlassAutomation", "glass.db");
 
         private static readonly string ConnStr = $"Data Source={DbPath};Cache=Shared";
-        private static readonly int LatestVersion = 12;
+        private static readonly int LatestVersion = 13;
 
         private static SqliteConnection CreateConnection()
         {
@@ -233,6 +233,13 @@ CREATE TABLE IF NOT EXISTS ProformaInvoiceItems (Id INTEGER PRIMARY KEY AUTOINCR
 CREATE INDEX IF NOT EXISTS idx_pi_date ON ProformaInvoices(PIDate);";
                         cmd.ExecuteNonQuery();
                     }
+                    break;
+                case 13:
+                    ExecuteSafeAlter(conn, "ALTER TABLE ProformaInvoices ADD COLUMN Salesman TEXT");
+                    ExecuteSafeAlter(conn, "ALTER TABLE ProformaInvoices ADD COLUMN JobOrderRef TEXT");
+                    ExecuteSafeAlter(conn, "ALTER TABLE ProformaInvoices ADD COLUMN CustomerReference TEXT");
+                    ExecuteSafeAlter(conn, "ALTER TABLE ProformaInvoices ADD COLUMN ProjectNo TEXT");
+                    ExecuteSafeAlter(conn, "ALTER TABLE ProformaInvoices ADD COLUMN Color TEXT");
                     break;
             }
         }
@@ -1674,7 +1681,7 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
                 {
                     pi.Id = Convert.ToInt32(existingId);
                     using var cmd = conn.CreateCommand();
-                    cmd.CommandText = @"UPDATE ProformaInvoices SET ClientName = $cn, ClientTRN = $ctr, ClientAddress = $ca, ProjectName = $pn, ProjectLocation = $pl, LPONumber = $lp, Attention = $att, ContactNo = $con, PIDate = $pd, ValidUntil = $vu, Status = $st, TotalAmount = $ta, VATPercent = $vp, VATAmount = $va, NetAmount = $na, CompanyName = $compName, CompanyTRN = $compTRN, CompanyLocation = $compLoc, CompanyPhone = $compPhone, Notes = $nt, UpdatedDate = $ud WHERE Id = $id";
+                    cmd.CommandText = @"UPDATE ProformaInvoices SET ClientName = $cn, ClientTRN = $ctr, ClientAddress = $ca, ProjectName = $pn, ProjectLocation = $pl, LPONumber = $lp, Attention = $att, ContactNo = $con, PIDate = $pd, ValidUntil = $vu, Status = $st, TotalAmount = $ta, VATPercent = $vp, VATAmount = $va, NetAmount = $na, CompanyName = $compName, CompanyTRN = $compTRN, CompanyLocation = $compLoc, CompanyPhone = $compPhone, Notes = $nt, Salesman = $sm, JobOrderRef = $joRef, CustomerReference = $custRef, ProjectNo = $projNo, Color = $clr, UpdatedDate = $ud WHERE Id = $id";
                     cmd.Parameters.AddWithValue("$id", pi.Id);
                     cmd.Parameters.AddWithValue("$cn", pi.CustomerName ?? "");
                     cmd.Parameters.AddWithValue("$ctr", pi.CustomerTRN ?? "");
@@ -1696,6 +1703,11 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
                     cmd.Parameters.AddWithValue("$compLoc", pi.CompanyLocation ?? "");
                     cmd.Parameters.AddWithValue("$compPhone", pi.CompanyPhone ?? "");
                     cmd.Parameters.AddWithValue("$nt", pi.Notes ?? "");
+                    cmd.Parameters.AddWithValue("$sm", pi.Salesman ?? "");
+                    cmd.Parameters.AddWithValue("$joRef", pi.JobOrderRef ?? "");
+                    cmd.Parameters.AddWithValue("$custRef", pi.CustomerReference ?? "");
+                    cmd.Parameters.AddWithValue("$projNo", pi.ProjectNo ?? "");
+                    cmd.Parameters.AddWithValue("$clr", pi.Color ?? "");
                     cmd.Parameters.AddWithValue("$ud", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
                     cmd.ExecuteNonQuery();
 
@@ -1707,8 +1719,8 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
                 else
                 {
                     using var cmd = conn.CreateCommand();
-                    cmd.CommandText = @"INSERT INTO ProformaInvoices (PINumber, ClientName, ClientTRN, ClientAddress, ProjectName, ProjectLocation, LPONumber, Attention, ContactNo, PIDate, ValidUntil, Status, TotalAmount, VATPercent, VATAmount, NetAmount, CompanyName, CompanyTRN, CompanyLocation, CompanyPhone, Notes, CreatedDate, UpdatedDate)
-                    VALUES ($pi, $cn, $ctr, $ca, $pn, $pl, $lp, $att, $con, $pd, $vu, $st, $ta, $vp, $va, $na, $compName, $compTRN, $compLoc, $compPhone, $nt, $cd, $ud)";
+                    cmd.CommandText = @"INSERT INTO ProformaInvoices (PINumber, ClientName, ClientTRN, ClientAddress, ProjectName, ProjectLocation, LPONumber, Attention, ContactNo, PIDate, ValidUntil, Status, TotalAmount, VATPercent, VATAmount, NetAmount, CompanyName, CompanyTRN, CompanyLocation, CompanyPhone, Notes, Salesman, JobOrderRef, CustomerReference, ProjectNo, Color, CreatedDate, UpdatedDate)
+                    VALUES ($pi, $cn, $ctr, $ca, $pn, $pl, $lp, $att, $con, $pd, $vu, $st, $ta, $vp, $va, $na, $compName, $compTRN, $compLoc, $compPhone, $nt, $sm, $joRef, $custRef, $projNo, $clr, $cd, $ud)";
                     cmd.Parameters.AddWithValue("$pi", pi.InvoiceNo);
                     cmd.Parameters.AddWithValue("$cn", pi.CustomerName ?? "");
                     cmd.Parameters.AddWithValue("$ctr", pi.CustomerTRN ?? "");
@@ -1730,6 +1742,11 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
                     cmd.Parameters.AddWithValue("$compLoc", pi.CompanyLocation ?? "");
                     cmd.Parameters.AddWithValue("$compPhone", pi.CompanyPhone ?? "");
                     cmd.Parameters.AddWithValue("$nt", pi.Notes ?? "");
+                    cmd.Parameters.AddWithValue("$sm", pi.Salesman ?? "");
+                    cmd.Parameters.AddWithValue("$joRef", pi.JobOrderRef ?? "");
+                    cmd.Parameters.AddWithValue("$custRef", pi.CustomerReference ?? "");
+                    cmd.Parameters.AddWithValue("$projNo", pi.ProjectNo ?? "");
+                    cmd.Parameters.AddWithValue("$clr", pi.Color ?? "");
                     cmd.Parameters.AddWithValue("$cd", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
                     cmd.Parameters.AddWithValue("$ud", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
                     cmd.ExecuteNonQuery();
@@ -1795,7 +1812,12 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
                         CompanyTRN = r.IsDBNull(18) ? "" : r.GetString(18),
                         CompanyLocation = r.IsDBNull(19) ? "" : r.GetString(19),
                         CompanyPhone = r.IsDBNull(20) ? "" : r.GetString(20),
-                        Notes = r.IsDBNull(21) ? "" : r.GetString(21)
+                        Notes = r.IsDBNull(21) ? "" : r.GetString(21),
+                        Salesman = r.FieldCount > 22 && !r.IsDBNull(22) ? r.GetString(22) : "",
+                        JobOrderRef = r.FieldCount > 23 && !r.IsDBNull(23) ? r.GetString(23) : "",
+                        CustomerReference = r.FieldCount > 24 && !r.IsDBNull(24) ? r.GetString(24) : "",
+                        ProjectNo = r.FieldCount > 25 && !r.IsDBNull(25) ? r.GetString(25) : "",
+                        Color = r.FieldCount > 26 && !r.IsDBNull(26) ? r.GetString(26) : ""
                     };
                     pi.Items = GetProformaInvoiceItems(pi.Id, conn);
                     list.Add(pi);
@@ -2998,6 +3020,20 @@ VALUES ($inv, $piId, $joId, $doId, $cn, $ctr, $ca, $idate, $dd, $st, $ps, $sub, 
         public string CompanyLocation { get; set; } = "";
         public string CompanyPhone { get; set; } = "";
         public string Notes { get; set; } = "";
+        public string Salesman { get; set; } = "";
+
+        // ✅ NEW: Missing properties
+        public string JobOrderRef { get; set; } = "";
+        public string CustomerReference { get; set; } = "";
+        public string ProjectNo { get; set; } = "";
+        public string Color { get; set; } = "";
+        public bool IsConvertedToJobOrder { get; set; } = false;
+
+        // ✅ NEW: Computed properties
+        public double GrandTotal => NetAmount;
+        public double TotalSQM => Items?.Sum(x => x.TotalSQM) ?? 0;
+        public int TotalQty => Items?.Sum(x => x.Qty) ?? 0;
+
         public List<ProformaInvoiceItemModel> Items { get; set; } = new();
     }
 

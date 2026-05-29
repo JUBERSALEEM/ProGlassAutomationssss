@@ -359,7 +359,7 @@
         <!-- ==================== CONTENT AREA ==================== -->
         <Border x:Name="MainContentBorder" Grid.Row="1" Background="#111827" Margin="16" 
                 CornerRadius="16" Effect="{StaticResource CardShadow}">
-            <ContentControl Content="{Binding CurrentView}"/>
+            <ContentControl x:Name="MainContent" Content="{Binding CurrentView}"/>
         </Border>
     </Grid>
 </Window>

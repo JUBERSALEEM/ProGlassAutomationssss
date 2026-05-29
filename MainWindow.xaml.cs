@@ -42,7 +42,7 @@ namespace ProGlassAutomation
             _closeTimer.Tick += CloseTimer_Tick;
 
             this.Deactivated += MainWindow_Deactivated;
-            this.Closing += MainWindow_Closing;  // ← ADDED THIS LINE
+            this.Closing += MainWindow_Closing;
 
             _viewModel.PropertyChanged += (s, e) =>
             {
@@ -204,7 +204,7 @@ namespace ProGlassAutomation
         private void MenuItem_JobOrders_Click(object sender, RoutedEventArgs e)
         {
             CloseCurrentDropdown();
-            _viewModel.ShowJobOrders();
+            ShowJobOrders();
         }
 
         // ==================== LICENSING DROPDOWN ====================
@@ -279,7 +279,7 @@ namespace ProGlassAutomation
         private void MenuItem_SheetStore_Click(object sender, RoutedEventArgs e)
         {
             CloseCurrentDropdown();
-            _viewModel.ShowSheetStore();
+            ShowSheetStore();
         }
 
         private void MenuItem_DailyWorks_Click(object sender, RoutedEventArgs e)
@@ -291,7 +291,7 @@ namespace ProGlassAutomation
         private void MenuItem_Deliveries_Click(object sender, RoutedEventArgs e)
         {
             CloseCurrentDropdown();
-            _viewModel.ShowDeliveries();
+            ShowDeliveries();
         }
 
         // ==================== REPORTS DROPDOWN ====================
@@ -305,13 +305,13 @@ namespace ProGlassAutomation
         private void MenuItem_DeliveryReport_Click(object sender, RoutedEventArgs e)
         {
             CloseCurrentDropdown();
-            _viewModel.ShowDeliveries();
+            ShowDeliveries();
         }
 
         private void MenuItem_InventoryReport_Click(object sender, RoutedEventArgs e)
         {
             CloseCurrentDropdown();
-            _viewModel.ShowSheetStore();
+            ShowSheetStore();
         }
 
         // ==================== SETTINGS DROPDOWN ====================
@@ -360,6 +360,78 @@ namespace ProGlassAutomation
             var aboutDialog = new Views.About.AboutDialog();
             aboutDialog.Owner = this;
             aboutDialog.ShowDialog();
+        }
+
+        // ==================== NAVIGATION TO REAL PAGES ====================
+
+        public void ShowProformaInvoice()
+        {
+            try
+            {
+                MainContent.Content = new Views.ProformaInvoice.ProformaInvoiceView();
+                System.Diagnostics.Debug.WriteLine("[MainWindow] Navigated to Proforma Invoice");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainWindow] ShowProformaInvoice Error: {ex.Message}");
+                MessageBox.Show($"Failed to load Proforma Invoice: {ex.Message}", "Navigation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        public void ShowJobOrders()
+        {
+            try
+            {
+                MainContent.Content = new Views.JobOrderListView();
+                System.Diagnostics.Debug.WriteLine("[MainWindow] Navigated to Job Orders");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainWindow] ShowJobOrders Error: {ex.Message}");
+                MessageBox.Show($"Failed to load Job Orders: {ex.Message}", "Navigation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        public void ShowDeliveries()
+        {
+            try
+            {
+                MainContent.Content = new Views.Delivery.DeliveryView();
+                System.Diagnostics.Debug.WriteLine("[MainWindow] Navigated to Deliveries");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainWindow] ShowDeliveries Error: {ex.Message}");
+                MessageBox.Show($"Failed to load Deliveries: {ex.Message}", "Navigation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        public void ShowSheetStore()
+        {
+            try
+            {
+                MainContent.Content = new Views.SheetStore.SheetStoreView();
+                System.Diagnostics.Debug.WriteLine("[MainWindow] Navigated to Sheet Store");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainWindow] ShowSheetStore Error: {ex.Message}");
+                MessageBox.Show($"Failed to load Sheet Store: {ex.Message}", "Navigation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        public void ShowDashboard()
+        {
+            try
+            {
+                MainContent.Content = new Views.Dashboard.DashboardView();
+                System.Diagnostics.Debug.WriteLine("[MainWindow] Navigated to Dashboard");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainWindow] ShowDashboard Error: {ex.Message}");
+                MessageBox.Show($"Failed to load Dashboard: {ex.Message}", "Navigation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         }
 
         // ==================== SCREENSHOT ====================
@@ -444,7 +516,7 @@ namespace ProGlassAutomation
             {
                 Tag = quality,
                 Margin = new Thickness(0, 0, 0, 6),
-                Padding = new Thickness(12, 10, 12, 10),
+                Padding = new Thickness(12, 10, 12, 1),
                 Cursor = Cursors.Hand,
                 HorizontalContentAlignment = HorizontalAlignment.Stretch,
                 Background = Brushes.White,
@@ -658,7 +730,7 @@ namespace ProGlassAutomation
                 {
                     Dispatcher.Invoke(() =>
                     {
-                        _viewModel.ShowProformaInvoice();
+                        ShowProformaInvoice();
                     });
                 };
                 System.Diagnostics.Debug.WriteLine("[MainWindow] Connected DailyWorksView navigation");
@@ -681,6 +753,7 @@ namespace ProGlassAutomation
         }
 
         // ==================== SAVE ON CLOSE ====================
+
         private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
         {
             try
