@@ -1,6 +1,4 @@
-﻿// Services/BalanceService.cs
-using ProGlassAutomation.Data.Database;
-using ProGlassAutomation.Views.Dashboard;
+﻿using ProGlassAutomation.Data.Database;
 using System;
 using System.Collections.Generic;
 using System.Windows.Threading;
@@ -310,6 +308,31 @@ namespace ProGlassAutomation.Services
 
             Stop();
             Log("BalanceService disposed");
+        }
+
+        #endregion
+
+        #region Inner Classes (No Separate Files)
+
+        public class TransactionInfo
+        {
+            public string Type { get; set; } = "";
+            public double Amount { get; set; }
+            public DateTime Timestamp { get; set; }
+            public string Description { get; set; } = "";
+        }
+
+        public class BalanceData
+        {
+            public double TodayRevenue { get; set; }
+            public double TodayExpenses { get; set; }
+            public double NetIncome { get; set; }
+            public double DailyBalance { get; set; }
+            public double MonthlyBalance { get; set; }
+            public double AnnualBalance { get; set; }
+            public int TransactionCount { get; set; }
+            public int PendingDeliveries { get; set; }
+            public int CompletedToday { get; set; }
         }
 
         #endregion
