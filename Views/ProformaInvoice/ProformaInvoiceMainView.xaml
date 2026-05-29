@@ -61,44 +61,6 @@
             </Setter>
         </Style>
 
-        <!-- DATAGRID STYLE -->
-        <Style TargetType="DataGrid">
-            <Setter Property="Background" Value="White"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="RowBackground" Value="White"/>
-            <Setter Property="AlternatingRowBackground" Value="#F8FAFC"/>
-            <Setter Property="GridLinesVisibility" Value="All"/>
-            <Setter Property="HorizontalGridLinesBrush" Value="#E2E8F0"/>
-            <Setter Property="VerticalGridLinesBrush" Value="#E2E8F0"/>
-            <Setter Property="HeadersVisibility" Value="Column"/>
-            <Setter Property="AutoGenerateColumns" Value="False"/>
-            <Setter Property="CanUserAddRows" Value="False"/>
-            <Setter Property="CanUserDeleteRows" Value="False"/>
-            <Setter Property="SelectionMode" Value="Single"/>
-            <Setter Property="SelectionUnit" Value="FullRow"/>
-            <Setter Property="FontSize" Value="12"/>
-        </Style>
-
-        <!-- DATAGRID COLUMN HEADER -->
-        <Style TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="#EFF6FF"/>
-            <Setter Property="Foreground" Value="#1D4ED8"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="FontSize" Value="11"/>
-            <Setter Property="Padding" Value="8,6"/>
-            <Setter Property="BorderBrush" Value="#DBEAFE"/>
-            <Setter Property="BorderThickness" Value="0,0,1,1"/>
-        </Style>
-
-        <!-- DATAGRID CELL -->
-        <Style TargetType="DataGridCell">
-            <Setter Property="Padding" Value="6,4"/>
-            <Setter Property="BorderBrush" Value="#F1F5F9"/>
-            <Setter Property="BorderThickness" Value="0,0,1,1"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-        </Style>
-
         <!-- ACTION BUTTONS -->
         <Style x:Key="ActionButtonStyle" TargetType="Button">
             <Setter Property="BorderThickness" Value="0"/>
@@ -423,246 +385,277 @@
             </Border>
         </Grid>
 
-        <!-- DATAGRID -->
-        <Border Grid.Row="3"
-                Background="White"
+        <!-- DATAGRID - MATCHING JOBORDERLISTVIEW STYLE -->
+        <Border Grid.Row="3" 
+                Background="White" 
                 CornerRadius="12"
                 BorderBrush="#E2E8F0"
-                BorderThickness="1">
+                BorderThickness="1"
+                Padding="0,0,0,0">
 
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
+            <DataGrid ItemsSource="{Binding FilteredProformaInvoices}"
+                      SelectedItem="{Binding SelectedInvoice}"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      SelectionMode="Single"
+                      GridLinesVisibility="Horizontal"
+                      HorizontalGridLinesBrush="#E2E8F0"
+                      BorderThickness="0"
+                      Background="Transparent"
+                      RowBackground="White"
+                      AlternatingRowBackground="#F8FAFC"
+                      HeadersVisibility="Column"
+                      CanUserAddRows="False"
+                      CanUserDeleteRows="False">
 
-                <!-- TABLE HEADER -->
-                <Grid Margin="16,10,16,6" Grid.Row="0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
+                <DataGrid.Resources>
+                    <!-- Column Header Style -->
+                    <Style TargetType="DataGridColumnHeader">
+                        <Setter Property="Background" Value="#F1F5F9"/>
+                        <Setter Property="Foreground" Value="#475569"/>
+                        <Setter Property="Padding" Value="12,10"/>
+                        <Setter Property="FontWeight" Value="SemiBold"/>
+                        <Setter Property="FontSize" Value="11"/>
+                        <Setter Property="BorderBrush" Value="#E2E8F0"/>
+                        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                    </Style>
 
-                    <TextBlock Text="Proforma Invoice Records"
-                               FontSize="13"
-                               FontWeight="SemiBold"
-                               VerticalAlignment="Center"/>
+                    <!-- Cell Style -->
+                    <Style TargetType="DataGridCell">
+                        <Setter Property="Padding" Value="12,8"/>
+                        <Setter Property="BorderThickness" Value="0"/>
+                        <Setter Property="Foreground" Value="#334155"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="DataGridCell">
+                                    <Border Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}">
+                                        <ContentPresenter VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                        <Style.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="#DBEAFE"/>
+                                <Setter Property="Foreground" Value="#1E40AF"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
 
-                    <StackPanel Grid.Column="1" Orientation="Horizontal">
-                        <Button Content="🔄 Refresh"
-                                Style="{StaticResource LightButtonStyle}"
-                                Command="{Binding RefreshCommand}"/>
-                    </StackPanel>
-                </Grid>
+                    <!-- Row Style -->
+                    <Style TargetType="DataGridRow">
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#F1F5F9"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="#DBEAFE"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </DataGrid.Resources>
 
-                <!-- TABLE -->
-                <DataGrid Grid.Row="1"
-                          Margin="8,0,8,8"
-                          ItemsSource="{Binding FilteredProformaInvoices}"
-                          SelectedItem="{Binding SelectedInvoice}"
-                          EnableRowVirtualization="True"
-                          VirtualizingPanel.IsVirtualizing="True"
-                          VirtualizingPanel.VirtualizationMode="Recycling">
+                <DataGrid.Columns>
 
-                    <DataGrid.Columns>
+                    <!-- PI No -->
+                    <DataGridTextColumn Header="PI NO" Binding="{Binding InvoiceNo}" Width="120">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                <Setter Property="Foreground" Value="#2563EB"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
 
-                        <!-- PI No -->
-                        <DataGridTextColumn Header="PI No"
-                                            Width="120"
-                                            Binding="{Binding InvoiceNo}">
-                            <DataGridTextColumn.ElementStyle>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="FontWeight" Value="SemiBold"/>
-                                    <Setter Property="Foreground" Value="#2563EB"/>
-                                    <Setter Property="Padding" Value="4,2"/>
-                                </Style>
-                            </DataGridTextColumn.ElementStyle>
-                        </DataGridTextColumn>
+                    <!-- Date -->
+                    <DataGridTextColumn Header="DATE" Binding="{Binding InvoiceDate, StringFormat='{}{0:dd-MMM-yy}'}" Width="95">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="#334155"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
 
-                        <!-- Date -->
-                        <DataGridTextColumn Header="Date"
-                                            Width="95"
-                                            Binding="{Binding InvoiceDate, StringFormat='{}{0:dd-MMM-yy}'}"/>
+                    <!-- Customer -->
+                    <DataGridTextColumn Header="CUSTOMER" Binding="{Binding CustomerName}" Width="*">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                <Setter Property="Foreground" Value="#1E293B"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
 
-                        <!-- Customer -->
-                        <DataGridTextColumn Header="Customer"
-                                            Width="*"
-                                            Binding="{Binding CustomerName}">
-                            <DataGridTextColumn.ElementStyle>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="FontWeight" Value="Medium"/>
-                                    <Setter Property="Padding" Value="4,2"/>
-                                </Style>
-                            </DataGridTextColumn.ElementStyle>
-                        </DataGridTextColumn>
+                    <!-- Project -->
+                    <DataGridTextColumn Header="PROJECT" Binding="{Binding ProjectName}" Width="*">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="#334155"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
 
-                        <!-- Project -->
-                        <DataGridTextColumn Header="Project"
-                                            Width="*"
-                                            Binding="{Binding ProjectName}"/>
+                    <!-- Salesman -->
+                    <DataGridTextColumn Header="SALESMAN" Binding="{Binding Salesman}" Width="90">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="#64748B"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
 
-                        <!-- Salesman -->
-                        <DataGridTextColumn Header="Salesman"
-                                            Width="90"
-                                            Binding="{Binding Salesman}"/>
+                    <!-- Total Amount -->
+                    <DataGridTextColumn Header="AMOUNT (AED)" Binding="{Binding GrandTotal, StringFormat='{}{0:N0}'}" Width="120">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                <Setter Property="Foreground" Value="#059669"/>
+                                <Setter Property="TextAlignment" Value="Right"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
 
-                        <!-- Total Amount -->
-                        <DataGridTextColumn Header="Amount"
-                                            Width="100"
-                                            Binding="{Binding GrandTotal, StringFormat='AED {0:N0}'}">
-                            <DataGridTextColumn.ElementStyle>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="FontWeight" Value="SemiBold"/>
-                                    <Setter Property="TextAlignment" Value="Right"/>
-                                    <Setter Property="Padding" Value="4,2"/>
-                                </Style>
-                            </DataGridTextColumn.ElementStyle>
-                        </DataGridTextColumn>
+                    <!-- STATUS with Dropdown -->
+                    <DataGridTemplateColumn Header="STATUS" Width="140">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Grid HorizontalAlignment="Center">
+                                    <Border x:Name="StatusBadge"
+                                            Background="{Binding Status, Converter={StaticResource StatusColorConverter}}"
+                                            CornerRadius="12"
+                                            Padding="10,4"
+                                            Cursor="Hand"
+                                            Margin="2,0"
+                                            PreviewMouseLeftButtonDown="StatusBadge_PreviewMouseDown">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding Status}"
+                                                       FontSize="10"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="White"
+                                                       VerticalAlignment="Center"/>
+                                            <Path Fill="White"
+                                                  Data="M 0 0 L 4 3 L 8 0 Z"
+                                                  Margin="6,0,0,0"
+                                                  VerticalAlignment="Center"
+                                                  Opacity="0.7"/>
+                                        </StackPanel>
+                                    </Border>
 
-                        <!-- STATUS with Dropdown -->
-                        <DataGridTemplateColumn Header="Status" Width="130">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Grid HorizontalAlignment="Center">
-                                        <Border x:Name="StatusBadge"
-                                                Background="{Binding Status, Converter={StaticResource StatusColorConverter}}"
-                                                CornerRadius="12"
-                                                Padding="10,4"
-                                                Cursor="Hand"
-                                                Margin="2,0"
-                                                PreviewMouseLeftButtonDown="StatusBadge_PreviewMouseDown">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="{Binding Status}"
-                                                           FontSize="10"
-                                                           FontWeight="SemiBold"
-                                                           Foreground="White"
-                                                           VerticalAlignment="Center"/>
-                                                <Path Fill="White"
-                                                      Data="M 0 0 L 4 3 L 8 0 Z"
-                                                      Margin="6,0,0,0"
-                                                      VerticalAlignment="Center"
-                                                      Opacity="0.7"/>
+                                    <!-- Status Dropdown Popup -->
+                                    <Popup x:Name="StatusPopup"
+                                           AllowsTransparency="True"
+                                           Placement="Bottom"
+                                           PlacementTarget="{Binding ElementName=StatusBadge}"
+                                           StaysOpen="False"
+                                           PopupAnimation="Fade"
+                                           Focusable="False">
+                                        <Border Background="White"
+                                                CornerRadius="8"
+                                                BorderBrush="#E2E8F0"
+                                                BorderThickness="1"
+                                                Margin="0,4,0,0">
+                                            <Border.Effect>
+                                                <DropShadowEffect BlurRadius="8"
+                                                                  ShadowDepth="2"
+                                                                  Opacity="0.12"
+                                                                  Direction="270"/>
+                                            </Border.Effect>
+                                            <StackPanel Margin="4" MinWidth="130">
+                                                <Button Content="Draft"
+                                                        Style="{StaticResource StatusMenuButtonStyle}"
+                                                        Click="StatusOption_Click"
+                                                        Tag="Draft"/>
+                                                <Button Content="Sent"
+                                                        Style="{StaticResource StatusMenuButtonStyle}"
+                                                        Click="StatusOption_Click"
+                                                        Tag="Sent"/>
+                                                <Button Content="Pending"
+                                                        Style="{StaticResource StatusMenuButtonStyle}"
+                                                        Click="StatusOption_Click"
+                                                        Tag="Pending"/>
+                                                <Button Content="Confirmed"
+                                                        Style="{StaticResource StatusMenuButtonStyle}"
+                                                        Click="StatusOption_Click"
+                                                        Tag="Confirmed"/>
+                                                <Button Content="Hold"
+                                                        Style="{StaticResource StatusMenuButtonStyle}"
+                                                        Click="StatusOption_Click"
+                                                        Tag="Hold"/>
+                                                <Button Content="Revised"
+                                                        Style="{StaticResource StatusMenuButtonStyle}"
+                                                        Click="StatusOption_Click"
+                                                        Tag="Revised"/>
+                                                <Separator Margin="4,2"/>
+                                                <Button Content="Converted To JO"
+                                                        Style="{StaticResource StatusMenuButtonStyle}"
+                                                        Click="StatusOption_Click"
+                                                        Tag="Converted To JO"/>
+                                                <Button Content="Cancelled"
+                                                        Style="{StaticResource StatusMenuButtonStyle}"
+                                                        Click="StatusOption_Click"
+                                                        Tag="Cancelled"/>
+                                                <Button Content="Voided"
+                                                        Style="{StaticResource StatusMenuButtonStyle}"
+                                                        Click="StatusOption_Click"
+                                                        Tag="Voided"/>
                                             </StackPanel>
                                         </Border>
+                                    </Popup>
+                                </Grid>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
 
-                                        <!-- Status Dropdown Popup -->
-                                        <Popup x:Name="StatusPopup"
-                                               AllowsTransparency="True"
-                                               Placement="Bottom"
-                                               PlacementTarget="{Binding ElementName=StatusBadge}"
-                                               StaysOpen="False"
-                                               PopupAnimation="Fade"
-                                               Focusable="False">
-                                            <Border Background="White"
-                                                    CornerRadius="8"
-                                                    BorderBrush="#E2E8F0"
-                                                    BorderThickness="1"
-                                                    Margin="0,4,0,0">
-                                                <Border.Effect>
-                                                    <DropShadowEffect BlurRadius="8"
-                                                                      ShadowDepth="2"
-                                                                      Opacity="0.12"
-                                                                      Direction="270"/>
-                                                </Border.Effect>
-                                                <StackPanel Margin="4" MinWidth="130">
-                                                    <Button Content="Draft"
-                                                            Style="{StaticResource StatusMenuButtonStyle}"
-                                                            Click="StatusOption_Click"
-                                                            Tag="Draft"/>
-                                                    <Button Content="Sent"
-                                                            Style="{StaticResource StatusMenuButtonStyle}"
-                                                            Click="StatusOption_Click"
-                                                            Tag="Sent"/>
-                                                    <Button Content="Pending"
-                                                            Style="{StaticResource StatusMenuButtonStyle}"
-                                                            Click="StatusOption_Click"
-                                                            Tag="Pending"/>
-                                                    <Button Content="Confirmed"
-                                                            Style="{StaticResource StatusMenuButtonStyle}"
-                                                            Click="StatusOption_Click"
-                                                            Tag="Confirmed"/>
-                                                    <Button Content="Hold"
-                                                            Style="{StaticResource StatusMenuButtonStyle}"
-                                                            Click="StatusOption_Click"
-                                                            Tag="Hold"/>
-                                                    <Button Content="Revised"
-                                                            Style="{StaticResource StatusMenuButtonStyle}"
-                                                            Click="StatusOption_Click"
-                                                            Tag="Revised"/>
-                                                    <Separator Margin="4,2"/>
-                                                    <Button Content="Converted To JO"
-                                                            Style="{StaticResource StatusMenuButtonStyle}"
-                                                            Click="StatusOption_Click"
-                                                            Tag="Converted To JO"/>
-                                                    <Button Content="Cancelled"
-                                                            Style="{StaticResource StatusMenuButtonStyle}"
-                                                            Click="StatusOption_Click"
-                                                            Tag="Cancelled"/>
-                                                    <Button Content="Voided"
-                                                            Style="{StaticResource StatusMenuButtonStyle}"
-                                                            Click="StatusOption_Click"
-                                                            Tag="Voided"/>
-                                                </StackPanel>
-                                            </Border>
-                                        </Popup>
-                                    </Grid>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
+                    <!-- JO Ref -->
+                    <DataGridTextColumn Header="JO REF" Binding="{Binding JobOrderRef}" Width="100">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="#64748B"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
 
-                        <!-- JO Ref -->
-                        <DataGridTextColumn Header="JO Ref"
-                                            Width="100"
-                                            Binding="{Binding JobOrderRef}">
-                            <DataGridTextColumn.ElementStyle>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Foreground" Value="#64748B"/>
-                                    <Setter Property="Padding" Value="4,2"/>
-                                </Style>
-                            </DataGridTextColumn.ElementStyle>
-                        </DataGridTextColumn>
+                    <!-- ACTIONS -->
+                    <DataGridTemplateColumn Header="ACTIONS" Width="230">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <Button Content="View"
+                                            Style="{StaticResource ActionButtonStyle}"
+                                            Background="#DBEAFE"
+                                            Foreground="#1D4ED8"
+                                            Command="{Binding DataContext.ViewPICommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"
+                                            ToolTip="View PI"/>
+                                    <Button Content="Edit"
+                                            Style="{StaticResource ActionButtonStyle}"
+                                            Background="#FEF3C7"
+                                            Foreground="#92400E"
+                                            Command="{Binding DataContext.EditPICommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"
+                                            ToolTip="Edit PI"/>
+                                    <Button Content="Delete"
+                                            Style="{StaticResource ActionButtonStyle}"
+                                            Background="#FEE2E2"
+                                            Foreground="#DC2626"
+                                            Command="{Binding DataContext.DeletePICommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"
+                                            ToolTip="Delete PI"/>
+                                    <Button Content="Convert"
+                                            Style="{StaticResource ActionButtonStyle}"
+                                            Background="#DCFCE7"
+                                            Foreground="#166534"
+                                            Command="{Binding DataContext.ConvertToJOCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"
+                                            ToolTip="Convert to JO"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
 
-                        <!-- ACTIONS -->
-                        <DataGridTemplateColumn Header="Actions" Width="220">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                        <Button Content="View"
-                        Style="{StaticResource ActionButtonStyle}"
-                        Background="#DBEAFE"
-                        Foreground="#1D4ED8"
-                        Command="{Binding DataContext.ViewPICommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                        CommandParameter="{Binding}"
-                        ToolTip="View PI"/>
-                                        <Button Content="Edit"
-                        Style="{StaticResource ActionButtonStyle}"
-                        Background="#FEF3C7"
-                        Foreground="#92400E"
-                        Command="{Binding DataContext.EditPICommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                        CommandParameter="{Binding}"
-                        ToolTip="Edit PI"/>
-                                        <Button Content="Delete"
-                        Style="{StaticResource ActionButtonStyle}"
-                        Background="#FEE2E2"
-                        Foreground="#DC2626"
-                        Command="{Binding DataContext.DeletePICommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                        CommandParameter="{Binding}"
-                        ToolTip="Delete PI"/>
-                                        <Button Content="Convert"
-                        Style="{StaticResource ActionButtonStyle}"
-                        Background="#DCFCE7"
-                        Foreground="#166534"
-                        Command="{Binding DataContext.ConvertToJOCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                        CommandParameter="{Binding}"
-                        ToolTip="Convert to JO"/>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-
-                    </DataGrid.Columns>
-                </DataGrid>
-            </Grid>
+                </DataGrid.Columns>
+            </DataGrid>
         </Border>
     </Grid>
 </UserControl>
