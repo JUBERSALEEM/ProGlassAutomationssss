@@ -2208,47 +2208,47 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
         {
             Execute(conn =>
             {
-            using var checkCmd = conn.CreateCommand();
-            checkCmd.CommandText = "SELECT Id FROM TaxInvoices WHERE InvoiceNumber = $inv";
-            checkCmd.Parameters.AddWithValue("$inv", ti.InvoiceNumber);
-            var existingId = checkCmd.ExecuteScalar();
+                using var checkCmd = conn.CreateCommand();
+                checkCmd.CommandText = "SELECT Id FROM TaxInvoices WHERE InvoiceNumber = $inv";
+                checkCmd.Parameters.AddWithValue("$inv", ti.InvoiceNumber);
+                var existingId = checkCmd.ExecuteScalar();
 
-            if (existingId != null)
-            {
-                ti.Id = Convert.ToInt32(existingId);
-                using var cmd = conn.CreateCommand();
-                cmd.CommandText = @"UPDATE TaxInvoices SET ProformaInvoiceId = $piId, JobOrderId = $joId, DeliveryOrderId = $doId, ClientName = $cn, ClientTRN = $ctr, ClientAddress = $ca, InvoiceDate = $idate, DueDate = $dd, Status = $st, PaymentStatus = $ps, SubTotal = $sub, VATPercent = $vp, VATAmount = $va, TotalAmount = $ta, PaidAmount = $pa, BalanceAmount = $ba, Notes = $nt, UpdatedDate = $ud WHERE Id = $id";
-                cmd.Parameters.AddWithValue("$id", ti.Id);
-                cmd.Parameters.AddWithValue("$piId", ti.ProformaInvoiceId > 0 ? ti.ProformaInvoiceId : DBNull.Value);
-                cmd.Parameters.AddWithValue("$joId", ti.JobOrderId > 0 ? ti.JobOrderId : DBNull.Value);
-                cmd.Parameters.AddWithValue("$doId", ti.DeliveryOrderId > 0 ? ti.DeliveryOrderId : DBNull.Value);
-                cmd.Parameters.AddWithValue("$cn", ti.ClientName ?? "");
-                cmd.Parameters.AddWithValue("$ctr", ti.ClientTRN ?? "");
-                cmd.Parameters.AddWithValue("$ca", ti.ClientAddress ?? "");
-                cmd.Parameters.AddWithValue("$idate", ti.InvoiceDate.ToString("yyyy-MM-dd HH:mm:ss"));
-                cmd.Parameters.AddWithValue("$dd", ti.DueDate.ToString("yyyy-MM-dd HH:mm:ss"));
-                cmd.Parameters.AddWithValue("$st", ti.Status ?? "Pending");
-                cmd.Parameters.AddWithValue("$ps", ti.PaymentStatus ?? "Unpaid");
-                cmd.Parameters.AddWithValue("$sub", ti.SubTotal);
-                cmd.Parameters.AddWithValue("$vp", ti.VATPercent);
-                cmd.Parameters.AddWithValue("$va", ti.VATAmount);
-                cmd.Parameters.AddWithValue("$ta", ti.TotalAmount);
-                cmd.Parameters.AddWithValue("$pa", ti.PaidAmount);
-                cmd.Parameters.AddWithValue("$ba", ti.BalanceAmount);
-                cmd.Parameters.AddWithValue("$nt", ti.Notes ?? "");
-                cmd.Parameters.AddWithValue("$ud", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
-                cmd.ExecuteNonQuery();
+                if (existingId != null)
+                {
+                    ti.Id = Convert.ToInt32(existingId);
+                    using var cmd = conn.CreateCommand();
+                    cmd.CommandText = @"UPDATE TaxInvoices SET ProformaInvoiceId = $piId, JobOrderId = $joId, DeliveryOrderId = $doId, ClientName = $cn, ClientTRN = $ctr, ClientAddress = $ca, InvoiceDate = $idate, DueDate = $dd, Status = $st, PaymentStatus = $ps, SubTotal = $sub, VATPercent = $vp, VATAmount = $va, TotalAmount = $ta, PaidAmount = $pa, BalanceAmount = $ba, Notes = $nt, UpdatedDate = $ud WHERE Id = $id";
+                    cmd.Parameters.AddWithValue("$id", ti.Id);
+                    cmd.Parameters.AddWithValue("$piId", ti.ProformaInvoiceId > 0 ? ti.ProformaInvoiceId : DBNull.Value);
+                    cmd.Parameters.AddWithValue("$joId", ti.JobOrderId > 0 ? ti.JobOrderId : DBNull.Value);
+                    cmd.Parameters.AddWithValue("$doId", ti.DeliveryOrderId > 0 ? ti.DeliveryOrderId : DBNull.Value);
+                    cmd.Parameters.AddWithValue("$cn", ti.ClientName ?? "");
+                    cmd.Parameters.AddWithValue("$ctr", ti.ClientTRN ?? "");
+                    cmd.Parameters.AddWithValue("$ca", ti.ClientAddress ?? "");
+                    cmd.Parameters.AddWithValue("$idate", ti.InvoiceDate.ToString("yyyy-MM-dd HH:mm:ss"));
+                    cmd.Parameters.AddWithValue("$dd", ti.DueDate.ToString("yyyy-MM-dd HH:mm:ss"));
+                    cmd.Parameters.AddWithValue("$st", ti.Status ?? "Pending");
+                    cmd.Parameters.AddWithValue("$ps", ti.PaymentStatus ?? "Unpaid");
+                    cmd.Parameters.AddWithValue("$sub", ti.SubTotal);
+                    cmd.Parameters.AddWithValue("$vp", ti.VATPercent);
+                    cmd.Parameters.AddWithValue("$va", ti.VATAmount);
+                    cmd.Parameters.AddWithValue("$ta", ti.TotalAmount);
+                    cmd.Parameters.AddWithValue("$pa", ti.PaidAmount);
+                    cmd.Parameters.AddWithValue("$ba", ti.BalanceAmount);
+                    cmd.Parameters.AddWithValue("$nt", ti.Notes ?? "");
+                    cmd.Parameters.AddWithValue("$ud", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
+                    cmd.ExecuteNonQuery();
 
-                using var delCmd = conn.CreateCommand();
-                delCmd.CommandText = "DELETE FROM TaxInvoiceItems WHERE TaxInvoiceId = $id";
-                delCmd.Parameters.AddWithValue("$id", ti.Id);
-                delCmd.ExecuteNonQuery();
-            }
-            else
-            {
-                using var cmd = conn.CreateCommand();
-                cmd.CommandText = @"INSERT INTO TaxInvoices (InvoiceNumber, ProformaInvoiceId, JobOrderId, DeliveryOrderId, ClientName, ClientTRN, ClientAddress, InvoiceDate, DueDate, Status, PaymentStatus, SubTotal, VATPercent, VATAmount, TotalAmount, PaidAmount, BalanceAmount, Notes, CreatedDate, UpdatedDate)
-                    VALUES ($inv, $piId, $joId, $doId, $cn, $ctr, $ca, $idate, $dd, $st, $ps, $sub, $vp, $va, $ta, $pa, $ba, $nt, $cd, $ud)";
+                    using var delCmd = conn.CreateCommand();
+                    delCmd.CommandText = "DELETE FROM TaxInvoiceItems WHERE TaxInvoiceId = $id";
+                    delCmd.Parameters.AddWithValue("$id", ti.Id);
+                    delCmd.ExecuteNonQuery();
+                }
+                else
+                {
+                    using var cmd = conn.CreateCommand();
+                    cmd.CommandText = @"INSERT INTO TaxInvoices (InvoiceNumber, ProformaInvoiceId, JobOrderId, DeliveryOrderId, ClientName, ClientTRN, ClientAddress, InvoiceDate, DueDate, Status, PaymentStatus, SubTotal, VATPercent, VATAmount, TotalAmount, PaidAmount, BalanceAmount, Notes, CreatedDate, UpdatedDate)
+VALUES ($inv, $piId, $joId, $doId, $cn, $ctr, $ca, $idate, $dd, $st, $ps, $sub, $vp, $va, $ta, $pa, $ba, $nt, $cd, $ud)";
                     cmd.Parameters.AddWithValue("$inv", ti.InvoiceNumber);
                     cmd.Parameters.AddWithValue("$piId", ti.ProformaInvoiceId > 0 ? ti.ProformaInvoiceId : DBNull.Value);
                     cmd.Parameters.AddWithValue("$joId", ti.JobOrderId > 0 ? ti.JobOrderId : DBNull.Value);
@@ -2280,7 +2280,7 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
                 {
                     using var itemCmd = conn.CreateCommand();
                     itemCmd.CommandText = @"INSERT INTO TaxInvoiceItems (TaxInvoiceId, SrNo, Description, Qty, UnitPrice, TotalPrice)
-                    VALUES ($tiId, $sr, $desc, $q, $up, $tp)";
+            VALUES ($tiId, $sr, $desc, $q, $up, $tp)";
                     itemCmd.Parameters.AddWithValue("$tiId", ti.Id);
                     itemCmd.Parameters.AddWithValue("$sr", item.SrNo);
                     itemCmd.Parameters.AddWithValue("$desc", item.Description ?? "");
