@@ -167,6 +167,8 @@ namespace ProGlassAutomation.ViewModels
             set => SetProperty(ref _companyIndex, value);
         }
 
+
+
         // Filter Properties
         public string FilterCustomerReference
         {
@@ -176,6 +178,14 @@ namespace ProGlassAutomation.ViewModels
                 if (SetProperty(ref _filterCustomerReference, value))
                     ApplyFilters();
             }
+        }
+
+        // Status message for user feedback
+        private string _statusMessage = "Ready";
+        public string StatusMessage
+        {
+            get => _statusMessage;
+            set => SetProperty(ref _statusMessage, value);
         }
 
         // Duplicate warning
@@ -246,8 +256,8 @@ namespace ProGlassAutomation.ViewModels
             PrintCommand = new RelayCommand(ExecutePrint);
             LoadToInvoiceCommand = new RelayCommand(ExecuteLoadToInvoice);
 
-            // Subscribe to ProformaInvoice save event
-            SharedViewModels.ProformaInvoiceVM.InvoiceSaved += OnProformaInvoiceSaved;
+            // NOTE: Event subscription is handled by MainViewModel via DailyWorksViewModel property
+            // This ensures proper timing - MainViewModel wires up InvoiceSaved after DailyWorksViewModel is created
 
             LoadFromDatabase();
             LoadOptionsFromDatabase();
@@ -650,10 +660,6 @@ namespace ProGlassAutomation.ViewModels
             }
 
             System.Diagnostics.Debug.WriteLine($"[DailyWork] Updating from ProformaInvoice: {invoice.InvoiceNo}");
-            System.Diagnostics.Debug.WriteLine($"[DailyWork]   ProjectNo: {invoice.ProjectNo}");
-            System.Diagnostics.Debug.WriteLine($"[DailyWork]   CustomerName: {invoice.CustomerName}");
-            System.Diagnostics.Debug.WriteLine($"[DailyWork]   Salesman: {invoice.Salesman}");
-            System.Diagnostics.Debug.WriteLine($"[DailyWork]   Color: {invoice.Color}");
 
             // Calculate totals from specifications
             double totalSQM = 0;
@@ -666,8 +672,6 @@ namespace ProGlassAutomation.ViewModels
                     totalQty += spec.SpecTotalQty;
                 }
             }
-
-            System.Diagnostics.Debug.WriteLine($"[DailyWork]   Calculated SQM: {totalSQM}, Qty: {totalQty}");
 
             // Collect colors from all specifications
             var colorsFromSpecs = new List<string>();
@@ -683,11 +687,9 @@ namespace ProGlassAutomation.ViewModels
                 }
             }
 
-            // Determine final color
             string finalColor;
             if (colorsFromSpecs.Count > 0)
             {
-                // Join all spec colors with " | " separator
                 finalColor = string.Join(" | ", colorsFromSpecs);
             }
             else if (!string.IsNullOrEmpty(invoice.Color))
@@ -699,15 +701,14 @@ namespace ProGlassAutomation.ViewModels
                 finalColor = "";
             }
 
-            System.Diagnostics.Debug.WriteLine($"[DailyWork]   Colors from specs: {finalColor}");
-
-            // Find matching DailyWork by PINumber = ProjectNo
+            // Find matching DailyWork by PINumber = ProjectNo OR InvoiceNo
             var matchingWork = DailyWorks?.FirstOrDefault(w =>
-                !string.IsNullOrEmpty(w.PINumber) &&
-                !string.IsNullOrEmpty(invoice.ProjectNo) &&
-                w.PINumber.Equals(invoice.ProjectNo, StringComparison.OrdinalIgnoreCase));
+                (!string.IsNullOrEmpty(w.PINumber) && !string.IsNullOrEmpty(invoice.ProjectNo) &&
+                 w.PINumber.Equals(invoice.ProjectNo, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrEmpty(w.PINumber) && !string.IsNullOrEmpty(invoice.InvoiceNo) &&
+                 w.PINumber.Equals(invoice.InvoiceNo, StringComparison.OrdinalIgnoreCase)));
 
-            // If not found by ProjectNo, try by Customer Reference
+            // If not found by ProjectNo/InvoiceNo, try by Customer Reference
             if (matchingWork == null && !string.IsNullOrEmpty(invoice.CustomerName))
             {
                 matchingWork = DailyWorks?.FirstOrDefault(w =>
@@ -720,61 +721,142 @@ namespace ProGlassAutomation.ViewModels
             if (matchingWork != null)
             {
                 System.Diagnostics.Debug.WriteLine($"[DailyWork] ✅ Found existing record ID: {matchingWork.Id}");
+
+                // Show confirmation dialog with options
+                var result = MessageBox.Show(
+                    $"A Daily Work entry already exists for this invoice.\n\n" +
+                    $"┌─────────────────────────────────────────────────────┐\n" +
+                    $"│ EXISTING ENTRY                                     │\n" +
+                    $"├─────────────────────────────────────────────────────┤\n" +
+                    $"│ ID:              {matchingWork.Id,-30}│\n" +
+                    $"│ PI Number:       {matchingWork.PINumber,-30}│\n" +
+                    $"│ Customer Ref:    {matchingWork.CustomerReference,-30}│\n" +
+                    $"│ Status:          {matchingWork.Status,-30}│\n" +
+                    $"│ Type of Work:    {matchingWork.TypeOfWork,-30}│\n" +
+                    $"│ Production:      {matchingWork.ProductionStatus,-30}│\n" +
+                    $"│ Qty:             {matchingWork.Qty,-30}│\n" +
+                    $"│ SQM:             {matchingWork.SQM:F2}{-28}│\n" +
+                    $"└─────────────────────────────────────────────────────┘\n\n" +
+                    $"What would you like to do?\n\n" +
+                    $"[YES]     → Create NEW entry (keep existing)\n" +
+                    $"[NO]      → UPDATE existing entry with invoice data\n" +
+                    $"[CANCEL]  → Skip (don't save to Daily Work)",
+                    "Daily Work Entry Exists",
+                    MessageBoxButton.YesNoCancel,
+                    MessageBoxImage.Question);
+
+                if (result == MessageBoxResult.Cancel)
+                {
+                    System.Diagnostics.Debug.WriteLine("[DailyWork] ⏭️ User cancelled - skipping Daily Work save");
+                    StatusMessage = "⏭️ Daily Work save cancelled by user";
+                    return;
+                }
+                else if (result == MessageBoxResult.Yes)
+                {
+                    // User wants to create NEW entry - keep existing and create new one
+                    System.Diagnostics.Debug.WriteLine("[DailyWork] ➕ User chose to create NEW entry");
+                    isNewRecord = true;
+                    matchingWork = new DbDailyWork
+                    {
+                        Id = DailyWorks.Count > 0 ? DailyWorks.Max(w => w.Id) + 1 : 1,
+                        Date = DateTime.Today,
+                        CreatedDate = DateTime.Now,
+                        Status = "Pending"  // Default status for new entry
+                    };
+                }
+                else // MessageBoxResult.No
+                {
+                    // User wants to UPDATE existing entry
+                    System.Diagnostics.Debug.WriteLine("[DailyWork] 🔄 User chose to UPDATE existing entry");
+                    isNewRecord = false;
+                }
             }
             else
             {
-                System.Diagnostics.Debug.WriteLine($"[DailyWork] ➕ Creating new DailyWork record");
-
-                // Create new DailyWork
+                System.Diagnostics.Debug.WriteLine("[DailyWork] No existing record found, creating new...");
+                isNewRecord = true;
                 matchingWork = new DbDailyWork
                 {
                     Id = DailyWorks.Count > 0 ? DailyWorks.Max(w => w.Id) + 1 : 1,
                     Date = DateTime.Today,
-                    CreatedDate = DateTime.Now
+                    CreatedDate = DateTime.Now,
+                    Status = "Pending"
                 };
-                isNewRecord = true;
             }
 
             // Update all fields from ProformaInvoice
-            // PINumber = InvoiceNo (the final PI number)
             matchingWork.PINumber = invoice.InvoiceNo ?? matchingWork.PINumber ?? "";
             matchingWork.Company = invoice.CustomerName ?? matchingWork.Company ?? "";
-            matchingWork.CustomerReference = invoice.CustomerName ?? matchingWork.CustomerReference ?? "";
+            matchingWork.CustomerReference = invoice.ProjectName ?? matchingWork.CustomerReference ?? "";
             matchingWork.Salesman = invoice.Salesman ?? matchingWork.Salesman ?? "";
             matchingWork.Color = finalColor;
-            matchingWork.Notes = invoice.Notes ?? matchingWork.Notes ?? "";
             matchingWork.UpdateDate = DateTime.Today;
             matchingWork.SQM = totalSQM;
             matchingWork.Qty = totalQty;
 
+            // Build comprehensive notes from invoice
+            var notesList = new List<string>();
+            if (!string.IsNullOrEmpty(invoice.ProjectLocation))
+                notesList.Add($"Location: {invoice.ProjectLocation}");
+            if (!string.IsNullOrEmpty(invoice.LPONo))
+                notesList.Add($"LPO: {invoice.LPONo}");
+            if (!string.IsNullOrEmpty(invoice.AttentionName))
+                notesList.Add($"Attention: {invoice.AttentionName}");
+            if (!string.IsNullOrEmpty(invoice.ContactNo))
+                notesList.Add($"Contact: {invoice.ContactNo}");
+            if (!string.IsNullOrEmpty(invoice.CompanyName))
+                notesList.Add($"Company: {invoice.CompanyName}");
+            if (!string.IsNullOrEmpty(invoice.CompanyTRN))
+                notesList.Add($"TRN: {invoice.CompanyTRN}");
+            if (!string.IsNullOrEmpty(invoice.Notes))
+                notesList.Add(invoice.Notes);
+            matchingWork.Notes = string.Join(" | ", notesList);
+
+            // Set TypeOfWork from first specification's ModuleType
+            if (invoice.Specifications != null && invoice.Specifications.Count > 0)
+            {
+                var firstSpec = invoice.Specifications[0];
+                matchingWork.TypeOfWork = firstSpec.ModuleType ?? "SGU";
+            }
+            else
+            {
+                matchingWork.TypeOfWork = matchingWork.TypeOfWork ?? "SGU";
+            }
+
+            // Set default statuses if new record
+            if (isNewRecord)
+            {
+                matchingWork.ProductionStatus = matchingWork.ProductionStatus ?? "Pending";
+                matchingWork.DailyReportStatus = matchingWork.DailyReportStatus ?? "Pending";
+                matchingWork.Status = matchingWork.Status ?? "Pending";
+            }
+
             // Add to options if new values
-            if (!string.IsNullOrEmpty(matchingWork.PINumber) && !PINumberOptions.Contains(matchingWork.PINumber))
-                PINumberOptions.Add(matchingWork.PINumber);
-            if (!string.IsNullOrEmpty(matchingWork.Company) && !CompanyOptions.Contains(matchingWork.Company))
-                CompanyOptions.Add(matchingWork.Company);
-            if (!string.IsNullOrEmpty(matchingWork.Salesman) && !SalesmanOptions.Contains(matchingWork.Salesman))
-                SalesmanOptions.Add(matchingWork.Salesman);
-            if (!string.IsNullOrEmpty(matchingWork.Color) && !ColorOptions.Contains(matchingWork.Color))
-                ColorOptions.Add(matchingWork.Color);
-            if (!string.IsNullOrEmpty(matchingWork.CustomerReference) && !CustomerReferenceOptions.Contains(matchingWork.CustomerReference))
-                CustomerReferenceOptions.Add(matchingWork.CustomerReference);
+            AddToOptionsIfNew(PINumberOptions, matchingWork.PINumber);
+            AddToOptionsIfNew(CompanyOptions, matchingWork.Company);
+            AddToOptionsIfNew(SalesmanOptions, matchingWork.Salesman);
+            AddToOptionsIfNew(ColorOptions, matchingWork.Color);
+            AddToOptionsIfNew(CustomerReferenceOptions, matchingWork.CustomerReference);
 
             // Save to database
             if (isNewRecord)
             {
                 DbHelper.SaveDailyWork(matchingWork);
                 DailyWorks.Add(matchingWork);
-                System.Diagnostics.Debug.WriteLine($"[DailyWork] ✅ Created new DailyWork ID: {matchingWork.Id}");
+                System.Diagnostics.Debug.WriteLine($"[DailyWork] ✅ Created NEW DailyWork ID: {matchingWork.Id}");
+                StatusMessage = $"✅ Created NEW Daily Work: {matchingWork.PINumber}";
             }
             else
             {
                 DbHelper.UpdateDailyWork(matchingWork);
                 System.Diagnostics.Debug.WriteLine($"[DailyWork] ✅ Updated DailyWork ID: {matchingWork.Id}");
+                StatusMessage = $"🔄 Updated Daily Work: {matchingWork.PINumber}";
             }
 
             // Refresh the DataGrid
             RefreshDataView();
             UpdateStatistics();
+            OnPropertyChanged(nameof(FilteredDataView));
             System.Diagnostics.Debug.WriteLine("[DailyWork] ✅ Refresh complete");
         }
         public ICommand LoadToInvoiceCommand { get; }

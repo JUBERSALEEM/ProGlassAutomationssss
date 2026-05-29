@@ -149,17 +149,17 @@ namespace ProGlassAutomation.Models
             LM = LM1 + LM2;
             TotalLM = Math.Round(LM * q, 4);
 
-            // Price calculations
+            // Price calculations (Price is PER SQM)
             double p = Price > 0 ? Price : 0;
             double sp = SurchargePercent > 0 ? SurchargePercent : 0;
 
             double surcharge = Math.Round((p * sp) / 100, 4);
             SurchargeAmount = surcharge;
 
-            double dp = p + surcharge;
+            double dp = p + surcharge;      // Price per SQM with surcharge
             DisplayPrice = dp;
 
-            double tp = dp * q;
+            double tp = dp * TotalSQM * q;  // (Price + surcharge) * SQM * Qty
             TotalPrice = tp;
             FinalPrice = tp;
         }

@@ -110,6 +110,32 @@ namespace ProGlassAutomation.ViewModels
                 OnPropertyChanged(nameof(SpecTotalLM1));
                 OnPropertyChanged(nameof(SpecTotalLM2));
             }
+
+            // Notify all total properties when any total-related property changes
+            if (e.PropertyName == nameof(ProformaInvoiceModel.GrandTotal) ||
+                e.PropertyName == nameof(ProformaInvoiceModel.VatAmount) ||
+                e.PropertyName == nameof(ProformaInvoiceModel.NetTotal) ||
+                e.PropertyName == nameof(ProformaInvoiceModel.OtherChargesTotal) ||
+                e.PropertyName == nameof(ProformaInvoiceModel.TotalSQM) ||
+                e.PropertyName == nameof(ProformaInvoiceModel.TotalQty) ||
+                e.PropertyName == nameof(ProformaInvoiceModel.TotalSQM1) ||
+                e.PropertyName == nameof(ProformaInvoiceModel.TotalSQM2) ||
+                e.PropertyName == nameof(ProformaInvoiceModel.TotalLM) ||
+                e.PropertyName == nameof(ProformaInvoiceModel.TotalLM1) ||
+                e.PropertyName == nameof(ProformaInvoiceModel.TotalLM2))
+            {
+                OnPropertyChanged(nameof(InvoiceGrandTotal));
+                OnPropertyChanged(nameof(InvoiceVatAmount));
+                OnPropertyChanged(nameof(InvoiceNetTotal));
+                OnPropertyChanged(nameof(InvoiceOtherChargesTotal));
+                OnPropertyChanged(nameof(InvoiceTotalSQM));
+                OnPropertyChanged(nameof(InvoiceTotalQty));
+                OnPropertyChanged(nameof(InvoiceTotalSQM1));
+                OnPropertyChanged(nameof(InvoiceTotalSQM2));
+                OnPropertyChanged(nameof(InvoiceTotalLM));
+                OnPropertyChanged(nameof(InvoiceTotalLM1));
+                OnPropertyChanged(nameof(InvoiceTotalLM2));
+            }
         }
 
         private string GetNextSequentialInvoiceNo() { _currentPINumber++; return $"PI-{DateTime.Now.Year}-{_currentPINumber:D2}"; }
@@ -1132,8 +1158,21 @@ namespace ProGlassAutomation.ViewModels
                     if (SelectedTargetSpecification != null)
                     {
                         SelectedTargetSpecification.CalculateOtherChargesTotal();
-                        Invoice?.CalculateTotals();
+                        Invoice.CalculateTotals();
                         Invoice.IsDirty = true;
+
+                        // Notify all total properties
+                        OnPropertyChanged(nameof(InvoiceGrandTotal));
+                        OnPropertyChanged(nameof(InvoiceVatAmount));
+                        OnPropertyChanged(nameof(InvoiceNetTotal));
+                        OnPropertyChanged(nameof(InvoiceOtherChargesTotal));
+                        OnPropertyChanged(nameof(InvoiceTotalSQM));
+                        OnPropertyChanged(nameof(InvoiceTotalQty));
+                        OnPropertyChanged(nameof(InvoiceTotalSQM1));
+                        OnPropertyChanged(nameof(InvoiceTotalSQM2));
+                        OnPropertyChanged(nameof(InvoiceTotalLM));
+                        OnPropertyChanged(nameof(InvoiceTotalLM1));
+                        OnPropertyChanged(nameof(InvoiceTotalLM2));
                     }
                 }
             }
@@ -1394,6 +1433,19 @@ namespace ProGlassAutomation.ViewModels
             SelectedTargetSpecification.CalculateOtherChargesTotal();
             Invoice.CalculateTotals();
             Invoice.IsDirty = true;
+
+            // Notify all total properties
+            OnPropertyChanged(nameof(InvoiceGrandTotal));
+            OnPropertyChanged(nameof(InvoiceVatAmount));
+            OnPropertyChanged(nameof(InvoiceNetTotal));
+            OnPropertyChanged(nameof(InvoiceOtherChargesTotal));
+            OnPropertyChanged(nameof(InvoiceTotalSQM));
+            OnPropertyChanged(nameof(InvoiceTotalQty));
+            OnPropertyChanged(nameof(InvoiceTotalSQM1));
+            OnPropertyChanged(nameof(InvoiceTotalSQM2));
+            OnPropertyChanged(nameof(InvoiceTotalLM));
+            OnPropertyChanged(nameof(InvoiceTotalLM1));
+            OnPropertyChanged(nameof(InvoiceTotalLM2));
         }
 
         private void UpdateChargeValue(OtherChargeModel charge)
@@ -1710,6 +1762,20 @@ namespace ProGlassAutomation.ViewModels
         public double SpecTotalLM1 => SelectedTargetSpecification?.Items?.Sum(x => x.LM1 * x.Qty) ?? 0;
         public double SpecTotalLM2 => SelectedTargetSpecification?.Items?.Sum(x => x.LM2 * x.Qty) ?? 0;
 
+        // ==================== INVOICE TOTALS ====================
+
+        public double InvoiceGrandTotal => Invoice?.GrandTotal ?? 0;
+        public double InvoiceVatAmount => Invoice?.VatAmount ?? 0;
+        public double InvoiceNetTotal => Invoice?.NetTotal ?? 0;
+        public double InvoiceOtherChargesTotal => Invoice?.OtherChargesTotal ?? 0;
+        public double InvoiceTotalSQM => Invoice?.TotalSQM ?? 0;
+        public int InvoiceTotalQty => Invoice?.TotalQty ?? 0;
+        public double InvoiceTotalSQM1 => Invoice?.TotalSQM1 ?? 0;
+        public double InvoiceTotalSQM2 => Invoice?.TotalSQM2 ?? 0;
+        public double InvoiceTotalLM => Invoice?.TotalLM ?? 0;
+        public double InvoiceTotalLM1 => Invoice?.TotalLM1 ?? 0;
+        public double InvoiceTotalLM2 => Invoice?.TotalLM2 ?? 0;
+
         // ==================== CSV IMPORT/EXPORT ====================
 
         private void ExportToCsv()
@@ -1839,7 +1905,21 @@ namespace ProGlassAutomation.ViewModels
                 RenumberAllSrNumbers();
                 Invoice.CalculateTotals();
                 Invoice.IsDirty = true;
-                StatusMessage = $"✅ Imported {items.Count} items";
+
+                // Notify all total properties
+                OnPropertyChanged(nameof(InvoiceGrandTotal));
+                OnPropertyChanged(nameof(InvoiceVatAmount));
+                OnPropertyChanged(nameof(InvoiceNetTotal));
+                OnPropertyChanged(nameof(InvoiceOtherChargesTotal));
+                OnPropertyChanged(nameof(InvoiceTotalSQM));
+                OnPropertyChanged(nameof(InvoiceTotalQty));
+                OnPropertyChanged(nameof(InvoiceTotalSQM1));
+                OnPropertyChanged(nameof(InvoiceTotalSQM2));
+                OnPropertyChanged(nameof(InvoiceTotalLM));
+                OnPropertyChanged(nameof(InvoiceTotalLM1));
+                OnPropertyChanged(nameof(InvoiceTotalLM2));
+
+                StatusMessage = $"✅ Applied '{GeneratedDescription}' @ AED {CalculatedPrice:N2}";
             }
             catch (Exception ex)
             {

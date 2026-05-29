@@ -14,6 +14,10 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
+// Disambiguation aliases
+using DbProformaInvoice = ProGlassAutomation.Data.Database.ProformaInvoiceModel;
+using InvoiceModel = ProGlassAutomation.Models.ProformaInvoiceModel;
+
 namespace ProGlassAutomation.ViewModels
 {
     public class MainViewModel : INotifyPropertyChanged
@@ -82,7 +86,7 @@ namespace ProGlassAutomation.ViewModels
                 "Optimization" => new Views.GlassOptimization.GlassOptimizationView(),
                 "Dashboard" => new Views.Dashboard.DashboardView(),
                 "Subscription" => new Views.Subscription.SubscriptionPlanView(),
-                "DailyWorks" => new Views.DailyWorksView(),
+                "DailyWorks" => CreateDailyWorksView(),
                 "Deliveries" => new Views.Delivery.DeliveryView(),
                 "Profile" => new Views.Profile.ProfileView(),
                 "Users" => CreatePlaceholder("Users - Coming Soon!"),
@@ -138,6 +142,28 @@ namespace ProGlassAutomation.ViewModels
         {
             var view = new Views.JobOrder.JobOrderView();
             view.DataContext = JobOrderVM;
+            return view;
+        }
+
+        // PATCH: Create DailyWorks view and wire up event connection
+        private UserControl CreateDailyWorksView()
+        {
+            var view = new Views.DailyWorksView();
+
+            // Create or get DailyWorksViewModel
+            if (_dailyWorksViewModel == null)
+            {
+                _dailyWorksViewModel = new DailyWorksViewModel();
+            }
+
+            view.DataContext = _dailyWorksViewModel;
+
+            // PATCH: Wire up InvoiceSaved event from MainViewModel to DailyWorksViewModel
+            InvoiceSaved -= _dailyWorksViewModel.OnProformaInvoiceSaved;
+            InvoiceSaved += _dailyWorksViewModel.OnProformaInvoiceSaved;
+
+            System.Diagnostics.Debug.WriteLine("[MainVM] DailyWorks view created and event wired");
+
             return view;
         }
 
@@ -391,6 +417,9 @@ namespace ProGlassAutomation.ViewModels
                 // PATCH: Subscribe to save event from editor
                 editorViewModel.InvoiceToBeAdded += _proformaInvoiceMainVM.OnInvoiceToBeAdded;
 
+                // PATCH: Also subscribe InvoiceSaved to update DailyWorks
+                editorViewModel.InvoiceSaved += OnProformaInvoiceSaved;
+
                 editorViewModel.LoadFromProformaInvoice(invoice);
                 CurrentView = new Views.ProformaInvoice.ProformaInvoiceView { DataContext = editorViewModel };
             };
@@ -398,6 +427,33 @@ namespace ProGlassAutomation.ViewModels
             mainView.DataContext = _proformaInvoiceMainVM;
             CurrentView = mainView;
             CurrentViewName = "ProformaInvoice";
+        }
+
+        // PATCH: Event for forwarding InvoiceSaved to DailyWorksViewModel
+        public event Action<InvoiceModel>? InvoiceSaved;
+
+        // PATCH: Event handler to forward InvoiceSaved to DailyWorksViewModel
+        public void OnProformaInvoiceSaved(InvoiceModel invoice)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MainVM] OnProformaInvoiceSaved received: {invoice?.InvoiceNo}");
+
+            // Forward directly to DailyWorksViewModel's handler
+            if (DailyWorksViewModel != null)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainVM] Forwarding to DailyWorksViewModel");
+                DailyWorksViewModel.OnProformaInvoiceSaved(invoice);
+            }
+
+            // Also raise the InvoiceSaved event for any other subscribers
+            InvoiceSaved?.Invoke(invoice);
+        }
+
+        // Reference to DailyWorksViewModel
+        private DailyWorksViewModel _dailyWorksViewModel;
+        public DailyWorksViewModel DailyWorksViewModel
+        {
+            get => _dailyWorksViewModel;
+            set => Set(ref _dailyWorksViewModel, value);
         }
 
         // PATCH: Handle invoice being saved

@@ -775,7 +775,7 @@
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="Total SQM" FontSize="12" Foreground="#6B7280"/>
-                                        <TextBlock Grid.Column="1" Text="0.0000" FontSize="12" FontWeight="SemiBold" Foreground="#1F2937"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding InvoiceTotalSQM1, Mode=OneWay, StringFormat=N4}" FontSize="12" FontWeight="SemiBold" Foreground="#1F2937"/>
                                     </Grid>
                                     <Grid Margin="0,0,0,8">
                                         <Grid.ColumnDefinitions>
@@ -783,7 +783,7 @@
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="Total LM" FontSize="12" Foreground="#6B7280"/>
-                                        <TextBlock Grid.Column="1" Text="0.0000" FontSize="12" FontWeight="SemiBold" Foreground="#4A6FA5"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding InvoiceTotalLM1, Mode=OneWay, StringFormat=N4}" FontSize="12" FontWeight="SemiBold" Foreground="#4A6FA5"/>
                                     </Grid>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -791,7 +791,7 @@
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="Total Qty" FontSize="12" Foreground="#6B7280"/>
-                                        <TextBlock Grid.Column="1" Text="{Binding Invoice.TotalQty, Mode=OneWay}" FontSize="12" FontWeight="SemiBold" Foreground="#1F2937"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding InvoiceTotalQty, Mode=OneWay, StringFormat=N0}" FontSize="12" FontWeight="SemiBold" Foreground="#1F2937"/>
                                     </Grid>
                                 </StackPanel>
                             </Border>
@@ -804,8 +804,8 @@
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Sub Total" FontSize="12" Foreground="#6B7280"/>
-                                        <TextBlock Grid.Column="1" Text="{Binding Invoice.NetAmount, Mode=OneWay, StringFormat='AED {0:N2}'}" FontSize="12" FontWeight="SemiBold" Foreground="#1F2937"/>
+                                        <TextBlock Text="Grand Total" FontSize="12" Foreground="#6B7280"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding InvoiceGrandTotal, Mode=OneWay, StringFormat='AED {0:N2}'}" FontSize="12" FontWeight="SemiBold" Foreground="#1F2937"/>
                                     </Grid>
                                     <Grid Margin="0,0,0,8">
                                         <Grid.Style>
@@ -823,7 +823,7 @@
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="VAT (5%)" FontSize="12" Foreground="#6B7280"/>
-                                        <TextBlock Grid.Column="1" Text="{Binding Invoice.VATAmount, Mode=OneWay, StringFormat='AED {0:N2}'}" FontSize="12" Foreground="#6B7280"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding InvoiceVatAmount, Mode=OneWay, StringFormat='AED {0:N2}'}" FontSize="12" Foreground="#6B7280"/>
                                     </Grid>
                                     <Separator Margin="0,8">
                                         <Separator.Style>
@@ -853,7 +853,7 @@
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="NET TOTAL" FontSize="14" FontWeight="Bold" Foreground="#1E3A5F"/>
-                                        <TextBlock Grid.Column="1" Text="{Binding Invoice.NetAmount, Mode=OneWay, StringFormat='AED {0:N2}'}" FontSize="16" FontWeight="Bold" Foreground="#4A6FA5"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding InvoiceNetTotal, Mode=OneWay, StringFormat='AED {0:N2}'}" FontSize="16" FontWeight="Bold" Foreground="#4A6FA5"/>
                                     </Grid>
                                 </StackPanel>
                             </Border>
