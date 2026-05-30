@@ -1,18 +1,22 @@
 ﻿using ProGlassAutomation.Models;
+using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Linq;
 
 namespace ProGlassAutomation.Views.ProformaInvoice
 {
     public partial class ProformaInvoiceMainView : UserControl
     {
+        private Popup _currentStatusPopup = null;
+
         public ProformaInvoiceMainView()
         {
             InitializeComponent();
-
-            // Subscribe to window mouse down to close popups when clicking outside
             Loaded += OnLoaded;
             Unloaded += OnUnloaded;
         }
@@ -35,46 +39,26 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             }
         }
 
-        private void StatusBadge_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        // ==================== STATUS DROPDOWN HANDLER ====================
+        private void StatusComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // Prevent DataGrid row selection
-            e.Handled = true;
-
-            if (sender is Border border)
+            if (sender is ComboBox comboBox && comboBox.SelectedItem is ComboBoxItem selectedItem)
             {
-                var grid = border.Parent as Grid;
-                if (grid != null)
-                {
-                    foreach (var child in grid.Children)
-                    {
-                        if (child is Popup popup)
-                        {
-                            // Close all other popups first
-                            CloseAllOtherPopups(popup);
-
-                            // Toggle this popup - SINGLE CLICK
-                            popup.IsOpen = !popup.IsOpen;
-                            return;
-                        }
-                    }
-                }
-            }
-        }
-
-        private void StatusOption_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button button)
-            {
-                var newStatus = button.Tag?.ToString();
-                if (string.IsNullOrEmpty(newStatus)) return;
-
-                var invoice = button.DataContext as ProformaInvoiceModel;
+                // Get the current invoice from DataContext
+                var invoice = comboBox.DataContext as ProformaInvoiceModel;
                 if (invoice == null) return;
 
-                // Close all popups
-                CloseAllPopups();
+                // Get the new status
+                var newStatus = selectedItem.Content?.ToString();
+                if (string.IsNullOrEmpty(newStatus)) return;
 
-                // Call ViewModel with Tuple
+                // Don't update if status is the same
+                if (invoice.Status == newStatus) return;
+
+                // Update the model
+                invoice.Status = newStatus;
+
+                // Call ViewModel command
                 if (DataContext is ViewModels.ProformaInvoiceMainViewModel vm)
                 {
                     var param = new System.Tuple<ProformaInvoiceModel, string>(invoice, newStatus);
@@ -83,83 +67,58 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             }
         }
 
+        // ==================== WINDOW CLICK HANDLER ====================
         private void Window_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            // Close all popups when clicking outside
             var element = e.OriginalSource as DependencyObject;
-
-            // Check if click is on any StatusBadge or inside a StatusPopup
             var statusBadge = FindAncestorByName<Border>(element, "StatusBadge");
             var statusPopup = FindAncestor<Popup>(element);
 
-            // Only close if clicking outside
             if (statusBadge == null && statusPopup == null)
             {
                 CloseAllPopups();
             }
         }
 
-        private void CloseAllOtherPopups(Popup keepOpen)
-        {
-            var dataGrid = FindChild<DataGrid>(this);
-            if (dataGrid != null)
-            {
-                var allPopups = FindChildren<Popup>(dataGrid);
-                foreach (var popup in allPopups)
-                {
-                    if (popup != keepOpen)
-                    {
-                        popup.IsOpen = false;
-                    }
-                }
-            }
-        }
-
+        // ==================== POPUP HELPERS ====================
         private void CloseAllPopups()
         {
-            var dataGrid = FindChild<DataGrid>(this);
-            if (dataGrid != null)
+            if (_currentStatusPopup != null)
             {
-                var allPopups = FindChildren<Popup>(dataGrid);
-                foreach (var popup in allPopups)
-                {
-                    popup.IsOpen = false;
-                }
+                _currentStatusPopup.IsOpen = false;
+                _currentStatusPopup = null;
             }
         }
 
-        // Helper: Find ancestor by name
         private static T FindAncestorByName<T>(DependencyObject child, string name) where T : DependencyObject
         {
-            var parent = System.Windows.Media.VisualTreeHelper.GetParent(child);
+            var parent = VisualTreeHelper.GetParent(child);
             while (parent != null)
             {
                 if (parent is T t && (parent as FrameworkElement)?.Name == name)
                     return t;
-                parent = System.Windows.Media.VisualTreeHelper.GetParent(parent);
+                parent = VisualTreeHelper.GetParent(parent);
             }
             return null;
         }
 
-        // Helper: Find ancestor of type
         private static T FindAncestor<T>(DependencyObject child) where T : DependencyObject
         {
-            var parent = System.Windows.Media.VisualTreeHelper.GetParent(child);
+            var parent = VisualTreeHelper.GetParent(child);
             while (parent != null)
             {
                 if (parent is T)
                     return (T)parent;
-                parent = System.Windows.Media.VisualTreeHelper.GetParent(parent);
+                parent = VisualTreeHelper.GetParent(parent);
             }
             return null;
         }
 
-        // Helper: Find first child of type
         private static T FindChild<T>(DependencyObject parent) where T : DependencyObject
         {
-            for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent); i++)
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
             {
-                var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i);
+                var child = VisualTreeHelper.GetChild(parent, i);
                 if (child is T found)
                     return found;
                 var result = FindChild<T>(child);
@@ -169,12 +128,11 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             return null;
         }
 
-        // Helper: Find all children of type
         private static IEnumerable<T> FindChildren<T>(DependencyObject parent) where T : DependencyObject
         {
-            for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent); i++)
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
             {
-                var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i);
+                var child = VisualTreeHelper.GetChild(parent, i);
                 if (child is T found)
                     yield return found;
                 foreach (var result in FindChildren<T>(child))
