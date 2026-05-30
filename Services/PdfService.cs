@@ -193,7 +193,7 @@ namespace ProGlassAutomation.Services
             e.Graphics.DrawString($"Required Date: {jo.RequiredDate:yyyy-MM-dd}", font, Brushes.Black, 50, y);
             y += 30;
 
-            e.Graphics.DrawString("Client:", boldFont, Brushes.Black, 50, y);
+            e.Graphics.DrawString("Customer:", boldFont, Brushes.Black, 50, y);
             y += 20;
             e.Graphics.DrawString(jo.ClientName, font, Brushes.Black, 50, y); y += 15;
             e.Graphics.DrawString($"Project: {jo.ProjectName}", smallFont, Brushes.Black, 50, y); y += 15;

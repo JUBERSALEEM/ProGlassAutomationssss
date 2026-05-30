@@ -2,6 +2,7 @@
 using ProGlassAutomation.Data.Database;
 using ProGlassAutomation.Models;
 using System;
+using DbJobOrder = ProGlassAutomation.Data.Database.JobOrderModel;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
@@ -18,11 +19,11 @@ namespace ProGlassAutomation.ViewModels
         #region Private Fields
 
         private string _jobOrderNumber = "";
-        private string _customerName = "";
-        private string _customerTRN = "";
-        private string _customerReference = "";
+        private string _clientName = "";
+        private string _clientTRN = "";
+        private string _clientReference = "";
         private string _salesman = "";
-        private string _customerAddress = "";
+        private string _clientAddress = "";
         private string _projectName = "";
         private string _projectNo = "";
         private string _projectLocation = "";
@@ -169,11 +170,11 @@ namespace ProGlassAutomation.ViewModels
         #region Properties
 
         public string JobOrderNumber { get => _jobOrderNumber; set => SetProperty(ref _jobOrderNumber, value); }
-        public string CustomerName { get => _customerName; set => SetProperty(ref _customerName, value); }
-        public string CustomerTRN { get => _customerTRN; set => SetProperty(ref _customerTRN, value); }
-        public string CustomerReference { get => _customerReference; set => SetProperty(ref _customerReference, value); }
+        public string ClientName { get => _clientName; set => SetProperty(ref _clientName, value); }
+        public string ClientTRN { get => _clientTRN; set => SetProperty(ref _clientTRN, value); }
+        public string ClientReference { get => _clientReference; set => SetProperty(ref _clientReference, value); }
         public string Salesman { get => _salesman; set => SetProperty(ref _salesman, value); }
-        public string CustomerAddress { get => _customerAddress; set => SetProperty(ref _customerAddress, value); }
+        public string ClientAddress { get => _clientAddress; set => SetProperty(ref _clientAddress, value); }
         public string ProjectName { get => _projectName; set => SetProperty(ref _projectName, value); }
         public string ProjectNo { get => _projectNo; set => SetProperty(ref _projectNo, value); }
         public string ProjectLocation { get => _projectLocation; set => SetProperty(ref _projectLocation, value); }
@@ -238,11 +239,11 @@ namespace ProGlassAutomation.ViewModels
                 CompanyName = pi.CompanyName ?? "PROGLASS AUTOMATION";
                 CompanyTRN = pi.CompanyTRN ?? "100458979400003";
                 CompanyLocation = pi.CompanyLocation ?? "Dubai, UAE";
-                CustomerName = pi.CustomerName ?? "";
-                CustomerTRN = pi.CustomerTRN ?? "";
-                CustomerReference = pi.CustomerReference ?? "";
+                ClientName = pi.CustomerName ?? "";
+                ClientTRN = pi.CustomerTRN ?? "";
+                ClientReference = pi.CustomerReference ?? "";
                 Salesman = pi.Salesman ?? "";
-                CustomerAddress = pi.CustomerAddress ?? "";
+                ClientAddress = pi.CustomerAddress ?? "";
                 ProjectName = pi.ProjectName ?? "";
                 ProjectNo = pi.ProjectNo ?? "";
                 ProjectLocation = pi.ProjectLocation ?? "";
@@ -486,12 +487,15 @@ namespace ProGlassAutomation.ViewModels
                 {
                     JONumber = JobOrderNumber,
                     ProformaInvoiceId = _proformaInvoiceId,
-                    ClientName = CustomerName,
-                    ClientTRN = CustomerTRN,
-                    ClientAddress = CustomerAddress,
+                    ClientName = ClientName,
+                    ClientTRN = ClientTRN,
+                    ClientAddress = ClientAddress,
+                    ClientReference = ClientReference,
+                    Salesman = Salesman,
                     ContactPerson = AttentionName,
                     ContactNumber = ContactNo,
                     ProjectName = ProjectName,
+                    ProjectNo = ProjectNo,            // ✅ ADD THIS
                     ProjectLocation = ProjectLocation,
                     LPONumber = LPONo,
                     JODate = JobOrderDate,
@@ -578,7 +582,32 @@ namespace ProGlassAutomation.ViewModels
                     }
                 }
 
-                await Task.Run(() => DbHelper.SaveJobOrder(jobOrderModel));
+                var saveModel = new JobOrder
+                {
+                    Id = jobOrderModel.Id,
+                    JobNumber = jobOrderModel.JONumber,
+                    PINumber = jobOrderModel.PINumber,
+                    ClientName = jobOrderModel.ClientName,
+                    ClientTRN = jobOrderModel.ClientTRN,
+                    ClientAddress = jobOrderModel.ClientAddress,
+                    ClientReference = jobOrderModel.ClientReference,
+                    Salesman = jobOrderModel.Salesman,
+                    ProjectNo = jobOrderModel.ProjectNo,
+                    ProjectName = jobOrderModel.ProjectName,
+                    ProjectLocation = jobOrderModel.ProjectLocation,
+                    LPONumber = jobOrderModel.LPONumber,
+                    Date = jobOrderModel.JODate,
+                    RequiredDate = jobOrderModel.RequiredDate,
+                    Status = jobOrderModel.Status,
+                    Notes = jobOrderModel.Notes,
+                    TotalQty = jobOrderModel.TotalQty,
+                    ReleasedQty = jobOrderModel.ReleasedQty,
+                    BalanceQty = jobOrderModel.BalanceQty,
+                    TotalAmount = jobOrderModel.TotalAmount,
+                    SpecificationsJson = jobOrderModel.SpecificationsJson
+                };
+
+                await Task.Run(() => DbHelper.SaveJobOrder(saveModel));
 
                 Application.Current.Dispatcher.Invoke(() =>
                 {
@@ -586,9 +615,9 @@ namespace ProGlassAutomation.ViewModels
                     {
                         Id = jobOrderModel.Id,
                         JobNumber = jobOrderModel.JONumber,
-                        CustomerName = jobOrderModel.ClientName,
-                        CustomerTRN = jobOrderModel.ClientTRN,
-                        CustomerAddress = jobOrderModel.ClientAddress,
+                        ClientName = jobOrderModel.ClientName,
+                        ClientTRN = jobOrderModel.ClientTRN,
+                        ClientAddress = jobOrderModel.ClientAddress,
                         ProjectName = jobOrderModel.ProjectName,
                         ProjectLocation = jobOrderModel.ProjectLocation,
                         LPONumber = jobOrderModel.LPONumber,
@@ -601,7 +630,33 @@ namespace ProGlassAutomation.ViewModels
                         SpecificationsJson = jobOrderModel.SpecificationsJson
                     };
 
-                    JobOrders.Add(savedJob);
+                    var existing = JobOrders.FirstOrDefault(x => x.Id == savedJob.Id);
+
+                    if (existing != null)
+                    {
+                        existing.JobNumber = savedJob.JobNumber;
+                        existing.PINumber = savedJob.PINumber;
+                        existing.ClientName = savedJob.ClientName;
+                        existing.ClientTRN = savedJob.ClientTRN;
+                        existing.ClientAddress = savedJob.ClientAddress;
+                        existing.ClientReference = savedJob.ClientReference;
+                        existing.Salesman = savedJob.Salesman;
+                        existing.ProjectNo = savedJob.ProjectNo;
+                        existing.ProjectName = savedJob.ProjectName;
+                        existing.ProjectLocation = savedJob.ProjectLocation;
+                        existing.LPONumber = savedJob.LPONumber;
+                        existing.Date = savedJob.Date;
+                        existing.RequiredDate = savedJob.RequiredDate;
+                        existing.Status = savedJob.Status;
+                        existing.Notes = savedJob.Notes;
+                        existing.TotalQty = savedJob.TotalQty;
+                        existing.TotalAmount = savedJob.TotalAmount;
+                        existing.SpecificationsJson = savedJob.SpecificationsJson;
+                    }
+                    else
+                    {
+                        JobOrders.Add(savedJob);
+                    }
 
                     MessageBox.Show(
                         $"Job Order {JobOrderNumber} saved!\n\nDate: {JobOrderDate:dd MMM yyyy hh:mm:ss tt}\nTotal Items: {TotalQty}\nTotal SQM: {TotalSQM:F4}\nTotal Amount: AED {TotalAmount:N2}",
@@ -622,11 +677,11 @@ namespace ProGlassAutomation.ViewModels
         public void ClearAll(bool notifyUI = true)
         {
             JobOrderNumber = "";
-            CustomerName = "";
-            CustomerTRN = "";
-            CustomerReference = "";
+            ClientName = "";
+            ClientTRN = "";
+            ClientReference = "";
             Salesman = "";
-            CustomerAddress = "";
+            ClientAddress = "";
             ProjectName = "";
             ProjectNo = "";
             ProjectLocation = "";
@@ -641,6 +696,7 @@ namespace ProGlassAutomation.ViewModels
             RequiredDate = DateTime.Today.AddDays(7);
 
             Specifications.Clear();
+            JobOrders.Clear();
             var newSpec = new JobOrderSpecification { Id = 1, SpecificationName = "Specification 1" };
             SubscribeToSpecChanges(newSpec);
             Specifications.Add(newSpec);
@@ -666,7 +722,7 @@ namespace ProGlassAutomation.ViewModels
 
         #region Load From Existing
 
-        public void LoadFromExistingJobOrder(JobOrderModel jo)
+        public void LoadFromExistingJobOrder(ProGlassAutomation.Data.Database.JobOrderModel jo)
         {
             if (jo == null) return;
 
@@ -679,10 +735,13 @@ namespace ProGlassAutomation.ViewModels
                 RequiredDate = jo.RequiredDate == DateTime.MinValue ? DateTime.Today.AddDays(7) : jo.RequiredDate;
                 Status = jo.Status ?? "Pending";
                 PINumber = jo.PINumber ?? "";
-                CustomerName = jo.ClientName ?? "";
-                CustomerTRN = jo.ClientTRN ?? "";
-                CustomerAddress = jo.ClientAddress ?? "";
+                ClientName = jo.ClientName ?? "";
+                ClientTRN = jo.ClientTRN ?? "";
+                ClientAddress = jo.ClientAddress ?? "";
+                ClientReference = jo.ClientReference ?? "";
+                Salesman = jo.Salesman ?? "";
                 ProjectName = jo.ProjectName ?? "";
+                ProjectNo = jo.ProjectNo ?? "";            // ✅ ADD THIS
                 ProjectLocation = jo.ProjectLocation ?? "";
                 LPONo = jo.LPONumber ?? "";
                 Notes = jo.Notes ?? "";

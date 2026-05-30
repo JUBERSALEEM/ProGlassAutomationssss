@@ -13,9 +13,9 @@ namespace ProGlassAutomation.Models
         private int _id;
         private string _jobNumber = "";
         private string _piNumber = "";
-        private string _customerName = "";
-        private string _customerTRN = "";
-        private string _customerAddress = "";
+        private string _clientName = "";
+        private string _clientTRN = "";
+        private string _clientAddress = "";
         private string _projectName = "";
         private string _projectLocation = "";
         private string _lpoNumber = "";
@@ -25,7 +25,7 @@ namespace ProGlassAutomation.Models
         private string _status = "Pending";
         private string _color = "";
         private string _salesman = "";
-        private string _customerReference = "";
+        private string _clientReference = "";
         private string _notes = "";
         private bool _isConvertedToDelivery;
         private int _totalQty;
@@ -39,11 +39,13 @@ namespace ProGlassAutomation.Models
         public int Id { get => _id; set => SetField(ref _id, value); }
         public string JobNumber { get => _jobNumber; set => SetField(ref _jobNumber, value ?? ""); }
         public string PINumber { get => _piNumber; set => SetField(ref _piNumber, value ?? ""); }
-        public string CustomerName { get => _customerName; set => SetField(ref _customerName, value ?? ""); }
-        public string CustomerTRN { get => _customerTRN; set => SetField(ref _customerTRN, value ?? ""); }
-        public string CustomerAddress { get => _customerAddress; set => SetField(ref _customerAddress, value ?? ""); }
+        public string ClientName { get => _clientName; set => SetField(ref _clientName, value ?? ""); }
+        public string ClientTRN { get => _clientTRN; set => SetField(ref _clientTRN, value ?? ""); }
+        public string ClientAddress { get => _clientAddress; set => SetField(ref _clientAddress, value ?? ""); }
         public string ProjectName { get => _projectName; set => SetField(ref _projectName, value ?? ""); }
         public string ProjectLocation { get => _projectLocation; set => SetField(ref _projectLocation, value ?? ""); }
+        private string _projectNo = "";
+        public string ProjectNo { get => _projectNo; set => SetField(ref _projectNo, value ?? ""); }
         public string LPONumber { get => _lpoNumber; set => SetField(ref _lpoNumber, value ?? ""); }
         public DateTime Date { get => _date; set => SetField(ref _date, value); }
         public DateTime RequiredDate { get => _requiredDate; set => SetField(ref _requiredDate, value); }
@@ -51,7 +53,7 @@ namespace ProGlassAutomation.Models
         public string Status { get => _status; set => SetField(ref _status, value ?? ""); }
         public string Color { get => _color; set => SetField(ref _color, value ?? ""); }
         public string Salesman { get => _salesman; set => SetField(ref _salesman, value ?? ""); }
-        public string CustomerReference { get => _customerReference; set => SetField(ref _customerReference, value ?? ""); }
+        public string ClientReference { get => _clientReference; set => SetField(ref _clientReference, value ?? ""); }
         public string Notes { get => _notes; set => SetField(ref _notes, value ?? ""); }
         public bool IsConvertedToDelivery { get => _isConvertedToDelivery; set => SetField(ref _isConvertedToDelivery, value); }
         public int TotalQty { get => _totalQty; set => SetField(ref _totalQty, value); }
@@ -65,7 +67,9 @@ namespace ProGlassAutomation.Models
         public void CalculateTotals()
         {
             TotalQty = Specifications?.Sum(s => s.TotalQty) ?? 0;
-            ReleasedQty = Specifications?.Sum(s => s.Items.Sum(i => i.DeliveredQty)) ?? 0;
+            ReleasedQty = Specifications?
+    .Where(s => s?.Items != null)
+    .Sum(s => s.Items.Sum(i => i?.DeliveredQty ?? 0)) ?? 0;
             BalanceQty = TotalQty - ReleasedQty;
             TotalSQM = Specifications?.Sum(s => s.TotalSQM) ?? 0;
             TotalAmount = Specifications?.Sum(s => s.TotalAmount) ?? 0;
@@ -178,6 +182,7 @@ namespace ProGlassAutomation.Models
         private void InvalidateTotals()
         {
             _totalsValid = false;
+
             OnPropertyChanged(nameof(TotalItems));
             OnPropertyChanged(nameof(TotalQty));
             OnPropertyChanged(nameof(TotalSQM1));
@@ -200,11 +205,11 @@ namespace ProGlassAutomation.Models
                 foreach (var item in _items)
                 {
                     _cachedTotalQty += item.Qty;
-                    _cachedTotalSQM1 += item.SQM1 * item.Qty;
-                    _cachedTotalSQM2 += item.SQM2 * item.Qty;
+                    _cachedTotalSQM1 += item.SQM1;
+                    _cachedTotalSQM2 += item.SQM2;
                     _cachedTotalSQM += item.TotalSQM;
-                    _cachedTotalLM1 += item.LM1 * item.Qty;
-                    _cachedTotalLM2 += item.LM2 * item.Qty;
+                    _cachedTotalLM1 += item.LM1;
+                    _cachedTotalLM2 += item.LM2;
                     _cachedTotalAmount += item.TotalAmount;
                 }
             }
@@ -215,7 +220,7 @@ namespace ProGlassAutomation.Models
                     _cachedOtherChargesTotal += charge?.Amount ?? 0;
             }
 
-            _cachedTotalAmount += _cachedOtherChargesTotal;
+            _cachedTotalAmount = _cachedTotalAmount + _cachedOtherChargesTotal;
         }
 
         public void CalculateTotals() { RefreshTotals(); _totalsValid = true; InvalidateTotals(); }
@@ -249,7 +254,10 @@ namespace ProGlassAutomation.Models
 
         public JobOrderItem()
         {
-            _recalculateTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
+            _recalculateTimer = new DispatcherTimer(DispatcherPriority.Background)
+            {
+                Interval = TimeSpan.FromMilliseconds(50)
+            };
             _recalculateTimer.Tick += (s, e) =>
             {
                 _recalculateTimer.Stop();
@@ -299,6 +307,7 @@ namespace ProGlassAutomation.Models
             _sqm2 = CalculateSQM(_width2, _height2);
             _lm1 = CalculateLM(_width1, _height1);
             _lm2 = CalculateLM(_width2, _height2);
+
             OnPropertyChanged(nameof(SQM1));
             OnPropertyChanged(nameof(SQM2));
             OnPropertyChanged(nameof(LM1));

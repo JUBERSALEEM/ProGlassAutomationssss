@@ -2005,7 +2005,7 @@ namespace ProGlassAutomation.ViewModels
                 {
                     SourceId = jobOrder.Id,
                     Date = DateTime.Today,
-                    Company = jobOrder.CustomerName ?? "",
+                    Company = jobOrder.ClientName ?? "",
                     PINumber = jobOrder.JobNumber ?? "",
                     TypeOfWork = "Glass",  // Default value
                     OrderQty = jobOrder.TotalQty,

@@ -13,6 +13,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using DbJobOrder = ProGlassAutomation.Data.Database.JobOrderModel;
 
 // Disambiguation aliases
 using DbProformaInvoice = ProGlassAutomation.Data.Database.ProformaInvoiceModel;
@@ -176,7 +177,7 @@ namespace ProGlassAutomation.ViewModels
         // JOB ORDER LIST EVENT HANDLERS
         // ═══════════════════════════════════════════════════════
 
-        private void OnOpenJobOrderRequested(JobOrderModel jo)
+        private void OnOpenJobOrderRequested(DbJobOrder jo)
         {
             try
             {
@@ -190,7 +191,7 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        private void OnOpenProformaInvoiceRequested(JobOrderModel jo)
+        private void OnOpenProformaInvoiceRequested(DbJobOrder jo)
         {
             try
             {

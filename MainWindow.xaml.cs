@@ -11,7 +11,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
-
+using DbJobOrder = ProGlassAutomation.Data.Database.JobOrderModel;
 using ProGlassAutomation.Data.Database;
 using ProGlassAutomation.Models;
 using ProGlassAutomation.ViewModels;
@@ -523,7 +523,7 @@ namespace ProGlassAutomation
 
         // ==================== JOB ORDER EVENT HANDLERS ====================
 
-        private void OnOpenJobOrderRequested(JobOrderModel jo)
+        private void OnOpenJobOrderRequested(DbJobOrder jo)
         {
             try
             {
@@ -547,7 +547,7 @@ namespace ProGlassAutomation
             }
         }
 
-        private void OnOpenProformaInvoiceRequested(JobOrderModel jo)
+        private void OnOpenProformaInvoiceRequested(DbJobOrder jo)
         {
             try
             {

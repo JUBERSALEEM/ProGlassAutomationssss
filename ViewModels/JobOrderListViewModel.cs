@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ProGlassAutomation.Data.Database;
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
@@ -7,7 +8,6 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
-
 using DbJobOrder = ProGlassAutomation.Data.Database.JobOrderModel;
 
 namespace ProGlassAutomation.ViewModels
@@ -385,7 +385,7 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        public void UpdateStatus(DbJobOrder jobOrder, string newStatus)
+        public void UpdateStatus(ProGlassAutomation.Data.Database.JobOrderModel jobOrder, string newStatus)
         {
             if (jobOrder == null || string.IsNullOrWhiteSpace(newStatus)) return;
 
@@ -394,7 +394,10 @@ namespace ProGlassAutomation.ViewModels
                 try
                 {
                     jobOrder.Status = newStatus;
-                    await Task.Run(() => Data.Database.DbHelper.SaveJobOrder(jobOrder));
+                    await Task.Run(() =>
+    Data.Database.DbHelper.UpdateJobOrderStatus(
+        jobOrder.Id,
+        newStatus));
 
                     await Application.Current.Dispatcher.InvokeAsync(() =>
                     {
