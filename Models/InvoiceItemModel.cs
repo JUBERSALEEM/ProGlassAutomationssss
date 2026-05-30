@@ -137,6 +137,11 @@ namespace ProGlassAutomation.Models
             // SQM calculations
             double sqm1Val = (w1 * h1) / 1000000.0;
             double sqm2Val = (w2 * h2) / 1000000.0;
+
+            // Minimum SQM of 0.5 for display
+            if (sqm1Val > 0 && sqm1Val < 0.5) sqm1Val = 0.5;
+            if (sqm2Val > 0 && sqm2Val < 0.5) sqm2Val = 0.5;
+
             SQM1 = Math.Round(sqm1Val, 4);
             SQM2 = Math.Round(sqm2Val, 4);
             TotalSQM = Math.Round((SQM1 + SQM2) * q, 4);
@@ -152,10 +157,7 @@ namespace ProGlassAutomation.Models
             // Price calculations
             double p = Price > 0 ? Price : 0;
             double sp = SurchargePercent > 0 ? SurchargePercent : 0;
-            double itemSQM = TotalSQM; // This is ALREADY multiplied by Qty in your code
-
-            // Note: TotalSQM in your code = SQM * Qty, so don't multiply again
-            // But if TotalSQM = SQM (single item), then use: TotalSQM * Qty
+            double itemSQM = TotalSQM;
 
             double surcharge = 0;
             if (itemSQM >= 4)
@@ -181,8 +183,6 @@ namespace ProGlassAutomation.Models
 
             DisplayPrice = dp;
 
-            // FIX: TotalSQM already includes Qty, so don't multiply again
-            // OR if TotalSQM doesn't include Qty, use: TotalSQM * Qty
             double tp = dp * TotalSQM;
             TotalPrice = Math.Round(tp, 2);
             FinalPrice = TotalPrice;
