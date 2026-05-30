@@ -465,7 +465,7 @@
                                 <StackPanel Margin="0,0,8,0">
                                     <TextBlock Text="SEARCH" FontSize="9" FontWeight="SemiBold" Foreground="#94A3B8" Margin="0,0,0,3"/>
                                     <Border Background="White" CornerRadius="6" BorderBrush="#E2E8F0" BorderThickness="1" Padding="8,4" MinWidth="150">
-                                        <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent" FontSize="11" Foreground="#334155"/>
+                                        <TextBox Text="{Binding SearchText, UpdateSourceTrigger=LostFocus}" BorderThickness="0" Background="Transparent" FontSize="11" Foreground="#334155"/>
                                     </Border>
                                 </StackPanel>
 

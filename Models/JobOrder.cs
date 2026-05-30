@@ -3,9 +3,11 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Windows.Threading;
 
 namespace ProGlassAutomation.Models
 {
+    // ==================== JOB ORDER ====================
     public class JobOrder : INotifyPropertyChanged
     {
         private int _id;
@@ -34,31 +36,31 @@ namespace ProGlassAutomation.Models
         private ObservableCollection<JobOrderSpecification> _specifications = new ObservableCollection<JobOrderSpecification>();
         private string _specificationsJson = "";
 
-        public int Id { get => _id; set { _id = value; OnPropertyChanged(); } }
-        public string JobNumber { get => _jobNumber; set { _jobNumber = value ?? ""; OnPropertyChanged(); } }
-        public string PINumber { get => _piNumber; set { _piNumber = value ?? ""; OnPropertyChanged(); } }
-        public string CustomerName { get => _customerName; set { _customerName = value ?? ""; OnPropertyChanged(); } }
-        public string CustomerTRN { get => _customerTRN; set { _customerTRN = value ?? ""; OnPropertyChanged(); } }
-        public string CustomerAddress { get => _customerAddress; set { _customerAddress = value ?? ""; OnPropertyChanged(); } }
-        public string ProjectName { get => _projectName; set { _projectName = value ?? ""; OnPropertyChanged(); } }
-        public string ProjectLocation { get => _projectLocation; set { _projectLocation = value ?? ""; OnPropertyChanged(); } }
-        public string LPONumber { get => _lpoNumber; set { _lpoNumber = value ?? ""; OnPropertyChanged(); } }
-        public DateTime Date { get => _date; set { _date = value; OnPropertyChanged(); } }
-        public DateTime RequiredDate { get => _requiredDate; set { _requiredDate = value; OnPropertyChanged(); } }
-        public DateTime CreatedDate { get => _createdDate; set { _createdDate = value; OnPropertyChanged(); } }
-        public string Status { get => _status; set { _status = value ?? ""; OnPropertyChanged(); } }
-        public string Color { get => _color; set { _color = value ?? ""; OnPropertyChanged(); } }
-        public string Salesman { get => _salesman; set { _salesman = value ?? ""; OnPropertyChanged(); } }
-        public string CustomerReference { get => _customerReference; set { _customerReference = value ?? ""; OnPropertyChanged(); } }
-        public string Notes { get => _notes; set { _notes = value ?? ""; OnPropertyChanged(); } }
-        public bool IsConvertedToDelivery { get => _isConvertedToDelivery; set { _isConvertedToDelivery = value; OnPropertyChanged(); } }
-        public int TotalQty { get => _totalQty; set { _totalQty = value; OnPropertyChanged(); } }
-        public int ReleasedQty { get => _releasedQty; set { _releasedQty = value; OnPropertyChanged(); } }
-        public int BalanceQty { get => _balanceQty; set { _balanceQty = value; OnPropertyChanged(); } }
-        public double TotalSQM { get => _totalSQM; set { _totalSQM = value; OnPropertyChanged(); } }
-        public double TotalAmount { get => _totalAmount; set { _totalAmount = value; OnPropertyChanged(); } }
-        public ObservableCollection<JobOrderSpecification> Specifications { get => _specifications; set { _specifications = value; OnPropertyChanged(); } }
-        public string SpecificationsJson { get => _specificationsJson; set { _specificationsJson = value ?? ""; OnPropertyChanged(); } }
+        public int Id { get => _id; set => SetField(ref _id, value); }
+        public string JobNumber { get => _jobNumber; set => SetField(ref _jobNumber, value ?? ""); }
+        public string PINumber { get => _piNumber; set => SetField(ref _piNumber, value ?? ""); }
+        public string CustomerName { get => _customerName; set => SetField(ref _customerName, value ?? ""); }
+        public string CustomerTRN { get => _customerTRN; set => SetField(ref _customerTRN, value ?? ""); }
+        public string CustomerAddress { get => _customerAddress; set => SetField(ref _customerAddress, value ?? ""); }
+        public string ProjectName { get => _projectName; set => SetField(ref _projectName, value ?? ""); }
+        public string ProjectLocation { get => _projectLocation; set => SetField(ref _projectLocation, value ?? ""); }
+        public string LPONumber { get => _lpoNumber; set => SetField(ref _lpoNumber, value ?? ""); }
+        public DateTime Date { get => _date; set => SetField(ref _date, value); }
+        public DateTime RequiredDate { get => _requiredDate; set => SetField(ref _requiredDate, value); }
+        public DateTime CreatedDate { get => _createdDate; set => SetField(ref _createdDate, value); }
+        public string Status { get => _status; set => SetField(ref _status, value ?? ""); }
+        public string Color { get => _color; set => SetField(ref _color, value ?? ""); }
+        public string Salesman { get => _salesman; set => SetField(ref _salesman, value ?? ""); }
+        public string CustomerReference { get => _customerReference; set => SetField(ref _customerReference, value ?? ""); }
+        public string Notes { get => _notes; set => SetField(ref _notes, value ?? ""); }
+        public bool IsConvertedToDelivery { get => _isConvertedToDelivery; set => SetField(ref _isConvertedToDelivery, value); }
+        public int TotalQty { get => _totalQty; set => SetField(ref _totalQty, value); }
+        public int ReleasedQty { get => _releasedQty; set => SetField(ref _releasedQty, value); }
+        public int BalanceQty { get => _balanceQty; set => SetField(ref _balanceQty, value); }
+        public double TotalSQM { get => _totalSQM; set => SetField(ref _totalSQM, value); }
+        public double TotalAmount { get => _totalAmount; set => SetField(ref _totalAmount, value); }
+        public ObservableCollection<JobOrderSpecification> Specifications { get => _specifications; set => SetField(ref _specifications, value); }
+        public string SpecificationsJson { get => _specificationsJson; set => SetField(ref _specificationsJson, value ?? ""); }
 
         public void CalculateTotals()
         {
@@ -70,12 +72,11 @@ namespace ProGlassAutomation.Models
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string name = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-        }
+        protected void OnPropertyChanged([CallerMemberName] string name = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        protected bool SetField<T>(ref T field, T value, [CallerMemberName] string name = null) { if (Equals(field, value)) return false; field = value; OnPropertyChanged(name); return true; }
     }
 
+    // ==================== JOB ORDER SPECIFICATION ====================
     public class JobOrderSpecification : INotifyPropertyChanged
     {
         private int _id;
@@ -92,55 +93,91 @@ namespace ProGlassAutomation.Models
         private bool _includeInSpec = true;
         private double _basePrice = 0;
         private double _surchargePercent = 20;
-        private ObservableCollection<JobOrderItem> _items = new ObservableCollection<JobOrderItem>();
-        private ObservableCollection<JobOrderOtherCharge> _otherCharges = new ObservableCollection<JobOrderOtherCharge>();
+
+        // ✅ Cached totals
+        private int _cachedTotalQty;
+        private double _cachedTotalSQM1;
+        private double _cachedTotalSQM2;
+        private double _cachedTotalSQM;
+        private double _cachedTotalLM1;
+        private double _cachedTotalLM2;
+        private double _cachedTotalAmount;
+        private double _cachedOtherChargesTotal;
+        private bool _totalsValid;
+
+        private ObservableCollection<JobOrderItem> _items;
+        private ObservableCollection<JobOrderOtherCharge> _otherCharges;
 
         public JobOrderSpecification()
         {
-            _items.CollectionChanged += (s, e) => CalculateTotals();
-            _otherCharges.CollectionChanged += (s, e) => CalculateTotals();
+            _items = new ObservableCollection<JobOrderItem>();
+            _otherCharges = new ObservableCollection<JobOrderOtherCharge>();
+            _items.CollectionChanged += (s, e) => InvalidateTotals();
+            _otherCharges.CollectionChanged += (s, e) => InvalidateTotals();
         }
 
-        public int Id { get => _id; set { _id = value; OnPropertyChanged(); } }
-        public string SpecificationName { get => _specificationName; set { _specificationName = value ?? ""; OnPropertyChanged(); } }
-        public string ModuleType { get => _moduleType; set { _moduleType = value ?? ""; OnPropertyChanged(); } }
-        public string WorkType { get => _workType; set { _workType = value ?? ""; OnPropertyChanged(); } }
-        public string OuterThickness { get => _outerThickness; set { _outerThickness = value ?? ""; OnPropertyChanged(); } }
-        public string OuterColor { get => _outerColor; set { _outerColor = value ?? ""; OnPropertyChanged(); } }
-        public string InnerThickness { get => _innerThickness; set { _innerThickness = value ?? ""; OnPropertyChanged(); } }
-        public string InnerColor { get => _innerColor; set { _innerColor = value ?? ""; OnPropertyChanged(); } }
-        public string SpacerThickness { get => _spacerThickness; set { _spacerThickness = value ?? ""; OnPropertyChanged(); } }
-        public string PVBThickness { get => _pvbThickness; set { _pvbThickness = value ?? ""; OnPropertyChanged(); } }
-        public string PVBColor { get => _pvbColor; set { _pvbColor = value ?? ""; OnPropertyChanged(); } }
-        public bool IncludeInSpec { get => _includeInSpec; set { _includeInSpec = value; OnPropertyChanged(); } }
-        public double BasePrice { get => _basePrice; set { _basePrice = value; OnPropertyChanged(); } }
-        public double SurchargePercent { get => _surchargePercent; set { _surchargePercent = value; OnPropertyChanged(); } }
+        public int Id { get => _id; set => SetField(ref _id, value); }
+        public string SpecificationName { get => _specificationName; set => SetField(ref _specificationName, value ?? ""); }
+        public string ModuleType { get => _moduleType; set => SetField(ref _moduleType, value ?? ""); }
+        public string WorkType { get => _workType; set => SetField(ref _workType, value ?? ""); }
+        public string OuterThickness { get => _outerThickness; set => SetField(ref _outerThickness, value ?? ""); }
+        public string OuterColor { get => _outerColor; set => SetField(ref _outerColor, value ?? ""); }
+        public string InnerThickness { get => _innerThickness; set => SetField(ref _innerThickness, value ?? ""); }
+        public string InnerColor { get => _innerColor; set => SetField(ref _innerColor, value ?? ""); }
+        public string SpacerThickness { get => _spacerThickness; set => SetField(ref _spacerThickness, value ?? ""); }
+        public string PVBThickness { get => _pvbThickness; set => SetField(ref _pvbThickness, value ?? ""); }
+        public string PVBColor { get => _pvbColor; set => SetField(ref _pvbColor, value ?? ""); }
+        public bool IncludeInSpec { get => _includeInSpec; set => SetField(ref _includeInSpec, value); }
+        public double BasePrice { get => _basePrice; set => SetField(ref _basePrice, value); }
+        public double SurchargePercent { get => _surchargePercent; set => SetField(ref _surchargePercent, value); }
 
         public ObservableCollection<JobOrderItem> Items
         {
             get => _items;
-            set { _items = value; OnPropertyChanged(); }
+            set
+            {
+                if (_items != null) _items.CollectionChanged -= Items_CollectionChanged;
+                _items = value;
+                OnPropertyChanged();
+                if (_items != null) _items.CollectionChanged += Items_CollectionChanged;
+                InvalidateTotals();
+            }
         }
 
         public ObservableCollection<JobOrderOtherCharge> OtherCharges
         {
             get => _otherCharges;
-            set { _otherCharges = value; OnPropertyChanged(); }
+            set
+            {
+                if (_otherCharges != null) _otherCharges.CollectionChanged -= OtherCharges_CollectionChanged;
+                _otherCharges = value;
+                OnPropertyChanged();
+                if (_otherCharges != null) _otherCharges.CollectionChanged += OtherCharges_CollectionChanged;
+                InvalidateTotals();
+            }
         }
 
-        // Calculated properties
-        public int TotalItems => Items?.Count ?? 0;
-        public int TotalQty => Items?.Sum(i => i.Qty) ?? 0;
-        public double TotalSQM1 => Items?.Sum(i => i.SQM1 * i.Qty) ?? 0;
-        public double TotalSQM2 => Items?.Sum(i => i.SQM2 * i.Qty) ?? 0;
-        public double TotalSQM => Items?.Sum(i => i.TotalSQM) ?? 0;
-        public double TotalLM1 => Items?.Sum(i => i.LM1 * i.Qty) ?? 0;
-        public double TotalLM2 => Items?.Sum(i => i.LM2 * i.Qty) ?? 0;
-        public double OtherChargesTotal => OtherCharges?.Sum(c => c.Amount) ?? 0;
-        public double TotalAmount => (Items?.Sum(i => i.TotalAmount) ?? 0) + OtherChargesTotal;
+        private void Items_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e) => InvalidateTotals();
+        private void OtherCharges_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e) => InvalidateTotals();
 
-        public void CalculateTotals()
+        public int TotalItems => _items?.Count ?? 0;
+        public int TotalQty { get { EnsureTotalsValid(); return _cachedTotalQty; } }
+        public double TotalSQM1 { get { EnsureTotalsValid(); return _cachedTotalSQM1; } }
+        public double TotalSQM2 { get { EnsureTotalsValid(); return _cachedTotalSQM2; } }
+        public double TotalSQM { get { EnsureTotalsValid(); return _cachedTotalSQM; } }
+        public double TotalLM1 { get { EnsureTotalsValid(); return _cachedTotalLM1; } }
+        public double TotalLM2 { get { EnsureTotalsValid(); return _cachedTotalLM2; } }
+        public double OtherChargesTotal { get { EnsureTotalsValid(); return _cachedOtherChargesTotal; } }
+        public double TotalAmount { get { EnsureTotalsValid(); return _cachedTotalAmount; } }
+
+        private void EnsureTotalsValid()
         {
+            if (!_totalsValid) { RefreshTotals(); _totalsValid = true; }
+        }
+
+        private void InvalidateTotals()
+        {
+            _totalsValid = false;
             OnPropertyChanged(nameof(TotalItems));
             OnPropertyChanged(nameof(TotalQty));
             OnPropertyChanged(nameof(TotalSQM1));
@@ -152,13 +189,43 @@ namespace ProGlassAutomation.Models
             OnPropertyChanged(nameof(TotalAmount));
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
-        public void OnPropertyChanged([CallerMemberName] string name = null)
+        private void RefreshTotals()
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+            _cachedTotalQty = 0; _cachedTotalSQM1 = 0; _cachedTotalSQM2 = 0;
+            _cachedTotalSQM = 0; _cachedTotalLM1 = 0; _cachedTotalLM2 = 0;
+            _cachedOtherChargesTotal = 0; _cachedTotalAmount = 0;
+
+            if (_items != null)
+            {
+                foreach (var item in _items)
+                {
+                    _cachedTotalQty += item.Qty;
+                    _cachedTotalSQM1 += item.SQM1 * item.Qty;
+                    _cachedTotalSQM2 += item.SQM2 * item.Qty;
+                    _cachedTotalSQM += item.TotalSQM;
+                    _cachedTotalLM1 += item.LM1 * item.Qty;
+                    _cachedTotalLM2 += item.LM2 * item.Qty;
+                    _cachedTotalAmount += item.TotalAmount;
+                }
+            }
+
+            if (_otherCharges != null)
+            {
+                foreach (var charge in _otherCharges)
+                    _cachedOtherChargesTotal += charge?.Amount ?? 0;
+            }
+
+            _cachedTotalAmount += _cachedOtherChargesTotal;
         }
+
+        public void CalculateTotals() { RefreshTotals(); _totalsValid = true; InvalidateTotals(); }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string name = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        protected bool SetField<T>(ref T field, T value, [CallerMemberName] string name = null) { if (Equals(field, value)) return false; field = value; OnPropertyChanged(name); return true; }
     }
 
+    // ==================== JOB ORDER ITEM (DEBOUNCED) ====================
     public class JobOrderItem : INotifyPropertyChanged
     {
         private int _id;
@@ -176,107 +243,72 @@ namespace ProGlassAutomation.Models
         private double _lm1;
         private double _lm2;
 
+        // ✅ Debounce timer
+        private readonly DispatcherTimer _recalculateTimer;
+        private bool _pendingRecalculation;
+
         public JobOrderItem()
         {
+            _recalculateTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
+            _recalculateTimer.Tick += (s, e) =>
+            {
+                _recalculateTimer.Stop();
+                if (_pendingRecalculation) { PerformRecalculation(); _pendingRecalculation = false; }
+            };
             Recalculate();
         }
 
-        public int Id { get => _id; set { _id = value; OnPropertyChanged(); } }
-        public int SrNo { get => _srNo; set { _srNo = value; OnPropertyChanged(); } }
-        public string GlassRef { get => _glassRef; set { _glassRef = value ?? ""; OnPropertyChanged(); } }
+        public int Id { get => _id; set => SetField(ref _id, value); }
+        public int SrNo { get => _srNo; set => SetField(ref _srNo, value); }
+        public string GlassRef { get => _glassRef; set => SetField(ref _glassRef, value); }
 
-        public double Width1
-        {
-            get => _width1;
-            set { _width1 = value; OnPropertyChanged(); Recalculate(); }
-        }
-
-        public double Height1
-        {
-            get => _height1;
-            set { _height1 = value; OnPropertyChanged(); Recalculate(); }
-        }
-
-        public double Width2
-        {
-            get => _width2;
-            set { _width2 = value; OnPropertyChanged(); Recalculate(); }
-        }
-
-        public double Height2
-        {
-            get => _height2;
-            set { _height2 = value; OnPropertyChanged(); Recalculate(); }
-        }
+        public double Width1 { get => _width1; set { if (SetField(ref _width1, value)) ScheduleRecalculation(); } }
+        public double Height1 { get => _height1; set { if (SetField(ref _height1, value)) ScheduleRecalculation(); } }
+        public double Width2 { get => _width2; set { if (SetField(ref _width2, value)) ScheduleRecalculation(); } }
+        public double Height2 { get => _height2; set { if (SetField(ref _height2, value)) ScheduleRecalculation(); } }
 
         public int Qty
         {
             get => _qty;
-            set { _qty = value; OnPropertyChanged(); Recalculate(); OnPropertyChanged(nameof(RemainingQty)); }
+            set { if (SetField(ref _qty, value)) { ScheduleRecalculation(); OnPropertyChanged(nameof(RemainingQty)); } }
         }
 
-        public int DeliveredQty
-        {
-            get => _deliveredQty;
-            set { _deliveredQty = value; OnPropertyChanged(); OnPropertyChanged(nameof(RemainingQty)); }
-        }
-
+        public int DeliveredQty { get => _deliveredQty; set { if (SetField(ref _deliveredQty, value)) OnPropertyChanged(nameof(RemainingQty)); } }
         public int RemainingQty => Qty - DeliveredQty;
 
-        public double Price
-        {
-            get => _price;
-            set { _price = value; OnPropertyChanged(); Recalculate(); }
-        }
+        public double Price { get => _price; set { if (SetField(ref _price, value)) ScheduleRecalculation(); } }
 
-        public double SQM1
-        {
-            get => _sqm1;
-            private set { _sqm1 = value; OnPropertyChanged(); }
-        }
-
-        public double SQM2
-        {
-            get => _sqm2;
-            private set { _sqm2 = value; OnPropertyChanged(); }
-        }
-
+        public double SQM1 => _sqm1;
+        public double SQM2 => _sqm2;
+        public double LM1 => _lm1;
+        public double LM2 => _lm2;
         public double TotalSQM => Math.Round((_sqm1 + _sqm2) * Qty, 4);
-
-        public double LM1
-        {
-            get => _lm1;
-            private set { _lm1 = value; OnPropertyChanged(); }
-        }
-
-        public double LM2
-        {
-            get => _lm2;
-            private set { _lm2 = value; OnPropertyChanged(); }
-        }
-
         public double TotalLM => Math.Round((_lm1 + _lm2) * Qty, 4);
-
         public double TotalAmount => Math.Round(TotalSQM * _price, 2);
 
-        public void Recalculate()
+        private void ScheduleRecalculation()
+        {
+            _pendingRecalculation = true;
+            _recalculateTimer.Stop();
+            _recalculateTimer.Start();
+        }
+
+        private void PerformRecalculation()
         {
             _sqm1 = CalculateSQM(_width1, _height1);
-            SQM1 = _sqm1;
-
             _sqm2 = CalculateSQM(_width2, _height2);
-            SQM2 = _sqm2;
-
             _lm1 = CalculateLM(_width1, _height1);
-            LM1 = _lm1;
-
             _lm2 = CalculateLM(_width2, _height2);
-            LM2 = _lm2;
-
+            OnPropertyChanged(nameof(SQM1));
+            OnPropertyChanged(nameof(SQM2));
+            OnPropertyChanged(nameof(LM1));
+            OnPropertyChanged(nameof(LM2));
             OnPropertyChanged(nameof(TotalSQM));
             OnPropertyChanged(nameof(TotalLM));
             OnPropertyChanged(nameof(TotalAmount));
         }
+
+        public void Recalculate() => PerformRecalculation();
 
         private double CalculateSQM(double width, double height)
         {
@@ -293,12 +325,11 @@ namespace ProGlassAutomation.Models
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string name = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-        }
+        protected void OnPropertyChanged([CallerMemberName] string name = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        protected bool SetField<T>(ref T field, T value, [CallerMemberName] string name = null) { if (Equals(field, value)) return false; field = value; OnPropertyChanged(name); return true; }
     }
 
+    // ==================== JOB ORDER OTHER CHARGE ====================
     public class JobOrderOtherCharge : INotifyPropertyChanged
     {
         private string _name = "New Charge";
@@ -313,16 +344,10 @@ namespace ProGlassAutomation.Models
         private bool _isManualOverride = false;
 
         public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string name = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-        }
+        protected void OnPropertyChanged([CallerMemberName] string name = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        protected bool SetField<T>(ref T field, T value, [CallerMemberName] string name = null) { if (Equals(field, value)) return false; field = value; OnPropertyChanged(name); return true; }
 
-        public string Name
-        {
-            get => _name;
-            set { _name = value ?? ""; OnPropertyChanged(); }
-        }
+        public string Name { get => _name; set => SetField(ref _name, value ?? ""); }
 
         public string Type
         {
@@ -357,17 +382,8 @@ namespace ProGlassAutomation.Models
             set { _amount = value; OnPropertyChanged(); OnPropertyChanged(nameof(AmountDisplay)); }
         }
 
-        public string LmDimType
-        {
-            get => _lmDimType;
-            set { _lmDimType = value ?? "w1h1"; OnPropertyChanged(); }
-        }
-
-        public int LinkedSpecIndex
-        {
-            get => _linkedSpecIndex;
-            set { _linkedSpecIndex = value; OnPropertyChanged(); }
-        }
+        public string LmDimType { get => _lmDimType; set => SetField(ref _lmDimType, value ?? "w1h1"); }
+        public int LinkedSpecIndex { get => _linkedSpecIndex; set => SetField(ref _linkedSpecIndex, value); }
 
         public string LinkedSpecIndices
         {
@@ -391,20 +407,12 @@ namespace ProGlassAutomation.Models
                     _targetsAllSpecs = value;
                     OnPropertyChanged();
                     OnPropertyChanged(nameof(LinkedSpecsDisplay));
-                    if (value)
-                    {
-                        LinkedSpecIndices = "";
-                    }
+                    if (value) LinkedSpecIndices = "";
                 }
             }
         }
 
-        public bool IsManualOverride
-        {
-            get => _isManualOverride;
-            set { _isManualOverride = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsAutoMode)); }
-        }
-
+        public bool IsManualOverride { get => _isManualOverride; set { _isManualOverride = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsAutoMode)); } }
         public bool IsAutoMode => !_isManualOverride;
 
         private void CalculateAmount()
@@ -412,58 +420,40 @@ namespace ProGlassAutomation.Models
             Amount = Math.Round(_value * _rate, 2);
         }
 
-        public string ValueDisplay
+        public string ValueDisplay => Type?.ToLower() switch
         {
-            get
-            {
-                return Type?.ToLower() switch
-                {
-                    "lm" => $"{Value:F2} LM",
-                    "sqm" => $"{Value:F2} SQM",
-                    "sqm1" => $"{Value:F2} SQM1",
-                    "sqm2" => $"{Value:F2} SQM2",
-                    "qty" => $"{Value:F0} pcs",
-                    "1x" => $"{Value:F0} pcs",
-                    "2x" => $"{Value:F0} pcs (2X)",
-                    _ => $"{Value:F2}"
-                };
-            }
-        }
+            "lm" => $"{Value:F2} LM",
+            "sqm" => $"{Value:F2} SQM",
+            "sqm1" => $"{Value:F2} SQM1",
+            "sqm2" => $"{Value:F2} SQM2",
+            "qty" => $"{Value:F0} pcs",
+            "1x" => $"{Value:F0} pcs",
+            "2x" => $"{Value:F0} pcs (2X)",
+            _ => $"{Value:F2}"
+        };
 
-        public string UnitDisplay
+        public string UnitDisplay => Type?.ToLower() switch
         {
-            get
-            {
-                return Type?.ToLower() switch
-                {
-                    "lm" => "AED/LM",
-                    "sqm" or "sqm1" or "sqm2" => "AED/SQM",
-                    "qty" or "1x" or "2x" => "AED/pc",
-                    _ => "AED"
-                };
-            }
-        }
+            "lm" => "AED/LM",
+            "sqm" or "sqm1" or "sqm2" => "AED/SQM",
+            "qty" or "1x" or "2x" => "AED/pc",
+            _ => "AED"
+        };
 
         public string RateDisplay => Rate == 0 ? "0" : $"{Rate:F2}";
         public string AmountDisplay => $"AED {Amount:N2}";
 
-        public string TypeDisplay
+        public string TypeDisplay => Type?.ToLower() switch
         {
-            get
-            {
-                return Type?.ToLower() switch
-                {
-                    "lm" => "LM",
-                    "sqm" => "SQM",
-                    "sqm1" => "SQM1",
-                    "sqm2" => "SQM2",
-                    "qty" => "QTY",
-                    "1x" => "1X",
-                    "2x" => "2X",
-                    _ => Type?.ToUpper() ?? ""
-                };
-            }
-        }
+            "lm" => "LM",
+            "sqm" => "SQM",
+            "sqm1" => "SQM1",
+            "sqm2" => "SQM2",
+            "qty" => "QTY",
+            "1x" => "1X",
+            "2x" => "2X",
+            _ => Type?.ToUpper() ?? ""
+        };
 
         public bool IsLMBased => Type == "lm" || Type == "sqm" || Type == "sqm1" || Type == "sqm2";
         public bool IsHoleType => Type == "1x" || Type == "2x";
@@ -472,13 +462,9 @@ namespace ProGlassAutomation.Models
         {
             get
             {
-                if (string.IsNullOrWhiteSpace(_linkedSpecIndices))
-                    return "All Specs";
-
+                if (string.IsNullOrWhiteSpace(_linkedSpecIndices)) return "All Specs";
                 var indices = SpecIndexList;
-                if (indices.Count == 0)
-                    return "All Specs";
-
+                if (indices.Count == 0) return "All Specs";
                 return string.Join(" + ", indices.Select(i => $"Spec {i + 1}"));
             }
         }
@@ -487,50 +473,30 @@ namespace ProGlassAutomation.Models
         {
             get
             {
-                if (string.IsNullOrWhiteSpace(_linkedSpecIndices))
-                    return new List<int>();
-
-                return _linkedSpecIndices
-                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                    .Select(s => int.TryParse(s.Trim(), out int i) ? i : -1)
-                    .Where(i => i >= 0)
-                    .ToList();
+                if (string.IsNullOrWhiteSpace(_linkedSpecIndices)) return new List<int>();
+                return _linkedSpecIndices.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(s => int.TryParse(s.Trim(), out int i) ? i : -1).Where(i => i >= 0).ToList();
             }
         }
 
         public void AddSpec(int index)
         {
             var indices = SpecIndexList;
-            if (!indices.Contains(index))
-            {
-                indices.Add(index);
-                indices.Sort();
-                LinkedSpecIndices = string.Join(",", indices);
-            }
+            if (!indices.Contains(index)) { indices.Add(index); indices.Sort(); LinkedSpecIndices = string.Join(",", indices); }
         }
 
         public void RemoveSpec(int index)
         {
             var indices = SpecIndexList;
-            if (indices.Contains(index))
-            {
-                indices.Remove(index);
-                LinkedSpecIndices = indices.Count > 0 ? string.Join(",", indices) : "";
-            }
+            if (indices.Contains(index)) { indices.Remove(index); LinkedSpecIndices = indices.Count > 0 ? string.Join(",", indices) : ""; }
         }
 
         public void ToggleSpec(int index)
         {
-            if (SpecIndexList.Contains(index))
-                RemoveSpec(index);
-            else
-                AddSpec(index);
+            if (SpecIndexList.Contains(index)) RemoveSpec(index); else AddSpec(index);
         }
 
-        public void SetAllSpecs()
-        {
-            LinkedSpecIndices = "";
-        }
+        public void SetAllSpecs() => LinkedSpecIndices = "";
 
         public JobOrderOtherCharge Clone()
         {

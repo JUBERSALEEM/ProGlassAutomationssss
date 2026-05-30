@@ -11,6 +11,9 @@ namespace ProGlassAutomation.Views.Dashboard
     {
         private DashboardViewModel _viewModel;
 
+        // PATCH 1: Add flag to prevent double load
+        private bool _isLoaded;
+
         public DashboardView()
         {
             InitializeComponent();
@@ -21,11 +24,18 @@ namespace ProGlassAutomation.Views.Dashboard
             Loaded += DashboardView_Loaded;
         }
 
+        // PATCH 1: Prevent double load on startup
         private void DashboardView_Loaded(object sender, RoutedEventArgs e)
         {
             try
             {
+                if (_isLoaded)
+                    return;
+
+                _isLoaded = true;
+
                 _viewModel.LoadData();
+
                 System.Diagnostics.Debug.WriteLine("[DashboardView] Loaded");
             }
             catch (Exception ex)
@@ -34,13 +44,20 @@ namespace ProGlassAutomation.Views.Dashboard
             }
         }
 
+        // PATCH 1: Only load after initial load
         private void FilterComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             try
             {
+                if (!_isLoaded)
+                    return;
+
                 _viewModel.LoadData();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[Dashboard Filter] {ex.Message}");
+            }
         }
 
         private void SyncBalance_Click(object sender, RoutedEventArgs e)

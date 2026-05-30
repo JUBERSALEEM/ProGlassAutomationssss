@@ -253,7 +253,7 @@
                             <ComboBox Style="{StaticResource SharpCombo}" ItemsSource="{Binding ColorOptions}" SelectedValue="{Binding ColorName}" DisplayMemberPath="Name" SelectedValuePath="Name" IsEditable="True"/>
 
                             <TextBlock Text="Sheet Price (AED)" Style="{StaticResource FieldLabel}" Margin="0,14,0,0"/>
-                            <TextBox Style="{StaticResource SharpInput}" Text="{Binding SheetPrice, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
+                            <TextBox Style="{StaticResource SharpInput}" Text="{Binding SheetPrice, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
                         </StackPanel>
                     </Border>
 
@@ -263,13 +263,13 @@
                             <TextBlock Text="PROCESSING CHARGES" Style="{StaticResource SectionTitle}"/>
 
                             <TextBlock Text="Cutting (AED)" Style="{StaticResource FieldLabel}"/>
-                            <TextBox Style="{StaticResource SharpInput}" Text="{Binding Cutting, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
+                            <TextBox Style="{StaticResource SharpInput}" Text="{Binding Cutting, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
 
                             <TextBlock Text="Tempering (AED)" Style="{StaticResource FieldLabel}" Margin="0,14,0,0"/>
-                            <TextBox Style="{StaticResource SharpInput}" Text="{Binding TemperingCharge, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
+                            <TextBox Style="{StaticResource SharpInput}" Text="{Binding TemperingCharge, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
 
                             <TextBlock Text="Other Charges (AED)" Style="{StaticResource FieldLabel}" Margin="0,14,0,0"/>
-                            <TextBox Style="{StaticResource SharpInput}" Text="{Binding OtherCharges, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
+                            <TextBox Style="{StaticResource SharpInput}" Text="{Binding OtherCharges, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
 
                             <Border Background="{StaticResource BgLight}" CornerRadius="10" Padding="14" Margin="0,18,0,0" BorderBrush="{StaticResource BorderSharp}" BorderThickness="1">
                                 <Grid>
@@ -426,9 +426,9 @@
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBox Grid.Column="0" Style="{StaticResource SharpInput}" Height="38" Text="{Binding Width, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBox Grid.Column="0" Style="{StaticResource SharpInput}" Height="38" Text="{Binding Width, UpdateSourceTrigger=LostFocus}"/>
                                     <TextBlock Grid.Column="1" Text="×" FontSize="16" FontWeight="Bold" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="10,0"/>
-                                    <TextBox Grid.Column="2" Style="{StaticResource SharpInput}" Height="38" Text="{Binding Height, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBox Grid.Column="2" Style="{StaticResource SharpInput}" Height="38" Text="{Binding Height, UpdateSourceTrigger=LostFocus}"/>
                                 </Grid>
                             </StackPanel>
                         </Grid>
@@ -447,7 +447,7 @@
                             <TextBlock Text="QUANTITY &amp; TOTAL" Style="{StaticResource SectionTitle}"/>
 
                             <TextBlock Text="Quantity" Style="{StaticResource FieldLabel}"/>
-                            <TextBox Style="{StaticResource SharpInput}" Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}"/>
+                            <TextBox Style="{StaticResource SharpInput}" Text="{Binding Quantity, UpdateSourceTrigger=LostFocus}"/>
 
                             <Grid Margin="0,18,0,0">
                                 <Grid.ColumnDefinitions>
@@ -469,7 +469,7 @@
                     <Border Grid.Column="1" Style="{StaticResource ModuleBorderStyle}" Margin="12,0,0,0">
                         <StackPanel>
                             <TextBlock Text="CUSTOM NOTES" Style="{StaticResource SectionTitle}"/>
-                            <TextBox Style="{StaticResource SharpInput}" Height="90" TextWrapping="Wrap" AcceptsReturn="True" VerticalContentAlignment="Top" Text="{Binding CustomNotes, UpdateSourceTrigger=PropertyChanged}"/>
+                            <TextBox Style="{StaticResource SharpInput}" Height="90" TextWrapping="Wrap" AcceptsReturn="True" VerticalContentAlignment="Top" Text="{Binding CustomNotes, UpdateSourceTrigger=LostFocus}"/>
                         </StackPanel>
                     </Border>
                 </Grid>

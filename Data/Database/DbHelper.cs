@@ -31,6 +31,8 @@ namespace ProGlassAutomation.Data.Database
         {
             using var conn = CreateConnection();
             conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandTimeout = 30;
             try { action(conn); }
             catch (Exception ex) { Log(ex); throw; }
         }
@@ -39,6 +41,8 @@ namespace ProGlassAutomation.Data.Database
         {
             using var conn = CreateConnection();
             conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandTimeout = 30;
             try { return func(conn); }
             catch (Exception ex) { Log(ex); throw; }
         }
@@ -2064,13 +2068,17 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
         {
             Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
-                cmd.CommandText = @"UPDATE JobOrders SET ProformaInvoiceId = $piId, ClientName = $cn, ClientTRN = $ctr, ClientAddress = $ca, ContactPerson = $cp, ContactNumber = $cno, ProjectName = $pn, ProjectLocation = $pl, LPONumber = $lp, JODate = $jd, RequiredDate = $rd, Status = $st, TotalQty = $tq, ReleasedQty = $rq, BalanceQty = $bq, TotalAmount = $ta, VATAmount = $va, DiscountAmount = $da, NetAmount = $na, Notes = $nt, SpecificationsJson = $specsJson, UpdatedDate = $ud WHERE Id = $id";
-                // Note: PINumber is derived from ProformaInvoiceId via JOIN, not stored directly
-                cmd.Parameters.AddWithValue("$id", id);
-                cmd.ExecuteNonQuery();
-                cmd.CommandText = "DELETE FROM JobOrders WHERE Id = $id";
-                cmd.ExecuteNonQuery();
+                // Delete JobOrderItems first (child records)
+                using var delItemsCmd = conn.CreateCommand();
+                delItemsCmd.CommandText = "DELETE FROM JobOrderItems WHERE JobOrderId = $id";
+                delItemsCmd.Parameters.AddWithValue("$id", id);
+                delItemsCmd.ExecuteNonQuery();
+
+                // Delete main JobOrder record
+                using var delCmd = conn.CreateCommand();
+                delCmd.CommandText = "DELETE FROM JobOrders WHERE Id = $id";
+                delCmd.Parameters.AddWithValue("$id", id);
+                delCmd.ExecuteNonQuery();
             });
         }
 

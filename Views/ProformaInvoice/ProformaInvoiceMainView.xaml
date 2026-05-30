@@ -193,7 +193,7 @@
                         <TextBox Height="36"
                                  Padding="10,0"
                                  FontSize="12"
-                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 Text="{Binding SearchText, UpdateSourceTrigger=LostFocus}"
                                  ToolTip="Search PI number, customer or project"/>
                     </StackPanel>
 
@@ -243,7 +243,7 @@
                         <TextBox Height="36"
                                  Padding="10,0"
                                  FontSize="12"
-                                 Text="{Binding CustomerFilter, UpdateSourceTrigger=PropertyChanged}"/>
+                                 Text="{Binding CustomerFilter, UpdateSourceTrigger=LostFocus}"/>
                     </StackPanel>
 
                     <!-- DATE FROM -->

@@ -16,20 +16,17 @@ namespace ProGlassAutomation.Views
         {
             InitializeComponent();
 
-            // Use shared ProformaInvoiceViewModel
-            var dailyWorksVM = new DailyWorksViewModel();
-            dailyWorksVM.ProformaInvoiceVM = SharedViewModels.ProformaInvoiceVM;
-
-            // Subscribe to save event for auto-update
-            SharedViewModels.ProformaInvoiceVM.InvoiceSaved += (invoice) => dailyWorksVM.OnProformaInvoiceSaved(invoice);
+            // NOTE: DataContext is set by MainViewModel.CreateDailyWorksView()
+            // We only set up event handlers here
 
             // Connect navigation event
-            dailyWorksVM.RequestNavigateToInvoice += OnNavigateToInvoice;
+            if (DataContext is DailyWorksViewModel vm)
+            {
+                vm.RequestNavigateToInvoice += OnNavigateToInvoice;
+                System.Diagnostics.Debug.WriteLine("[DailyWorksView] Navigation event connected");
+            }
 
-            // Set DataContext
-            DataContext = dailyWorksVM;
-
-            System.Diagnostics.Debug.WriteLine("[DailyWorksView] ViewModels initialized and connected");
+            System.Diagnostics.Debug.WriteLine("[DailyWorksView] Initialized");
         }
 
         // Event to notify MainWindow to navigate
@@ -96,17 +93,12 @@ namespace ProGlassAutomation.Views
 
                 vm.UpdateSelectedIds(selectedIds);
 
-                // Set SelectedDataRowView for command CanExecute checks
                 if (firstSelected != null)
                 {
                     vm.SelectedDataRowView = firstSelected;
                 }
             }
         }
-
-        // ═══════════════════════════════════════════════════════════
-        // SELECT ALL ON CLICK - TextBox
-        // ═══════════════════════════════════════════════════════════
 
         private void TextBox_GotFocus(object sender, RoutedEventArgs e)
         {
@@ -124,10 +116,6 @@ namespace ProGlassAutomation.Views
                 textBox.Focus();
             }
         }
-
-        // ═══════════════════════════════════════════════════════════
-        // SELECT ALL ON CLICK - ComboBox (Editable)
-        // ═══════════════════════════════════════════════════════════
 
         private void ComboBox_GotFocus(object sender, RoutedEventArgs e)
         {
@@ -154,7 +142,6 @@ namespace ProGlassAutomation.Views
         {
             if (DataContext is DailyWorksViewModel vm)
             {
-                // Get selected row from DataGrid
                 DataRowView? selectedRow = null;
                 if (MainDataGrid?.SelectedItem is DataRowView drv)
                 {
@@ -162,7 +149,6 @@ namespace ProGlassAutomation.Views
                     vm.SelectedDataRowView = drv;
                 }
 
-                // Execute the command
                 vm.LoadToInvoiceCommand.Execute(MainDataGrid);
 
                 System.Diagnostics.Debug.WriteLine($"[DailyWork] LoadToInvoice clicked. SelectedRow={(selectedRow != null)}");

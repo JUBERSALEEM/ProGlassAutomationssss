@@ -576,7 +576,7 @@ namespace ProGlassAutomation.ViewModels
             _isUpdatingASPPrice = false;
         }
 
-        private void CreateNewInvoice()
+        public void CreateNewInvoice()
         {
             Invoice = new ProformaInvoiceModel
             {
@@ -2309,6 +2309,7 @@ namespace ProGlassAutomation.ViewModels
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
 
         // ==================== VALIDATION (PATCH 17) ====================
 

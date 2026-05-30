@@ -1,228 +1,445 @@
-﻿using ProGlassAutomation.Data.Database;
-using ProGlassAutomation.Models;
-using System;
+﻿using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
+
+using DbJobOrder = ProGlassAutomation.Data.Database.JobOrderModel;
 
 namespace ProGlassAutomation.ViewModels
 {
     public class JobOrderListViewModel : INotifyPropertyChanged
     {
-        private ObservableCollection<JobOrder> _jobOrders = new();
-        private JobOrder _selectedJobOrder;
+        // Events
+        public event Action<DbJobOrder>? OpenJobOrderRequested;
+        public event Action<DbJobOrder>? OpenProformaInvoiceRequested;
+        public event Action? NewJobOrderRequested;
+
+        // Private fields
         private string _searchText = "";
-        private string _selectedStatus = "All";
+        private string _selectedStatus = "All Status";
+        private string _customerFilter = "";
+        private DateTime? _fromDate;
+        private DateTime? _toDate;
+        private DbJobOrder? _selectedJobOrder;
         private bool _isLoading;
+        private bool _isRefreshing;
 
-        // Events for navigation
-        public event Action<JobOrder> OpenJobOrderRequested;
-        public event Action<JobOrder> OpenProformaInvoiceRequested;
-        public event Action NewJobOrderRequested;
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        protected void OnPropertyChanged([CallerMemberName] string name = null)
+        // Collections
+        public ObservableCollection<DbJobOrder> JobOrders { get; } = new ObservableCollection<DbJobOrder>();
+        public ObservableCollection<DbJobOrder> FilteredJobOrders { get; } = new ObservableCollection<DbJobOrder>();
+        public ObservableCollection<string> SalesmanList { get; } = new ObservableCollection<string>();
+        public ObservableCollection<string> StatusOptions { get; } = new ObservableCollection<string>
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-        }
+            "All Status", "Pending", "In Progress", "Completed", "On Hold", "Cancelled"
+        };
 
-        public ObservableCollection<JobOrder> JobOrders
-        {
-            get => _jobOrders;
-            set
-            {
-                _jobOrders = value;
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(FilteredJobOrders));
-            }
-        }
-
-        public ObservableCollection<JobOrder> FilteredJobOrders
-        {
-            get
-            {
-                var filtered = JobOrders.AsEnumerable();
-
-                if (!string.IsNullOrWhiteSpace(SearchText))
-                {
-                    var search = SearchText.ToLower();
-                    filtered = filtered.Where(jo =>
-                        (jo.JobNumber?.ToLower().Contains(search) ?? false) ||
-                        (jo.CustomerName?.ToLower().Contains(search) ?? false) ||
-                        (jo.ProjectName?.ToLower().Contains(search) ?? false));
-                }
-
-                if (SelectedStatus != "All")
-                {
-                    filtered = filtered.Where(jo => jo.Status == SelectedStatus);
-                }
-
-                return new ObservableCollection<JobOrder>(filtered);
-            }
-        }
-
-        public JobOrder SelectedJobOrder
-        {
-            get => _selectedJobOrder;
-            set
-            {
-                _selectedJobOrder = value;
-                OnPropertyChanged();
-            }
-        }
-
+        // Properties
         public string SearchText
         {
             get => _searchText;
-            set
-            {
-                _searchText = value;
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(FilteredJobOrders));
-            }
+            set { _searchText = value; OnPropertyChanged(); ApplyFilters(); }
         }
 
         public string SelectedStatus
         {
             get => _selectedStatus;
-            set
-            {
-                _selectedStatus = value;
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(FilteredJobOrders));
-            }
+            set { _selectedStatus = value; OnPropertyChanged(); ApplyFilters(); }
+        }
+
+        public string CustomerFilter
+        {
+            get => _customerFilter;
+            set { _customerFilter = value; OnPropertyChanged(); ApplyFilters(); }
+        }
+
+        public DateTime? FromDate
+        {
+            get => _fromDate;
+            set { _fromDate = value; OnPropertyChanged(); ApplyFilters(); }
+        }
+
+        public DateTime? ToDate
+        {
+            get => _toDate;
+            set { _toDate = value; OnPropertyChanged(); ApplyFilters(); }
+        }
+
+        public DbJobOrder? SelectedJobOrder
+        {
+            get => _selectedJobOrder;
+            set { _selectedJobOrder = value; OnPropertyChanged(); }
         }
 
         public bool IsLoading
         {
             get => _isLoading;
-            set
-            {
-                _isLoading = value;
-                OnPropertyChanged();
-            }
+            set { _isLoading = value; OnPropertyChanged(); }
         }
 
-        public string[] StatusOptions { get; } = { "All", "Pending", "In Progress", "Completed", "Cancelled" };
+        public bool IsRefreshing
+        {
+            get => _isRefreshing;
+            set { _isRefreshing = value; OnPropertyChanged(); }
+        }
 
-        public ICommand RefreshCommand { get; }
-        public ICommand NewJobOrderCommand { get; }
-        public ICommand OpenJobOrderCommand { get; }
-        public ICommand OpenProformaInvoiceCommand { get; }
+        // Summary Counts
+        public int TotalJOCount => JobOrders.Count;
+        public int PendingCount => JobOrders.Count(j => j.Status == "Pending");
+        public int InProgressCount => JobOrders.Count(j => j.Status == "In Progress");
+        public int CompletedCount => JobOrders.Count(j => j.Status == "Completed");
+
+        // Commands
+        public ICommand CreateNewJobOrderCommand { get; }
+        public ICommand ViewJobOrderCommand { get; }
+        public ICommand EditJobOrderCommand { get; }
         public ICommand DeleteJobOrderCommand { get; }
+        public ICommand OpenPICommand { get; }
+        public ICommand ExportReportCommand { get; }
+        public ICommand ClearFiltersCommand { get; }
+        public ICommand RefreshCommand { get; }
 
         public JobOrderListViewModel()
         {
-            RefreshCommand = new RelayCommand(_ => LoadJobOrders());
-            NewJobOrderCommand = new RelayCommand(_ => NewJobOrderRequested?.Invoke());
-            OpenJobOrderCommand = new RelayCommand(jo => OpenJobOrder(jo as JobOrder));
-            OpenProformaInvoiceCommand = new RelayCommand(jo => OpenProformaInvoice(jo as JobOrder));
-            DeleteJobOrderCommand = new RelayCommand(jo => DeleteJobOrder(jo as JobOrder));
+            CreateNewJobOrderCommand = new RelayCommand(_ => CreateNewJobOrder());
+            ViewJobOrderCommand = new RelayCommand(param => ViewJobOrder(param as DbJobOrder));
+            EditJobOrderCommand = new RelayCommand(param => EditJobOrder(param as DbJobOrder));
+            DeleteJobOrderCommand = new RelayCommand(param => DeleteJobOrder(param as DbJobOrder));
+            OpenPICommand = new RelayCommand(param => OpenProformaInvoice(param as DbJobOrder));
+            ExportReportCommand = new RelayCommand(_ => ExportReport());
+            ClearFiltersCommand = new RelayCommand(_ => ClearFilters());
+            RefreshCommand = new RelayCommand(_ => LoadJobOrdersAsync(), _ => !IsLoading);
 
-            LoadJobOrders();
+            // Initial load
+            LoadJobOrdersAsync();
         }
 
-        private void LoadJobOrders()
+        public async void LoadJobOrdersAsync()
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("[JobOrderListVM] Loading Job Orders from database...");
-                var dbOrders = DbHelper.GetAllJobOrders();
-                System.Diagnostics.Debug.WriteLine($"[JobOrderListVM] Found {dbOrders.Count} Job Orders in database");
-
-                var orders = new ObservableCollection<JobOrder>();
-                foreach (var db in dbOrders)
-                {
-                    var jo = new JobOrder
-                    {
-                        Id = db.Id,
-                        JobNumber = db.JONumber,
-                        PINumber = db.PINumber ?? "",
-                        CustomerName = db.ClientName ?? "",
-                        CustomerTRN = db.ClientTRN ?? "",
-                        CustomerAddress = db.ClientAddress ?? "",
-                        ProjectName = db.ProjectName ?? "",
-                        ProjectLocation = db.ProjectLocation ?? "",
-                        LPONumber = db.LPONumber ?? "",
-                        Date = db.JODate,
-                        RequiredDate = db.RequiredDate,
-                        Status = db.Status ?? "Pending",
-                        TotalQty = db.TotalQty,
-                        ReleasedQty = db.ReleasedQty,
-                        BalanceQty = db.BalanceQty,
-                        TotalAmount = db.TotalAmount,
-                        Notes = db.Notes ?? "",
-                        SpecificationsJson = db.SpecificationsJson ?? "",
-                        CreatedDate = DateTime.Now
-                    };
-
-                    System.Diagnostics.Debug.WriteLine($"[JobOrderListVM] Loaded JO: {jo.JobNumber}, JSON Length: {jo.SpecificationsJson?.Length ?? 0}");
-                    orders.Add(jo);
-                }
-
-                JobOrders = orders;
-                OnPropertyChanged(nameof(FilteredJobOrders));
-                System.Diagnostics.Debug.WriteLine($"[JobOrderListVM] Loaded {JobOrders.Count} Job Orders into collection");
+                await LoadJobOrdersAsyncCore();
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[JobOrderListVM] Error: {ex.Message}");
-                MessageBox.Show($"Error loading Job Orders: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Diagnostics.Debug.WriteLine($"[JobOrderListVM] LoadJobOrdersAsync Error: {ex.Message}");
+            }
+        }
+
+        private async Task LoadJobOrdersAsyncCore()
+        {
+            if (IsLoading) return;
+
+            try
+            {
+                IsLoading = true;
+                IsRefreshing = true;
+
+                // Load data in background thread
+                var orders = await Task.Run(() =>
+                {
+                    try
+                    {
+                        return Data.Database.DbHelper.GetAllJobOrders();
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[JobOrderListVM] DB Error: {ex.Message}");
+                        return null;
+                    }
+                });
+
+                // Clear on UI thread
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    JobOrders.Clear();
+                    FilteredJobOrders.Clear();
+                });
+
+                if (orders == null || orders.Count == 0)
+                {
+                    IsLoading = false;
+                    IsRefreshing = false;
+                    return;
+                }
+
+                // Add items in batches to avoid UI freeze
+                const int batchSize = 50;
+                var batches = orders
+                    .Select((item, index) => new { item, index })
+                    .GroupBy(x => x.index / batchSize)
+                    .Select(g => g.Select(x => x.item).ToList())
+                    .ToList();
+
+                foreach (var batch in batches)
+                {
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        foreach (var order in batch)
+                        {
+                            JobOrders.Add(order);
+                        }
+                    });
+
+                    // Small delay to allow UI to breathe
+                    await Task.Delay(1);
+                }
+
+                // Apply filters
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    ApplyFilters();
+                    RefreshCounts();
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[JobOrderListVM] LoadJobOrders Error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(ex.StackTrace);
+
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    System.Windows.MessageBox.Show($"Error loading job orders: {ex.Message}", "Error",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                });
             }
             finally
             {
                 IsLoading = false;
+                IsRefreshing = false;
             }
         }
 
-        private void OpenJobOrder(JobOrder jo)
+        private void ApplyFilters()
         {
-            if (jo == null) return;
-            OpenJobOrderRequested?.Invoke(jo);
-        }
+            if (JobOrders == null) return;
 
-        private void OpenProformaInvoice(JobOrder jo)
-        {
-            if (jo == null || string.IsNullOrWhiteSpace(jo.PINumber))
+            try
             {
-                MessageBox.Show("No linked Proforma Invoice found.", "Info",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
-            }
+                FilteredJobOrders.Clear();
 
-            OpenProformaInvoiceRequested?.Invoke(jo);
+                var filtered = JobOrders.AsEnumerable();
+
+                // Search filter - CORRECTED property names
+                if (!string.IsNullOrWhiteSpace(SearchText))
+                {
+                    var search = SearchText.ToLower();
+                    filtered = filtered.Where(j =>
+                        (j.JONumber?.ToLower().Contains(search) ?? false) ||
+                        (j.ClientName?.ToLower().Contains(search) ?? false) ||
+                        (j.ProjectName?.ToLower().Contains(search) ?? false) ||
+                        (j.PINumber?.ToLower().Contains(search) ?? false));
+                }
+
+                // Status filter
+                if (!string.IsNullOrWhiteSpace(SelectedStatus) && SelectedStatus != "All Status")
+                {
+                    filtered = filtered.Where(j => j.Status == SelectedStatus);
+                }
+
+                // Customer filter - use ClientName
+                if (!string.IsNullOrWhiteSpace(CustomerFilter))
+                {
+                    var customerSearch = CustomerFilter.ToLower();
+                    filtered = filtered.Where(j =>
+                        j.ClientName?.ToLower().Contains(customerSearch) ?? false);
+                }
+
+                // Date range filter - use JODate
+                if (FromDate.HasValue)
+                {
+                    filtered = filtered.Where(j => j.JODate >= FromDate.Value);
+                }
+
+                if (ToDate.HasValue)
+                {
+                    filtered = filtered.Where(j => j.JODate <= ToDate.Value.AddDays(1));
+                }
+
+                // Sort by date descending
+                foreach (var order in filtered.OrderByDescending(j => j.JODate))
+                {
+                    FilteredJobOrders.Add(order);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[JobOrderListVM] ApplyFilters Error: {ex.Message}");
+            }
         }
 
-        private void DeleteJobOrder(JobOrder jo)
+        private void RefreshCounts()
         {
-            if (jo == null) return;
+            try
+            {
+                OnPropertyChanged(nameof(TotalJOCount));
+                OnPropertyChanged(nameof(PendingCount));
+                OnPropertyChanged(nameof(InProgressCount));
+                OnPropertyChanged(nameof(CompletedCount));
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[JobOrderListVM] RefreshCounts Error: {ex.Message}");
+            }
+        }
 
-            var result = MessageBox.Show(
-                $"Delete Job Order {jo.JobNumber}?\n\nThis cannot be undone.",
+        private void CreateNewJobOrder()
+        {
+            try
+            {
+                NewJobOrderRequested?.Invoke();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[JobOrderListVM] CreateNewJobOrder Error: {ex.Message}");
+            }
+        }
+
+        private void ViewJobOrder(DbJobOrder? jobOrder)
+        {
+            if (jobOrder == null) return;
+            try
+            {
+                OpenJobOrderRequested?.Invoke(jobOrder);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[JobOrderListVM] ViewJobOrder Error: {ex.Message}");
+            }
+        }
+
+        private void EditJobOrder(DbJobOrder? jobOrder)
+        {
+            if (jobOrder == null) return;
+            try
+            {
+                OpenJobOrderRequested?.Invoke(jobOrder);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[JobOrderListVM] EditJobOrder Error: {ex.Message}");
+            }
+        }
+
+        private void OpenProformaInvoice(DbJobOrder? jobOrder)
+        {
+            if (jobOrder == null) return;
+            try
+            {
+                OpenProformaInvoiceRequested?.Invoke(jobOrder);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[JobOrderListVM] OpenProformaInvoice Error: {ex.Message}");
+            }
+        }
+
+        private void DeleteJobOrder(DbJobOrder? jobOrder)
+        {
+            if (jobOrder == null) return;
+
+            var result = System.Windows.MessageBox.Show(
+                $"Delete Job Order {jobOrder.JONumber}?\n\nThis action cannot be undone.",
                 "Confirm Delete",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Warning);
+                System.Windows.MessageBoxButton.YesNo,
+                System.Windows.MessageBoxImage.Warning);
 
-            if (result == MessageBoxResult.Yes)
+            if (result == System.Windows.MessageBoxResult.Yes)
+            {
+                DeleteJobOrderAsync(jobOrder);
+            }
+        }
+
+        private async void DeleteJobOrderAsync(DbJobOrder jobOrder)
+        {
+            try
+            {
+                // Run delete on background thread
+                await Task.Run(() => Data.Database.DbHelper.DeleteJobOrder(jobOrder.Id));
+
+                // Update UI on main thread
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    JobOrders.Remove(jobOrder);
+                    ApplyFilters();
+                    RefreshCounts();
+
+                    System.Windows.MessageBox.Show(
+                        $"Job Order {jobOrder.JONumber} deleted successfully.",
+                        "Deleted",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                });
+            }
+            catch (Exception ex)
+            {
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    System.Windows.MessageBox.Show($"Error deleting: {ex.Message}", "Error",
+                        System.Windows.MessageBoxButton.OK, MessageBoxImage.Error);
+                });
+            }
+        }
+
+        public void UpdateStatus(DbJobOrder jobOrder, string newStatus)
+        {
+            if (jobOrder == null || string.IsNullOrWhiteSpace(newStatus)) return;
+
+            Task.Run(async () =>
             {
                 try
                 {
-                    DbHelper.DeleteJobOrder(jo.Id);
-                    JobOrders.Remove(jo);
-                    OnPropertyChanged(nameof(FilteredJobOrders));
-                    MessageBox.Show("Job Order deleted.", "Success",
-                        MessageBoxButton.OK, MessageBoxImage.Information);
+                    jobOrder.Status = newStatus;
+                    await Task.Run(() => Data.Database.DbHelper.SaveJobOrder(jobOrder));
+
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        ApplyFilters();
+                        RefreshCounts();
+                    });
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Error: {ex.Message}", "Error",
-                        MessageBoxButton.OK, MessageBoxImage.Error);
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        System.Windows.MessageBox.Show($"Error updating status: {ex.Message}", "Error",
+                            System.Windows.MessageBoxButton.OK, MessageBoxImage.Error);
+                    });
                 }
-            }
+            });
+        }
+
+        private void ExportReport()
+        {
+            System.Windows.MessageBox.Show("Export feature coming soon!", "Export",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+        }
+
+        private void ClearFilters()
+        {
+            SearchText = "";
+            SelectedStatus = "All Status";
+            CustomerFilter = "";
+            FromDate = null;
+            ToDate = null;
+        }
+
+        public void Cleanup()
+        {
+            // Called when leaving the view
+            JobOrders.Clear();
+            FilteredJobOrders.Clear();
+        }
+
+        // INotifyPropertyChanged
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

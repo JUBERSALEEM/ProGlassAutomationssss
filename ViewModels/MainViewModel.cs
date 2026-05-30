@@ -38,9 +38,17 @@ namespace ProGlassAutomation.ViewModels
             return true;
         }
 
+        // Helper method to set CurrentView and notify UI
+        private void SetCurrentView(UserControl view)
+        {
+            _currentView = view;
+            Notify(nameof(CurrentView));
+            System.Diagnostics.Debug.WriteLine($"[MainVM] SetCurrentView: {view?.GetType().Name ?? "null"}");
+        }
+
         // ═══════════════════════════════════════════════════════
         // VIEW CACHE - Instantiate once, reuse forever
-        // ═══════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════
         private readonly Dictionary<string, UserControl> _viewCache = new();
 
         // Job Order ViewModel - shared across views
@@ -73,8 +81,13 @@ namespace ProGlassAutomation.ViewModels
 
         private UserControl GetOrCreateView(string viewName)
         {
+            System.Diagnostics.Debug.WriteLine($"[MainVM] GetOrCreateView called with: {viewName}");
+
             if (_viewCache.TryGetValue(viewName, out var cached))
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainVM] Returning cached view: {viewName}");
                 return cached;
+            }
 
             UserControl view = viewName switch
             {
@@ -93,12 +106,18 @@ namespace ProGlassAutomation.ViewModels
                 "ProformaInvoice" => new Views.ProformaInvoice.ProformaInvoiceMainView(),
                 "JobOrders" => CreateJobOrdersListView(),
                 "JobOrderEdit" => CreateJobOrderEditView(),
-                "JobOrderDetails" => new Views.JobOrder.JobOrderDetailsView(),
                 _ => null
             };
 
             if (view != null)
+            {
                 _viewCache[viewName] = view;
+                System.Diagnostics.Debug.WriteLine($"[MainVM] Created and cached view: {viewName}");
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainVM] WARNING: GetOrCreateView returned NULL for: {viewName}");
+            }
 
             return view;
         }
@@ -123,9 +142,10 @@ namespace ProGlassAutomation.ViewModels
 
         private UserControl CreateJobOrdersListView()
         {
-            var view = new Views.JobOrderListView();
+            var view = new Views.JobOrder.JobOrderListView();
             view.DataContext = JobOrderListVM;
 
+            // Wire up events
             JobOrderListVM.OpenJobOrderRequested -= OnOpenJobOrderRequested;
             JobOrderListVM.OpenJobOrderRequested += OnOpenJobOrderRequested;
 
@@ -145,33 +165,48 @@ namespace ProGlassAutomation.ViewModels
             return view;
         }
 
-        // PATCH: Create DailyWorks view and wire up event connection
+        // Create DailyWorks view and wire up event connection
         private UserControl CreateDailyWorksView()
         {
-            var view = new Views.DailyWorksView();
+            System.Diagnostics.Debug.WriteLine("[MainVM] CreateDailyWorksView STARTING");
 
-            // Create or get DailyWorksViewModel
-            if (_dailyWorksViewModel == null)
+            try
             {
-                _dailyWorksViewModel = new DailyWorksViewModel();
+                var view = new Views.DailyWorksView();
+                System.Diagnostics.Debug.WriteLine("[MainVM] DailyWorksView created");
+
+                // Create or get DailyWorksViewModel
+                if (_dailyWorksViewModel == null)
+                {
+                    _dailyWorksViewModel = new DailyWorksViewModel();
+                    System.Diagnostics.Debug.WriteLine("[MainVM] DailyWorksViewModel created");
+                }
+
+                view.DataContext = _dailyWorksViewModel;
+                System.Diagnostics.Debug.WriteLine("[MainVM] DataContext set");
+
+                // Wire up InvoiceSaved event from MainViewModel to DailyWorksViewModel
+                InvoiceSaved -= _dailyWorksViewModel.OnProformaInvoiceSaved;
+                InvoiceSaved += _dailyWorksViewModel.OnProformaInvoiceSaved;
+
+                System.Diagnostics.Debug.WriteLine("[MainVM] DailyWorks view created and event wired");
+                System.Diagnostics.Debug.WriteLine("[MainVM] CreateDailyWorksView COMPLETE");
+
+                return view;
             }
-
-            view.DataContext = _dailyWorksViewModel;
-
-            // PATCH: Wire up InvoiceSaved event from MainViewModel to DailyWorksViewModel
-            InvoiceSaved -= _dailyWorksViewModel.OnProformaInvoiceSaved;
-            InvoiceSaved += _dailyWorksViewModel.OnProformaInvoiceSaved;
-
-            System.Diagnostics.Debug.WriteLine("[MainVM] DailyWorks view created and event wired");
-
-            return view;
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainVM] CreateDailyWorksView ERROR: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(ex.StackTrace);
+                throw;
+            }
         }
 
         // ═══════════════════════════════════════════════════════
         // JOB ORDER LIST EVENT HANDLERS
-        // ═══════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════
 
-        private void OnOpenJobOrderRequested(JobOrder jo)
+        private void OnOpenJobOrderRequested(Data.Database.JobOrderModel jo)
         {
             try
             {
@@ -185,7 +220,7 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        private void OnOpenProformaInvoiceRequested(JobOrder jo)
+        private void OnOpenProformaInvoiceRequested(Data.Database.JobOrderModel jo)
         {
             try
             {
@@ -213,7 +248,7 @@ namespace ProGlassAutomation.ViewModels
 
         // ═══════════════════════════════════════════════════════
         // NAVIGATION ENGINE - Central hub
-        // ═══════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════
         private UserControl _currentView;
         public UserControl CurrentView
         {
@@ -232,7 +267,13 @@ namespace ProGlassAutomation.ViewModels
 
         private void Navigate(string viewName)
         {
-            if (string.IsNullOrEmpty(viewName)) return;
+            System.Diagnostics.Debug.WriteLine($"[MainVM] Navigate called with: {viewName}");
+
+            if (string.IsNullOrEmpty(viewName))
+            {
+                System.Diagnostics.Debug.WriteLine("[MainVM] Navigate: viewName is null/empty, returning");
+                return;
+            }
 
             if (IsCalculatorView(viewName) && !IsLicensed)
             {
@@ -245,30 +286,43 @@ namespace ProGlassAutomation.ViewModels
             if (viewName == "JobOrderEdit")
             {
                 var view = CreateJobOrderEditView();
-                CurrentView = view;
+                SetCurrentView(view);
                 CurrentViewName = viewName;
+                System.Diagnostics.Debug.WriteLine($"[MainVM] Navigated to JobOrderEdit");
                 return;
             }
 
             var newView = GetOrCreateView(viewName);
 
+            System.Diagnostics.Debug.WriteLine($"[MainVM] GetOrCreateView returned: {newView?.GetType().Name ?? "NULL"}");
+
+            if (newView == null)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainVM] ERROR: Navigate - newView is NULL for: {viewName}");
+                MessageBox.Show($"View '{viewName}' not found.", "Navigation Error",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             if (CurrentView == newView)
             {
-                CurrentView = null;
+                System.Diagnostics.Debug.WriteLine("[MainVM] Same view, toggling off");
+                SetCurrentView(null);
                 CurrentViewName = "";
                 return;
             }
 
-            CurrentView = newView;
+            SetCurrentView(newView);
             CurrentViewName = viewName;
+            System.Diagnostics.Debug.WriteLine($"[MainVM] Navigated successfully to: {viewName}");
         }
 
         private bool IsCalculatorView(string name) =>
             name is "SGU" or "DGU" or "Lamination" or "DguLam" or "Optimization";
 
-        // ═══════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════
         // LICENSE STATE
-        // ═══════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════
         private bool _isLicensed = false;
         private string _currentKey = "";
 
@@ -281,7 +335,7 @@ namespace ProGlassAutomation.ViewModels
         public bool CalculatorsEnabled => _isLicensed;
         public bool IsLocked => !_isLicensed;
 
-        // PATCH: Track if data needs saving
+        // Track if data needs saving
         private bool _isDirty = false;
         public bool IsDirty
         {
@@ -289,9 +343,9 @@ namespace ProGlassAutomation.ViewModels
             set => Set(ref _isDirty, value);
         }
 
-        // ═══════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════
         // INIT
-        // ═══════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════
         public MainViewModel()
         {
             NavigateCommand = new RelayCommand(o => Navigate(o?.ToString() ?? ""));
@@ -393,46 +447,130 @@ namespace ProGlassAutomation.ViewModels
             _viewCache.Clear();
         }
 
-        // ═══════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════
         // PUBLIC NAVIGATION HELPERS
-        // ═══════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════
 
-        public void ShowDashboard() => Navigate("Dashboard");
+        public void ShowDashboard()
+        {
+            System.Diagnostics.Debug.WriteLine("[MainVM] ShowDashboard called");
+            Navigate("Dashboard");
+        }
+
         public void ShowSubscriptionPlan() => Navigate("Subscription");
         public void ShowSheetStore() => Navigate("SheetStore");
-        public void ShowDailyWorks() => Navigate("DailyWorks");
         public void ShowDeliveries() => Navigate("Deliveries");
         public void ShowProfile() => Navigate("Profile");
         public void ShowUsers() => Navigate("Users");
         public void ShowBalanceReports() => Navigate("BalanceReports");
-        public void ShowProformaInvoice()
+        public void ShowJobOrders() => Navigate("JobOrders");
+
+        // ═══════════════════════════════════════════════
+        // DAILY WORKS - WITH DEBUG
+        // ═══════════════════════════════════════════════
+
+        public void ShowDailyWorks()
         {
-            var mainView = new Views.ProformaInvoice.ProformaInvoiceMainView();
-            _proformaInvoiceMainVM = new ProformaInvoiceMainViewModel(null);
-
-            _proformaInvoiceMainVM.OpenPIEditor += invoice =>
+            try
             {
-                var editorViewModel = new ProformaInvoiceViewModel();
+                System.Diagnostics.Debug.WriteLine("[MainVM] ShowDailyWorks called - START");
 
-                // PATCH: Subscribe to save event from editor
-                editorViewModel.InvoiceToBeAdded += _proformaInvoiceMainVM.OnInvoiceToBeAdded;
+                // Clear cache to force recreation
+                if (_viewCache.ContainsKey("DailyWorks"))
+                {
+                    System.Diagnostics.Debug.WriteLine("[MainVM] Removing DailyWorks from cache");
+                    _viewCache.Remove("DailyWorks");
+                }
 
-                // PATCH: Also subscribe InvoiceSaved to update DailyWorks
-                editorViewModel.InvoiceSaved += OnProformaInvoiceSaved;
+                Navigate("DailyWorks");
 
-                editorViewModel.LoadFromProformaInvoice(invoice);
-                CurrentView = new Views.ProformaInvoice.ProformaInvoiceView { DataContext = editorViewModel };
-            };
-
-            mainView.DataContext = _proformaInvoiceMainVM;
-            CurrentView = mainView;
-            CurrentViewName = "ProformaInvoice";
+                System.Diagnostics.Debug.WriteLine("[MainVM] ShowDailyWorks called - END");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainVM] ShowDailyWorks ERROR: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(ex.StackTrace);
+                MessageBox.Show($"Error loading Daily Works: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
-        // PATCH: Event for forwarding InvoiceSaved to DailyWorksViewModel
+        // ═══════════════════════════════════════════════
+        // PROFORMA INVOICE - WITH DEBUG
+        // ═══════════════════════════════════════════════
+
+        public void ShowProformaInvoice()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("[MainVM] ShowProformaInvoice called - START");
+
+                System.Diagnostics.Debug.WriteLine("[MainVM] About to create ProformaInvoiceMainView");
+                var mainView = new Views.ProformaInvoice.ProformaInvoiceMainView();
+                System.Diagnostics.Debug.WriteLine("[MainVM] Created ProformaInvoiceMainView");
+
+                // Create editor ViewModel FIRST, then pass to ProformaInvoiceMainViewModel
+                System.Diagnostics.Debug.WriteLine("[MainVM] Creating ProformaInvoiceViewModel");
+                var editorViewModel = new ProformaInvoiceViewModel();
+
+                System.Diagnostics.Debug.WriteLine("[MainVM] Creating ProformaInvoiceMainViewModel");
+                _proformaInvoiceMainVM = new ProformaInvoiceMainViewModel(editorViewModel);
+
+                // Subscribe InvoiceSaved to update DailyWorks
+                System.Diagnostics.Debug.WriteLine("[MainVM] Subscribing to InvoiceSaved");
+                editorViewModel.InvoiceSaved += OnProformaInvoiceSaved;
+
+                // SUBSCRIBE TO OpenPIEditor EVENT
+                System.Diagnostics.Debug.WriteLine("[MainVM] Subscribing to OpenPIEditor event");
+                _proformaInvoiceMainVM.OpenPIEditor += invoice =>
+                {
+                    System.Diagnostics.Debug.WriteLine($"[MainVM] OpenPIEditor event triggered with: {invoice?.InvoiceNo ?? "NEW"}");
+
+                    try
+                    {
+                        if (invoice != null)
+                        {
+                            editorViewModel.LoadFromProformaInvoice(invoice);
+                        }
+                        else
+                        {
+                            editorViewModel.CreateNewInvoice();
+                        }
+
+                        var editorView = new Views.ProformaInvoice.ProformaInvoiceView { DataContext = editorViewModel };
+                        SetCurrentView(editorView);
+                        System.Diagnostics.Debug.WriteLine("[MainVM] Set editor view as CurrentView");
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[MainVM] OpenPIEditor error: {ex.Message}");
+                        MessageBox.Show($"Error opening invoice: {ex.Message}", "Error",
+                            MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                };
+
+                mainView.DataContext = _proformaInvoiceMainVM;
+
+                System.Diagnostics.Debug.WriteLine("[MainVM] Setting CurrentView to ProformaInvoiceMainView");
+                SetCurrentView(mainView);
+                CurrentViewName = "ProformaInvoice";
+
+                System.Diagnostics.Debug.WriteLine($"[MainVM] CurrentView now: {CurrentView?.GetType().Name}");
+                System.Diagnostics.Debug.WriteLine("[MainVM] ShowProformaInvoice called - END");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainVM] ShowProformaInvoice ERROR: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(ex.StackTrace);
+                MessageBox.Show($"Error loading Proforma Invoice: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // Event for forwarding InvoiceSaved to DailyWorksViewModel
         public event Action<InvoiceModel>? InvoiceSaved;
 
-        // PATCH: Event handler to forward InvoiceSaved to DailyWorksViewModel
+        // Event handler to forward InvoiceSaved to DailyWorksViewModel
         public void OnProformaInvoiceSaved(InvoiceModel invoice)
         {
             System.Diagnostics.Debug.WriteLine($"[MainVM] OnProformaInvoiceSaved received: {invoice?.InvoiceNo}");
@@ -456,7 +594,7 @@ namespace ProGlassAutomation.ViewModels
             set => Set(ref _dailyWorksViewModel, value);
         }
 
-        // PATCH: Handle invoice being saved
+        // Handle invoice being saved
         public void OnInvoiceToBeAdded(Models.ProformaInvoiceModel invoice)
         {
             if (invoice == null) return;
@@ -475,11 +613,10 @@ namespace ProGlassAutomation.ViewModels
                 System.Diagnostics.Debug.WriteLine($"[MainVM] OnInvoiceToBeAdded error: {ex.Message}");
             }
         }
-        public void ShowJobOrders() => Navigate("JobOrders");
 
-        // ═══════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════
         // PROFORMA INVOICE METHODS
-        // ═══════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════
 
         public void ShowProformaInvoiceByNumber(string invoiceNo)
         {
@@ -492,6 +629,8 @@ namespace ProGlassAutomation.ViewModels
 
             try
             {
+                System.Diagnostics.Debug.WriteLine($"[MainVM] ShowProformaInvoiceByNumber: {invoiceNo}");
+
                 var allPIs = DbHelper.GetAllProformaInvoices();
                 var pi = allPIs.FirstOrDefault(p => p.InvoiceNo == invoiceNo);
 
@@ -512,8 +651,10 @@ namespace ProGlassAutomation.ViewModels
                         if (uiModel != null)
                         {
                             editorViewModel.LoadFromProformaInvoice(uiModel);
-                            CurrentView = new Views.ProformaInvoice.ProformaInvoiceView { DataContext = editorViewModel };
+                            var view = new Views.ProformaInvoice.ProformaInvoiceView { DataContext = editorViewModel };
+                            SetCurrentView(view);
                             CurrentViewName = "ProformaInvoice";
+                            System.Diagnostics.Debug.WriteLine($"[MainVM] Loaded PI: {invoiceNo}");
                         }
                     }
                     catch (Exception ex)
@@ -536,9 +677,9 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // ═══════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════
         // PROFORMA INVOICE TO JOB ORDER CONVERSION
-        // ═══════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════
 
         public void CreateJobOrderFromProformaInvoice(Models.ProformaInvoiceModel invoice)
         {
@@ -567,29 +708,19 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        public void ShowJobOrderDetails(int jobOrderId)
-        {
-            _viewCache.Remove("JobOrderDetails");
+        // ═══════════════════════════════════════════════
+        // CALCULATOR METHODS
+        // ═══════════════════════════════════════════════
 
-            var view = new Views.JobOrder.JobOrderDetailsView();
-            var vm = new ViewModels.JobOrderDetailsViewModel();
-            vm.LoadJobOrder(jobOrderId);
-            view.DataContext = vm;
-
-            CurrentView = view;
-            CurrentViewName = "JobOrderDetails";
-        }
-
-        // Calculator methods
         public void ShowSGUCalculator() => Navigate("SGU");
         public void ShowDGUCalculator() => Navigate("DGU");
         public void ShowLaminationCalculator() => Navigate("Lamination");
         public void ShowDGULaminationCalculator() => Navigate("DguLam");
         public void ShowGlassOptimization() => Navigate("Optimization");
 
-        // ═══════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════
         // JOB ORDER TO DELIVERY CONVERSION
-        // ═══════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════
 
         public void CreateDeliveryFromJobOrder(JobOrder jobOrder)
         {
@@ -607,9 +738,9 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // ═══════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════
         // CLICK COMMANDS
-        // ═══════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════
 
         public ICommand SGUCommand => new RelayCommand(o =>
         {
@@ -651,15 +782,10 @@ namespace ProGlassAutomation.ViewModels
         public ICommand UsersCommand => new RelayCommand(o => ShowUsers());
         public ICommand ProformaInvoiceCommand => new RelayCommand(o => ShowProformaInvoice());
         public ICommand JobOrdersCommand => new RelayCommand(o => ShowJobOrders());
-        public ICommand JobOrderDetailsCommand => new RelayCommand(o =>
-        {
-            if (o is int jobOrderId)
-                ShowJobOrderDetails(jobOrderId);
-        });
 
-        // ═══════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════
         // SAVE ALL DATA (FOR APP CLOSE)
-        // ═══════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════
 
         public void SaveAllData()
         {
@@ -673,9 +799,6 @@ namespace ProGlassAutomation.ViewModels
                     _proformaInvoiceMainVM.SaveOnExit();
                     System.Diagnostics.Debug.WriteLine("[MainViewModel] ProformaInvoice data saved");
                 }
-
-                // Add other ViewModels to save as needed
-                // if (_jobOrderListVM != null) _jobOrderListVM.SaveOnExit();
 
                 System.Diagnostics.Debug.WriteLine("[MainViewModel] All data saved successfully");
             }

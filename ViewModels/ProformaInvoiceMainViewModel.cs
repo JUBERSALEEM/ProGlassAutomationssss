@@ -53,6 +53,8 @@ namespace ProGlassAutomation.ViewModels
             if (_editorViewModel != null)
             {
                 _editorViewModel.InvoiceToBeAdded += OnInvoiceToBeAdded;
+                // PATCH: Also subscribe to InvoiceSaved event
+                _editorViewModel.InvoiceSaved += OnEditorInvoiceSaved;
             }
 
             // Load data
@@ -639,6 +641,17 @@ namespace ProGlassAutomation.ViewModels
             {
                 System.Diagnostics.Debug.WriteLine($"[PIMainViewModel] OnInvoiceToBeAdded error: {ex.Message}");
                 StatusChanged?.Invoke($"❌ Error saving invoice: {ex.Message}");
+            }
+        }
+
+        // PATCH: Handle InvoiceSaved event from editor (alternative to InvoiceToBeAdded)
+        private void OnEditorInvoiceSaved(ProformaInvoiceModel invoice)
+        {
+            System.Diagnostics.Debug.WriteLine($"[PIMainViewModel] OnEditorInvoiceSaved: {invoice?.InvoiceNo}");
+
+            if (invoice != null)
+            {
+                OnInvoiceToBeAdded(invoice);
             }
         }
 

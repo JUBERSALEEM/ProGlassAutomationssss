@@ -266,7 +266,7 @@
                                 <ComboBox Style="{StaticResource SharpCombo}" ItemsSource="{Binding ColorOptions}" SelectedValue="{Binding OuterColor}" DisplayMemberPath="Name" SelectedValuePath="Name" IsEditable="True"/>
 
                                 <TextBlock Text="Sheet Price (AED)" Style="{StaticResource FieldLabel}" Margin="0,14,0,0"/>
-                                <TextBox Style="{StaticResource SharpInput}" Text="{Binding OuterPrice, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
+                                <TextBox Style="{StaticResource SharpInput}" Text="{Binding OuterPrice, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
                             </StackPanel>
                         </Border>
 
@@ -288,7 +288,7 @@
                                 <ComboBox Style="{StaticResource SharpCombo}" ItemsSource="{Binding ColorOptions}" SelectedValue="{Binding InnerColor}" DisplayMemberPath="Name" SelectedValuePath="Name" IsEditable="True"/>
 
                                 <TextBlock Text="Sheet Price (AED)" Style="{StaticResource FieldLabel}" Margin="0,14,0,0"/>
-                                <TextBox Style="{StaticResource SharpInput}" Text="{Binding InnerPrice, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
+                                <TextBox Style="{StaticResource SharpInput}" Text="{Binding InnerPrice, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>
@@ -308,13 +308,13 @@
                                 <ComboBox Style="{StaticResource SharpCombo}" ItemsSource="{Binding SpacerOptions}" SelectedValue="{Binding Spacer}"/>
 
                                 <TextBlock Text="Spacer Charge (AED)" Style="{StaticResource FieldLabel}" Margin="0,14,0,0"/>
-                                <TextBox Style="{StaticResource SharpInput}" Text="{Binding SpacerCharge, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
+                                <TextBox Style="{StaticResource SharpInput}" Text="{Binding SpacerCharge, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
 
                                 <TextBlock Text="Sealant Charge (AED)" Style="{StaticResource FieldLabel}" Margin="0,14,0,0"/>
-                                <TextBox Style="{StaticResource SharpInput}" Text="{Binding SealantCharge, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
+                                <TextBox Style="{StaticResource SharpInput}" Text="{Binding SealantCharge, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
 
                                 <TextBlock Text="Gas Charge (AED)" Style="{StaticResource FieldLabel}" Margin="0,14,0,0"/>
-                                <TextBox Style="{StaticResource SharpInput}" Text="{Binding GasCharge, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
+                                <TextBox Style="{StaticResource SharpInput}" Text="{Binding GasCharge, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
                             </StackPanel>
                         </Border>
 
@@ -587,7 +587,7 @@
                             <!-- Custom Notes -->
                             <StackPanel Grid.Column="2" Margin="10,0,0,0">
                                 <TextBlock Text="Custom Notes" Style="{StaticResource FieldLabel}"/>
-                                <TextBox Style="{StaticResource SharpInput}" Height="60" TextWrapping="Wrap" AcceptsReturn="True" VerticalContentAlignment="Top" Text="{Binding CustomNotes, UpdateSourceTrigger=PropertyChanged}"/>
+                                <TextBox Style="{StaticResource SharpInput}" Height="60" TextWrapping="Wrap" AcceptsReturn="True" VerticalContentAlignment="Top" Text="{Binding CustomNotes, UpdateSourceTrigger=LostFocus}"/>
                             </StackPanel>
                         </Grid>
 
@@ -603,19 +603,19 @@
                             <!-- Width -->
                             <StackPanel Grid.Column="0" Margin="0,0,10,0">
                                 <TextBlock Text="Width (mm)" Style="{StaticResource FieldLabel}"/>
-                                <TextBox Style="{StaticResource SharpInput}" Text="{Binding Width, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
+                                <TextBox Style="{StaticResource SharpInput}" Text="{Binding Width, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
                             </StackPanel>
 
                             <!-- Height -->
                             <StackPanel Grid.Column="1" Margin="10,0">
                                 <TextBlock Text="Height (mm)" Style="{StaticResource FieldLabel}"/>
-                                <TextBox Style="{StaticResource SharpInput}" Text="{Binding Height, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
+                                <TextBox Style="{StaticResource SharpInput}" Text="{Binding Height, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
                             </StackPanel>
 
                             <!-- Quantity -->
                             <StackPanel Grid.Column="2" Margin="10,0">
                                 <TextBlock Text="Quantity" Style="{StaticResource FieldLabel}"/>
-                                <TextBox Style="{StaticResource SharpInput}" Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged, TargetNullValue='1'}"/>
+                                <TextBox Style="{StaticResource SharpInput}" Text="{Binding Quantity, UpdateSourceTrigger=LostFocus, TargetNullValue='1'}"/>
                             </StackPanel>
 
                             <!-- Unit -->

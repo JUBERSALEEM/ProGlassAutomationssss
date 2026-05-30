@@ -167,8 +167,6 @@ namespace ProGlassAutomation.ViewModels
             set => SetProperty(ref _companyIndex, value);
         }
 
-
-
         // Filter Properties
         public string FilterCustomerReference
         {
@@ -256,10 +254,9 @@ namespace ProGlassAutomation.ViewModels
             PrintCommand = new RelayCommand(ExecutePrint);
             LoadToInvoiceCommand = new RelayCommand(ExecuteLoadToInvoice);
 
-            // NOTE: Event subscription is handled by MainViewModel via DailyWorksViewModel property
-            // This ensures proper timing - MainViewModel wires up InvoiceSaved after DailyWorksViewModel is created
-
+            // PATCH: Load from database first, then merge JSON entries
             LoadFromDatabase();
+            LoadFromJsonFile();
             LoadOptionsFromDatabase();
             CreateDataView();
         }
@@ -635,6 +632,7 @@ namespace ProGlassAutomation.ViewModels
         public ICommand DuplicateRowCommand { get; }
         public ICommand DeleteSelectedCommand { get; }
         public ICommand PrintCommand { get; }
+        public ICommand LoadToInvoiceCommand { get; }
 
         // Event handler for ProformaInvoice save event
         public void OnProformaInvoiceSaved(InvoiceModel invoice)
@@ -859,7 +857,6 @@ namespace ProGlassAutomation.ViewModels
             OnPropertyChanged(nameof(FilteredDataView));
             System.Diagnostics.Debug.WriteLine("[DailyWork] ✅ Refresh complete");
         }
-        public ICommand LoadToInvoiceCommand { get; }
 
         #endregion
 
@@ -948,10 +945,20 @@ namespace ProGlassAutomation.ViewModels
                 DailyWorks.Clear();
                 foreach (var work in dbData)
                 {
-                    DailyWorks.Add(work);
+                    bool alreadyExists = DailyWorks.Any(w =>
+                        w.Id == work.Id ||
+
+                        (!string.IsNullOrWhiteSpace(w.PINumber) &&
+                         w.PINumber.Equals(work.PINumber,
+                             StringComparison.OrdinalIgnoreCase)));
+
+                    if (!alreadyExists)
+                    {
+                        DailyWorks.Add(work);
+                    }
                 }
 
-                System.Diagnostics.Debug.WriteLine($"[DailyWork] Loaded {DailyWorks.Count} records");
+                System.Diagnostics.Debug.WriteLine($"[DailyWork] Loaded {DailyWorks.Count} records from DB");
                 UpdateStatistics();
             }
             catch (Exception ex)
@@ -960,10 +967,238 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
+        // PATCH: Load Daily Works from local JSON files (one file per entry)
+        // PATCH-OPTIMIZE: Load DB records once only
+        private void LoadFromJsonFile()
+        {
+            try
+            {
+                string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                string dataFolder = System.IO.Path.Combine(baseDir, "Data");
+
+                if (!System.IO.Directory.Exists(dataFolder))
+                {
+                    StatusMessage = "⚠️ Data folder not found";
+                    return;
+                }
+
+                // Get only PI-*.json files (DailyWorks files)
+                var allJsonFiles = System.IO.Directory.GetFiles(dataFolder, "*.json");
+
+                // Filter to only PI-*.json files (DailyWorks format)
+                var jsonFiles = allJsonFiles.Where(f =>
+                {
+                    string fileName = System.IO.Path.GetFileName(f);
+                    return fileName.StartsWith("PI-", StringComparison.OrdinalIgnoreCase);
+                }).ToArray();
+
+                if (jsonFiles.Length == 0)
+                {
+                    StatusMessage = "ℹ️ No PI-*.json files found in Data folder";
+                    return;
+                }
+
+                var settings = new Newtonsoft.Json.JsonSerializerSettings
+                {
+                    ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore,
+                    NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore,
+                    DateFormatString = "yyyy-MM-ddTHH:mm:ss"
+                };
+
+                int addedCount = 0;
+                int skippedCount = 0;
+                int errorCount = 0;
+
+                // PATCH-OPTIMIZE: Load DB records once only
+                var dbRecords = DbHelper.GetAllDailyWork();
+
+                foreach (var jsonPath in jsonFiles)
+                {
+                    string fileName = System.IO.Path.GetFileName(jsonPath);
+
+                    try
+                    {
+                        var json = System.IO.File.ReadAllText(jsonPath);
+
+                        if (string.IsNullOrWhiteSpace(json))
+                        {
+                            skippedCount++;
+                            continue;
+                        }
+
+                        var work = Newtonsoft.Json.JsonConvert.DeserializeObject<DbDailyWork>(json, settings);
+
+                        if (work == null)
+                        {
+                            errorCount++;
+                            continue;
+                        }
+
+                        // PATCH: Skip invalid empty records
+                        if (string.IsNullOrWhiteSpace(work.PINumber) &&
+                            string.IsNullOrWhiteSpace(work.CustomerReference))
+                        {
+                            skippedCount++;
+                            continue;
+                        }
+
+                        string jsonPINumber = (work.PINumber ?? "").Trim();
+                        string jsonCustRef = (work.CustomerReference ?? "").Trim();
+
+                        // Check in-memory DailyWorks
+                        bool foundInMemory = DailyWorks.Any(w =>
+                            (!string.IsNullOrEmpty(jsonPINumber) && jsonPINumber.Equals((w.PINumber ?? "").Trim(), StringComparison.OrdinalIgnoreCase)) ||
+                            (!string.IsNullOrEmpty(jsonCustRef) && jsonCustRef.Equals((w.CustomerReference ?? "").Trim(), StringComparison.OrdinalIgnoreCase)));
+
+                        if (foundInMemory)
+                        {
+                            skippedCount++;
+                            continue;
+                        }
+
+                        // PATCH-OPTIMIZE: Check cached database records (not calling DB inside loop)
+                        bool foundInDB = dbRecords.Any(w =>
+                            (!string.IsNullOrEmpty(jsonPINumber) &&
+                             jsonPINumber.Equals((w.PINumber ?? "").Trim(), StringComparison.OrdinalIgnoreCase)) ||
+                            (!string.IsNullOrEmpty(jsonCustRef) &&
+                             jsonCustRef.Equals((w.CustomerReference ?? "").Trim(), StringComparison.OrdinalIgnoreCase)));
+
+                        if (foundInDB)
+                        {
+                            skippedCount++;
+                            continue;
+                        }
+
+                        // PATCH: Generate stable ID if JSON has invalid ID
+                        if (work.Id <= 0)
+                        {
+                            var existingByPI = DailyWorks.FirstOrDefault(w =>
+                                !string.IsNullOrWhiteSpace(work.PINumber) &&
+                                (w.PINumber ?? "").Trim()
+                                    .Equals((work.PINumber ?? "").Trim(),
+                                        StringComparison.OrdinalIgnoreCase));
+
+                            if (existingByPI != null)
+                            {
+                                work.Id = existingByPI.Id;
+                            }
+                        }
+
+                        // PATCH: Final duplicate protection
+                        bool alreadyAdded = DailyWorks.Any(w =>
+                            w.Id == work.Id ||
+                            (!string.IsNullOrWhiteSpace(work.PINumber) &&
+                             string.Equals((w.PINumber ?? "").Trim(), work.PINumber.Trim(), StringComparison.OrdinalIgnoreCase)) ||
+                            (!string.IsNullOrWhiteSpace(work.CustomerReference) &&
+                             string.Equals((w.CustomerReference ?? "").Trim(), work.CustomerReference.Trim(), StringComparison.OrdinalIgnoreCase)));
+
+                        if (!alreadyAdded)
+                        {
+                            DailyWorks.Add(work);
+                            addedCount++;
+                        }
+                        else
+                        {
+                            skippedCount++;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[DailyWork] Error reading {fileName}: {ex.Message}");
+                        errorCount++;
+                    }
+                }
+
+                System.Diagnostics.Debug.WriteLine($"[DailyWork] JSON load complete: {addedCount} added, {skippedCount} skipped, {errorCount} errors");
+                StatusMessage = $"✅ Added {addedCount}, Skipped {skippedCount} duplicates";
+
+                // PATCH: Removed automatic DB merge save
+                // Imported JSON data should NOT be re-saved automatically
+                // because it creates duplicate/random entries.
+            }
+            catch (UnauthorizedAccessException unauthEx)
+            {
+                StatusMessage = "❌ Access denied to Data folder";
+            }
+            catch (System.IO.IOException ioEx)
+            {
+                StatusMessage = "❌ File I/O error";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"❌ Error loading JSON: {ex.Message}";
+            }
+        }
+
+        // PATCH DISABLED: This method caused duplicate/random entries
+        // during refresh/import cycle.
+        private void SaveMergedToDatabase()
+        {
+            // PATCH DISABLED
+            // This method caused duplicate/random entries
+            // during refresh/import cycle.
+            System.Diagnostics.Debug.WriteLine("[DailyWork] SaveMergedToDatabase() is DISABLED");
+        }
+
+        // PATCH: Update JSON file - remove deleted entries
+        private void UpdateJsonFileAfterDelete(List<int> deletedIds)
+        {
+            try
+            {
+                string jsonPath = System.IO.Path.Combine(
+                    AppDomain.CurrentDomain.BaseDirectory,
+                    "Data",
+                    "DailyWorks.json");
+
+                if (!System.IO.File.Exists(jsonPath))
+                {
+                    jsonPath = System.IO.Path.Combine(
+                        AppDomain.CurrentDomain.BaseDirectory,
+                        "DailyWorks.json");
+                }
+
+                if (!System.IO.File.Exists(jsonPath))
+                {
+                    System.Diagnostics.Debug.WriteLine($"[DailyWork] No JSON file to update");
+                    return;
+                }
+
+                System.Diagnostics.Debug.WriteLine($"[DailyWork] Updating JSON file after delete...");
+
+                var json = System.IO.File.ReadAllText(jsonPath);
+                var settings = new Newtonsoft.Json.JsonSerializerSettings
+                {
+                    ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore,
+                    NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore
+                };
+
+                var jsonWorks = Newtonsoft.Json.JsonConvert.DeserializeObject<List<DbDailyWork>>(json, settings);
+
+                if (jsonWorks != null && jsonWorks.Count > 0)
+                {
+                    var originalCount = jsonWorks.Count;
+                    jsonWorks = jsonWorks.Where(w => !deletedIds.Contains(w.Id)).ToList();
+
+                    if (jsonWorks.Count < originalCount)
+                    {
+                        var updatedJson = Newtonsoft.Json.JsonConvert.SerializeObject(jsonWorks, Newtonsoft.Json.Formatting.Indented, settings);
+                        System.IO.File.WriteAllText(jsonPath, updatedJson);
+
+                        System.Diagnostics.Debug.WriteLine($"[DailyWork] Removed {originalCount - jsonWorks.Count} entries from JSON");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DailyWork] UpdateJsonFileAfterDelete error: {ex.Message}");
+            }
+        }
+
         #endregion
 
         #region Filter Implementation
 
+        // PATCH: Escape single quotes in filters to prevent crashes on names like O'Brien
         private void ApplyFilters()
         {
             if (FilteredDataView == null) return;
@@ -976,34 +1211,35 @@ namespace ProGlassAutomation.ViewModels
             }
 
             if (!string.IsNullOrWhiteSpace(FilterStatus))
-                filterExpressions.Add($"Status = '{FilterStatus}'");
+                filterExpressions.Add($"Status = '{FilterStatus.Replace("'", "''")}'");
 
             if (!string.IsNullOrWhiteSpace(FilterProductionStatus))
-                filterExpressions.Add($"ProductionStatus = '{FilterProductionStatus}'");
+                filterExpressions.Add($"ProductionStatus = '{FilterProductionStatus.Replace("'", "''")}'");
 
             if (!string.IsNullOrWhiteSpace(FilterTypeOfWork))
-                filterExpressions.Add($"TypeOfWork = '{FilterTypeOfWork}'");
+                filterExpressions.Add($"TypeOfWork = '{FilterTypeOfWork.Replace("'", "''")}'");
 
             if (!string.IsNullOrWhiteSpace(FilterSalesman))
-                filterExpressions.Add($"Salesman = '{FilterSalesman}'");
+                filterExpressions.Add($"Salesman = '{FilterSalesman.Replace("'", "''")}'");
 
             if (!string.IsNullOrWhiteSpace(FilterCompany))
-                filterExpressions.Add($"Company = '{FilterCompany}'");
+                filterExpressions.Add($"Company = '{FilterCompany.Replace("'", "''")}'");
 
             if (!string.IsNullOrWhiteSpace(FilterColor))
-                filterExpressions.Add($"Color = '{FilterColor}'");
+                filterExpressions.Add($"Color = '{FilterColor.Replace("'", "''")}'");
 
             if (!string.IsNullOrWhiteSpace(FilterPINumber))
-                filterExpressions.Add($"PINumber = '{FilterPINumber}'");
+                filterExpressions.Add($"PINumber = '{FilterPINumber.Replace("'", "''")}'");
 
             if (!string.IsNullOrWhiteSpace(FilterCustomerReference))
-                filterExpressions.Add($"CustomerReference = '{FilterCustomerReference}'");
+                filterExpressions.Add($"CustomerReference = '{FilterCustomerReference.Replace("'", "''")}'");
 
             if (FilterStartDate.HasValue)
                 filterExpressions.Add($"Date >= #{FilterStartDate.Value:yyyy-MM-dd}#");
 
+            // PATCH: Fix end date to include the entire day
             if (FilterEndDate.HasValue)
-                filterExpressions.Add($"Date <= #{FilterEndDate.Value:yyyy-MM-dd}#");
+                filterExpressions.Add($"Date < #{FilterEndDate.Value.AddDays(1):yyyy-MM-dd}#");
 
             FilteredDataView.RowFilter = filterExpressions.Count > 0 ? string.Join(" AND ", filterExpressions) : "";
 
@@ -1049,6 +1285,7 @@ namespace ProGlassAutomation.ViewModels
             _selectedCompany = "";
         }
 
+        // PATCH: Prevent null reference with DBNull checks
         private void ExecuteEdit(object parameter)
         {
             DbDailyWork workToEdit = null;
@@ -1067,8 +1304,13 @@ namespace ProGlassAutomation.ViewModels
                     TypeOfWork = dataRow["TypeOfWork"]?.ToString() ?? "",
                     ProductionStatus = dataRow["ProductionStatus"]?.ToString() ?? "",
                     DailyReportStatus = dataRow["DailyReportStatus"]?.ToString() ?? "",
-                    Qty = Convert.ToInt32(dataRow["Qty"]),
-                    SQM = Convert.ToDouble(dataRow["SQM"]),
+                    // PATCH: Handle DBNull for Qty and SQM
+                    Qty = dataRow["Qty"] != DBNull.Value
+                        ? Convert.ToInt32(dataRow["Qty"])
+                        : 0,
+                    SQM = dataRow["SQM"] != DBNull.Value
+                        ? Convert.ToDouble(dataRow["SQM"])
+                        : 0,
                     Status = dataRow["Status"]?.ToString() ?? "",
                     Salesman = dataRow["Salesman"]?.ToString() ?? "",
                     Color = dataRow["Color"]?.ToString() ?? "",
@@ -1142,10 +1384,17 @@ namespace ProGlassAutomation.ViewModels
 
                 if (result == MessageBoxResult.Yes)
                 {
+                    // PATCH: Store ID before deletion for JSON update
+                    var deletedId = workToDelete.Id;
+
                     DbHelper.DeleteDailyWork(workToDelete.Id);
                     System.Diagnostics.Debug.WriteLine($"[DailyWork] Deleted ID: {workToDelete.Id}");
 
                     DailyWorks.Remove(workToDelete);
+
+                    // PATCH: Also remove from JSON file
+                    UpdateJsonFileAfterDelete(new List<int> { deletedId });
+
                     RefreshDataView();
                     UpdateStatistics();
                     SelectedWork = null;
@@ -1202,7 +1451,6 @@ namespace ProGlassAutomation.ViewModels
                 System.Diagnostics.Debug.WriteLine($"[DailyWork] Saved new ID: {EditingWork.Id}");
 
                 DailyWorks.Add(EditingWork);
-                System.Diagnostics.Debug.WriteLine($"[DailyWork] DailyWorks count after add: {DailyWorks.Count}");
             }
             else
             {
@@ -1248,62 +1496,8 @@ namespace ProGlassAutomation.ViewModels
             IsDuplicateWarning = false;
             DuplicateMessage = "";
 
-            System.Diagnostics.Debug.WriteLine("[DailyWork] Save complete, refreshing view...");
-
-            // CRITICAL: Reset the view reference to force UI update
-            System.Diagnostics.Debug.WriteLine($"[DailyWork] Before refresh - DailyWorks count: {DailyWorks.Count}");
-
-            // Create a fresh DataView from current DailyWorks
-            var newDataTable = new System.Data.DataTable("DailyWorks");
-            newDataTable.Columns.Add("Id", typeof(int));
-            newDataTable.Columns.Add("Date", typeof(DateTime));
-            newDataTable.Columns.Add("UpdateDate", typeof(DateTime));
-            newDataTable.Columns.Add("Company", typeof(string));
-            newDataTable.Columns.Add("PINumber", typeof(string));
-            newDataTable.Columns.Add("CustomerReference", typeof(string));
-            newDataTable.Columns.Add("TypeOfWork", typeof(string));
-            newDataTable.Columns.Add("ProductionStatus", typeof(string));
-            newDataTable.Columns.Add("DailyReportStatus", typeof(string));
-            newDataTable.Columns.Add("Qty", typeof(int));
-            newDataTable.Columns.Add("SQM", typeof(double));
-            newDataTable.Columns.Add("Status", typeof(string));
-            newDataTable.Columns.Add("Salesman", typeof(string));
-            newDataTable.Columns.Add("Color", typeof(string));
-            newDataTable.Columns.Add("Notes", typeof(string));
-
-            foreach (var work in DailyWorks)
-            {
-                var row = newDataTable.NewRow();
-                row["Id"] = work.Id;
-                row["Date"] = work.Date;
-                row["UpdateDate"] = work.UpdateDate;
-                row["Company"] = work.Company ?? "";
-                row["PINumber"] = work.PINumber ?? "";
-                row["CustomerReference"] = work.CustomerReference ?? "";
-                row["TypeOfWork"] = work.TypeOfWork ?? "";
-                row["ProductionStatus"] = work.ProductionStatus ?? "";
-                row["DailyReportStatus"] = work.DailyReportStatus ?? "";
-                row["Qty"] = work.Qty;
-                row["SQM"] = work.SQM;
-                row["Status"] = work.Status ?? "";
-                row["Salesman"] = work.Salesman ?? "";
-                row["Color"] = work.Color ?? "";
-                row["Notes"] = work.Notes ?? "";
-                newDataTable.Rows.Add(row);
-                System.Diagnostics.Debug.WriteLine($"[DailyWork] Added row for: {work.PINumber}");
-            }
-
-            // Assign new view and force notification
-            _filteredDataView = newDataTable.DefaultView;
-            OnPropertyChanged(nameof(FilteredDataView));
-
-            // Also update statistics
-            OnPropertyChanged(nameof(TotalRecords));
-            OnPropertyChanged(nameof(FilteredRecords));
-            OnPropertyChanged(nameof(TotalQty));
-            OnPropertyChanged(nameof(TotalSQM));
-
-            System.Diagnostics.Debug.WriteLine($"[DailyWork] After refresh - FilteredDataView count: {_filteredDataView?.Count ?? 0}");
+            RefreshDataView();
+            UpdateStatistics();
         }
 
         private bool CanExecuteSave(object parameter) => EditingWork != null;
@@ -1318,10 +1512,41 @@ namespace ProGlassAutomation.ViewModels
 
         private void ExecuteRefresh(object parameter)
         {
-            LoadFromDatabase();
-            LoadOptionsFromDatabase();
-            RefreshDataView();
-            UpdateStatistics();
+            try
+            {
+                // PATCH: Prevent duplicate accumulation
+                DailyWorks.Clear();
+
+                // PATCH: Reset selections
+                SelectedWork = null;
+                SelectedDataRowView = null;
+
+                System.Diagnostics.Debug.WriteLine("[DailyWork] Refresh started...");
+
+                // Reload fresh data
+                LoadFromDatabase();
+
+                // PATCH: Load JSON for display only
+                // DO NOT save imported records automatically
+                LoadFromJsonFile();
+
+                LoadOptionsFromDatabase();
+
+                RefreshDataView();
+                UpdateStatistics();
+
+                System.Diagnostics.Debug.WriteLine(
+                    $"[DailyWork] Refresh complete. Records: {DailyWorks.Count}");
+
+                StatusMessage = "✅ Refresh completed";
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(
+                    $"[DailyWork] Refresh error: {ex.Message}");
+
+                StatusMessage = "❌ Refresh failed";
+            }
         }
 
         private void ExecuteExport(object parameter)
@@ -1347,15 +1572,35 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
+        // PATCH: Fix CSV export - explicitly select columns to avoid Id column
         private void ExportToCSV(string filePath)
         {
             var sb = new System.Text.StringBuilder();
             var headers = new[] { "Date", "Update Date", "Company", "PI Number", "Customer Ref", "Type of Work", "Production Status", "Daily Report Status", "Qty", "SQM", "Status", "Salesman", "Color", "Notes" };
-            sb.AppendLine(string.Join(",", headers));
+            sb.AppendLine(string.Join(",", headers.Select(h => $"\"{h}\"")));
 
             foreach (DataRowView rowView in FilteredDataView)
             {
-                var fields = rowView.Row.ItemArray.Select(f => $"\"{f?.ToString()?.Replace("\"", "\"\"")}\"");
+                // PATCH: Explicitly select columns to avoid internal Id column
+                var fields = new[]
+                {
+                    rowView["Date"]?.ToString(),
+                    rowView["UpdateDate"]?.ToString(),
+                    rowView["Company"]?.ToString(),
+                    rowView["PINumber"]?.ToString(),
+                    rowView["CustomerReference"]?.ToString(),
+                    rowView["TypeOfWork"]?.ToString(),
+                    rowView["ProductionStatus"]?.ToString(),
+                    rowView["DailyReportStatus"]?.ToString(),
+                    rowView["Qty"]?.ToString(),
+                    rowView["SQM"]?.ToString(),
+                    rowView["Status"]?.ToString(),
+                    rowView["Salesman"]?.ToString(),
+                    rowView["Color"]?.ToString(),
+                    rowView["Notes"]?.ToString()
+                }
+                .Select(f => $"\"{f?.Replace("\"", "\"\"")}\"");
+
                 sb.AppendLine(string.Join(",", fields));
             }
 
@@ -1399,6 +1644,7 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
+        // PATCH: Fix duplicate COPY_/DUP_ prefix stacking
         private void ExecuteCopyRow(object parameter)
         {
             DbDailyWork sourceWork = null;
@@ -1417,7 +1663,13 @@ namespace ProGlassAutomation.ViewModels
             {
                 var copy = sourceWork.Clone();
                 copy.Id = 0;
-                copy.PINumber = $"COPY_{copy.PINumber}";
+
+                // PATCH: Clean existing prefixes before adding new one
+                var cleanPINumber = (copy.PINumber ?? "")
+                    .Replace("COPY_", "")
+                    .Replace("DUP_", "");
+                copy.PINumber = $"COPY_{cleanPINumber}";
+
                 copy.Date = DateTime.Today;
                 copy.UpdateDate = DateTime.Today;
                 copy.CreatedDate = DateTime.Now;
@@ -1435,6 +1687,7 @@ namespace ProGlassAutomation.ViewModels
             return SelectedDataRowView != null || SelectedWork != null;
         }
 
+        // PATCH: Fix duplicate COPY_/DUP_ prefix stacking
         private void ExecuteDuplicateRow(object parameter)
         {
             DbDailyWork sourceWork = null;
@@ -1453,7 +1706,13 @@ namespace ProGlassAutomation.ViewModels
             {
                 var duplicate = sourceWork.Clone();
                 duplicate.Id = DailyWorks.Count > 0 ? DailyWorks.Max(w => w.Id) + 1 : 1;
-                duplicate.PINumber = $"DUP_{duplicate.PINumber}";
+
+                // PATCH: Clean existing prefixes before adding new one
+                var cleanDuplicatePI = (duplicate.PINumber ?? "")
+                    .Replace("COPY_", "")
+                    .Replace("DUP_", "");
+                duplicate.PINumber = $"DUP_{cleanDuplicatePI}";
+
                 duplicate.Date = DateTime.Today;
                 duplicate.UpdateDate = DateTime.Today;
                 duplicate.CreatedDate = DateTime.Now;
@@ -1505,9 +1764,14 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
+        // PATCH: Fix print grid overlay layout with proper Grid.Row assignments
         private Grid CreatePrintVisual()
         {
             var grid = new Grid { Margin = new Thickness(20) };
+
+            // PATCH: Define rows properly to prevent overlap
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
 
             var headerPanel = new StackPanel { Margin = new Thickness(0, 0, 0, 20) };
             headerPanel.Children.Add(new TextBlock
@@ -1532,7 +1796,10 @@ namespace ProGlassAutomation.ViewModels
                 HorizontalAlignment = HorizontalAlignment.Center,
                 Margin = new Thickness(0, 5, 0, 0)
             });
+
+            // PATCH: Set header to row 0
             grid.Children.Add(headerPanel);
+            Grid.SetRow(headerPanel, 0);
 
             var dataGrid = new DataGrid
             {
@@ -1559,7 +1826,9 @@ namespace ProGlassAutomation.ViewModels
             dataGrid.Columns.Add(new DataGridTextColumn { Header = "Status", Binding = new System.Windows.Data.Binding("Status"), Width = 70 });
             dataGrid.Columns.Add(new DataGridTextColumn { Header = "Salesman", Binding = new System.Windows.Data.Binding("Salesman"), Width = 90 });
 
+            // PATCH: Set DataGrid to row 1
             grid.Children.Add(dataGrid);
+            Grid.SetRow(dataGrid, 1);
 
             return grid;
         }
@@ -1591,6 +1860,9 @@ namespace ProGlassAutomation.ViewModels
 
                 if (result == MessageBoxResult.Yes)
                 {
+                    // PATCH: Save IDs before deletion for JSON update
+                    var deletedIds = new List<int>(selectedIds);
+
                     foreach (var id in selectedIds)
                     {
                         DbHelper.DeleteDailyWork(id);
@@ -1603,8 +1875,14 @@ namespace ProGlassAutomation.ViewModels
 
                     System.Diagnostics.Debug.WriteLine($"[DailyWork] Deleted {selectedIds.Count} records");
 
+                    // PATCH: Also remove from JSON file
+                    UpdateJsonFileAfterDelete(deletedIds);
+
                     _selectedIds.Clear();
                     _selectedCount = 0;
+
+                    // PATCH: Notify property changed after clearing selection
+                    OnPropertyChanged(nameof(SelectedCount));
 
                     RefreshDataView();
                     UpdateStatistics();

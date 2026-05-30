@@ -223,15 +223,15 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0">
                             <TextBlock Text="Company Name" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                            <TextBox Text="{Binding CompanyName, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                            <TextBox Text="{Binding CompanyName, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
                         </StackPanel>
                         <StackPanel Grid.Column="2">
                             <TextBlock Text="TRN Number" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                            <TextBox Text="{Binding CompanyTRN, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                            <TextBox Text="{Binding CompanyTRN, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
                         </StackPanel>
                         <StackPanel Grid.Column="4">
                             <TextBlock Text="Location" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                            <TextBox Text="{Binding CompanyLocation, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                            <TextBox Text="{Binding CompanyLocation, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
                         </StackPanel>
                     </Grid>
                 </Border>
@@ -247,7 +247,7 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0">
                             <TextBlock Text="Invoice No" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                            <TextBox Text="{Binding Invoice.InvoiceNo, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                            <TextBox Text="{Binding Invoice.InvoiceNo, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
                         </StackPanel>
                         <StackPanel Grid.Column="2">
                             <TextBlock Text="Date" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
@@ -313,23 +313,23 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,6">
                                     <TextBlock Text="Company Name *" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                    <TextBox Text="{Binding Invoice.CustomerName, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                    <TextBox Text="{Binding Invoice.CustomerName, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
                                 </StackPanel>
                                 <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,6">
                                     <TextBlock Text="TRN Number" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                    <TextBox Text="{Binding Invoice.CustomerTRN, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                    <TextBox Text="{Binding Invoice.CustomerTRN, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
                                 </StackPanel>
                                 <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,0,6">
                                     <TextBlock Text="Customer Reference" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                    <TextBox Text="{Binding Invoice.CustomerAddress, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                    <TextBox Text="{Binding Invoice.CustomerAddress, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
                                 </StackPanel>
                                 <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,6">
                                     <TextBlock Text="Salesman" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                    <TextBox Text="{Binding Invoice.Salesman, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                    <TextBox Text="{Binding Invoice.Salesman, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
                                 </StackPanel>
                                 <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3">
                                     <TextBlock Text="Address" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                    <TextBox Text="{Binding Invoice.CustomerAddress, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF" TextWrapping="Wrap" Height="28"/>
+                                    <TextBox Text="{Binding Invoice.CustomerAddress, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF" TextWrapping="Wrap" Height="28"/>
                                 </StackPanel>
                             </Grid>
                         </StackPanel>
@@ -340,15 +340,15 @@
                             <TextBlock Text="Project Details" FontSize="12" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,8"/>
                             <StackPanel Margin="0,0,0,6">
                                 <TextBlock Text="Project Name *" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                <TextBox Text="{Binding Invoice.ProjectName, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                <TextBox Text="{Binding Invoice.ProjectName, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
                             </StackPanel>
                             <StackPanel Margin="0,0,0,6">
                                 <TextBlock Text="Project No." FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                <TextBox Text="{Binding Invoice.ProjectLocation, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                <TextBox Text="{Binding Invoice.ProjectLocation, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
                             </StackPanel>
                             <StackPanel>
                                 <TextBlock Text="Location *" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                <TextBox Text="{Binding Invoice.ProjectLocation, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                <TextBox Text="{Binding Invoice.ProjectLocation, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>
@@ -358,15 +358,15 @@
                             <TextBlock Text="Additional Details" FontSize="12" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,8"/>
                             <StackPanel Margin="0,0,0,6">
                                 <TextBlock Text="LPO No." FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                <TextBox Text="{Binding Invoice.LPONo, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                <TextBox Text="{Binding Invoice.LPONo, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
                             </StackPanel>
                             <StackPanel Margin="0,0,0,6">
                                 <TextBlock Text="Attention" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                <TextBox Text="{Binding Invoice.AttentionName, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                <TextBox Text="{Binding Invoice.AttentionName, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
                             </StackPanel>
                             <StackPanel>
                                 <TextBlock Text="Contact No." FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                <TextBox Text="{Binding Invoice.ContactNo, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                <TextBox Text="{Binding Invoice.ContactNo, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>
@@ -401,14 +401,14 @@
                                                         <ColumnDefinition Width="Auto"/>
                                                     </Grid.ColumnDefinitions>
                                                     <TextBlock Grid.Column="0" Text="SPEC:" FontSize="10" FontWeight="SemiBold" Foreground="#1E3A5F" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                                    <TextBox Grid.Column="1" Text="{Binding SpecificationName, UpdateSourceTrigger=PropertyChanged}" FontSize="10" Padding="6,3" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF" MinWidth="100"/>
+                                                    <TextBox Grid.Column="1" Text="{Binding SpecificationName, UpdateSourceTrigger=LostFocus}" FontSize="10" Padding="6,3" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF" MinWidth="100"/>
                                                     <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="10,0">
                                                         <TextBlock Text="Base:" FontSize="9" Foreground="#6B7280" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                                        <TextBox Text="{Binding BasePrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}" Width="80" Padding="4,2" FontSize="10" Background="#FFFFFF" BorderBrush="#D1D5DB" BorderThickness="1"/>
+                                                        <TextBox Text="{Binding BasePrice, UpdateSourceTrigger=LostFocus, StringFormat=N2}" Width="80" Padding="4,2" FontSize="10" Background="#FFFFFF" BorderBrush="#D1D5DB" BorderThickness="1"/>
                                                     </StackPanel>
                                                     <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="0,0,10,0">
                                                         <TextBlock Text="Sur. %:" FontSize="9" Foreground="#6B7280" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                                        <TextBox Text="{Binding SurchargePercent, UpdateSourceTrigger=PropertyChanged, StringFormat=N1}" Width="55" Padding="4,2" FontSize="10" Background="#FFFFFF" BorderBrush="#D1D5DB" BorderThickness="1"/>
+                                                        <TextBox Text="{Binding SurchargePercent, UpdateSourceTrigger=LostFocus, StringFormat=N1}" Width="55" Padding="4,2" FontSize="10" Background="#FFFFFF" BorderBrush="#D1D5DB" BorderThickness="1"/>
                                                     </StackPanel>
                                                     <Button Grid.Column="4" Content="+ Row" Style="{StaticResource SecondaryButton}" Click="AddRow_Click" Tag="{Binding}" Padding="8,4" FontSize="10"/>
                                                 </Grid>
@@ -428,7 +428,7 @@
                                                         </DataGridTextColumn.ElementStyle>
                                                     </DataGridTextColumn>
 
-                                                    <DataGridTextColumn Header="Glass Ref" Binding="{Binding GlassRef, UpdateSourceTrigger=PropertyChanged}" Width="*">
+                                                    <DataGridTextColumn Header="Glass Ref" Binding="{Binding GlassRef, UpdateSourceTrigger=LostFocus}" Width="*">
                                                         <DataGridTextColumn.ElementStyle>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="VerticalAlignment" Value="Center"/>
@@ -438,7 +438,7 @@
                                                         </DataGridTextColumn.ElementStyle>
                                                     </DataGridTextColumn>
 
-                                                    <DataGridTextColumn Header="W1" Binding="{Binding Width1, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="55">
+                                                    <DataGridTextColumn Header="W1" Binding="{Binding Width1, UpdateSourceTrigger=LostFocus, StringFormat=N0}" Width="55">
                                                         <DataGridTextColumn.ElementStyle>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -448,7 +448,7 @@
                                                         </DataGridTextColumn.ElementStyle>
                                                     </DataGridTextColumn>
 
-                                                    <DataGridTextColumn Header="H1" Binding="{Binding Height1, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="55">
+                                                    <DataGridTextColumn Header="H1" Binding="{Binding Height1, UpdateSourceTrigger=LostFocus, StringFormat=N0}" Width="55">
                                                         <DataGridTextColumn.ElementStyle>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -458,7 +458,7 @@
                                                         </DataGridTextColumn.ElementStyle>
                                                     </DataGridTextColumn>
 
-                                                    <DataGridTextColumn Header="W2" Binding="{Binding Width2, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="55">
+                                                    <DataGridTextColumn Header="W2" Binding="{Binding Width2, UpdateSourceTrigger=LostFocus, StringFormat=N0}" Width="55">
                                                         <DataGridTextColumn.ElementStyle>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -468,7 +468,7 @@
                                                         </DataGridTextColumn.ElementStyle>
                                                     </DataGridTextColumn>
 
-                                                    <DataGridTextColumn Header="H2" Binding="{Binding Height2, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="55">
+                                                    <DataGridTextColumn Header="H2" Binding="{Binding Height2, UpdateSourceTrigger=LostFocus, StringFormat=N0}" Width="55">
                                                         <DataGridTextColumn.ElementStyle>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -478,7 +478,7 @@
                                                         </DataGridTextColumn.ElementStyle>
                                                     </DataGridTextColumn>
 
-                                                    <DataGridTextColumn Header="Qty" Binding="{Binding Qty, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="45">
+                                                    <DataGridTextColumn Header="Qty" Binding="{Binding Qty, UpdateSourceTrigger=LostFocus, StringFormat=N0}" Width="45">
                                                         <DataGridTextColumn.ElementStyle>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -666,7 +666,7 @@
                                                 <ColumnDefinition Width="24"/>
                                             </Grid.ColumnDefinitions>
 
-                                            <ComboBox Grid.Column="0" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" IsEditable="True" Margin="0,0,4,0" FontSize="9" Padding="4,2" Background="White">
+                                            <ComboBox Grid.Column="0" Text="{Binding Name, UpdateSourceTrigger=LostFocus}" IsEditable="True" Margin="0,0,4,0" FontSize="9" Padding="4,2" Background="White">
                                                 <ComboBoxItem Content="Wastage"/>
                                                 <ComboBoxItem Content="Polish"/>
                                                 <ComboBoxItem Content="Mitring"/>
@@ -683,7 +683,7 @@
                                                 <ComboBoxItem Content="Custom"/>
                                             </ComboBox>
 
-                                            <ComboBox Grid.Column="1" SelectedValue="{Binding Type, UpdateSourceTrigger=PropertyChanged}" SelectedValuePath="Tag" Margin="0,0,4,0" FontSize="9" Padding="4,2" Background="White">
+                                            <ComboBox Grid.Column="1" SelectedValue="{Binding Type, UpdateSourceTrigger=LostFocus}" SelectedValuePath="Tag" Margin="0,0,4,0" FontSize="9" Padding="4,2" Background="White">
                                                 <ComboBoxItem Content="LM" Tag="lm"/>
                                                 <ComboBoxItem Content="SQM" Tag="sqm"/>
                                                 <ComboBoxItem Content="SQM1" Tag="sqm1"/>
@@ -728,7 +728,7 @@
                                                 <TextBlock Text="{Binding ValueDisplay}" FontSize="10" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                             </Border>
 
-                                            <TextBox Grid.Column="4" Text="{Binding Rate, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:N2}}" Style="{StaticResource FormTextBox}" Padding="2,2" FontSize="9" TextAlignment="Center" Margin="0,0,4,0"/>
+                                            <TextBox Grid.Column="4" Text="{Binding Rate, UpdateSourceTrigger=LostFocus, StringFormat={}{0:N2}}" Style="{StaticResource FormTextBox}" Padding="2,2" FontSize="9" TextAlignment="Center" Margin="0,0,4,0"/>
 
                                             <Border Grid.Column="5" Background="#1E3A5F" CornerRadius="3" Padding="4,2" Margin="0,0,4,0">
                                                 <TextBlock Text="{Binding AmountDisplay}" FontSize="10" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -1007,7 +1007,7 @@
                                 <RadioButton IsChecked="{Binding IsFTSelected}" Content="FT Glass"/>
                             </StackPanel>
                             <TextBlock Text="Sheet Price (AED)" Style="{StaticResource FieldLabel}"/>
-                            <TextBox Text="{Binding SGUSheetPrice, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" FontSize="14" FontWeight="SemiBold" TextAlignment="Center" Margin="0,0,0,10"/>
+                            <TextBox Text="{Binding SGUSheetPrice, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" FontSize="14" FontWeight="SemiBold" TextAlignment="Center" Margin="0,0,0,10"/>
                             <Grid Margin="0,0,0,10">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -1016,11 +1016,11 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="Cutting" FontSize="10" Foreground="#6B7280"/>
-                                    <TextBox Text="{Binding SGUCutting, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
+                                    <TextBox Text="{Binding SGUCutting, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="2">
                                     <TextBlock Text="Tempering" FontSize="10" Foreground="#6B7280"/>
-                                    <TextBox Text="{Binding SGUTempering, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
+                                    <TextBox Text="{Binding SGUTempering, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
                                 </StackPanel>
                             </Grid>
                             <Grid>
@@ -1031,11 +1031,11 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="Waste Factor" FontSize="10" Foreground="#6B7280"/>
-                                    <TextBox Text="{Binding SGUWasteFactor, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
+                                    <TextBox Text="{Binding SGUWasteFactor, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="2">
                                     <TextBlock Text="Profit %" FontSize="10" Foreground="#6B7280"/>
-                                    <TextBox Text="{Binding SGUProfitPercent, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
+                                    <TextBox Text="{Binding SGUProfitPercent, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
                                 </StackPanel>
                             </Grid>
                         </StackPanel>
@@ -1063,7 +1063,7 @@
                                 </StackPanel>
                                 <StackPanel Grid.Column="4">
                                     <TextBlock Text="Price" FontSize="10" Foreground="#6B7280"/>
-                                    <TextBox Text="{Binding DGUOuterPrice, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
+                                    <TextBox Text="{Binding DGUOuterPrice, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
                                 </StackPanel>
                             </Grid>
                             <TextBlock Text="Work Type" Style="{StaticResource FieldLabel}"/>
@@ -1121,7 +1121,7 @@
                                 </StackPanel>
                                 <StackPanel Grid.Column="4">
                                     <TextBlock Text="Price" FontSize="10" Foreground="#6B7280"/>
-                                    <TextBox Text="{Binding DGUInnerPrice, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
+                                    <TextBox Text="{Binding DGUInnerPrice, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
                                 </StackPanel>
                             </Grid>
                             <Grid>
@@ -1132,11 +1132,11 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="Waste Factor" FontSize="10" Foreground="#6B7280"/>
-                                    <TextBox Text="{Binding DGUWasteFactor, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
+                                    <TextBox Text="{Binding DGUWasteFactor, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="2">
                                     <TextBlock Text="Profit %" FontSize="10" Foreground="#6B7280"/>
-                                    <TextBox Text="{Binding DGUProfitPercent, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
+                                    <TextBox Text="{Binding DGUProfitPercent, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
                                 </StackPanel>
                             </Grid>
                         </StackPanel>
@@ -1164,7 +1164,7 @@
                                 </StackPanel>
                                 <StackPanel Grid.Column="4">
                                     <TextBlock Text="Price" FontSize="10" Foreground="#6B7280"/>
-                                    <TextBox Text="{Binding LAMOuterPrice, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
+                                    <TextBox Text="{Binding LAMOuterPrice, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
                                 </StackPanel>
                             </Grid>
                             <TextBlock Text="Work Type" Style="{StaticResource FieldLabel}"/>
@@ -1214,7 +1214,7 @@
                                 </StackPanel>
                                 <StackPanel Grid.Column="4">
                                     <TextBlock Text="PVB Price" FontSize="10" Foreground="#6B7280"/>
-                                    <TextBox Text="{Binding LAMPVBPrice, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
+                                    <TextBox Text="{Binding LAMPVBPrice, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
                                 </StackPanel>
                             </Grid>
                             <TextBlock Text="Inner Glass" Style="{StaticResource FieldLabel}"/>
@@ -1236,7 +1236,7 @@
                                 </StackPanel>
                                 <StackPanel Grid.Column="4">
                                     <TextBlock Text="Price" FontSize="10" Foreground="#6B7280"/>
-                                    <TextBox Text="{Binding LAMInnerPrice, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
+                                    <TextBox Text="{Binding LAMInnerPrice, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
                                 </StackPanel>
                             </Grid>
                             <Grid Margin="0,0,0,10">
@@ -1247,11 +1247,11 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="Cutting" FontSize="10" Foreground="#6B7280"/>
-                                    <TextBox Text="{Binding LAMCutting, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
+                                    <TextBox Text="{Binding LAMCutting, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="2">
                                     <TextBlock Text="Tempering" FontSize="10" Foreground="#6B7280"/>
-                                    <TextBox Text="{Binding LAMTempering, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
+                                    <TextBox Text="{Binding LAMTempering, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
                                 </StackPanel>
                             </Grid>
                             <Grid>
@@ -1262,11 +1262,11 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="Waste Factor" FontSize="10" Foreground="#6B7280"/>
-                                    <TextBox Text="{Binding LAMWasteFactor, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
+                                    <TextBox Text="{Binding LAMWasteFactor, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="2">
                                     <TextBlock Text="Profit %" FontSize="10" Foreground="#6B7280"/>
-                                    <TextBox Text="{Binding LAMProfitPercent, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
+                                    <TextBox Text="{Binding LAMProfitPercent, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
                                 </StackPanel>
                             </Grid>
                         </StackPanel>

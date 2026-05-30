@@ -434,7 +434,7 @@
                                 <TextBlock Text="🔍" FontSize="12"/>
                             </Border>
                             <TextBox Grid.Column="1" 
-                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
+                                     Text="{Binding SearchText, UpdateSourceTrigger=LostFocus}" 
                                      BorderThickness="0" 
                                      VerticalAlignment="Center" 
                                      Padding="10,6" 
@@ -448,7 +448,7 @@
                         <StackPanel Orientation="Horizontal">
                             <StackPanel Margin="0,0,12,0">
                                 <TextBlock Text="FROM" FontSize="9" FontWeight="Bold" Foreground="#059669"/>
-                                <DatePicker SelectedDate="{Binding FilterStartDate, UpdateSourceTrigger=PropertyChanged}" 
+                                <DatePicker SelectedDate="{Binding FilterStartDate, UpdateSourceTrigger=LostFocus}" 
                                            BorderThickness="0" 
                                            Background="Transparent" 
                                            FontSize="12"
@@ -462,7 +462,7 @@
                     <Border Background="White" CornerRadius="10" Padding="12,8" BorderBrush="#F59E0B" BorderThickness="1">
                         <StackPanel>
                             <TextBlock Text="TO" FontSize="9" FontWeight="Bold" Foreground="#D97706"/>
-                            <DatePicker SelectedDate="{Binding FilterEndDate, UpdateSourceTrigger=PropertyChanged}" 
+                            <DatePicker SelectedDate="{Binding FilterEndDate, UpdateSourceTrigger=LostFocus}" 
                                        BorderThickness="0" 
                                        Background="Transparent" 
                                        FontSize="12"
@@ -506,7 +506,7 @@
                     <StackPanel>
                         <TextBlock Text="COMPANY" FontSize="9" FontWeight="Bold" Foreground="#1E40AF" Margin="4,0,0,4"/>
                         <ComboBox ItemsSource="{Binding CompanyOptions}" 
-                                 SelectedItem="{Binding FilterCompany, UpdateSourceTrigger=PropertyChanged}"
+                                 SelectedItem="{Binding FilterCompany, UpdateSourceTrigger=LostFocus}"
                                  Background="White" BorderBrush="#93C5FD" BorderThickness="1" Padding="10,8" FontSize="11"/>
                     </StackPanel>
                 </Border>
@@ -516,7 +516,7 @@
                     <StackPanel>
                         <TextBlock Text="TYPE OF WORK" FontSize="9" FontWeight="Bold" Foreground="#1E40AF" Margin="4,0,0,4"/>
                         <ComboBox ItemsSource="{Binding TypeOfWorkOptions}" 
-                                 SelectedItem="{Binding FilterTypeOfWork, UpdateSourceTrigger=PropertyChanged}"
+                                 SelectedItem="{Binding FilterTypeOfWork, UpdateSourceTrigger=LostFocus}"
                                  Background="White" BorderBrush="#93C5FD" BorderThickness="1" Padding="10,8" FontSize="11"/>
                     </StackPanel>
                 </Border>
@@ -526,7 +526,7 @@
                     <StackPanel>
                         <TextBlock Text="STATUS" FontSize="9" FontWeight="Bold" Foreground="#1E40AF" Margin="4,0,0,4"/>
                         <ComboBox ItemsSource="{Binding StatusOptions}" 
-                                 SelectedItem="{Binding FilterStatus, UpdateSourceTrigger=PropertyChanged}"
+                                 SelectedItem="{Binding FilterStatus, UpdateSourceTrigger=LostFocus}"
                                  Background="White" BorderBrush="#93C5FD" BorderThickness="1" Padding="10,8" FontSize="11"/>
                     </StackPanel>
                 </Border>
@@ -536,7 +536,7 @@
                     <StackPanel>
                         <TextBlock Text="SALESMAN" FontSize="9" FontWeight="Bold" Foreground="#1E40AF" Margin="4,0,0,4"/>
                         <ComboBox ItemsSource="{Binding SalesmanOptions}" 
-                                 SelectedItem="{Binding FilterSalesman, UpdateSourceTrigger=PropertyChanged}"
+                                 SelectedItem="{Binding FilterSalesman, UpdateSourceTrigger=LostFocus}"
                                  Background="White" BorderBrush="#93C5FD" BorderThickness="1" Padding="10,8" FontSize="11"/>
                     </StackPanel>
                 </Border>
@@ -546,7 +546,7 @@
                     <StackPanel>
                         <TextBlock Text="COLOR" FontSize="9" FontWeight="Bold" Foreground="#1E40AF" Margin="4,0,0,4"/>
                         <ComboBox ItemsSource="{Binding ColorOptions}" 
-                                 SelectedItem="{Binding FilterColor, UpdateSourceTrigger=PropertyChanged}"
+                                 SelectedItem="{Binding FilterColor, UpdateSourceTrigger=LostFocus}"
                                  Background="White" BorderBrush="#93C5FD" BorderThickness="1" Padding="10,8" FontSize="11"/>
                     </StackPanel>
                 </Border>
@@ -1106,7 +1106,7 @@
                                      ItemsSource="{Binding DriverOptions}" 
                                      SelectedItem="{Binding EditingDeliveryItem.Driver}"
                                      IsEditable="True"
-                                     Text="{Binding EditingDeliveryItem.Driver, UpdateSourceTrigger=PropertyChanged}"
+                                     Text="{Binding EditingDeliveryItem.Driver, UpdateSourceTrigger=LostFocus}"
                                      Background="White"
                                      BorderBrush="#CBD5E1"
                                      BorderThickness="1"/>
@@ -1118,7 +1118,7 @@
                                      ItemsSource="{Binding VehicleOptions}" 
                                      SelectedItem="{Binding EditingDeliveryItem.Vehicle}"
                                      IsEditable="True"
-                                     Text="{Binding EditingDeliveryItem.Vehicle, UpdateSourceTrigger=PropertyChanged}"
+                                     Text="{Binding EditingDeliveryItem.Vehicle, UpdateSourceTrigger=LostFocus}"
                                      Background="White"
                                      BorderBrush="#CBD5E1"
                                      BorderThickness="1"/>
@@ -1363,7 +1363,7 @@
                                      ItemsSource="{Binding DriverOptions}" 
                                      SelectedItem="{Binding EditingDeliveryItemFromDb.Driver}"
                                      IsEditable="True"
-                                     Text="{Binding EditingDeliveryItemFromDb.Driver, UpdateSourceTrigger=PropertyChanged}"
+                                     Text="{Binding EditingDeliveryItemFromDb.Driver, UpdateSourceTrigger=LostFocus}"
                                      Background="White"
                                      BorderBrush="#CBD5E1"
                                      BorderThickness="1"/>
@@ -1375,7 +1375,7 @@
                                      ItemsSource="{Binding VehicleOptions}" 
                                      SelectedItem="{Binding EditingDeliveryItemFromDb.Vehicle}"
                                      IsEditable="True"
-                                     Text="{Binding EditingDeliveryItemFromDb.Vehicle, UpdateSourceTrigger=PropertyChanged}"
+                                     Text="{Binding EditingDeliveryItemFromDb.Vehicle, UpdateSourceTrigger=LostFocus}"
                                      Background="White"
                                      BorderBrush="#CBD5E1"
                                      BorderThickness="1"/>
@@ -1467,7 +1467,7 @@
                                                     </StackPanel>
 
                                                     <TextBox Grid.Column="1" 
-                                                             Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" 
+                                                             Text="{Binding Notes, UpdateSourceTrigger=LostFocus}" 
                                                              Width="250" 
                                                              Padding="12,10" 
                                                              FontSize="12"

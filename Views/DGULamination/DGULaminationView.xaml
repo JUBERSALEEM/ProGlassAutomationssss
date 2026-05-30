@@ -305,19 +305,19 @@
                             <StackPanel>
                                 <TextBlock Text="PRICE INPUT (AED)" Style="{StaticResource SectionTitle}" Foreground="{StaticResource WarningOrange}"/>
                                 <TextBlock Text="Sheet1 Price" Style="{StaticResource FieldLabel}"/>
-                                <TextBox Style="{StaticResource SharpInput}" Text="{Binding Sheet1, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
+                                <TextBox Style="{StaticResource SharpInput}" Text="{Binding Sheet1, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
                                 <TextBlock Text="Sheet2 Price" Style="{StaticResource FieldLabel}" Margin="0,12,0,0"/>
-                                <TextBox Style="{StaticResource SharpInput}" Text="{Binding Sheet2, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
+                                <TextBox Style="{StaticResource SharpInput}" Text="{Binding Sheet2, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
                                 <TextBlock Text="Sheet3 Price" Style="{StaticResource FieldLabel}" Margin="0,12,0,0"/>
-                                <TextBox Style="{StaticResource SharpInput}" Text="{Binding Sheet3, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
+                                <TextBox Style="{StaticResource SharpInput}" Text="{Binding Sheet3, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
                                 <TextBlock Text="ASP Price" Style="{StaticResource FieldLabel}" Margin="0,12,0,0"/>
-                                <TextBox Style="{StaticResource SharpInput}" Text="{Binding AspPrice, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
+                                <TextBox Style="{StaticResource SharpInput}" Text="{Binding AspPrice, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
                                 <TextBlock Text="Outsource PVB" Style="{StaticResource FieldLabel}" Margin="0,12,0,0"/>
-                                <TextBox Style="{StaticResource SharpInput}" Text="{Binding OutsourcePrice, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
+                                <TextBox Style="{StaticResource SharpInput}" Text="{Binding OutsourcePrice, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
                                 <TextBlock Text="Cutting Charge" Style="{StaticResource FieldLabel}" Margin="0,12,0,0"/>
-                                <TextBox Style="{StaticResource SharpInput}" Text="{Binding CuttingCharge, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
+                                <TextBox Style="{StaticResource SharpInput}" Text="{Binding CuttingCharge, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
                                 <TextBlock Text="Tempering Charge" Style="{StaticResource FieldLabel}" Margin="0,12,0,0"/>
-                                <TextBox Style="{StaticResource SharpInput}" Text="{Binding TemperingCharge, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
+                                <TextBox Style="{StaticResource SharpInput}" Text="{Binding TemperingCharge, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
                             </StackPanel>
                         </Border>
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -10,6 +11,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+
 using ProGlassAutomation.Data.Database;
 using ProGlassAutomation.Models;
 using ProGlassAutomation.ViewModels;
@@ -29,26 +31,59 @@ namespace ProGlassAutomation
         public MainWindow()
         {
             InitializeComponent();
+
+            // Initialize ViewModel
             _viewModel = new MainViewModel();
             DataContext = _viewModel;
+
+            // Start system clock
             StartClock();
 
-            // Find DailyWorksView and connect navigation event
-            this.Loaded += MainWindow_Loaded;
-            UpdateLicenseStatus();
+            // Setup screenshot functionality
             CreateScreenshotPopup();
 
+            // Setup dropdown close timer
             _closeTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
             _closeTimer.Tick += CloseTimer_Tick;
 
+            // Window events
             this.Deactivated += MainWindow_Deactivated;
             this.Closing += MainWindow_Closing;
+            this.Loaded += MainWindow_Loaded;
 
+            // Watch for license changes
             _viewModel.PropertyChanged += (s, e) =>
             {
                 if (e.PropertyName == nameof(_viewModel.IsLicensed))
                     UpdateLicenseStatus();
             };
+
+            // Update license UI
+            UpdateLicenseStatus();
+
+            // Load initial dashboard
+            ShowDashboard();
+        }
+
+        // ==================== CLEANUP ====================
+
+        private void CleanupCurrentView()
+        {
+            if (MainContent.Content is IDisposable disposable)
+            {
+                try
+                {
+                    // Call cleanup on JobOrderListViewModel if present
+                    if (MainContent.Content is FrameworkElement fe && fe.DataContext is JobOrderListViewModel joVm)
+                    {
+                        joVm.Cleanup();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[MainWindow] Cleanup Error: {ex.Message}");
+                }
+            }
         }
 
         // ==================== CORE DROPDOWN LOGIC ====================
@@ -107,7 +142,7 @@ namespace ProGlassAutomation
             if (_activeDropdown != null && _activeDropdownName != dropdownName)
             {
                 try { _activeDropdown.IsOpen = false; }
-                catch { }
+                catch { /* Ignore */ }
                 DetachPopupEvents();
             }
 
@@ -120,7 +155,7 @@ namespace ProGlassAutomation
             _isMouseOverPopup = false;
 
             try { dropdown.IsOpen = true; }
-            catch { }
+            catch { /* Ignore */ }
 
             AttachPopupEvents(dropdown);
         }
@@ -166,7 +201,7 @@ namespace ProGlassAutomation
             {
                 DetachPopupEvents();
                 try { _activeDropdown.IsOpen = false; }
-                catch { }
+                catch { /* Ignore */ }
             }
 
             _activeDropdown = null;
@@ -175,30 +210,38 @@ namespace ProGlassAutomation
 
         // ==================== MENU HANDLERS ====================
 
-        // ==================== DASHBOARD DROPDOWN ====================
-
         private void MenuItem_Overview_Click(object sender, RoutedEventArgs e)
         {
             CloseCurrentDropdown();
-            _viewModel.ShowDashboard();
+            ShowDashboard();
         }
 
         private void MenuItem_Statistics_Click(object sender, RoutedEventArgs e)
         {
             CloseCurrentDropdown();
-            _viewModel.ShowDashboard();
+            ShowDashboard();
         }
 
         private void MenuItem_RecentActivity_Click(object sender, RoutedEventArgs e)
         {
             CloseCurrentDropdown();
-            _viewModel.ShowDashboard();
+            ShowDashboard();
         }
 
         private void MenuItem_ProformaInvoice_Click(object sender, RoutedEventArgs e)
         {
             CloseCurrentDropdown();
-            _viewModel.ShowProformaInvoice();
+
+            try
+            {
+                _viewModel.ShowProformaInvoice();
+                MainContent.Content = _viewModel.CurrentView;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainWindow] ERROR: {ex.Message}");
+                MessageBox.Show($"ERROR: {ex.Message}", "ERROR");
+            }
         }
 
         private void MenuItem_JobOrders_Click(object sender, RoutedEventArgs e)
@@ -206,8 +249,6 @@ namespace ProGlassAutomation
             CloseCurrentDropdown();
             ShowJobOrders();
         }
-
-        // ==================== LICENSING DROPDOWN ====================
 
         private void MenuItem_ActivateLicense_Click(object sender, RoutedEventArgs e)
         {
@@ -226,8 +267,6 @@ namespace ProGlassAutomation
             CloseCurrentDropdown();
             _viewModel.ShowSubscriptionPlan();
         }
-
-        // ==================== CALCULATORS DROPDOWN ====================
 
         private void MenuItem_SGU_Click(object sender, RoutedEventArgs e)
         {
@@ -274,8 +313,6 @@ namespace ProGlassAutomation
             }
         }
 
-        // ==================== OPERATIONS DROPDOWN ====================
-
         private void MenuItem_SheetStore_Click(object sender, RoutedEventArgs e)
         {
             CloseCurrentDropdown();
@@ -285,7 +322,17 @@ namespace ProGlassAutomation
         private void MenuItem_DailyWorks_Click(object sender, RoutedEventArgs e)
         {
             CloseCurrentDropdown();
-            _viewModel.ShowDailyWorks();
+
+            try
+            {
+                _viewModel.ShowDailyWorks();
+                MainContent.Content = _viewModel.CurrentView;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainWindow] ERROR: {ex.Message}");
+                MessageBox.Show($"ERROR: {ex.Message}", "ERROR");
+            }
         }
 
         private void MenuItem_Deliveries_Click(object sender, RoutedEventArgs e)
@@ -293,8 +340,6 @@ namespace ProGlassAutomation
             CloseCurrentDropdown();
             ShowDeliveries();
         }
-
-        // ==================== REPORTS DROPDOWN ====================
 
         private void MenuItem_DailyWorksReport_Click(object sender, RoutedEventArgs e)
         {
@@ -314,8 +359,6 @@ namespace ProGlassAutomation
             ShowSheetStore();
         }
 
-        // ==================== SETTINGS DROPDOWN ====================
-
         private void MenuItem_Profile_Click(object sender, RoutedEventArgs e)
         {
             CloseCurrentDropdown();
@@ -327,26 +370,6 @@ namespace ProGlassAutomation
             CloseCurrentDropdown();
             _viewModel.ShowUsers();
         }
-
-        // ==================== HOME BUTTON ====================
-
-        private void BtnHome_Click(object sender, RoutedEventArgs e)
-        {
-            CloseCurrentDropdown();
-            _viewModel.ShowDashboard();
-        }
-
-        // ==================== LOGO CLICK ====================
-
-        private void Logo_Click(object sender, MouseButtonEventArgs e)
-        {
-            CloseCurrentDropdown();
-            var aboutDialog = new Views.About.AboutDialog();
-            aboutDialog.Owner = this;
-            aboutDialog.ShowDialog();
-        }
-
-        // ==================== SETTINGS DROPDOWN ====================
 
         private void MenuItem_Settings_Click(object sender, RoutedEventArgs e)
         {
@@ -362,13 +385,46 @@ namespace ProGlassAutomation
             aboutDialog.ShowDialog();
         }
 
-        // ==================== NAVIGATION TO REAL PAGES ====================
+        // ==================== BUTTON HANDLERS ====================
+
+        private void BtnHome_Click(object sender, RoutedEventArgs e)
+        {
+            CloseCurrentDropdown();
+            ShowDashboard();
+        }
+
+        private void Logo_Click(object sender, MouseButtonEventArgs e)
+        {
+            CloseCurrentDropdown();
+            var aboutDialog = new Views.About.AboutDialog();
+            aboutDialog.Owner = this;
+            aboutDialog.ShowDialog();
+        }
+
+        // ==================== NAVIGATION METHODS ====================
+
+        public void ShowDashboard()
+        {
+            try
+            {
+                CleanupCurrentView();
+                MainContent.Content = new Views.Dashboard.DashboardView();
+                System.Diagnostics.Debug.WriteLine("[MainWindow] Navigated to Dashboard");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainWindow] ShowDashboard Error: {ex.Message}");
+                MessageBox.Show($"Failed to load Dashboard: {ex.Message}", "Navigation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
 
         public void ShowProformaInvoice()
         {
             try
             {
-                MainContent.Content = new Views.ProformaInvoice.ProformaInvoiceView();
+                CleanupCurrentView();
+                _viewModel.ShowProformaInvoice();
+                MainContent.Content = _viewModel.CurrentView;
                 System.Diagnostics.Debug.WriteLine("[MainWindow] Navigated to Proforma Invoice");
             }
             catch (Exception ex)
@@ -382,12 +438,39 @@ namespace ProGlassAutomation
         {
             try
             {
-                MainContent.Content = new Views.JobOrderListView();
+                CleanupCurrentView();
+
+                // Create the view
+                var view = new Views.JobOrder.JobOrderListView();
+
+                // Wire up events via MainViewModel's JobOrderListVM
+                if (_viewModel?.JobOrderListVM != null)
+                {
+                    // Unsubscribe first (idempotent)
+                    _viewModel.JobOrderListVM.OpenJobOrderRequested -= OnOpenJobOrderRequested;
+                    _viewModel.JobOrderListVM.OpenProformaInvoiceRequested -= OnOpenProformaInvoiceRequested;
+                    _viewModel.JobOrderListVM.NewJobOrderRequested -= OnNewJobOrderRequested;
+
+                    // Subscribe
+                    _viewModel.JobOrderListVM.OpenJobOrderRequested += OnOpenJobOrderRequested;
+                    _viewModel.JobOrderListVM.OpenProformaInvoiceRequested += OnOpenProformaInvoiceRequested;
+                    _viewModel.JobOrderListVM.NewJobOrderRequested += OnNewJobOrderRequested;
+
+                    // Set DataContext
+                    view.DataContext = _viewModel.JobOrderListVM;
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("[MainWindow] WARNING: JobOrderListVM is null!");
+                }
+
+                MainContent.Content = view;
                 System.Diagnostics.Debug.WriteLine("[MainWindow] Navigated to Job Orders");
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[MainWindow] ShowJobOrders Error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(ex.StackTrace);
                 MessageBox.Show($"Failed to load Job Orders: {ex.Message}", "Navigation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
@@ -396,6 +479,7 @@ namespace ProGlassAutomation
         {
             try
             {
+                CleanupCurrentView();
                 MainContent.Content = new Views.Delivery.DeliveryView();
                 System.Diagnostics.Debug.WriteLine("[MainWindow] Navigated to Deliveries");
             }
@@ -406,10 +490,27 @@ namespace ProGlassAutomation
             }
         }
 
+        public void ShowDailyWorks()
+        {
+            try
+            {
+                CleanupCurrentView();
+                _viewModel.ShowDailyWorks();
+                MainContent.Content = _viewModel.CurrentView;
+                System.Diagnostics.Debug.WriteLine("[MainWindow] Navigated to Daily Works");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainWindow] ShowDailyWorks Error: {ex.Message}");
+                MessageBox.Show($"Failed to load Daily Works: {ex.Message}", "Navigation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
         public void ShowSheetStore()
         {
             try
             {
+                CleanupCurrentView();
                 MainContent.Content = new Views.SheetStore.SheetStoreView();
                 System.Diagnostics.Debug.WriteLine("[MainWindow] Navigated to Sheet Store");
             }
@@ -420,17 +521,73 @@ namespace ProGlassAutomation
             }
         }
 
-        public void ShowDashboard()
+        // ==================== JOB ORDER EVENT HANDLERS ====================
+
+        private void OnOpenJobOrderRequested(JobOrderModel jo)
         {
             try
             {
-                MainContent.Content = new Views.Dashboard.DashboardView();
-                System.Diagnostics.Debug.WriteLine("[MainWindow] Navigated to Dashboard");
+                if (jo == null) return;
+                System.Diagnostics.Debug.WriteLine($"[MainWindow] OnOpenJobOrderRequested: {jo.JONumber}");
+
+                // Load into ViewModel
+                _viewModel.JobOrderVM.LoadFromExistingJobOrder(jo);
+
+                // Navigate to Job Order Edit
+                var view = new Views.JobOrder.JobOrderView();
+                view.DataContext = _viewModel.JobOrderVM;
+                MainContent.Content = view;
+
+                System.Diagnostics.Debug.WriteLine("[MainWindow] Navigated to Job Order Edit");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[MainWindow] ShowDashboard Error: {ex.Message}");
-                MessageBox.Show($"Failed to load Dashboard: {ex.Message}", "Navigation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                System.Diagnostics.Debug.WriteLine($"[MainWindow] OnOpenJobOrderRequested Error: {ex.Message}");
+                MessageBox.Show($"Error opening Job Order: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void OnOpenProformaInvoiceRequested(JobOrderModel jo)
+        {
+            try
+            {
+                if (jo == null) return;
+
+                if (string.IsNullOrWhiteSpace(jo.PINumber))
+                {
+                    MessageBox.Show("No linked Proforma Invoice found.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                System.Diagnostics.Debug.WriteLine($"[MainWindow] OnOpenProformaInvoiceRequested: {jo.PINumber}");
+                _viewModel.ShowProformaInvoiceByNumber(jo.PINumber);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainWindow] OnOpenProformaInvoiceRequested Error: {ex.Message}");
+                MessageBox.Show($"Error opening Proforma Invoice: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void OnNewJobOrderRequested()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("[MainWindow] OnNewJobOrderRequested");
+
+                _viewModel.JobOrderVM.ClearForNewJobOrder();
+
+                // Navigate directly
+                var view = new Views.JobOrder.JobOrderView();
+                view.DataContext = _viewModel.JobOrderVM;
+                MainContent.Content = view;
+
+                System.Diagnostics.Debug.WriteLine("[MainWindow] Navigated to New Job Order");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainWindow] OnNewJobOrderRequested Error: {ex.Message}");
+                MessageBox.Show($"Error creating new Job Order: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -477,7 +634,7 @@ namespace ProGlassAutomation
             stack.Children.Add(header);
 
             var btnStack = new StackPanel { Margin = new Thickness(8, 12, 8, 12) };
-            btnStack.Children.Add(CreateQualityButton("📱", "HD 720p", "2560 × 1440", "#64748B", "#F1F5F9", "720p", ScreenshotQuality.HD));
+                        btnStack.Children.Add(CreateQualityButton("📱", "HD 720p", "2560 × 1440", "#64748B", "#F1F5F9", "720p", ScreenshotQuality.HD));
             btnStack.Children.Add(CreateQualityButton("🖥️", "Full HD 1080p", "3840 × 2160", "#2563EB", "#DBEAFE", "1080p", ScreenshotQuality.FullHD));
             btnStack.Children.Add(CreateQualityButton("🎬", "2K QHD", "5120 × 2880", "#D97706", "#FEF3C7", "2K", ScreenshotQuality.QHD));
             btnStack.Children.Add(CreateQualityButton("📺", "4K UHD", "7680 × 4320", "#059669", "#D1FAE5", "4K", ScreenshotQuality.UltraHD));
@@ -516,7 +673,7 @@ namespace ProGlassAutomation
             {
                 Tag = quality,
                 Margin = new Thickness(0, 0, 0, 6),
-                Padding = new Thickness(12, 10, 12, 1),
+                Padding = new Thickness(12, 10, 12, 10),
                 Cursor = Cursors.Hand,
                 HorizontalContentAlignment = HorizontalAlignment.Stretch,
                 Background = Brushes.White,
@@ -547,16 +704,19 @@ namespace ProGlassAutomation
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
+            // Icon
             var iconText = new TextBlock { Text = icon, FontSize = 20, VerticalAlignment = VerticalAlignment.Center };
             Grid.SetColumn(iconText, 0);
             grid.Children.Add(iconText);
 
+            // Text Stack
             var textStack = new StackPanel { Margin = new Thickness(10, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
             textStack.Children.Add(new TextBlock { Text = title, FontSize = 13, FontWeight = FontWeights.Bold, Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0F172A")) });
             textStack.Children.Add(new TextBlock { Text = resolution, FontSize = 10, Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#64748B")) });
             Grid.SetColumn(textStack, 1);
             grid.Children.Add(textStack);
 
+            // Badge
             var badgeBorder = new Border
             {
                 Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(badgeColor)),
@@ -600,9 +760,11 @@ namespace ProGlassAutomation
                     case ScreenshotQuality.UHD8K: targetWidth = 10240; targetHeight = 5760; break;
                 }
 
+                // Force layout update
                 UpdateLayout();
                 Dispatcher.Invoke(() => { }, DispatcherPriority.Loaded);
 
+                // Calculate scale
                 double scaleX = targetWidth / ActualWidth;
                 double scaleY = targetHeight / ActualHeight;
                 double scale = Math.Max(scaleX, scaleY);
@@ -613,10 +775,12 @@ namespace ProGlassAutomation
                 int height = (int)(ActualHeight * scale);
                 int dpi = (int)(96 * scale);
 
+                // Capture screenshot
                 RenderTargetBitmap rtb = new RenderTargetBitmap(width, height, dpi, dpi, PixelFormats.Pbgra32);
                 rtb.Render(this);
                 rtb.Freeze();
 
+                // Show save dialog
                 var sfd = new Microsoft.Win32.SaveFileDialog
                 {
                     Filter = "PNG Image|*.png|BMP Image|*.bmp|JPEG Image|*.jpg",
@@ -629,10 +793,12 @@ namespace ProGlassAutomation
                     string filePath = sfd.FileName;
                     string extension = Path.GetExtension(filePath).ToLower();
 
+                    // Ensure directory exists
                     var directory = Path.GetDirectoryName(filePath);
                     if (!Directory.Exists(directory) && !string.IsNullOrEmpty(directory))
                         Directory.CreateDirectory(directory);
 
+                    // Save file
                     await Task.Run(() =>
                     {
                         BitmapEncoder encoder = extension switch
@@ -648,6 +814,7 @@ namespace ProGlassAutomation
                         encoder.Save(fs);
                     });
 
+                    // Show success message
                     var fileInfo = new FileInfo(filePath);
                     string sizeDisplay = fileInfo.Length >= 1024 * 1024
                         ? $"{fileInfo.Length / (1024.0 * 1024.0):F2} MB"
@@ -655,7 +822,11 @@ namespace ProGlassAutomation
 
                     Dispatcher.Invoke(() =>
                     {
-                        MessageBox.Show($"Screenshot saved!\n\nFile: {filePath}\nResolution: {width}x{height}\nSize: {sizeDisplay}", "Screenshot", MessageBoxButton.OK, MessageBoxImage.Information);
+                        MessageBox.Show(
+                            $"Screenshot saved!\n\nFile: {filePath}\nResolution: {width}x{height}\nSize: {sizeDisplay}",
+                            "Screenshot",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Information);
                     });
                 }
             }
@@ -668,7 +839,7 @@ namespace ProGlassAutomation
             }
         }
 
-        // ==================== OTHER METHODS ====================
+        // ==================== LICENSE ====================
 
         private void UpdateLicenseStatus()
         {
@@ -692,22 +863,6 @@ namespace ProGlassAutomation
             _viewModel.ShowSubscriptionPlan();
         }
 
-        private void StartClock()
-        {
-            _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
-            _clockTimer.Tick += (s, e) =>
-            {
-                ClockText.Text = DateTime.Now.ToString("HH:mm:ss");
-                CurrentDateText.Text = DateTime.Now.ToString("dd-MMMM-yyyy");
-            };
-            _clockTimer.Start();
-        }
-
-        private void MainWindow_Deactivated(object sender, EventArgs e)
-        {
-            CloseCurrentDropdown();
-        }
-
         private bool CheckLicense()
         {
             if (!_viewModel.IsLicensed)
@@ -720,22 +875,64 @@ namespace ProGlassAutomation
             return true;
         }
 
+        // ==================== CLOCK ====================
+
+        private void StartClock()
+        {
+            _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+            _clockTimer.Tick += (s, e) =>
+            {
+                ClockText.Text = DateTime.Now.ToString("HH:mm:ss");
+                CurrentDateText.Text = DateTime.Now.ToString("dd-MMMM-yyyy");
+            };
+            _clockTimer.Start();
+        }
+
+        // ==================== WINDOW EVENTS ====================
+
+        private void MainWindow_Deactivated(object sender, EventArgs e)
+        {
+            CloseCurrentDropdown();
+        }
+
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            // Find DailyWorksView and connect navigation event
-            var dailyWorksView = FindChildByName(this, "DailyWorksViewContent") as Views.DailyWorksView;
-            if (dailyWorksView != null)
+            System.Diagnostics.Debug.WriteLine("[MainWindow] Loaded successfully");
+        }
+
+        private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            try
             {
-                dailyWorksView.NavigateToInvoice += () =>
+                System.Diagnostics.Debug.WriteLine("[MainWindow] Application closing...");
+
+                // Stop clock
+                _clockTimer?.Stop();
+
+                // Cleanup current view
+                CleanupCurrentView();
+
+                // Save data using reflection (safe call)
+                if (DataContext is MainViewModel vm)
                 {
-                    Dispatcher.Invoke(() =>
+                    var saveMethod = vm.GetType().GetMethod("SaveAllData");
+                    if (saveMethod != null)
                     {
-                        ShowProformaInvoice();
-                    });
-                };
-                System.Diagnostics.Debug.WriteLine("[MainWindow] Connected DailyWorksView navigation");
+                        System.Diagnostics.Debug.WriteLine("[MainWindow] Calling SaveAllData...");
+                        saveMethod.Invoke(vm, null);
+                    }
+                }
+
+                System.Diagnostics.Debug.WriteLine("[MainWindow] Cleanup completed");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainWindow] Error during close: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(ex.StackTrace);
             }
         }
+
+        // ==================== HELPER METHODS ====================
 
         private FrameworkElement? FindChildByName(DependencyObject parent, string name)
         {
@@ -750,28 +947,6 @@ namespace ProGlassAutomation
                 if (result != null) return result;
             }
             return null;
-        }
-
-        // ==================== SAVE ON CLOSE ====================
-
-        private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
-        {
-            try
-            {
-                if (DataContext is MainViewModel vm)
-                {
-                    System.Diagnostics.Debug.WriteLine("[MainWindow] Saving all data on close...");
-
-                    // Call SaveAllData method in MainViewModel
-                    vm.SaveAllData();
-
-                    System.Diagnostics.Debug.WriteLine("[MainWindow] All data saved successfully");
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[MainWindow] Error during close: {ex.Message}");
-            }
         }
     }
 }

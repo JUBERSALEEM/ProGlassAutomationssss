@@ -5,9 +5,6 @@
              Background="#F5F5F5">
 
     <UserControl.Resources>
-        <converters:BoolToVisibilityConverter x:Key="BoolToVis"/>
-        <converters:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVis"/>
-        <converters:NullToVisibilityConverter x:Key="NullToVis"/>
 
         <SolidColorBrush x:Key="PrimaryBrush" Color="#1E3A5F"/>
         <SolidColorBrush x:Key="SecondaryBrush" Color="#4A6FA5"/>
@@ -97,56 +94,6 @@
             </Setter>
         </Style>
 
-        <Style x:Key="FormTextBox" TargetType="TextBox">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="BorderBrush" Value="#D1D5DB"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="10,8"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
-            <Setter Property="Foreground" Value="#1F2937"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="TextBox">
-                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">
-                            <ScrollViewer x:Name="PART_ContentHost" Margin="0"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsFocused" Value="True">
-                                <Setter Property="BorderBrush" Value="#1E3A5F"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="FormComboBox" TargetType="ComboBox">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="BorderBrush" Value="#D1D5DB"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="10,8"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
-            <Setter Property="Foreground" Value="#1F2937"/>
-        </Style>
-
-        <Style x:Key="FieldLabel" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="11"/>
-            <Setter Property="FontWeight" Value="Medium"/>
-            <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
-            <Setter Property="Foreground" Value="#4B5563"/>
-            <Setter Property="Margin" Value="0,0,0,6"/>
-        </Style>
-
-        <Style x:Key="SectionHeader" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
-            <Setter Property="Foreground" Value="#1F2937"/>
-            <Setter Property="Margin" Value="0,0,0,12"/>
-        </Style>
-
         <Style x:Key="CleanDataGridHeader" TargetType="DataGridColumnHeader">
             <Setter Property="Background" Value="#1E3A5F"/>
             <Setter Property="Foreground" Value="#FFFFFF"/>
@@ -184,7 +131,7 @@
     </UserControl.Resources>
 
     <Grid>
-        <ScrollViewer VerticalScrollBarVisibility="Auto" CanContentScroll="False" PanningMode="VerticalOnly" Background="#F5F5F5">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" CanContentScroll="True" PanningMode="VerticalOnly" Background="#F5F5F5">
             <StackPanel Margin="24">
 
                 <!-- Header -->
@@ -198,10 +145,8 @@
                         <TextBlock Text="Create and manage job orders from proforma invoices" FontSize="11" Foreground="#6B7280" Margin="0,2,0,0" FontFamily="{StaticResource PrimaryFont}"/>
                     </StackPanel>
                     <StackPanel Grid.Column="1" Orientation="Horizontal">
-                        <Button Content="💾 Save" Style="{StaticResource PrimaryButton}" 
-                                Command="{Binding SaveJobOrderCommand}" Padding="16,10" Margin="0,0,8,0"/>
-                        <Button Content="🗑️ Delete" Style="{StaticResource DangerButton}" 
-                                Command="{Binding DeleteJobOrderCommand}" Padding="16,10"/>
+                        <Button Content="Save" Style="{StaticResource PrimaryButton}" Command="{Binding SaveJobOrderCommand}" Padding="16,10" Margin="0,0,8,0"/>
+                        <Button Content="Delete" Style="{StaticResource DangerButton}" Command="{Binding DeleteJobOrderCommand}" Padding="16,10"/>
                     </StackPanel>
                 </Grid>
 
@@ -217,15 +162,15 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0">
                             <TextBlock Text="Company Name" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                            <TextBox Text="{Binding CompanyName, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                            <TextBox Text="{Binding CompanyName, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
                         </StackPanel>
                         <StackPanel Grid.Column="2">
                             <TextBlock Text="TRN Number" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                            <TextBox Text="{Binding CompanyTRN, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                            <TextBox Text="{Binding CompanyTRN, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
                         </StackPanel>
                         <StackPanel Grid.Column="4">
                             <TextBlock Text="Location" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                            <TextBox Text="{Binding CompanyLocation, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                            <TextBox Text="{Binding CompanyLocation, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
                         </StackPanel>
                     </Grid>
                 </Border>
@@ -242,7 +187,7 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0">
                             <TextBlock Text="Job Order No" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                            <TextBox Text="{Binding JobOrderNumber, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                            <TextBox Text="{Binding JobOrderNumber, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
                         </StackPanel>
                         <StackPanel Grid.Column="2">
                             <TextBlock Text="Job Date" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
@@ -274,7 +219,7 @@
                         </StackPanel>
                         <StackPanel Grid.Column="2">
                             <TextBlock Text="Reference PI" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                            <TextBox Text="{Binding PINumber, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF" IsReadOnly="True"/>
+                            <TextBox Text="{Binding PINumber, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF" IsReadOnly="True"/>
                         </StackPanel>
                     </Grid>
                 </Border>
@@ -305,24 +250,24 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,6">
-                                    <TextBlock Text="Company Name *" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                    <TextBox Text="{Binding CustomerName, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                    <TextBlock Text="Company Name" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
+                                    <TextBox Text="{Binding CustomerName, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
                                 </StackPanel>
                                 <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,6">
                                     <TextBlock Text="TRN Number" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                    <TextBox Text="{Binding CustomerTRN, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                    <TextBox Text="{Binding CustomerTRN, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
                                 </StackPanel>
                                 <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,0,6">
                                     <TextBlock Text="Customer Reference" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                    <TextBox Text="{Binding CustomerReference, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                    <TextBox Text="{Binding CustomerReference, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
                                 </StackPanel>
                                 <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,6">
                                     <TextBlock Text="Salesman" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                    <TextBox Text="{Binding Salesman, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                    <TextBox Text="{Binding Salesman, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
                                 </StackPanel>
                                 <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3">
                                     <TextBlock Text="Address" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                    <TextBox Text="{Binding CustomerAddress, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF" TextWrapping="Wrap" Height="28"/>
+                                    <TextBox Text="{Binding CustomerAddress, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF" TextWrapping="Wrap" Height="28"/>
                                 </StackPanel>
                             </Grid>
                         </StackPanel>
@@ -333,16 +278,16 @@
                         <StackPanel>
                             <TextBlock Text="Project Details" FontSize="12" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,8"/>
                             <StackPanel Margin="0,0,0,6">
-                                <TextBlock Text="Project Name *" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                <TextBox Text="{Binding ProjectName, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                <TextBlock Text="Project Name" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
+                                <TextBox Text="{Binding ProjectName, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
                             </StackPanel>
                             <StackPanel Margin="0,0,0,6">
                                 <TextBlock Text="Project No." FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                <TextBox Text="{Binding ProjectNo, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                <TextBox Text="{Binding ProjectNo, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
                             </StackPanel>
                             <StackPanel>
-                                <TextBlock Text="Location *" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                <TextBox Text="{Binding ProjectLocation, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                <TextBlock Text="Location" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
+                                <TextBox Text="{Binding ProjectLocation, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>
@@ -353,15 +298,15 @@
                             <TextBlock Text="Additional Details" FontSize="12" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,8"/>
                             <StackPanel Margin="0,0,0,6">
                                 <TextBlock Text="LPO No." FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                <TextBox Text="{Binding LPONo, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                <TextBox Text="{Binding LPONo, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
                             </StackPanel>
                             <StackPanel Margin="0,0,0,6">
                                 <TextBlock Text="Attention" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                <TextBox Text="{Binding AttentionName, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                <TextBox Text="{Binding AttentionName, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
                             </StackPanel>
                             <StackPanel>
                                 <TextBlock Text="Contact No." FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                <TextBox Text="{Binding ContactNo, UpdateSourceTrigger=PropertyChanged}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                <TextBox Text="{Binding ContactNo, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>
@@ -382,7 +327,13 @@
                             </StackPanel>
                         </Grid>
 
-                        <ItemsControl ItemsSource="{Binding Specifications}">
+                        <!-- ItemsControl with Virtualization -->
+                        <ItemsControl ItemsSource="{Binding Specifications}" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <VirtualizingStackPanel/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Border BorderBrush="#D1D5DB" BorderThickness="1" Margin="0,0,0,10" CornerRadius="4" Background="#FAFAFA">
@@ -396,13 +347,13 @@
                                                         <ColumnDefinition Width="Auto"/>
                                                     </Grid.ColumnDefinitions>
                                                     <TextBlock Grid.Column="0" Text="SPEC:" FontSize="10" FontWeight="SemiBold" Foreground="#1E3A5F" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                                    <TextBox Grid.Column="1" Text="{Binding SpecificationName, UpdateSourceTrigger=PropertyChanged}" FontSize="10" Padding="6,3" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF" MinWidth="100"/>
+                                                    <TextBox Grid.Column="1" Text="{Binding SpecificationName, UpdateSourceTrigger=LostFocus}" FontSize="10" Padding="6,3" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF" MinWidth="100"/>
                                                     <Button Grid.Column="2" Content="+ Add Row" Style="{StaticResource SecondaryButton}" Click="AddRow_Click" Tag="{Binding}" Padding="8,4" FontSize="10"/>
                                                 </Grid>
                                             </Border>
 
-                                            <!-- Data Grid -->
-                                            <DataGrid ItemsSource="{Binding Items}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" BorderThickness="0" Background="#FFFFFF" Margin="0" Padding="0" ColumnHeaderStyle="{StaticResource CleanDataGridHeader}" CellStyle="{StaticResource CleanDataGridCell}" RowStyle="{StaticResource CleanDataGridRow}" GridLinesVisibility="All" HorizontalGridLinesBrush="#E5E7EB" VerticalGridLinesBrush="#E5E7EB" HeadersVisibility="Column" RowHeight="28" SelectionUnit="Cell" AlternationCount="2" FocusVisualStyle="{x:Null}" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                            <!-- DataGrid with Virtualization -->
+                                            <DataGrid ItemsSource="{Binding Items}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" BorderThickness="0" Background="#FFFFFF" Margin="0" Padding="0" ColumnHeaderStyle="{StaticResource CleanDataGridHeader}" CellStyle="{StaticResource CleanDataGridCell}" RowStyle="{StaticResource CleanDataGridRow}" GridLinesVisibility="All" HorizontalGridLinesBrush="#E5E7EB" VerticalGridLinesBrush="#E5E7EB" HeadersVisibility="Column" RowHeight="28" SelectionUnit="Cell" AlternationCount="2" FocusVisualStyle="{x:Null}" ScrollViewer.VerticalScrollBarVisibility="Auto" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" EnableRowVirtualization="True" EnableColumnVirtualization="True">
                                                 <DataGrid.Columns>
                                                     <DataGridTextColumn Header="SR" Binding="{Binding SrNo}" Width="40" IsReadOnly="True">
                                                         <DataGridTextColumn.ElementStyle>
@@ -415,8 +366,7 @@
                                                             </Style>
                                                         </DataGridTextColumn.ElementStyle>
                                                     </DataGridTextColumn>
-
-                                                    <DataGridTextColumn Header="Glass Ref" Binding="{Binding GlassRef, UpdateSourceTrigger=PropertyChanged}" Width="*">
+                                                    <DataGridTextColumn Header="Glass Ref" Binding="{Binding GlassRef, UpdateSourceTrigger=LostFocus}" Width="*">
                                                         <DataGridTextColumn.ElementStyle>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="VerticalAlignment" Value="Center"/>
@@ -425,8 +375,7 @@
                                                             </Style>
                                                         </DataGridTextColumn.ElementStyle>
                                                     </DataGridTextColumn>
-
-                                                    <DataGridTextColumn Header="W1" Binding="{Binding Width1, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="55">
+                                                    <DataGridTextColumn Header="W1" Binding="{Binding Width1, UpdateSourceTrigger=LostFocus, StringFormat=N0}" Width="55">
                                                         <DataGridTextColumn.ElementStyle>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -435,8 +384,7 @@
                                                             </Style>
                                                         </DataGridTextColumn.ElementStyle>
                                                     </DataGridTextColumn>
-
-                                                    <DataGridTextColumn Header="H1" Binding="{Binding Height1, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="55">
+                                                    <DataGridTextColumn Header="H1" Binding="{Binding Height1, UpdateSourceTrigger=LostFocus, StringFormat=N0}" Width="55">
                                                         <DataGridTextColumn.ElementStyle>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -445,8 +393,7 @@
                                                             </Style>
                                                         </DataGridTextColumn.ElementStyle>
                                                     </DataGridTextColumn>
-
-                                                    <DataGridTextColumn Header="W2" Binding="{Binding Width2, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="55">
+                                                    <DataGridTextColumn Header="W2" Binding="{Binding Width2, UpdateSourceTrigger=LostFocus, StringFormat=N0}" Width="55">
                                                         <DataGridTextColumn.ElementStyle>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -455,8 +402,7 @@
                                                             </Style>
                                                         </DataGridTextColumn.ElementStyle>
                                                     </DataGridTextColumn>
-
-                                                    <DataGridTextColumn Header="H2" Binding="{Binding Height2, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="55">
+                                                    <DataGridTextColumn Header="H2" Binding="{Binding Height2, UpdateSourceTrigger=LostFocus, StringFormat=N0}" Width="55">
                                                         <DataGridTextColumn.ElementStyle>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -465,8 +411,7 @@
                                                             </Style>
                                                         </DataGridTextColumn.ElementStyle>
                                                     </DataGridTextColumn>
-
-                                                    <DataGridTextColumn Header="Qty" Binding="{Binding Qty, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="45">
+                                                    <DataGridTextColumn Header="Qty" Binding="{Binding Qty, UpdateSourceTrigger=LostFocus, StringFormat=N0}" Width="45">
                                                         <DataGridTextColumn.ElementStyle>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -475,7 +420,6 @@
                                                             </Style>
                                                         </DataGridTextColumn.ElementStyle>
                                                     </DataGridTextColumn>
-
                                                     <DataGridTextColumn Header="SQM" Binding="{Binding SQM1, Mode=OneWay, StringFormat=N4}" Width="65" IsReadOnly="True">
                                                         <DataGridTextColumn.ElementStyle>
                                                             <Style TargetType="TextBlock">
@@ -487,7 +431,6 @@
                                                             </Style>
                                                         </DataGridTextColumn.ElementStyle>
                                                     </DataGridTextColumn>
-
                                                     <DataGridTextColumn Header="Total SQM" Binding="{Binding TotalSQM, Mode=OneWay, StringFormat=N4}" Width="75" IsReadOnly="True">
                                                         <DataGridTextColumn.ElementStyle>
                                                             <Style TargetType="TextBlock">
@@ -500,7 +443,6 @@
                                                             </Style>
                                                         </DataGridTextColumn.ElementStyle>
                                                     </DataGridTextColumn>
-
                                                     <DataGridTemplateColumn Header="" Width="30">
                                                         <DataGridTemplateColumn.CellTemplate>
                                                             <DataTemplate>
@@ -526,20 +468,14 @@
                                                         <ColumnDefinition Width="75"/>
                                                         <ColumnDefinition Width="30"/>
                                                     </Grid.ColumnDefinitions>
-
                                                     <TextBlock Grid.Column="0" Text="" FontSize="8" Foreground="#FFFFFF"/>
-
                                                     <TextBlock Grid.Column="1" Text="TOTAL" FontSize="10" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center" Margin="8,0,0,0"/>
-
                                                     <TextBlock Grid.Column="2" Text="" FontSize="8" Foreground="#FFFFFF"/>
                                                     <TextBlock Grid.Column="3" Text="" FontSize="8" Foreground="#FFFFFF"/>
                                                     <TextBlock Grid.Column="4" Text="" FontSize="8" Foreground="#FFFFFF"/>
                                                     <TextBlock Grid.Column="5" Text="" FontSize="8" Foreground="#FFFFFF"/>
-
                                                     <TextBlock Grid.Column="6" Text="{Binding Items.Count, Mode=OneWay, StringFormat=N0}" FontSize="9" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-
                                                     <TextBlock Grid.Column="7" Text="{Binding TotalSQM, Mode=OneWay, StringFormat=N4}" FontSize="9" FontWeight="Bold" Foreground="#60A5FA" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-
                                                     <TextBlock Grid.Column="8" Text="{Binding TotalSQM, Mode=OneWay, StringFormat=N4}" FontSize="9" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                 </Grid>
                                             </Border>
@@ -551,7 +487,7 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Other Charges (AFTER ALL SPECIFICATIONS) -->
+                <!-- Other Charges -->
                 <Border Background="#FFFFFF" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,12">
                     <StackPanel>
                         <Grid Margin="0,0,0,10">
@@ -560,9 +496,7 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="Other Charges" FontSize="12" FontWeight="SemiBold" Foreground="#1F2937" Margin="0"/>
-                            <Button Grid.Column="1" Content="+ Add Charge" 
-                                    Command="{Binding AddOtherChargeCommand}"
-                                    Padding="12,6" FontSize="11" Background="#1E3A5F" Foreground="White" BorderThickness="0" Cursor="Hand"/>
+                            <Button Grid.Column="1" Content="+ Add Charge" Command="{Binding AddOtherChargeCommand}" Padding="12,6" FontSize="11" Background="#1E3A5F" Foreground="White" BorderThickness="0" Cursor="Hand"/>
                         </Grid>
 
                         <!-- Other Charges Header -->
@@ -597,47 +531,18 @@
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="40"/>
                                             </Grid.ColumnDefinitions>
-
-                                            <!-- Sr No -->
-                                            <TextBlock Grid.Column="0" 
-                                                       Text="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=(ItemsControl.AlternationIndex), StringFormat={}{0}}"
-                                                       VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="11" Foreground="#9CA3AF"/>
-
-                                            <!-- Name -->
-                                            <TextBox Grid.Column="1" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" 
-                                                     FontSize="11" Padding="8,6" Margin="4,0" VerticalAlignment="Center"
-                                                     BorderBrush="#D1D5DB" BorderThickness="1"/>
-
-                                            <!-- Type -->
-                                            <ComboBox Grid.Column="2" SelectedValue="{Binding Type, UpdateSourceTrigger=PropertyChanged}" 
-                                                      SelectedValuePath="Tag" FontSize="11" Padding="8,6" Margin="4,0" VerticalAlignment="Center"
-                                                      HorizontalContentAlignment="Center">
+                                            <TextBlock Grid.Column="0" Text="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=(ItemsControl.AlternationIndex), StringFormat={}{0}}" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="11" Foreground="#9CA3AF"/>
+                                            <TextBox Grid.Column="1" Text="{Binding Name, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="8,6" Margin="4,0" VerticalAlignment="Center" BorderBrush="#D1D5DB" BorderThickness="1"/>
+                                            <ComboBox Grid.Column="2" SelectedValue="{Binding Type, UpdateSourceTrigger=LostFocus}" SelectedValuePath="Tag" FontSize="11" Padding="8,6" Margin="4,0" VerticalAlignment="Center" HorizontalContentAlignment="Center">
                                                 <ComboBoxItem Content="LM" Tag="lm"/>
                                                 <ComboBoxItem Content="SQM" Tag="sqm"/>
-                                                <ComboBoxItem Content="SQM1" Tag="sqm1"/>
-                                                <ComboBoxItem Content="SQM2" Tag="sqm2"/>
                                                 <ComboBoxItem Content="QTY" Tag="qty"/>
-                                                <ComboBoxItem Content="1X" Tag="1x"/>
-                                                <ComboBoxItem Content="2X" Tag="2x"/>
                                             </ComboBox>
-
-                                            <!-- Value -->
-                                            <TextBox Grid.Column="3" Text="{Binding Value, StringFormat={}{0:F2}, UpdateSourceTrigger=PropertyChanged}" 
-                                                     FontSize="11" Padding="8,6" Margin="4,0" VerticalAlignment="Center" 
-                                                     HorizontalContentAlignment="Right" BorderBrush="#D1D5DB" BorderThickness="1"/>
-
-                                            <!-- Linked Specs -->
+                                            <TextBox Grid.Column="3" Text="{Binding Value, StringFormat={}{0:F2}, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="8,6" Margin="4,0" VerticalAlignment="Center" HorizontalContentAlignment="Right" BorderBrush="#D1D5DB" BorderThickness="1"/>
                                             <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0">
                                                 <CheckBox Content="All Specs" IsChecked="{Binding TargetsAllSpecs}" FontSize="10" VerticalAlignment="Center"/>
                                             </StackPanel>
-
-                                            <!-- Delete Button -->
-                                            <Button Grid.Column="5" Content="X" 
-                                                    Command="{Binding DataContext.DeleteOtherChargeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                    CommandParameter="{Binding}"
-                                                    Width="28" Height="28" FontSize="11" FontWeight="Bold"
-                                                    Background="#DC2626" Foreground="White" BorderThickness="0" 
-                                                    Cursor="Hand" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            <Button Grid.Column="5" Content="X" Command="{Binding DataContext.DeleteOtherChargeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Width="28" Height="28" FontSize="11" FontWeight="Bold" Background="#DC2626" Foreground="White" BorderThickness="0" Cursor="Hand" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         </Grid>
                                     </Border>
                                 </DataTemplate>
@@ -645,8 +550,7 @@
                         </ItemsControl>
 
                         <!-- No Charges Message -->
-                        <TextBlock Text="No other charges added" FontSize="11" Foreground="#9CA3AF" 
-                                   FontStyle="Italic" Margin="8,12" HorizontalAlignment="Center">
+                        <TextBlock Text="No other charges added" FontSize="11" Foreground="#9CA3AF" FontStyle="Italic" Margin="8,12" HorizontalAlignment="Center">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="Visibility" Value="Collapsed"/>
@@ -683,10 +587,10 @@
                     </StackPanel>
                 </Border>
 
-                                <!-- Summary -->
+                <!-- Summary -->
                 <Border Background="#FFFFFF" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="8" Padding="20" Margin="0,0,0,16">
                     <StackPanel>
-                        <TextBlock Text="Job Order Summary" Style="{StaticResource SectionHeader}"/>
+                        <TextBlock Text="Job Order Summary" FontSize="14" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,12"/>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -752,13 +656,8 @@
                 <!-- Notes -->
                 <Border Background="#FFFFFF" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="8" Padding="20" Margin="0,0,0,16">
                     <StackPanel>
-                        <TextBlock Text="Notes" Style="{StaticResource SectionHeader}"/>
-                        <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" 
-                                 Style="{StaticResource FormTextBox}" 
-                                 TextWrapping="Wrap" 
-                                 AcceptsReturn="True" 
-                                 Height="80" 
-                                 VerticalScrollBarVisibility="Auto"/>
+                        <TextBlock Text="Notes" FontSize="14" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,12"/>
+                        <TextBox Text="{Binding Notes, UpdateSourceTrigger=LostFocus}" Background="#FFFFFF" BorderBrush="#D1D5DB" BorderThickness="1" Padding="10,8" FontSize="13" Foreground="#1F2937" TextWrapping="Wrap" AcceptsReturn="True" Height="80" VerticalScrollBarVisibility="Auto"/>
                     </StackPanel>
                 </Border>
 

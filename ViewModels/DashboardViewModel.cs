@@ -11,7 +11,13 @@ using LiveChartsCore.SkiaSharpView.Painting;
 using SkiaSharp;
 using ProGlassAutomation.Services;
 using ProGlassAutomation.Data.Database;
-using ProGlassAutomation.Models;
+
+// FIX: Add type aliases to resolve ambiguous references
+using Delivery = ProGlassAutomation.Data.Database.Delivery;
+using DailyWork = ProGlassAutomation.Data.Database.DailyWork;
+using Sheet = ProGlassAutomation.Data.Database.Sheet;
+using ProformaInvoice = ProGlassAutomation.Data.Database.ProformaInvoiceModel;
+using JobOrder = ProGlassAutomation.Data.Database.JobOrderModel;
 
 namespace ProGlassAutomation.ViewModels
 {
@@ -70,9 +76,12 @@ namespace ProGlassAutomation.ViewModels
         public Axis[] ChartXAxes { get; set; }
         public Axis[] ChartYAxes { get; set; }
 
+        // PATCH 5: Add field to prevent chart recreation
+        private LineSeries<double> _salesSeries;
+
         // ══════════════════════════════════════════════════════════════════════════════
         // ACTIVITY LOG
-        // ══════════════════════════════════════════════════════════════════════════════
+        // ══════════════════════════════════════════════════════════════════════════════════════
 
         public ObservableCollection<ActivityItem> ActivityItems { get; set; } = new ObservableCollection<ActivityItem>();
 
@@ -95,7 +104,7 @@ namespace ProGlassAutomation.ViewModels
             ActivateCommand = new RelayCommand(_ => Activate());
 
             InitializeChart();
-            InitializeSalesmanArrays();
+            // PATCH 2: Removed InitializeSalesmanArrays() - called lazily in LoadData()
         }
 
         // ══════════════════════════════════════════════════════════════════════════════
@@ -104,19 +113,19 @@ namespace ProGlassAutomation.ViewModels
 
         private void InitializeChart()
         {
-            ChartSeries = new ISeries[]
+            // PATCH 5: Store reference to prevent recreation
+            _salesSeries = new LineSeries<double>
             {
-                new LineSeries<double>
-                {
-                    Values = new double[] { 2, 1, 3, 5, 3, 4, 6 },
-                    Fill = new SolidColorPaint(SKColors.LightBlue.WithAlpha(80)),
-                    Stroke = new SolidColorPaint(SKColors.DodgerBlue, 3),
-                    GeometrySize = 8,
-                    GeometryStroke = new SolidColorPaint(SKColors.DodgerBlue, 2),
-                    GeometryFill = new SolidColorPaint(SKColors.White),
-                    LineSmoothness = 0.5
-                }
+                Values = new double[] { 2, 1, 3, 5, 3, 4, 6 },
+                Fill = new SolidColorPaint(SKColors.LightBlue.WithAlpha(80)),
+                Stroke = new SolidColorPaint(SKColors.DodgerBlue, 3),
+                GeometrySize = 8,
+                GeometryStroke = new SolidColorPaint(SKColors.DodgerBlue, 2),
+                GeometryFill = new SolidColorPaint(SKColors.White),
+                LineSmoothness = 0.5
             };
+
+            ChartSeries = new ISeries[] { _salesSeries };
 
             ChartXAxes = new Axis[]
             {
@@ -138,13 +147,21 @@ namespace ProGlassAutomation.ViewModels
             };
         }
 
-        private void InitializeSalesmanArrays()
+        // PATCH 4: Updated method signature - now uses aliased types
+        private void InitializeSalesmanArrays(List<DailyWork> dailyWorks, List<Delivery> deliveries)
         {
             try
             {
-                var allSalesmen = DbHelper.GetAllSalesmanOptions();
-                var dailyWorks = DbHelper.GetAllDailyWork();
-                var deliveries = DbHelper.GetAllDeliveries();
+                // Get salesmen from data instead of separate table
+                var allSalesmen = dailyWorks
+                    .Where(d => !string.IsNullOrWhiteSpace(d.Salesman))
+                    .Select(d => d.Salesman)
+                    .Union(
+                        deliveries
+                        .Where(d => !string.IsNullOrWhiteSpace(d.Salesman))
+                        .Select(d => d.Salesman))
+                    .Distinct()
+                    .ToList();
 
                 var salesmanData = allSalesmen.Select(s => new
                 {
@@ -172,7 +189,8 @@ namespace ProGlassAutomation.ViewModels
                 }
                 else
                 {
-                    for (int i = 0; i < 5; i++)
+                    // PATCH 7: Changed from 5 to 9
+                    for (int i = 0; i < 9; i++)
                     {
                         SalesmanNames.Add("No Salesmen");
                         SalesmanAmounts.Add("AED 0");
@@ -198,13 +216,20 @@ namespace ProGlassAutomation.ViewModels
         {
             try
             {
-                LoadPIStats();
-                LoadJOStats();
-                LoadDeliveryStats();
-                LoadSheetStats();
-                LoadBalanceStats();
-                UpdateChartData();
-                InitializeSalesmanArrays();
+                // PATCH 3: Cache DB results - fetch once, pass to methods
+                var dailyWorks = DbHelper.GetAllDailyWork();
+                var deliveries = DbHelper.GetAllDeliveries();
+                var pis = DbHelper.GetAllProformaInvoices();
+                var jos = DbHelper.GetAllJobOrders();
+                var sheets = DbHelper.GetAllSheets();
+
+                LoadPIStats(pis, dailyWorks, deliveries);
+                LoadJOStats(jos);
+                LoadDeliveryStats(deliveries);
+                LoadSheetStats(sheets);
+                LoadBalanceStats(dailyWorks);
+                UpdateChartData(dailyWorks);
+                InitializeSalesmanArrays(dailyWorks, deliveries);
 
                 LastUpdate = $"Last update: {DateTime.Now:HH:mm}";
                 OnPropertyChanged(nameof(LastUpdate));
@@ -215,14 +240,14 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        private void LoadPIStats()
+        // PATCH 4: Updated method parameters - using aliased types
+        private void LoadPIStats(
+            List<ProformaInvoice> pis,
+            List<DailyWork> dailyWorks,
+            List<Delivery> deliveries)
         {
             try
             {
-                var pis = DbHelper.GetAllProformaInvoices();
-                var dailyWorks = DbHelper.GetAllDailyWork();
-                var deliveries = DbHelper.GetAllDeliveries();
-
                 PITotal = pis.Count.ToString();
                 PIConfirmed = pis.Count(p => p.Status == "Confirmed").ToString();
                 PIPending = pis.Count(p => p.Status == "Draft" || p.Status == "Pending").ToString();
@@ -255,12 +280,11 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        private void LoadJOStats()
+        // PATCH 4: Updated method parameter - using aliased type
+        private void LoadJOStats(List<JobOrder> jos)
         {
             try
             {
-                var jos = DbHelper.GetAllJobOrders();
-
                 JOTotal = jos.Count.ToString();
                 JOInProgress = jos.Count(j => j.Status == "In Progress" || j.Status == "Pending").ToString();
                 JOCompleted = jos.Count(j => j.Status == "Completed").ToString();
@@ -275,12 +299,11 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        private void LoadDeliveryStats()
+        // PATCH 4: Updated method parameter - using aliased type
+        private void LoadDeliveryStats(List<Delivery> deliveries)
         {
             try
             {
-                var deliveries = DbHelper.GetAllDeliveries();
-
                 DelTotal = deliveries.Count.ToString();
                 DelPending = deliveries.Count(d => d.Status == "Pending" || d.Status == "In Transit").ToString();
                 DelCompleted = deliveries.Count(d => d.Status == "Completed").ToString();
@@ -295,12 +318,11 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        private void LoadSheetStats()
+        // PATCH 4: Updated method parameter - using aliased type
+        private void LoadSheetStats(List<Sheet> sheets)
         {
             try
             {
-                var sheets = DbHelper.GetAllSheets();
-
                 var totalQty = sheets.Sum(s => s.TotalStock);
                 SheetTotal = totalQty.ToString();
                 SheetAvailable = sheets.Count(s => s.BalanceSheets > 0).ToString();
@@ -316,11 +338,11 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        private void LoadBalanceStats()
+        // PATCH 4: Updated method parameter - using aliased type
+        private void LoadBalanceStats(List<DailyWork> dailyWorks)
         {
             try
             {
-                var dailyWorks = DbHelper.GetAllDailyWork();
                 var today = DateTime.Today;
                 var monthStart = new DateTime(today.Year, today.Month, 1);
                 var yearStart = new DateTime(today.Year, 1, 1);
@@ -347,11 +369,12 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        private void UpdateChartData()
+        // PATCH 4: Updated method parameter - using aliased type
+        // PATCH 5: Update values instead of recreating chart
+        private void UpdateChartData(List<DailyWork> dailyWorks)
         {
             try
             {
-                var dailyWorks = DbHelper.GetAllDailyWork();
                 var today = DateTime.Today;
                 var weekStart = today.AddDays(-(int)today.DayOfWeek + (int)DayOfWeek.Monday);
                 if (today.DayOfWeek == DayOfWeek.Sunday) weekStart = weekStart.AddDays(-7);
@@ -370,21 +393,8 @@ namespace ProGlassAutomation.ViewModels
                     values[i] = (dayData?.Total ?? 0) / 10;
                 }
 
-                ChartSeries = new ISeries[]
-                {
-                    new LineSeries<double>
-                    {
-                        Values = values,
-                        Fill = new SolidColorPaint(SKColors.LightBlue.WithAlpha(80)),
-                        Stroke = new SolidColorPaint(SKColors.DodgerBlue, 3),
-                        GeometrySize = 8,
-                        GeometryStroke = new SolidColorPaint(SKColors.DodgerBlue, 2),
-                        GeometryFill = new SolidColorPaint(SKColors.White),
-                        LineSmoothness = 0.5
-                    }
-                };
-
-                OnPropertyChanged(nameof(ChartSeries));
+                // PATCH 5: Update existing series instead of recreating
+                _salesSeries.Values = values;
             }
             catch (Exception ex)
             {

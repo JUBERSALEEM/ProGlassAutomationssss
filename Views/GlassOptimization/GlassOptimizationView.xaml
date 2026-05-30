@@ -303,7 +303,7 @@
                                             <StackPanel Grid.Column="0" Margin="0,0,6,0">
                                                 <TextBlock Text="PRICE (AED)" Style="{StaticResource FieldLabel}" Foreground="#818CF8"/>
                                                 <TextBox Style="{StaticResource InputBox}"
-                                                         Text="{Binding PriceText, UpdateSourceTrigger=PropertyChanged}"
+                                                         Text="{Binding PriceText, UpdateSourceTrigger=LostFocus}"
                                                          vm:DecimalInputBehavior.Enable="True"
                                                          GotFocus="InputBox_GotFocus"
                                                          PreviewMouseLeftButtonDown="InputBox_PreviewMouseLeftButtonDown"
@@ -314,7 +314,7 @@
                                             <StackPanel Grid.Column="1" Margin="3,0">
                                                 <TextBlock Text="OPTIMIZATION (%)" Style="{StaticResource FieldLabel}" Foreground="#818CF8"/>
                                                 <TextBox Style="{StaticResource InputBox}"
-                                                         Text="{Binding OptimizationText, UpdateSourceTrigger=PropertyChanged}"
+                                                         Text="{Binding OptimizationText, UpdateSourceTrigger=LostFocus}"
                                                          vm:DecimalInputBehavior.Enable="True"
                                                          GotFocus="InputBox_GotFocus"
                                                          PreviewMouseLeftButtonDown="InputBox_PreviewMouseLeftButtonDown"
@@ -325,7 +325,7 @@
                                             <StackPanel Grid.Column="2" Margin="3,0,0,0">
                                                 <TextBlock Text="CHARGEABLE SQM" Style="{StaticResource FieldLabel}" Foreground="#818CF8"/>
                                                 <TextBox Style="{StaticResource InputBox}"
-                                                         Text="{Binding ChargeableSqmText, UpdateSourceTrigger=PropertyChanged}"
+                                                         Text="{Binding ChargeableSqmText, UpdateSourceTrigger=LostFocus}"
                                                          vm:DecimalInputBehavior.Enable="True"
                                                          GotFocus="InputBox_GotFocus"
                                                          PreviewMouseLeftButtonDown="InputBox_PreviewMouseLeftButtonDown"

@@ -84,8 +84,10 @@
                 <Border Grid.Column="0" Background="White" CornerRadius="18" Padding="22" Margin="0,0,10,0">
                     <StackPanel>
                         <TextBlock Text="Sales Analytics" FontSize="20" FontWeight="Bold" Foreground="#1F2937" Margin="0,0,0,20"/>
-                        <Border Background="#FAFBFC" CornerRadius="12" Padding="10" MinHeight="420">
-                            <lvc:CartesianChart Series="{Binding ChartSeries}" XAxes="{Binding ChartXAxes}" YAxes="{Binding ChartYAxes}"/>
+
+                        <!-- PATCH 6: Fixed height to prevent chart/scroll freeze -->
+                        <Border Background="#FAFBFC" CornerRadius="12" Padding="10" Height="420">
+                            <lvc:CartesianChart Series="{Binding ChartSeries}" XAxes="{Binding ChartXAxes}" YAxes="{Binding ChartYAxes}" Height="380"/>
                         </Border>
                     </StackPanel>
                 </Border>
