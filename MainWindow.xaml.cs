@@ -948,5 +948,19 @@ namespace ProGlassAutomation
             }
             return null;
         }
+
+        // ==================== SET CONTENT ====================
+
+        public void SetContent(UserControl view)
+        {
+            try
+            {
+                MainContent.Content = view;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainWindow] SetContent Error: {ex.Message}");
+            }
+        }
     }
 }
