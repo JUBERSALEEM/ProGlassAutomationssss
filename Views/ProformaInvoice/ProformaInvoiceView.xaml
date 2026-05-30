@@ -321,7 +321,7 @@
                                 </StackPanel>
                                 <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,0,6">
                                     <TextBlock Text="Customer Reference" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                    <TextBox Text="{Binding Invoice.CustomerAddress, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                    <TextBox Text="{Binding Invoice.CustomerReference, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
                                 </StackPanel>
                                 <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,6">
                                     <TextBlock Text="Salesman" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
@@ -344,7 +344,7 @@
                             </StackPanel>
                             <StackPanel Margin="0,0,0,6">
                                 <TextBlock Text="Project No." FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                <TextBox Text="{Binding Invoice.ProjectLocation, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                <TextBox Text="{Binding Invoice.ProjectNo, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
                             </StackPanel>
                             <StackPanel>
                                 <TextBlock Text="Location *" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
