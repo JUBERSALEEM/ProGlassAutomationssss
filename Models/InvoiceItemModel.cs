@@ -149,19 +149,43 @@ namespace ProGlassAutomation.Models
             LM = LM1 + LM2;
             TotalLM = Math.Round(LM * q, 4);
 
-            // Price calculations (Price is PER SQM)
+            // Price calculations
             double p = Price > 0 ? Price : 0;
             double sp = SurchargePercent > 0 ? SurchargePercent : 0;
+            double itemSQM = TotalSQM; // This is ALREADY multiplied by Qty in your code
 
-            double surcharge = Math.Round((p * sp) / 100, 4);
+            // Note: TotalSQM in your code = SQM * Qty, so don't multiply again
+            // But if TotalSQM = SQM (single item), then use: TotalSQM * Qty
+
+            double surcharge = 0;
+            if (itemSQM >= 4)
+            {
+                if (p >= 160)
+                {
+                    surcharge = Math.Round((p * 10) / 100, 2);
+                }
+                else
+                {
+                    surcharge = Math.Round((p * sp) / 100, 2);
+                }
+            }
             SurchargeAmount = surcharge;
 
-            double dp = p + surcharge;      // Price per SQM with surcharge
+            double dp = p + surcharge;
+
+            // Round UP if decimal
+            if (dp != Math.Floor(dp))
+            {
+                dp = Math.Ceiling(dp);
+            }
+
             DisplayPrice = dp;
 
-            double tp = dp * TotalSQM * q;  // (Price + surcharge) * SQM * Qty
-            TotalPrice = tp;
-            FinalPrice = tp;
+            // FIX: TotalSQM already includes Qty, so don't multiply again
+            // OR if TotalSQM doesn't include Qty, use: TotalSQM * Qty
+            double tp = dp * TotalSQM;
+            TotalPrice = Math.Round(tp, 2);
+            FinalPrice = TotalPrice;
         }
 
         // ==================== NOTIFY SURCHARGE CHANGED ====================
