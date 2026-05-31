@@ -294,15 +294,27 @@ namespace ProGlassAutomation.ViewModels
                 await Task.Run(() =>
                 {
                     var dbData = DbHelper.GetAllDailyWork();
+                    // PATCH: Filter out empty records from database
+                    var validData = dbData.Where(w =>
+                    {
+                        var piNum = (w.PINumber ?? "").Trim();
+                        var custRef = (w.CustomerReference ?? "").Trim();
+                        return !string.IsNullOrWhiteSpace(piNum) || !string.IsNullOrWhiteSpace(custRef);
+                    }).ToList();
+
                     System.Windows.Application.Current.Dispatcher.Invoke(() =>
                     {
-                        DailyWorks = new ObservableCollection<DbDailyWork>(dbData);
-                        _allWorksSource = new ObservableCollection<DbDailyWork>(dbData);
+                        DailyWorks = new ObservableCollection<DbDailyWork>(validData);
+                        _allWorksSource = new ObservableCollection<DbDailyWork>(validData);
                     });
                 });
 
                 LoadFromJsonFile();
                 LoadOptionsFromDatabase();
+
+                // PATCH: Clean up empty records from database on startup
+                CleanupEmptyRecords();
+
                 CreateDataView();
                 UpdateStatistics();
             }
@@ -645,6 +657,10 @@ namespace ProGlassAutomation.ViewModels
         public double FilteredSQM => FilteredDataView?.Cast<DataRowView>().Sum(r => r["SQM"] != DBNull.Value ? Convert.ToDouble(r["SQM"]) : 0) ?? 0;
         public int FilteredQty => FilteredDataView?.Cast<DataRowView>().Sum(r => r["Qty"] != DBNull.Value ? Convert.ToInt32(r["Qty"]) : 0) ?? 0;
 
+        // PATCH: Add missing computed stats
+        public int TotalCompanies => DailyWorks?.Select(w => w.Company ?? "").Distinct().Count() ?? 0;
+        public int TotalPINumbers => DailyWorks?.Select(w => w.PINumber ?? "").Distinct().Count() ?? 0;
+
         public int SelectedRecords => _selectedCount;
         public double SelectedSQM => GetSelectedSQM();
         public int SelectedQty => GetSelectedQty();
@@ -943,20 +959,39 @@ namespace ProGlassAutomation.ViewModels
                             continue;
                         }
 
-                        if (string.IsNullOrWhiteSpace(work.PINumber) && string.IsNullOrWhiteSpace(work.CustomerReference))
+                        // PATCH: Better null/empty check - skip if both are empty OR have only whitespace
+                        string jsonPINumber = (work.PINumber ?? "").Trim();
+                        string jsonCustRef = (work.CustomerReference ?? "").Trim();
+
+                        if (string.IsNullOrWhiteSpace(jsonPINumber) && string.IsNullOrWhiteSpace(jsonCustRef))
                         {
                             skippedCount++;
                             continue;
                         }
 
-                        string jsonPINumber = (work.PINumber ?? "").Trim();
-                        string jsonCustRef = (work.CustomerReference ?? "").Trim();
+                        // PATCH: Also skip if PI Number is just whitespace characters
+                        if (!string.IsNullOrWhiteSpace(jsonPINumber) && jsonPINumber.All(c => char.IsWhiteSpace(c)))
+                        {
+                            skippedCount++;
+                            continue;
+                        }
 
                         bool foundInMemory = DailyWorks.Any(w =>
-                            (!string.IsNullOrEmpty(jsonPINumber) && jsonPINumber.Equals((w.PINumber ?? "").Trim(), StringComparison.OrdinalIgnoreCase)) ||
-                            (!string.IsNullOrEmpty(jsonCustRef) && jsonCustRef.Equals((w.CustomerReference ?? "").Trim(), StringComparison.OrdinalIgnoreCase)));
+    (!string.IsNullOrEmpty(jsonPINumber) && jsonPINumber.Equals((w.PINumber ?? "").Trim(), StringComparison.OrdinalIgnoreCase)) ||
+    (!string.IsNullOrEmpty(jsonCustRef) && jsonCustRef.Equals((w.CustomerReference ?? "").Trim(), StringComparison.OrdinalIgnoreCase)));
 
                         if (foundInMemory)
+                        {
+                            skippedCount++;
+                            continue;
+                        }
+
+                        // PATCH: Also check _allWorksSource
+                        bool foundInAllWorksSource = _allWorksSource?.Any(w =>
+                            (!string.IsNullOrEmpty(jsonPINumber) && jsonPINumber.Equals((w.PINumber ?? "").Trim(), StringComparison.OrdinalIgnoreCase)) ||
+                            (!string.IsNullOrEmpty(jsonCustRef) && jsonCustRef.Equals((w.CustomerReference ?? "").Trim(), StringComparison.OrdinalIgnoreCase))) ?? false;
+
+                        if (foundInAllWorksSource)
                         {
                             skippedCount++;
                             continue;
@@ -1049,6 +1084,40 @@ namespace ProGlassAutomation.ViewModels
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[DailyWork] UpdateJsonFileAfterDelete error: {ex.Message}");
+            }
+        }
+
+        private void CleanupEmptyRecords()
+        {
+            try
+            {
+                var allRecords = DbHelper.GetAllDailyWork();
+                var emptyRecordIds = new List<int>();
+
+                foreach (var work in allRecords)
+                {
+                    var piNum = (work.PINumber ?? "").Trim();
+                    var custRef = (work.CustomerReference ?? "").Trim();
+
+                    if (string.IsNullOrWhiteSpace(piNum) && string.IsNullOrWhiteSpace(custRef))
+                    {
+                        emptyRecordIds.Add(work.Id);
+                    }
+                }
+
+                foreach (var id in emptyRecordIds)
+                {
+                    DbHelper.DeleteDailyWork(id);
+                }
+
+                if (emptyRecordIds.Count > 0)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[DailyWork] Cleaned up {emptyRecordIds.Count} empty records");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DailyWork] Cleanup error: {ex.Message}");
             }
         }
 
@@ -1369,11 +1438,22 @@ namespace ProGlassAutomation.ViewModels
                 var dbData = DbHelper.GetAllDailyWork();
                 foreach (var work in dbData)
                 {
-                    freshData.Add(work);
+                    // PATCH: Skip empty/invalid records from database
+                    var piNum = (work.PINumber ?? "").Trim();
+                    var custRef = (work.CustomerReference ?? "").Trim();
+
+                    // Only add if has valid PI Number OR Customer Reference
+                    if (!string.IsNullOrWhiteSpace(piNum) || !string.IsNullOrWhiteSpace(custRef))
+                    {
+                        freshData.Add(work);
+                    }
                 }
 
                 DailyWorks = freshData;
                 _allWorksSource = freshData;
+
+                // PATCH: Clean up empty records from database
+                CleanupEmptyRecords();
 
                 SelectedWork = null;
                 SelectedDataRowView = null;
@@ -1578,6 +1658,8 @@ namespace ProGlassAutomation.ViewModels
             OnPropertyChanged(nameof(SelectedSQM));
             OnPropertyChanged(nameof(IsEmpty));
             OnPropertyChanged(nameof(HasRecords));
+            OnPropertyChanged(nameof(TotalCompanies));
+            OnPropertyChanged(nameof(TotalPINumbers));
         }
 
         private void ExecutePrint(object parameter)

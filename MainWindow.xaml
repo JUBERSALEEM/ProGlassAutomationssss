@@ -7,9 +7,7 @@
         UseLayoutRounding="True" SnapsToDevicePixels="True"
         TextOptions.TextFormattingMode="Display">
 
-    <Window.DataContext>
-        <vm:MainViewModel/>
-    </Window.DataContext>
+    <!-- DataContext set in MainWindow.xaml.cs constructor -->
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
@@ -190,13 +188,11 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- =========================
-     LEFT : LOGO
-========================= -->
+                <!-- LEFT: LOGO -->
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <!-- Logo Box -->
                     <Border Width="68" Height="58" CornerRadius="10" Background="White" Cursor="Hand"
-            Padding="5" MouseLeftButtonDown="Logo_Click">
+                            Padding="5" MouseLeftButtonDown="Logo_Click">
                         <Border.Effect>
                             <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.25"/>
                         </Border.Effect>
@@ -209,19 +205,19 @@
 
                             <!-- PROGLASS Badge -->
                             <Border Grid.Row="0" Background="#2563EB" CornerRadius="4" Padding="5,2" 
-                    HorizontalAlignment="Center" Margin="0,2,0,3">
+                                    HorizontalAlignment="Center" Margin="0,2,0,3">
                                 <TextBlock Text="PROGLASS" FontSize="8" FontWeight="Bold" Foreground="White"/>
                             </Border>
 
                             <!-- ERP -->
                             <TextBlock Grid.Row="1" Text="ERP" FontSize="22" FontWeight="Bold" 
-                       Foreground="#2563EB" HorizontalAlignment="Center" 
-                       VerticalAlignment="Center"/>
+                                       Foreground="#2563EB" HorizontalAlignment="Center" 
+                                       VerticalAlignment="Center"/>
 
                             <!-- SYSTEM -->
                             <TextBlock Grid.Row="2" Text="SYSTEM" FontSize="8" FontWeight="Bold" 
-                       Foreground="#1E293B" HorizontalAlignment="Center" 
-                       Margin="0,3,0,2"/>
+                                       Foreground="#1E293B" HorizontalAlignment="Center" 
+                                       Margin="0,3,0,2"/>
                         </Grid>
                     </Border>
 
@@ -232,9 +228,7 @@
                     </StackPanel>
                 </StackPanel>
 
-                <!-- =========================
-                     CENTER : NAVIGATION
-                ========================== -->
+                <!-- CENTER: NAVIGATION -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
 
                     <!-- Dashboard Button -->
@@ -296,9 +290,7 @@
                     </Menu>
                 </StackPanel>
 
-                <!-- =========================
-                     RIGHT SECTION
-                ========================== -->
+                <!-- RIGHT SECTION -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
 
                     <!-- License Status -->

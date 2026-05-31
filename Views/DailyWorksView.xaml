@@ -475,8 +475,7 @@
                     <Button Content="📋 Load to Invoice" 
         Style="{StaticResource WarningButton}" 
         Command="{Binding LoadToInvoiceCommand}"
-        CommandParameter="{Binding ElementName=MainDataGrid}"
-        Click="LoadToInvoice_Click"/>
+        CommandParameter="{Binding ElementName=MainDataGrid}"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -601,7 +600,7 @@
                     <DataGridTemplateColumn Header="DATE" Width="100">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Date, StringFormat='{}{0:dd-MM-yyyy}'}" Style="{StaticResource TextDate}"/>
+                                <TextBlock Text="{Binding Date, StringFormat=dd-MM-yyyy}" Style="{StaticResource TextDate}"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                         <DataGridTemplateColumn.HeaderStyle>
@@ -888,7 +887,6 @@
         Style="{StaticResource WarningButton}" 
         Command="{Binding LoadToInvoiceCommand}"
         CommandParameter="{Binding ElementName=MainDataGrid}"
-        Click="LoadToInvoice_Click"
         Padding="10,5" Margin="0,0,4,0" FontSize="9"/>
                             </WrapPanel>
                             <Button Content="Delete Selected" Style="{StaticResource DangerOutlineButton}" Command="{Binding DeleteSelectedCommand}" CommandParameter="{Binding ElementName=MainDataGrid}" Padding="10,5" FontSize="9"/>
