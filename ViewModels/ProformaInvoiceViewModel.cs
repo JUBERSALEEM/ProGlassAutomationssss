@@ -175,6 +175,9 @@ namespace ProGlassAutomation.ViewModels
         public bool IsLMVisible { get => _isLMVisible; set { if (SetProperty(ref _isLMVisible, value)) OnPropertyChanged(nameof(IsLMToggleText)); } }
         public string IsLMToggleText => IsLMVisible ? "HIDE LM" : "SHOW LM";
 
+        // PATCH 5: HasNoCharges property
+        public bool HasNoCharges => SelectedSpecificationOtherCharges == null || SelectedSpecificationOtherCharges.Count == 0;
+
         public string CompanyName { get; set; } = "PROGLASS AUTOMATION";
 
         // ==================== JOB ORDER CONVERSION (PATCH 1) ====================
@@ -203,6 +206,10 @@ namespace ProGlassAutomation.ViewModels
         public System.Windows.Visibility IsTotalPriceColumnVisible => IsJobOrder ? System.Windows.Visibility.Collapsed : System.Windows.Visibility.Visible;
         public System.Windows.Visibility IsVatSectionVisible => IsJobOrder ? System.Windows.Visibility.Collapsed : System.Windows.Visibility.Visible;
         public System.Windows.Visibility IsNetTotalVisible => IsJobOrder ? System.Windows.Visibility.Collapsed : System.Windows.Visibility.Visible;
+
+        // PATCH 10: Visibility properties
+        public bool IsPriceSectionVisible => !IsJobOrder;
+        public bool IsNetTotalSectionVisible => !IsJobOrder;
 
         private JobOrderViewModel _jobOrderVM;
         public JobOrderViewModel JobOrderVM
@@ -424,6 +431,10 @@ namespace ProGlassAutomation.ViewModels
         public ICommand CalculatePriceCommand { get; private set; } = null!;
         public ICommand IncludeInSpecificationCommand { get; private set; } = null!;
         public ICommand PrintCommand { get; private set; } = null!;
+
+        // PATCH 1: Print commands
+        public ICommand PrintPreviewCommand { get; private set; } = null!;
+        public ICommand PrintInvoiceCommand { get; private set; } = null!;
         public ICommand PasteFromExcelCommand { get; private set; } = null!;
         public ICommand SelectSGUCommand { get; private set; } = null!;
         public ICommand SelectDGUCommand { get; private set; } = null!;
@@ -461,6 +472,8 @@ namespace ProGlassAutomation.ViewModels
             CalculatePriceCommand = new RelayCommand(_ => CalculatePrice());
             IncludeInSpecificationCommand = new RelayCommand(_ => IncludeInSpecification(), _ => CanIncludeInSpecification());
             PrintCommand = new RelayCommand(_ => PrintInvoice());
+            PrintPreviewCommand = new RelayCommand(_ => PrintPreview());
+            PrintInvoiceCommand = new RelayCommand(_ => PrintInvoice());
             PasteFromExcelCommand = new RelayCommand(_ => PasteFromExcel());
             SelectSGUCommand = new RelayCommand(_ => { IsSGUSelected = true; });
             SelectDGUCommand = new RelayCommand(_ => { IsDGUSelected = true; });
@@ -939,6 +952,29 @@ namespace ProGlassAutomation.ViewModels
             catch (Exception ex)
             {
                 StatusMessage = $"❌ Print failed: {ex.Message}";
+            }
+        }
+
+        // PATCH 1: PrintPreview method
+        private void PrintPreview()
+        {
+            try
+            {
+                var window = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.DataContext == this);
+                if (window?.Content is System.Windows.Media.Visual visual)
+                {
+                    var printDialog = new System.Windows.Controls.PrintDialog();
+                    printDialog.PrintVisual(visual, $"Preview: {Invoice?.InvoiceNo}");
+                    StatusMessage = "✅ Preview sent to printer";
+                }
+                else
+                {
+                    StatusMessage = "❌ Cannot find window to print";
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"❌ Preview failed: {ex.Message}";
             }
         }
 

@@ -411,9 +411,10 @@
                         <TextBlock Text="STATUS" FontSize="10" FontWeight="Bold" Foreground="#14532D" Margin="4,0,0,4"/>
                         <ComboBox Style="{StaticResource ModernComboBox}" SelectedItem="{Binding SelectedStatus}">
                             <ComboBoxItem Content="All Status" IsSelected="True"/>
-                            <ComboBoxItem Content="Released"/>
-                            <ComboBoxItem Content="Hold"/>
-                            <ComboBoxItem Content="Revised"/>
+                            <ComboBoxItem Content="Pending"/>
+                            <ComboBoxItem Content="In Progress"/>
+                            <ComboBoxItem Content="Completed"/>
+                            <ComboBoxItem Content="On Hold"/>
                             <ComboBoxItem Content="Cancelled"/>
                         </ComboBox>
                     </StackPanel>
@@ -559,15 +560,16 @@
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <ComboBox SelectedItem="{Binding Status, Mode=TwoWay}"
-                                         BorderBrush="#86EFAC"
-                                         BorderThickness="1"
-                                         Padding="6"
-                                         FontSize="11"
-                                         MinHeight="30"
-                                         Background="White">
-                                    <ComboBoxItem Content="Released"/>
-                                    <ComboBoxItem Content="Hold"/>
-                                    <ComboBoxItem Content="Revised"/>
+                     BorderBrush="#86EFAC"
+                     BorderThickness="1"
+                     Padding="6"
+                     FontSize="11"
+                     MinHeight="30"
+                     Background="White">
+                                    <ComboBoxItem Content="Pending"/>
+                                    <ComboBoxItem Content="In Progress"/>
+                                    <ComboBoxItem Content="Completed"/>
+                                    <ComboBoxItem Content="On Hold"/>
                                     <ComboBoxItem Content="Cancelled"/>
                                 </ComboBox>
                             </DataTemplate>

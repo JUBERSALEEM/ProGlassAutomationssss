@@ -84,6 +84,10 @@ namespace ProGlassAutomation.ViewModels
             AddOtherChargeCommand = new RelayCommand(o => ExecuteAddOtherCharge(o));
             DeleteOtherChargeCommand = new RelayCommand(o => ExecuteDeleteOtherCharge(o));
 
+            // PATCH 1: Initialize Print Commands
+            PrintPreviewCommand = new RelayCommand(_ => ExecutePrintPreview());
+            PrintJobOrderCommand = new RelayCommand(_ => ExecutePrint());
+
             RefreshTotals();
         }
 
@@ -180,6 +184,12 @@ namespace ProGlassAutomation.ViewModels
         public string ProjectLocation { get => _projectLocation; set => SetProperty(ref _projectLocation, value); }
         public string LPONo { get => _lpoNo; set => SetProperty(ref _lpoNo, value); }
         public string AttentionName { get => _attentionName; set => SetProperty(ref _attentionName, value); }
+        // PATCH: Add CustomerName alias for XAML compatibility
+        public string CustomerName { get => _clientName; set => SetProperty(ref _clientName, value); }
+        public string CustomerTRN { get => _clientTRN; set => SetProperty(ref _clientTRN, value); }
+        public string CustomerReference { get => _clientReference; set => SetProperty(ref _clientReference, value); }
+        public string CustomerAddress { get => _clientAddress; set => SetProperty(ref _clientAddress, value); }
+
         public string ContactNo { get => _contactNo; set => SetProperty(ref _contactNo, value); }
         public string Notes { get => _notes; set => SetProperty(ref _notes, value); }
         public string PINumber { get => _piNumber; set => SetProperty(ref _piNumber, value); }
@@ -215,6 +225,10 @@ namespace ProGlassAutomation.ViewModels
 
         public ObservableCollection<JobOrderOtherCharge> AllOtherCharges => _allOtherCharges;
 
+        // PATCH 5: HasNoCharges and HasOtherCharges properties
+        public bool HasNoCharges => AllOtherCharges == null || AllOtherCharges.Count == 0;
+        public bool HasOtherCharges => AllOtherCharges != null && AllOtherCharges.Count > 0;
+
         #endregion
 
         #region Commands
@@ -226,6 +240,10 @@ namespace ProGlassAutomation.ViewModels
         public ICommand RemoveSpecificationCommand { get; }
         public ICommand AddOtherChargeCommand { get; }
         public ICommand DeleteOtherChargeCommand { get; }
+
+        // PATCH 1: Print Commands
+        public ICommand PrintPreviewCommand { get; private set; }
+        public ICommand PrintJobOrderCommand { get; private set; }
 
         #endregion
 
@@ -466,6 +484,9 @@ namespace ProGlassAutomation.ViewModels
                 foreach (var charge in spec.OtherCharges)
                     _allOtherCharges.Add(charge);
             OnPropertyChanged(nameof(AllOtherCharges));
+            // PATCH 5: Notify HasNoCharges and HasOtherCharges
+            OnPropertyChanged(nameof(HasNoCharges));
+            OnPropertyChanged(nameof(HasOtherCharges));
         }
 
         #endregion
@@ -714,6 +735,19 @@ namespace ProGlassAutomation.ViewModels
                 "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
 
             if (result == MessageBoxResult.Yes) ClearAll();
+        }
+
+        // PATCH 1: Print Methods
+        private void ExecutePrintPreview()
+        {
+            MessageBox.Show($"Print Preview for Job Order: {JobOrderNumber}\nTotal Items: {TotalQty}\nTotal SQM: {TotalSQM:F4}",
+                "Print Preview", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void ExecutePrint()
+        {
+            MessageBox.Show($"Printing Job Order: {JobOrderNumber}\nTotal Items: {TotalQty}\nTotal SQM: {TotalSQM:F4}",
+                "Print", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         public JobOrder GetJobOrderById(int id) => JobOrders.FirstOrDefault(j => j.Id == id);

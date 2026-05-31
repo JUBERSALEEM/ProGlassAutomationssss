@@ -395,9 +395,7 @@ namespace ProGlassAutomation.ViewModels
                 {
                     jobOrder.Status = newStatus;
                     await Task.Run(() =>
-    Data.Database.DbHelper.UpdateJobOrderStatus(
-        jobOrder.Id,
-        newStatus));
+                        Data.Database.DbHelper.UpdateJobOrderStatus(jobOrder.Id, newStatus));
 
                     await Application.Current.Dispatcher.InvokeAsync(() =>
                     {

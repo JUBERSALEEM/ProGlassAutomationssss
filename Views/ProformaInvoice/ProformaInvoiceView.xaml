@@ -261,7 +261,7 @@
                 </Border>
 
                 <Border Background="#FFFFFF" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,12"
-        Visibility="{Binding IsJobOrder, Converter={StaticResource BoolToVis}}">
+        Visibility="{Binding IsPriceSectionVisible, Converter={StaticResource BoolToVis}}">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -438,7 +438,7 @@
                                                         </DataGridTextColumn.ElementStyle>
                                                     </DataGridTextColumn>
 
-                                                    <DataGridTextColumn Header="W1" Binding="{Binding Width1, UpdateSourceTrigger=LostFocus, StringFormat=N0}" Width="55">
+                                                    <DataGridTextColumn Header="W1" Binding="{Binding Width1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="55">
                                                         <DataGridTextColumn.ElementStyle>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -448,7 +448,7 @@
                                                         </DataGridTextColumn.ElementStyle>
                                                     </DataGridTextColumn>
 
-                                                    <DataGridTextColumn Header="H1" Binding="{Binding Height1, UpdateSourceTrigger=LostFocus, StringFormat=N0}" Width="55">
+                                                    <DataGridTextColumn Header="H1" Binding="{Binding Height1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="55">
                                                         <DataGridTextColumn.ElementStyle>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -458,7 +458,7 @@
                                                         </DataGridTextColumn.ElementStyle>
                                                     </DataGridTextColumn>
 
-                                                    <DataGridTextColumn Header="W2" Binding="{Binding Width2, UpdateSourceTrigger=LostFocus, StringFormat=N0}" Width="55">
+                                                    <DataGridTextColumn Header="W2" Binding="{Binding Width2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="55">
                                                         <DataGridTextColumn.ElementStyle>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -468,7 +468,7 @@
                                                         </DataGridTextColumn.ElementStyle>
                                                     </DataGridTextColumn>
 
-                                                    <DataGridTextColumn Header="H2" Binding="{Binding Height2, UpdateSourceTrigger=LostFocus, StringFormat=N0}" Width="55">
+                                                    <DataGridTextColumn Header="H2" Binding="{Binding Height2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="55">
                                                         <DataGridTextColumn.ElementStyle>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -478,7 +478,7 @@
                                                         </DataGridTextColumn.ElementStyle>
                                                     </DataGridTextColumn>
 
-                                                    <DataGridTextColumn Header="Qty" Binding="{Binding Qty, UpdateSourceTrigger=LostFocus, StringFormat=N0}" Width="45">
+                                                    <DataGridTextColumn Header="Qty" Binding="{Binding Qty, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="45">
                                                         <DataGridTextColumn.ElementStyle>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -651,7 +651,14 @@
                             <TextBlock Grid.Column="5" Text="Amount" FontSize="10" FontWeight="SemiBold" Foreground="#6B7280" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Grid>
 
-                        <ItemsControl ItemsSource="{Binding SelectedSpecificationOtherCharges}">
+                        <ItemsControl ItemsSource="{Binding SelectedSpecificationOtherCharges}"
+              VirtualizingStackPanel.IsVirtualizing="True"
+              VirtualizingStackPanel.VirtualizationMode="Recycling">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <VirtualizingStackPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Border BorderBrush="#E5E7EB" BorderThickness="1" Padding="8,6" Margin="0,0,0,4" Background="#FAFAFA" CornerRadius="4">
@@ -683,7 +690,7 @@
                                                 <ComboBoxItem Content="Custom"/>
                                             </ComboBox>
 
-                                            <ComboBox Grid.Column="1" SelectedValue="{Binding Type, UpdateSourceTrigger=LostFocus}" SelectedValuePath="Tag" Margin="0,0,4,0" FontSize="9" Padding="4,2" Background="White">
+                                            <ComboBox Grid.Column="1" SelectedValue="{Binding Type, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" SelectedValuePath="Tag" Margin="0,0,4,0" FontSize="9" Padding="4,2" Background="White">
                                                 <ComboBoxItem Content="LM" Tag="lm"/>
                                                 <ComboBoxItem Content="SQM" Tag="sqm"/>
                                                 <ComboBoxItem Content="SQM1" Tag="sqm1"/>
@@ -728,7 +735,7 @@
                                                 <TextBlock Text="{Binding ValueDisplay}" FontSize="10" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                             </Border>
 
-                                            <TextBox Grid.Column="4" Text="{Binding Rate, UpdateSourceTrigger=LostFocus, StringFormat={}{0:N2}}" Style="{StaticResource FormTextBox}" Padding="2,2" FontSize="9" TextAlignment="Center" Margin="0,0,4,0"/>
+                                            <TextBox Grid.Column="4" Text="{Binding Rate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}" BorderThickness="1"/>
 
                                             <Border Grid.Column="5" Background="#1E3A5F" CornerRadius="3" Padding="4,2" Margin="0,0,4,0">
                                                 <TextBlock Text="{Binding AmountDisplay}" FontSize="10" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -741,18 +748,12 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <TextBlock Text="No charges added" FontSize="10" Foreground="#9CA3AF" HorizontalAlignment="Center" Margin="0,8,0,0">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding SelectedSpecificationOtherCharges.Count}" Value="0">
-                                            <Setter Property="Visibility" Value="Visible"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
+                        <TextBlock Text="No charges added" 
+           FontSize="10" 
+           Foreground="#9CA3AF" 
+           HorizontalAlignment="Center" 
+           Margin="0,8,0,0"
+           Visibility="{Binding HasNoCharges, Converter={StaticResource BoolToVis}}"/>
                     </StackPanel>
                 </Border>
 
@@ -921,8 +922,8 @@
                                     <ColumnDefinition Width="8"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Button Grid.Column="0" Content="Preview" Style="{StaticResource SecondaryButton}" Click="PrintPreview_Click" Padding="12,8"/>
-                                <Button Grid.Column="2" Content="Print" Style="{StaticResource PrimaryButton}" Click="PrintInvoice_Click" Padding="12,8"/>
+                                <Button Grid.Column="0" Content="Preview" Style="{StaticResource SecondaryButton}" Command="{Binding PrintPreviewCommand}" Padding="12,8"/>
+                                <Button Grid.Column="2" Content="Print" Style="{StaticResource PrimaryButton}" Command="{Binding PrintInvoiceCommand}" Padding="12,8"/>
                             </Grid>
                         </StackPanel>
                     </Border>
@@ -1302,7 +1303,19 @@
                     <Border Background="#F9FAFB" Padding="16">
                         <StackPanel>
                             <TextBlock Text="Recent Invoices" FontSize="12" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,12"/>
-                            <ListBox ItemsSource="{Binding SavedFiles}" Background="#FFFFFF" BorderThickness="1" BorderBrush="#E5E7EB" MaxHeight="200">
+                            <ListBox ItemsSource="{Binding SavedFiles}" 
+         Background="#FFFFFF" 
+         BorderThickness="1" 
+         BorderBrush="#E5E7EB" 
+         MaxHeight="200"
+         VirtualizingStackPanel.IsVirtualizing="True"
+         VirtualizingStackPanel.VirtualizationMode="Recycling"
+         ScrollViewer.CanContentScroll="True">
+                                <ListBox.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <VirtualizingStackPanel />
+                                    </ItemsPanelTemplate>
+                                </ListBox.ItemsPanel>
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <Border BorderBrush="#E5E7EB" BorderThickness="0,0,0,1" Padding="12,10" Cursor="Hand">

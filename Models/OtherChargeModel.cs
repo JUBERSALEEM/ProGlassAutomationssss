@@ -149,11 +149,14 @@ namespace ProGlassAutomation.Models
         public bool IsLMBased => Type == "lm" || Type == "sqm" || Type == "sqm1" || Type == "sqm2";
         public bool IsHoleType => Type == "1x" || Type == "2x";
 
-        // ==================== CALCULATE AMOUNT ====================
+        // ==================== CALCULATE AMOUNT (PATCH: Add PropertyChanged) ====================
 
         public void CalculateAmount()
         {
             Amount = Math.Round(Value * Rate, 2);
+            // PATCH: Notify Amount changed for UI update
+            OnPropertyChanged(nameof(Amount));
+            OnPropertyChanged(nameof(AmountDisplay));
         }
 
         // ==================== SPEC TARGETING ====================

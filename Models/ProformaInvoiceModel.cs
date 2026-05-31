@@ -613,7 +613,7 @@ namespace ProGlassAutomation.Models
 
         public bool IsValid => Validate().IsValid;
 
-        // ==================== CALCULATIONS ====================
+        // ==================== CALCULATIONS (PATCH: Add Specs notify) ====================
         public void CalculateTotals()
         {
             if (IsBulkUpdating) return;
@@ -653,6 +653,9 @@ namespace ProGlassAutomation.Models
             VatAmount = Math.Round(GrandTotal * VatPercent / 100.0, 2);
             NetTotal = Math.Round(GrandTotal + VatAmount, 2);
             IsDirty = true;
+
+            // PATCH: Notify Specifications changed to refresh UI
+            OnPropertyChanged(nameof(Specifications));
         }
 
         // ==================== BULK OPERATIONS (PATCH 8) ====================

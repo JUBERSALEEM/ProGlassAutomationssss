@@ -36,7 +36,7 @@ namespace ProGlassAutomation.Views.Delivery
         private void DataGrid_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             // Find the row that was clicked
-            var row = GetDataGridRowFromEvent(e);
+            var row = GetDataGridRowFromVisualTree(e.OriginalSource as DependencyObject);
             if (row != null && row.DataContext != null)
             {
                 // Toggle selection
@@ -54,9 +54,10 @@ namespace ProGlassAutomation.Views.Delivery
             }
         }
 
-        private DataGridRow GetDataGridRowFromEvent(MouseButtonEventArgs e)
+        private DataGridRow? GetDataGridRowFromVisualTree(DependencyObject? element)
         {
-            var dep = e.OriginalSource as DependencyObject;
+            if (element == null) return null;
+            var dep = element;
             while (dep != null && !(dep is DataGridRow))
             {
                 dep = VisualTreeHelper.GetParent(dep);

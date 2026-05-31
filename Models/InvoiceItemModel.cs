@@ -24,9 +24,22 @@ namespace ProGlassAutomation.Models
             }
         }
 
-        // ==================== PARENT SPECIFICATION REFERENCE (PATCH 10) ====================
+        // ==================== PARENT SPECIFICATION REFERENCE (PATCH 10 + FIX) ====================
         [JsonIgnore]
-        public SpecificationModel? Specification { get; set; }
+        private SpecificationModel? _specification;
+        [JsonIgnore]
+        public SpecificationModel? Specification
+        {
+            get => _specification;
+            set
+            {
+                if (_specification != value)
+                {
+                    _specification = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         // ==================== PROPERTY CHANGED ====================
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)

@@ -257,7 +257,7 @@ namespace ProGlassAutomation.Models
         public string PVBPrice { get => _pvbPrice; set { _pvbPrice = value; OnPropertyChanged(); } }
 
         // ==================== OTHER CHARGES ====================
-        public ObservableCollection<OtherChargeModel> OtherCharges { get; }
+        public ObservableCollection<OtherChargeModel> OtherCharges { get; private set; } = new();
 
         private double _otherChargesTotal = 0;
         public double OtherChargesTotal
@@ -360,7 +360,7 @@ namespace ProGlassAutomation.Models
         private double _specTotalPrice = 0;
         public double SpecTotalPrice { get => _specTotalPrice; private set { if (_specTotalPrice != value) { _specTotalPrice = value; OnPropertyChanged(); OnPropertyChanged(nameof(SpecTotalPriceWithOtherCharges)); } } }
 
-        // ==================== CALCULATE SPEC TOTALS ====================
+        // ==================== CALCULATE SPEC TOTALS (PATCH 8 - Add Items refresh) ====================
         public void CalculateSpecTotals()
         {
             if (IsBulkUpdating) return;
@@ -391,6 +391,9 @@ namespace ProGlassAutomation.Models
             SpecTotalLM2 = Math.Round(lm2, 4);
             SpecTotalQty = qty;
             SpecTotalPrice = Math.Round(price, 2);
+
+            // PATCH: Notify Items collection changed to refresh DataGrid
+            OnPropertyChanged(nameof(Items));
         }
 
         // ==================== RENUMBER ITEMS (PATCH 9) ====================
