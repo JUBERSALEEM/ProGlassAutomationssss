@@ -81,9 +81,17 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // Proforma Invoice Main ViewModel
-        private ProformaInvoiceMainViewModel _proformaInvoiceMainVM;
-        public ProformaInvoiceMainViewModel ProformaInvoiceMainViewModel => _proformaInvoiceMainVM;
+        // Proforma Invoice List ViewModel
+        private ProformaInvoiceListViewModel _proformaInvoiceListVM;
+        public ProformaInvoiceListViewModel ProformaInvoiceListVM
+        {
+            get
+            {
+                if (_proformaInvoiceListVM == null)
+                    _proformaInvoiceListVM = new ProformaInvoiceListViewModel();
+                return _proformaInvoiceListVM;
+            }
+        }
 
         private UserControl GetOrCreateView(string viewName)
         {
@@ -104,7 +112,7 @@ namespace ProGlassAutomation.ViewModels
                 "Deliveries" => new Views.Delivery.DeliveryView(),
                 "Profile" => new Views.Profile.ProfileView(),
                 "Users" => CreatePlaceholder("Users - Coming Soon!"),
-                "ProformaInvoice" => new Views.ProformaInvoice.ProformaInvoiceMainView(),
+                "ProformaInvoice" => new ProformaInvoiceListView(),
                 "JobOrders" => CreateJobOrdersListView(),
                 "JobOrderEdit" => CreateJobOrderEditView(),
                 _ => null
@@ -437,50 +445,19 @@ namespace ProGlassAutomation.ViewModels
         }
 
         // ═══════════════════════════════════════════════════════
-        // PROFORMA INVOICE - FIXED
+        // PROFORMA INVOICE
         // ═══════════════════════════════════════════════════════
 
         public void ShowProformaInvoice()
         {
             try
             {
-                var mainView = new Views.ProformaInvoice.ProformaInvoiceMainView();
-                var editorViewModel = new ProformaInvoiceViewModel();
-                _proformaInvoiceMainVM = new ProformaInvoiceMainViewModel(editorViewModel);
+                var listView = new ProformaInvoiceListView();
+                listView.DataContext = ProformaInvoiceListVM;
 
-                editorViewModel.InvoiceSaved += OnProformaInvoiceSaved;
-
-                // KEY FIX: OpenPIEditor event
-                _proformaInvoiceMainVM.OpenPIEditor += invoice =>
-                {
-                    try
-                    {
-                        if (invoice != null)
-                        {
-                            editorViewModel.LoadFromProformaInvoice(invoice);
-                        }
-                        else
-                        {
-                            editorViewModel.CreateNewInvoice();
-                        }
-
-                        var editorView = new Views.ProformaInvoice.ProformaInvoiceView { DataContext = editorViewModel };
-
-                        SetCurrentView(editorView);
-                        GetMainWindow()?.SetContent(editorView);
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"Error opening editor: {ex.Message}", "Error",
-                            MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
-                };
-
-                mainView.DataContext = _proformaInvoiceMainVM;
-
-                SetCurrentView(mainView);
+                SetCurrentView(listView);
                 CurrentViewName = "ProformaInvoice";
-                GetMainWindow()?.SetContent(mainView);
+                GetMainWindow()?.SetContent(listView);
             }
             catch (Exception ex)
             {
@@ -614,7 +591,7 @@ namespace ProGlassAutomation.ViewModels
 
             if (GetOrCreateView("Deliveries") is Views.Delivery.DeliveryView deliveryView)
             {
-                if (deliveryView.DataContext is ViewModels.DeliveryViewModel deliveryVM)
+                if (deliveryView.DataContext is DeliveryViewModel deliveryVM)
                 {
                     deliveryVM.CreateFromJobOrder(jobOrder);
                 }
@@ -674,10 +651,8 @@ namespace ProGlassAutomation.ViewModels
         {
             try
             {
-                if (_proformaInvoiceMainVM != null)
-                {
-                    _proformaInvoiceMainVM.SaveOnExit();
-                }
+                // Save any pending data before exit
+                System.Diagnostics.Debug.WriteLine("[MainViewModel] SaveAllData called");
             }
             catch (Exception ex)
             {

@@ -242,7 +242,7 @@ namespace ProGlassAutomation.ViewModels
                 ClientName = pi.CustomerName ?? "";
                 ClientTRN = pi.CustomerTRN ?? "";
                 ClientReference = pi.CustomerReference ?? "";
-                Salesman = pi.Salesman ?? "";
+                Salesman = string.IsNullOrWhiteSpace(pi.Salesman) ? "Unknown" : pi.Salesman;  // FIX HERE
                 ClientAddress = pi.CustomerAddress ?? "";
                 ProjectName = pi.ProjectName ?? "";
                 ProjectNo = pi.ProjectNo ?? "";

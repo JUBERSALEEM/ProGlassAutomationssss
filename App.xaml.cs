@@ -48,7 +48,7 @@ namespace ProGlassAutomation
             // Save all ViewModels before exit
             try
             {
-                if (MainWindow?.DataContext is ViewModels.ProformaInvoiceMainViewModel mainVm)
+                if (MainWindow?.DataContext is ViewModels.ProformaInvoiceListViewModel mainVm)
                 {
                     mainVm.SaveOnExit();
                     System.Diagnostics.Debug.WriteLine("[App] ProformaInvoice data saved on exit");

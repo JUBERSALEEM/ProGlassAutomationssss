@@ -454,7 +454,7 @@ namespace ProGlassAutomation.ViewModels
             SaveInvoiceCommand = new RelayCommand(_ => SaveInvoice(), _ => CanExecuteSaveInvoice());
             OpenInvoiceCommand = new RelayCommand(_ => OpenInvoice());
             CreateJobOrderCommand = new RelayCommand(_ => ExecuteCreateJobOrder());
-            DeleteInvoiceCommand = new RelayCommand(_ => DeleteInvoice());
+            DeleteInvoiceCommand = new RelayCommand(param => DeleteInvoice(param));
             AddSpecificationCommand = new RelayCommand(_ => AddSpecification());
             RemoveSpecificationCommand = new RelayCommand(_ => RemoveSpecification(), _ => Invoice?.Specifications?.Count > 0);
             ToggleLMCommand = new RelayCommand(_ => ToggleLM());
@@ -582,13 +582,88 @@ namespace ProGlassAutomation.ViewModels
             {
                 InvoiceNo = GetNextSequentialInvoiceNo(),
                 InvoiceDate = DateTime.Now,
-                ValidUntil = DateTime.Now.AddDays(2)
+                ValidUntil = DateTime.Now.AddDays(2),
+                // Copy Company fields from ViewModel
+                CompanyName = CompanyName,
+                CompanyTRN = CompanyTRN,
+                CompanyLocation = CompanyLocation,
+                CompanyPhone = CompanyPhone
             };
             CurrentFileName = "Untitled";
 
             AddSpecification();
             if (Invoice.Specifications.Count > 0)
                 Invoice.Specifications[0].Invoice = Invoice;
+
+            Invoice.IsDirty = false;
+            System.Diagnostics.Debug.WriteLine($"[ProformaInvoiceVM] Created new invoice: {Invoice.InvoiceNo}");
+        }
+
+        public void LoadFromExistingInvoice(ProformaInvoiceModel invoice)
+        {
+            if (invoice == null)
+            {
+                System.Diagnostics.Debug.WriteLine("[ProformaInvoiceVM] LoadFromExistingInvoice: invoice is null!");
+                return;
+            }
+
+            System.Diagnostics.Debug.WriteLine($"[ProformaInvoiceVM] Loading invoice: {invoice.InvoiceNo}");
+
+            using (BulkUpdateScope())
+            {
+                Invoice.InvoiceNo = invoice.InvoiceNo;
+                Invoice.InvoiceDate = invoice.InvoiceDate;
+                Invoice.ValidUntil = invoice.ValidUntil;
+                Invoice.CustomerName = invoice.CustomerName ?? "";
+                Invoice.CustomerTRN = invoice.CustomerTRN ?? "";
+                Invoice.CustomerReference = invoice.CustomerReference ?? "";
+                Invoice.Salesman = invoice.Salesman ?? "";
+                Invoice.CustomerAddress = invoice.CustomerAddress ?? "";
+                Invoice.ProjectName = invoice.ProjectName ?? "";
+                Invoice.ProjectNo = invoice.ProjectNo ?? "";
+                Invoice.ProjectLocation = invoice.ProjectLocation ?? "";
+                Invoice.LPONo = invoice.LPONo ?? "";
+                Invoice.AttentionName = invoice.AttentionName ?? "";
+                Invoice.ContactNo = invoice.ContactNo ?? "";
+                Invoice.Color = invoice.Color ?? "";
+                Invoice.Notes = invoice.Notes ?? "";
+                Invoice.Status = invoice.Status ?? "Pending";
+                Invoice.IsConvertedToJobOrder = invoice.IsConvertedToJobOrder;
+
+                // Load Company fields from Invoice to ViewModel
+                CompanyName = invoice.CompanyName ?? "PROGLASS AUTOMATION";
+                CompanyTRN = invoice.CompanyTRN ?? "100458979400003";
+                CompanyLocation = invoice.CompanyLocation ?? "Dubai, UAE";
+                CompanyPhone = invoice.CompanyPhone ?? "+971-50-123-4567";
+
+                Invoice.Specifications.Clear();
+                if (invoice.Specifications != null)
+                {
+                    foreach (var srcSpec in invoice.Specifications)
+                    {
+                        var newSpec = srcSpec.DeepClone();
+                        newSpec.Invoice = Invoice;
+
+                        foreach (var item in newSpec.Items)
+                        {
+                            item.Specification = newSpec;
+                        }
+
+                        Invoice.Specifications.Add(newSpec);
+                    }
+                }
+            }
+
+            ReconstructAfterLoad();
+
+            SelectedTargetSpecification = Invoice.Specifications.FirstOrDefault();
+            SelectedSpecificationId = SelectedTargetSpecification?.Id ?? 0;
+
+            Invoice.CalculateTotals();
+            Invoice.IsDirty = false;
+            CurrentFileName = invoice.InvoiceNo ?? "Loaded Invoice";
+
+            System.Diagnostics.Debug.WriteLine($"[ProformaInvoiceVM] Loaded: {Invoice.InvoiceNo}");
         }
 
         private void NewInvoice()
@@ -607,48 +682,93 @@ namespace ProGlassAutomation.ViewModels
         {
             try
             {
+                System.Diagnostics.Debug.WriteLine("[ProformaInvoice] ===== SAVE STARTED =====");
+
                 // Auto-set default customer if empty
                 if (string.IsNullOrWhiteSpace(Invoice?.CustomerName))
                 {
                     Invoice!.CustomerName = "New Customer";
+                    System.Diagnostics.Debug.WriteLine("[ProformaInvoice] Set default customer name");
                 }
 
+                // Copy Company fields from ViewModel to Invoice before saving
+                Invoice!.CompanyName = CompanyName;
+                Invoice.CompanyTRN = CompanyTRN;
+                Invoice.CompanyLocation = CompanyLocation;
+                Invoice.CompanyPhone = CompanyPhone;
+                System.Diagnostics.Debug.WriteLine("[ProformaInvoice] Copied company fields");
+
                 Invoice.CalculateTotals();
+                System.Diagnostics.Debug.WriteLine("[ProformaInvoice] Calculated totals");
 
                 // PATCH: Add to main view model's list FIRST
                 AddToMainViewModelList();
+                System.Diagnostics.Debug.WriteLine("[ProformaInvoice] Added to main list");
 
-                // Then save to individual file (optional - for backup)
-                var dialog = new SaveFileDialog
-                {
-                    Filter = "JSON Files (*.json)|*.json",
-                    InitialDirectory = GetDataFolder(),
-                    FileName = $"{Invoice.InvoiceNo}.json"
-                };
+                // === SAVE TO FILE ===
+                string folder = GetDataFolder();
+                System.Diagnostics.Debug.WriteLine($"[ProformaInvoice] Data folder: {folder}");
 
-                if (dialog.ShowDialog() == true)
+                string filePath = Path.Combine(folder, $"{Invoice.InvoiceNo}.json");
+
+                // Check if file already exists
+                if (File.Exists(filePath))
                 {
-                    string json = JsonConvert.SerializeObject(Invoice, Formatting.Indented, _jsonSettings);
-                    File.WriteAllText(dialog.FileName, json);
-                    CurrentFileName = Path.GetFileNameWithoutExtension(dialog.FileName);
-                    LoadSavedFiles();
+                    System.Diagnostics.Debug.WriteLine($"[ProformaInvoice] File EXISTS: {filePath}");
+
+                    // Ask user to confirm overwrite
+                    var result = MessageBox.Show(
+                        $"Invoice '{Invoice.InvoiceNo}' already exists.\n\nDo you want to overwrite it?",
+                        "Confirm Overwrite",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Question);
+
+                    if (result != MessageBoxResult.Yes)
+                    {
+                        System.Diagnostics.Debug.WriteLine("[ProformaInvoice] Save cancelled by user");
+                        return; // User cancelled
+                    }
                 }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"[ProformaInvoice] File is NEW: {filePath}");
+                }
+
+                string json = JsonConvert.SerializeObject(Invoice, Formatting.Indented, _jsonSettings);
+                System.Diagnostics.Debug.WriteLine($"[ProformaInvoice] JSON length: {json.Length}");
+
+                File.WriteAllText(filePath, json);
+                System.Diagnostics.Debug.WriteLine($"[ProformaInvoice] File saved: {filePath}");
+                System.Diagnostics.Debug.WriteLine("[ProformaInvoice] File written successfully!");
+
+                CurrentFileName = Invoice.InvoiceNo;
+                System.Diagnostics.Debug.WriteLine($"[ProformaInvoice] CurrentFileName set to: {CurrentFileName}");
+
+                // Refresh the saved files list
+                LoadSavedFiles();
+                System.Diagnostics.Debug.WriteLine("[ProformaInvoice] Loaded saved files");
 
                 Invoice.IsDirty = false;
                 StatusMessage = $"✅ Saved: {CurrentFileName}";
+                System.Diagnostics.Debug.WriteLine("[ProformaInvoice] Status message set");
 
                 // Raise event for other views to update
-                System.Diagnostics.Debug.WriteLine($"[ProformaInvoice] About to raise InvoiceSaved event. InvoiceNo={Invoice?.InvoiceNo}");
                 InvoiceSaved?.Invoke(Invoice);
-                System.Diagnostics.Debug.WriteLine($"[ProformaInvoice] InvoiceSaved event raised");
+                System.Diagnostics.Debug.WriteLine("[ProformaInvoice] InvoiceSaved event raised");
 
                 // Check and convert to Job Order if status is Confirmed
                 CheckAndConvertToJobOrder();
+
+                System.Diagnostics.Debug.WriteLine("[ProformaInvoice] ===== SAVE COMPLETE =====");
+
+                MessageBox.Show($"Saved successfully!\n\n{filePath}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"[ProformaInvoice] ERROR: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[ProformaInvoice] STACK: {ex.StackTrace}");
                 StatusMessage = $"❌ Error: {ex.Message}";
-                MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Error: {ex.Message}\n\n{ex.StackTrace}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -684,6 +804,12 @@ namespace ProGlassAutomation.ViewModels
                         Invoice = invoice;
                         CurrentFileName = Path.GetFileNameWithoutExtension(dialog.FileName);
 
+                        // Load Company fields from Invoice to ViewModel
+                        CompanyName = invoice.CompanyName ?? "PROGLASS AUTOMATION";
+                        CompanyTRN = invoice.CompanyTRN ?? "100458979400003";
+                        CompanyLocation = invoice.CompanyLocation ?? "Dubai, UAE";
+                        CompanyPhone = invoice.CompanyPhone ?? "+971-50-123-4567";
+
                         // PATCH: Add to main view model's list
                         AddToMainViewModelList();
 
@@ -702,26 +828,58 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        private void DeleteInvoice()
+        private void DeleteInvoice(object? param)
         {
-            var result = MessageBox.Show($"Delete '{CurrentFileName}'?\nThis cannot be undone.", "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-            if (result == MessageBoxResult.Yes)
+            try
             {
-                try
+                ProformaInvoiceModel? invoiceToDelete = param as ProformaInvoiceModel;
+
+                if (invoiceToDelete == null)
                 {
-                    string filePath = Path.Combine(GetDataFolder(), $"{CurrentFileName}.json");
+                    invoiceToDelete = Invoice;
+                }
+
+                if (invoiceToDelete == null)
+                {
+                    MessageBox.Show("No invoice selected to delete.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                string invoiceInfo = $"{invoiceToDelete.InvoiceNo} - {invoiceToDelete.CustomerName}";
+
+                // Confirm before delete
+                var result = MessageBox.Show(
+                    $"Are you sure you want to delete this invoice?\n\n{invoiceInfo}\n\nThis action cannot be undone!",
+                    "⚠️ Confirm Delete",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    // Delete the file
+                    string filePath = Path.Combine(GetDataFolder(), $"{invoiceToDelete.InvoiceNo}.json");
                     if (File.Exists(filePath))
                     {
                         File.Delete(filePath);
-                        LoadSavedFiles();
-                        StatusMessage = $"✅ Deleted: {CurrentFileName}";
+                        System.Diagnostics.Debug.WriteLine($"[PIViewModel] Deleted: {filePath}");
+                    }
+
+                    // Remove from list if it's the current invoice
+                    if (Invoice?.InvoiceNo == invoiceToDelete.InvoiceNo)
+                    {
                         CreateNewInvoice();
                     }
+
+                    // Refresh the list
+                    LoadSavedFiles();
+
+                    StatusMessage = $"✅ Deleted: {invoiceToDelete.InvoiceNo}";
                 }
-                catch (Exception ex)
-                {
-                    StatusMessage = $"❌ Delete failed: {ex.Message}";
-                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[PIViewModel] Delete error: {ex.Message}");
+                StatusMessage = $"❌ Delete failed: {ex.Message}";
             }
         }
 

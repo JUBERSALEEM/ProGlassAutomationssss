@@ -10,8 +10,6 @@ namespace ProGlassAutomation.Views.Dashboard
     public partial class DashboardView : UserControl
     {
         private DashboardViewModel _viewModel;
-
-        // PATCH 1: Add flag to prevent double load
         private bool _isLoaded;
 
         public DashboardView()
@@ -24,19 +22,15 @@ namespace ProGlassAutomation.Views.Dashboard
             Loaded += DashboardView_Loaded;
         }
 
-        // PATCH 1: Prevent double load on startup
         private void DashboardView_Loaded(object sender, RoutedEventArgs e)
         {
             try
             {
-                if (_isLoaded)
-                    return;
-
+                if (_isLoaded) return;
                 _isLoaded = true;
 
                 _viewModel.LoadData();
-
-                System.Diagnostics.Debug.WriteLine("[DashboardView] Loaded");
+                LoadDatabaseStats();
             }
             catch (Exception ex)
             {
@@ -44,20 +38,23 @@ namespace ProGlassAutomation.Views.Dashboard
             }
         }
 
-        // PATCH 1: Only load after initial load
-        private void FilterComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void LoadDatabaseStats()
         {
             try
             {
-                if (!_isLoaded)
-                    return;
-
-                _viewModel.LoadData();
+                var stats = DbHelper.GetDatabaseStats();
+                DbStatsText.Text = stats;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[Dashboard Filter] {ex.Message}");
+                DbStatsText.Text = $"Error: {ex.Message}";
             }
+        }
+
+        private void FilterComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!_isLoaded) return;
+            _viewModel.LoadData();
         }
 
         private void SyncBalance_Click(object sender, RoutedEventArgs e)
@@ -65,7 +62,7 @@ namespace ProGlassAutomation.Views.Dashboard
             try
             {
                 _viewModel.Sync();
-                MessageBox.Show("Data synchronized!", "Sync", MessageBoxButton.OK, MessageBoxImage.Information);
+                LoadDatabaseStats();
             }
             catch (Exception ex)
             {
@@ -78,17 +75,12 @@ namespace ProGlassAutomation.Views.Dashboard
             try
             {
                 _viewModel.LoadData();
-                MessageBox.Show("Dashboard refreshed!", "Refresh", MessageBoxButton.OK, MessageBoxImage.Information);
+                LoadDatabaseStats();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Refresh failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-        }
-
-        private void ActivateNow_Click(object sender, RoutedEventArgs e)
-        {
-            _viewModel.Activate();
         }
 
         private void ShowSalesmen_Click(object sender, RoutedEventArgs e)
@@ -97,45 +89,55 @@ namespace ProGlassAutomation.Views.Dashboard
             {
                 var dailyWorks = DbHelper.GetAllDailyWork();
                 var deliveries = DbHelper.GetAllDeliveries();
+                var pis = DbHelper.GetAllProformaInvoices();
 
                 var dwSalesmen = dailyWorks.Where(d => !string.IsNullOrEmpty(d.Salesman))
-                                           .Select(d => d.Salesman).Distinct().ToList();
+                                       .Select(d => d.Salesman).Distinct().ToList();
 
                 var delSalesmen = deliveries.Where(d => !string.IsNullOrEmpty(d.Salesman))
-                                            .Select(d => d.Salesman).Distinct().ToList();
+                                    .Select(d => d.Salesman).Distinct().ToList();
 
-                var allSalesmen = dwSalesmen.Union(delSalesmen).OrderBy(s => s).ToList();
+                var piSalesmen = pis.Where(p => !string.IsNullOrEmpty(p.Salesman))
+                                 .Select(p => p.Salesman).Distinct().ToList();
 
-                var result = "👥 ALL SALESMEN\n\n";
-                result += $"From DailyWork: {dwSalesmen.Count}\n";
-                foreach (var s in dwSalesmen)
-                {
-                    var count = dailyWorks.Count(d => d.Salesman == s);
-                    result += $"  • {s} ({count} records)\n";
-                }
+                var allSalesmen = dwSalesmen.Union(delSalesmen).Union(piSalesmen).Distinct().OrderBy(s => s).ToList();
 
-                result += $"\nFrom Deliveries: {delSalesmen.Count}\n";
-                foreach (var s in delSalesmen)
-                {
-                    var count = deliveries.Count(d => d.Salesman == s);
-                    result += $"  • {s} ({count} records)\n";
-                }
+                var result = "👥 SALESMEN LIST\n";
+                result += "═══════════════════════════════\n\n";
 
-                result += $"\n═══════════════════════════\n";
-                result += $"Total Unique Salesmen: {allSalesmen.Count}\n\n";
+                int index = 1;
                 foreach (var s in allSalesmen)
                 {
                     var dwCount = dailyWorks.Count(d => d.Salesman == s);
                     var delCount = deliveries.Count(d => d.Salesman == s);
-                    result += $"  • {s}\n    DailyWork: {dwCount} | Deliveries: {delCount}\n";
+                    var piCount = pis.Count(p => p.Salesman == s && p.Status == "Confirmed");
+
+                    var piTotal = pis.Where(p => p.Salesman == s && p.Status == "Confirmed")
+                                  .Sum(p => p.NetAmount);
+
+                    result += $"{index}. {s}\n";
+                    result += $"   DailyWork: {dwCount} | Deliveries: {delCount}\n";
+                    result += $"   Confirmed PIs: {piCount} | Total: AED {piTotal:N0}\n\n";
+                    index++;
                 }
 
+                result += "═══════════════════════════════\n";
+                result += $"Total Salesmen: {allSalesmen.Count}";
+
                 MessageBox.Show(result, "Salesmen List", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                // Refresh dashboard
+                _viewModel.LoadData();
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private void ActivateNow_Click(object sender, RoutedEventArgs e)
+        {
+            _viewModel.Activate();
         }
     }
 }

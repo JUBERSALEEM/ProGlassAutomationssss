@@ -9,93 +9,102 @@ using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
 using SkiaSharp;
-using ProGlassAutomation.Services;
 using ProGlassAutomation.Data.Database;
-
-// FIX: Add type aliases to resolve ambiguous references
-using Delivery = ProGlassAutomation.Data.Database.Delivery;
-using DailyWork = ProGlassAutomation.Data.Database.DailyWork;
-using Sheet = ProGlassAutomation.Data.Database.Sheet;
-using ProformaInvoice = ProGlassAutomation.Data.Database.ProformaInvoiceModel;
-using JobOrder = ProGlassAutomation.Data.Database.JobOrderModel;
 
 namespace ProGlassAutomation.ViewModels
 {
     public class DashboardViewModel : INotifyPropertyChanged
     {
-        // ══════════════════════════════════════════════════════════════════════════════
-        // PROPERTIES
-        // ══════════════════════════════════════════════════════════════════════════════
+        // ════════════════════════════════════════════════════════════════════
+        // PROPERTIES - Main Stats
+        // ════════════════════════════════════════════════════════════════════
 
         public string TotalRevenue { get; set; } = "AED 0";
-        public string RevenueGrowth { get; set; } = "+0% this year";
+        public string RevenueGrowth { get; set; } = "+0%";
         public string Orders { get; set; } = "0";
-        public string OrdersGrowth { get; set; } = "+0 this week";
+        public string OrdersGrowth { get; set; } = "+0";
         public string Salesmen { get; set; } = "0";
         public string PendingQuotes { get; set; } = "0";
 
+        // Proforma Invoice Stats
         public string PITotal { get; set; } = "0";
         public string PIConfirmed { get; set; } = "0";
         public string PIPending { get; set; } = "0";
         public string PIValue { get; set; } = "AED 0";
 
+        // Job Order Stats
         public string JOTotal { get; set; } = "0";
         public string JOInProgress { get; set; } = "0";
         public string JOCompleted { get; set; } = "0";
 
+        // Delivery Stats
         public string DelPending { get; set; } = "0";
         public string DelCompleted { get; set; } = "0";
         public string DelTotal { get; set; } = "0";
 
+        // Sheet Stats
         public string SheetTotal { get; set; } = "0";
         public string SheetAvailable { get; set; } = "0";
         public string SheetTypes { get; set; } = "0";
 
+        // Balance Stats
         public string DailyBalance { get; set; } = "AED 0";
         public string MonthlyBalance { get; set; } = "AED 0";
         public string AnnualBalance { get; set; } = "AED 0";
 
+        // UI Properties
         public string LastUpdate { get; set; } = "Last update: Just now";
-        public string LastSync { get; set; } = "Never";
-
         public string SelectedFilter { get; set; } = "This Week";
 
-        // ══════════════════════════════════════════════════════════════════════════════
-        // SALESMAN ARRAYS - Top 9 salesmen with their totals
-        // ══════════════════════════════════════════════════════════════════════════════
+        // Filter button states
+        public string DayFilterBg { get; set; } = "#F3F4F6";
+        public string WeekFilterBg { get; set; } = "#2563EB";
+        public string MonthFilterBg { get; set; } = "#F3F4F6";
+        public string YearFilterBg { get; set; } = "#F3F4F6";
 
-        public ObservableCollection<string> SalesmanNames { get; set; } = new ObservableCollection<string>();
-        public ObservableCollection<string> SalesmanAmounts { get; set; } = new ObservableCollection<string>();
-        public ObservableCollection<string> SalesmanDiffs { get; set; } = new ObservableCollection<string>();
+        public string DayFilterFg { get; set; } = "#1F2937";
+        public string WeekFilterFg { get; set; } = "#FFFFFF";
+        public string MonthFilterFg { get; set; } = "#1F2937";
+        public string YearFilterFg { get; set; } = "#1F2937";
 
-        // ══════════════════════════════════════════════════════════════════════════════
+        // ════════════════════════════════════════════════════════════════════════════
+        // SALESMAN DATA
+        // ════════════════════════════════════════════════════════════════════
+
+        public ObservableCollection<SalesmanData> SalesmanList { get; set; } = new ObservableCollection<SalesmanData>();
+        public ObservableCollection<SalesmanData> SalesmanPerformance { get; set; } = new ObservableCollection<SalesmanData>();
+
+        // ════════════════════════════════════════════════════════════════════════════
         // LIVECHARTS
-        // ══════════════════════════════════════════════════════════════════════════════
+        // ════════════════════════════════════════════════════════════════════════════
 
         public ISeries[] ChartSeries { get; set; }
         public Axis[] ChartXAxes { get; set; }
         public Axis[] ChartYAxes { get; set; }
 
-        // PATCH 5: Add field to prevent chart recreation
+        // Secondary chart for salesman performance
+        public ISeries[] SalesmanChartSeries { get; set; }
+        public Axis[] SalesmanChartXAxes { get; set; }
+        public Axis[] SalesmanChartYAxes { get; set; }
+
         private LineSeries<double> _salesSeries;
+        private ColumnSeries<double> _salesmanColumnSeries;
 
-        // ══════════════════════════════════════════════════════════════════════════════
-        // ACTIVITY LOG
-        // ══════════════════════════════════════════════════════════════════════════════════════
-
-        public ObservableCollection<ActivityItem> ActivityItems { get; set; } = new ObservableCollection<ActivityItem>();
-
-        // ══════════════════════════════════════════════════════════════════════════════
+        // ════════════════════════════════════════════════════════════════════════════
         // COMMANDS
-        // ══════════════════════════════════════════════════════════════════════════════
+        // ════════════════════════════════════════════════════════════════════
 
         public ICommand RefreshCommand { get; }
         public ICommand SyncCommand { get; }
         public ICommand ActivateCommand { get; }
+        public ICommand DayFilterCommand { get; }
+        public ICommand WeekFilterCommand { get; }
+        public ICommand MonthFilterCommand { get; }
+        public ICommand YearFilterCommand { get; }
 
-        // ══════════════════════════════════════════════════════════════════════════════
+        // ════════════════════════════════════════════════════════════════════════════
         // CONSTRUCTOR
-        // ══════════════════════════════════════════════════════════════════════════════
+        // ════════════════════════════════════════════════════════════════════
 
         public DashboardViewModel()
         {
@@ -103,17 +112,35 @@ namespace ProGlassAutomation.ViewModels
             SyncCommand = new RelayCommand(_ => Sync());
             ActivateCommand = new RelayCommand(_ => Activate());
 
-            InitializeChart();
-            // PATCH 2: Removed InitializeSalesmanArrays() - called lazily in LoadData()
+            DayFilterCommand = new RelayCommand(_ => ApplyFilter("Today"));
+            WeekFilterCommand = new RelayCommand(_ => ApplyFilter("This Week"));
+            MonthFilterCommand = new RelayCommand(_ => ApplyFilter("This Month"));
+            YearFilterCommand = new RelayCommand(_ => ApplyFilter("This Year"));
+
+            // Initialize default salesmen
+            InitializeDefaultSalesmen();
+            InitializeCharts();
         }
 
-        // ══════════════════════════════════════════════════════════════════════════════
-        // INITIALIZE
-        // ══════════════════════════════════════════════════════════════════════════════
-
-        private void InitializeChart()
+        private void InitializeDefaultSalesmen()
         {
-            // PATCH 5: Store reference to prevent recreation
+            var defaultNames = new[]
+            {
+                "Mr Pradeep", "Mr Sooraj", "Ms Maya Ibrahim",
+                "Mr Aftab Akram", "Mr Talha", "Mr Bilal",
+                "Mr Salman (Sunny)", "Mr Harvinder", "Mr Nazim"
+            };
+
+            foreach (var name in defaultNames)
+            {
+                SalesmanList.Add(new SalesmanData { Name = name, Amount = "AED 0" });
+                SalesmanPerformance.Add(new SalesmanData { Name = name, Amount = "0" });
+            }
+        }
+
+        private void InitializeCharts()
+        {
+            // Main Sales Chart (Line)
             _salesSeries = new LineSeries<double>
             {
                 Values = new double[] { 2, 1, 3, 5, 3, 4, 6 },
@@ -142,94 +169,105 @@ namespace ProGlassAutomation.ViewModels
                 new Axis
                 {
                     LabelsPaint = new SolidColorPaint(SKColors.Gray),
-                    SeparatorsPaint = new SolidColorPaint(SKColors.LightGray, 1)
+                    SeparatorsPaint = new SolidColorPaint(SKColors.LightGray, 1),
+                    Labeler = value => $"AED {value:N0}"
+                }
+            };
+
+            // Salesman Performance Chart (Bar/Column)
+            _salesmanColumnSeries = new ColumnSeries<double>
+            {
+                Values = new double[] { 10, 25, 30, 15, 40, 20, 35, 18, 12 },
+                Fill = new SolidColorPaint(SKColors.MediumPurple),
+                MaxBarWidth = 30
+            };
+
+            SalesmanChartSeries = new ISeries[] { _salesmanColumnSeries };
+
+            SalesmanChartXAxes = new Axis[]
+            {
+                new Axis
+                {
+                    Labels = new string[] { "Pradeep", "Sooraj", "Maya", "Aftab", "Talha", "Bilal", "Sunny", "Harvi", "Nazim" },
+                    LabelsPaint = new SolidColorPaint(SKColors.Gray),
+                    TextSize = 10
+                }
+            };
+
+            SalesmanChartYAxes = new Axis[]
+            {
+                new Axis
+                {
+                    LabelsPaint = new SolidColorPaint(SKColors.Gray),
+                    Labeler = value => $"AED {value:N0}"
                 }
             };
         }
 
-        // PATCH 4: Updated method signature - now uses aliased types
-        private void InitializeSalesmanArrays(List<DailyWork> dailyWorks, List<Delivery> deliveries)
+        // ════════════════════════════════════════════════════════════════════
+        // FILTER LOGIC
+        // ════════════════════════════════════════════════════════════════════
+
+        private void ApplyFilter(string filter)
         {
-            try
+            SelectedFilter = filter;
+
+            // Reset all filters
+            DayFilterBg = "#F3F4F6"; WeekFilterBg = "#F3F4F6"; MonthFilterBg = "#F3F4F6"; YearFilterBg = "#F3F4F6";
+            DayFilterFg = "#1F2937"; WeekFilterFg = "#1F2937"; MonthFilterFg = "#1F2937"; YearFilterFg = "#1F2937";
+
+            // Apply selected filter
+            switch (filter)
             {
-                // Get salesmen from data instead of separate table
-                var allSalesmen = dailyWorks
-                    .Where(d => !string.IsNullOrWhiteSpace(d.Salesman))
-                    .Select(d => d.Salesman)
-                    .Union(
-                        deliveries
-                        .Where(d => !string.IsNullOrWhiteSpace(d.Salesman))
-                        .Select(d => d.Salesman))
-                    .Distinct()
-                    .ToList();
-
-                var salesmanData = allSalesmen.Select(s => new
-                {
-                    Name = s,
-                    DailyWorkTotal = dailyWorks.Where(d => d.Salesman == s).Sum(d => d.SQM),
-                    DeliveryTotal = deliveries.Where(d => d.Salesman == s).Sum(d => d.OrderSQM)
-                })
-                .Select(x => new { x.Name, Total = x.DailyWorkTotal + x.DeliveryTotal })
-                .OrderByDescending(x => x.Total)
-                .Take(9)
-                .ToList();
-
-                SalesmanNames.Clear();
-                SalesmanAmounts.Clear();
-                SalesmanDiffs.Clear();
-
-                if (salesmanData.Any())
-                {
-                    foreach (var item in salesmanData)
-                    {
-                        SalesmanNames.Add(item.Name);
-                        SalesmanAmounts.Add($"AED {item.Total:N0}");
-                        SalesmanDiffs.Add("Active");
-                    }
-                }
-                else
-                {
-                    // PATCH 7: Changed from 5 to 9
-                    for (int i = 0; i < 9; i++)
-                    {
-                        SalesmanNames.Add("No Salesmen");
-                        SalesmanAmounts.Add("AED 0");
-                        SalesmanDiffs.Add("+0%");
-                    }
-                }
-
-                OnPropertyChanged(nameof(SalesmanNames));
-                OnPropertyChanged(nameof(SalesmanAmounts));
-                OnPropertyChanged(nameof(SalesmanDiffs));
+                case "Today":
+                    DayFilterBg = "#2563EB"; DayFilterFg = "#FFFFFF";
+                    break;
+                case "This Week":
+                    WeekFilterBg = "#2563EB"; WeekFilterFg = "#FFFFFF";
+                    break;
+                case "This Month":
+                    MonthFilterBg = "#2563EB"; MonthFilterFg = "#FFFFFF";
+                    break;
+                case "This Year":
+                    YearFilterBg = "#2563EB"; YearFilterFg = "#FFFFFF";
+                    break;
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[DashboardViewModel] InitializeSalesmanArrays Error: {ex.Message}");
-            }
+
+            // Notify property changes
+            OnPropertyChanged(nameof(SelectedFilter));
+            OnPropertyChanged(nameof(DayFilterBg)); OnPropertyChanged(nameof(WeekFilterBg));
+            OnPropertyChanged(nameof(MonthFilterBg)); OnPropertyChanged(nameof(YearFilterBg));
+            OnPropertyChanged(nameof(DayFilterFg)); OnPropertyChanged(nameof(WeekFilterFg));
+            OnPropertyChanged(nameof(MonthFilterFg)); OnPropertyChanged(nameof(YearFilterFg));
+
+            // Reload data with new filter
+            LoadData();
         }
 
-        // ══════════════════════════════════════════════════════════════════════════════
+        // ════════════════════════════════════════════════════════════════════
         // LOAD DATA
-        // ══════════════════════════════════════════════════════════════════════════════
+        // ════════════════════════════════════════════════════════════════════
 
         public void LoadData()
         {
             try
             {
-                // PATCH 3: Cache DB results - fetch once, pass to methods
                 var dailyWorks = DbHelper.GetAllDailyWork();
                 var deliveries = DbHelper.GetAllDeliveries();
                 var pis = DbHelper.GetAllProformaInvoices();
                 var jos = DbHelper.GetAllJobOrders();
                 var sheets = DbHelper.GetAllSheets();
 
-                LoadPIStats(pis, dailyWorks, deliveries);
+                // Filter data based on selected filter
+                var filteredWorks = FilterData(dailyWorks, pis);
+
+                LoadPIStats(pis, filteredWorks, deliveries);
                 LoadJOStats(jos);
                 LoadDeliveryStats(deliveries);
                 LoadSheetStats(sheets);
-                LoadBalanceStats(dailyWorks);
-                UpdateChartData(dailyWorks);
-                InitializeSalesmanArrays(dailyWorks, deliveries);
+                LoadBalanceStats(filteredWorks);
+                UpdateChartData(filteredWorks);
+                LoadSalesmanData(dailyWorks, deliveries, pis);
 
                 LastUpdate = $"Last update: {DateTime.Now:HH:mm}";
                 OnPropertyChanged(nameof(LastUpdate));
@@ -240,11 +278,100 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // PATCH 4: Updated method parameters - using aliased types
-        private void LoadPIStats(
-            List<ProformaInvoice> pis,
+        private List<DailyWork> FilterData(List<DailyWork> dailyWorks, List<ProformaInvoiceModel> pis)
+        {
+            var today = DateTime.Today;
+
+            switch (SelectedFilter)
+            {
+                case "Today":
+                    return dailyWorks.Where(d => d.Date.Date == today).ToList();
+
+                case "This Week":
+                    var weekStart = today.AddDays(-(int)today.DayOfWeek + (int)DayOfWeek.Monday);
+                    if (today.DayOfWeek == DayOfWeek.Sunday) weekStart = weekStart.AddDays(-7);
+                    return dailyWorks.Where(d => d.Date.Date >= weekStart && d.Date.Date <= today).ToList();
+
+                case "This Month":
+                    var monthStart = new DateTime(today.Year, today.Month, 1);
+                    return dailyWorks.Where(d => d.Date >= monthStart).ToList();
+
+                case "This Year":
+                    var yearStart = new DateTime(today.Year, 1, 1);
+                    return dailyWorks.Where(d => d.Date >= yearStart).ToList();
+
+                default:
+                    return dailyWorks;
+            }
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        // SALESMAN DATA
+        // ════════════════════════════════════════════════════════════
+
+        private void LoadSalesmanData(
             List<DailyWork> dailyWorks,
-            List<Delivery> deliveries)
+            List<Delivery> deliveries,
+            List<ProformaInvoiceModel> pis)
+        {
+            try
+            {
+                var defaultNames = new[]
+                {
+                    "Mr Pradeep", "Mr Sooraj", "Ms Maya Ibrahim",
+                    "Mr Aftab Akram", "Mr Talha", "Mr Bilal",
+                    "Mr Salman (Sunny)", "Mr Harvinder", "Mr Nazim"
+                };
+
+                // Calculate totals for each salesman from ProformaInvoices
+                var piSalesmen = pis
+                    .Where(p => !string.IsNullOrWhiteSpace(p.Salesman) && p.Status == "Confirmed")
+                    .GroupBy(p => p.Salesman)
+                    .Select(g => new SalesmanData
+                    {
+                        Name = g.Key,
+                        Amount = $"AED {g.Sum(x => x.NetAmount):N0}"
+                    })
+                    .ToDictionary(s => s.Name, s => s.Amount);
+
+                // Update SalesmanList
+                SalesmanList.Clear();
+                for (int i = 0; i < defaultNames.Length; i++)
+                {
+                    var name = defaultNames[i];
+                    var amount = piSalesmen.ContainsKey(name) ? piSalesmen[name] : "AED 0";
+                    SalesmanList.Add(new SalesmanData { Name = name, Amount = amount });
+                }
+
+                // Update Salesman Performance Chart
+                var performanceValues = new double[9];
+                for (int i = 0; i < defaultNames.Length; i++)
+                {
+                    var name = defaultNames[i];
+                    if (piSalesmen.ContainsKey(name))
+                    {
+                        var amountStr = piSalesmen[name].Replace("AED ", "").Replace(",", "");
+                        double.TryParse(amountStr, out double amount);
+                        performanceValues[i] = amount / 1000; // Convert to thousands
+                    }
+                }
+
+                _salesmanColumnSeries.Values = performanceValues;
+
+                OnPropertyChanged(nameof(SalesmanList));
+                OnPropertyChanged(nameof(SalesmanPerformance));
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DashboardViewModel] LoadSalesmanData Error: {ex.Message}");
+            }
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        // STATS METHODS
+        // ════════════════════════════════════════════════════════════
+
+        private void LoadPIStats(List<ProformaInvoiceModel> pis, List<DailyWork> dailyWorks, List<Delivery> deliveries)
         {
             try
             {
@@ -262,17 +389,11 @@ namespace ProGlassAutomation.ViewModels
 
                 var dwSalesmen = dailyWorks.Where(d => !string.IsNullOrEmpty(d.Salesman)).Select(d => d.Salesman).Distinct().ToList();
                 var delSalesmen = deliveries.Where(d => !string.IsNullOrEmpty(d.Salesman)).Select(d => d.Salesman).Distinct().ToList();
-                var allSalesmen = dwSalesmen.Union(delSalesmen).Distinct().ToList();
+                var piSalesmen = pis.Where(p => !string.IsNullOrEmpty(p.Salesman)).Select(p => p.Salesman).Distinct().ToList();
+                var allSalesmen = dwSalesmen.Union(delSalesmen).Union(piSalesmen).Distinct().ToList();
                 Salesmen = allSalesmen.Count.ToString();
 
-                OnPropertyChanged(nameof(TotalRevenue));
-                OnPropertyChanged(nameof(Orders));
-                OnPropertyChanged(nameof(Salesmen));
-                OnPropertyChanged(nameof(PITotal));
-                OnPropertyChanged(nameof(PIConfirmed));
-                OnPropertyChanged(nameof(PIPending));
-                OnPropertyChanged(nameof(PIValue));
-                OnPropertyChanged(nameof(PendingQuotes));
+                NotifyStatsProperties();
             }
             catch (Exception ex)
             {
@@ -280,26 +401,18 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // PATCH 4: Updated method parameter - using aliased type
-        private void LoadJOStats(List<JobOrder> jos)
+        private void LoadJOStats(List<JobOrderModel> jos)
         {
             try
             {
                 JOTotal = jos.Count.ToString();
                 JOInProgress = jos.Count(j => j.Status == "In Progress" || j.Status == "Pending").ToString();
                 JOCompleted = jos.Count(j => j.Status == "Completed").ToString();
-
-                OnPropertyChanged(nameof(JOTotal));
-                OnPropertyChanged(nameof(JOInProgress));
-                OnPropertyChanged(nameof(JOCompleted));
+                OnPropertyChanged(nameof(JOTotal)); OnPropertyChanged(nameof(JOInProgress)); OnPropertyChanged(nameof(JOCompleted));
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[DashboardViewModel] LoadJOStats Error: {ex.Message}");
-            }
+            catch { }
         }
 
-        // PATCH 4: Updated method parameter - using aliased type
         private void LoadDeliveryStats(List<Delivery> deliveries)
         {
             try
@@ -307,18 +420,11 @@ namespace ProGlassAutomation.ViewModels
                 DelTotal = deliveries.Count.ToString();
                 DelPending = deliveries.Count(d => d.Status == "Pending" || d.Status == "In Transit").ToString();
                 DelCompleted = deliveries.Count(d => d.Status == "Completed").ToString();
-
-                OnPropertyChanged(nameof(DelTotal));
-                OnPropertyChanged(nameof(DelPending));
-                OnPropertyChanged(nameof(DelCompleted));
+                OnPropertyChanged(nameof(DelTotal)); OnPropertyChanged(nameof(DelPending)); OnPropertyChanged(nameof(DelCompleted));
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[DashboardViewModel] LoadDeliveryStats Error: {ex.Message}");
-            }
+            catch { }
         }
 
-        // PATCH 4: Updated method parameter - using aliased type
         private void LoadSheetStats(List<Sheet> sheets)
         {
             try
@@ -327,18 +433,11 @@ namespace ProGlassAutomation.ViewModels
                 SheetTotal = totalQty.ToString();
                 SheetAvailable = sheets.Count(s => s.BalanceSheets > 0).ToString();
                 SheetTypes = sheets.Select(s => s.Thickness).Distinct().Count().ToString();
-
-                OnPropertyChanged(nameof(SheetTotal));
-                OnPropertyChanged(nameof(SheetAvailable));
-                OnPropertyChanged(nameof(SheetTypes));
+                OnPropertyChanged(nameof(SheetTotal)); OnPropertyChanged(nameof(SheetAvailable)); OnPropertyChanged(nameof(SheetTypes));
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[DashboardViewModel] LoadSheetStats Error: {ex.Message}");
-            }
+            catch { }
         }
 
-        // PATCH 4: Updated method parameter - using aliased type
         private void LoadBalanceStats(List<DailyWork> dailyWorks)
         {
             try
@@ -359,18 +458,11 @@ namespace ProGlassAutomation.ViewModels
                 var yearBal = yearWorks.Sum(d => d.SQM * 100);
                 AnnualBalance = $"AED {yearBal:N0}";
 
-                OnPropertyChanged(nameof(DailyBalance));
-                OnPropertyChanged(nameof(MonthlyBalance));
-                OnPropertyChanged(nameof(AnnualBalance));
+                OnPropertyChanged(nameof(DailyBalance)); OnPropertyChanged(nameof(MonthlyBalance)); OnPropertyChanged(nameof(AnnualBalance));
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[DashboardViewModel] LoadBalanceStats Error: {ex.Message}");
-            }
+            catch { }
         }
 
-        // PATCH 4: Updated method parameter - using aliased type
-        // PATCH 5: Update values instead of recreating chart
         private void UpdateChartData(List<DailyWork> dailyWorks)
         {
             try
@@ -393,31 +485,25 @@ namespace ProGlassAutomation.ViewModels
                     values[i] = (dayData?.Total ?? 0) / 10;
                 }
 
-                // PATCH 5: Update existing series instead of recreating
                 _salesSeries.Values = values;
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[DashboardViewModel] UpdateChartData Error: {ex.Message}");
-            }
+            catch { }
         }
 
-        // ══════════════════════════════════════════════════════════════════════════════
+        private void NotifyStatsProperties()
+        {
+            OnPropertyChanged(nameof(TotalRevenue)); OnPropertyChanged(nameof(Orders)); OnPropertyChanged(nameof(Salesmen));
+            OnPropertyChanged(nameof(PITotal)); OnPropertyChanged(nameof(PIConfirmed)); OnPropertyChanged(nameof(PIPending));
+            OnPropertyChanged(nameof(PIValue)); OnPropertyChanged(nameof(PendingQuotes));
+        }
+
+        // ════════════════════════════════════════════════════════════════════
         // ACTIONS
-        // ══════════════════════════════════════════════════════════════════════════════
+        // ════════════════════════════════════════════════════════════
 
         public void Sync()
         {
-            try
-            {
-                LastSync = DateTime.Now.ToString("HH:mm");
-                OnPropertyChanged(nameof(LastSync));
-                LoadData();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[DashboardViewModel] Sync Error: {ex.Message}");
-            }
+            LoadData();
         }
 
         public void Activate()
@@ -425,9 +511,9 @@ namespace ProGlassAutomation.ViewModels
             MessageBox.Show("Please enter your license key to activate.", "Activate", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
-        // ══════════════════════════════════════════════════════════════════════════════
+        // ════════════════════════════════════════════════════════════════════
         // PROPERTY CHANGED
-        // ══════════════════════════════════════════════════════════════════════════════
+        // ════════════════════════════════════════════════════════════════════
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -437,9 +523,13 @@ namespace ProGlassAutomation.ViewModels
         }
     }
 
-    public class ActivityItem
+    // ════════════════════════════════════════════════════════════════════
+    // SALESMAN DATA CLASS
+    // ════════════════════════════════════════════════════════════════════
+
+    public class SalesmanData
     {
-        public string Message { get; set; } = "";
-        public string Time { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string Amount { get; set; } = "";
     }
 }

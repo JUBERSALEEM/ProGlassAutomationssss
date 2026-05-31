@@ -1881,6 +1881,28 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
             });
         }
 
+        // ==================== CLEAR ALL PROFROMA INVOICES ====================
+        public static void ClearAllProformaInvoices()
+        {
+            try
+            {
+                Init();
+                Execute(conn =>
+                {
+                    using var cmd = conn.CreateCommand();
+                    cmd.CommandText = "DELETE FROM ProformaInvoiceItems";
+                    cmd.ExecuteNonQuery();
+                    cmd.CommandText = "DELETE FROM ProformaInvoices";
+                    cmd.ExecuteNonQuery();
+                });
+                System.Diagnostics.Debug.WriteLine("[DB] Cleared all ProformaInvoices");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DB] Clear Error: {ex.Message}");
+            }
+        }
+
         // ═══════════════════════════════════════════════════
         // JOB ORDER METHODS
         // ═══════════════════════════════════════════════════
