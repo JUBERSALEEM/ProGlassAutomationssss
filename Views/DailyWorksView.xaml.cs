@@ -10,7 +10,8 @@ namespace ProGlassAutomation.Views
 {
     public partial class DailyWorksView : UserControl
     {
-        private bool _isSelectingAll = false;
+        // PATCH #3: Guard flag for bulk selection
+        private bool _isBulkSelecting = false;
 
         public DailyWorksView()
         {
@@ -50,28 +51,36 @@ namespace ProGlassAutomation.Views
         {
             if (sender is CheckBox checkBox && MainDataGrid != null)
             {
-                _isSelectingAll = true;
+                // PATCH #3: Set bulk select flag BEFORE selection
+                _isBulkSelecting = true;
 
-                if (checkBox.IsChecked == true)
+                // PATCH #4: Force UI update with Dispatcher
+                MainDataGrid.Dispatcher.Invoke(() =>
                 {
-                    MainDataGrid.SelectAll();
-                }
-                else
-                {
-                    MainDataGrid.UnselectAll();
-                }
+                    if (checkBox.IsChecked == true)
+                    {
+                        MainDataGrid.SelectAll();
+                    }
+                    else
+                    {
+                        MainDataGrid.UnselectAll();
+                    }
+                    MainDataGrid.UpdateLayout();
+                });
 
-                _isSelectingAll = false;
+                // PATCH #3: Clear flag AFTER selection
+                _isBulkSelecting = false;
+
                 UpdateSelectedIds();
             }
         }
 
         private void MainDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (!_isSelectingAll)
-            {
-                UpdateSelectedIds();
-            }
+            // PATCH #3: Guard against bulk selection to prevent incorrect count
+            if (_isBulkSelecting) return;
+
+            UpdateSelectedIds();
         }
 
         private void UpdateSelectedIds()

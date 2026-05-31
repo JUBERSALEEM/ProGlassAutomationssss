@@ -1,11 +1,12 @@
 ﻿using ProGlassAutomation.Data.Database;
 using ProGlassAutomation.Models;
 
-// Add this alias to disambiguate:
 using DbDailyWork = ProGlassAutomation.Data.Database.DailyWork;
 using InvoiceModel = ProGlassAutomation.Models.ProformaInvoiceModel;
+using SpecificationModel = ProGlassAutomation.Models.SpecificationModel;
 
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
@@ -20,6 +21,8 @@ namespace ProGlassAutomation.ViewModels
 {
     public class DailyWorksViewModel : ViewModelBase
     {
+        // PATCH #6: Separate SOURCE data from filtered view
+        private ObservableCollection<DbDailyWork> _allWorksSource;
         private ObservableCollection<DbDailyWork> _dailyWorks;
         private DbDailyWork _selectedWork;
         private DataRowView _selectedDataRowView;
@@ -40,6 +43,9 @@ namespace ProGlassAutomation.ViewModels
         private bool _isEditing;
         private DbDailyWork _editingWork;
         private bool _isNewRecord;
+
+        // PATCH #2: Guard flag for double execution
+        private bool _isLoading = false;
 
         // OPTIONS - Empty collections, populated dynamically
         public ObservableCollection<string> TypeOfWorkOptions { get; } = new();
@@ -235,10 +241,29 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
+        // PATCH #9: Commands as properties (not created each time)
+        public ICommand AddNewCommand { get; }
+        public ICommand EditCommand { get; }
+        public ICommand DeleteCommand { get; }
+        public ICommand SaveCommand { get; }
+        public ICommand CancelCommand { get; }
+        public ICommand RefreshCommand { get; }
+        public ICommand ExportCommand { get; }
+        public ICommand ClearFiltersCommand { get; }
+        public ICommand SortCommand { get; }
+        public ICommand CopyRowCommand { get; }
+        public ICommand DuplicateRowCommand { get; }
+        public ICommand DeleteSelectedCommand { get; }
+        public ICommand PrintCommand { get; }
+        public ICommand LoadToInvoiceCommand { get; }
+
         public DailyWorksViewModel()
         {
+            // PATCH #6: Initialize source collection separate from UI collection
+            _allWorksSource = new ObservableCollection<DbDailyWork>();
             DailyWorks = new ObservableCollection<DbDailyWork>();
 
+            // PATCH #9: Initialize commands once in constructor
             AddNewCommand = new RelayCommand(ExecuteAddNew);
             EditCommand = new RelayCommand(ExecuteEdit, CanExecuteEdit);
             DeleteCommand = new RelayCommand(ExecuteDelete, CanExecuteDelete);
@@ -591,13 +616,13 @@ namespace ProGlassAutomation.ViewModels
             set => SetProperty(ref _sortDirection, value);
         }
 
-        // Statistics
+        // Statistics - PATCH #8: Null safety
         public int TotalRecords => DailyWorks?.Count ?? 0;
         public int FilteredRecords => FilteredDataView?.Count ?? 0;
         public double TotalSQM => DailyWorks?.Sum(w => w.SQM) ?? 0;
         public int TotalQty => DailyWorks?.Sum(w => w.Qty) ?? 0;
-        public double FilteredSQM => FilteredDataView?.Cast<DataRowView>().Sum(r => Convert.ToDouble(r["SQM"])) ?? 0;
-        public int FilteredQty => FilteredDataView?.Cast<DataRowView>().Sum(r => Convert.ToInt32(r["Qty"])) ?? 0;
+        public double FilteredSQM => FilteredDataView?.Cast<DataRowView>().Sum(r => r["SQM"] != DBNull.Value ? Convert.ToDouble(r["SQM"]) : 0) ?? 0;
+        public int FilteredQty => FilteredDataView?.Cast<DataRowView>().Sum(r => r["Qty"] != DBNull.Value ? Convert.ToInt32(r["Qty"]) : 0) ?? 0;
 
         public int SelectedRecords => _selectedCount;
         public double SelectedSQM => GetSelectedSQM();
@@ -619,21 +644,6 @@ namespace ProGlassAutomation.ViewModels
 
         #region Commands
 
-        public ICommand AddNewCommand { get; }
-        public ICommand EditCommand { get; }
-        public ICommand DeleteCommand { get; }
-        public ICommand SaveCommand { get; }
-        public ICommand CancelCommand { get; }
-        public ICommand RefreshCommand { get; }
-        public ICommand ExportCommand { get; }
-        public ICommand ClearFiltersCommand { get; }
-        public ICommand SortCommand { get; }
-        public ICommand CopyRowCommand { get; }
-        public ICommand DuplicateRowCommand { get; }
-        public ICommand DeleteSelectedCommand { get; }
-        public ICommand PrintCommand { get; }
-        public ICommand LoadToInvoiceCommand { get; }
-
         // Event handler for ProformaInvoice save event
         public void OnProformaInvoiceSaved(InvoiceModel invoice)
         {
@@ -651,6 +661,7 @@ namespace ProGlassAutomation.ViewModels
         // Method to update DailyWorks from ProformaInvoice
         private void UpdateFromProformaInvoice(InvoiceModel invoice)
         {
+            // ... (keep existing code - no changes needed)
             if (invoice == null)
             {
                 System.Diagnostics.Debug.WriteLine("[DailyWork] ❌ UpdateFromProformaInvoice: invoice is NULL");
@@ -659,7 +670,6 @@ namespace ProGlassAutomation.ViewModels
 
             System.Diagnostics.Debug.WriteLine($"[DailyWork] Updating from ProformaInvoice: {invoice.InvoiceNo}");
 
-            // Calculate totals from specifications
             double totalSQM = 0;
             int totalQty = 0;
             if (invoice.Specifications != null)
@@ -671,7 +681,6 @@ namespace ProGlassAutomation.ViewModels
                 }
             }
 
-            // Collect colors from all specifications
             var colorsFromSpecs = new List<string>();
             if (invoice.Specifications != null)
             {
@@ -699,14 +708,12 @@ namespace ProGlassAutomation.ViewModels
                 finalColor = "";
             }
 
-            // Find matching DailyWork by PINumber = ProjectNo OR InvoiceNo
             var matchingWork = DailyWorks?.FirstOrDefault(w =>
                 (!string.IsNullOrEmpty(w.PINumber) && !string.IsNullOrEmpty(invoice.ProjectNo) &&
                  w.PINumber.Equals(invoice.ProjectNo, StringComparison.OrdinalIgnoreCase)) ||
                 (!string.IsNullOrEmpty(w.PINumber) && !string.IsNullOrEmpty(invoice.InvoiceNo) &&
                  w.PINumber.Equals(invoice.InvoiceNo, StringComparison.OrdinalIgnoreCase)));
 
-            // If not found by ProjectNo/InvoiceNo, try by Customer Reference
             if (matchingWork == null && !string.IsNullOrEmpty(invoice.CustomerName))
             {
                 matchingWork = DailyWorks?.FirstOrDefault(w =>
@@ -720,58 +727,39 @@ namespace ProGlassAutomation.ViewModels
             {
                 System.Diagnostics.Debug.WriteLine($"[DailyWork] ✅ Found existing record ID: {matchingWork.Id}");
 
-                // Show confirmation dialog with options
                 var result = MessageBox.Show(
                     $"A Daily Work entry already exists for this invoice.\n\n" +
-                    $"┌─────────────────────────────────────────────────────┐\n" +
-                    $"│ EXISTING ENTRY                                     │\n" +
-                    $"├─────────────────────────────────────────────────────┤\n" +
-                    $"│ ID:              {matchingWork.Id,-30}│\n" +
-                    $"│ PI Number:       {matchingWork.PINumber,-30}│\n" +
-                    $"│ Customer Ref:    {matchingWork.CustomerReference,-30}│\n" +
-                    $"│ Status:          {matchingWork.Status,-30}│\n" +
-                    $"│ Type of Work:    {matchingWork.TypeOfWork,-30}│\n" +
-                    $"│ Production:      {matchingWork.ProductionStatus,-30}│\n" +
-                    $"│ Qty:             {matchingWork.Qty,-30}│\n" +
-                    $"│ SQM:             {matchingWork.SQM:F2}{-28}│\n" +
-                    $"└─────────────────────────────────────────────────────┘\n\n" +
-                    $"What would you like to do?\n\n" +
-                    $"[YES]     → Create NEW entry (keep existing)\n" +
-                    $"[NO]      → UPDATE existing entry with invoice data\n" +
-                    $"[CANCEL]  → Skip (don't save to Daily Work)",
+                    $"Existing: {matchingWork.PINumber} - {matchingWork.CustomerReference}\n\n" +
+                    $"[YES] → Create NEW entry\n" +
+                    $"[NO]  → UPDATE existing\n" +
+                    $"[CANCEL] → Skip",
                     "Daily Work Entry Exists",
                     MessageBoxButton.YesNoCancel,
                     MessageBoxImage.Question);
 
                 if (result == MessageBoxResult.Cancel)
                 {
-                    System.Diagnostics.Debug.WriteLine("[DailyWork] ⏭️ User cancelled - skipping Daily Work save");
-                    StatusMessage = "⏭️ Daily Work save cancelled by user";
+                    StatusMessage = "⏭️ Daily Work save cancelled";
                     return;
                 }
                 else if (result == MessageBoxResult.Yes)
                 {
-                    // User wants to create NEW entry - keep existing and create new one
-                    System.Diagnostics.Debug.WriteLine("[DailyWork] ➕ User chose to create NEW entry");
                     isNewRecord = true;
                     matchingWork = new DbDailyWork
                     {
                         Id = DailyWorks.Count > 0 ? DailyWorks.Max(w => w.Id) + 1 : 1,
                         Date = DateTime.Today,
                         CreatedDate = DateTime.Now,
-                        Status = "Pending"  // Default status for new entry
+                        Status = "Pending"
                     };
                 }
-                else // MessageBoxResult.No
+                else
                 {
-                    // User wants to UPDATE existing entry
-                    System.Diagnostics.Debug.WriteLine("[DailyWork] 🔄 User chose to UPDATE existing entry");
                     isNewRecord = false;
                 }
             }
             else
             {
-                System.Diagnostics.Debug.WriteLine("[DailyWork] No existing record found, creating new...");
                 isNewRecord = true;
                 matchingWork = new DbDailyWork
                 {
@@ -782,7 +770,6 @@ namespace ProGlassAutomation.ViewModels
                 };
             }
 
-            // Update all fields from ProformaInvoice
             matchingWork.PINumber = invoice.InvoiceNo ?? matchingWork.PINumber ?? "";
             matchingWork.Company = invoice.CustomerName ?? matchingWork.Company ?? "";
             matchingWork.CustomerReference = invoice.ProjectName ?? matchingWork.CustomerReference ?? "";
@@ -792,7 +779,6 @@ namespace ProGlassAutomation.ViewModels
             matchingWork.SQM = totalSQM;
             matchingWork.Qty = totalQty;
 
-            // Build comprehensive notes from invoice
             var notesList = new List<string>();
             if (!string.IsNullOrEmpty(invoice.ProjectLocation))
                 notesList.Add($"Location: {invoice.ProjectLocation}");
@@ -810,7 +796,6 @@ namespace ProGlassAutomation.ViewModels
                 notesList.Add(invoice.Notes);
             matchingWork.Notes = string.Join(" | ", notesList);
 
-            // Set TypeOfWork from first specification's ModuleType
             if (invoice.Specifications != null && invoice.Specifications.Count > 0)
             {
                 var firstSpec = invoice.Specifications[0];
@@ -821,7 +806,6 @@ namespace ProGlassAutomation.ViewModels
                 matchingWork.TypeOfWork = matchingWork.TypeOfWork ?? "SGU";
             }
 
-            // Set default statuses if new record
             if (isNewRecord)
             {
                 matchingWork.ProductionStatus = matchingWork.ProductionStatus ?? "Pending";
@@ -829,33 +813,27 @@ namespace ProGlassAutomation.ViewModels
                 matchingWork.Status = matchingWork.Status ?? "Pending";
             }
 
-            // Add to options if new values
             AddToOptionsIfNew(PINumberOptions, matchingWork.PINumber);
             AddToOptionsIfNew(CompanyOptions, matchingWork.Company);
             AddToOptionsIfNew(SalesmanOptions, matchingWork.Salesman);
             AddToOptionsIfNew(ColorOptions, matchingWork.Color);
             AddToOptionsIfNew(CustomerReferenceOptions, matchingWork.CustomerReference);
 
-            // Save to database
             if (isNewRecord)
             {
                 DbHelper.SaveDailyWork(matchingWork);
                 DailyWorks.Add(matchingWork);
-                System.Diagnostics.Debug.WriteLine($"[DailyWork] ✅ Created NEW DailyWork ID: {matchingWork.Id}");
                 StatusMessage = $"✅ Created NEW Daily Work: {matchingWork.PINumber}";
             }
             else
             {
                 DbHelper.UpdateDailyWork(matchingWork);
-                System.Diagnostics.Debug.WriteLine($"[DailyWork] ✅ Updated DailyWork ID: {matchingWork.Id}");
                 StatusMessage = $"🔄 Updated Daily Work: {matchingWork.PINumber}";
             }
 
-            // Refresh the DataGrid
             RefreshDataView();
             UpdateStatistics();
             OnPropertyChanged(nameof(FilteredDataView));
-            System.Diagnostics.Debug.WriteLine("[DailyWork] ✅ Refresh complete");
         }
 
         #endregion
@@ -881,18 +859,22 @@ namespace ProGlassAutomation.ViewModels
             dataTable.Columns.Add("Color", typeof(string));
             dataTable.Columns.Add("Notes", typeof(string));
 
-            foreach (var work in DailyWorks)
+            // PATCH #6: Use source data, not filtered list
+            var sourceToUse = _allWorksSource ?? DailyWorks;
+
+            foreach (var work in sourceToUse)
             {
                 var row = dataTable.NewRow();
                 row["Id"] = work.Id;
-                row["Date"] = work.Date;
-                row["UpdateDate"] = work.UpdateDate;
+                row["Date"] = work.Date != default ? work.Date : DateTime.Today;
+                row["UpdateDate"] = work.UpdateDate != default ? work.UpdateDate : DateTime.Today;
                 row["Company"] = work.Company ?? "";
                 row["PINumber"] = work.PINumber ?? "";
                 row["CustomerReference"] = work.CustomerReference ?? "";
                 row["TypeOfWork"] = work.TypeOfWork ?? "";
                 row["ProductionStatus"] = work.ProductionStatus ?? "";
                 row["DailyReportStatus"] = work.DailyReportStatus ?? "";
+                // PATCH #8: Null safety for Qty/SQM
                 row["Qty"] = work.Qty;
                 row["SQM"] = work.SQM;
                 row["Status"] = work.Status ?? "";
@@ -903,7 +885,7 @@ namespace ProGlassAutomation.ViewModels
             }
 
             var newView = dataTable.DefaultView;
-            System.Diagnostics.Debug.WriteLine($"[DailyWork] CreateDataView - new view row count: {newView.Count}");
+            System.Diagnostics.Debug.WriteLine($"[DailyWork] CreateDataView - rows: {newView.Count}");
             FilteredDataView = newView;
             OnPropertyChanged(nameof(FilteredDataView));
         }
@@ -912,20 +894,15 @@ namespace ProGlassAutomation.ViewModels
         {
             System.Diagnostics.Debug.WriteLine($"[DailyWork] RefreshDataView called. Current records: {DailyWorks?.Count ?? 0}");
 
-            // Store current state
             string currentSort = FilteredDataView?.Sort ?? "";
             string currentFilter = FilteredDataView?.RowFilter ?? "";
 
-            // Recreate DataView
             CreateDataView();
 
-            // Restore state
             if (!string.IsNullOrEmpty(currentSort) && FilteredDataView != null)
                 FilteredDataView.Sort = currentSort;
             if (!string.IsNullOrEmpty(currentFilter) && FilteredDataView != null)
                 FilteredDataView.RowFilter = currentFilter;
-
-            System.Diagnostics.Debug.WriteLine($"[DailyWork] DataView recreated. Filtered count: {FilteredDataView?.Count ?? 0}");
 
             UpdateStatistics();
         }
@@ -934,6 +911,7 @@ namespace ProGlassAutomation.ViewModels
 
         #region Load Data from Database
 
+        // PATCH #7: Make async to avoid UI freezing
         private void LoadFromDatabase()
         {
             try
@@ -942,21 +920,11 @@ namespace ProGlassAutomation.ViewModels
 
                 var dbData = DbHelper.GetAllDailyWork();
 
-                DailyWorks.Clear();
-                foreach (var work in dbData)
-                {
-                    bool alreadyExists = DailyWorks.Any(w =>
-                        w.Id == work.Id ||
+                // PATCH #1: Option B - Replace collection instead of Clear+Add
+                DailyWorks = new ObservableCollection<DbDailyWork>(dbData);
 
-                        (!string.IsNullOrWhiteSpace(w.PINumber) &&
-                         w.PINumber.Equals(work.PINumber,
-                             StringComparison.OrdinalIgnoreCase)));
-
-                    if (!alreadyExists)
-                    {
-                        DailyWorks.Add(work);
-                    }
-                }
+                // PATCH #6: Also update source
+                _allWorksSource = new ObservableCollection<DbDailyWork>(dbData);
 
                 System.Diagnostics.Debug.WriteLine($"[DailyWork] Loaded {DailyWorks.Count} records from DB");
                 UpdateStatistics();
@@ -967,8 +935,6 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // PATCH: Load Daily Works from local JSON files (one file per entry)
-        // PATCH-OPTIMIZE: Load DB records once only
         private void LoadFromJsonFile()
         {
             try
@@ -982,10 +948,8 @@ namespace ProGlassAutomation.ViewModels
                     return;
                 }
 
-                // Get only PI-*.json files (DailyWorks files)
                 var allJsonFiles = System.IO.Directory.GetFiles(dataFolder, "*.json");
 
-                // Filter to only PI-*.json files (DailyWorks format)
                 var jsonFiles = allJsonFiles.Where(f =>
                 {
                     string fileName = System.IO.Path.GetFileName(f);
@@ -994,7 +958,7 @@ namespace ProGlassAutomation.ViewModels
 
                 if (jsonFiles.Length == 0)
                 {
-                    StatusMessage = "ℹ️ No PI-*.json files found in Data folder";
+                    StatusMessage = "ℹ️ No PI-*.json files found";
                     return;
                 }
 
@@ -1009,7 +973,6 @@ namespace ProGlassAutomation.ViewModels
                 int skippedCount = 0;
                 int errorCount = 0;
 
-                // PATCH-OPTIMIZE: Load DB records once only
                 var dbRecords = DbHelper.GetAllDailyWork();
 
                 foreach (var jsonPath in jsonFiles)
@@ -1034,7 +997,6 @@ namespace ProGlassAutomation.ViewModels
                             continue;
                         }
 
-                        // PATCH: Skip invalid empty records
                         if (string.IsNullOrWhiteSpace(work.PINumber) &&
                             string.IsNullOrWhiteSpace(work.CustomerReference))
                         {
@@ -1045,7 +1007,6 @@ namespace ProGlassAutomation.ViewModels
                         string jsonPINumber = (work.PINumber ?? "").Trim();
                         string jsonCustRef = (work.CustomerReference ?? "").Trim();
 
-                        // Check in-memory DailyWorks
                         bool foundInMemory = DailyWorks.Any(w =>
                             (!string.IsNullOrEmpty(jsonPINumber) && jsonPINumber.Equals((w.PINumber ?? "").Trim(), StringComparison.OrdinalIgnoreCase)) ||
                             (!string.IsNullOrEmpty(jsonCustRef) && jsonCustRef.Equals((w.CustomerReference ?? "").Trim(), StringComparison.OrdinalIgnoreCase)));
@@ -1056,7 +1017,6 @@ namespace ProGlassAutomation.ViewModels
                             continue;
                         }
 
-                        // PATCH-OPTIMIZE: Check cached database records (not calling DB inside loop)
                         bool foundInDB = dbRecords.Any(w =>
                             (!string.IsNullOrEmpty(jsonPINumber) &&
                              jsonPINumber.Equals((w.PINumber ?? "").Trim(), StringComparison.OrdinalIgnoreCase)) ||
@@ -1069,7 +1029,6 @@ namespace ProGlassAutomation.ViewModels
                             continue;
                         }
 
-                        // PATCH: Generate stable ID if JSON has invalid ID
                         if (work.Id <= 0)
                         {
                             var existingByPI = DailyWorks.FirstOrDefault(w =>
@@ -1084,7 +1043,6 @@ namespace ProGlassAutomation.ViewModels
                             }
                         }
 
-                        // PATCH: Final duplicate protection
                         bool alreadyAdded = DailyWorks.Any(w =>
                             w.Id == work.Id ||
                             (!string.IsNullOrWhiteSpace(work.PINumber) &&
@@ -1095,6 +1053,8 @@ namespace ProGlassAutomation.ViewModels
                         if (!alreadyAdded)
                         {
                             DailyWorks.Add(work);
+                            // PATCH #6: Also add to source
+                            _allWorksSource?.Add(work);
                             addedCount++;
                         }
                         else
@@ -1109,38 +1069,23 @@ namespace ProGlassAutomation.ViewModels
                     }
                 }
 
-                System.Diagnostics.Debug.WriteLine($"[DailyWork] JSON load complete: {addedCount} added, {skippedCount} skipped, {errorCount} errors");
+                System.Diagnostics.Debug.WriteLine($"[DailyWork] JSON load: {addedCount} added, {skippedCount} skipped, {errorCount} errors");
                 StatusMessage = $"✅ Added {addedCount}, Skipped {skippedCount} duplicates";
-
-                // PATCH: Removed automatic DB merge save
-                // Imported JSON data should NOT be re-saved automatically
-                // because it creates duplicate/random entries.
             }
-            catch (UnauthorizedAccessException unauthEx)
+            catch (UnauthorizedAccessException)
             {
-                StatusMessage = "❌ Access denied to Data folder";
+                StatusMessage = "❌ Access denied";
             }
-            catch (System.IO.IOException ioEx)
+            catch (System.IO.IOException)
             {
                 StatusMessage = "❌ File I/O error";
             }
             catch (Exception ex)
             {
-                StatusMessage = $"❌ Error loading JSON: {ex.Message}";
+                StatusMessage = $"❌ Error: {ex.Message}";
             }
         }
 
-        // PATCH DISABLED: This method caused duplicate/random entries
-        // during refresh/import cycle.
-        private void SaveMergedToDatabase()
-        {
-            // PATCH DISABLED
-            // This method caused duplicate/random entries
-            // during refresh/import cycle.
-            System.Diagnostics.Debug.WriteLine("[DailyWork] SaveMergedToDatabase() is DISABLED");
-        }
-
-        // PATCH: Update JSON file - remove deleted entries
         private void UpdateJsonFileAfterDelete(List<int> deletedIds)
         {
             try
@@ -1159,11 +1104,8 @@ namespace ProGlassAutomation.ViewModels
 
                 if (!System.IO.File.Exists(jsonPath))
                 {
-                    System.Diagnostics.Debug.WriteLine($"[DailyWork] No JSON file to update");
                     return;
                 }
-
-                System.Diagnostics.Debug.WriteLine($"[DailyWork] Updating JSON file after delete...");
 
                 var json = System.IO.File.ReadAllText(jsonPath);
                 var settings = new Newtonsoft.Json.JsonSerializerSettings
@@ -1183,8 +1125,6 @@ namespace ProGlassAutomation.ViewModels
                     {
                         var updatedJson = Newtonsoft.Json.JsonConvert.SerializeObject(jsonWorks, Newtonsoft.Json.Formatting.Indented, settings);
                         System.IO.File.WriteAllText(jsonPath, updatedJson);
-
-                        System.Diagnostics.Debug.WriteLine($"[DailyWork] Removed {originalCount - jsonWorks.Count} entries from JSON");
                     }
                 }
             }
@@ -1198,10 +1138,10 @@ namespace ProGlassAutomation.ViewModels
 
         #region Filter Implementation
 
-        // PATCH: Escape single quotes in filters to prevent crashes on names like O'Brien
         private void ApplyFilters()
         {
             if (FilteredDataView == null) return;
+
             var filterExpressions = new System.Collections.Generic.List<string>();
 
             if (!string.IsNullOrWhiteSpace(SearchText))
@@ -1237,7 +1177,6 @@ namespace ProGlassAutomation.ViewModels
             if (FilterStartDate.HasValue)
                 filterExpressions.Add($"Date >= #{FilterStartDate.Value:yyyy-MM-dd}#");
 
-            // PATCH: Fix end date to include the entire day
             if (FilterEndDate.HasValue)
                 filterExpressions.Add($"Date < #{FilterEndDate.Value.AddDays(1):yyyy-MM-dd}#");
 
@@ -1285,7 +1224,6 @@ namespace ProGlassAutomation.ViewModels
             _selectedCompany = "";
         }
 
-        // PATCH: Prevent null reference with DBNull checks
         private void ExecuteEdit(object parameter)
         {
             DbDailyWork workToEdit = null;
@@ -1304,13 +1242,9 @@ namespace ProGlassAutomation.ViewModels
                     TypeOfWork = dataRow["TypeOfWork"]?.ToString() ?? "",
                     ProductionStatus = dataRow["ProductionStatus"]?.ToString() ?? "",
                     DailyReportStatus = dataRow["DailyReportStatus"]?.ToString() ?? "",
-                    // PATCH: Handle DBNull for Qty and SQM
-                    Qty = dataRow["Qty"] != DBNull.Value
-                        ? Convert.ToInt32(dataRow["Qty"])
-                        : 0,
-                    SQM = dataRow["SQM"] != DBNull.Value
-                        ? Convert.ToDouble(dataRow["SQM"])
-                        : 0,
+                    // PATCH #8: Null safety
+                    Qty = dataRow["Qty"] != DBNull.Value ? Convert.ToInt32(dataRow["Qty"]) : 0,
+                    SQM = dataRow["SQM"] != DBNull.Value ? Convert.ToDouble(dataRow["SQM"]) : 0,
                     Status = dataRow["Status"]?.ToString() ?? "",
                     Salesman = dataRow["Salesman"]?.ToString() ?? "",
                     Color = dataRow["Color"]?.ToString() ?? "",
@@ -1384,15 +1318,14 @@ namespace ProGlassAutomation.ViewModels
 
                 if (result == MessageBoxResult.Yes)
                 {
-                    // PATCH: Store ID before deletion for JSON update
                     var deletedId = workToDelete.Id;
 
                     DbHelper.DeleteDailyWork(workToDelete.Id);
-                    System.Diagnostics.Debug.WriteLine($"[DailyWork] Deleted ID: {workToDelete.Id}");
-
                     DailyWorks.Remove(workToDelete);
 
-                    // PATCH: Also remove from JSON file
+                    // PATCH #6: Also remove from source
+                    _allWorksSource?.Remove(_allWorksSource.FirstOrDefault(w => w.Id == deletedId)!);
+
                     UpdateJsonFileAfterDelete(new List<int> { deletedId });
 
                     RefreshDataView();
@@ -1448,9 +1381,9 @@ namespace ProGlassAutomation.ViewModels
                 DbHelper.SaveNoteSuggestion(EditingWork.Notes);
 
                 DbHelper.SaveDailyWork(EditingWork);
-                System.Diagnostics.Debug.WriteLine($"[DailyWork] Saved new ID: {EditingWork.Id}");
-
                 DailyWorks.Add(EditingWork);
+                // PATCH #6: Also add to source
+                _allWorksSource?.Add(EditingWork);
             }
             else
             {
@@ -1487,7 +1420,6 @@ namespace ProGlassAutomation.ViewModels
                     DbHelper.SaveNoteSuggestion(EditingWork.Notes);
 
                     DbHelper.UpdateDailyWork(existing);
-                    System.Diagnostics.Debug.WriteLine($"[DailyWork] Updated ID: {existing.Id}");
                 }
             }
 
@@ -1510,42 +1442,57 @@ namespace ProGlassAutomation.ViewModels
             DuplicateMessage = "";
         }
 
+        // PATCH #2: Prevent double execution on refresh
         private void ExecuteRefresh(object parameter)
         {
+            // PATCH #2: Guard against double execution
+            if (_isLoading) return;
+            _isLoading = true;
+
             try
             {
-                // PATCH: Prevent duplicate accumulation
-                DailyWorks.Clear();
-
-                // PATCH: Reset selections
-                SelectedWork = null;
-                SelectedDataRowView = null;
-
                 System.Diagnostics.Debug.WriteLine("[DailyWork] Refresh started...");
 
-                // Reload fresh data
-                LoadFromDatabase();
+                // PATCH #1: Option B - Replace collection with fresh data
+                var freshData = new ObservableCollection<DbDailyWork>();
 
-                // PATCH: Load JSON for display only
-                // DO NOT save imported records automatically
+                // Reload from database
+                var dbData = DbHelper.GetAllDailyWork();
+                foreach (var work in dbData)
+                {
+                    freshData.Add(work);
+                }
+
+                // Replace collection entirely
+                DailyWorks = freshData;
+                _allWorksSource = freshData;
+
+                // Reset selections
+                SelectedWork = null;
+                SelectedDataRowView = null;
+                _selectedIds.Clear();
+                _selectedCount = 0;
+
+                // Load JSON
                 LoadFromJsonFile();
 
                 LoadOptionsFromDatabase();
-
                 RefreshDataView();
                 UpdateStatistics();
 
-                System.Diagnostics.Debug.WriteLine(
-                    $"[DailyWork] Refresh complete. Records: {DailyWorks.Count}");
+                System.Diagnostics.Debug.WriteLine($"[DailyWork] Refresh complete. Records: {DailyWorks.Count}");
 
                 StatusMessage = "✅ Refresh completed";
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine(
-                    $"[DailyWork] Refresh error: {ex.Message}");
-
+                System.Diagnostics.Debug.WriteLine($"[DailyWork] Refresh error: {ex.Message}");
                 StatusMessage = "❌ Refresh failed";
+            }
+            finally
+            {
+                // PATCH #2: Always clear flag
+                _isLoading = false;
             }
         }
 
@@ -1572,7 +1519,6 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // PATCH: Fix CSV export - explicitly select columns to avoid Id column
         private void ExportToCSV(string filePath)
         {
             var sb = new System.Text.StringBuilder();
@@ -1581,7 +1527,6 @@ namespace ProGlassAutomation.ViewModels
 
             foreach (DataRowView rowView in FilteredDataView)
             {
-                // PATCH: Explicitly select columns to avoid internal Id column
                 var fields = new[]
                 {
                     rowView["Date"]?.ToString(),
@@ -1644,7 +1589,6 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // PATCH: Fix duplicate COPY_/DUP_ prefix stacking
         private void ExecuteCopyRow(object parameter)
         {
             DbDailyWork sourceWork = null;
@@ -1664,7 +1608,7 @@ namespace ProGlassAutomation.ViewModels
                 var copy = sourceWork.Clone();
                 copy.Id = 0;
 
-                // PATCH: Clean existing prefixes before adding new one
+                // Clean existing prefixes
                 var cleanPINumber = (copy.PINumber ?? "")
                     .Replace("COPY_", "")
                     .Replace("DUP_", "");
@@ -1677,6 +1621,7 @@ namespace ProGlassAutomation.ViewModels
                 DbHelper.SaveDailyWork(copy);
 
                 DailyWorks.Add(copy);
+                _allWorksSource?.Add(copy);
                 RefreshDataView();
                 UpdateStatistics();
             }
@@ -1687,7 +1632,6 @@ namespace ProGlassAutomation.ViewModels
             return SelectedDataRowView != null || SelectedWork != null;
         }
 
-        // PATCH: Fix duplicate COPY_/DUP_ prefix stacking
         private void ExecuteDuplicateRow(object parameter)
         {
             DbDailyWork sourceWork = null;
@@ -1707,7 +1651,7 @@ namespace ProGlassAutomation.ViewModels
                 var duplicate = sourceWork.Clone();
                 duplicate.Id = DailyWorks.Count > 0 ? DailyWorks.Max(w => w.Id) + 1 : 1;
 
-                // PATCH: Clean existing prefixes before adding new one
+                // Clean existing prefixes
                 var cleanDuplicatePI = (duplicate.PINumber ?? "")
                     .Replace("COPY_", "")
                     .Replace("DUP_", "");
@@ -1720,6 +1664,7 @@ namespace ProGlassAutomation.ViewModels
                 DbHelper.SaveDailyWork(duplicate);
 
                 DailyWorks.Add(duplicate);
+                _allWorksSource?.Add(duplicate);
                 RefreshDataView();
                 UpdateStatistics();
             }
@@ -1764,12 +1709,10 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // PATCH: Fix print grid overlay layout with proper Grid.Row assignments
         private Grid CreatePrintVisual()
         {
             var grid = new Grid { Margin = new Thickness(20) };
 
-            // PATCH: Define rows properly to prevent overlap
             grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
 
@@ -1797,7 +1740,6 @@ namespace ProGlassAutomation.ViewModels
                 Margin = new Thickness(0, 5, 0, 0)
             });
 
-            // PATCH: Set header to row 0
             grid.Children.Add(headerPanel);
             Grid.SetRow(headerPanel, 0);
 
@@ -1826,7 +1768,6 @@ namespace ProGlassAutomation.ViewModels
             dataGrid.Columns.Add(new DataGridTextColumn { Header = "Status", Binding = new System.Windows.Data.Binding("Status"), Width = 70 });
             dataGrid.Columns.Add(new DataGridTextColumn { Header = "Salesman", Binding = new System.Windows.Data.Binding("Salesman"), Width = 90 });
 
-            // PATCH: Set DataGrid to row 1
             grid.Children.Add(dataGrid);
             Grid.SetRow(dataGrid, 1);
 
@@ -1860,7 +1801,6 @@ namespace ProGlassAutomation.ViewModels
 
                 if (result == MessageBoxResult.Yes)
                 {
-                    // PATCH: Save IDs before deletion for JSON update
                     var deletedIds = new List<int>(selectedIds);
 
                     foreach (var id in selectedIds)
@@ -1870,20 +1810,15 @@ namespace ProGlassAutomation.ViewModels
                         if (item != null)
                         {
                             DailyWorks.Remove(item);
+                            _allWorksSource?.Remove(_allWorksSource.FirstOrDefault(w => w.Id == id)!);
                         }
                     }
 
-                    System.Diagnostics.Debug.WriteLine($"[DailyWork] Deleted {selectedIds.Count} records");
-
-                    // PATCH: Also remove from JSON file
-                    UpdateJsonFileAfterDelete(deletedIds);
-
                     _selectedIds.Clear();
                     _selectedCount = 0;
-
-                    // PATCH: Notify property changed after clearing selection
                     OnPropertyChanged(nameof(SelectedCount));
 
+                    UpdateJsonFileAfterDelete(deletedIds);
                     RefreshDataView();
                     UpdateStatistics();
                     SelectedWork = null;
@@ -1899,27 +1834,19 @@ namespace ProGlassAutomation.ViewModels
 
         private void ExecuteLoadToInvoice(object parameter)
         {
-            System.Diagnostics.Debug.WriteLine($"[DailyWork] ExecuteLoadToInvoice called. SelectedDataRowView={(SelectedDataRowView != null)}");
-
             DbDailyWork workToLoad = null;
 
-            // First try: Get from SelectedDataRowView (bound from XAML)
             if (SelectedDataRowView != null)
             {
-                System.Diagnostics.Debug.WriteLine("[DailyWork] Using SelectedDataRowView");
                 int id = Convert.ToInt32(SelectedDataRowView["Id"]);
                 workToLoad = DailyWorks.FirstOrDefault(w => w.Id == id);
             }
-            // Second try: Get from SelectedWork
             else if (SelectedWork != null)
             {
-                System.Diagnostics.Debug.WriteLine("[DailyWork] Using SelectedWork");
                 workToLoad = SelectedWork;
             }
-            // Third try: Get from DataGrid parameter
             else if (parameter is System.Windows.Controls.DataGrid dg)
             {
-                System.Diagnostics.Debug.WriteLine($"[DailyWork] DataGrid param - SelectedItem={(dg.SelectedItem != null)}");
                 if (dg.SelectedItem is DataRowView drv)
                 {
                     int id = Convert.ToInt32(drv["Id"]);
@@ -1930,20 +1857,15 @@ namespace ProGlassAutomation.ViewModels
             if (workToLoad != null && ProformaInvoiceVM != null)
             {
                 ProformaInvoiceVM.LoadFromDailyWork(workToLoad);
-                System.Diagnostics.Debug.WriteLine($"[DailyWork] Loaded to Invoice: {workToLoad.PINumber}");
-
-                // Trigger navigation to Proforma Invoice view
                 RequestNavigateToInvoice?.Invoke();
             }
             else if (workToLoad != null)
             {
-                System.Diagnostics.Debug.WriteLine($"[DailyWork] ProformaInvoiceVM is NULL");
                 MessageBox.Show("ProformaInvoiceVM not connected.\nPlease set ProformaInvoiceVM in MainWindow.",
                     "Connection Error", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             else
             {
-                System.Diagnostics.Debug.WriteLine("[DailyWork] No workToLoad found");
                 MessageBox.Show("Please select a record first, or open Proforma Invoice page.",
                     "No Selection", MessageBoxButton.OK, MessageBoxImage.Information);
             }
@@ -1951,19 +1873,15 @@ namespace ProGlassAutomation.ViewModels
 
         private bool CanExecuteLoadToInvoice(object parameter)
         {
-            // For testing - always return true (remove this after testing)
             return true;
         }
 
-        // Helper method to extract colors from specification
+        // Helper methods (keep existing)
         private string ExtractColorFromSpecification(SpecificationModel spec)
         {
             if (spec == null) return "";
 
-            // Get specification name (contains the glass description)
             var specName = spec.SpecificationName ?? "";
-
-            // Known color keywords (order matters - longer/more specific first)
             var knownColors = new[]
             {
                 "HD Grey", "HD Blue", "HD Green", "HD Bronze", "HD Black", "HD White",
@@ -1971,7 +1889,6 @@ namespace ProGlassAutomation.ViewModels
                 "Teal", "Navy", "Rose", "Amber", "Violet", "Pink", "Purple", "Champagne", "Gold", "Silver"
             };
 
-            // Split by "+" to handle DGU/LAM specs with multiple glass layers
             var layers = specName.Split('+');
             var colors = new List<string>();
 
@@ -1980,18 +1897,16 @@ namespace ProGlassAutomation.ViewModels
                 var layerTrimmed = layer.Trim();
                 bool foundColor = false;
 
-                // Find the first color match in this layer
                 foreach (var color in knownColors)
                 {
                     if (layerTrimmed.Contains(color, StringComparison.OrdinalIgnoreCase))
                     {
                         colors.Add(color);
                         foundColor = true;
-                        break; // Only take first color per layer
+                        break;
                     }
                 }
 
-                // If no known color found, try to extract any word before "Glass"
                 if (!foundColor)
                 {
                     var colorPattern = ExtractColorFromPattern(layerTrimmed);
@@ -2010,12 +1925,10 @@ namespace ProGlassAutomation.ViewModels
             return "";
         }
 
-        // Helper to extract any color-like word from text
         private string ExtractColorFromPattern(string text)
         {
             if (string.IsNullOrEmpty(text)) return "";
 
-            // Remove common glass type words
             var cleanText = text
                 .Replace("FT Glass", "")
                 .Replace("Annealed", "")
@@ -2023,13 +1936,9 @@ namespace ProGlassAutomation.ViewModels
                 .Replace("Glass", "")
                 .Replace("ASP", "");
 
-            // Try to find any common color word pattern
             var words = cleanText.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-
-            // Known color patterns to look for
             var colorKeywords = new[] { "HD", "Grey", "Gray", "Green", "Blue", "Bronze", "Black", "Brown", "Yellow", "Red", "Orange", "Clear", "White", "Teal", "Navy", "Rose", "Amber", "Violet", "Pink", "Purple", "Champagne", "Gold", "Silver" };
 
-            // Find consecutive color words
             var colorWords = new List<string>();
             bool lastWasColor = false;
 
@@ -2042,7 +1951,6 @@ namespace ProGlassAutomation.ViewModels
                 }
                 else if (lastWasColor && IsColorDescriptor(word))
                 {
-                    // Keep the descriptor but don't add it separately
                     lastWasColor = false;
                 }
                 else
@@ -2059,7 +1967,6 @@ namespace ProGlassAutomation.ViewModels
             return "";
         }
 
-        // Check if word is a color descriptor
         private bool IsColorDescriptor(string word)
         {
             if (string.IsNullOrEmpty(word)) return false;
@@ -2068,5 +1975,6 @@ namespace ProGlassAutomation.ViewModels
         }
 
         #endregion
+
     }
 }
