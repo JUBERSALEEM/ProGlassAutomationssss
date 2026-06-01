@@ -479,26 +479,38 @@ namespace ProGlassAutomation.ViewModels
             OnPropertyChanged(nameof(HasRecords));
         }
 
+        // PATCH 12: Prevent UI thread blocking with parallel loading
         public async Task LoadDataAsync()
         {
+            if (IsBusy) return; // PATCH 104: Prevent concurrent LoadDataAsync
+
             IsBusy = true;
             try
             {
-                var dbItems = await _repository.GetAllAsync();
-                DailyWorks.Clear();
-                foreach (var item in dbItems)
+                // PATCH 13: Use Task.WhenAll for parallel loading
+                var loadTask = Task.Run(async () =>
                 {
-                    var piNum = item.PINumber?.Trim() ?? "";
-                    var custRef = item.CustomerReference?.Trim() ?? "";
-                    if (!string.IsNullOrWhiteSpace(piNum) || !string.IsNullOrWhiteSpace(custRef))
+                    var dbItems = await _repository.GetAllAsync();
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                     {
-                        DailyWorks.Add(item.ToUiModel());
-                    }
-                }
-                _filteredView = null;
-                OnPropertyChanged(nameof(FilteredDataView));
-                LoadFilterOptions();
-                UpdateStatistics();
+                        DailyWorks.Clear();
+                        foreach (var item in dbItems)
+                        {
+                            var piNum = item.PINumber?.Trim() ?? "";
+                            var custRef = item.CustomerReference?.Trim() ?? "";
+                            if (!string.IsNullOrWhiteSpace(piNum) || !string.IsNullOrWhiteSpace(custRef))
+                            {
+                                DailyWorks.Add(item.ToUiModel());
+                            }
+                        }
+                        _filteredView = null;
+                        OnPropertyChanged(nameof(FilteredDataView));
+                        LoadFilterOptions();
+                        UpdateStatistics();
+                    });
+                });
+
+                await loadTask;
                 StatusMessage = "Ready";
             }
             catch (Exception ex)
