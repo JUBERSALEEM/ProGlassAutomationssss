@@ -88,15 +88,15 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // Selection tracking
-        private List<int> _selectedIds = new();
+        // PATCH 20: Selection tracking with HashSet for O(1) lookups
+        private HashSet<int> _selectedIds = new();
         private int _selectedCount;
         public int SelectedCount => _selectedCount;
 
-        public void UpdateSelectedIds(List<int> ids)
+        public void UpdateSelectedIds(IEnumerable<int> ids)
         {
-            _selectedIds = ids;
-            _selectedCount = ids.Count;
+            _selectedIds = new HashSet<int>(ids);
+            _selectedCount = _selectedIds.Count;
             OnPropertyChanged(nameof(SelectedCount));
         }
 
@@ -258,7 +258,7 @@ namespace ProGlassAutomation.ViewModels
                 }
 
                 await LoadDataAsync();
-                _selectedIds.Clear();
+                _selectedIds.Clear(); // PATCH 20: Clear HashSet
                 SelectedItem = null;
                 StatusMessage = $"Deleted {selectedIds.Count} records successfully!";
             }
