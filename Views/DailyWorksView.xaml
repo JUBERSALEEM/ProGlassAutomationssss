@@ -473,9 +473,9 @@
                     <Button Content="🖨️ Print" Style="{StaticResource SecondaryButton}" Command="{Binding PrintCommand}" Margin="0,0,6,0"/>
                     <Button Content="📄 Export" Style="{StaticResource SecondaryButton}" Command="{Binding ExportCommand}" Margin="0,0,6,0"/>
                     <Button Content="📋 Load to Invoice" 
-        Style="{StaticResource WarningButton}" 
-        Command="{Binding LoadToInvoiceCommand}"
-        CommandParameter="{Binding ElementName=MainDataGrid}"/>
+                            Style="{StaticResource WarningButton}" 
+                            Command="{Binding LoadToInvoiceCommand}"
+                            CommandParameter="{Binding ElementName=MainDataGrid}"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -549,17 +549,26 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Clear All Button -->
-                <Border Grid.Column="5" CornerRadius="10" Background="#1E40AF" VerticalAlignment="Bottom">
-                    <Button Content="Clear All" 
-                            Command="{Binding ClearFiltersCommand}" 
-                            Padding="20,10"
-                            MinWidth="100"
-                            Background="Transparent"
-                            Foreground="White"
-                            BorderThickness="0"
-                            FontWeight="SemiBold"
-                            Cursor="Hand"/>
+                <!-- PATCH 41-44: Quick Filter Buttons + Clear All -->
+                <Border Grid.Column="5" VerticalAlignment="Bottom">
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="Week" 
+                                Style="{StaticResource PrimaryButton}" 
+                                Command="{Binding QuickFilterThisWeekCommand}" 
+                                Padding="8,6" Margin="0,0,4,0" FontSize="9"/>
+                        <Button Content="Month" 
+                                Style="{StaticResource PrimaryButton}" 
+                                Command="{Binding QuickFilterThisMonthCommand}" 
+                                Padding="8,6" Margin="0,0,4,0" FontSize="9"/>
+                        <Button Content="All" 
+                                Style="{StaticResource SecondaryButton}" 
+                                Command="{Binding QuickFilterAllTimeCommand}" 
+                                Padding="8,6" Margin="0,0,8,0" FontSize="9"/>
+                        <Button Content="Clear" 
+                                Style="{StaticResource DangerButton}" 
+                                Command="{Binding ClearFiltersCommand}" 
+                                Padding="12,6" FontSize="9"/>
+                    </StackPanel>
                 </Border>
             </Grid>
         </Border>
@@ -569,180 +578,190 @@
             <Border.Effect>
                 <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.1"/>
             </Border.Effect>
-            <!-- PATCH 86, 87: Enable UI virtualization and recycling for 60fps performance -->
-            <DataGrid x:Name="MainDataGrid"
-          ItemsSource="{Binding FilteredDataView}" 
-          SelectedItem="{Binding SelectedItem}"
-          SelectionMode="Extended"
-          SelectionUnit="FullRow"
-          MouseDoubleClick="DataGrid_MouseDoubleClick"
-          Style="{StaticResource SimpleDataGrid}" 
-          CellStyle="{StaticResource SimpleCell}"
-          RowStyle="{StaticResource SimpleRow}"
-          SelectionChanged="MainDataGrid_SelectionChanged"
-          BorderThickness="0"
-          EnableRowVirtualization="True"
-          EnableColumnVirtualization="True"
-          VirtualizingPanel.VirtualizationMode="Recycling"
-          VirtualizingPanel.IsVirtualizing="True">
-                <DataGrid.Columns>
-                    <!-- SELECT CHECKBOX -->
-                    <DataGridTemplateColumn Header="" Width="45">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <CheckBox HorizontalAlignment="Center" 
-                                          IsChecked="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected, Mode=OneWay}"/>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                        <DataGridTemplateColumn.HeaderTemplate>
-                            <DataTemplate>
-                                <CheckBox x:Name="SelectAllCheckBox" Click="HeaderSelectAll_Click"/>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.HeaderTemplate>
-                    </DataGridTemplateColumn>
+            <Grid>
+                <!-- PATCH 86, 87: Enable UI virtualization and recycling for 60fps performance -->
+                <DataGrid x:Name="MainDataGrid"
+                          ItemsSource="{Binding FilteredDataView}" 
+                          SelectedItem="{Binding SelectedItem}"
+                          SelectionMode="Extended"
+                          SelectionUnit="FullRow"
+                          MouseDoubleClick="DataGrid_MouseDoubleClick"
+                          Style="{StaticResource SimpleDataGrid}" 
+                          CellStyle="{StaticResource SimpleCell}"
+                          RowStyle="{StaticResource SimpleRow}"
+                          SelectionChanged="MainDataGrid_SelectionChanged"
+                          BorderThickness="0"
+                          EnableRowVirtualization="True"
+                          EnableColumnVirtualization="True"
+                          VirtualizingPanel.VirtualizationMode="Recycling"
+                          VirtualizingPanel.IsVirtualizing="True">
+                    <DataGrid.Columns>
+                        <!-- SELECT CHECKBOX -->
+                        <DataGridTemplateColumn Header="" Width="45">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox HorizontalAlignment="Center" 
+                                             IsChecked="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected, Mode=OneWay}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.HeaderTemplate>
+                                <DataTemplate>
+                                    <CheckBox x:Name="SelectAllCheckBox" Click="HeaderSelectAll_Click"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.HeaderTemplate>
+                        </DataGridTemplateColumn>
 
-                    <!-- DATE - Blue -->
-                    <DataGridTemplateColumn Header="DATE" Width="100">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding Date, StringFormat=dd-MM-yyyy}" Style="{StaticResource TextDate}"/>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                        <DataGridTemplateColumn.HeaderStyle>
-                            <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource SimpleHeader}"/>
-                        </DataGridTemplateColumn.HeaderStyle>
-                    </DataGridTemplateColumn>
+                        <!-- DATE - Blue -->
+                        <DataGridTemplateColumn Header="DATE" Width="100">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Date, StringFormat=dd-MM-yyyy}" Style="{StaticResource TextDate}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource SimpleHeader}"/>
+                            </DataGridTemplateColumn.HeaderStyle>
+                        </DataGridTemplateColumn>
 
-                    <!-- COMPANY - Dark Gray -->
-                    <DataGridTemplateColumn Header="COMPANY" Width="130">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding Company}" Style="{StaticResource TextCompany}" ToolTip="{Binding Company}"/>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                        <DataGridTemplateColumn.HeaderStyle>
-                            <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource SimpleHeader}"/>
-                        </DataGridTemplateColumn.HeaderStyle>
-                    </DataGridTemplateColumn>
+                        <!-- COMPANY - Dark Gray -->
+                        <DataGridTemplateColumn Header="COMPANY" Width="130">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Company}" Style="{StaticResource TextCompany}" ToolTip="{Binding Company}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource SimpleHeader}"/>
+                            </DataGridTemplateColumn.HeaderStyle>
+                        </DataGridTemplateColumn>
 
-                    <DataGridTemplateColumn Header="PI NUMBER" Width="110">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding PiNumber}" Style="{StaticResource TextPINumber}"/>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                        <DataGridTemplateColumn.HeaderStyle>
-                            <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource SimpleHeader}"/>
-                        </DataGridTemplateColumn.HeaderStyle>
-                    </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="PI NUMBER" Width="110">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding PiNumber}" Style="{StaticResource TextPINumber}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource SimpleHeader}"/>
+                            </DataGridTemplateColumn.HeaderStyle>
+                        </DataGridTemplateColumn>
 
-                    <DataGridTemplateColumn Header="COLOR" Width="80">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding Color}" Style="{StaticResource TextColor}"/>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                        <DataGridTemplateColumn.HeaderStyle>
-                            <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource SimpleHeader}"/>
-                        </DataGridTemplateColumn.HeaderStyle>
-                    </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="COLOR" Width="80">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Color}" Style="{StaticResource TextColor}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource SimpleHeader}"/>
+                            </DataGridTemplateColumn.HeaderStyle>
+                        </DataGridTemplateColumn>
 
-                    <DataGridTemplateColumn Header="CUST REF" Width="100">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding CustomerReference}" Style="{StaticResource TextCustRef}"/>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                        <DataGridTemplateColumn.HeaderStyle>
-                            <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource SimpleHeader}"/>
-                        </DataGridTemplateColumn.HeaderStyle>
-                    </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="CUST REF" Width="100">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding CustomerReference}" Style="{StaticResource TextCustRef}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource SimpleHeader}"/>
+                            </DataGridTemplateColumn.HeaderStyle>
+                        </DataGridTemplateColumn>
 
-                    <!-- TYPE OF WORK - Amber -->
-                    <DataGridTemplateColumn Header="TYPE OF WORK" Width="110">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding TypeOfWork}" Style="{StaticResource TextType}"/>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                        <DataGridTemplateColumn.HeaderStyle>
-                            <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource SimpleHeader}"/>
-                        </DataGridTemplateColumn.HeaderStyle>
-                    </DataGridTemplateColumn>
+                        <!-- TYPE OF WORK - Amber -->
+                        <DataGridTemplateColumn Header="TYPE OF WORK" Width="110">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding TypeOfWork}" Style="{StaticResource TextType}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource SimpleHeader}"/>
+                            </DataGridTemplateColumn.HeaderStyle>
+                        </DataGridTemplateColumn>
 
-                    <!-- PRODUCTION STATUS - Teal -->
-                    <DataGridTemplateColumn Header="PRODUCTION" Width="100">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding ProductionStatus}" Style="{StaticResource TextProduction}"/>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                        <DataGridTemplateColumn.HeaderStyle>
-                            <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource SimpleHeader}"/>
-                        </DataGridTemplateColumn.HeaderStyle>
-                    </DataGridTemplateColumn>
+                        <!-- PRODUCTION STATUS - Teal -->
+                        <DataGridTemplateColumn Header="PRODUCTION" Width="100">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding ProductionStatus}" Style="{StaticResource TextProduction}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource SimpleHeader}"/>
+                            </DataGridTemplateColumn.HeaderStyle>
+                        </DataGridTemplateColumn>
 
-                    <!-- QTY - Emerald Green -->
-                    <DataGridTemplateColumn Header="QTY" Width="70">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding Qty}" Style="{StaticResource TextQty}"/>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                        <DataGridTemplateColumn.HeaderStyle>
-                            <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource SimpleHeader}"/>
-                        </DataGridTemplateColumn.HeaderStyle>
-                    </DataGridTemplateColumn>
+                        <!-- QTY - Emerald Green -->
+                        <DataGridTemplateColumn Header="QTY" Width="70">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Qty}" Style="{StaticResource TextQty}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource SimpleHeader}"/>
+                            </DataGridTemplateColumn.HeaderStyle>
+                        </DataGridTemplateColumn>
 
-                    <!-- SQM - Lime -->
-                    <DataGridTemplateColumn Header="SQM" Width="70">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding Sqm, StringFormat=N2}" Style="{StaticResource TextSQM}"/>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                        <DataGridTemplateColumn.HeaderStyle>
-                            <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource SimpleHeader}"/>
-                        </DataGridTemplateColumn.HeaderStyle>
-                    </DataGridTemplateColumn>
+                        <!-- SQM - Lime -->
+                        <DataGridTemplateColumn Header="SQM" Width="70">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Sqm, StringFormat=N2}" Style="{StaticResource TextSQM}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource SimpleHeader}"/>
+                            </DataGridTemplateColumn.HeaderStyle>
+                        </DataGridTemplateColumn>
 
-                    <!-- STATUS - Purple -->
-                    <DataGridTemplateColumn Header="STATUS" Width="100">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding Status}" Style="{StaticResource TextStatus}"/>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                        <DataGridTemplateColumn.HeaderStyle>
-                            <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource SimpleHeader}"/>
-                        </DataGridTemplateColumn.HeaderStyle>
-                    </DataGridTemplateColumn>
+                        <!-- STATUS - Purple -->
+                        <DataGridTemplateColumn Header="STATUS" Width="100">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Status}" Style="{StaticResource TextStatus}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource SimpleHeader}"/>
+                            </DataGridTemplateColumn.HeaderStyle>
+                        </DataGridTemplateColumn>
 
-                    <!-- SALESMAN - Orange -->
-                    <DataGridTemplateColumn Header="SALESMAN" Width="100">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding Salesman}" Style="{StaticResource TextSalesman}"/>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                        <DataGridTemplateColumn.HeaderStyle>
-                            <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource SimpleHeader}"/>
-                        </DataGridTemplateColumn.HeaderStyle>
-                    </DataGridTemplateColumn>
+                        <!-- SALESMAN - Orange -->
+                        <DataGridTemplateColumn Header="SALESMAN" Width="100">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Salesman}" Style="{StaticResource TextSalesman}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource SimpleHeader}"/>
+                            </DataGridTemplateColumn.HeaderStyle>
+                        </DataGridTemplateColumn>
 
-                    <!-- NOTES - Stone Gray -->
-                    <DataGridTemplateColumn Header="NOTES" Width="*">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding Notes}" Style="{StaticResource TextNotes}" ToolTip="{Binding Notes}"/>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                        <DataGridTemplateColumn.HeaderStyle>
-                            <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource SimpleHeader}"/>
-                        </DataGridTemplateColumn.HeaderStyle>
-                    </DataGridTemplateColumn>
-                </DataGrid.Columns>
-            </DataGrid>
+                        <!-- NOTES - Stone Gray -->
+                        <DataGridTemplateColumn Header="NOTES" Width="*">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Notes}" Style="{StaticResource TextNotes}" ToolTip="{Binding Notes}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource SimpleHeader}"/>
+                            </DataGridTemplateColumn.HeaderStyle>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+                <!-- PATCH 90: Loading overlay -->
+                <Border Background="#80FFFFFF" 
+                        Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConverter}}"
+                        CornerRadius="12">
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <TextBlock Text="⏳ Loading..." FontSize="18" FontWeight="Bold" Foreground="#1E40AF"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
         </Border>
 
         <!-- 4. STATS BAR -->
@@ -889,10 +908,10 @@
                                 <Button Content="Edit" Style="{StaticResource PrimaryButton}" Command="{Binding EditCommand}" CommandParameter="{Binding SelectedItem}" Padding="10,5" Margin="0,0,4,0" FontSize="9"/>
                                 <Button Content="Delete" Style="{StaticResource DangerButton}" Command="{Binding DeleteCommand}" CommandParameter="{Binding SelectedItem}" Padding="10,5" Margin="0,0,4,0" FontSize="9"/>
                                 <Button Content="📋 Invoice" 
-        Style="{StaticResource WarningButton}" 
-        Command="{Binding LoadToInvoiceCommand}"
-        CommandParameter="{Binding ElementName=MainDataGrid}"
-        Padding="10,5" Margin="0,0,4,0" FontSize="9"/>
+                                        Style="{StaticResource WarningButton}" 
+                                        Command="{Binding LoadToInvoiceCommand}"
+                                        CommandParameter="{Binding ElementName=MainDataGrid}"
+                                        Padding="10,5" Margin="0,0,4,0" FontSize="9"/>
                             </WrapPanel>
                             <Button Content="Delete Selected" Style="{StaticResource DangerOutlineButton}" Command="{Binding DeleteSelectedCommand}" Padding="10,5" FontSize="9"/>
                         </StackPanel>

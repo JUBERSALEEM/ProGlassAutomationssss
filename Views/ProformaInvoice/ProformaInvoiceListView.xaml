@@ -313,6 +313,19 @@
                     </Border>
                 </StackPanel>
 
+                <!-- Quick Filters - PATCH 41-44 -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="This Week" Style="{StaticResource SecondaryButton}" 
+                            Command="{Binding QuickFilterThisWeekCommand}" 
+                            Padding="10,6" Margin="0,0,4,0" FontSize="10"/>
+                    <Button Content="This Month" Style="{StaticResource SecondaryButton}" 
+                            Command="{Binding QuickFilterThisMonthCommand}" 
+                            Padding="10,6" Margin="0,0,4,0" FontSize="10"/>
+                    <Button Content="All Time" Style="{StaticResource SecondaryButton}" 
+                            Command="{Binding QuickFilterAllTimeCommand}" 
+                            Padding="10,6" FontSize="10"/>
+                </StackPanel>
+
                 <!-- Action Buttons -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                     <Button Content="➕ Create PI" Style="{StaticResource SuccessButton}" Command="{Binding NewInvoiceCommand}" Margin="0,0,6,0"/>

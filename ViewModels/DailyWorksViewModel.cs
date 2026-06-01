@@ -400,6 +400,31 @@ namespace ProGlassAutomation.ViewModels
             RefreshFilteredView();
         }
 
+        // PATCH 41-44: Quick filter presets
+        [RelayCommand]
+        private void QuickFilterThisWeek()
+        {
+            FilterStartDate = DateTime.Today.AddDays(-7);
+            FilterEndDate = DateTime.Today;
+            RefreshFilteredView();
+        }
+
+        [RelayCommand]
+        private void QuickFilterThisMonth()
+        {
+            FilterStartDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+            FilterEndDate = DateTime.Today;
+            RefreshFilteredView();
+        }
+
+        [RelayCommand]
+        private void QuickFilterAllTime()
+        {
+            FilterStartDate = null;
+            FilterEndDate = null;
+            RefreshFilteredView();
+        }
+
         // Invoice handling
         public event Action? RequestNavigateToInvoice;
 
