@@ -143,6 +143,9 @@ namespace ProGlassAutomation.Views
         {
             // Focus search on load
             SearchTextBox?.Focus();
+
+            // PATCH 110: Load saved column widths
+            LoadColumnWidths();
         }
 
         // PATCH 92: Print button handler
@@ -171,6 +174,59 @@ namespace ProGlassAutomation.Views
         {
             // Raise navigation event to navigate to invoice page
             NavigateToInvoice?.Invoke();
+        }
+
+        // PATCH 110: Column widths persistence
+        private readonly string _columnWidthsKey = "DailyWorksColumnWidths";
+
+        private void MainDataGrid_Loaded(object sender, RoutedEventArgs e)
+        {
+            LoadColumnWidths();
+        }
+
+        private void MainDataGrid_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            SaveColumnWidths();
+        }
+
+        private void SaveColumnWidths()
+        {
+            try
+            {
+                if (MainDataGrid == null) return;
+
+                var widths = new Dictionary<string, double>();
+                foreach (var col in MainDataGrid.Columns)
+                {
+                    if (col.Header != null && col.Width.IsAbsolute)
+                        widths[col.Header.ToString()!] = col.Width.Value;
+                }
+
+                var json = System.Text.Json.JsonSerializer.Serialize(widths);
+                System.IO.File.WriteAllText(_columnWidthsKey + ".json", json);
+            }
+            catch { /* Ignore errors */ }
+        }
+
+        private void LoadColumnWidths()
+        {
+            try
+            {
+                var path = _columnWidthsKey + ".json";
+                if (!System.IO.File.Exists(path)) return;
+
+                var json = System.IO.File.ReadAllText(path);
+                var widths = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, double>>(json);
+
+                if (widths == null || MainDataGrid == null) return;
+
+                foreach (var col in MainDataGrid.Columns)
+                {
+                    if (col.Header != null && widths.TryGetValue(col.Header.ToString()!, out var w))
+                        col.Width = new DataGridLength(w);
+                }
+            }
+            catch { /* Ignore errors */ }
         }
 
         // PATCH 94: Keyboard shortcuts

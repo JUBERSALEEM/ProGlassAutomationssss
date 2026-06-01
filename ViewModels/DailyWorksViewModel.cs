@@ -458,7 +458,8 @@ namespace ProGlassAutomation.ViewModels
                     }
 
                     await System.IO.File.WriteAllLinesAsync(dialog.FileName, lines);
-                    StatusMessage = $"Exported {filteredList.Count} records!";
+                    // PATCH 111: Add export timestamp
+                    StatusMessage = $"Exported {filteredList.Count} records at {DateTime.Now:HH:mm:ss}!";
                 }
             }
             catch (Exception ex)

@@ -595,9 +595,12 @@
             </Border.Effect>
             <Grid>
                 <!-- PATCH 86, 87: Enable UI virtualization and recycling for 60fps performance -->
+                <!-- PATCH 110: Save column widths on change -->
                 <DataGrid x:Name="MainDataGrid"
-                          ItemsSource="{Binding FilteredDataView}" 
-                          SelectedItem="{Binding SelectedItem}"
+          ItemsSource="{Binding FilteredDataView}" 
+          SelectedItem="{Binding SelectedItem}"
+          Loaded="MainDataGrid_Loaded"
+          MouseLeftButtonUp="MainDataGrid_MouseLeftButtonUp"
                           SelectionMode="Extended"
                           SelectionUnit="FullRow"
                           MouseDoubleClick="DataGrid_MouseDoubleClick"
@@ -626,8 +629,8 @@
                             </DataGridTemplateColumn.HeaderTemplate>
                         </DataGridTemplateColumn>
 
-                        <!-- DATE - Blue -->
-                        <DataGridTemplateColumn Header="DATE" Width="100">
+                        <!-- DATE - Blue - PATCH 109: Add Sorting -->
+                        <DataGridTemplateColumn Header="DATE" Width="100" SortMemberPath="Date">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Date, StringFormat=dd-MM-yyyy}" Style="{StaticResource TextDate}"/>
@@ -639,7 +642,7 @@
                         </DataGridTemplateColumn>
 
                         <!-- COMPANY - Dark Gray -->
-                        <DataGridTemplateColumn Header="COMPANY" Width="130">
+                        <DataGridTemplateColumn Header="COMPANY" Width="130" SortMemberPath="Company">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Company}" Style="{StaticResource TextCompany}" ToolTip="{Binding Company}"/>
@@ -650,7 +653,7 @@
                             </DataGridTemplateColumn.HeaderStyle>
                         </DataGridTemplateColumn>
 
-                        <DataGridTemplateColumn Header="PI NUMBER" Width="110">
+                        <DataGridTemplateColumn Header="PI NUMBER" Width="110" SortMemberPath="PiNumber">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding PiNumber}" Style="{StaticResource TextPINumber}"/>
@@ -661,7 +664,7 @@
                             </DataGridTemplateColumn.HeaderStyle>
                         </DataGridTemplateColumn>
 
-                        <DataGridTemplateColumn Header="COLOR" Width="80">
+                        <DataGridTemplateColumn Header="COLOR" Width="80" SortMemberPath="Color">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Color}" Style="{StaticResource TextColor}"/>
@@ -672,7 +675,7 @@
                             </DataGridTemplateColumn.HeaderStyle>
                         </DataGridTemplateColumn>
 
-                        <DataGridTemplateColumn Header="CUST REF" Width="100">
+                        <DataGridTemplateColumn Header="CUST REF" Width="100" SortMemberPath="CustomerReference">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding CustomerReference}" Style="{StaticResource TextCustRef}"/>
@@ -684,7 +687,7 @@
                         </DataGridTemplateColumn>
 
                         <!-- TYPE OF WORK - Amber -->
-                        <DataGridTemplateColumn Header="TYPE OF WORK" Width="110">
+                        <DataGridTemplateColumn Header="TYPE OF WORK" Width="110" SortMemberPath="TypeOfWork">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding TypeOfWork}" Style="{StaticResource TextType}"/>
@@ -696,7 +699,7 @@
                         </DataGridTemplateColumn>
 
                         <!-- PRODUCTION STATUS - Teal -->
-                        <DataGridTemplateColumn Header="PRODUCTION" Width="100">
+                        <DataGridTemplateColumn Header="PRODUCTION" Width="100" SortMemberPath="ProductionStatus">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding ProductionStatus}" Style="{StaticResource TextProduction}"/>
@@ -708,7 +711,7 @@
                         </DataGridTemplateColumn>
 
                         <!-- QTY - Emerald Green -->
-                        <DataGridTemplateColumn Header="QTY" Width="70">
+                        <DataGridTemplateColumn Header="QTY" Width="70" SortMemberPath="Qty">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Qty}" Style="{StaticResource TextQty}"/>
@@ -720,7 +723,7 @@
                         </DataGridTemplateColumn>
 
                         <!-- SQM - Lime -->
-                        <DataGridTemplateColumn Header="SQM" Width="70">
+                        <DataGridTemplateColumn Header="SQM" Width="70" SortMemberPath="Sqm">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Sqm, StringFormat=N2}" Style="{StaticResource TextSQM}"/>
@@ -732,7 +735,7 @@
                         </DataGridTemplateColumn>
 
                         <!-- STATUS - Purple -->
-                        <DataGridTemplateColumn Header="STATUS" Width="100">
+                        <DataGridTemplateColumn Header="STATUS" Width="100" SortMemberPath="Status">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Status}" Style="{StaticResource TextStatus}"/>
@@ -744,7 +747,7 @@
                         </DataGridTemplateColumn>
 
                         <!-- SALESMAN - Orange -->
-                        <DataGridTemplateColumn Header="SALESMAN" Width="100">
+                        <DataGridTemplateColumn Header="SALESMAN" Width="100" SortMemberPath="Salesman">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Salesman}" Style="{StaticResource TextSalesman}"/>
@@ -756,7 +759,7 @@
                         </DataGridTemplateColumn>
 
                         <!-- NOTES - Stone Gray -->
-                        <DataGridTemplateColumn Header="NOTES" Width="*">
+                        <DataGridTemplateColumn Header="NOTES" Width="*" SortMemberPath="Notes">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Notes}" Style="{StaticResource TextNotes}" ToolTip="{Binding Notes}"/>
