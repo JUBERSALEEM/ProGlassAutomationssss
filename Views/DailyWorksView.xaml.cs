@@ -166,6 +166,13 @@ namespace ProGlassAutomation.Views
             }
         }
 
+        // PATCH 93: Load to Invoice handler
+        private void LoadToInvoice_Click(object sender, RoutedEventArgs e)
+        {
+            // Raise navigation event to navigate to invoice page
+            NavigateToInvoice?.Invoke();
+        }
+
         // PATCH 94: Keyboard shortcuts
         protected override void OnKeyDown(KeyEventArgs e)
         {
