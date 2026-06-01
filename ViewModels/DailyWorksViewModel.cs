@@ -101,12 +101,29 @@ namespace ProGlassAutomation.ViewModels
             OnPropertyChanged(nameof(SelectedCount));
         }
 
-        // Filter properties - MANUAL IMPLEMENTATION
+        // PATCH 35: Add debounce timer for search
+        private System.Timers.Timer? _searchDebounceTimer;
+
         private string _searchText = string.Empty;
         public string SearchText
         {
             get => _searchText;
-            set { if (SetProperty(ref _searchText, value)) RefreshFilteredView(); }
+            set
+            {
+                if (SetProperty(ref _searchText, value))
+                {
+                    // PATCH 35: Debounce search to prevent excessive filtering
+                    _searchDebounceTimer?.Stop();
+                    _searchDebounceTimer?.Dispose();
+                    _searchDebounceTimer = new System.Timers.Timer(300); // 300ms debounce
+                    _searchDebounceTimer.Elapsed += (s, e) =>
+                    {
+                        _searchDebounceTimer?.Stop();
+                        System.Windows.Application.Current?.Dispatcher.Invoke(RefreshFilteredView);
+                    };
+                    _searchDebounceTimer.Start();
+                }
+            }
         }
 
         private string _filterStatus = string.Empty;
@@ -521,10 +538,18 @@ namespace ProGlassAutomation.ViewModels
         }
 
         // Constructor
+        // PATCH 56-60: Proper disposal
         public DailyWorksViewModel()
         {
             _repository = new DailyWorkRepository();
             _ = LoadDataAsync();
+        }
+
+        public void Dispose()
+        {
+            _searchDebounceTimer?.Stop();
+            _searchDebounceTimer?.Dispose();
+            _searchDebounceTimer = null;
         }
     }
 }
