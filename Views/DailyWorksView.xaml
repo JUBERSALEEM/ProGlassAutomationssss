@@ -571,7 +571,7 @@
             </Border.Effect>
             <DataGrid x:Name="MainDataGrid"
                       ItemsSource="{Binding FilteredDataView}" 
-                      SelectedItem="{Binding SelectedDataRowView}"
+                      SelectedItem="{Binding SelectedItem}"
                       SelectionMode="Extended"
                       SelectionUnit="FullRow"
                       MouseDoubleClick="DataGrid_MouseDoubleClick"
@@ -623,7 +623,7 @@
                     <DataGridTemplateColumn Header="PI NUMBER" Width="110">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding PINumber}" Style="{StaticResource TextPINumber}"/>
+                                <TextBlock Text="{Binding PiNumber}" Style="{StaticResource TextPINumber}"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                         <DataGridTemplateColumn.HeaderStyle>
@@ -693,7 +693,7 @@
                     <DataGridTemplateColumn Header="SQM" Width="70">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding SQM, StringFormat=N2}" Style="{StaticResource TextSQM}"/>
+                                <TextBlock Text="{Binding Sqm, StringFormat=N2}" Style="{StaticResource TextSQM}"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                         <DataGridTemplateColumn.HeaderStyle>
@@ -881,15 +881,15 @@
                         <!-- Action Buttons -->
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                             <WrapPanel Margin="0,0,0,4">
-                                <Button Content="Edit" Style="{StaticResource PrimaryButton}" Command="{Binding EditCommand}" CommandParameter="{Binding SelectedDataRowView}" Padding="10,5" Margin="0,0,4,0" FontSize="9"/>
-                                <Button Content="Delete" Style="{StaticResource DangerButton}" Command="{Binding DeleteCommand}" CommandParameter="{Binding SelectedDataRowView}" Padding="10,5" Margin="0,0,4,0" FontSize="9"/>
+                                <Button Content="Edit" Style="{StaticResource PrimaryButton}" Command="{Binding EditCommand}" CommandParameter="{Binding SelectedItem}" Padding="10,5" Margin="0,0,4,0" FontSize="9"/>
+                                <Button Content="Delete" Style="{StaticResource DangerButton}" Command="{Binding DeleteCommand}" CommandParameter="{Binding SelectedItem}" Padding="10,5" Margin="0,0,4,0" FontSize="9"/>
                                 <Button Content="📋 Invoice" 
         Style="{StaticResource WarningButton}" 
         Command="{Binding LoadToInvoiceCommand}"
         CommandParameter="{Binding ElementName=MainDataGrid}"
         Padding="10,5" Margin="0,0,4,0" FontSize="9"/>
                             </WrapPanel>
-                            <Button Content="Delete Selected" Style="{StaticResource DangerOutlineButton}" Command="{Binding DeleteSelectedCommand}" CommandParameter="{Binding ElementName=MainDataGrid}" Padding="10,5" FontSize="9"/>
+                            <Button Content="Delete Selected" Style="{StaticResource DangerOutlineButton}" Command="{Binding DeleteSelectedCommand}" Padding="10,5" FontSize="9"/>
                         </StackPanel>
                     </Grid>
                 </Border>
@@ -907,7 +907,7 @@
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
                         <TextBlock Text="✏️ WORK ORDER DETAILS" FontSize="20" FontWeight="Bold" Foreground="#1E40AF"/>
                         <TextBlock Text=" - " FontSize="20" Foreground="#64748B"/>
-                        <TextBlock Text="{Binding EditingWork.PINumber}" FontSize="20" FontWeight="Bold" Foreground="#059669"/>
+                        <TextBlock Text="{Binding EditingWork.PiNumber}" FontSize="20" FontWeight="Bold" Foreground="#059669"/>
                     </StackPanel>
 
                     <Grid>
@@ -993,7 +993,7 @@
 
                         <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,10,12">
                             <TextBlock Text="SQM" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
-                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditingWork.SQM, StringFormat=N2}"/>
+                            <TextBox Style="{StaticResource ModernTextBox}" Text="{Binding EditingWork.Sqm, StringFormat=N2}"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.Column="2" Margin="0,0,10,12">
@@ -1043,7 +1043,7 @@
 
                                 <StackPanel Grid.Column="3" Orientation="Horizontal" HorizontalAlignment="Right">
                                     <TextBlock Text="Total SQM:" FontSize="10" Foreground="#64748B" Margin="0,0,4,0"/>
-                                    <TextBlock Text="{Binding EditingWork.SQM, StringFormat=N2}" FontSize="10" Foreground="#059669" FontWeight="Bold"/>
+                                    <TextBlock Text="{Binding EditingWork.Sqm, StringFormat=N2}" FontSize="10" Foreground="#059669" FontWeight="Bold"/>
                                 </StackPanel>
                             </Grid>
                         </Border>

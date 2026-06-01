@@ -654,6 +654,40 @@ VALUES ($d, $ud, $c, $pi, $cr, $t, $ps, $drs, $q, $s, $st, $sm, $cl, $n, $cd)";
             });
         }
 
+        public static DailyWork? GetDailyWorkByPINumber(string piNumber)
+        {
+            return Execute(conn =>
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT * FROM DailyWork WHERE PINumber = $piNumber LIMIT 1";
+                cmd.Parameters.AddWithValue("$piNumber", piNumber);
+                using var r = cmd.ExecuteReader();
+                if (r.Read())
+                {
+                    return new DailyWork
+                    {
+                        Id = r.GetInt32(0),
+                        Date = DateTime.TryParse(r.GetString(1), out var d) ? d : DateTime.Today,
+                        UpdateDate = DateTime.TryParse(r.GetString(2), out var ud) ? ud : DateTime.Today,
+                        Company = r.IsDBNull(3) ? "" : r.GetString(3),
+                        PINumber = r.IsDBNull(4) ? "" : r.GetString(4),
+                        CustomerReference = r.IsDBNull(5) ? "" : r.GetString(5),
+                        TypeOfWork = r.IsDBNull(6) ? "" : r.GetString(6),
+                        ProductionStatus = r.IsDBNull(7) ? "" : r.GetString(7),
+                        DailyReportStatus = r.IsDBNull(8) ? "" : r.GetString(8),
+                        Qty = r.GetInt32(9),
+                        SQM = r.GetDouble(10),
+                        Status = r.IsDBNull(11) ? "" : r.GetString(11),
+                        Salesman = r.IsDBNull(12) ? "" : r.GetString(12),
+                        Color = r.IsDBNull(13) ? "" : r.GetString(13),
+                        Notes = r.IsDBNull(14) ? "" : r.GetString(14),
+                        CreatedDate = DateTime.TryParse(r.GetString(15), out var cd) ? cd : DateTime.Today
+                    };
+                }
+                return null;
+            });
+        }
+
         // ═══════════════════════════════════════════════════
         // DELIVERY METHODS
         // ═══════════════════════════════════════════════════

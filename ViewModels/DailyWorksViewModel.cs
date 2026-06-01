@@ -1,193 +1,196 @@
-﻿using ProGlassAutomation.Data.Database;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using ProGlassAutomation.Data;
+using ProGlassAutomation.Data.Database;
 using ProGlassAutomation.Models;
-
-using DbDailyWork = ProGlassAutomation.Data.Database.DailyWork;
-using InvoiceModel = ProGlassAutomation.Models.ProformaInvoiceModel;
-using SpecificationModel = ProGlassAutomation.Models.SpecificationModel;
-
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Data;
-using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Media;
+using System.Windows.Data;
 
 namespace ProGlassAutomation.ViewModels
 {
-    public class DailyWorksViewModel : ViewModelBase
+    /// <summary>
+    /// ViewModel - Manual properties, uses RelayCommand from toolkit
+    /// </summary>
+    public partial class DailyWorksViewModel : ObservableObject
     {
-        private ObservableCollection<DbDailyWork> _allWorksSource;
-        private ObservableCollection<DbDailyWork> _dailyWorks;
-        private DbDailyWork _selectedWork;
-        private DataRowView _selectedDataRowView;
-        private DataView _filteredDataView;
-        private string _searchText = "";
-        private string _sortColumn = "";
-        private ListSortDirection _sortDirection = ListSortDirection.Ascending;
-        private string _filterStatus = "";
-        private string _filterProductionStatus = "";
-        private string _filterTypeOfWork = "";
-        private string _filterSalesman = "";
-        private string _filterCompany = "";
-        private string _filterColor = "";
-        private string _filterPINumber = "";
-        private string _filterCustomerReference = "";
-        private DateTime? _filterStartDate;
-        private DateTime? _filterEndDate;
-        private bool _isEditing;
-        private DbDailyWork _editingWork;
-        private bool _isNewRecord;
-        private bool _isLoading = false;
-        private System.Timers.Timer _filterDebounceTimer;
-        private const int FilterDebounceMs = 300;
-        private bool _isBusy = false;
+        private readonly IDailyWorkRepository _repository;
 
-        public bool IsBusy
+        // Main collection
+        private ObservableCollection<DailyWorkModel> _dailyWorks = new();
+        public ObservableCollection<DailyWorkModel> DailyWorks
         {
-            get => _isBusy;
+            get => _dailyWorks;
+            set => SetProperty(ref _dailyWorks, value);
+        }
+
+        // Filtered view
+        private ICollectionView? _filteredView;
+        public ICollectionView FilteredDataView
+        {
+            get
+            {
+                if (_filteredView == null && DailyWorks.Count > 0)
+                {
+                    _filteredView = CollectionViewSource.GetDefaultView(_dailyWorks);
+                    _filteredView.Filter = FilterPredicate;
+                }
+                return _filteredView!;
+            }
+        }
+
+        private bool FilterPredicate(object obj)
+        {
+            if (obj is not DailyWorkModel work) return false;
+
+            if (!string.IsNullOrWhiteSpace(SearchText))
+            {
+                var search = SearchText.ToLowerInvariant();
+                if (!work.Company.ToLowerInvariant().Contains(search) &&
+                    !work.PiNumber.ToLowerInvariant().Contains(search) &&
+                    !work.CustomerReference.ToLowerInvariant().Contains(search) &&
+                    !work.Salesman.ToLowerInvariant().Contains(search) &&
+                    !work.Notes.ToLowerInvariant().Contains(search))
+                    return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(FilterStatus) && work.Status != FilterStatus) return false;
+            if (!string.IsNullOrWhiteSpace(FilterProductionStatus) && work.ProductionStatus != FilterProductionStatus) return false;
+            if (!string.IsNullOrWhiteSpace(FilterTypeOfWork) && work.TypeOfWork != FilterTypeOfWork) return false;
+            if (!string.IsNullOrWhiteSpace(FilterSalesman) && work.Salesman != FilterSalesman) return false;
+            if (!string.IsNullOrWhiteSpace(FilterCompany) && work.Company != FilterCompany) return false;
+            if (!string.IsNullOrWhiteSpace(FilterColor) && work.Color != FilterColor) return false;
+            if (!string.IsNullOrWhiteSpace(FilterPINumber) && work.PiNumber != FilterPINumber) return false;
+            if (!string.IsNullOrWhiteSpace(FilterCustomerReference) && work.CustomerReference != FilterCustomerReference) return false;
+            if (FilterStartDate.HasValue && work.Date < FilterStartDate) return false;
+            if (FilterEndDate.HasValue && work.Date > FilterEndDate) return false;
+
+            return true;
+        }
+
+        // Selection
+        private DailyWorkModel? _selectedItem;
+        public DailyWorkModel? SelectedItem
+        {
+            get => _selectedItem;
             set
             {
-                if (SetProperty(ref _isBusy, value))
+                if (SetProperty(ref _selectedItem, value))
                 {
-                    CommandManager.InvalidateRequerySuggested();
+                    System.Windows.Input.CommandManager.InvalidateRequerySuggested();
                 }
             }
         }
 
-        public ObservableCollection<string> TypeOfWorkOptions { get; } = new();
-        public ObservableCollection<string> ProductionStatusOptions { get; } = new();
-        public ObservableCollection<string> DailyReportStatusOptions { get; } = new();
-        public ObservableCollection<string> StatusOptions { get; } = new();
-        public ObservableCollection<string> ColorOptions { get; } = new();
-        public ObservableCollection<string> SalesmanOptions { get; } = new();
-        public ObservableCollection<string> CompanyOptions { get; } = new();
-        public ObservableCollection<string> PINumberOptions { get; } = new();
-        public ObservableCollection<string> CustomerReferenceOptions { get; } = new();
-        public ObservableCollection<string> NotesOptions { get; } = new();
+        // Selection tracking
+        private List<int> _selectedIds = new();
+        private int _selectedCount;
+        public int SelectedCount => _selectedCount;
 
-        private ViewModels.ProformaInvoiceViewModel _proformaInvoiceVM;
-        public ViewModels.ProformaInvoiceViewModel ProformaInvoiceVM
+        public void UpdateSelectedIds(List<int> ids)
         {
-            get => _proformaInvoiceVM;
-            set => SetProperty(ref _proformaInvoiceVM, value);
+            _selectedIds = ids;
+            _selectedCount = ids.Count;
+            OnPropertyChanged(nameof(SelectedCount));
         }
 
-        public event Action RequestNavigateToInvoice;
-
-        private string _selectedTypeOfWork = "";
-        private string _selectedProductionStatus = "";
-        private string _selectedDailyReportStatus = "";
-        private string _selectedStatus = "";
-        private string _selectedColor = "";
-        private string _selectedSalesman = "";
-        private string _selectedCompany = "";
-
-        private int _typeOfWorkIndex = -1;
-        private int _productionStatusIndex = -1;
-        private int _dailyReportStatusIndex = -1;
-        private int _statusIndex = -1;
-        private int _colorIndex = -1;
-        private int _salesmanIndex = -1;
-        private int _companyIndex = -1;
-
-        public string SelectedTypeOfWork
+        // Filter properties - MANUAL IMPLEMENTATION
+        private string _searchText = string.Empty;
+        public string SearchText
         {
-            get => _selectedTypeOfWork;
-            set => SetProperty(ref _selectedTypeOfWork, value);
+            get => _searchText;
+            set { if (SetProperty(ref _searchText, value)) RefreshFilteredView(); }
         }
 
-        public int TypeOfWorkIndex
+        private string _filterStatus = string.Empty;
+        public string FilterStatus
         {
-            get => _typeOfWorkIndex;
-            set => SetProperty(ref _typeOfWorkIndex, value);
+            get => _filterStatus;
+            set { if (SetProperty(ref _filterStatus, value)) RefreshFilteredView(); }
         }
 
-        public string SelectedProductionStatus
+        private string _filterProductionStatus = string.Empty;
+        public string FilterProductionStatus
         {
-            get => _selectedProductionStatus;
-            set => SetProperty(ref _selectedProductionStatus, value);
+            get => _filterProductionStatus;
+            set { if (SetProperty(ref _filterProductionStatus, value)) RefreshFilteredView(); }
         }
 
-        public int ProductionStatusIndex
+        private string _filterTypeOfWork = string.Empty;
+        public string FilterTypeOfWork
         {
-            get => _productionStatusIndex;
-            set => SetProperty(ref _productionStatusIndex, value);
+            get => _filterTypeOfWork;
+            set { if (SetProperty(ref _filterTypeOfWork, value)) RefreshFilteredView(); }
         }
 
-        public string SelectedDailyReportStatus
+        private string _filterSalesman = string.Empty;
+        public string FilterSalesman
         {
-            get => _selectedDailyReportStatus;
-            set => SetProperty(ref _selectedDailyReportStatus, value);
+            get => _filterSalesman;
+            set { if (SetProperty(ref _filterSalesman, value)) RefreshFilteredView(); }
         }
 
-        public int DailyReportStatusIndex
+        private string _filterCompany = string.Empty;
+        public string FilterCompany
         {
-            get => _dailyReportStatusIndex;
-            set => SetProperty(ref _dailyReportStatusIndex, value);
+            get => _filterCompany;
+            set { if (SetProperty(ref _filterCompany, value)) RefreshFilteredView(); }
         }
 
-        public string SelectedStatus
+        private string _filterColor = string.Empty;
+        public string FilterColor
         {
-            get => _selectedStatus;
-            set => SetProperty(ref _selectedStatus, value);
+            get => _filterColor;
+            set { if (SetProperty(ref _filterColor, value)) RefreshFilteredView(); }
         }
 
-        public int StatusIndex
+        private string _filterPINumber = string.Empty;
+        public string FilterPINumber
         {
-            get => _statusIndex;
-            set => SetProperty(ref _statusIndex, value);
+            get => _filterPINumber;
+            set { if (SetProperty(ref _filterPINumber, value)) RefreshFilteredView(); }
         }
 
-        public string SelectedColor
-        {
-            get => _selectedColor;
-            set => SetProperty(ref _selectedColor, value);
-        }
-
-        public int ColorIndex
-        {
-            get => _colorIndex;
-            set => SetProperty(ref _colorIndex, value);
-        }
-
-        public string SelectedSalesman
-        {
-            get => _selectedSalesman;
-            set => SetProperty(ref _selectedSalesman, value);
-        }
-
-        public int SalesmanIndex
-        {
-            get => _salesmanIndex;
-            set => SetProperty(ref _salesmanIndex, value);
-        }
-
-        public string SelectedCompany
-        {
-            get => _selectedCompany;
-            set => SetProperty(ref _selectedCompany, value);
-        }
-
-        public int CompanyIndex
-        {
-            get => _companyIndex;
-            set => SetProperty(ref _companyIndex, value);
-        }
-
+        private string _filterCustomerReference = string.Empty;
         public string FilterCustomerReference
         {
             get => _filterCustomerReference;
-            set
-            {
-                if (SetProperty(ref _filterCustomerReference, value))
-                    ApplyFilters();
-            }
+            set { if (SetProperty(ref _filterCustomerReference, value)) RefreshFilteredView(); }
+        }
+
+        private DateTime? _filterStartDate;
+        public DateTime? FilterStartDate
+        {
+            get => _filterStartDate;
+            set { if (SetProperty(ref _filterStartDate, value)) RefreshFilteredView(); }
+        }
+
+        private DateTime? _filterEndDate;
+        public DateTime? FilterEndDate
+        {
+            get => _filterEndDate;
+            set { if (SetProperty(ref _filterEndDate, value)) RefreshFilteredView(); }
+        }
+
+        // Editing state - MANUAL
+        private bool _isEditing;
+        public bool IsEditing
+        {
+            get => _isEditing;
+            set => SetProperty(ref _isEditing, value);
+        }
+
+        private DailyWorkModel? _editingWork;
+        public DailyWorkModel? EditingWork
+        {
+            get => _editingWork;
+            set => SetProperty(ref _editingWork, value);
         }
 
         private string _statusMessage = "Ready";
@@ -204,1222 +207,155 @@ namespace ProGlassAutomation.ViewModels
             set => SetProperty(ref _isDuplicateWarning, value);
         }
 
-        private string _duplicateMessage = "";
+        private string _duplicateMessage = string.Empty;
         public string DuplicateMessage
         {
             get => _duplicateMessage;
             set => SetProperty(ref _duplicateMessage, value);
         }
 
-        private string _editingSqmText = "";
-        public string EditingSqmText
+        [RelayCommand]
+        private async Task DeleteSelectedAsync(object? parameter)
         {
-            get => _editingSqmText;
-            set
+            // Get selected IDs from the tracking list
+            var selectedIds = _selectedIds?.ToList() ?? new List<int>();
+
+            System.Diagnostics.Debug.WriteLine($"[DailyWorksVM] DeleteSelected called. Count: {selectedIds.Count}");
+
+            // If empty, try to get from DataGrid parameter
+            if (selectedIds.Count == 0 && parameter is DataGrid dg)
             {
-                if (SetProperty(ref _editingSqmText, value))
+                selectedIds.Clear();
+                foreach (var item in dg.SelectedItems)
                 {
-                    if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out double result))
+                    if (item is DailyWorkModel work)
                     {
-                        if (EditingWork != null)
-                            EditingWork.SQM = result;
+                        selectedIds.Add(work.Id);
+                        System.Diagnostics.Debug.WriteLine($"[DailyWorksVM] Adding selected Id: {work.Id}");
                     }
                 }
             }
-        }
 
-        private string _editingQtyText = "";
-        public string EditingQtyText
-        {
-            get => _editingQtyText;
-            set
+            if (selectedIds.Count == 0)
             {
-                if (SetProperty(ref _editingQtyText, value))
-                {
-                    if (int.TryParse(value, out int result))
-                    {
-                        if (EditingWork != null)
-                            EditingWork.Qty = result;
-                    }
-                }
+                StatusMessage = "No items selected! Please select items first.";
+                MessageBox.Show("Please select items to delete.", "No Selection", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
             }
-        }
 
-        public ICommand AddNewCommand { get; }
-        public ICommand EditCommand { get; }
-        public ICommand DeleteCommand { get; }
-        public ICommand SaveCommand { get; }
-        public ICommand CancelCommand { get; }
-        public ICommand RefreshCommand { get; }
-        public ICommand ExportCommand { get; }
-        public ICommand ClearFiltersCommand { get; }
-        public ICommand SortCommand { get; }
-        public ICommand CopyRowCommand { get; }
-        public ICommand DuplicateRowCommand { get; }
-        public ICommand DeleteSelectedCommand { get; }
-        public ICommand PrintCommand { get; }
-        public ICommand LoadToInvoiceCommand { get; }
+            var result = MessageBox.Show($"Delete {selectedIds.Count} selected records?",
+                "Confirm Bulk Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
 
-        public DailyWorksViewModel()
-        {
-            _allWorksSource = new ObservableCollection<DbDailyWork>();
-            DailyWorks = new ObservableCollection<DbDailyWork>();
-
-            AddNewCommand = new RelayCommand(ExecuteAddNew);
-            EditCommand = new RelayCommand(ExecuteEdit, CanExecuteEdit);
-            DeleteCommand = new RelayCommand(ExecuteDelete, CanExecuteDelete);
-            SaveCommand = new RelayCommand(ExecuteSave, CanExecuteSave);
-            CancelCommand = new RelayCommand(ExecuteCancel);
-            RefreshCommand = new RelayCommand(ExecuteRefresh);
-            ExportCommand = new RelayCommand(ExecuteExport);
-            ClearFiltersCommand = new RelayCommand(ExecuteClearFilters);
-            SortCommand = new RelayCommand(ExecuteSort);
-            CopyRowCommand = new RelayCommand(ExecuteCopyRow, CanExecuteCopyRow);
-            DuplicateRowCommand = new RelayCommand(ExecuteDuplicateRow, CanExecuteDuplicateRow);
-            DeleteSelectedCommand = new RelayCommand(ExecuteDeleteSelected, CanExecuteDeleteSelected);
-            PrintCommand = new RelayCommand(ExecutePrint);
-            LoadToInvoiceCommand = new RelayCommand(ExecuteLoadToInvoice);
-
-            LoadDataAsync();
-        }
-
-        private async void LoadDataAsync()
-        {
-            if (_isLoading) return;
-            _isLoading = true;
-            IsBusy = true;
+            if (result != MessageBoxResult.Yes) return;
 
             try
             {
-                await Task.Run(() =>
+                foreach (var id in selectedIds)
                 {
-                    var dbData = DbHelper.GetAllDailyWork();
-                    // PATCH: Filter out empty records from database
-                    var validData = dbData.Where(w =>
-                    {
-                        var piNum = (w.PINumber ?? "").Trim();
-                        var custRef = (w.CustomerReference ?? "").Trim();
-                        return !string.IsNullOrWhiteSpace(piNum) || !string.IsNullOrWhiteSpace(custRef);
-                    }).ToList();
+                    DbHelper.DeleteDailyWork(id);
+                    System.Diagnostics.Debug.WriteLine($"[DailyWorksVM] Deleted Id: {id}");
+                }
 
-                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        DailyWorks = new ObservableCollection<DbDailyWork>(validData);
-                        _allWorksSource = new ObservableCollection<DbDailyWork>(validData);
-                    });
-                });
-
-                LoadFromJsonFile();
-                LoadOptionsFromDatabase();
-
-                // PATCH: Clean up empty records from database on startup
-                CleanupEmptyRecords();
-
-                CreateDataView();
-                UpdateStatistics();
+                await LoadDataAsync();
+                _selectedIds.Clear();
+                SelectedItem = null;
+                StatusMessage = $"Deleted {selectedIds.Count} records successfully!";
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[DailyWork] LoadDataAsync error: {ex.Message}");
-                StatusMessage = "Load failed";
-            }
-            finally
-            {
-                _isLoading = false;
-                IsBusy = false;
-            }
-        }
-
-        private void AddToOptionsIfNew(ObservableCollection<string> collection, string value)
-        {
-            if (string.IsNullOrWhiteSpace(value)) return;
-            if (!collection.Contains(value))
-            {
-                collection.Add(value);
-            }
-        }
-
-        private void SetSelectedValue(string value, ObservableCollection<string> collection, Action<int> setIndex, Action<string> setSelected)
-        {
-            var index = collection.IndexOf(value);
-            if (index >= 0)
-            {
-                setIndex(index);
-            }
-            else if (!string.IsNullOrWhiteSpace(value))
-            {
-                AddToOptionsIfNew(collection, value);
-                setIndex(collection.Count - 1);
-            }
-            else
-            {
-                setIndex(-1);
-            }
-            setSelected(value);
-        }
-
-        private void LoadOptionsFromDatabase()
-        {
-            try
-            {
-                var dbData = DbHelper.GetAllDailyWork();
-                foreach (var work in dbData)
-                {
-                    AddToOptionsIfNew(TypeOfWorkOptions, work.TypeOfWork);
-                    AddToOptionsIfNew(ProductionStatusOptions, work.ProductionStatus);
-                    AddToOptionsIfNew(DailyReportStatusOptions, work.DailyReportStatus);
-                    AddToOptionsIfNew(StatusOptions, work.Status);
-                    AddToOptionsIfNew(ColorOptions, work.Color);
-                    AddToOptionsIfNew(SalesmanOptions, work.Salesman);
-                    AddToOptionsIfNew(CompanyOptions, work.Company);
-                    AddToOptionsIfNew(PINumberOptions, work.PINumber);
-                    AddToOptionsIfNew(CustomerReferenceOptions, work.CustomerReference);
-                    AddToOptionsIfNew(NotesOptions, work.Notes);
-                }
-
-                var customerRefs = DbHelper.GetAllCustomerReferences();
-                foreach (var cr in customerRefs)
-                {
-                    AddToOptionsIfNew(CustomerReferenceOptions, cr.CustomerReference);
-                }
-
-                var notes = DbHelper.GetAllNotes();
-                foreach (var note in notes)
-                {
-                    AddToOptionsIfNew(NotesOptions, note);
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[DailyWork] Load options error: {ex.Message}");
-            }
-        }
-
-        private void CheckForDuplicate()
-        {
-            if (EditingWork == null) return;
-            if (!string.IsNullOrWhiteSpace(EditingWork.CustomerReference) &&
-                !string.IsNullOrWhiteSpace(EditingWork.PINumber))
-            {
-                bool isDuplicate = DbHelper.IsDuplicateDailyWork(
-                    EditingWork.CustomerReference,
-                    EditingWork.PINumber,
-                    EditingWork.Id);
-                IsDuplicateWarning = isDuplicate;
-                DuplicateMessage = isDuplicate
-                    ? $"Duplicate: {EditingWork.CustomerReference} + {EditingWork.PINumber} already exists!"
-                    : "";
-            }
-            else
-            {
-                IsDuplicateWarning = false;
-                DuplicateMessage = "";
-            }
-        }
-
-        private double ParseDecimal(string value)
-        {
-            if (string.IsNullOrWhiteSpace(value)) return 0;
-            if (double.TryParse(value, NumberStyles.Any, CultureInfo.CurrentCulture, out double result))
-                return result;
-            if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out result))
-                return result;
-            if (double.TryParse(value.Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out result))
-                return result;
-            return 0;
-        }
-
-        public ObservableCollection<DbDailyWork> DailyWorks
-        {
-            get => _dailyWorks;
-            set => SetProperty(ref _dailyWorks, value);
-        }
-
-        public DataView FilteredDataView
-        {
-            get => _filteredDataView;
-            private set => SetProperty(ref _filteredDataView, value);
-        }
-
-        public DbDailyWork SelectedWork
-        {
-            get => _selectedWork;
-            set
-            {
-                if (SetProperty(ref _selectedWork, value))
-                    CommandManager.InvalidateRequerySuggested();
-            }
-        }
-
-        public bool SelectAll
-        {
-            get => _selectAll;
-            set
-            {
-                if (SetProperty(ref _selectAll, value))
-                {
-                    if (FilteredDataView != null)
-                    {
-                        foreach (var row in FilteredDataView.Cast<DataRowView>())
-                        {
-                            if (row.Row.Table.Columns.Contains("IsSelected"))
-                            {
-                                row["IsSelected"] = value;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        private bool _selectAll;
-
-        public int SelectedCount => _selectedCount;
-        private int _selectedCount;
-
-        public void SetSelectedCount(int count)
-        {
-            _selectedCount = count;
-            OnPropertyChanged(nameof(SelectedCount));
-            OnPropertyChanged(nameof(SelectedRecords));
-            OnPropertyChanged(nameof(SelectedQty));
-            OnPropertyChanged(nameof(SelectedSQM));
-        }
-
-        private DataGrid _mainDataGrid;
-        public DataGrid MainDataGrid
-        {
-            get => _mainDataGrid;
-            set => SetProperty(ref _mainDataGrid, value);
-        }
-
-        private List<int> _selectedIds = new List<int>();
-        public List<DbDailyWork> SelectedRecordsData => DailyWorks?.Where(w => _selectedIds.Contains(w.Id)).ToList() ?? new List<DbDailyWork>();
-
-        public void UpdateSelectedIds(List<int> ids)
-        {
-            _selectedIds = ids;
-            _selectedCount = ids.Count;
-            OnPropertyChanged(nameof(SelectedCount));
-            OnPropertyChanged(nameof(SelectedRecords));
-            OnPropertyChanged(nameof(SelectedQty));
-            OnPropertyChanged(nameof(SelectedSQM));
-        }
-
-        private int GetSelectedCount()
-        {
-            return FilteredDataView?.Cast<DataRowView>()
-                .Count(r => r.Row.Table.Columns.Contains("IsSelected") &&
-                            r["IsSelected"] is bool b && b) ?? 0;
-        }
-
-        public DataRowView SelectedDataRowView
-        {
-            get => _selectedDataRowView;
-            set
-            {
-                if (SetProperty(ref _selectedDataRowView, value))
-                    CommandManager.InvalidateRequerySuggested();
-            }
-        }
-
-        public string SearchText
-        {
-            get => _searchText;
-            set
-            {
-                if (SetProperty(ref _searchText, value))
-                    ApplyFilters();
-            }
-        }
-
-        public string FilterStatus
-        {
-            get => _filterStatus;
-            set
-            {
-                if (SetProperty(ref _filterStatus, value))
-                    ApplyFilters();
-            }
-        }
-
-        public string FilterProductionStatus
-        {
-            get => _filterProductionStatus;
-            set
-            {
-                if (SetProperty(ref _filterProductionStatus, value))
-                    ApplyFilters();
-            }
-        }
-
-        public string FilterTypeOfWork
-        {
-            get => _filterTypeOfWork;
-            set
-            {
-                if (SetProperty(ref _filterTypeOfWork, value))
-                    ApplyFilters();
-            }
-        }
-
-        public string FilterSalesman
-        {
-            get => _filterSalesman;
-            set
-            {
-                if (SetProperty(ref _filterSalesman, value))
-                    ApplyFilters();
-            }
-        }
-
-        public string FilterCompany
-        {
-            get => _filterCompany;
-            set
-            {
-                if (SetProperty(ref _filterCompany, value))
-                    ApplyFilters();
-            }
-        }
-
-        public string FilterColor
-        {
-            get => _filterColor;
-            set
-            {
-                if (SetProperty(ref _filterColor, value))
-                    ApplyFilters();
-            }
-        }
-
-        public string FilterPINumber
-        {
-            get => _filterPINumber;
-            set
-            {
-                if (SetProperty(ref _filterPINumber, value))
-                    ApplyFilters();
-            }
-        }
-
-        public DateTime? FilterStartDate
-        {
-            get => _filterStartDate;
-            set
-            {
-                if (SetProperty(ref _filterStartDate, value))
-                    ApplyFilters();
-            }
-        }
-
-        public DateTime? FilterEndDate
-        {
-            get => _filterEndDate;
-            set
-            {
-                if (SetProperty(ref _filterEndDate, value))
-                    ApplyFilters();
-            }
-        }
-
-        public bool IsEditing
-        {
-            get => _isEditing;
-            set => SetProperty(ref _isEditing, value);
-        }
-
-        public DbDailyWork EditingWork
-        {
-            get => _editingWork;
-            set => SetProperty(ref _editingWork, value);
-        }
-
-        public string SortColumn
-        {
-            get => _sortColumn;
-            set => SetProperty(ref _sortColumn, value);
-        }
-
-        public ListSortDirection SortDirection
-        {
-            get => _sortDirection;
-            set => SetProperty(ref _sortDirection, value);
-        }
-
-        public bool IsEmpty => FilteredRecords == 0;
-        public bool HasRecords => FilteredRecords > 0;
-
-        public int TotalRecords => DailyWorks?.Count ?? 0;
-        public int FilteredRecords => FilteredDataView?.Count ?? 0;
-        public double TotalSQM => DailyWorks?.Sum(w => w.SQM) ?? 0;
-        public int TotalQty => DailyWorks?.Sum(w => w.Qty) ?? 0;
-        public double FilteredSQM => FilteredDataView?.Cast<DataRowView>().Sum(r => r["SQM"] != DBNull.Value ? Convert.ToDouble(r["SQM"]) : 0) ?? 0;
-        public int FilteredQty => FilteredDataView?.Cast<DataRowView>().Sum(r => r["Qty"] != DBNull.Value ? Convert.ToInt32(r["Qty"]) : 0) ?? 0;
-
-        // PATCH: Add missing computed stats
-        public int TotalCompanies => DailyWorks?.Select(w => w.Company ?? "").Distinct().Count() ?? 0;
-        public int TotalPINumbers => DailyWorks?.Select(w => w.PINumber ?? "").Distinct().Count() ?? 0;
-
-        public int SelectedRecords => _selectedCount;
-        public double SelectedSQM => GetSelectedSQM();
-        public int SelectedQty => GetSelectedQty();
-
-        private double GetSelectedSQM()
-        {
-            if (_selectedCount == 0) return TotalSQM;
-            return DailyWorks?.Where(w => _selectedIds.Contains(w.Id)).Sum(w => w.SQM) ?? 0;
-        }
-
-        private int GetSelectedQty()
-        {
-            if (_selectedCount == 0) return TotalQty;
-            return DailyWorks?.Where(w => _selectedIds.Contains(w.Id)).Sum(w => w.Qty) ?? 0;
-        }
-
-        public void OnProformaInvoiceSaved(InvoiceModel invoice)
-        {
-            if (invoice != null)
-            {
-                UpdateFromProformaInvoice(invoice);
-            }
-        }
-
-        private void UpdateFromProformaInvoice(InvoiceModel invoice)
-        {
-            if (invoice == null) return;
-
-            double totalSQM = 0;
-            int totalQty = 0;
-            if (invoice.Specifications != null)
-            {
-                foreach (var spec in invoice.Specifications)
-                {
-                    totalSQM += spec.SpecTotalSQM;
-                    totalQty += spec.SpecTotalQty;
-                }
-            }
-
-            var colorsFromSpecs = new List<string>();
-            if (invoice.Specifications != null)
-            {
-                foreach (var spec in invoice.Specifications)
-                {
-                    var specColor = ExtractColorFromSpecification(spec);
-                    if (!string.IsNullOrEmpty(specColor))
-                    {
-                        colorsFromSpecs.Add(specColor);
-                    }
-                }
-            }
-
-            string finalColor = colorsFromSpecs.Count > 0 ? string.Join(" | ", colorsFromSpecs) : invoice.Color ?? "";
-
-            var matchingWork = DailyWorks?.FirstOrDefault(w =>
-                (!string.IsNullOrEmpty(w.PINumber) && !string.IsNullOrEmpty(invoice.ProjectNo) &&
-                 w.PINumber.Equals(invoice.ProjectNo, StringComparison.OrdinalIgnoreCase)) ||
-                (!string.IsNullOrEmpty(w.PINumber) && !string.IsNullOrEmpty(invoice.InvoiceNo) &&
-                 w.PINumber.Equals(invoice.InvoiceNo, StringComparison.OrdinalIgnoreCase)));
-
-            if (matchingWork == null && !string.IsNullOrEmpty(invoice.CustomerName))
-            {
-                matchingWork = DailyWorks?.FirstOrDefault(w =>
-                    !string.IsNullOrEmpty(w.CustomerReference) &&
-                    w.CustomerReference.Equals(invoice.CustomerName, StringComparison.OrdinalIgnoreCase));
-            }
-
-            bool isNewRecord = false;
-
-            if (matchingWork != null)
-            {
-                var result = MessageBox.Show(
-                    $"A Daily Work entry already exists for this invoice.\n\n" +
-                    $"Existing: {matchingWork.PINumber} - {matchingWork.CustomerReference}\n\n" +
-                    "[YES] -> Create NEW entry\n" +
-                    "[NO] -> UPDATE existing\n" +
-                    "[CANCEL] -> Skip",
-                    "Daily Work Entry Exists",
-                    MessageBoxButton.YesNoCancel,
-                    MessageBoxImage.Question);
-
-                if (result == MessageBoxResult.Cancel)
-                {
-                    StatusMessage = "Daily Work save cancelled";
-                    return;
-                }
-                else if (result == MessageBoxResult.Yes)
-                {
-                    isNewRecord = true;
-                    matchingWork = new DbDailyWork
-                    {
-                        Id = DailyWorks.Count > 0 ? DailyWorks.Max(w => w.Id) + 1 : 1,
-                        Date = DateTime.Today,
-                        CreatedDate = DateTime.Now,
-                        Status = "Pending"
-                    };
-                }
-                else
-                {
-                    isNewRecord = false;
-                }
-            }
-            else
-            {
-                isNewRecord = true;
-                matchingWork = new DbDailyWork
-                {
-                    Id = DailyWorks.Count > 0 ? DailyWorks.Max(w => w.Id) + 1 : 1,
-                    Date = DateTime.Today,
-                    CreatedDate = DateTime.Now,
-                    Status = "Pending"
-                };
-            }
-
-            matchingWork.PINumber = invoice.InvoiceNo ?? matchingWork.PINumber ?? "";
-            matchingWork.Company = invoice.CustomerName ?? matchingWork.Company ?? "";
-            matchingWork.CustomerReference = invoice.ProjectName ?? matchingWork.CustomerReference ?? "";
-            matchingWork.Salesman = invoice.Salesman ?? matchingWork.Salesman ?? "";
-            matchingWork.Color = finalColor;
-            matchingWork.UpdateDate = DateTime.Today;
-            matchingWork.SQM = totalSQM;
-            matchingWork.Qty = totalQty;
-
-            var notesList = new List<string>();
-            if (!string.IsNullOrEmpty(invoice.ProjectLocation))
-                notesList.Add($"Location: {invoice.ProjectLocation}");
-            if (!string.IsNullOrEmpty(invoice.LPONo))
-                notesList.Add($"LPO: {invoice.LPONo}");
-            if (!string.IsNullOrEmpty(invoice.AttentionName))
-                notesList.Add($"Attention: {invoice.AttentionName}");
-            if (!string.IsNullOrEmpty(invoice.ContactNo))
-                notesList.Add($"Contact: {invoice.ContactNo}");
-            if (!string.IsNullOrEmpty(invoice.CompanyName))
-                notesList.Add($"Company: {invoice.CompanyName}");
-            if (!string.IsNullOrEmpty(invoice.CompanyTRN))
-                notesList.Add($"TRN: {invoice.CompanyTRN}");
-            if (!string.IsNullOrEmpty(invoice.Notes))
-                notesList.Add(invoice.Notes);
-            matchingWork.Notes = string.Join(" | ", notesList);
-
-            if (invoice.Specifications != null && invoice.Specifications.Count > 0)
-            {
-                var firstSpec = invoice.Specifications[0];
-                matchingWork.TypeOfWork = firstSpec.ModuleType ?? "SGU";
-            }
-            else
-            {
-                matchingWork.TypeOfWork = matchingWork.TypeOfWork ?? "SGU";
-            }
-
-            if (isNewRecord)
-            {
-                matchingWork.ProductionStatus = matchingWork.ProductionStatus ?? "Pending";
-                matchingWork.DailyReportStatus = matchingWork.DailyReportStatus ?? "Pending";
-                matchingWork.Status = matchingWork.Status ?? "Pending";
-            }
-
-            AddToOptionsIfNew(PINumberOptions, matchingWork.PINumber);
-            AddToOptionsIfNew(CompanyOptions, matchingWork.Company);
-            AddToOptionsIfNew(SalesmanOptions, matchingWork.Salesman);
-            AddToOptionsIfNew(ColorOptions, matchingWork.Color);
-            AddToOptionsIfNew(CustomerReferenceOptions, matchingWork.CustomerReference);
-
-            if (isNewRecord)
-            {
-                DbHelper.SaveDailyWork(matchingWork);
-                DailyWorks.Add(matchingWork);
-                StatusMessage = $"Created NEW Daily Work: {matchingWork.PINumber}";
-            }
-            else
-            {
-                DbHelper.UpdateDailyWork(matchingWork);
-                StatusMessage = $"Updated Daily Work: {matchingWork.PINumber}";
-            }
-
-            RefreshDataView();
-            UpdateStatistics();
-            OnPropertyChanged(nameof(FilteredDataView));
-        }
-
-        private void CreateDataView()
-        {
-            var dataTable = new DataTable("DailyWorks");
-            dataTable.Columns.Add("Id", typeof(int));
-            dataTable.Columns.Add("Date", typeof(DateTime));
-            dataTable.Columns.Add("UpdateDate", typeof(DateTime));
-            dataTable.Columns.Add("Company", typeof(string));
-            dataTable.Columns.Add("PINumber", typeof(string));
-            dataTable.Columns.Add("CustomerReference", typeof(string));
-            dataTable.Columns.Add("TypeOfWork", typeof(string));
-            dataTable.Columns.Add("ProductionStatus", typeof(string));
-            dataTable.Columns.Add("DailyReportStatus", typeof(string));
-            dataTable.Columns.Add("Qty", typeof(int));
-            dataTable.Columns.Add("SQM", typeof(double));
-            dataTable.Columns.Add("Status", typeof(string));
-            dataTable.Columns.Add("Salesman", typeof(string));
-            dataTable.Columns.Add("Color", typeof(string));
-            dataTable.Columns.Add("Notes", typeof(string));
-
-            var sourceToUse = _allWorksSource ?? DailyWorks;
-
-            foreach (var work in sourceToUse)
-            {
-                var row = dataTable.NewRow();
-                row["Id"] = work.Id;
-                row["Date"] = work.Date != default ? work.Date : DateTime.Today;
-                row["UpdateDate"] = work.UpdateDate != default ? work.UpdateDate : DateTime.Today;
-                row["Company"] = work.Company ?? "";
-                row["PINumber"] = work.PINumber ?? "";
-                row["CustomerReference"] = work.CustomerReference ?? "";
-                row["TypeOfWork"] = work.TypeOfWork ?? "";
-                row["ProductionStatus"] = work.ProductionStatus ?? "";
-                row["DailyReportStatus"] = work.DailyReportStatus ?? "";
-                row["Qty"] = work.Qty;
-                row["SQM"] = work.SQM;
-                row["Status"] = work.Status ?? "";
-                row["Salesman"] = work.Salesman ?? "";
-                row["Color"] = work.Color ?? "";
-                row["Notes"] = work.Notes ?? "";
-                dataTable.Rows.Add(row);
-            }
-
-            FilteredDataView = dataTable.DefaultView;
-            OnPropertyChanged(nameof(FilteredDataView));
-        }
-
-        private void RefreshDataView()
-        {
-            string currentSort = FilteredDataView?.Sort ?? "";
-            string currentFilter = FilteredDataView?.RowFilter ?? "";
-
-            CreateDataView();
-
-            if (!string.IsNullOrEmpty(currentSort) && FilteredDataView != null)
-                FilteredDataView.Sort = currentSort;
-            if (!string.IsNullOrEmpty(currentFilter) && FilteredDataView != null)
-                FilteredDataView.RowFilter = currentFilter;
-
-            UpdateStatistics();
-        }
-
-        private void LoadFromJsonFile()
-        {
-            try
-            {
-                string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                string dataFolder = System.IO.Path.Combine(baseDir, "Data");
-
-                if (!System.IO.Directory.Exists(dataFolder))
-                {
-                    StatusMessage = "Data folder not found";
-                    return;
-                }
-
-                var allJsonFiles = System.IO.Directory.GetFiles(dataFolder, "*.json");
-                var jsonFiles = allJsonFiles.Where(f =>
-                {
-                    string fileName = System.IO.Path.GetFileName(f);
-                    return fileName.StartsWith("PI-", StringComparison.OrdinalIgnoreCase);
-                }).ToArray();
-
-                if (jsonFiles.Length == 0)
-                {
-                    StatusMessage = "No PI-*.json files found";
-                    return;
-                }
-
-                var settings = new Newtonsoft.Json.JsonSerializerSettings
-                {
-                    ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore,
-                    NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore,
-                    DateFormatString = "yyyy-MM-ddTHH:mm:ss"
-                };
-
-                int addedCount = 0;
-                int skippedCount = 0;
-                int errorCount = 0;
-                var dbRecords = DbHelper.GetAllDailyWork();
-
-                foreach (var jsonPath in jsonFiles)
-                {
-                    string fileName = System.IO.Path.GetFileName(jsonPath);
-                    try
-                    {
-                        var json = System.IO.File.ReadAllText(jsonPath);
-                        if (string.IsNullOrWhiteSpace(json))
-                        {
-                            skippedCount++;
-                            continue;
-                        }
-
-                        var work = Newtonsoft.Json.JsonConvert.DeserializeObject<DbDailyWork>(json, settings);
-                        if (work == null)
-                        {
-                            errorCount++;
-                            continue;
-                        }
-
-                        // PATCH: Better null/empty check - skip if both are empty OR have only whitespace
-                        string jsonPINumber = (work.PINumber ?? "").Trim();
-                        string jsonCustRef = (work.CustomerReference ?? "").Trim();
-
-                        if (string.IsNullOrWhiteSpace(jsonPINumber) && string.IsNullOrWhiteSpace(jsonCustRef))
-                        {
-                            skippedCount++;
-                            continue;
-                        }
-
-                        // PATCH: Also skip if PI Number is just whitespace characters
-                        if (!string.IsNullOrWhiteSpace(jsonPINumber) && jsonPINumber.All(c => char.IsWhiteSpace(c)))
-                        {
-                            skippedCount++;
-                            continue;
-                        }
-
-                        bool foundInMemory = DailyWorks.Any(w =>
-    (!string.IsNullOrEmpty(jsonPINumber) && jsonPINumber.Equals((w.PINumber ?? "").Trim(), StringComparison.OrdinalIgnoreCase)) ||
-    (!string.IsNullOrEmpty(jsonCustRef) && jsonCustRef.Equals((w.CustomerReference ?? "").Trim(), StringComparison.OrdinalIgnoreCase)));
-
-                        if (foundInMemory)
-                        {
-                            skippedCount++;
-                            continue;
-                        }
-
-                        // PATCH: Also check _allWorksSource
-                        bool foundInAllWorksSource = _allWorksSource?.Any(w =>
-                            (!string.IsNullOrEmpty(jsonPINumber) && jsonPINumber.Equals((w.PINumber ?? "").Trim(), StringComparison.OrdinalIgnoreCase)) ||
-                            (!string.IsNullOrEmpty(jsonCustRef) && jsonCustRef.Equals((w.CustomerReference ?? "").Trim(), StringComparison.OrdinalIgnoreCase))) ?? false;
-
-                        if (foundInAllWorksSource)
-                        {
-                            skippedCount++;
-                            continue;
-                        }
-
-                        bool foundInDB = dbRecords.Any(w =>
-                            (!string.IsNullOrEmpty(jsonPINumber) && jsonPINumber.Equals((w.PINumber ?? "").Trim(), StringComparison.OrdinalIgnoreCase)) ||
-                            (!string.IsNullOrEmpty(jsonCustRef) && jsonCustRef.Equals((w.CustomerReference ?? "").Trim(), StringComparison.OrdinalIgnoreCase)));
-
-                        if (foundInDB)
-                        {
-                            skippedCount++;
-                            continue;
-                        }
-
-                        if (work.Id <= 0)
-                        {
-                            var existingByPI = DailyWorks.FirstOrDefault(w =>
-                                !string.IsNullOrWhiteSpace(work.PINumber) &&
-                                (w.PINumber ?? "").Trim().Equals((work.PINumber ?? "").Trim(), StringComparison.OrdinalIgnoreCase));
-
-                            if (existingByPI != null)
-                            {
-                                work.Id = existingByPI.Id;
-                            }
-                        }
-
-                        bool alreadyAdded = DailyWorks.Any(w =>
-                            w.Id == work.Id ||
-                            (!string.IsNullOrWhiteSpace(work.PINumber) && string.Equals((w.PINumber ?? "").Trim(), work.PINumber.Trim(), StringComparison.OrdinalIgnoreCase)) ||
-                            (!string.IsNullOrWhiteSpace(work.CustomerReference) && string.Equals((w.CustomerReference ?? "").Trim(), work.CustomerReference.Trim(), StringComparison.OrdinalIgnoreCase)));
-
-                        if (!alreadyAdded)
-                        {
-                            DailyWorks.Add(work);
-                            _allWorksSource?.Add(work);
-                            addedCount++;
-                        }
-                        else
-                        {
-                            skippedCount++;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"[DailyWork] Error reading {fileName}: {ex.Message}");
-                        errorCount++;
-                    }
-                }
-
-                StatusMessage = $"Added {addedCount}, Skipped {skippedCount} duplicates";
-            }
-            catch (Exception ex)
-            {
+                System.Diagnostics.Debug.WriteLine($"[DailyWorksVM] DeleteSelected error: {ex.Message}");
                 StatusMessage = $"Error: {ex.Message}";
             }
         }
 
-        private void UpdateJsonFileAfterDelete(List<int> deletedIds)
+        // Busy state
+        private bool _isBusy;
+        public bool IsBusy
         {
-            try
-            {
-                string jsonPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "DailyWorks.json");
-                if (!System.IO.File.Exists(jsonPath))
-                {
-                    jsonPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DailyWorks.json");
-                }
-
-                if (!System.IO.File.Exists(jsonPath)) return;
-
-                var json = System.IO.File.ReadAllText(jsonPath);
-                var settings = new Newtonsoft.Json.JsonSerializerSettings
-                {
-                    ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore,
-                    NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore
-                };
-
-                var jsonWorks = Newtonsoft.Json.JsonConvert.DeserializeObject<List<DbDailyWork>>(json, settings);
-                if (jsonWorks != null && jsonWorks.Count > 0)
-                {
-                    var originalCount = jsonWorks.Count;
-                    jsonWorks = jsonWorks.Where(w => !deletedIds.Contains(w.Id)).ToList();
-                    if (jsonWorks.Count < originalCount)
-                    {
-                        var updatedJson = Newtonsoft.Json.JsonConvert.SerializeObject(jsonWorks, Newtonsoft.Json.Formatting.Indented, settings);
-                        System.IO.File.WriteAllText(jsonPath, updatedJson);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[DailyWork] UpdateJsonFileAfterDelete error: {ex.Message}");
-            }
+            get => _isBusy;
+            set => SetProperty(ref _isBusy, value);
         }
 
-        private void CleanupEmptyRecords()
+        // Options
+        public ObservableCollection<string> CompanyOptions { get; } = new();
+        public ObservableCollection<string> PINumberOptions { get; } = new();
+        public ObservableCollection<string> CustomerReferenceOptions { get; } = new();
+        public ObservableCollection<string> TypeOfWorkOptions { get; } = new();
+        public ObservableCollection<string> StatusOptions { get; } = new();
+        public ObservableCollection<string> ProductionStatusOptions { get; } = new();
+        public ObservableCollection<string> SalesmanOptions { get; } = new();
+        public ObservableCollection<string> ColorOptions { get; } = new();
+
+        // Commands - Source generators auto-create commands from [RelayCommand]
+        [RelayCommand]
+        private async Task AddNewAsync()
         {
-            try
-            {
-                var allRecords = DbHelper.GetAllDailyWork();
-                var emptyRecordIds = new List<int>();
-
-                foreach (var work in allRecords)
-                {
-                    var piNum = (work.PINumber ?? "").Trim();
-                    var custRef = (work.CustomerReference ?? "").Trim();
-
-                    if (string.IsNullOrWhiteSpace(piNum) && string.IsNullOrWhiteSpace(custRef))
-                    {
-                        emptyRecordIds.Add(work.Id);
-                    }
-                }
-
-                foreach (var id in emptyRecordIds)
-                {
-                    DbHelper.DeleteDailyWork(id);
-                }
-
-                if (emptyRecordIds.Count > 0)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[DailyWork] Cleaned up {emptyRecordIds.Count} empty records");
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[DailyWork] Cleanup error: {ex.Message}");
-            }
-        }
-
-        private void ApplyFilters()
-        {
-            if (FilteredDataView == null) return;
-
-            _filterDebounceTimer?.Stop();
-            _filterDebounceTimer?.Dispose();
-
-            _filterDebounceTimer = new System.Timers.Timer(FilterDebounceMs);
-            _filterDebounceTimer.Elapsed += (s, e) =>
-            {
-                _filterDebounceTimer.Stop();
-                System.Windows.Application.Current?.Dispatcher?.Invoke(() => ApplyFiltersInternal());
-            };
-            _filterDebounceTimer.AutoReset = false;
-            _filterDebounceTimer.Start();
-        }
-
-        private void ApplyFiltersInternal()
-        {
-            var filterExpressions = new System.Collections.Generic.List<string>();
-
-            if (!string.IsNullOrWhiteSpace(SearchText))
-            {
-                var searchLower = SearchText.Replace("'", "''");
-                filterExpressions.Add($"(Company LIKE '%{searchLower}%' OR PINumber LIKE '%{searchLower}%' OR CustomerReference LIKE '%{searchLower}%' OR Salesman LIKE '%{searchLower}%' OR Notes LIKE '%{searchLower}%')");
-            }
-
-            if (!string.IsNullOrWhiteSpace(FilterStatus))
-                filterExpressions.Add($"Status = '{FilterStatus.Replace("'", "''")}'");
-
-            if (!string.IsNullOrWhiteSpace(FilterProductionStatus))
-                filterExpressions.Add($"ProductionStatus = '{FilterProductionStatus.Replace("'", "''")}'");
-
-            if (!string.IsNullOrWhiteSpace(FilterTypeOfWork))
-                filterExpressions.Add($"TypeOfWork = '{FilterTypeOfWork.Replace("'", "''")}'");
-
-            if (!string.IsNullOrWhiteSpace(FilterSalesman))
-                filterExpressions.Add($"Salesman = '{FilterSalesman.Replace("'", "''")}'");
-
-            if (!string.IsNullOrWhiteSpace(FilterCompany))
-                filterExpressions.Add($"Company = '{FilterCompany.Replace("'", "''")}'");
-
-            if (!string.IsNullOrWhiteSpace(FilterColor))
-                filterExpressions.Add($"Color = '{FilterColor.Replace("'", "''")}'");
-
-            if (!string.IsNullOrWhiteSpace(FilterPINumber))
-                filterExpressions.Add($"PINumber = '{FilterPINumber.Replace("'", "''")}'");
-
-            if (!string.IsNullOrWhiteSpace(FilterCustomerReference))
-                filterExpressions.Add($"CustomerReference = '{FilterCustomerReference.Replace("'", "''")}'");
-
-            if (FilterStartDate.HasValue)
-                filterExpressions.Add($"Date >= #{FilterStartDate.Value:yyyy-MM-dd}#");
-
-            if (FilterEndDate.HasValue)
-                filterExpressions.Add($"Date < #{FilterEndDate.Value.AddDays(1):yyyy-MM-dd}#");
-
-            FilteredDataView.RowFilter = filterExpressions.Count > 0 ? string.Join(" AND ", filterExpressions) : "";
-
-            if (!string.IsNullOrEmpty(SortColumn))
-                FilteredDataView.Sort = $"{SortColumn} {(SortDirection == ListSortDirection.Ascending ? "ASC" : "DESC")}";
-
-            UpdateStatistics();
-        }
-
-        private void ExecuteAddNew(object parameter)
-        {
-            _isNewRecord = true;
-            EditingWork = new DbDailyWork
-            {
-                Id = 0,
-                Date = DateTime.Today,
-                UpdateDate = DateTime.Today,
-                CreatedDate = DateTime.Now
-            };
+            EditingWork = DailyWorkModel.CreateNew();
             IsEditing = true;
             IsDuplicateWarning = false;
             DuplicateMessage = "";
-            EditingSqmText = "";
-            EditingQtyText = "";
-
-            _typeOfWorkIndex = -1;
-            _productionStatusIndex = -1;
-            _dailyReportStatusIndex = -1;
-            _statusIndex = -1;
-            _colorIndex = -1;
-            _salesmanIndex = -1;
-            _companyIndex = -1;
-            _selectedTypeOfWork = "";
-            _selectedProductionStatus = "";
-            _selectedDailyReportStatus = "";
-            _selectedStatus = "";
-            _selectedColor = "";
-            _selectedSalesman = "";
-            _selectedCompany = "";
         }
 
-        private void ExecuteEdit(object parameter)
+        [RelayCommand]
+        private async Task EditAsync()
         {
-            DbDailyWork workToEdit = null;
-
-            if (SelectedDataRowView != null)
-            {
-                var dataRow = SelectedDataRowView;
-                workToEdit = new DbDailyWork
-                {
-                    Id = Convert.ToInt32(dataRow["Id"]),
-                    Date = Convert.ToDateTime(dataRow["Date"]),
-                    UpdateDate = Convert.ToDateTime(dataRow["UpdateDate"]),
-                    Company = dataRow["Company"]?.ToString() ?? "",
-                    PINumber = dataRow["PINumber"]?.ToString() ?? "",
-                    CustomerReference = dataRow["CustomerReference"]?.ToString() ?? "",
-                    TypeOfWork = dataRow["TypeOfWork"]?.ToString() ?? "",
-                    ProductionStatus = dataRow["ProductionStatus"]?.ToString() ?? "",
-                    DailyReportStatus = dataRow["DailyReportStatus"]?.ToString() ?? "",
-                    Qty = dataRow["Qty"] != DBNull.Value ? Convert.ToInt32(dataRow["Qty"]) : 0,
-                    SQM = dataRow["SQM"] != DBNull.Value ? Convert.ToDouble(dataRow["SQM"]) : 0,
-                    Status = dataRow["Status"]?.ToString() ?? "",
-                    Salesman = dataRow["Salesman"]?.ToString() ?? "",
-                    Color = dataRow["Color"]?.ToString() ?? "",
-                    Notes = dataRow["Notes"]?.ToString() ?? ""
-                };
-            }
-            else if (SelectedWork != null)
-            {
-                workToEdit = SelectedWork;
-            }
-
-            if (workToEdit != null)
-            {
-                _isNewRecord = false;
-                EditingWork = workToEdit.Clone();
-                IsEditing = true;
-                IsDuplicateWarning = false;
-                DuplicateMessage = "";
-                EditingSqmText = EditingWork.SQM.ToString(CultureInfo.InvariantCulture);
-                EditingQtyText = EditingWork.Qty.ToString();
-
-                SetSelectedValue(workToEdit.TypeOfWork, TypeOfWorkOptions, i => _typeOfWorkIndex = i, v => _selectedTypeOfWork = v);
-                SetSelectedValue(workToEdit.ProductionStatus, ProductionStatusOptions, i => _productionStatusIndex = i, v => _selectedProductionStatus = v);
-                SetSelectedValue(workToEdit.DailyReportStatus, DailyReportStatusOptions, i => _dailyReportStatusIndex = i, v => _selectedDailyReportStatus = v);
-                SetSelectedValue(workToEdit.Status, StatusOptions, i => _statusIndex = i, v => _selectedStatus = v);
-                SetSelectedValue(workToEdit.Color, ColorOptions, i => _colorIndex = i, v => _selectedColor = v);
-                SetSelectedValue(workToEdit.Salesman, SalesmanOptions, i => _salesmanIndex = i, v => _selectedSalesman = v);
-                SetSelectedValue(workToEdit.Company, CompanyOptions, i => _companyIndex = i, v => _selectedCompany = v);
-
-                OnPropertyChanged(nameof(TypeOfWorkIndex));
-                OnPropertyChanged(nameof(ProductionStatusIndex));
-                OnPropertyChanged(nameof(DailyReportStatusIndex));
-                OnPropertyChanged(nameof(StatusIndex));
-                OnPropertyChanged(nameof(ColorIndex));
-                OnPropertyChanged(nameof(SalesmanIndex));
-                OnPropertyChanged(nameof(CompanyIndex));
-                OnPropertyChanged(nameof(SelectedTypeOfWork));
-                OnPropertyChanged(nameof(SelectedProductionStatus));
-                OnPropertyChanged(nameof(SelectedDailyReportStatus));
-                OnPropertyChanged(nameof(SelectedStatus));
-                OnPropertyChanged(nameof(SelectedColor));
-                OnPropertyChanged(nameof(SelectedSalesman));
-                OnPropertyChanged(nameof(SelectedCompany));
-            }
+            if (SelectedItem == null) return;
+            EditingWork = SelectedItem.Clone();
+            IsEditing = true;
+            IsDuplicateWarning = false;
+            DuplicateMessage = "";
         }
 
-        private bool CanExecuteEdit(object parameter)
+        [RelayCommand]
+        private async Task DeleteAsync()
         {
-            return parameter != null || SelectedDataRowView != null || SelectedWork != null;
-        }
-
-        private void ExecuteDelete(object parameter)
-        {
-            DbDailyWork workToDelete = null;
-
-            if (SelectedDataRowView != null)
+            if (SelectedItem == null) return;
+            var result = MessageBox.Show($"Delete {SelectedItem.Company}?", "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (result == MessageBoxResult.Yes)
             {
-                int id = Convert.ToInt32(SelectedDataRowView["Id"]);
-                workToDelete = DailyWorks.FirstOrDefault(w => w.Id == id);
-            }
-            else if (SelectedWork != null)
-            {
-                workToDelete = SelectedWork;
-            }
-
-            if (workToDelete != null)
-            {
-                var result = MessageBox.Show(
-                    $"Delete record for {workToDelete.Company}?\nPI: {workToDelete.PINumber}",
-                    "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-
-                if (result == MessageBoxResult.Yes)
-                {
-                    var deletedId = workToDelete.Id;
-                    DbHelper.DeleteDailyWork(workToDelete.Id);
-                    DailyWorks.Remove(workToDelete);
-                    _allWorksSource?.Remove(_allWorksSource.FirstOrDefault(w => w.Id == deletedId));
-                    UpdateJsonFileAfterDelete(new List<int> { deletedId });
-                    RefreshDataView();
-                    UpdateStatistics();
-                    SelectedWork = null;
-                    SelectedDataRowView = null;
-                }
+                await _repository.DeleteAsync(SelectedItem.Id);
+                DailyWorks.Remove(SelectedItem);
+                RefreshFilteredView();
+                SelectedItem = null;
+                UpdateStatistics();
             }
         }
 
-        private bool CanExecuteDelete(object parameter)
-        {
-            return parameter != null || SelectedDataRowView != null || SelectedWork != null;
-        }
-
-        private void ExecuteSave(object parameter)
+        [RelayCommand]
+        private async Task SaveAsync()
         {
             if (EditingWork == null) return;
-
             if (string.IsNullOrWhiteSpace(EditingWork.Company))
             {
-                MessageBox.Show("Company name is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Company required!", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
-
-            if (DbHelper.IsDuplicateDailyWork(EditingWork.CustomerReference, EditingWork.PINumber, EditingWork.Id))
-            {
-                var result = MessageBox.Show(
-                    $"Duplicate Entry!\n\nCustomer Reference: {EditingWork.CustomerReference}\nPI Number: {EditingWork.PINumber}\n\nThis combination already exists. Do you want to save anyway?",
-                    "Duplicate Warning", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-
-                if (result == MessageBoxResult.No)
-                    return;
-            }
-
-            if (_isNewRecord)
+            var dbEntity = DbDailyWork.FromUiModel(EditingWork);
+            if (EditingWork.Id == 0)
             {
                 EditingWork.Id = DailyWorks.Count > 0 ? DailyWorks.Max(w => w.Id) + 1 : 1;
-                EditingWork.CreatedDate = DateTime.Now;
-
-                AddToOptionsIfNew(TypeOfWorkOptions, EditingWork.TypeOfWork);
-                AddToOptionsIfNew(ProductionStatusOptions, EditingWork.ProductionStatus);
-                AddToOptionsIfNew(DailyReportStatusOptions, EditingWork.DailyReportStatus);
-                AddToOptionsIfNew(StatusOptions, EditingWork.Status);
-                AddToOptionsIfNew(ColorOptions, EditingWork.Color);
-                AddToOptionsIfNew(SalesmanOptions, EditingWork.Salesman);
-                AddToOptionsIfNew(CompanyOptions, EditingWork.Company);
-                AddToOptionsIfNew(PINumberOptions, EditingWork.PINumber);
-                AddToOptionsIfNew(CustomerReferenceOptions, EditingWork.CustomerReference);
-                AddToOptionsIfNew(NotesOptions, EditingWork.Notes);
-
-                DbHelper.SaveCustomerReference(EditingWork.CustomerReference, EditingWork.Company);
-                DbHelper.SaveNoteSuggestion(EditingWork.Notes);
-                DbHelper.SaveDailyWork(EditingWork);
+                await _repository.InsertAsync(dbEntity);
                 DailyWorks.Add(EditingWork);
-                _allWorksSource?.Add(EditingWork);
             }
             else
             {
+                EditingWork.UpdateDate = DateTime.Today;
+                await _repository.UpdateAsync(dbEntity);
                 var existing = DailyWorks.FirstOrDefault(w => w.Id == EditingWork.Id);
                 if (existing != null)
                 {
-                    existing.Date = EditingWork.Date;
-                    existing.UpdateDate = DateTime.Today;
-                    existing.Company = EditingWork.Company;
-                    existing.PINumber = EditingWork.PINumber;
-                    existing.CustomerReference = EditingWork.CustomerReference;
-                    existing.TypeOfWork = EditingWork.TypeOfWork;
-                    existing.ProductionStatus = EditingWork.ProductionStatus;
-                    existing.DailyReportStatus = EditingWork.DailyReportStatus;
-                    existing.Qty = EditingWork.Qty;
-                    existing.SQM = EditingWork.SQM;
-                    existing.Status = EditingWork.Status;
-                    existing.Salesman = EditingWork.Salesman;
-                    existing.Color = EditingWork.Color;
-                    existing.Notes = EditingWork.Notes;
-
-                    AddToOptionsIfNew(TypeOfWorkOptions, EditingWork.TypeOfWork);
-                    AddToOptionsIfNew(ProductionStatusOptions, EditingWork.ProductionStatus);
-                    AddToOptionsIfNew(DailyReportStatusOptions, EditingWork.DailyReportStatus);
-                    AddToOptionsIfNew(StatusOptions, EditingWork.Status);
-                    AddToOptionsIfNew(ColorOptions, EditingWork.Color);
-                    AddToOptionsIfNew(SalesmanOptions, EditingWork.Salesman);
-                    AddToOptionsIfNew(CompanyOptions, EditingWork.Company);
-                    AddToOptionsIfNew(PINumberOptions, EditingWork.PINumber);
-                    AddToOptionsIfNew(CustomerReferenceOptions, EditingWork.CustomerReference);
-                    AddToOptionsIfNew(NotesOptions, EditingWork.Notes);
-
-                    DbHelper.SaveCustomerReference(EditingWork.CustomerReference, EditingWork.Company);
-                    DbHelper.SaveNoteSuggestion(EditingWork.Notes);
-                    DbHelper.UpdateDailyWork(existing);
+                    var index = DailyWorks.IndexOf(existing);
+                    DailyWorks[index] = EditingWork;
                 }
             }
-
             IsEditing = false;
             EditingWork = null;
-            IsDuplicateWarning = false;
-            DuplicateMessage = "";
-
-            RefreshDataView();
+            RefreshFilteredView();
             UpdateStatistics();
         }
 
-        private bool CanExecuteSave(object parameter) => EditingWork != null;
-
-        private void ExecuteCancel(object parameter)
+        [RelayCommand]
+        private void Cancel()
         {
             IsEditing = false;
             EditingWork = null;
@@ -1427,221 +363,47 @@ namespace ProGlassAutomation.ViewModels
             DuplicateMessage = "";
         }
 
-        private void ExecuteRefresh(object parameter)
+        [RelayCommand]
+        private async Task RefreshAsync() => await LoadDataAsync();
+
+        [RelayCommand]
+        private void ClearFilters()
         {
-            if (_isLoading) return;
-            _isLoading = true;
-
-            try
-            {
-                var freshData = new ObservableCollection<DbDailyWork>();
-                var dbData = DbHelper.GetAllDailyWork();
-                foreach (var work in dbData)
-                {
-                    // PATCH: Skip empty/invalid records from database
-                    var piNum = (work.PINumber ?? "").Trim();
-                    var custRef = (work.CustomerReference ?? "").Trim();
-
-                    // Only add if has valid PI Number OR Customer Reference
-                    if (!string.IsNullOrWhiteSpace(piNum) || !string.IsNullOrWhiteSpace(custRef))
-                    {
-                        freshData.Add(work);
-                    }
-                }
-
-                DailyWorks = freshData;
-                _allWorksSource = freshData;
-
-                // PATCH: Clean up empty records from database
-                CleanupEmptyRecords();
-
-                SelectedWork = null;
-                SelectedDataRowView = null;
-                _selectedIds.Clear();
-                _selectedCount = 0;
-
-                LoadFromJsonFile();
-                LoadOptionsFromDatabase();
-                RefreshDataView();
-                UpdateStatistics();
-
-                StatusMessage = "Refresh completed";
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = "Refresh failed: " + ex.Message;
-            }
-            finally
-            {
-                _isLoading = false;
-            }
-        }
-
-        private void ExecuteExport(object parameter)
-        {
-            try
-            {
-                var dialog = new Microsoft.Win32.SaveFileDialog
-                {
-                    Filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*",
-                    DefaultExt = ".csv",
-                    FileName = $"DailyWorks_Export_{DateTime.Now:yyyyMMdd_HHmmss}"
-                };
-
-                if (dialog.ShowDialog() == true)
-                {
-                    ExportToCSV(dialog.FileName);
-                    MessageBox.Show($"Export completed!\n{dialog.FileName}", "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Export failed: {ex.Message}", "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        private void ExportToCSV(string filePath)
-        {
-            var sb = new System.Text.StringBuilder();
-            var headers = new[] { "Date", "Update Date", "Company", "PI Number", "Customer Ref", "Type of Work", "Production Status", "Daily Report Status", "Qty", "SQM", "Status", "Salesman", "Color", "Notes" };
-            sb.AppendLine(string.Join(",", headers.Select(h => $"\"{h}\"")));
-
-            foreach (DataRowView rowView in FilteredDataView)
-            {
-                var fields = new[]
-                {
-                    rowView["Date"]?.ToString(),
-                    rowView["UpdateDate"]?.ToString(),
-                    rowView["Company"]?.ToString(),
-                    rowView["PINumber"]?.ToString(),
-                    rowView["CustomerReference"]?.ToString(),
-                    rowView["TypeOfWork"]?.ToString(),
-                    rowView["ProductionStatus"]?.ToString(),
-                    rowView["DailyReportStatus"]?.ToString(),
-                    rowView["Qty"]?.ToString(),
-                    rowView["SQM"]?.ToString(),
-                    rowView["Status"]?.ToString(),
-                    rowView["Salesman"]?.ToString(),
-                    rowView["Color"]?.ToString(),
-                    rowView["Notes"]?.ToString()
-                }
-                .Select(f => $"\"{f?.Replace("\"", "\"\"")}\"");
-
-                sb.AppendLine(string.Join(",", fields));
-            }
-
-            System.IO.File.WriteAllText(filePath, sb.ToString(), System.Text.Encoding.UTF8);
-        }
-
-        private void ExecuteClearFilters(object parameter)
-        {
-            SearchText = "";
-            FilterStatus = "";
-            FilterProductionStatus = "";
-            FilterTypeOfWork = "";
-            FilterSalesman = "";
-            FilterCompany = "";
-            FilterColor = "";
-            FilterPINumber = "";
-            FilterCustomerReference = "";
+            SearchText = string.Empty;
+            FilterStatus = string.Empty;
+            FilterProductionStatus = string.Empty;
+            FilterTypeOfWork = string.Empty;
+            FilterSalesman = string.Empty;
+            FilterCompany = string.Empty;
+            FilterColor = string.Empty;
+            FilterPINumber = string.Empty;
+            FilterCustomerReference = string.Empty;
             FilterStartDate = null;
             FilterEndDate = null;
-            SortColumn = "";
-            SortDirection = ListSortDirection.Ascending;
-            ApplyFilters();
+            RefreshFilteredView();
         }
 
-        private void ExecuteSort(object parameter)
+        // Invoice handling
+        public event Action? RequestNavigateToInvoice;
+
+        public void OnProformaInvoiceSaved(Models.ProformaInvoiceModel invoice)
         {
-            if (parameter is string columnName)
-            {
-                if (SortColumn == columnName)
-                {
-                    SortDirection = SortDirection == ListSortDirection.Ascending
-                        ? ListSortDirection.Descending
-                        : ListSortDirection.Ascending;
-                }
-                else
-                {
-                    SortColumn = columnName;
-                    SortDirection = ListSortDirection.Ascending;
-                }
-                ApplyFilters();
-            }
+            _ = LoadDataAsync();
         }
 
-        private void ExecuteCopyRow(object parameter)
+        // Statistics
+        public int TotalRecords => DailyWorks?.Count ?? 0;
+        public int FilteredRecords => FilteredDataView?.Cast<object>().Count() ?? 0;
+        public double TotalSQM => DailyWorks?.Sum(w => w.Sqm) ?? 0;
+        public int TotalQty => DailyWorks?.Sum(w => w.Qty) ?? 0;
+        public double FilteredSQM => FilteredDataView?.Cast<DailyWorkModel>().Sum(w => w.Sqm) ?? 0;
+        public int FilteredQty => FilteredDataView?.Cast<DailyWorkModel>().Sum(w => w.Qty) ?? 0;
+        public bool HasRecords => FilteredRecords > 0;
+
+        private void RefreshFilteredView()
         {
-            DbDailyWork sourceWork = null;
-
-            if (SelectedDataRowView != null)
-            {
-                int id = Convert.ToInt32(SelectedDataRowView["Id"]);
-                sourceWork = DailyWorks.FirstOrDefault(w => w.Id == id);
-            }
-            else if (SelectedWork != null)
-            {
-                sourceWork = SelectedWork;
-            }
-
-            if (sourceWork != null)
-            {
-                var copy = sourceWork.Clone();
-                copy.Id = 0;
-                var cleanPINumber = (copy.PINumber ?? "").Replace("COPY_", "").Replace("DUP_", "");
-                copy.PINumber = $"COPY_{cleanPINumber}";
-                copy.Date = DateTime.Today;
-                copy.UpdateDate = DateTime.Today;
-                copy.CreatedDate = DateTime.Now;
-
-                DbHelper.SaveDailyWork(copy);
-                DailyWorks.Add(copy);
-                _allWorksSource?.Add(copy);
-                RefreshDataView();
-                UpdateStatistics();
-            }
-        }
-
-        private bool CanExecuteCopyRow(object parameter)
-        {
-            return SelectedDataRowView != null || SelectedWork != null;
-        }
-
-        private void ExecuteDuplicateRow(object parameter)
-        {
-            DbDailyWork sourceWork = null;
-
-            if (SelectedDataRowView != null)
-            {
-                int id = Convert.ToInt32(SelectedDataRowView["Id"]);
-                sourceWork = DailyWorks.FirstOrDefault(w => w.Id == id);
-            }
-            else if (SelectedWork != null)
-            {
-                sourceWork = SelectedWork;
-            }
-
-            if (sourceWork != null)
-            {
-                var duplicate = sourceWork.Clone();
-                duplicate.Id = DailyWorks.Count > 0 ? DailyWorks.Max(w => w.Id) + 1 : 1;
-                var cleanDuplicatePI = (duplicate.PINumber ?? "").Replace("COPY_", "").Replace("DUP_", "");
-                duplicate.PINumber = $"DUP_{cleanDuplicatePI}";
-                duplicate.Date = DateTime.Today;
-                duplicate.UpdateDate = DateTime.Today;
-                duplicate.CreatedDate = DateTime.Now;
-
-                DbHelper.SaveDailyWork(duplicate);
-                DailyWorks.Add(duplicate);
-                _allWorksSource?.Add(duplicate);
-                RefreshDataView();
-                UpdateStatistics();
-            }
-        }
-
-        private bool CanExecuteDuplicateRow(object parameter)
-        {
-            return SelectedDataRowView != null || SelectedWork != null;
+            _filteredView?.Refresh();
+            UpdateStatistics();
         }
 
         private void UpdateStatistics()
@@ -1653,270 +415,75 @@ namespace ProGlassAutomation.ViewModels
             OnPropertyChanged(nameof(FilteredSQM));
             OnPropertyChanged(nameof(FilteredQty));
             OnPropertyChanged(nameof(SelectedCount));
-            OnPropertyChanged(nameof(SelectedRecords));
-            OnPropertyChanged(nameof(SelectedQty));
-            OnPropertyChanged(nameof(SelectedSQM));
-            OnPropertyChanged(nameof(IsEmpty));
             OnPropertyChanged(nameof(HasRecords));
-            OnPropertyChanged(nameof(TotalCompanies));
-            OnPropertyChanged(nameof(TotalPINumbers));
         }
 
-        private void ExecutePrint(object parameter)
+        public async Task LoadDataAsync()
         {
+            IsBusy = true;
             try
             {
-                var printDialog = new PrintDialog();
-                if (printDialog.ShowDialog() == true)
+                var dbItems = await _repository.GetAllAsync();
+                DailyWorks.Clear();
+                foreach (var item in dbItems)
                 {
-                    var printVisual = CreatePrintVisual();
-                    if (printVisual != null)
+                    var piNum = item.PINumber?.Trim() ?? "";
+                    var custRef = item.CustomerReference?.Trim() ?? "";
+                    if (!string.IsNullOrWhiteSpace(piNum) || !string.IsNullOrWhiteSpace(custRef))
                     {
-                        printDialog.PrintVisual(printVisual, "Daily Works Report");
+                        DailyWorks.Add(item.ToUiModel());
                     }
                 }
+                _filteredView = null;
+                OnPropertyChanged(nameof(FilteredDataView));
+                LoadFilterOptions();
+                UpdateStatistics();
+                StatusMessage = "Ready";
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Print failed: {ex.Message}", "Print Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                StatusMessage = "Load failed: " + ex.Message;
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
 
-        private Grid CreatePrintVisual()
+        private void LoadFilterOptions()
         {
-            var grid = new Grid { Margin = new Thickness(20) };
-            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            CompanyOptions.Clear();
+            PINumberOptions.Clear();
+            CustomerReferenceOptions.Clear();
+            TypeOfWorkOptions.Clear();
+            StatusOptions.Clear();
+            ProductionStatusOptions.Clear();
+            SalesmanOptions.Clear();
+            ColorOptions.Clear();
 
-            var headerPanel = new StackPanel { Margin = new Thickness(0, 0, 0, 20) };
-            headerPanel.Children.Add(new TextBlock
-            {
-                Text = "DAILY WORKS REPORT",
-                FontSize = 20,
-                FontWeight = FontWeights.Bold,
-                HorizontalAlignment = HorizontalAlignment.Center
-            });
-            headerPanel.Children.Add(new TextBlock
-            {
-                Text = $"Generated: {DateTime.Now:dd-MM-yyyy HH:mm}",
-                FontSize = 10,
-                Foreground = Brushes.Gray,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(0, 5, 0, 0)
-            });
-            headerPanel.Children.Add(new TextBlock
-            {
-                Text = $"Records: {FilteredRecords} | Total Qty: {TotalQty} | Total SQM: {TotalSQM:N2}",
-                FontSize = 12,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(0, 5, 0, 0)
-            });
-
-            grid.Children.Add(headerPanel);
-            Grid.SetRow(headerPanel, 0);
-
-            var dataGrid = new DataGrid
-            {
-                ItemsSource = FilteredDataView,
-                AutoGenerateColumns = false,
-                CanUserAddRows = false,
-                IsReadOnly = true,
-                FontSize = 10,
-                GridLinesVisibility = DataGridGridLinesVisibility.All,
-                HorizontalGridLinesBrush = Brushes.LightGray,
-                VerticalGridLinesBrush = Brushes.LightGray,
-                BorderThickness = new Thickness(1),
-                BorderBrush = Brushes.Black,
-                Margin = new Thickness(0, 10, 0, 0)
-            };
-
-            dataGrid.Columns.Add(new DataGridTextColumn { Header = "Date", Binding = new System.Windows.Data.Binding("Date") { StringFormat = "dd-MM-yyyy" }, Width = 80 });
-            dataGrid.Columns.Add(new DataGridTextColumn { Header = "Company", Binding = new System.Windows.Data.Binding("Company"), Width = 120 });
-            dataGrid.Columns.Add(new DataGridTextColumn { Header = "PI No", Binding = new System.Windows.Data.Binding("PINumber"), Width = 100 });
-            dataGrid.Columns.Add(new DataGridTextColumn { Header = "Type", Binding = new System.Windows.Data.Binding("TypeOfWork"), Width = 100 });
-            dataGrid.Columns.Add(new DataGridTextColumn { Header = "Production", Binding = new System.Windows.Data.Binding("ProductionStatus"), Width = 90 });
-            dataGrid.Columns.Add(new DataGridTextColumn { Header = "Qty", Binding = new System.Windows.Data.Binding("Qty"), Width = 50 });
-            dataGrid.Columns.Add(new DataGridTextColumn { Header = "SQM", Binding = new System.Windows.Data.Binding("SQM") { StringFormat = "N2" }, Width = 60 });
-            dataGrid.Columns.Add(new DataGridTextColumn { Header = "Status", Binding = new System.Windows.Data.Binding("Status"), Width = 70 });
-            dataGrid.Columns.Add(new DataGridTextColumn { Header = "Salesman", Binding = new System.Windows.Data.Binding("Salesman"), Width = 90 });
-
-            grid.Children.Add(dataGrid);
-            Grid.SetRow(dataGrid, 1);
-
-            return grid;
+            foreach (var company in DailyWorks.Select(w => w.Company).Where(c => !string.IsNullOrWhiteSpace(c)).Distinct().OrderBy(c => c))
+                CompanyOptions.Add(company);
+            foreach (var pi in DailyWorks.Select(w => w.PiNumber).Where(p => !string.IsNullOrWhiteSpace(p)).Distinct().OrderBy(p => p))
+                PINumberOptions.Add(pi);
+            foreach (var custRef in DailyWorks.Select(w => w.CustomerReference).Where(c => !string.IsNullOrWhiteSpace(c)).Distinct().OrderBy(c => c))
+                CustomerReferenceOptions.Add(custRef);
+            foreach (var type in DailyWorks.Select(w => w.TypeOfWork).Where(t => !string.IsNullOrWhiteSpace(t)).Distinct().OrderBy(t => t))
+                TypeOfWorkOptions.Add(type);
+            foreach (var status in DailyWorks.Select(w => w.Status).Where(s => !string.IsNullOrWhiteSpace(s)).Distinct().OrderBy(s => s))
+                StatusOptions.Add(status);
+            foreach (var prodStatus in DailyWorks.Select(w => w.ProductionStatus).Where(p => !string.IsNullOrWhiteSpace(p)).Distinct().OrderBy(p => p))
+                ProductionStatusOptions.Add(prodStatus);
+            foreach (var salesman in DailyWorks.Select(w => w.Salesman).Where(s => !string.IsNullOrWhiteSpace(s)).Distinct().OrderBy(s => s))
+                SalesmanOptions.Add(salesman);
+            foreach (var color in DailyWorks.Select(w => w.Color).Where(c => !string.IsNullOrWhiteSpace(c)).Distinct().OrderBy(c => c))
+                ColorOptions.Add(color);
         }
 
-        private void ExecuteDeleteSelected(object parameter)
+        // Constructor
+        public DailyWorksViewModel()
         {
-            if (parameter is DataGrid dataGrid)
-            {
-                var selectedIds = new List<int>();
-                foreach (var item in dataGrid.SelectedItems)
-                {
-                    if (item is DataRowView rowView)
-                    {
-                        selectedIds.Add(Convert.ToInt32(rowView["Id"]));
-                    }
-                }
-
-                if (selectedIds.Count == 0)
-                {
-                    MessageBox.Show("Please select rows to delete.", "No Selection", MessageBoxButton.OK, MessageBoxImage.Information);
-                    return;
-                }
-
-                var result = MessageBox.Show(
-                    $"Delete {selectedIds.Count} selected record(s)?\n\nThis action cannot be undone.",
-                    "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-
-                if (result == MessageBoxResult.Yes)
-                {
-                    var deletedIds = new List<int>(selectedIds);
-                    foreach (var id in selectedIds)
-                    {
-                        DbHelper.DeleteDailyWork(id);
-                        var item = DailyWorks.FirstOrDefault(w => w.Id == id);
-                        if (item != null)
-                        {
-                            DailyWorks.Remove(item);
-                            _allWorksSource?.Remove(_allWorksSource.FirstOrDefault(w => w.Id == id));
-                        }
-                    }
-
-                    _selectedIds.Clear();
-                    _selectedCount = 0;
-                    OnPropertyChanged(nameof(SelectedCount));
-
-                    UpdateJsonFileAfterDelete(deletedIds);
-                    RefreshDataView();
-                    UpdateStatistics();
-                    SelectedWork = null;
-                    SelectedDataRowView = null;
-                }
-            }
-        }
-
-        private bool CanExecuteDeleteSelected(object parameter)
-        {
-            return _selectedCount > 0;
-        }
-
-        private void ExecuteLoadToInvoice(object parameter)
-        {
-            DbDailyWork workToLoad = null;
-
-            if (SelectedDataRowView != null)
-            {
-                int id = Convert.ToInt32(SelectedDataRowView["Id"]);
-                workToLoad = DailyWorks.FirstOrDefault(w => w.Id == id);
-            }
-            else if (SelectedWork != null)
-            {
-                workToLoad = SelectedWork;
-            }
-            else if (parameter is System.Windows.Controls.DataGrid dg)
-            {
-                if (dg.SelectedItem is DataRowView drv)
-                {
-                    int id = Convert.ToInt32(drv["Id"]);
-                    workToLoad = DailyWorks.FirstOrDefault(w => w.Id == id);
-                }
-            }
-
-            if (workToLoad != null && ProformaInvoiceVM != null)
-            {
-                ProformaInvoiceVM.LoadFromDailyWork(workToLoad);
-                RequestNavigateToInvoice?.Invoke();
-            }
-            else if (workToLoad != null)
-            {
-                MessageBox.Show("ProformaInvoiceVM not connected.\nPlease set ProformaInvoiceVM in MainWindow.", "Connection Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
-            else
-            {
-                MessageBox.Show("Please select a record first, or open Proforma Invoice page.", "No Selection", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
-
-        private bool CanExecuteLoadToInvoice(object parameter)
-        {
-            return true;
-        }
-
-        private string ExtractColorFromSpecification(SpecificationModel spec)
-        {
-            if (spec == null) return "";
-
-            var specName = spec.SpecificationName ?? "";
-            var knownColors = new[] { "HD Grey", "HD Blue", "HD Green", "HD Bronze", "HD Black", "HD White", "Grey", "Green", "Blue", "Bronze", "Black", "Brown", "Yellow", "Red", "Orange", "Clear", "White", "Teal", "Navy", "Rose", "Amber", "Violet", "Pink", "Purple", "Champagne", "Gold", "Silver" };
-
-            var layers = specName.Split('+');
-            var colors = new List<string>();
-
-            foreach (var layer in layers)
-            {
-                var layerTrimmed = layer.Trim();
-                bool foundColor = false;
-
-                foreach (var color in knownColors)
-                {
-                    if (layerTrimmed.Contains(color, StringComparison.OrdinalIgnoreCase))
-                    {
-                        colors.Add(color);
-                        foundColor = true;
-                        break;
-                    }
-                }
-
-                if (!foundColor)
-                {
-                    var colorPattern = ExtractColorFromPattern(layerTrimmed);
-                    if (!string.IsNullOrEmpty(colorPattern))
-                    {
-                        colors.Add(colorPattern);
-                    }
-                }
-            }
-
-            return colors.Count > 0 ? string.Join(" + ", colors) : "";
-        }
-
-        private string ExtractColorFromPattern(string text)
-        {
-            if (string.IsNullOrEmpty(text)) return "";
-
-            var cleanText = text.Replace("FT Glass", "").Replace("Annealed", "").Replace("Tempered", "").Replace("Glass", "").Replace("ASP", "");
-            var words = cleanText.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            var colorKeywords = new[] { "HD", "Grey", "Gray", "Green", "Blue", "Bronze", "Black", "Brown", "Yellow", "Red", "Orange", "Clear", "White", "Teal", "Navy", "Rose", "Amber", "Violet", "Pink", "Purple", "Champagne", "Gold", "Silver" };
-
-            var colorWords = new List<string>();
-            bool lastWasColor = false;
-
-            foreach (var word in words)
-            {
-                if (colorKeywords.Any(c => word.Equals(c, StringComparison.OrdinalIgnoreCase)))
-                {
-                    colorWords.Add(word);
-                    lastWasColor = true;
-                }
-                else if (lastWasColor && IsColorDescriptor(word))
-                {
-                    lastWasColor = false;
-                }
-                else
-                {
-                    lastWasColor = false;
-                }
-            }
-
-            return colorWords.Count > 0 ? string.Join(" ", colorWords) : "";
-        }
-
-        private bool IsColorDescriptor(string word)
-        {
-            if (string.IsNullOrEmpty(word)) return false;
-            var descriptors = new[] { "Tinted", "Reflective", "Mirror", "LowE", "Solar" };
-            return descriptors.Any(d => word.Contains(d, StringComparison.OrdinalIgnoreCase));
+            _repository = new DailyWorkRepository();
+            _ = LoadDataAsync();
         }
     }
 }

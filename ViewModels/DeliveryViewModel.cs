@@ -4,9 +4,8 @@ using ProGlassAutomation.Models;
 // Add these aliases to disambiguate:
 using DbDelivery = ProGlassAutomation.Data.Database.Delivery;
 using DbDeliveryItem = ProGlassAutomation.Data.Database.DeliveryItem;
-using DbDailyWork = ProGlassAutomation.Data.Database.DailyWork;
 using JobOrder = ProGlassAutomation.Models.JobOrder;
-
+using DbDailyWork = ProGlassAutomation.Data.DbDailyWork;
 using System;
 using System.Collections.ObjectModel;
 using System.Collections.Generic;

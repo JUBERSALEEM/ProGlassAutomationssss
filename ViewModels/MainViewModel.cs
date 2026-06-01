@@ -14,6 +14,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using DbJobOrder = ProGlassAutomation.Data.Database.JobOrderModel;
+using ModelsInvoice = ProGlassAutomation.Models.ProformaInvoiceModel;
 
 // Disambiguation aliases
 using DbProformaInvoice = ProGlassAutomation.Data.Database.ProformaInvoiceModel;
@@ -21,6 +22,10 @@ using InvoiceModel = ProGlassAutomation.Models.ProformaInvoiceModel;
 
 namespace ProGlassAutomation.ViewModels
 {
+    /// <summary>
+    /// Main ViewModel - Navigation + Factory
+    /// PATCH: Updated for refactored DailyWorksViewModel
+    /// </summary>
     public class MainViewModel : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
@@ -166,19 +171,54 @@ namespace ProGlassAutomation.ViewModels
             return view;
         }
 
+        // ═══════════════════════════════════════════════════════
+        // CREATE DAILY WORKS VIEW - PATCHED
+        // Now uses refactored DailyWorksViewModel
+        // ═══════════════════════════════════════════════════════════════
+
         private UserControl CreateDailyWorksView()
         {
+            // Create new DailyWorksViewModel
+            _dailyWorksViewModel = new DailyWorksViewModel();
+
             var view = new Views.DailyWorksView();
-
-            if (_dailyWorksViewModel == null)
-                _dailyWorksViewModel = new DailyWorksViewModel();
-
             view.DataContext = _dailyWorksViewModel;
 
+            // Connect navigation event from DailyWorks back to main
+            _dailyWorksViewModel.RequestNavigateToInvoice -= OnNavigateToInvoiceFromDailyWorks;
+            _dailyWorksViewModel.RequestNavigateToInvoice += OnNavigateToInvoiceFromDailyWorks;
+
+            // Connect invoice saved event
             InvoiceSaved -= _dailyWorksViewModel.OnProformaInvoiceSaved;
             InvoiceSaved += _dailyWorksViewModel.OnProformaInvoiceSaved;
 
             return view;
+        }
+
+        private void OnNavigateToInvoiceFromDailyWorks()
+        {
+            // Navigate to Proforma Invoice when requested from DailyWorks
+            ShowProformaInvoice();
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // DAILY WORKS VIEWMODEL - PATCHED
+        // Now uses refactored version with Repository
+        // ═══════════════════════════════════════════════════════
+
+        private DailyWorksViewModel _dailyWorksViewModel;
+
+        public DailyWorksViewModel DailyWorksViewModel
+        {
+            get
+            {
+                if (_dailyWorksViewModel == null)
+                {
+                    // Lazy load - will be created when Navigate("DailyWorks") is called
+                }
+                return _dailyWorksViewModel;
+            }
+            set => Set(ref _dailyWorksViewModel, value);
         }
 
         // ═══════════════════════════════════════════════════════
@@ -468,21 +508,19 @@ namespace ProGlassAutomation.ViewModels
         // Event for forwarding InvoiceSaved to DailyWorksViewModel
         public event Action<InvoiceModel>? InvoiceSaved;
 
-        public void OnProformaInvoiceSaved(InvoiceModel invoice)
+        public void OnProformaInvoiceSaved(ProGlassAutomation.Models.ProformaInvoiceModel invoice)
         {
             if (DailyWorksViewModel != null)
             {
-                DailyWorksViewModel.OnProformaInvoiceSaved(invoice);
+                // Create the proper InvoiceModel type
+                var invoiceModel = new ProGlassAutomation.Models.ProformaInvoiceModel
+                {
+                    InvoiceNo = invoice.InvoiceNo,
+                    // Copy other properties as needed
+                };
+                DailyWorksViewModel.OnProformaInvoiceSaved(invoiceModel);
             }
             InvoiceSaved?.Invoke(invoice);
-        }
-
-        // DailyWorksViewModel reference
-        private DailyWorksViewModel _dailyWorksViewModel;
-        public DailyWorksViewModel DailyWorksViewModel
-        {
-            get => _dailyWorksViewModel;
-            set => Set(ref _dailyWorksViewModel, value);
         }
 
         public void OnInvoiceToBeAdded(Models.ProformaInvoiceModel invoice)
@@ -524,6 +562,7 @@ namespace ProGlassAutomation.ViewModels
                     if (uiModel != null)
                     {
                         editorViewModel.LoadFromProformaInvoice(uiModel);
+                        // Event will be handled by MainViewModel's InvoiceSaved event
                         var view = new Views.ProformaInvoice.ProformaInvoiceView { DataContext = editorViewModel };
                         SetCurrentView(view);
                         CurrentViewName = "ProformaInvoice";

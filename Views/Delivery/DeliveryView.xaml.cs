@@ -12,7 +12,7 @@ using System.Windows.Media;
 // Add aliases to disambiguate:
 using DbDeliveryItem = ProGlassAutomation.Data.Database.DeliveryItem;
 using DbDelivery = ProGlassAutomation.Data.Database.Delivery;
-using DbDailyWork = ProGlassAutomation.Data.Database.DailyWork;
+using DbDailyWork = ProGlassAutomation.Data.DbDailyWork;
 using ModelsDeliveryItem = ProGlassAutomation.Models.DeliveryItem;
 
 namespace ProGlassAutomation.Views.Delivery

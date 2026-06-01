@@ -712,7 +712,7 @@ namespace ProGlassAutomation.ViewModels
                 System.Diagnostics.Debug.WriteLine("[ProformaInvoice] Copied company fields");
 
                 Invoice.CalculateTotals();
-                System.Diagnostics.Debug.WriteLine("[ProformaInvoice] Calculated totals");
+                System.Diagnostics.Debug.WriteLine($"[ProformaInvoice] Calculated totals: SQM={Invoice.TotalSQM}, Qty={Invoice.TotalQty}");
 
                 // PATCH: Add to main view model's list FIRST
                 AddToMainViewModelList();
@@ -768,6 +768,155 @@ namespace ProGlassAutomation.ViewModels
                 // Raise event for other views to update
                 InvoiceSaved?.Invoke(Invoice);
                 System.Diagnostics.Debug.WriteLine("[ProformaInvoice] InvoiceSaved event raised");
+
+                // === COLOR EXTRACTION ===
+                string extractedColor = "";
+
+                // Try to extract from Notes/Description
+                if (!string.IsNullOrWhiteSpace(Invoice?.Notes))
+                {
+                    extractedColor = ProGlassAutomation.Helpers.ColorExtractor.ExtractColors(Invoice.Notes);
+                }
+
+                // If nothing found in Notes, try specifications
+                if (string.IsNullOrEmpty(extractedColor) && Invoice?.Specifications != null)
+                {
+                    foreach (var spec in Invoice.Specifications)
+                    {
+                        // Try from SpecificationName (e.g., "6mm Clear + 6mm HD Grey FT Glass")
+                        if (!string.IsNullOrWhiteSpace(spec.SpecificationName))
+                        {
+                            extractedColor = ProGlassAutomation.Helpers.ColorExtractor.ExtractColors(spec.SpecificationName);
+                            if (!string.IsNullOrEmpty(extractedColor)) break;
+                        }
+                    }
+                }
+
+                // === Get the final color (extracted or fallback) ===
+                var finalColor = !string.IsNullOrEmpty(extractedColor)
+                    ? extractedColor
+                    : (Invoice?.Color ?? "Clear");
+
+                // === AUTO-SYNC: Save to DailyWorks via DbHelper ===
+                System.Diagnostics.Debug.WriteLine("[PI] Starting DailyWorks save...");
+
+                try
+                {
+                    var piNumber = Invoice?.InvoiceNo ?? "";
+                    var totalSqm = Invoice?.TotalSQM ?? 0;
+                    var totalQty = Invoice?.TotalQty ?? 0;
+
+                    System.Diagnostics.Debug.WriteLine($"[PI] Before Save: PINumber={piNumber}, SQM={totalSqm}, Qty={totalQty}");
+
+                    if (string.IsNullOrEmpty(piNumber))
+                    {
+                        System.Diagnostics.Debug.WriteLine("[PI] ERROR: PI Number is empty!");
+                    }
+
+                    // Check if this PI Number already exists in DailyWorks
+                    var existingWork = ProGlassAutomation.Data.Database.DbHelper.GetDailyWorkByPINumber(piNumber);
+
+                    if (existingWork != null)
+                    {
+                        // Ask user to overwrite
+                        var result = MessageBox.Show(
+                            $"PI Number '{piNumber}' already exists in DailyWorks.\n\nDo you want to overwrite the existing record?",
+                            "Duplicate PI Number",
+                            MessageBoxButton.YesNo,
+                            MessageBoxImage.Question);
+
+                        if (result != MessageBoxResult.Yes)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[PI] DailyWorks save skipped by user: {piNumber}");
+                        }
+                        else
+                        {
+                            // FALLBACK: Calculate SQM manually if Totals are 0
+                            double calculatedSQM = Invoice?.TotalSQM ?? 0;
+                            int calculatedQty = Invoice?.TotalQty ?? 0;
+
+                            if (calculatedSQM == 0 && Invoice?.Specifications != null)
+                            {
+                                foreach (var spec in Invoice.Specifications)
+                                {
+                                    if (spec?.Items != null)
+                                    {
+                                        foreach (var item in spec.Items)
+                                        {
+                                            calculatedSQM += item.TotalSQM;
+                                            calculatedQty += item.Qty;
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Update existing record
+                            existingWork.Date = DateTime.Now;
+                            existingWork.UpdateDate = DateTime.Now;
+                            existingWork.Company = Invoice?.CustomerName ?? "";
+                            existingWork.CustomerReference = Invoice?.CustomerReference ?? "";
+                            existingWork.TypeOfWork = "Installation";
+                            existingWork.ProductionStatus = "Pending";
+                            existingWork.Qty = calculatedQty > 0 ? calculatedQty : (Invoice?.TotalQty ?? 0);
+                            existingWork.SQM = calculatedSQM > 0 ? calculatedSQM : (Invoice?.TotalSQM ?? 0);
+                            existingWork.Status = "Draft";
+                            existingWork.Salesman = Invoice?.Salesman ?? "";
+                            existingWork.Color = finalColor;
+                            existingWork.Notes = Invoice?.Notes ?? "";
+
+                            ProGlassAutomation.Data.Database.DbHelper.UpdateDailyWork(existingWork);
+                            System.Diagnostics.Debug.WriteLine($"[PI] Updated DailyWorks: {piNumber}");
+                        }
+                    }
+                    else
+                    {
+                        // FALLBACK: Calculate SQM manually if Totals are 0
+                        double calculatedSQM = Invoice?.TotalSQM ?? 0;
+                        int calculatedQty = Invoice?.TotalQty ?? 0;
+
+                        if (calculatedSQM == 0 && Invoice?.Specifications != null)
+                        {
+                            foreach (var spec in Invoice.Specifications)
+                            {
+                                if (spec?.Items != null)
+                                {
+                                    foreach (var item in spec.Items)
+                                    {
+                                        calculatedSQM += item.TotalSQM;
+                                        calculatedQty += item.Qty;
+                                    }
+                                }
+                            }
+                            System.Diagnostics.Debug.WriteLine($"[PI] Fallback calc: SQM={calculatedSQM}, Qty={calculatedQty}");
+                        }
+
+                        // Create new record
+                        var dailyWork = new ProGlassAutomation.Data.Database.DailyWork
+                        {
+                            Date = DateTime.Now,
+                            UpdateDate = DateTime.Now,
+                            Company = Invoice?.CustomerName ?? "",
+                            PINumber = piNumber,
+                            CustomerReference = Invoice?.CustomerReference ?? "",
+                            TypeOfWork = "Installation",
+                            ProductionStatus = "Pending",
+                            Qty = calculatedQty > 0 ? calculatedQty : (Invoice?.TotalQty ?? 0),
+                            SQM = calculatedSQM > 0 ? calculatedSQM : (Invoice?.TotalSQM ?? 0),
+                            Status = "Draft",
+                            Salesman = Invoice?.Salesman ?? "",
+                            Color = finalColor,
+                            Notes = Invoice?.Notes ?? "",
+                            CreatedDate = DateTime.Now
+                        };
+
+                        ProGlassAutomation.Data.Database.DbHelper.SaveDailyWork(dailyWork);
+                        System.Diagnostics.Debug.WriteLine($"[PI] Saved to DailyWorks: {piNumber}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[PI] DailyWorks save error: {ex.Message}");
+                }
 
                 // Check and convert to Job Order if status is Confirmed
                 CheckAndConvertToJobOrder();
@@ -2364,23 +2513,88 @@ namespace ProGlassAutomation.ViewModels
         {
             if (dailyWork == null) return;
 
-            Invoice.InvoiceNo = $"PI-{DateTime.Now:yyyyMMdd}-{dailyWork.Id:D4}";
+            // Generate PI Number from DailyWork
+            Invoice.InvoiceNo = string.IsNullOrEmpty(dailyWork.PINumber)
+                ? $"PI-{DateTime.Now:yyyyMMdd}-{dailyWork.Id:D4}"
+                : dailyWork.PINumber;
+
             Invoice.InvoiceDate = DateTime.Now;
             Invoice.ValidUntil = DateTime.Now.AddDays(30);
-            Invoice.CustomerName = dailyWork.CustomerReference;
-            Invoice.CustomerReference = dailyWork.CustomerReference;
-            Invoice.Salesman = dailyWork.Salesman;
+
+            // Fix: Use Company for CustomerName
+            Invoice.CustomerName = dailyWork.Company ?? "New Customer";
+
+            // Keep CustomerReference from DailyWork
+            Invoice.CustomerReference = dailyWork.CustomerReference ?? "";
+            Invoice.Salesman = dailyWork.Salesman ?? "";
             Invoice.ProjectName = ExtractProjectName(dailyWork.Notes);
-            Invoice.ProjectNo = dailyWork.PINumber;
+            Invoice.ProjectNo = dailyWork.PINumber ?? "";
             Invoice.ProjectLocation = "";
             Invoice.LPONo = "";
             Invoice.AttentionName = "";
             Invoice.ContactNo = "";
-            Invoice.Color = dailyWork.Color;
-            Invoice.Notes = dailyWork.Notes;
+            Invoice.Color = dailyWork.Color ?? "";
+            Invoice.Notes = dailyWork.Notes ?? "";
 
+            // Calculate SQM - create specifications from DailyWork qty
+            if (dailyWork.SQM > 0 || dailyWork.Qty > 0)
+            {
+                // Clear existing specs and create new one
+                Invoice.Specifications.Clear();
+
+                // Add specification with SQM info
+                var spec = new SpecificationModel
+                {
+                    SpecificationName = $"Load from DailyWork",
+                    Id = 0,
+                    Invoice = Invoice
+                };
+
+                // Calculate dimensions: assume square panels for simplicity
+                // SQM = (Width * Height * Qty) / 1,000,000
+                // So Height = (SQM * 1,000,000) / (Width * Qty)
+                double qty = dailyWork.Qty > 0 ? dailyWork.Qty : 1;
+                double sqm = dailyWork.SQM > 0 ? dailyWork.SQM : 1;
+                double widthMm = 1000; // Default 1m width
+                double heightMm = (sqm * 1000000) / (widthMm * qty); // Calculate height from SQM
+
+                // Handle edge cases
+                if (double.IsNaN(heightMm) || double.IsInfinity(heightMm))
+                    heightMm = 1000;
+                if (heightMm <= 0)
+                    heightMm = 1000;
+
+                // Add item with dimensions calculated from SQM
+                var item = new InvoiceItemModel
+                {
+                    SrNo = 1,
+                    GlassRef = dailyWork.Color ?? "Clear",
+                    Width1 = widthMm,
+                    Height1 = heightMm,
+                    Width2 = 0,
+                    Height2 = 0,
+                    Qty = (int)qty,
+                    SurchargePercent = 20,
+                    Specification = spec
+                };
+
+                // CRITICAL: Call Recalculate to set TotalSQM
+                item.Recalculate();
+
+                spec.Items.Add(item);
+                Invoice.Specifications.Add(spec);
+
+                System.Diagnostics.Debug.WriteLine($"[PIViewModel] Created item from DailyWork: Width1={item.Width1}, Height1={item.Height1}, Qty={item.Qty}, TotalSQM={item.TotalSQM}");
+
+                // Subscribe to changes
+                SubscribeToOtherChargeChanges();
+            }
+
+            Invoice.CalculateTotals();
             Invoice.IsDirty = true;
             OnPropertyChanged(nameof(Invoice));
+
+            System.Diagnostics.Debug.WriteLine($"[PIViewModel] Loaded from DailyWorks: PINumber={dailyWork.PINumber}, SQM={Invoice.TotalSQM}, Qty={Invoice.TotalQty}");
         }
 
         private string ExtractProjectName(string notes)
