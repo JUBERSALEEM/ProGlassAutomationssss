@@ -250,9 +250,10 @@ namespace ProGlassAutomation.ViewModels
 
             try
             {
+                // PATCH 01, 04: Use repository instead of direct DbHelper call
                 foreach (var id in selectedIds)
                 {
-                    DbHelper.DeleteDailyWork(id);
+                    await _repository.DeleteAsync(id);
                     System.Diagnostics.Debug.WriteLine($"[DailyWorksVM] Deleted Id: {id}");
                 }
 
