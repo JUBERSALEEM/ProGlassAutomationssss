@@ -37,7 +37,8 @@ namespace ProGlassAutomation.Views
             if (sender is CheckBox checkBox && MainDataGrid != null)
             {
                 _suppressSelectionChanged = true;
-                MainDataGrid.Dispatcher.Invoke(() =>
+                // PATCH 14: Use BeginInvoke for non-blocking UI update
+                MainDataGrid.Dispatcher.BeginInvoke(() =>
                 {
                     if (checkBox.IsChecked == true)
                         MainDataGrid.SelectAll();
