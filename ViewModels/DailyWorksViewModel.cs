@@ -425,7 +425,7 @@ namespace ProGlassAutomation.ViewModels
             RefreshFilteredView();
         }
 
-        // PATCH 91: Export to CSV
+        // PATCH 91: Export to CSV - Export FILTERED records
         [RelayCommand]
         private async Task ExportToCsvAsync()
         {
@@ -444,18 +444,21 @@ namespace ProGlassAutomation.ViewModels
                     StatusMessage = "Exporting...";
 
                     var lines = new List<string>
-                    {
-                        "Date,Company,PI Number,Color,Cust Ref,Type of Work,Production,QTY,SQM,Status,Salesman,Notes"
-                    };
+            {
+                "Date,Company,PI Number,Color,Cust Ref,Type of Work,Production,QTY,SQM,Status,Salesman,Notes"
+            };
 
-                    foreach (var work in DailyWorks)
+                    // PATCH 91 FIX: Export FILTERED records, not all records
+                    var filteredList = FilteredDataView?.Cast<DailyWorkModel>().ToList() ?? DailyWorks.ToList();
+
+                    foreach (var work in filteredList)
                     {
                         var line = $"\"{work.Date:dd-MM-yyyy}\",\"{work.Company}\",\"{work.PiNumber}\",\"{work.Color}\",\"{work.CustomerReference}\",\"{work.TypeOfWork}\",\"{work.ProductionStatus}\",{work.Qty},{work.Sqm:N2},\"{work.Status}\",\"{work.Salesman}\",\"{work.Notes}\"";
                         lines.Add(line);
                     }
 
                     await System.IO.File.WriteAllLinesAsync(dialog.FileName, lines);
-                    StatusMessage = $"Exported {DailyWorks.Count} records!";
+                    StatusMessage = $"Exported {filteredList.Count} records!";
                 }
             }
             catch (Exception ex)

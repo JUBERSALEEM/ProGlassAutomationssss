@@ -428,13 +428,13 @@
                             <Border Background="#1E40AF" CornerRadius="8" Padding="10,8" Margin="2">
                                 <TextBlock Text="🔍" FontSize="12"/>
                             </Border>
-                            <TextBox Grid.Column="1" 
-                                     Text="{Binding SearchText, UpdateSourceTrigger=LostFocus}" 
-                                     BorderThickness="0" 
-                                     VerticalAlignment="Center" 
-                                     Padding="10,6" 
-                                     FontSize="12"
-                                     Background="Transparent"/>
+                            <TextBox x:Name="SearchTextBox"
+                                    Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
+                                    BorderThickness="0" 
+                                    VerticalAlignment="Center" 
+                                    Padding="10,6" 
+                                    FontSize="12"
+                                    Background="Transparent"/>
                         </Grid>
                     </Border>
 
@@ -482,7 +482,7 @@
 
         <!-- 2. FILTER BAR -->
         <Border Grid.Row="1" CornerRadius="12" Padding="12,10" Margin="0,0,0,12"
-                BorderBrush="#3B82F6" BorderThickness="2">
+        BorderBrush="#3B82F6" BorderThickness="2">
             <Border.Background>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
                     <GradientStop Color="#DBEAFE" Offset="0"/>
@@ -496,6 +496,7 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
@@ -504,8 +505,8 @@
                     <StackPanel>
                         <TextBlock Text="COMPANY" FontSize="9" FontWeight="Bold" Foreground="#1E40AF" Margin="4,0,0,4"/>
                         <ComboBox ItemsSource="{Binding CompanyOptions}" 
-                                 SelectedItem="{Binding FilterCompany, UpdateSourceTrigger=LostFocus}"
-                                 Background="White" BorderBrush="#93C5FD" BorderThickness="1" Padding="10,8" FontSize="11"/>
+                         SelectedItem="{Binding FilterCompany, UpdateSourceTrigger=LostFocus}"
+                         Background="White" BorderBrush="#93C5FD" BorderThickness="1" Padding="10,8" FontSize="11"/>
                     </StackPanel>
                 </Border>
 
@@ -514,8 +515,8 @@
                     <StackPanel>
                         <TextBlock Text="PI NUMBER" FontSize="9" FontWeight="Bold" Foreground="#1E40AF" Margin="4,0,0,4"/>
                         <ComboBox ItemsSource="{Binding PINumberOptions}" 
-                                 SelectedItem="{Binding FilterPINumber, UpdateSourceTrigger=LostFocus}"
-                                 Background="White" BorderBrush="#93C5FD" BorderThickness="1" Padding="10,8" FontSize="11"/>
+                         SelectedItem="{Binding FilterPINumber, UpdateSourceTrigger=LostFocus}"
+                         Background="White" BorderBrush="#93C5FD" BorderThickness="1" Padding="10,8" FontSize="11"/>
                     </StackPanel>
                 </Border>
 
@@ -524,8 +525,8 @@
                     <StackPanel>
                         <TextBlock Text="CUST REF" FontSize="9" FontWeight="Bold" Foreground="#1E40AF" Margin="4,0,0,4"/>
                         <ComboBox ItemsSource="{Binding CustomerReferenceOptions}" 
-                                 SelectedItem="{Binding FilterCustomerReference, UpdateSourceTrigger=LostFocus}"
-                                 Background="White" BorderBrush="#93C5FD" BorderThickness="1" Padding="10,8" FontSize="11"/>
+                         SelectedItem="{Binding FilterCustomerReference, UpdateSourceTrigger=LostFocus}"
+                         Background="White" BorderBrush="#93C5FD" BorderThickness="1" Padding="10,8" FontSize="11"/>
                     </StackPanel>
                 </Border>
 
@@ -534,8 +535,8 @@
                     <StackPanel>
                         <TextBlock Text="TYPE OF WORK" FontSize="9" FontWeight="Bold" Foreground="#1E40AF" Margin="4,0,0,4"/>
                         <ComboBox ItemsSource="{Binding TypeOfWorkOptions}" 
-                                 SelectedItem="{Binding FilterTypeOfWork, UpdateSourceTrigger=LostFocus}"
-                                 Background="White" BorderBrush="#93C5FD" BorderThickness="1" Padding="10,8" FontSize="11"/>
+                         SelectedItem="{Binding FilterTypeOfWork, UpdateSourceTrigger=LostFocus}"
+                         Background="White" BorderBrush="#93C5FD" BorderThickness="1" Padding="10,8" FontSize="11"/>
                     </StackPanel>
                 </Border>
 
@@ -544,30 +545,40 @@
                     <StackPanel>
                         <TextBlock Text="STATUS" FontSize="9" FontWeight="Bold" Foreground="#1E40AF" Margin="4,0,0,4"/>
                         <ComboBox ItemsSource="{Binding StatusOptions}" 
-                                 SelectedItem="{Binding FilterStatus, UpdateSourceTrigger=LostFocus}"
-                                 Background="White" BorderBrush="#93C5FD" BorderThickness="1" Padding="10,8" FontSize="11"/>
+                         SelectedItem="{Binding FilterStatus, UpdateSourceTrigger=LostFocus}"
+                         Background="White" BorderBrush="#93C5FD" BorderThickness="1" Padding="10,8" FontSize="11"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- PATCH 106: Filter: Production Status -->
+                <Border Grid.Column="5" Margin="0,0,8,0">
+                    <StackPanel>
+                        <TextBlock Text="PRODUCTION" FontSize="9" FontWeight="Bold" Foreground="#1E40AF" Margin="4,0,0,4"/>
+                        <ComboBox ItemsSource="{Binding ProductionStatusOptions}" 
+                         SelectedItem="{Binding FilterProductionStatus, UpdateSourceTrigger=LostFocus}"
+                         Background="White" BorderBrush="#93C5FD" BorderThickness="1" Padding="10,8" FontSize="11"/>
                     </StackPanel>
                 </Border>
 
                 <!-- PATCH 41-44: Quick Filter Buttons + Clear All -->
-                <Border Grid.Column="5" VerticalAlignment="Bottom">
+                <Border Grid.Column="6" VerticalAlignment="Bottom">
                     <StackPanel Orientation="Horizontal">
                         <Button Content="Week" 
-                                Style="{StaticResource PrimaryButton}" 
-                                Command="{Binding QuickFilterThisWeekCommand}" 
-                                Padding="8,6" Margin="0,0,4,0" FontSize="9"/>
+                        Style="{StaticResource PrimaryButton}" 
+                        Command="{Binding QuickFilterThisWeekCommand}" 
+                        Padding="8,6" Margin="0,0,4,0" FontSize="9"/>
                         <Button Content="Month" 
-                                Style="{StaticResource PrimaryButton}" 
-                                Command="{Binding QuickFilterThisMonthCommand}" 
-                                Padding="8,6" Margin="0,0,4,0" FontSize="9"/>
+                        Style="{StaticResource PrimaryButton}" 
+                        Command="{Binding QuickFilterThisMonthCommand}" 
+                        Padding="8,6" Margin="0,0,4,0" FontSize="9"/>
                         <Button Content="All" 
-                                Style="{StaticResource SecondaryButton}" 
-                                Command="{Binding QuickFilterAllTimeCommand}" 
-                                Padding="8,6" Margin="0,0,8,0" FontSize="9"/>
+                        Style="{StaticResource SecondaryButton}" 
+                        Command="{Binding QuickFilterAllTimeCommand}" 
+                        Padding="8,6" Margin="0,0,8,0" FontSize="9"/>
                         <Button Content="Clear" 
-                                Style="{StaticResource DangerButton}" 
-                                Command="{Binding ClearFiltersCommand}" 
-                                Padding="12,6" FontSize="9"/>
+                        Style="{StaticResource DangerButton}" 
+                        Command="{Binding ClearFiltersCommand}" 
+                        Padding="12,6" FontSize="9"/>
                     </StackPanel>
                 </Border>
             </Grid>
