@@ -235,6 +235,9 @@ namespace ProGlassAutomation.ViewModels
         [RelayCommand]
         private async Task DeleteSelectedAsync(object? parameter)
         {
+            // PATCH 55: Prevent command re-entry
+            if (IsBusy) return;
+
             // Get selected IDs from the tracking list
             var selectedIds = _selectedIds?.ToList() ?? new List<int>();
 
@@ -541,6 +544,7 @@ namespace ProGlassAutomation.ViewModels
         // PATCH 56-60: Proper disposal
         public DailyWorksViewModel()
         {
+            _isBusy = false;
             _repository = new DailyWorkRepository();
             _ = LoadDataAsync();
         }
