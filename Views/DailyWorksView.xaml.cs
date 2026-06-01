@@ -85,14 +85,64 @@ namespace ProGlassAutomation.Views
             }
         }
 
-        private void LoadToInvoice_Click(object sender, RoutedEventArgs e)
+        // PATCH 108: Keyboard shortcuts
+        private void UserControl_KeyDown(object sender, KeyEventArgs e)
         {
-            if (DataContext is DailyWorksViewModel vm)
+            if (DataContext is not DailyWorksViewModel vm) return;
+
+            // Escape = Close edit popup
+            if (e.Key == Key.Escape && vm.IsEditing)
             {
-                if (MainDataGrid?.SelectedItem is DailyWorkModel work)
-                    vm.SelectedItem = work;
-                vm.EditCommand?.Execute(null);
+                vm.CancelCommand.Execute(null);
+                e.Handled = true;
+                return;
             }
+
+            // Enter in edit mode = Save
+            if (e.Key == Key.Enter && vm.IsEditing)
+            {
+                vm.SaveCommand.Execute(null);
+                e.Handled = true;
+                return;
+            }
+
+            // Ctrl+F = Focus search
+            if (e.Key == Key.F && Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                SearchTextBox?.Focus();
+                e.Handled = true;
+                return;
+            }
+
+            // Ctrl+S = Save (when editing)
+            if (e.Key == Key.S && Keyboard.Modifiers == ModifierKeys.Control && vm.IsEditing)
+            {
+                vm.SaveCommand.Execute(null);
+                e.Handled = true;
+                return;
+            }
+
+            // Delete = Delete selected
+            if (e.Key == Key.Delete && !vm.IsEditing && vm.SelectedCount > 0)
+            {
+                vm.DeleteSelectedCommand.Execute(null);
+                e.Handled = true;
+                return;
+            }
+
+            // Ctrl+A = Select all
+            if (e.Key == Key.A && Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                MainDataGrid?.SelectAll();
+                e.Handled = true;
+                return;
+            }
+        }
+
+        private void UserControl_Loaded(object sender, RoutedEventArgs e)
+        {
+            // Focus search on load
+            SearchTextBox?.Focus();
         }
 
         // PATCH 92: Print button handler

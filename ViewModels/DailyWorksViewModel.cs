@@ -632,6 +632,71 @@ namespace ProGlassAutomation.ViewModels
             private set => SetProperty(ref _totalPINumbers, value);
         }
 
+        // PATCH 107: Bulk production status
+        private string _bulkProductionStatus = string.Empty;
+        public string BulkProductionStatus
+        {
+            get => _bulkProductionStatus;
+            set => SetProperty(ref _bulkProductionStatus, value);
+        }
+
+        [RelayCommand]
+        private async Task BulkUpdateProductionStatusAsync()
+        {
+            if (string.IsNullOrWhiteSpace(BulkProductionStatus)) return;
+
+            var selectedIds = _selectedIds?.ToList() ?? new List<int>();
+            if (selectedIds.Count == 0)
+            {
+                // Try from grid - PATCH 107
+                var grid = Application.Current.MainWindow?.FindName("MainDataGrid") as DataGrid;
+                if (grid != null)
+                {
+                    foreach (var item in grid.SelectedItems)
+                    {
+                        if (item is DailyWorkModel work)
+                            selectedIds.Add(work.Id);
+                    }
+                }
+            }
+
+            if (selectedIds.Count == 0)
+            {
+                StatusMessage = "No items selected!";
+                return;
+            }
+
+            var result = MessageBox.Show(
+                $"Update Production Status to '{BulkProductionStatus}' for {selectedIds.Count} records?",
+                "Confirm Bulk Update", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+            if (result != MessageBoxResult.Yes) return;
+
+            try
+            {
+                foreach (var id in selectedIds)
+                {
+                    var work = DailyWorks.FirstOrDefault(w => w.Id == id);
+                    if (work != null)
+                    {
+                        work.ProductionStatus = BulkProductionStatus;
+                        work.UpdateDate = DateTime.Today;
+                        await _repository.UpdateAsync(DbDailyWork.FromUiModel(work));
+                    }
+                }
+
+                RefreshFilteredView();
+                UpdateStatistics();
+                _selectedIds.Clear();
+                OnPropertyChanged(nameof(SelectedCount));
+                StatusMessage = $"Updated {selectedIds.Count} records to '{BulkProductionStatus}'!";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = "Update failed: " + ex.Message;
+            }
+        }
+
         // PATCH 12: Prevent UI thread blocking with parallel loading
         public async Task LoadDataAsync()
         {
