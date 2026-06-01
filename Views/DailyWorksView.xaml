@@ -569,17 +569,22 @@
             <Border.Effect>
                 <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.1"/>
             </Border.Effect>
+            <!-- PATCH 86, 87: Enable UI virtualization and recycling for 60fps performance -->
             <DataGrid x:Name="MainDataGrid"
-                      ItemsSource="{Binding FilteredDataView}" 
-                      SelectedItem="{Binding SelectedItem}"
-                      SelectionMode="Extended"
-                      SelectionUnit="FullRow"
-                      MouseDoubleClick="DataGrid_MouseDoubleClick"
-                      Style="{StaticResource SimpleDataGrid}" 
-                      CellStyle="{StaticResource SimpleCell}"
-                      RowStyle="{StaticResource SimpleRow}"
-                      SelectionChanged="MainDataGrid_SelectionChanged"
-                      BorderThickness="0">
+          ItemsSource="{Binding FilteredDataView}" 
+          SelectedItem="{Binding SelectedItem}"
+          SelectionMode="Extended"
+          SelectionUnit="FullRow"
+          MouseDoubleClick="DataGrid_MouseDoubleClick"
+          Style="{StaticResource SimpleDataGrid}" 
+          CellStyle="{StaticResource SimpleCell}"
+          RowStyle="{StaticResource SimpleRow}"
+          SelectionChanged="MainDataGrid_SelectionChanged"
+          BorderThickness="0"
+          EnableRowVirtualization="True"
+          EnableColumnVirtualization="True"
+          VirtualizingPanel.VirtualizationMode="Recycling"
+          VirtualizingPanel.IsVirtualizing="True">
                 <DataGrid.Columns>
                     <!-- SELECT CHECKBOX -->
                     <DataGridTemplateColumn Header="" Width="45">
