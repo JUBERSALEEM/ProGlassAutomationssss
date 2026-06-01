@@ -18,7 +18,8 @@ namespace ProGlassAutomation.ViewModels
     /// <summary>
     /// ViewModel - Manual properties, uses RelayCommand from toolkit
     /// </summary>
-    public partial class DailyWorksViewModel : ObservableObject
+    // PATCH 54: Implement IDisposable for proper cleanup
+    public partial class DailyWorksViewModel : ObservableObject, IDisposable
     {
         private readonly IDailyWorkRepository _repository;
 
@@ -561,11 +562,21 @@ namespace ProGlassAutomation.ViewModels
             _ = LoadDataAsync();
         }
 
+        // PATCH 54: Implement IDisposable for proper cleanup
         public void Dispose()
         {
-            _searchDebounceTimer?.Stop();
-            _searchDebounceTimer?.Dispose();
-            _searchDebounceTimer = null;
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _searchDebounceTimer?.Stop();
+                _searchDebounceTimer?.Dispose();
+                _searchDebounceTimer = null;
+            }
         }
     }
 }
