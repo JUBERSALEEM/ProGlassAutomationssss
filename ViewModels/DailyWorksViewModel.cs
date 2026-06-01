@@ -98,6 +98,14 @@ namespace ProGlassAutomation.ViewModels
         // PATCH 35: Add debounce timer for search
         private System.Timers.Timer? _searchDebounceTimer;
 
+        // PATCH 112: Quick instant search toggle
+        private bool _instantSearch = true;
+        public bool InstantSearch
+        {
+            get => _instantSearch;
+            set => SetProperty(ref _instantSearch, value);
+        }
+
         // Note: SearchText needs custom setter for debounce, so keep manual
         private string _searchText = string.Empty;
         public string SearchText
@@ -107,16 +115,25 @@ namespace ProGlassAutomation.ViewModels
             {
                 if (SetProperty(ref _searchText, value))
                 {
-                    // PATCH 35: Debounce search to prevent excessive filtering
-                    _searchDebounceTimer?.Stop();
-                    _searchDebounceTimer?.Dispose();
-                    _searchDebounceTimer = new System.Timers.Timer(300);
-                    _searchDebounceTimer.Elapsed += (s, e) =>
+                    // PATCH 112: Check if instant search is enabled
+                    if (_instantSearch)
                     {
+                        // Instant search - no debounce
+                        RefreshFilteredView();
+                    }
+                    else
+                    {
+                        // PATCH 35: Debounce search to prevent excessive filtering
                         _searchDebounceTimer?.Stop();
-                        System.Windows.Application.Current?.Dispatcher.Invoke(RefreshFilteredView);
-                    };
-                    _searchDebounceTimer.Start();
+                        _searchDebounceTimer?.Dispose();
+                        _searchDebounceTimer = new System.Timers.Timer(300);
+                        _searchDebounceTimer.Elapsed += (s, e) =>
+                        {
+                            _searchDebounceTimer?.Stop();
+                            System.Windows.Application.Current?.Dispatcher.Invoke(RefreshFilteredView);
+                        };
+                        _searchDebounceTimer.Start();
+                    }
                 }
             }
         }
