@@ -94,5 +94,69 @@ namespace ProGlassAutomation.Views
                 vm.EditCommand?.Execute(null);
             }
         }
+
+        // PATCH 92: Print button handler
+        private void PrintButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var printDialog = new PrintDialog();
+                if (printDialog.ShowDialog() == true && MainDataGrid != null)
+                {
+                    printDialog.PrintVisual(MainDataGrid, "Daily Works Report");
+                    if (DataContext is DailyWorksViewModel vm)
+                    {
+                        vm.StatusMessage = "Printing complete!";
+                    }
+                }
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show("Print failed: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // PATCH 94: Keyboard shortcuts
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            base.OnKeyDown(e);
+
+            if (DataContext is not DailyWorksViewModel vm) return;
+
+            switch (e.Key)
+            {
+                case Key.F5: // Refresh
+                    vm.RefreshCommand.Execute(null);
+                    e.Handled = true;
+                    break;
+
+                case Key.Insert: // Add new record
+                    vm.AddNewCommand.Execute(null);
+                    e.Handled = true;
+                    break;
+
+                case Key.Delete: // Delete selected
+                    if (vm.SelectedCount > 0)
+                        vm.DeleteSelectedCommand.Execute(null);
+                    e.Handled = true;
+                    break;
+
+                case Key.Escape: // Cancel/Close popup
+                    vm.CancelCommand.Execute(null);
+                    e.Handled = true;
+                    break;
+
+                case Key.S when Keyboard.Modifiers == ModifierKeys.Control: // Ctrl+S - Save
+                    if (vm.IsEditing)
+                        vm.SaveCommand.Execute(null);
+                    e.Handled = true;
+                    break;
+
+                case Key.F when Keyboard.Modifiers == ModifierKeys.Control: // Ctrl+F - Focus search
+                    // Focus search box - requires x:Name on search TextBox in XAML
+                    e.Handled = true;
+                    break;
+            }
+        }
     }
 }

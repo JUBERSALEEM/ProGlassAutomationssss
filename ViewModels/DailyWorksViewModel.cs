@@ -425,6 +425,117 @@ namespace ProGlassAutomation.ViewModels
             RefreshFilteredView();
         }
 
+        // PATCH 91: Export to CSV
+        [RelayCommand]
+        private async Task ExportToCsvAsync()
+        {
+            try
+            {
+                var dialog = new Microsoft.Win32.SaveFileDialog
+                {
+                    Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*",
+                    DefaultExt = ".csv",
+                    FileName = $"DailyWorks_Export_{DateTime.Now:yyyyMMdd_HHmmss}"
+                };
+
+                if (dialog.ShowDialog() == true)
+                {
+                    IsBusy = true;
+                    StatusMessage = "Exporting...";
+
+                    var lines = new List<string>
+                    {
+                        "Date,Company,PI Number,Color,Cust Ref,Type of Work,Production,QTY,SQM,Status,Salesman,Notes"
+                    };
+
+                    foreach (var work in DailyWorks)
+                    {
+                        var line = $"\"{work.Date:dd-MM-yyyy}\",\"{work.Company}\",\"{work.PiNumber}\",\"{work.Color}\",\"{work.CustomerReference}\",\"{work.TypeOfWork}\",\"{work.ProductionStatus}\",{work.Qty},{work.Sqm:N2},\"{work.Status}\",\"{work.Salesman}\",\"{work.Notes}\"";
+                        lines.Add(line);
+                    }
+
+                    await System.IO.File.WriteAllLinesAsync(dialog.FileName, lines);
+                    StatusMessage = $"Exported {DailyWorks.Count} records!";
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = "Export failed: " + ex.Message;
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        // PATCH 92: Print
+        [RelayCommand]
+        private void Print()
+        {
+            try
+            {
+                var printDialog = new PrintDialog();
+                if (printDialog.ShowDialog() == true)
+                {
+                    // Will be handled in code-behind with DataGrid reference
+                    StatusMessage = "Printing...";
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = "Print failed: " + ex.Message;
+            }
+        }
+
+        // PATCH 95: Auto-refresh timer
+        private System.Timers.Timer? _autoRefreshTimer;
+
+        private bool _autoRefreshEnabled;
+        public bool AutoRefreshEnabled
+        {
+            get => _autoRefreshEnabled;
+            set
+            {
+                if (SetProperty(ref _autoRefreshEnabled, value))
+                {
+                    UpdateAutoRefresh();
+                }
+            }
+        }
+
+        private int _autoRefreshSeconds = 60;
+        public int AutoRefreshSeconds
+        {
+            get => _autoRefreshSeconds;
+            set
+            {
+                if (SetProperty(ref _autoRefreshSeconds, value))
+                {
+                    UpdateAutoRefresh();
+                }
+            }
+        }
+
+        private void UpdateAutoRefresh()
+        {
+            _autoRefreshTimer?.Stop();
+            _autoRefreshTimer?.Dispose();
+            _autoRefreshTimer = null;
+
+            if (AutoRefreshEnabled && AutoRefreshSeconds > 0)
+            {
+                _autoRefreshTimer = new System.Timers.Timer(AutoRefreshSeconds * 1000);
+                _autoRefreshTimer.Elapsed += async (s, e) =>
+                {
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                    {
+                        await LoadDataAsync();
+                    });
+                };
+                _autoRefreshTimer.Start();
+            }
+        }
+
         // Invoice handling
         public event Action? RequestNavigateToInvoice;
 
@@ -614,6 +725,11 @@ namespace ProGlassAutomation.ViewModels
                 _searchDebounceTimer?.Stop();
                 _searchDebounceTimer?.Dispose();
                 _searchDebounceTimer = null;
+
+                // PATCH 95: Auto-refresh timer cleanup
+                _autoRefreshTimer?.Stop();
+                _autoRefreshTimer?.Dispose();
+                _autoRefreshTimer = null;
             }
         }
     }
