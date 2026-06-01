@@ -81,9 +81,10 @@ namespace ProGlassAutomation.ViewModels
             get => _selectedItem;
             set
             {
+                // PATCH 53: Remove CommandManager.InvalidateRequerySuggested spam
                 if (SetProperty(ref _selectedItem, value))
                 {
-                    System.Windows.Input.CommandManager.InvalidateRequerySuggested();
+                    // Selection updated - do not trigger command re-evaluation
                 }
             }
         }

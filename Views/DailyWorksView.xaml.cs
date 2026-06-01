@@ -9,7 +9,8 @@ namespace ProGlassAutomation.Views
 {
     public partial class DailyWorksView : UserControl
     {
-        private bool _isBulkSelecting = false;
+        // PATCH 25: Remove _isBulkSelecting flag - use change suppression scope
+        private bool _suppressSelectionChanged = false;
 
         public DailyWorksView()
         {
@@ -35,7 +36,7 @@ namespace ProGlassAutomation.Views
         {
             if (sender is CheckBox checkBox && MainDataGrid != null)
             {
-                _isBulkSelecting = true;
+                _suppressSelectionChanged = true;
                 MainDataGrid.Dispatcher.Invoke(() =>
                 {
                     if (checkBox.IsChecked == true)
@@ -43,20 +44,23 @@ namespace ProGlassAutomation.Views
                     else
                         MainDataGrid.UnselectAll();
                     MainDataGrid.UpdateLayout();
+                    _suppressSelectionChanged = false; // PATCH 25: Reset AFTER operation
                 });
-                _isBulkSelecting = false;
                 UpdateSelectedIds();
             }
         }
 
         private void MainDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (_isBulkSelecting) return;
+            if (_suppressSelectionChanged) return;
             UpdateSelectedIds();
         }
 
+        // PATCH 27: Prevent re-raising SelectionChanged loops
         private void UpdateSelectedIds()
         {
+            if (_suppressSelectionChanged) return;
+
             if (DataContext is DailyWorksViewModel vm && MainDataGrid != null)
             {
                 var selectedIds = new List<int>();
@@ -73,7 +77,9 @@ namespace ProGlassAutomation.Views
                 }
 
                 vm.UpdateSelectedIds(selectedIds);
-                if (firstSelected != null)
+
+                // PATCH 27: Only update if different to avoid loops
+                if (firstSelected != null && vm.SelectedItem?.Id != firstSelected.Id)
                     vm.SelectedItem = firstSelected;
             }
         }
