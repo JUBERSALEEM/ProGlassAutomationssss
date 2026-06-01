@@ -392,13 +392,49 @@ namespace ProGlassAutomation.ViewModels
             _ = LoadDataAsync();
         }
 
-        // Statistics
-        public int TotalRecords => DailyWorks?.Count ?? 0;
-        public int FilteredRecords => FilteredDataView?.Cast<object>().Count() ?? 0;
-        public double TotalSQM => DailyWorks?.Sum(w => w.Sqm) ?? 0;
-        public int TotalQty => DailyWorks?.Sum(w => w.Qty) ?? 0;
-        public double FilteredSQM => FilteredDataView?.Cast<DailyWorkModel>().Sum(w => w.Sqm) ?? 0;
-        public int FilteredQty => FilteredDataView?.Cast<DailyWorkModel>().Sum(w => w.Qty) ?? 0;
+        // PATCH 17: Cached statistics
+        private int _totalRecords;
+        public int TotalRecords
+        {
+            get => _totalRecords;
+            private set => SetProperty(ref _totalRecords, value);
+        }
+
+        private double _totalSQM;
+        public double TotalSQM
+        {
+            get => _totalSQM;
+            private set => SetProperty(ref _totalSQM, value);
+        }
+
+        private int _totalQty;
+        public int TotalQty
+        {
+            get => _totalQty;
+            private set => SetProperty(ref _totalQty, value);
+        }
+
+        private int _filteredRecords;
+        public int FilteredRecords
+        {
+            get => _filteredRecords;
+            private set => SetProperty(ref _filteredRecords, value);
+        }
+
+        private double _filteredSQM;
+        public double FilteredSQM
+        {
+            get => _filteredSQM;
+            private set => SetProperty(ref _filteredSQM, value);
+        }
+
+        private int _filteredQty;
+        public int FilteredQty
+        {
+            get => _filteredQty;
+            private set => SetProperty(ref _filteredQty, value);
+        }
+
         public bool HasRecords => FilteredRecords > 0;
 
         private void RefreshFilteredView()
@@ -407,14 +443,17 @@ namespace ProGlassAutomation.ViewModels
             UpdateStatistics();
         }
 
+        // PATCH 17: Update cached statistics
         private void UpdateStatistics()
         {
-            OnPropertyChanged(nameof(TotalRecords));
-            OnPropertyChanged(nameof(FilteredRecords));
-            OnPropertyChanged(nameof(TotalSQM));
-            OnPropertyChanged(nameof(TotalQty));
-            OnPropertyChanged(nameof(FilteredSQM));
-            OnPropertyChanged(nameof(FilteredQty));
+            TotalRecords = DailyWorks.Count;
+            TotalSQM = DailyWorks.Sum(w => w.Sqm);
+            TotalQty = DailyWorks.Sum(w => w.Qty);
+
+            FilteredRecords = FilteredDataView?.Cast<object>().Count() ?? 0;
+            FilteredSQM = FilteredDataView?.Cast<DailyWorkModel>().Sum(w => w.Sqm) ?? 0;
+            FilteredQty = FilteredDataView?.Cast<DailyWorkModel>().Sum(w => w.Qty) ?? 0;
+
             OnPropertyChanged(nameof(SelectedCount));
             OnPropertyChanged(nameof(HasRecords));
         }
