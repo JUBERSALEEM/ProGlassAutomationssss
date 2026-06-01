@@ -75,19 +75,12 @@ namespace ProGlassAutomation.ViewModels
             return true;
         }
 
-        // Selection
+        // Selection - PATCH 63: Manual property (source generator had issues)
         private DailyWorkModel? _selectedItem;
         public DailyWorkModel? SelectedItem
         {
             get => _selectedItem;
-            set
-            {
-                // PATCH 53: Remove CommandManager.InvalidateRequerySuggested spam
-                if (SetProperty(ref _selectedItem, value))
-                {
-                    // Selection updated - do not trigger command re-evaluation
-                }
-            }
+            set => SetProperty(ref _selectedItem, value);
         }
 
         // PATCH 20: Selection tracking with HashSet for O(1) lookups
@@ -105,6 +98,7 @@ namespace ProGlassAutomation.ViewModels
         // PATCH 35: Add debounce timer for search
         private System.Timers.Timer? _searchDebounceTimer;
 
+        // Note: SearchText needs custom setter for debounce, so keep manual
         private string _searchText = string.Empty;
         public string SearchText
         {
@@ -116,7 +110,7 @@ namespace ProGlassAutomation.ViewModels
                     // PATCH 35: Debounce search to prevent excessive filtering
                     _searchDebounceTimer?.Stop();
                     _searchDebounceTimer?.Dispose();
-                    _searchDebounceTimer = new System.Timers.Timer(300); // 300ms debounce
+                    _searchDebounceTimer = new System.Timers.Timer(300);
                     _searchDebounceTimer.Elapsed += (s, e) =>
                     {
                         _searchDebounceTimer?.Stop();
@@ -465,12 +459,16 @@ namespace ProGlassAutomation.ViewModels
             UpdateStatistics();
         }
 
-        // PATCH 17: Update cached statistics
+        // PATCH 17, 70: Update cached statistics including unique counts
         private void UpdateStatistics()
         {
             TotalRecords = DailyWorks.Count;
             TotalSQM = DailyWorks.Sum(w => w.Sqm);
             TotalQty = DailyWorks.Sum(w => w.Qty);
+
+            // PATCH 70: Add unique counts for stats display
+            TotalCompanies = DailyWorks.Select(w => w.Company).Distinct().Count();
+            TotalPINumbers = DailyWorks.Select(w => w.PiNumber).Where(p => !string.IsNullOrWhiteSpace(p)).Distinct().Count();
 
             FilteredRecords = FilteredDataView?.Cast<object>().Count() ?? 0;
             FilteredSQM = FilteredDataView?.Cast<DailyWorkModel>().Sum(w => w.Sqm) ?? 0;
@@ -478,6 +476,21 @@ namespace ProGlassAutomation.ViewModels
 
             OnPropertyChanged(nameof(SelectedCount));
             OnPropertyChanged(nameof(HasRecords));
+        }
+
+        // Add these fields and properties
+        private int _totalCompanies;
+        public int TotalCompanies
+        {
+            get => _totalCompanies;
+            private set => SetProperty(ref _totalCompanies, value);
+        }
+
+        private int _totalPINumbers;
+        public int TotalPINumbers
+        {
+            get => _totalPINumbers;
+            private set => SetProperty(ref _totalPINumbers, value);
         }
 
         // PATCH 12: Prevent UI thread blocking with parallel loading
