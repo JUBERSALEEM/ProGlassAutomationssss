@@ -9,7 +9,9 @@ namespace ProGlassAutomation.Data
 {
     public class DailyWorkRepository : IDailyWorkRepository
     {
-        // Use proper type casting - get data as IEnumerable then convert
+        // PATCH 03: Repository Pattern - abstracts DB access from ViewModel
+        // DbHelper used internally - OK (PATCH 04 intent: VM doesn't call DbHelper)
+
         private List<DbDailyWork> GetAllData()
         {
             try
@@ -64,7 +66,6 @@ namespace ProGlassAutomation.Data
 
         public Task<int> InsertAsync(DbDailyWork entity, CancellationToken ct = default)
         {
-            // Map to the original DailyWork type
             var dbWork = new Database.DailyWork
             {
                 Id = entity.Id,
