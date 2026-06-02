@@ -83,6 +83,18 @@ namespace ProGlassAutomation.ViewModels
             set => SetProperty(ref _selectedItem, value);
         }
 
+        // PATCH 113: Check for duplicates before save
+        private DailyWorkModel? CheckForDuplicate()
+        {
+            if (EditingWork == null) return null;
+
+            return DailyWorks.FirstOrDefault(w =>
+                w.Id != EditingWork.Id &&
+                string.Equals(w.PiNumber?.Trim(), EditingWork.PiNumber?.Trim(), StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(w.CustomerReference?.Trim(), EditingWork.CustomerReference?.Trim(), StringComparison.OrdinalIgnoreCase));
+        }
+
+
         // PATCH 20: Selection tracking with HashSet for O(1) lookups
         private HashSet<int> _selectedIds = new();
         private int _selectedCount;
@@ -373,6 +385,16 @@ namespace ProGlassAutomation.ViewModels
                 MessageBox.Show("Company required!", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
+
+            // PATCH 113: Check for duplicate before saving
+            var duplicate = CheckForDuplicate();
+            if (duplicate != null)
+            {
+                IsDuplicateWarning = true;
+                DuplicateMessage = $"Duplicate found: {duplicate.Company} (PI: {duplicate.PiNumber}, Ref: {duplicate.CustomerReference}) - ID: {duplicate.Id}";
+                return;
+            }
+
             var dbEntity = DbDailyWork.FromUiModel(EditingWork);
             if (EditingWork.Id == 0)
             {
