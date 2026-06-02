@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -120,6 +121,14 @@ namespace ProGlassAutomation.Views
         {
             if (DataContext is not DailyWorksViewModel vm) return;
 
+            // PATCH 165: F1 shows keyboard shortcuts
+            if (e.Key == Key.F1)
+            {
+                ShowKeyboardShortcuts_Click(this, new RoutedEventArgs());
+                e.Handled = true;
+                return;
+            }
+
             if (e.Key == Key.Escape && vm.IsEditing)
             {
                 vm.CancelCommand.Execute(null);
@@ -234,11 +243,102 @@ namespace ProGlassAutomation.Views
         private void MainDataGrid_Loaded(object sender, RoutedEventArgs e)
         {
             LoadColumnWidths();
+
+            // PATCH 164: Load column order
+            LoadColumnOrder();
         }
 
         private void MainDataGrid_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             SaveColumnWidths();
+        }
+
+        // PATCH 164: Column reordering (drag & drop)
+        private void MainDataGrid_Drop(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(typeof(DataGridColumn)))
+            {
+                var col = e.Data.GetData(typeof(DataGridColumn)) as DataGridColumn;
+                if (col != null && MainDataGrid.Columns.Count > 0)
+                {
+                    var targetIndex = MainDataGrid.Columns.Count - 1;
+                    MainDataGrid.Columns.Move(MainDataGrid.Columns.IndexOf(col), targetIndex);
+                    SaveColumnOrder();
+                }
+            }
+        }
+
+        private void MainDataGrid_DragOver(object sender, DragEventArgs e)
+        {
+            e.Effects = DragDropEffects.Move;
+            e.Handled = true;
+        }
+
+        private void SaveColumnOrder()
+        {
+            try
+            {
+                var order = string.Join(",", MainDataGrid.Columns.Select(c => c.Header?.ToString()));
+                System.IO.File.WriteAllText("column_order.txt", order);
+            }
+            catch { /* Ignore errors */ }
+        }
+
+        private void LoadColumnOrder()
+        {
+            try
+            {
+                if (!System.IO.File.Exists("column_order.txt")) return;
+                var order = System.IO.File.ReadAllText("column_order.txt");
+                var headers = order.Split(',');
+
+                for (int i = 0; i < headers.Length && i < MainDataGrid.Columns.Count; i++)
+                {
+                    var col = MainDataGrid.Columns.FirstOrDefault(c => c.Header?.ToString() == headers[i]);
+                    if (col != null)
+                    {
+                        var currentIndex = MainDataGrid.Columns.IndexOf(col);
+                        if (currentIndex != i)
+                            MainDataGrid.Columns.Move(currentIndex, i);
+                    }
+                }
+            }
+            catch { /* Ignore errors */ }
+        }
+
+        // PATCH 166: Multi-column sort tracking
+        private readonly List<DataGridColumn> _sortColumns = new();
+
+        private void MainDataGrid_Sorting(object sender, DataGridSortingEventArgs e)
+        {
+            if (e.Column.SortDirection == null)
+            {
+                e.Column.SortDirection = ListSortDirection.Ascending;
+            }
+            else if (e.Column.SortDirection == ListSortDirection.Ascending)
+            {
+                e.Column.SortDirection = ListSortDirection.Descending;
+            }
+            else
+            {
+                e.Column.SortDirection = null;
+                _sortColumns.Remove(e.Column);
+            }
+
+            // PATCH 166: Track sort columns (Shift+Click for multi-sort)
+            if (Keyboard.Modifiers == ModifierKeys.Shift && e.Column.SortDirection != null)
+            {
+                if (!_sortColumns.Contains(e.Column))
+                    _sortColumns.Add(e.Column);
+            }
+            else
+            {
+                _sortColumns.Clear();
+                if (e.Column.SortDirection != null)
+                    _sortColumns.Add(e.Column);
+            }
+
+            e.Handled = true;
         }
 
         // PATCH 129: Search box key handler
@@ -525,6 +625,61 @@ namespace ProGlassAutomation.Views
 
             popup.Content = stack;
             popup.ShowDialog();
+        }
+
+        // PATCH 165: Show keyboard shortcuts window
+        private void ShowKeyboardShortcuts_Click(object sender, RoutedEventArgs e)
+        {
+            var helpWindow = new Window
+            {
+                Title = "⌨️ Keyboard Shortcuts",
+                Width = 400,
+                Height = 450,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Background = System.Windows.Media.Brushes.White
+            };
+
+            var stack = new StackPanel { Margin = new Thickness(20) };
+
+            stack.Children.Add(new TextBlock
+            {
+                Text = "⌨️ Keyboard Shortcuts",
+                FontSize = 18,
+                FontWeight = FontWeights.Bold,
+                Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(30, 64, 175)),
+                Margin = new Thickness(0, 0, 0, 15)
+            });
+
+            var shortcuts = new[]
+            {
+        "Ctrl+F - Focus Search Box",
+        "Ctrl+S - Save Record",
+        "Delete - Delete Selected",
+        "Ctrl+A - Select All",
+        "Escape - Cancel Edit",
+        "Enter - Save / Search",
+        "Insert (F2) - Add New Record",
+        "F5 - Refresh Data",
+        "Arrow Up/Down - Navigate",
+        "F1 - Show This Help"
+    };
+
+            foreach (var shortcut in shortcuts)
+            {
+                stack.Children.Add(new TextBlock
+                {
+                    Text = shortcut,
+                    FontSize = 12,
+                    Margin = new Thickness(0, 4, 0, 0)
+                });
+            }
+
+            var closeBtn = new Button { Content = "Close", Margin = new Thickness(0, 20, 0, 0) };
+            closeBtn.Click += (s, args) => helpWindow.Close();
+            stack.Children.Add(closeBtn);
+
+            helpWindow.Content = stack;
+            helpWindow.ShowDialog();
         }
 
         // PATCH 158: Quick search dropdown

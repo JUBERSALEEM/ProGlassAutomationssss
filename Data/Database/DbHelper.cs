@@ -2942,6 +2942,14 @@ VALUES ($inv, $piId, $joId, $doId, $cn, $ctr, $ca, $idate, $dd, $st, $ps, $sub, 
         public string Salesman { get; set; } = "";
         public string Color { get; set; } = "";
         public string Notes { get; set; } = "";
+
+        // PATCH 161: IsFavorite property
+        private bool _isFavorite;
+        public bool IsFavorite
+        {
+            get => _isFavorite;
+            set { _isFavorite = value; }
+        }
         public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         // Clone method for copying records

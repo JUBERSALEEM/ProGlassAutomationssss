@@ -34,6 +34,7 @@ namespace ProGlassAutomation.Models
         private string _color = string.Empty;
         private string _notes = string.Empty;
         private DateTime _createdDate = DateTime.Now;
+        private bool _isFavorite;
 
         // ═══════════════════════════════════════════════════════
         // PROPERTIES
@@ -135,6 +136,13 @@ namespace ProGlassAutomation.Models
             set { _createdDate = value; Notify(nameof(CreatedDate)); }
         }
 
+        // PATCH 161: IsFavorite property
+        public bool IsFavorite
+        {
+            get => _isFavorite;
+            set { _isFavorite = value; Notify(nameof(IsFavorite)); }
+        }
+
         // ═══════════════════════════════════════════════════════
         // CLONE
         // ═══════════════════════════════════════════════════════
@@ -145,20 +153,21 @@ namespace ProGlassAutomation.Models
             {
                 Id = this.Id,
                 Date = this.Date,
-                UpdateDate = this.UpdateDate,
                 Company = this.Company,
                 PiNumber = this.PiNumber,
+                Color = this.Color,
                 CustomerReference = this.CustomerReference,
                 TypeOfWork = this.TypeOfWork,
                 ProductionStatus = this.ProductionStatus,
-                DailyReportStatus = this.DailyReportStatus,
                 Qty = this.Qty,
                 Sqm = this.Sqm,
                 Status = this.Status,
                 Salesman = this.Salesman,
-                Color = this.Color,
                 Notes = this.Notes,
-                CreatedDate = this.CreatedDate
+                CreatedDate = this.CreatedDate,
+                UpdateDate = this.UpdateDate,
+                // PATCH 161: Clone IsFavorite
+                IsFavorite = this.IsFavorite
             };
         }
 

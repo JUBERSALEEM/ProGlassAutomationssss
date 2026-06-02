@@ -436,7 +436,7 @@
 
         <!-- 1. HEADER SECTION -->
         <Border Grid.Row="0" CornerRadius="12" Padding="16,12" Margin="0,0,0,12"
-                BorderBrush="#1E40AF" BorderThickness="2">
+        BorderBrush="#1E40AF" BorderThickness="2">
             <Border.Background>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
                     <GradientStop Color="#1E40AF" Offset="0"/>
@@ -446,15 +446,21 @@
             <Border.Effect>
                 <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.2"/>
             </Border.Effect>
+
+            <!-- ADDED: Grid.RowDefinitions for 2 rows of buttons -->
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
                 <!-- Title -->
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                <StackPanel Grid.Column="0" Grid.RowSpan="2" Orientation="Horizontal" VerticalAlignment="Center">
                     <Border Background="#DBEAFE" CornerRadius="10" Padding="12,10" Margin="0,0,12,0">
                         <TextBlock Text="📋" FontSize="20"/>
                     </Border>
@@ -470,16 +476,13 @@
                 </StackPanel>
 
                 <!-- Search & Date Filters -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-
-                    <!-- Search Box - Separated for better layout -->
+                <StackPanel Grid.Column="1" Grid.RowSpan="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Search Box -->
                     <Grid Width="280" Margin="0,0,12,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-
-                        <!-- Search Icon + Input -->
                         <Border Grid.Column="0" Background="White" CornerRadius="10" Padding="4" BorderBrush="#3B82F6" BorderThickness="1" Margin="0,0,8,0">
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -489,40 +492,17 @@
                                 <Border Background="#1E40AF" CornerRadius="8" Padding="8,6" Margin="2">
                                     <TextBlock Text="🔍" FontSize="12"/>
                                 </Border>
-                                <ComboBox x:Name="SearchTextBox"
-    KeyDown="SearchTextBox_KeyDown"
-                                    Grid.Column="1"
-                                    IsEditable="True"
-                                    ItemsSource="{Binding RecentSearches}"
-                                    Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
-                                    BorderThickness="0" 
-                                    VerticalAlignment="Center" 
-                                    Padding="8,6" 
-                                    FontSize="12"
-                                    Background="Transparent"
-                                    MinWidth="150"/>
+                                <ComboBox x:Name="SearchTextBox" KeyDown="SearchTextBox_KeyDown"
+                                Grid.Column="1" IsEditable="True"
+                                ItemsSource="{Binding RecentSearches}"
+                                Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
+                                BorderThickness="0" VerticalAlignment="Center" Padding="8,6" FontSize="12"
+                                Background="Transparent" MinWidth="150"/>
                             </Grid>
                         </Border>
-
-                        <!-- Toggle Buttons - Clean Row -->
                         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                            <!-- Instant Search -->
-                            <CheckBox Content="⚡" 
-                                     ToolTip="Instant Search"
-                                     IsChecked="{Binding InstantSearch}" 
-                                     Foreground="White" 
-                                     Background="#10B981"
-                                     Padding="6,4"
-                                     FontWeight="Bold"/>
-
-                            <!-- Dark Mode -->
-                            <Button Click="ToggleDarkMode_Click"
-                                    Background="#1F2937" 
-                                    BorderThickness="0"
-                                    Padding="8,6" 
-                                    Margin="6,0,0,0" 
-                                    Cursor="Hand"
-                                    ToolTip="Toggle Dark Mode">
+                            <CheckBox Content="⚡" ToolTip="Instant Search" IsChecked="{Binding InstantSearch}" Foreground="White" Background="#10B981" Padding="6,4" FontWeight="Bold"/>
+                            <Button Click="ToggleDarkMode_Click" Background="#1F2937" BorderThickness="0" Padding="8,6" Margin="6,0,0,0" Cursor="Hand" ToolTip="Toggle Dark Mode">
                                 <TextBlock Text="🌙" FontSize="14" Foreground="White"/>
                             </Button>
                         </StackPanel>
@@ -533,11 +513,7 @@
                         <StackPanel Orientation="Horizontal">
                             <StackPanel Margin="0,0,12,0">
                                 <TextBlock Text="FROM" FontSize="9" FontWeight="Bold" Foreground="#059669"/>
-                                <DatePicker SelectedDate="{Binding FilterStartDate, UpdateSourceTrigger=LostFocus}" 
-                                           BorderThickness="0" 
-                                           Background="Transparent" 
-                                           FontSize="12"
-                                           Foreground="#334155"/>
+                                <DatePicker SelectedDate="{Binding FilterStartDate, UpdateSourceTrigger=LostFocus}" BorderThickness="0" Background="Transparent" FontSize="12" Foreground="#334155"/>
                             </StackPanel>
                             <Border Width="1" Background="#10B981" Opacity="0.3" Margin="0,4"/>
                         </StackPanel>
@@ -547,29 +523,35 @@
                     <Border Background="White" CornerRadius="10" Padding="12,8" BorderBrush="#F59E0B" BorderThickness="1">
                         <StackPanel>
                             <TextBlock Text="TO" FontSize="9" FontWeight="Bold" Foreground="#D97706"/>
-                            <DatePicker SelectedDate="{Binding FilterEndDate, UpdateSourceTrigger=LostFocus}" 
-                                       BorderThickness="0" 
-                                       Background="Transparent" 
-                                       FontSize="12"
-                                       Foreground="#334155"/>
+                            <DatePicker SelectedDate="{Binding FilterEndDate, UpdateSourceTrigger=LostFocus}" BorderThickness="0" Background="Transparent" FontSize="12" Foreground="#334155"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>
 
-                <!-- Action Buttons -->
-                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Content="➕ Add" Style="{StaticResource SuccessButton}" Command="{Binding AddNewCommand}" Margin="0,0,6,0"/>
-                    <Button Content="🔄 Refresh" Style="{StaticResource PrimaryButton}" Command="{Binding RefreshCommand}" Margin="0,0,6,0"/>
-                    <Button Content="🖨️ Print" Style="{StaticResource SecondaryButton}" Click="PrintButton_Click" Margin="0,0,6,0"/>
-                    <Button Content="👁️ Preview" Style="{StaticResource SecondaryButton}" Click="PrintPreviewButton_Click" Margin="0,0,6,0"/>
-                    <Button Content="📄 Export" Style="{StaticResource SecondaryButton}" Command="{Binding ExportToCsvCommand}" Margin="0,0,6,0"/>
-                    <Button Content="📊 Export Selected" Style="{StaticResource SecondaryButton}" Command="{Binding ExportSelectedToCsvCommand}" Margin="0,0,6,0"/>
-                    <Button Content="📥 Import CSV" Style="{StaticResource SecondaryButton}" Command="{Binding ImportFromCsvCommand}" Margin="0,0,6,0"/>
-                    <Button Content="📋 Load to Invoice" 
-                    Style="{StaticResource WarningButton}" 
-                    Click="LoadToInvoice_Click"
-                    CommandParameter="{Binding ElementName=MainDataGrid}"/>
-                </StackPanel>
+                <!-- Action Buttons - ROW 1: Data Operations -->
+                <Grid Grid.Column="2" Grid.Row="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,4">
+                        <Button Content="➕ Add" Style="{StaticResource SuccessButton}" Command="{Binding AddNewCommand}" Margin="0,0,6,0"/>
+                        <Button Content="🔄 Refresh" Style="{StaticResource PrimaryButton}" Command="{Binding RefreshCommand}" Margin="0,0,6,0"/>
+                        <Button Content="🖨️ Print" Style="{StaticResource SecondaryButton}" Click="PrintButton_Click" Margin="0,0,6,0"/>
+                        <Button Content="👁️ Preview" Style="{StaticResource SecondaryButton}" Click="PrintPreviewButton_Click" Margin="0,0,6,0"/>
+                        <Button Content="📄 Export" Style="{StaticResource SecondaryButton}" Command="{Binding ExportToCsvCommand}" Margin="0,0,6,0"/>
+                        <Button Content="📊 Export Selected" Style="{StaticResource SecondaryButton}" Command="{Binding ExportSelectedToCsvCommand}" CommandParameter="{Binding ElementName=MainDataGrid}" Margin="0,0,6,0"/>
+                        <Button Content="📥 Import CSV" Style="{StaticResource SecondaryButton}" Command="{Binding ImportFromCsvCommand}" Margin="0,0,6,0"/>
+                    </StackPanel>
+
+                    <!-- Action Buttons - ROW 2: File Operations -->
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Content="💾 Backup" Style="{StaticResource SecondaryButton}" Command="{Binding BackupDatabaseCommand}" Margin="0,0,6,0"/>
+                        <Button Content="📂 Restore" Style="{StaticResource SecondaryButton}" Command="{Binding RestoreDatabaseCommand}" Margin="0,0,6,0"/>
+                        <Button Content="📋 Load to Invoice" Style="{StaticResource WarningButton}" Click="LoadToInvoice_Click" CommandParameter="{Binding ElementName=MainDataGrid}"/>
+                    </StackPanel>
+                </Grid>
             </Grid>
         </Border>
 
@@ -707,6 +689,10 @@
                 <!-- PATCH 86, 87: Enable UI virtualization and recycling for 60fps performance -->
                 <!-- PATCH 110: Save column widths on change -->
                 <DataGrid x:Name="MainDataGrid"
+                          AllowDrop="True"
+                          Drop="MainDataGrid_Drop"
+                          DragOver="MainDataGrid_DragOver"
+                          Sorting="MainDataGrid_Sorting"
                           AlternationCount="100"
                           ItemsSource="{Binding FilteredDataView}" 
                           SelectedItem="{Binding SelectedItem}"
@@ -727,6 +713,13 @@
                     <!-- PATCH 135: Column visibility toggle -->
                     <DataGrid.ContextMenu>
                         <ContextMenu>
+                            <!-- PATCH 167: Export Presets -->
+                            <MenuItem Header="📤 Export Presets">
+                                <MenuItem Header="Production List" Command="{Binding ExportWithPresetCommand}" CommandParameter="Production List"/>
+                                <MenuItem Header="Sales Report" Command="{Binding ExportWithPresetCommand}" CommandParameter="Sales Report"/>
+                                <MenuItem Header="Full Export" Command="{Binding ExportWithPresetCommand}" CommandParameter="Full Export"/>
+                            </MenuItem>
+                            <Separator/>
                             <MenuItem Header="Show Columns">
                                 <MenuItem Header="Date" IsCheckable="True" IsChecked="True" Click="ToggleColumn_Click"/>
                                 <MenuItem Header="Company" IsCheckable="True" IsChecked="True" Click="ToggleColumn_Click"/>
@@ -897,6 +890,28 @@
                             <DataGridTemplateColumn.HeaderStyle>
                                 <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource SimpleHeader}"/>
                             </DataGridTemplateColumn.HeaderStyle>
+                        </DataGridTemplateColumn>
+
+                        <!-- PATCH 161: FAVORITE STAR -->
+                        <DataGridTemplateColumn Header="⭐" Width="45">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock HorizontalAlignment="Center" FontSize="14" Cursor="Hand">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Text" Value="☆"/>
+                                                <Setter Property="Foreground" Value="#CBD5E1"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsFavorite}" Value="True">
+                                                        <Setter Property="Text" Value="⭐"/>
+                                                        <Setter Property="Foreground" Value="#F59E0B"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
 
                         <!-- NOTES - Stone Gray -->
