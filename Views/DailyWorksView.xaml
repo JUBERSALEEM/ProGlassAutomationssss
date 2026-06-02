@@ -422,34 +422,59 @@
 
                 <!-- Search & Date Filters -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <!-- Search Box -->
-                    <Border Background="White" CornerRadius="10" Padding="4" Margin="0,0,12,0" BorderBrush="#3B82F6" BorderThickness="1">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="200"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <Border Background="#1E40AF" CornerRadius="8" Padding="10,8" Margin="2">
-                                <TextBlock Text="🔍" FontSize="12"/>
-                            </Border>
-                            <TextBox x:Name="SearchTextBox"
-                Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
-                BorderThickness="0" 
-                VerticalAlignment="Center" 
-                Padding="10,6" 
-                FontSize="12"
-                Background="Transparent"/>
-                            <!-- PATCH 112: Instant Search Toggle -->
-                            <Border Grid.Column="2" Background="#10B981" CornerRadius="6" Padding="8,4" Margin="4,0,0,0" VerticalAlignment="Center">
-                                <CheckBox Content="Instant" 
-                     IsChecked="{Binding InstantSearch}" 
-                     Foreground="White" 
-                     FontSize="9" 
-                     FontWeight="SemiBold"/>
-                            </Border>
-                        </Grid>
-                    </Border>
+
+                    <!-- Search Box - Separated for better layout -->
+                    <Grid Width="280" Margin="0,0,12,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Search Icon + Input -->
+                        <Border Grid.Column="0" Background="White" CornerRadius="10" Padding="4" BorderBrush="#3B82F6" BorderThickness="1" Margin="0,0,8,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Background="#1E40AF" CornerRadius="8" Padding="8,6" Margin="2">
+                                    <TextBlock Text="🔍" FontSize="12"/>
+                                </Border>
+                                <TextBox x:Name="SearchTextBox"
+                                    Grid.Column="1"
+                                    Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
+                                    BorderThickness="0" 
+                                    VerticalAlignment="Center" 
+                                    Padding="8,6" 
+                                    FontSize="12"
+                                    Background="Transparent"
+                                    MinWidth="150"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Toggle Buttons - Clean Row -->
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <!-- Instant Search -->
+                            <CheckBox Content="⚡" 
+                                     ToolTip="Instant Search"
+                                     IsChecked="{Binding InstantSearch}" 
+                                     Foreground="White" 
+                                     Background="#10B981"
+                                     Padding="6,4"
+                                     FontWeight="Bold"/>
+
+                            <!-- Dark Mode -->
+                            <Button Click="ToggleDarkMode_Click"
+                                    Background="#1F2937" 
+                                    BorderThickness="0"
+                                    Padding="8,6" 
+                                    Margin="6,0,0,0" 
+                                    Cursor="Hand"
+                                    ToolTip="Toggle Dark Mode">
+                                <TextBlock Text="🌙" FontSize="14" Foreground="White"/>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
 
                     <!-- Date From -->
                     <Border Background="White" CornerRadius="10" Padding="12,8" Margin="0,0,8,0" BorderBrush="#10B981" BorderThickness="1">

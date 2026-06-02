@@ -189,6 +189,57 @@ namespace ProGlassAutomation.Views
             SaveColumnWidths();
         }
 
+        // PATCH 125, 126: Toggle dark mode click - FULL implementation
+        private void ToggleDarkMode_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is DailyWorksViewModel vm)
+            {
+                vm.ToggleDarkModeCommand.Execute(null);
+                ApplyDarkModeColors(vm.IsDarkMode);
+            }
+        }
+
+        // PATCH 126: Apply dark mode colors to all UI elements
+        private void ApplyDarkModeColors(bool isDarkMode)
+        {
+            try
+            {
+                // Colors
+                var bg = isDarkMode ? "#1F2937" : "#F1F5F9";
+                var cardBg = isDarkMode ? "#374151" : "#FFFFFF";
+                var headerBg = isDarkMode ? "#0F172A" : "#1E40AF";
+
+                // Apply to main control
+                this.Background = new System.Windows.Media.BrushConverter().ConvertFromString(bg) as System.Windows.Media.Brush;
+
+                // Apply to header (first element in grid)
+                var grid = this.Content as System.Windows.Controls.Grid;
+                if (grid?.Children[0] is Border headerBorder)
+                {
+                    headerBorder.Background = new System.Windows.Media.BrushConverter().ConvertFromString(headerBg) as System.Windows.Media.Brush;
+                }
+
+                // Apply to filter bar (second element)
+                if (grid?.Children[1] is Border filterBorder)
+                {
+                    filterBorder.Background = new System.Windows.Media.BrushConverter().ConvertFromString(isDarkMode ? "#1F2937" : "#DBEAFE") as System.Windows.Media.Brush;
+                }
+
+                // Apply to data border (third element)
+                if (grid?.Children[2] is Border dataBorder)
+                {
+                    dataBorder.Background = new System.Windows.Media.BrushConverter().ConvertFromString(cardBg) as System.Windows.Media.Brush;
+                }
+
+                // Apply to stats bar (fourth element)
+                if (grid?.Children[3] is Border statsBorder)
+                {
+                    statsBorder.Background = new System.Windows.Media.BrushConverter().ConvertFromString(cardBg) as System.Windows.Media.Brush;
+                }
+            }
+            catch { /* Ignore errors */ }
+        }
+
         private void SaveColumnWidths()
         {
             try
