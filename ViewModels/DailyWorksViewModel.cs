@@ -498,8 +498,7 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // PATCH 45: Export SELECTED records only
-        [RelayCommand]
+        // PATCH 45: Export SELECTED records only (command created in constructor)
         private async Task ExportSelectedToCsvAsync()
         {
             var selectedIds = _selectedIds?.ToList() ?? new List<int>();
@@ -550,8 +549,7 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // PATCH 46: Import from CSV
-        [RelayCommand]
+        // PATCH 46: Import from CSV (command created in constructor)
         private async Task ImportFromCsvAsync()
         {
             try
