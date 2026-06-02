@@ -98,6 +98,9 @@ namespace ProGlassAutomation.ViewModels
         // PATCH 35: Add debounce timer for search
         private System.Timers.Timer? _searchDebounceTimer;
 
+        // PATCH 16: Filter debounce
+        private CancellationTokenSource? _filterDebounceToken;
+
         // PATCH 112: Quick instant search toggle
         private bool _instantSearch = true;
         public bool InstantSearch
@@ -144,70 +147,70 @@ namespace ProGlassAutomation.ViewModels
         public string FilterStatus
         {
             get => _filterStatus;
-            set { if (SetProperty(ref _filterStatus, value)) RefreshFilteredView(); }
+            set { if (SetProperty(ref _filterStatus, value)) DebounceFilterRefreshAsync(); }
         }
 
         private string _filterProductionStatus = string.Empty;
         public string FilterProductionStatus
         {
             get => _filterProductionStatus;
-            set { if (SetProperty(ref _filterProductionStatus, value)) RefreshFilteredView(); }
+            set { if (SetProperty(ref _filterProductionStatus, value)) DebounceFilterRefreshAsync(); }
         }
 
         private string _filterTypeOfWork = string.Empty;
         public string FilterTypeOfWork
         {
             get => _filterTypeOfWork;
-            set { if (SetProperty(ref _filterTypeOfWork, value)) RefreshFilteredView(); }
+            set { if (SetProperty(ref _filterTypeOfWork, value)) DebounceFilterRefreshAsync(); }
         }
 
         private string _filterSalesman = string.Empty;
         public string FilterSalesman
         {
             get => _filterSalesman;
-            set { if (SetProperty(ref _filterSalesman, value)) RefreshFilteredView(); }
+            set { if (SetProperty(ref _filterSalesman, value)) DebounceFilterRefreshAsync(); }
         }
 
         private string _filterCompany = string.Empty;
         public string FilterCompany
         {
             get => _filterCompany;
-            set { if (SetProperty(ref _filterCompany, value)) RefreshFilteredView(); }
+            set { if (SetProperty(ref _filterCompany, value)) DebounceFilterRefreshAsync(); }
         }
 
         private string _filterColor = string.Empty;
         public string FilterColor
         {
             get => _filterColor;
-            set { if (SetProperty(ref _filterColor, value)) RefreshFilteredView(); }
+            set { if (SetProperty(ref _filterColor, value)) DebounceFilterRefreshAsync(); }
         }
 
         private string _filterPINumber = string.Empty;
         public string FilterPINumber
         {
             get => _filterPINumber;
-            set { if (SetProperty(ref _filterPINumber, value)) RefreshFilteredView(); }
+            set { if (SetProperty(ref _filterPINumber, value)) DebounceFilterRefreshAsync(); }
         }
 
         private string _filterCustomerReference = string.Empty;
         public string FilterCustomerReference
         {
             get => _filterCustomerReference;
-            set { if (SetProperty(ref _filterCustomerReference, value)) RefreshFilteredView(); }
+            set { if (SetProperty(ref _filterCustomerReference, value)) DebounceFilterRefreshAsync(); }
         }
 
         private DateTime? _filterStartDate;
         public DateTime? FilterStartDate
         {
             get => _filterStartDate;
-            set { if (SetProperty(ref _filterStartDate, value)) RefreshFilteredView(); }
+            set { if (SetProperty(ref _filterStartDate, value)) DebounceFilterRefreshAsync(); }
         }
 
         private DateTime? _filterEndDate;
         public DateTime? FilterEndDate
         {
             get => _filterEndDate;
-            set { if (SetProperty(ref _filterEndDate, value)) RefreshFilteredView(); }
+            set { if (SetProperty(ref _filterEndDate, value)) DebounceFilterRefreshAsync(); }
         }
 
         // Editing state - MANUAL
@@ -565,6 +568,20 @@ namespace ProGlassAutomation.ViewModels
         public void OnProformaInvoiceSaved(Models.ProformaInvoiceModel invoice)
         {
             _ = LoadDataAsync();
+        }
+
+        // PATCH 16: Debounce filter refresh to prevent excessive refreshes
+        private async void DebounceFilterRefreshAsync()
+        {
+            _filterDebounceToken?.Cancel();
+            _filterDebounceToken = new CancellationTokenSource();
+
+            try
+            {
+                await Task.Delay(150, _filterDebounceToken.Token);
+                RefreshFilteredView();
+            }
+            catch (TaskCanceledException) { /* debounced */ }
         }
 
         // PATCH 17: Cached statistics
