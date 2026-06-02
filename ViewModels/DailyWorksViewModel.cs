@@ -886,6 +886,72 @@ namespace ProGlassAutomation.ViewModels
             set => SetProperty(ref _bulkProductionStatus, value);
         }
 
+        // PATCH 119: Batch clone template for multi-edit
+        private DailyWorkModel? _batchCloneTemplate;
+        public DailyWorkModel? BatchCloneTemplate
+        {
+            get => _batchCloneTemplate;
+            set => SetProperty(ref _batchCloneTemplate, value);
+        }
+
+        // PATCH 120: Clone selected records as new
+        [RelayCommand]
+        private async Task BatchCloneAsync()
+        {
+            var selectedIds = _selectedIds?.ToList() ?? new List<int>();
+            if (selectedIds.Count == 0)
+            {
+                // Try from grid
+                var grid = Application.Current.MainWindow?.FindName("MainDataGrid") as DataGrid;
+                if (grid != null)
+                {
+                    foreach (var item in grid.SelectedItems)
+                    {
+                        if (item is DailyWorkModel work)
+                            selectedIds.Add(work.Id);
+                    }
+                }
+            }
+
+            if (selectedIds.Count == 0)
+            {
+                StatusMessage = "No items selected!";
+                return;
+            }
+
+            var result = MessageBox.Show(
+                $"Clone {selectedIds.Count} selected records as new?",
+                "Confirm Batch Clone", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+            if (result != MessageBoxResult.Yes) return;
+
+            var cloned = 0;
+            try
+            {
+                foreach (var id in selectedIds)
+                {
+                    var original = DailyWorks.FirstOrDefault(w => w.Id == id);
+                    if (original != null)
+                    {
+                        var clone = original.Clone();
+                        clone.Id = 0; // Reset ID for new record
+                        clone.PiNumber = clone.PiNumber + "-CLONE";
+                        clone.CreatedDate = DateTime.Now;
+                        clone.Date = DateTime.Today;
+                        await _repository.InsertAsync(DbDailyWork.FromUiModel(clone));
+                        cloned++;
+                    }
+                }
+
+                await LoadDataAsync();
+                StatusMessage = $"Cloned {cloned} records!";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = "Clone failed: " + ex.Message;
+            }
+        }
+
         [RelayCommand]
         private async Task BulkUpdateProductionStatusAsync()
         {
