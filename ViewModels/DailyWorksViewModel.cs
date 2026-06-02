@@ -50,28 +50,88 @@ namespace ProGlassAutomation.ViewModels
         {
             if (obj is not DailyWorkModel work) return false;
 
-            if (!string.IsNullOrWhiteSpace(SearchText))
-            {
-                var search = SearchText.ToLowerInvariant();
-                if (!MatchesSearch(work, search))
-                    return false;
-            }
-
-            if (!string.IsNullOrWhiteSpace(FilterStatus) && work.Status != FilterStatus) return false;
-            if (!string.IsNullOrWhiteSpace(FilterProductionStatus) && work.ProductionStatus != FilterProductionStatus) return false;
-            if (!string.IsNullOrWhiteSpace(FilterTypeOfWork) && work.TypeOfWork != FilterTypeOfWork) return false;
-            if (!string.IsNullOrWhiteSpace(FilterSalesman) && work.Salesman != FilterSalesman) return false;
-            if (!string.IsNullOrWhiteSpace(FilterCompany) && work.Company != FilterCompany) return false;
-            if (!string.IsNullOrWhiteSpace(FilterColor) && work.Color != FilterColor) return false;
-            if (!string.IsNullOrWhiteSpace(FilterPINumber) && work.PiNumber != FilterPINumber) return false;
-            if (!string.IsNullOrWhiteSpace(FilterCustomerReference) && work.CustomerReference != FilterCustomerReference) return false;
-            if (FilterStartDate.HasValue && work.Date < FilterStartDate) return false;
-            if (FilterEndDate.HasValue && work.Date > FilterEndDate) return false;
-
-            // PATCH 161: Filter favorites only
-            if (_filterFavoritesOnly && !work.IsFavorite) return false;
+            // PATCH 78: Split filter into composable checks
+            if (!MatchesSearchFilter(work)) return false;
+            if (!MatchesStatusFilter(work)) return false;
+            if (!MatchesProductionStatusFilter(work)) return false;
+            if (!MatchesTypeOfWorkFilter(work)) return false;
+            if (!MatchesSalesmanFilter(work)) return false;
+            if (!MatchesCompanyFilter(work)) return false;
+            if (!MatchesColorFilter(work)) return false;
+            if (!MatchesPINumberFilter(work)) return false;
+            if (!MatchesCustomerReferenceFilter(work)) return false;
+            if (!MatchesDateFilter(work)) return false;
+            if (!MatchesFavoritesFilter(work)) return false;
 
             return true;
+        }
+
+        // PATCH 78: Individual filter methods - each handles one field
+        private bool MatchesSearchFilter(DailyWorkModel work)
+        {
+            if (string.IsNullOrWhiteSpace(SearchText)) return true;
+            return MatchesSearch(work, SearchText.ToLowerInvariant());
+        }
+
+        private bool MatchesStatusFilter(DailyWorkModel work)
+        {
+            if (string.IsNullOrWhiteSpace(FilterStatus)) return true;
+            return work.Status == FilterStatus;
+        }
+
+        private bool MatchesProductionStatusFilter(DailyWorkModel work)
+        {
+            if (string.IsNullOrWhiteSpace(FilterProductionStatus)) return true;
+            return work.ProductionStatus == FilterProductionStatus;
+        }
+
+        private bool MatchesTypeOfWorkFilter(DailyWorkModel work)
+        {
+            if (string.IsNullOrWhiteSpace(FilterTypeOfWork)) return true;
+            return work.TypeOfWork == FilterTypeOfWork;
+        }
+
+        private bool MatchesSalesmanFilter(DailyWorkModel work)
+        {
+            if (string.IsNullOrWhiteSpace(FilterSalesman)) return true;
+            return work.Salesman == FilterSalesman;
+        }
+
+        private bool MatchesCompanyFilter(DailyWorkModel work)
+        {
+            if (string.IsNullOrWhiteSpace(FilterCompany)) return true;
+            return work.Company == FilterCompany;
+        }
+
+        private bool MatchesColorFilter(DailyWorkModel work)
+        {
+            if (string.IsNullOrWhiteSpace(FilterColor)) return true;
+            return work.Color == FilterColor;
+        }
+
+        private bool MatchesPINumberFilter(DailyWorkModel work)
+        {
+            if (string.IsNullOrWhiteSpace(FilterPINumber)) return true;
+            return work.PiNumber == FilterPINumber;
+        }
+
+        private bool MatchesCustomerReferenceFilter(DailyWorkModel work)
+        {
+            if (string.IsNullOrWhiteSpace(FilterCustomerReference)) return true;
+            return work.CustomerReference == FilterCustomerReference;
+        }
+
+        private bool MatchesDateFilter(DailyWorkModel work)
+        {
+            if (FilterStartDate.HasValue && work.Date < FilterStartDate) return false;
+            if (FilterEndDate.HasValue && work.Date > FilterEndDate) return false;
+            return true;
+        }
+
+        private bool MatchesFavoritesFilter(DailyWorkModel work)
+        {
+            if (!_filterFavoritesOnly) return true;
+            return work.IsFavorite;
         }
 
         // PATCH 143: Wildcard search support
