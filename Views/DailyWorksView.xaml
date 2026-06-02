@@ -428,17 +428,26 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="200"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <Border Background="#1E40AF" CornerRadius="8" Padding="10,8" Margin="2">
                                 <TextBlock Text="🔍" FontSize="12"/>
                             </Border>
                             <TextBox x:Name="SearchTextBox"
-                                    Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
-                                    BorderThickness="0" 
-                                    VerticalAlignment="Center" 
-                                    Padding="10,6" 
-                                    FontSize="12"
-                                    Background="Transparent"/>
+                Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
+                BorderThickness="0" 
+                VerticalAlignment="Center" 
+                Padding="10,6" 
+                FontSize="12"
+                Background="Transparent"/>
+                            <!-- PATCH 112: Instant Search Toggle -->
+                            <Border Grid.Column="2" Background="#10B981" CornerRadius="6" Padding="8,4" Margin="4,0,0,0" VerticalAlignment="Center">
+                                <CheckBox Content="Instant" 
+                     IsChecked="{Binding InstantSearch}" 
+                     Foreground="White" 
+                     FontSize="9" 
+                     FontWeight="SemiBold"/>
+                            </Border>
                         </Grid>
                     </Border>
 
@@ -580,9 +589,30 @@
                         Command="{Binding QuickFilterAllTimeCommand}" 
                         Padding="8,6" Margin="0,0,8,0" FontSize="9"/>
                         <Button Content="Clear" 
-                        Style="{StaticResource DangerButton}" 
-                        Command="{Binding ClearFiltersCommand}" 
-                        Padding="12,6" FontSize="9"/>
+        Style="{StaticResource DangerButton}" 
+        Command="{Binding ClearFiltersCommand}" 
+        Padding="12,6" FontSize="9"/>
+                        <!-- PATCH 95: Auto-Refresh Toggle + Interval -->
+                        <StackPanel Orientation="Horizontal" Margin="8,0,0,0">
+                            <Border Background="#7C3AED" CornerRadius="6" Padding="4" Margin="0,0,4,0">
+                                <CheckBox Content="🔄 Auto" 
+                  IsChecked="{Binding AutoRefreshEnabled}" 
+                  Foreground="White" 
+                  FontSize="9" 
+                  FontWeight="SemiBold"/>
+                            </Border>
+                            <Border Background="White" CornerRadius="6" Padding="4" BorderBrush="#7C3AED" BorderThickness="1">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBox Text="{Binding AutoRefreshSeconds}" 
+                    Width="40" 
+                    FontSize="9" 
+                    Padding="2"
+                    Background="Transparent"
+                    BorderThickness="0"/>
+                                    <TextBlock Text="sec" Foreground="#7C3AED" FontSize="9" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
                     </StackPanel>
                 </Border>
             </Grid>
