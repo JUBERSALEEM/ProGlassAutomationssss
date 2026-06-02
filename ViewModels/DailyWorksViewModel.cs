@@ -98,6 +98,10 @@ namespace ProGlassAutomation.ViewModels
         // PATCH 35: Add debounce timer for search
         private System.Timers.Timer? _searchDebounceTimer;
 
+        // PATCH 45-46: Explicit command properties (source generator not creating them)
+        public RelayCommand ExportSelectedToCsvCommand { get; private set; }
+        public RelayCommand ImportFromCsvCommand { get; private set; }
+
         // PATCH 16: Filter debounce
         private CancellationTokenSource? _filterDebounceToken;
 
@@ -494,6 +498,156 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
+        // PATCH 45: Export SELECTED records only
+        [RelayCommand]
+        private async Task ExportSelectedToCsvAsync()
+        {
+            var selectedIds = _selectedIds?.ToList() ?? new List<int>();
+            if (selectedIds.Count == 0)
+            {
+                StatusMessage = "No items selected!";
+                return;
+            }
+
+            try
+            {
+                var dialog = new Microsoft.Win32.SaveFileDialog
+                {
+                    Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*",
+                    DefaultExt = ".csv",
+                    FileName = $"DailyWorks_Selected_{DateTime.Now:yyyyMMdd_HHmmss}"
+                };
+
+                if (dialog.ShowDialog() == true)
+                {
+                    IsBusy = true;
+                    StatusMessage = "Exporting selected...";
+
+                    var lines = new List<string>
+                    {
+                        "Date,Company,PI Number,Color,Cust Ref,Type of Work,Production,QTY,SQM,Status,Salesman,Notes"
+                    };
+
+                    var selectedList = DailyWorks.Where(w => selectedIds.Contains(w.Id)).ToList();
+
+                    foreach (var work in selectedList)
+                    {
+                        var line = $"\"{work.Date:dd-MM-yyyy}\",\"{work.Company}\",\"{work.PiNumber}\",\"{work.Color}\",\"{work.CustomerReference}\",\"{work.TypeOfWork}\",\"{work.ProductionStatus}\",{work.Qty},{work.Sqm:N2},\"{work.Status}\",\"{work.Salesman}\",\"{work.Notes}\"";
+                        lines.Add(line);
+                    }
+
+                    await System.IO.File.WriteAllLinesAsync(dialog.FileName, lines);
+                    StatusMessage = $"Exported {selectedList.Count} selected records!";
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = "Export failed: " + ex.Message;
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        // PATCH 46: Import from CSV
+        [RelayCommand]
+        private async Task ImportFromCsvAsync()
+        {
+            try
+            {
+                var dialog = new Microsoft.Win32.OpenFileDialog
+                {
+                    Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*",
+                    DefaultExt = ".csv"
+                };
+
+                if (dialog.ShowDialog() == true)
+                {
+                    var result = MessageBox.Show(
+                        "This will add new records. Continue?",
+                        "Confirm Import", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+                    if (result != MessageBoxResult.Yes) return;
+
+                    IsBusy = true;
+                    StatusMessage = "Importing...";
+
+                    var lines = await System.IO.File.ReadAllLinesAsync(dialog.FileName);
+                    var imported = 0;
+                    var skipped = 0;
+
+                    foreach (var line in lines.Skip(1)) // Skip header
+                    {
+                        try
+                        {
+                            var parts = ParseCsvLine(line);
+                            if (parts.Length < 10) { skipped++; continue; }
+
+                            var work = new DailyWorkModel
+                            {
+                                Company = parts[1].Trim('"'),
+                                PiNumber = parts[2].Trim('"'),
+                                Color = parts[3].Trim('"'),
+                                CustomerReference = parts[4].Trim('"'),
+                                TypeOfWork = parts[5].Trim('"'),
+                                ProductionStatus = parts[6].Trim('"'),
+                                Qty = int.TryParse(parts[7], out var qty) ? qty : 0,
+                                Sqm = double.TryParse(parts[8], out var sqm) ? sqm : 0,
+                                Status = parts[9].Trim('"'),
+                                Salesman = parts.Length > 10 ? parts[10].Trim('"') : "",
+                                Notes = parts.Length > 11 ? parts[11].Trim('"') : "",
+                                Date = DateTime.Today,
+                                CreatedDate = DateTime.Now
+                            };
+
+                            if (!string.IsNullOrWhiteSpace(work.Company))
+                            {
+                                await _repository.InsertAsync(DbDailyWork.FromUiModel(work));
+                                imported++;
+                            }
+                            else
+                            {
+                                skipped++;
+                            }
+                        }
+                        catch { skipped++; }
+                    }
+
+                    await LoadDataAsync();
+                    StatusMessage = $"Imported {imported} records, skipped {skipped}!";
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = "Import failed: " + ex.Message;
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        private string[] ParseCsvLine(string line)
+        {
+            var result = new List<string>();
+            var current = "";
+            var inQuotes = false;
+
+            foreach (var c in line)
+            {
+                if (c == '"') inQuotes = !inQuotes;
+                else if (c == ',' && !inQuotes)
+                {
+                    result.Add(current);
+                    current = "";
+                }
+                else current += c;
+            }
+            result.Add(current);
+            return result.ToArray();
+        }
+
         // PATCH 92: Print
         [RelayCommand]
         private void Print()
@@ -813,6 +967,11 @@ namespace ProGlassAutomation.ViewModels
         {
             _isBusy = false;
             _repository = new DailyWorkRepository();
+
+            // PATCH 45-46: Initialize commands manually
+            ExportSelectedToCsvCommand = new RelayCommand(async () => await ExportSelectedToCsvAsync());
+            ImportFromCsvCommand = new RelayCommand(async () => await ImportFromCsvAsync());
+
             _ = LoadDataAsync();
         }
 

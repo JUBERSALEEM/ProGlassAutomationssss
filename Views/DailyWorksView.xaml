@@ -485,6 +485,8 @@
                     <Button Content="🔄 Refresh" Style="{StaticResource PrimaryButton}" Command="{Binding RefreshCommand}" Margin="0,0,6,0"/>
                     <Button Content="🖨️ Print" Style="{StaticResource SecondaryButton}" Click="PrintButton_Click" Margin="0,0,6,0"/>
                     <Button Content="📄 Export" Style="{StaticResource SecondaryButton}" Command="{Binding ExportToCsvCommand}" Margin="0,0,6,0"/>
+                    <Button Content="📊 Export Selected" Style="{StaticResource SecondaryButton}" Command="{Binding ExportSelectedToCsvCommand}" Margin="0,0,6,0"/>
+                    <Button Content="📥 Import CSV" Style="{StaticResource SecondaryButton}" Command="{Binding ImportFromCsvCommand}" Margin="0,0,6,0"/>
                     <Button Content="📋 Load to Invoice" 
                     Style="{StaticResource WarningButton}" 
                     Click="LoadToInvoice_Click"
