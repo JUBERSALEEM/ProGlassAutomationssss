@@ -1370,7 +1370,7 @@ namespace ProGlassAutomation.ViewModels
             catch (TaskCanceledException) { /* debounced */ }
         }
 
-        // PATCH 17: Cached statistics
+        // PATCH 17: Cached statistics - stored values updated incrementally
         private int _totalRecords;
         public int TotalRecords
         {
@@ -1415,39 +1415,127 @@ namespace ProGlassAutomation.ViewModels
 
         public bool HasRecords => FilteredRecords > 0;
 
-        // PATCH 133: Production status counts
-        public int CompletedCount => FilteredDataView?.Cast<DailyWorkModel>().Count(w => w.ProductionStatus == "COMPLETED") ?? 0;
-        public int PendingCount => FilteredDataView?.Cast<DailyWorkModel>().Count(w => w.ProductionStatus == "PENDING") ?? 0;
-        public int InProgressCount => FilteredDataView?.Cast<DailyWorkModel>().Count(w => w.ProductionStatus == "IN PROGRESS") ?? 0;
+        // PATCH 17: Production status cached counts - updated incrementally
+        private int _completedCount;
+        public int CompletedCount
+        {
+            get => _completedCount;
+            private set => SetProperty(ref _completedCount, value);
+        }
+
+        private int _pendingCount;
+        public int PendingCount
+        {
+            get => _pendingCount;
+            private set => SetProperty(ref _pendingCount, value);
+        }
+
+        private int _inProgressCount;
+        public int InProgressCount
+        {
+            get => _inProgressCount;
+            private set => SetProperty(ref _inProgressCount, value);
+        }
 
         private void RefreshFilteredView()
         {
             _filteredView?.Refresh();
-            UpdateStatistics();
+            UpdateFilteredStatisticsOnly();  // Only update filtered counts on filter change
         }
 
-        // PATCH 17, 70: Update cached statistics
+        // PATCH 17: Full statistics update - use on initial load
         private void UpdateStatistics()
         {
+            // Update totals from entire collection
             TotalRecords = DailyWorks.Count;
             TotalSQM = DailyWorks.Sum(w => w.Sqm);
             TotalQty = DailyWorks.Sum(w => w.Qty);
 
-            // PATCH 70: Unique counts
+            // Unique counts
             TotalCompanies = DailyWorks.Select(w => w.Company).Distinct().Count();
             TotalPINumbers = DailyWorks.Select(w => w.PiNumber).Where(p => !string.IsNullOrWhiteSpace(p)).Distinct().Count();
 
-            FilteredRecords = FilteredDataView?.Cast<object>().Count() ?? 0;
-            FilteredSQM = FilteredDataView?.Cast<DailyWorkModel>().Sum(w => w.Sqm) ?? 0;
-            FilteredQty = FilteredDataView?.Cast<DailyWorkModel>().Sum(w => w.Qty) ?? 0;
+            // Subscribe to property changes for incremental updates
+            foreach (var work in DailyWorks)
+            {
+                work.PropertyChanged += OnDailyWorkPropertyChanged;
+            }
+
+            // Update filtered counts
+            UpdateFilteredStatisticsOnly();
+        }
+
+        // PATCH 17: Filtered statistics only - lightweight, no LINQ enumeration
+        private void UpdateFilteredStatisticsOnly()
+        {
+            // Only count what's visible in filter
+            if (_filteredView == null)
+            {
+                FilteredRecords = 0;
+                FilteredSQM = 0;
+                FilteredQty = 0;
+                CompletedCount = 0;
+                PendingCount = 0;
+                InProgressCount = 0;
+            }
+            else
+            {
+                int filteredRecs = 0;
+                double filteredSqm = 0;
+                int filteredQty = 0;
+                int completed = 0;
+                int pending = 0;
+                int inProgress = 0;
+
+                foreach (DailyWorkModel? work in _filteredView)
+                {
+                    if (work == null) continue;
+                    filteredRecs++;
+                    filteredSqm += work.Sqm;
+                    filteredQty += work.Qty;
+
+                    // Status counts
+                    switch (work.ProductionStatus)
+                    {
+                        case "COMPLETED":
+                            completed++;
+                            break;
+                        case "PENDING":
+                            pending++;
+                            break;
+                        case "IN PROGRESS":
+                            inProgress++;
+                            break;
+                    }
+                }
+
+                FilteredRecords = filteredRecs;
+                FilteredSQM = filteredSqm;
+                FilteredQty = filteredQty;
+                CompletedCount = completed;
+                PendingCount = pending;
+                InProgressCount = inProgress;
+            }
 
             OnPropertyChanged(nameof(SelectedCount));
             OnPropertyChanged(nameof(HasRecords));
+        }
 
-            // PATCH 133: Notify status counts
-            OnPropertyChanged(nameof(CompletedCount));
-            OnPropertyChanged(nameof(PendingCount));
-            OnPropertyChanged(nameof(InProgressCount));
+        // PATCH 17: Incremental statistics update on property change
+        private void OnDailyWorkPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (sender is not DailyWorkModel work) return;
+
+            // Update total stats when an item's Qty/Sqm changes
+            if (e.PropertyName is nameof(DailyWorkModel.Qty) or nameof(DailyWorkModel.Sqm))
+            {
+                // Recalculate totals from all items
+                TotalSQM = DailyWorks.Sum(w => w.Sqm);
+                TotalQty = DailyWorks.Sum(w => w.Qty);
+            }
+
+            // Update filtered stats (because item might have entered/left filter)
+            UpdateFilteredStatisticsOnly();
         }
 
         private int _totalCompanies;
@@ -1622,6 +1710,12 @@ namespace ProGlassAutomation.ViewModels
                     var dbItems = await _repository.GetAllAsync();
                     await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                     {
+                        // Unsubscribe from old items before clearing
+                        foreach (var work in DailyWorks)
+                        {
+                            work.PropertyChanged -= OnDailyWorkPropertyChanged;
+                        }
+
                         DailyWorks.Clear();
                         foreach (var item in dbItems)
                         {
@@ -1635,7 +1729,7 @@ namespace ProGlassAutomation.ViewModels
                         _filteredView = null;
                         OnPropertyChanged(nameof(FilteredDataView));
                         LoadFilterOptions();
-                        UpdateStatistics();
+                        UpdateStatistics();  // Will subscribe to new items
                     }, System.Windows.Threading.DispatcherPriority.Background);
                 });
 
