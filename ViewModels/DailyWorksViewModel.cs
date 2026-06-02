@@ -133,7 +133,7 @@ namespace ProGlassAutomation.ViewModels
                             _searchDebounceTimer.Elapsed += (s, e) =>
                             {
                                 _searchDebounceTimer?.Stop();
-                                Application.Current?.Dispatcher.BeginInvoke(() => RefreshFilteredView());
+                                Application.Current?.Dispatcher.BeginInvoke(() => RefreshFilteredView(), System.Windows.Threading.DispatcherPriority.Background);
                             };
                         }
                         _searchDebounceTimer.Stop();
@@ -556,7 +556,7 @@ namespace ProGlassAutomation.ViewModels
                     await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
                     {
                         await LoadDataAsync();
-                    });
+                    }, System.Windows.Threading.DispatcherPriority.Background);
                 };
                 _autoRefreshTimer.Start();
             }
@@ -762,7 +762,7 @@ namespace ProGlassAutomation.ViewModels
                         OnPropertyChanged(nameof(FilteredDataView));
                         LoadFilterOptions();
                         UpdateStatistics();
-                    });
+                    }, System.Windows.Threading.DispatcherPriority.Background);
                 });
 
                 await loadTask;
