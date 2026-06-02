@@ -1867,6 +1867,7 @@ namespace ProGlassAutomation.ViewModels
         {
             if (disposing)
             {
+                // Timer cleanup
                 _searchDebounceTimer?.Stop();
                 _searchDebounceTimer?.Dispose();
                 _searchDebounceTimer = null;
@@ -1876,9 +1877,20 @@ namespace ProGlassAutomation.ViewModels
                 _autoRefreshTimer = null;
 
                 // PATCH 153: Cleanup auto-save timer
-                _autoSaveTimer?.Stop();
                 _autoSaveTimer?.Dispose();
                 _autoSaveTimer = null;
+
+                // PATCH 56: Unsubscribe all PropertyChanged events to prevent memory leaks
+                foreach (var work in DailyWorks)
+                {
+                    work.PropertyChanged -= OnDailyWorkPropertyChanged;
+                }
+                DailyWorks.Clear();
+
+                // PATCH 56: Cancel any pending debounce tokens
+                _filterDebounceToken?.Cancel();
+                _filterDebounceToken?.Dispose();
+                _filterDebounceToken = null;
             }
         }
     }
