@@ -1009,6 +1009,21 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
+        // PATCH 121: Save column widths to settings
+        public void SaveColumnWidths(string widths)
+        {
+            var settings = AppSettings.Load();
+            settings.ColumnWidths = widths;
+            settings.Save();
+        }
+
+        // PATCH 121: Load column widths from settings
+        public string GetColumnWidths()
+        {
+            var settings = AppSettings.Load();
+            return settings.ColumnWidths ?? "";
+        }
+
         // PATCH 12: Prevent UI thread blocking with parallel loading
         public async Task LoadDataAsync()
         {
