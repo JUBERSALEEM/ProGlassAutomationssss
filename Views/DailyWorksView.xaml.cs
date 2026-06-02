@@ -137,6 +137,38 @@ namespace ProGlassAutomation.Views
                 e.Handled = true;
                 return;
             }
+
+            // PATCH 130: Arrow key navigation
+            if (e.Key == Key.Down && MainDataGrid != null)
+            {
+                var currentIndex = MainDataGrid.SelectedIndex;
+                if (currentIndex < MainDataGrid.Items.Count - 1)
+                {
+                    MainDataGrid.SelectedIndex = currentIndex + 1;
+                    MainDataGrid.ScrollIntoView(MainDataGrid.SelectedItem);
+                }
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.Up && MainDataGrid != null)
+            {
+                var currentIndex = MainDataGrid.SelectedIndex;
+                if (currentIndex > 0)
+                {
+                    MainDataGrid.SelectedIndex = currentIndex - 1;
+                    MainDataGrid.ScrollIntoView(MainDataGrid.SelectedItem);
+                }
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.Enter && !vm.IsEditing && vm.SelectedItem != null)
+            {
+                vm.EditCommand.Execute(null);
+                e.Handled = true;
+                return;
+            }
         }
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)

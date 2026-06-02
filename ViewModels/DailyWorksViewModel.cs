@@ -159,6 +159,27 @@ namespace ProGlassAutomation.ViewModels
         public string CurrentHeaderForeground => IsDarkMode ? "#F9FAFB" : "#FFFFFF";
         public string CurrentBorderColor => IsDarkMode ? "#4B5563" : "#3B82F6";
 
+        // PATCH 129: Recent searches
+        private readonly List<string> _recentSearches = new();
+        public IReadOnlyList<string> RecentSearches => _recentSearches.AsReadOnly();
+
+        private void AddRecentSearch(string search)
+        {
+            if (string.IsNullOrWhiteSpace(search)) return;
+
+            // Remove if already exists
+            _recentSearches.Remove(search);
+
+            // Add to front
+            _recentSearches.Insert(0, search);
+
+            // Keep only last 5
+            while (_recentSearches.Count > 5)
+                _recentSearches.RemoveAt(_recentSearches.Count - 1);
+
+            OnPropertyChanged(nameof(RecentSearches));
+        }
+
         // Note: SearchText needs custom setter for debounce, so keep manual
         private string _searchText = string.Empty;
         public string SearchText
@@ -168,6 +189,8 @@ namespace ProGlassAutomation.ViewModels
             {
                 if (SetProperty(ref _searchText, value))
                 {
+                    AddRecentSearch(value); // PATCH 129: Track recent searches
+
                     // PATCH 112: Check if instant search is enabled
                     if (_instantSearch)
                     {

@@ -77,6 +77,16 @@
                 <Trigger Property="IsSelected" Value="True">
                     <Setter Property="Background" Value="#DBEAFE"/>
                 </Trigger>
+                <!-- PATCH 128: Row colors by production status -->
+                <DataTrigger Binding="{Binding ProductionStatus}" Value="COMPLETED">
+                    <Setter Property="Background" Value="#D1FAE5"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding ProductionStatus}" Value="IN PROGRESS">
+                    <Setter Property="Background" Value="#FEF3C7"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding ProductionStatus}" Value="PENDING">
+                    <Setter Property="Background" Value="#FEE2E2"/>
+                </DataTrigger>
             </Style.Triggers>
         </Style>
 
@@ -165,6 +175,14 @@
             <Setter Property="Foreground" Value="#78716C"/>
             <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
             <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+
+        <!-- PATCH 127: Search Highlight Text -->
+        <Style x:Key="HighlightText" TargetType="TextBlock">
+            <Setter Property="Background" Value="#FEF08A"/>
+            <Setter Property="Foreground" Value="#1E40AF"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Padding" Value="2"/>
         </Style>
 
         <!-- PRIMARY BUTTON -->
@@ -440,8 +458,10 @@
                                 <Border Background="#1E40AF" CornerRadius="8" Padding="8,6" Margin="2">
                                     <TextBlock Text="🔍" FontSize="12"/>
                                 </Border>
-                                <TextBox x:Name="SearchTextBox"
+                                <ComboBox x:Name="SearchTextBox"
                                     Grid.Column="1"
+                                    IsEditable="True"
+                                    ItemsSource="{Binding RecentSearches}"
                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
                                     BorderThickness="0" 
                                     VerticalAlignment="Center" 
