@@ -449,6 +449,18 @@ namespace ProGlassAutomation.ViewModels
                 return;
             }
 
+            // PATCH 132: Validate QTY and SQM
+            if (EditingWork.Qty <= 0)
+            {
+                MessageBox.Show("QTY must be greater than 0!", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            if (EditingWork.Sqm <= 0)
+            {
+                MessageBox.Show("SQM must be greater than 0!", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             // PATCH 113: Check for duplicate before saving
             var duplicate = CheckForDuplicate();
             if (duplicate != null)
@@ -583,6 +595,16 @@ namespace ProGlassAutomation.ViewModels
             FilterStartDate = null;
             FilterEndDate = null;
             RefreshFilteredView();
+        }
+
+        // PATCH 134: Export presets
+        public string LastExportPreset { get; set; } = "Default";
+
+        [RelayCommand]
+        private async Task ExportPresetAsync(string preset)
+        {
+            LastExportPreset = preset;
+            await ExportToCsvAsync();
         }
 
         // PATCH 91: Export to CSV - Export FILTERED records
@@ -915,6 +937,11 @@ namespace ProGlassAutomation.ViewModels
 
         public bool HasRecords => FilteredRecords > 0;
 
+        // PATCH 133: Production status counts
+        public int CompletedCount => FilteredDataView?.Cast<DailyWorkModel>().Count(w => w.ProductionStatus == "COMPLETED") ?? 0;
+        public int PendingCount => FilteredDataView?.Cast<DailyWorkModel>().Count(w => w.ProductionStatus == "PENDING") ?? 0;
+        public int InProgressCount => FilteredDataView?.Cast<DailyWorkModel>().Count(w => w.ProductionStatus == "IN PROGRESS") ?? 0;
+
         private void RefreshFilteredView()
         {
             _filteredView?.Refresh();
@@ -938,6 +965,11 @@ namespace ProGlassAutomation.ViewModels
 
             OnPropertyChanged(nameof(SelectedCount));
             OnPropertyChanged(nameof(HasRecords));
+
+            // PATCH 133: Notify status counts
+            OnPropertyChanged(nameof(CompletedCount));
+            OnPropertyChanged(nameof(PendingCount));
+            OnPropertyChanged(nameof(InProgressCount));
         }
 
         // Add these fields and properties

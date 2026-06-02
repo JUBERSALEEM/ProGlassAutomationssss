@@ -951,23 +951,47 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
+
+                            <!-- Records -->
                             <Border Grid.Column="0" Background="White" CornerRadius="8" Padding="6,4" Margin="0,0,4,0" BorderBrush="#3B82F6" BorderThickness="1">
                                 <StackPanel HorizontalAlignment="Center">
                                     <TextBlock Text="RECORDS" FontSize="7" Foreground="#1E40AF" HorizontalAlignment="Center" FontWeight="Bold"/>
                                     <TextBlock Text="{Binding FilteredRecords}" FontSize="16" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
+
+                            <!-- QTY -->
                             <Border Grid.Column="1" Background="White" CornerRadius="8" Padding="6,4" Margin="0,0,4,0" BorderBrush="#3B82F6" BorderThickness="1">
                                 <StackPanel HorizontalAlignment="Center">
                                     <TextBlock Text="QTY" FontSize="7" Foreground="#1E40AF" HorizontalAlignment="Center" FontWeight="Bold"/>
                                     <TextBlock Text="{Binding FilteredQty}" FontSize="16" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
-                            <Border Grid.Column="2" Background="White" CornerRadius="8" Padding="6,4" BorderBrush="#3B82F6" BorderThickness="1">
+
+                            <!-- SQM -->
+                            <Border Grid.Column="2" Background="White" CornerRadius="8" Padding="6,4" Margin="0,0,4,0" BorderBrush="#3B82F6" BorderThickness="1">
                                 <StackPanel HorizontalAlignment="Center">
                                     <TextBlock Text="SQM" FontSize="7" Foreground="#1E40AF" HorizontalAlignment="Center" FontWeight="Bold"/>
                                     <TextBlock Text="{Binding FilteredSQM, StringFormat=N2}" FontSize="16" FontWeight="Bold" Foreground="Black" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- PATCH 133: DONE -->
+                            <Border Grid.Column="3" Background="#F0FDF4" CornerRadius="8" Padding="6,4" Margin="0,0,4,0" BorderBrush="#22C55E" BorderThickness="1">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="DONE" FontSize="7" Foreground="#15803D" HorizontalAlignment="Center" FontWeight="Bold"/>
+                                    <TextBlock Text="{Binding CompletedCount}" FontSize="14" FontWeight="Bold" Foreground="#16A34A" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- PATCH 133: PENDING -->
+                            <Border Grid.Column="4" Background="#FEFCE8" CornerRadius="8" Padding="6,4" BorderBrush="#EAB308" BorderThickness="1">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="PENDING" FontSize="7" Foreground="#A16207" HorizontalAlignment="Center" FontWeight="Bold"/>
+                                    <TextBlock Text="{Binding PendingCount}" FontSize="14" FontWeight="Bold" Foreground="#CA8A04" HorizontalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
                         </Grid>
