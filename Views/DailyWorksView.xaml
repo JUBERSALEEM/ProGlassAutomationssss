@@ -3,6 +3,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:ProGlassAutomation.ViewModels"
+             xmlns:local="clr-namespace:ProGlassAutomation.Views"
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
              Background="#F1F5F9"
              Focusable="True"
@@ -459,6 +460,7 @@
                                     <TextBlock Text="🔍" FontSize="12"/>
                                 </Border>
                                 <ComboBox x:Name="SearchTextBox"
+    KeyDown="SearchTextBox_KeyDown"
                                     Grid.Column="1"
                                     IsEditable="True"
                                     ItemsSource="{Binding RecentSearches}"
@@ -674,10 +676,11 @@
                 <!-- PATCH 86, 87: Enable UI virtualization and recycling for 60fps performance -->
                 <!-- PATCH 110: Save column widths on change -->
                 <DataGrid x:Name="MainDataGrid"
-          ItemsSource="{Binding FilteredDataView}" 
-          SelectedItem="{Binding SelectedItem}"
-          Loaded="MainDataGrid_Loaded"
-          MouseLeftButtonUp="MainDataGrid_MouseLeftButtonUp"
+                          AlternationCount="100"
+                          ItemsSource="{Binding FilteredDataView}" 
+                          SelectedItem="{Binding SelectedItem}"
+                          Loaded="MainDataGrid_Loaded"
+                          MouseLeftButtonUp="MainDataGrid_MouseLeftButtonUp"
                           SelectionMode="Extended"
                           SelectionUnit="FullRow"
                           MouseDoubleClick="DataGrid_MouseDoubleClick"
@@ -690,7 +693,37 @@
                           EnableColumnVirtualization="True"
                           VirtualizingPanel.VirtualizationMode="Recycling"
                           VirtualizingPanel.IsVirtualizing="True">
+                    <!-- PATCH 135: Column visibility toggle -->
+                    <DataGrid.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Show Columns">
+                                <MenuItem Header="Date" IsCheckable="True" IsChecked="True" Click="ToggleColumn_Click"/>
+                                <MenuItem Header="Company" IsCheckable="True" IsChecked="True" Click="ToggleColumn_Click"/>
+                                <MenuItem Header="PI Number" IsCheckable="True" IsChecked="True" Click="ToggleColumn_Click"/>
+                                <MenuItem Header="Color" IsCheckable="True" IsChecked="True" Click="ToggleColumn_Click"/>
+                                <MenuItem Header="Cust Ref" IsCheckable="True" IsChecked="True" Click="ToggleColumn_Click"/>
+                                <MenuItem Header="Type of Work" IsCheckable="True" IsChecked="True" Click="ToggleColumn_Click"/>
+                                <MenuItem Header="Production" IsCheckable="True" IsChecked="True" Click="ToggleColumn_Click"/>
+                                <MenuItem Header="QTY" IsCheckable="True" IsChecked="True" Click="ToggleColumn_Click"/>
+                                <MenuItem Header="SQM" IsCheckable="True" IsChecked="True" Click="ToggleColumn_Click"/>
+                                <MenuItem Header="Status" IsCheckable="True" IsChecked="True" Click="ToggleColumn_Click"/>
+                                <MenuItem Header="Salesman" IsCheckable="True" IsChecked="True" Click="ToggleColumn_Click"/>
+                                <MenuItem Header="Notes" IsCheckable="True" IsChecked="True" Click="ToggleColumn_Click"/>
+                            </MenuItem>
+                        </ContextMenu>
+                    </DataGrid.ContextMenu>
                     <DataGrid.Columns>
+
+                        <!-- PATCH 136: Row Number -->
+                        <DataGridTemplateColumn Header="#" Width="45">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=(ItemsControl.AlternationIndex)}" 
+                       HorizontalAlignment="Center" Foreground="#64748B" FontSize="10"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
                         <!-- SELECT CHECKBOX -->
                         <DataGridTemplateColumn Header="" Width="45">
                             <DataGridTemplateColumn.CellTemplate>

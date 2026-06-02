@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -55,6 +56,37 @@ namespace ProGlassAutomation.Views
         {
             if (_suppressSelectionChanged) return;
             UpdateSelectedIds();
+        }
+
+        // PATCH 137: Copy cell value on right-click
+        private void MainDataGrid_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            try
+            {
+                if (MainDataGrid?.CurrentCell.Column is DataGridColumn column &&
+                    MainDataGrid.SelectedItem is DailyWorkModel work)
+                {
+                    // Get value based on column sort member path
+                    var propertyName = column.SortMemberPath;
+                    if (!string.IsNullOrEmpty(propertyName))
+                    {
+                        var prop = typeof(DailyWorkModel).GetProperty(propertyName);
+                        if (prop != null)
+                        {
+                            var value = prop.GetValue(work)?.ToString();
+                            if (!string.IsNullOrEmpty(value))
+                            {
+                                Clipboard.SetText(value);
+                                if (DataContext is DailyWorksViewModel vm)
+                                {
+                                    vm.StatusMessage = $"Copied: {value}";
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch { /* Ignore copy errors */ }
         }
 
         // PATCH 27: Prevent re-raising SelectionChanged loops
@@ -221,6 +253,17 @@ namespace ProGlassAutomation.Views
             SaveColumnWidths();
         }
 
+        // PATCH 129: Search box key handler
+        private void SearchTextBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter && DataContext is DailyWorksViewModel vm)
+            {
+                // Trigger search on Enter
+                vm.RefreshCommand.Execute(null);
+                e.Handled = true;
+            }
+        }
+
         // PATCH 125, 126: Toggle dark mode click - FULL implementation
         private void ToggleDarkMode_Click(object sender, RoutedEventArgs e)
         {
@@ -270,6 +313,23 @@ namespace ProGlassAutomation.Views
                 }
             }
             catch { /* Ignore errors */ }
+        }
+
+        // PATCH 135: Toggle column visibility
+        private void ToggleColumn_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem && DataContext is DailyWorksViewModel vm)
+            {
+                var header = menuItem.Header?.ToString();
+                if (string.IsNullOrEmpty(header) || MainDataGrid == null) return;
+
+                // Find column by header
+                var col = MainDataGrid.Columns.FirstOrDefault(c => c.Header?.ToString() == header);
+                if (col != null)
+                {
+                    col.Visibility = menuItem.IsChecked ? Visibility.Visible : Visibility.Collapsed;
+                }
+            }
         }
 
         private void SaveColumnWidths()
