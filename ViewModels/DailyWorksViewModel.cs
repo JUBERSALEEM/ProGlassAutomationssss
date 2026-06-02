@@ -97,6 +97,7 @@ namespace ProGlassAutomation.ViewModels
 
         // PATCH 20: Selection tracking with HashSet for O(1) lookups
         private HashSet<int> _selectedIds = new();
+
         private int _selectedCount;
         public int SelectedCount => _selectedCount;
 
@@ -106,6 +107,10 @@ namespace ProGlassAutomation.ViewModels
             _selectedCount = _selectedIds.Count;
             OnPropertyChanged(nameof(SelectedCount));
         }
+
+        // PATCH 116: Soft delete - store deleted items for undo
+        private readonly Stack<DailyWorkModel> _deletedItems = new();
+        public int DeletedCount => _deletedItems.Count;
 
         // PATCH 35: Add debounce timer for search
         private System.Timers.Timer? _searchDebounceTimer;
@@ -368,11 +373,17 @@ namespace ProGlassAutomation.ViewModels
             var result = MessageBox.Show($"Delete {SelectedItem.Company}?", "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (result == MessageBoxResult.Yes)
             {
+                // PATCH 116: Store for undo before deleting
+                var deletedWork = SelectedItem.Clone();
+                _deletedItems.Push(deletedWork);
+
                 await _repository.DeleteAsync(SelectedItem.Id);
                 DailyWorks.Remove(SelectedItem);
                 RefreshFilteredView();
                 SelectedItem = null;
                 UpdateStatistics();
+
+                StatusMessage = $"Deleted {deletedWork.Company}. Use Undo to restore.";
             }
         }
 
@@ -426,6 +437,30 @@ namespace ProGlassAutomation.ViewModels
             EditingWork = null;
             IsDuplicateWarning = false;
             DuplicateMessage = "";
+        }
+
+        // PATCH 118: Undo delete command
+        [RelayCommand]
+        private async Task UndoDeleteAsync()
+        {
+            if (_deletedItems.Count == 0)
+            {
+                StatusMessage = "Nothing to undo!";
+                return;
+            }
+
+            var restoredWork = _deletedItems.Pop();
+            var dbEntity = DbDailyWork.FromUiModel(restoredWork);
+
+            // Re-insert into database
+            restoredWork.Id = 0; // Reset ID for new insert
+            await _repository.InsertAsync(DbDailyWork.FromUiModel(restoredWork));
+
+            DailyWorks.Add(restoredWork);
+            RefreshFilteredView();
+            UpdateStatistics();
+
+            StatusMessage = $"Restored {restoredWork.Company}!";
         }
 
         [RelayCommand]
