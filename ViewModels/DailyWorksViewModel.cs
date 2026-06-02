@@ -123,15 +123,17 @@ namespace ProGlassAutomation.ViewModels
                     }
                     else
                     {
-                        // PATCH 35: Debounce search to prevent excessive filtering
-                        _searchDebounceTimer?.Stop();
-                        _searchDebounceTimer?.Dispose();
-                        _searchDebounceTimer = new System.Timers.Timer(300);
-                        _searchDebounceTimer.Elapsed += (s, e) =>
+                        // PATCH 112: Reuse timer to prevent memory leak
+                        if (_searchDebounceTimer == null)
                         {
-                            _searchDebounceTimer?.Stop();
-                            System.Windows.Application.Current?.Dispatcher.Invoke(RefreshFilteredView);
-                        };
+                            _searchDebounceTimer = new System.Timers.Timer(300);
+                            _searchDebounceTimer.Elapsed += (s, e) =>
+                            {
+                                _searchDebounceTimer?.Stop();
+                                Application.Current?.Dispatcher.BeginInvoke(() => RefreshFilteredView());
+                            };
+                        }
+                        _searchDebounceTimer.Stop();
                         _searchDebounceTimer.Start();
                     }
                 }
