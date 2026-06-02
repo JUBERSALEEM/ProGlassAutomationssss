@@ -3,6 +3,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using ProGlassAutomation.Models;
 using ProGlassAutomation.ViewModels;
 
@@ -38,7 +39,6 @@ namespace ProGlassAutomation.Views
             if (sender is CheckBox checkBox && MainDataGrid != null)
             {
                 _suppressSelectionChanged = true;
-                // PATCH 14: Use BeginInvoke for non-blocking UI update
                 MainDataGrid.Dispatcher.BeginInvoke(() =>
                 {
                     if (checkBox.IsChecked == true)
@@ -46,7 +46,7 @@ namespace ProGlassAutomation.Views
                     else
                         MainDataGrid.UnselectAll();
                     MainDataGrid.UpdateLayout();
-                    _suppressSelectionChanged = false; // PATCH 25: Reset AFTER operation
+                    _suppressSelectionChanged = false;
                 });
                 UpdateSelectedIds();
             }
@@ -66,7 +66,6 @@ namespace ProGlassAutomation.Views
                 if (MainDataGrid?.CurrentCell.Column is DataGridColumn column &&
                     MainDataGrid.SelectedItem is DailyWorkModel work)
                 {
-                    // Get value based on column sort member path
                     var propertyName = column.SortMemberPath;
                     if (!string.IsNullOrEmpty(propertyName))
                     {
@@ -111,7 +110,6 @@ namespace ProGlassAutomation.Views
 
                 vm.UpdateSelectedIds(selectedIds);
 
-                // PATCH 27: Only update if different to avoid loops
                 if (firstSelected != null && vm.SelectedItem?.Id != firstSelected.Id)
                     vm.SelectedItem = firstSelected;
             }
@@ -122,7 +120,6 @@ namespace ProGlassAutomation.Views
         {
             if (DataContext is not DailyWorksViewModel vm) return;
 
-            // Escape = Close edit popup
             if (e.Key == Key.Escape && vm.IsEditing)
             {
                 vm.CancelCommand.Execute(null);
@@ -130,7 +127,6 @@ namespace ProGlassAutomation.Views
                 return;
             }
 
-            // Enter in edit mode = Save
             if (e.Key == Key.Enter && vm.IsEditing)
             {
                 vm.SaveCommand.Execute(null);
@@ -138,7 +134,6 @@ namespace ProGlassAutomation.Views
                 return;
             }
 
-            // Ctrl+F = Focus search
             if (e.Key == Key.F && Keyboard.Modifiers == ModifierKeys.Control)
             {
                 SearchTextBox?.Focus();
@@ -146,7 +141,6 @@ namespace ProGlassAutomation.Views
                 return;
             }
 
-            // Ctrl+S = Save (when editing)
             if (e.Key == Key.S && Keyboard.Modifiers == ModifierKeys.Control && vm.IsEditing)
             {
                 vm.SaveCommand.Execute(null);
@@ -154,7 +148,6 @@ namespace ProGlassAutomation.Views
                 return;
             }
 
-            // Delete = Delete selected
             if (e.Key == Key.Delete && !vm.IsEditing && vm.SelectedCount > 0)
             {
                 vm.DeleteSelectedCommand.Execute(null);
@@ -162,7 +155,6 @@ namespace ProGlassAutomation.Views
                 return;
             }
 
-            // Ctrl+A = Select all
             if (e.Key == Key.A && Keyboard.Modifiers == ModifierKeys.Control)
             {
                 MainDataGrid?.SelectAll();
@@ -205,10 +197,7 @@ namespace ProGlassAutomation.Views
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
-            // Focus search on load
             SearchTextBox?.Focus();
-
-            // PATCH 110: Load saved column widths
             LoadColumnWidths();
         }
 
@@ -236,7 +225,6 @@ namespace ProGlassAutomation.Views
         // PATCH 93: Load to Invoice handler
         private void LoadToInvoice_Click(object sender, RoutedEventArgs e)
         {
-            // Raise navigation event to navigate to invoice page
             NavigateToInvoice?.Invoke();
         }
 
@@ -258,13 +246,12 @@ namespace ProGlassAutomation.Views
         {
             if (e.Key == Key.Enter && DataContext is DailyWorksViewModel vm)
             {
-                // Trigger search on Enter
                 vm.RefreshCommand.Execute(null);
                 e.Handled = true;
             }
         }
 
-        // PATCH 125, 126: Toggle dark mode click - FULL implementation
+        // PATCH 125, 126: Toggle dark mode click
         private void ToggleDarkMode_Click(object sender, RoutedEventArgs e)
         {
             if (DataContext is DailyWorksViewModel vm)
@@ -274,42 +261,36 @@ namespace ProGlassAutomation.Views
             }
         }
 
-        // PATCH 126: Apply dark mode colors to all UI elements
+        // PATCH 126: Apply dark mode colors
         private void ApplyDarkModeColors(bool isDarkMode)
         {
             try
             {
-                // Colors
                 var bg = isDarkMode ? "#1F2937" : "#F1F5F9";
                 var cardBg = isDarkMode ? "#374151" : "#FFFFFF";
                 var headerBg = isDarkMode ? "#0F172A" : "#1E40AF";
 
-                // Apply to main control
-                this.Background = new System.Windows.Media.BrushConverter().ConvertFromString(bg) as System.Windows.Media.Brush;
+                this.Background = new BrushConverter().ConvertFromString(bg) as Brush;
 
-                // Apply to header (first element in grid)
-                var grid = this.Content as System.Windows.Controls.Grid;
+                var grid = this.Content as Grid;
                 if (grid?.Children[0] is Border headerBorder)
                 {
-                    headerBorder.Background = new System.Windows.Media.BrushConverter().ConvertFromString(headerBg) as System.Windows.Media.Brush;
+                    headerBorder.Background = new BrushConverter().ConvertFromString(headerBg) as Brush;
                 }
 
-                // Apply to filter bar (second element)
                 if (grid?.Children[1] is Border filterBorder)
                 {
-                    filterBorder.Background = new System.Windows.Media.BrushConverter().ConvertFromString(isDarkMode ? "#1F2937" : "#DBEAFE") as System.Windows.Media.Brush;
+                    filterBorder.Background = new BrushConverter().ConvertFromString(isDarkMode ? "#1F2937" : "#DBEAFE") as Brush;
                 }
 
-                // Apply to data border (third element)
                 if (grid?.Children[2] is Border dataBorder)
                 {
-                    dataBorder.Background = new System.Windows.Media.BrushConverter().ConvertFromString(cardBg) as System.Windows.Media.Brush;
+                    dataBorder.Background = new BrushConverter().ConvertFromString(cardBg) as Brush;
                 }
 
-                // Apply to stats bar (fourth element)
                 if (grid?.Children[3] is Border statsBorder)
                 {
-                    statsBorder.Background = new System.Windows.Media.BrushConverter().ConvertFromString(cardBg) as System.Windows.Media.Brush;
+                    statsBorder.Background = new BrushConverter().ConvertFromString(cardBg) as Brush;
                 }
             }
             catch { /* Ignore errors */ }
@@ -323,7 +304,6 @@ namespace ProGlassAutomation.Views
                 var header = menuItem.Header?.ToString();
                 if (string.IsNullOrEmpty(header) || MainDataGrid == null) return;
 
-                // Find column by header
                 var col = MainDataGrid.Columns.FirstOrDefault(c => c.Header?.ToString() == header);
                 if (col != null)
                 {
@@ -372,6 +352,143 @@ namespace ProGlassAutomation.Views
             catch { /* Ignore errors */ }
         }
 
+        // PATCH 145: Print preview - FIXED
+        private void PrintPreviewButton_Click(object sender, RoutedEventArgs e)
+        {
+            var previewWindow = new Window
+            {
+                Title = "Print Preview - Daily Works",
+                Width = 900,
+                Height = 700,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen
+            };
+
+            var scrollViewer = new ScrollViewer
+            {
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                Background = Brushes.White
+            };
+
+            var stack = new StackPanel { Orientation = Orientation.Vertical, Margin = new Thickness(20) };
+            stack.Children.Add(new TextBlock
+            {
+                Text = "DAILY WORKS REPORT",
+                FontSize = 18,
+                FontWeight = FontWeights.Bold,
+                Margin = new Thickness(0, 0, 0, 10)
+            });
+
+            if (MainDataGrid?.ItemsSource != null)
+            {
+                foreach (DailyWorkModel w in MainDataGrid.ItemsSource)
+                {
+                    var row = new StackPanel { Orientation = Orientation.Horizontal };
+                    var dateStr = w.Date == default ? "" : w.Date.ToString("dd-MM-yyyy");
+                    row.Children.Add(new TextBlock { Text = dateStr, Width = 80 });
+                    row.Children.Add(new TextBlock { Text = w.Company ?? "", Width = 100 });
+                    row.Children.Add(new TextBlock { Text = w.PiNumber ?? "", Width = 80 });
+                    row.Children.Add(new TextBlock { Text = w.Qty.ToString(), Width = 50 });
+                    row.Children.Add(new TextBlock { Text = w.Sqm.ToString("N2"), Width = 60 });
+                    stack.Children.Add(row);
+                }
+            }
+
+            scrollViewer.Content = stack;
+
+            var toolBar = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(10) };
+
+            var printBtn = new Button { Content = "🖨️ Print", Margin = new Thickness(0, 0, 10, 0) };
+            printBtn.Click += (s, args) => { previewWindow.Close(); DoPrint(); };
+            toolBar.Children.Add(printBtn);
+
+            var closeBtn = new Button { Content = "❌ Close" };
+            closeBtn.Click += (s, args) => previewWindow.Close();
+            toolBar.Children.Add(closeBtn);
+
+            var mainGrid = new Grid();
+            mainGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            mainGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            mainGrid.Children.Add(toolBar);
+            mainGrid.Children.Add(scrollViewer);
+            Grid.SetRow(toolBar, 0);
+            Grid.SetRow(scrollViewer, 1);
+            previewWindow.Content = mainGrid;
+            previewWindow.Show();
+        }
+
+        private void DoPrint()
+        {
+            try
+            {
+                var printDialog = new PrintDialog();
+                if (printDialog.ShowDialog() == true && MainDataGrid != null)
+                {
+                    printDialog.PrintVisual(MainDataGrid, "Daily Works Report");
+                    if (DataContext is DailyWorksViewModel vm)
+                    {
+                        vm.StatusMessage = "Printing complete!";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Print failed: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // PATCH 150: Quick actions
+        private void ScrollToTop_Click(object sender, RoutedEventArgs e)
+        {
+            if (MainDataGrid?.Items.Count > 0)
+            {
+                MainDataGrid.ScrollIntoView(MainDataGrid.Items[0]);
+                MainDataGrid.SelectedIndex = 0;
+            }
+        }
+
+        private void ScrollToBottom_Click(object sender, RoutedEventArgs e)
+        {
+            if (MainDataGrid?.Items.Count > 0)
+            {
+                var last = MainDataGrid.Items.Count - 1;
+                MainDataGrid.ScrollIntoView(MainDataGrid.Items[last]);
+                MainDataGrid.SelectedIndex = last;
+            }
+        }
+
+        private void ShowStats_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is DailyWorksViewModel vm)
+            {
+                MessageBox.Show(
+                    $"Records: {vm.FilteredRecords}\n" +
+                    $"QTY: {vm.FilteredQty}\n" +
+                    $"SQM: {vm.FilteredSQM:N2}\n" +
+                    $"Done: {vm.CompletedCount}\n" +
+                    $"Pending: {vm.PendingCount}",
+                    "Statistics",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+        }
+
+        private void ShowHistory_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is DailyWorksViewModel vm)
+            {
+                var logs = vm.ActivityLogs;
+                if (logs == null || logs.Count == 0)
+                {
+                    MessageBox.Show("No activity history yet.", "History", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                var history = string.Join("\n", logs.Take(10).Select(l => $"{l.Timestamp:HH:mm:ss} - {l.Action}: {l.Details}"));
+                MessageBox.Show(history, "Activity History", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
         // PATCH 94: Keyboard shortcuts
         protected override void OnKeyDown(KeyEventArgs e)
         {
@@ -381,35 +498,35 @@ namespace ProGlassAutomation.Views
 
             switch (e.Key)
             {
-                case Key.F5: // Refresh
+                case Key.F5:
                     vm.RefreshCommand.Execute(null);
                     e.Handled = true;
                     break;
 
-                case Key.Insert: // Add new record
+                case Key.Insert:
                     vm.AddNewCommand.Execute(null);
                     e.Handled = true;
                     break;
 
-                case Key.Delete: // Delete selected
+                case Key.Delete:
                     if (vm.SelectedCount > 0)
                         vm.DeleteSelectedCommand.Execute(null);
                     e.Handled = true;
                     break;
 
-                case Key.Escape: // Cancel/Close popup
+                case Key.Escape:
                     vm.CancelCommand.Execute(null);
                     e.Handled = true;
                     break;
 
-                case Key.S when Keyboard.Modifiers == ModifierKeys.Control: // Ctrl+S - Save
+                case Key.S when Keyboard.Modifiers == ModifierKeys.Control:
                     if (vm.IsEditing)
                         vm.SaveCommand.Execute(null);
                     e.Handled = true;
                     break;
 
-                case Key.F when Keyboard.Modifiers == ModifierKeys.Control: // Ctrl+F - Focus search
-                    // Focus search box - requires x:Name on search TextBox in XAML
+                case Key.F when Keyboard.Modifiers == ModifierKeys.Control:
+                    SearchTextBox?.Focus();
                     e.Handled = true;
                     break;
             }

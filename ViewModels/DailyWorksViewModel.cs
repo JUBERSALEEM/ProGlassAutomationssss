@@ -53,11 +53,7 @@ namespace ProGlassAutomation.ViewModels
             if (!string.IsNullOrWhiteSpace(SearchText))
             {
                 var search = SearchText.ToLowerInvariant();
-                if (!work.Company.ToLowerInvariant().Contains(search) &&
-                    !work.PiNumber.ToLowerInvariant().Contains(search) &&
-                    !work.CustomerReference.ToLowerInvariant().Contains(search) &&
-                    !work.Salesman.ToLowerInvariant().Contains(search) &&
-                    !work.Notes.ToLowerInvariant().Contains(search))
+                if (!MatchesSearch(work, search))
                     return false;
             }
 
@@ -75,12 +71,56 @@ namespace ProGlassAutomation.ViewModels
             return true;
         }
 
+        // PATCH 143: Wildcard search support
+        private bool MatchesSearch(DailyWorkModel work, string search)
+        {
+            if (string.IsNullOrEmpty(search)) return true;
+
+            // Support wildcard (* and ?)
+            if (search.Contains('*') || search.Contains('?'))
+            {
+                return ContainsWildcard(work.Company ?? "", search) ||
+                       ContainsWildcard(work.PiNumber ?? "", search) ||
+                       ContainsWildcard(work.CustomerReference ?? "", search) ||
+                       ContainsWildcard(work.TypeOfWork ?? "", search) ||
+                       ContainsWildcard(work.Salesman ?? "", search) ||
+                       ContainsWildcard(work.Notes ?? "", search);
+            }
+
+            // Exact search (original behavior)
+            return work.Company.ToLowerInvariant().Contains(search) ||
+                   work.PiNumber.ToLowerInvariant().Contains(search) ||
+                   work.CustomerReference.ToLowerInvariant().Contains(search) ||
+                   work.Salesman.ToLowerInvariant().Contains(search) ||
+                   work.Notes.ToLowerInvariant().Contains(search);
+        }
+
+        private bool ContainsWildcard(string source, string search)
+        {
+            if (string.IsNullOrEmpty(search)) return true;
+
+            var pattern = "^" + System.Text.RegularExpressions.Regex.Escape(search)
+                .Replace("\\*", ".*")
+                .Replace("\\?", ".") + "$";
+
+            return System.Text.RegularExpressions.Regex.IsMatch(source ?? "", pattern,
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        }
+
         // Selection - PATCH 63: Manual property (source generator had issues)
         private DailyWorkModel? _selectedItem;
         public DailyWorkModel? SelectedItem
         {
             get => _selectedItem;
-            set => SetProperty(ref _selectedItem, value);
+            set
+            {
+                SetProperty(ref _selectedItem, value);
+                // PATCH 148: Push to undo stack on selection change
+                if (value != null)
+                {
+                    PushToUndo(value);
+                }
+            }
         }
 
         // PATCH 113: Check for duplicates before save
@@ -112,12 +152,49 @@ namespace ProGlassAutomation.ViewModels
         private readonly Stack<DailyWorkModel> _deletedItems = new();
         public int DeletedCount => _deletedItems.Count;
 
+        // PATCH 148: Undo/Redo stacks
+        private readonly Stack<DailyWorkModel> _undoStack = new();
+        private readonly Stack<DailyWorkModel> _redoStack = new();
+
+        public bool CanUndo => _undoStack.Count > 0;
+        public bool CanRedo => _redoStack.Count > 0;
+
+        // PATCH 149: Activity log
+        public ObservableCollection<ActivityLog> ActivityLogs { get; } = new();
+
+        public class ActivityLog
+        {
+            public DateTime Timestamp { get; set; }
+            public string Action { get; set; } = "";
+            public string Details { get; set; } = "";
+            public string User { get; set; } = "";
+        }
+
+        public void LogActivity(string action, string details)
+        {
+            Application.Current?.Dispatcher.Invoke(() =>
+            {
+                ActivityLogs.Insert(0, new ActivityLog
+                {
+                    Timestamp = DateTime.Now,
+                    Action = action,
+                    Details = details,
+                    User = Environment.UserName
+                });
+
+                while (ActivityLogs.Count > 100)
+                    ActivityLogs.RemoveAt(ActivityLogs.Count - 1);
+            });
+        }
+
         // PATCH 35: Add debounce timer for search
         private System.Timers.Timer? _searchDebounceTimer;
 
         // PATCH 45-46: Explicit command properties (source generator not creating them)
         public RelayCommand ExportSelectedToCsvCommand { get; private set; }
         public RelayCommand ImportFromCsvCommand { get; private set; }
+        // PATCH 144: Export to Excel command
+        public RelayCommand ExportToExcelCommand { get; private set; }
         // ToggleDarkModeCommand is auto-generated by [RelayCommand]
 
         // PATCH 16: Filter debounce
@@ -372,6 +449,7 @@ namespace ProGlassAutomation.ViewModels
                 _selectedIds.Clear(); // PATCH 20: Clear HashSet
                 SelectedItem = null;
                 StatusMessage = $"Deleted {selectedIds.Count} records successfully!";
+                LogActivity("DELETE", $"Deleted {selectedIds.Count} records");
             }
             catch (Exception ex)
             {
@@ -406,6 +484,7 @@ namespace ProGlassAutomation.ViewModels
             IsEditing = true;
             IsDuplicateWarning = false;
             DuplicateMessage = "";
+            LogActivity("ADD", "Started adding new record");
         }
 
         [RelayCommand]
@@ -416,6 +495,7 @@ namespace ProGlassAutomation.ViewModels
             IsEditing = true;
             IsDuplicateWarning = false;
             DuplicateMessage = "";
+            LogActivity("EDIT", $"Editing {SelectedItem.PiNumber}");
         }
 
         [RelayCommand]
@@ -436,6 +516,7 @@ namespace ProGlassAutomation.ViewModels
                 UpdateStatistics();
 
                 StatusMessage = $"Deleted {deletedWork.Company}. Use Undo to restore.";
+                LogActivity("DELETE", $"Deleted {deletedWork.PiNumber}");
             }
         }
 
@@ -443,21 +524,13 @@ namespace ProGlassAutomation.ViewModels
         private async Task SaveAsync()
         {
             if (EditingWork == null) return;
-            if (string.IsNullOrWhiteSpace(EditingWork.Company))
-            {
-                MessageBox.Show("Company required!", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
 
-            // PATCH 132: Validate QTY and SQM
-            if (EditingWork.Qty <= 0)
+            // PATCH 147: Required field validation
+            var (isValid, message) = ValidateWork(EditingWork);
+            if (!isValid)
             {
-                MessageBox.Show("QTY must be greater than 0!", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-            if (EditingWork.Sqm <= 0)
-            {
-                MessageBox.Show("SQM must be greater than 0!", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+                StatusMessage = message;
+                MessageBox.Show(message, "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -470,12 +543,25 @@ namespace ProGlassAutomation.ViewModels
                 return;
             }
 
+            // PATCH 146: Additional duplicate check
+            var duplicates = DailyWorks.Where(w =>
+                w.PiNumber == EditingWork.PiNumber &&
+                w.Id != EditingWork.Id).ToList();
+
+            if (duplicates.Any())
+            {
+                IsDuplicateWarning = true;
+                DuplicateMessage = $"Warning: PI Number '{EditingWork.PiNumber}' already exists ({duplicates.Count} duplicate(s)). Save anyway?";
+                return;
+            }
+
             var dbEntity = DbDailyWork.FromUiModel(EditingWork);
             if (EditingWork.Id == 0)
             {
                 EditingWork.Id = DailyWorks.Count > 0 ? DailyWorks.Max(w => w.Id) + 1 : 1;
                 await _repository.InsertAsync(dbEntity);
                 DailyWorks.Add(EditingWork);
+                LogActivity("SAVE", $"Created new record: {EditingWork.PiNumber}");
             }
             else
             {
@@ -487,11 +573,30 @@ namespace ProGlassAutomation.ViewModels
                     var index = DailyWorks.IndexOf(existing);
                     DailyWorks[index] = EditingWork;
                 }
+                LogActivity("SAVE", $"Updated record: {EditingWork.PiNumber}");
             }
             IsEditing = false;
             EditingWork = null;
             RefreshFilteredView();
             UpdateStatistics();
+        }
+
+        // PATCH 147: Validate required fields
+        public (bool IsValid, string Message) ValidateWork(DailyWorkModel work)
+        {
+            if (string.IsNullOrWhiteSpace(work.Company))
+                return (false, "Company is required");
+
+            if (string.IsNullOrWhiteSpace(work.PiNumber))
+                return (false, "PI Number is required");
+
+            if (work.Qty <= 0)
+                return (false, "QTY must be greater than 0");
+
+            if (work.Sqm <= 0)
+                return (false, "SQM must be greater than 0");
+
+            return (true, "Valid");
         }
 
         [RelayCommand]
@@ -501,6 +606,7 @@ namespace ProGlassAutomation.ViewModels
             EditingWork = null;
             IsDuplicateWarning = false;
             DuplicateMessage = "";
+            LogActivity("CANCEL", "Cancelled editing");
         }
 
         // PATCH 118: Undo delete command
@@ -514,7 +620,6 @@ namespace ProGlassAutomation.ViewModels
             }
 
             var restoredWork = _deletedItems.Pop();
-            var dbEntity = DbDailyWork.FromUiModel(restoredWork);
 
             // Re-insert into database
             restoredWork.Id = 0; // Reset ID for new insert
@@ -525,6 +630,87 @@ namespace ProGlassAutomation.ViewModels
             UpdateStatistics();
 
             StatusMessage = $"Restored {restoredWork.Company}!";
+            LogActivity("UNDO DELETE", $"Restored {restoredWork.PiNumber}");
+        }
+
+        // PATCH 148: Undo command
+        [RelayCommand]
+        private void Undo()
+        {
+            if (_undoStack.Count == 0)
+            {
+                StatusMessage = "Nothing to undo!";
+                return;
+            }
+
+            if (SelectedItem != null)
+                _redoStack.Push(CloneWork(SelectedItem));
+
+            var previous = _undoStack.Pop();
+            SelectedItem = previous;
+
+            StatusMessage = "Undone!";
+            LogActivity("UNDO", "Undo last action");
+        }
+
+        // PATCH 148: Redo command
+        [RelayCommand]
+        private void Redo()
+        {
+            if (_redoStack.Count == 0)
+            {
+                StatusMessage = "Nothing to redo!";
+                return;
+            }
+
+            if (SelectedItem != null)
+                _undoStack.Push(CloneWork(SelectedItem));
+
+            var next = _redoStack.Pop();
+            SelectedItem = next;
+
+            StatusMessage = "Redone!";
+            LogActivity("REDO", "Redo last action");
+        }
+
+        private DailyWorkModel CloneWork(DailyWorkModel work)
+        {
+            return new DailyWorkModel
+            {
+                Id = work.Id,
+                Date = work.Date,
+                Company = work.Company,
+                PiNumber = work.PiNumber,
+                Color = work.Color,
+                CustomerReference = work.CustomerReference,
+                TypeOfWork = work.TypeOfWork,
+                ProductionStatus = work.ProductionStatus,
+                Qty = work.Qty,
+                Sqm = work.Sqm,
+                Status = work.Status,
+                Salesman = work.Salesman,
+                Notes = work.Notes,
+                CreatedDate = work.CreatedDate,
+                UpdateDate = work.UpdateDate
+            };
+        }
+
+        private void PushToUndo(DailyWorkModel work)
+        {
+            if (_undoStack.Count > 0 && _undoStack.Peek().Id == work.Id)
+                return; // Don't push same item twice
+
+            _undoStack.Push(CloneWork(work));
+            _redoStack.Clear();
+
+            // Keep stack limited
+            while (_undoStack.Count > 50)
+            {
+                var temp = new Stack<DailyWorkModel>();
+                while (_undoStack.Count > 0) temp.Push(_undoStack.Pop());
+                temp.Pop(); // Remove oldest
+                while (temp.Count > 0) _undoStack.Push(temp.Pop());
+            }
         }
 
         // PATCH 124, 126: Toggle dark mode - FULL implementation
@@ -550,6 +736,7 @@ namespace ProGlassAutomation.ViewModels
             OnPropertyChanged(nameof(IsDarkMode));
 
             StatusMessage = IsDarkMode ? "🌙 Dark mode ON" : "☀️ Light mode ON";
+            LogActivity("THEME", IsDarkMode ? "Dark mode ON" : "Light mode ON");
         }
 
         [RelayCommand]
@@ -570,6 +757,7 @@ namespace ProGlassAutomation.ViewModels
             FilterStartDate = null;
             FilterEndDate = null;
             RefreshFilteredView();
+            LogActivity("FILTER", "Cleared all filters");
         }
 
         // PATCH 41-44: Quick filter presets
@@ -579,6 +767,7 @@ namespace ProGlassAutomation.ViewModels
             FilterStartDate = DateTime.Today.AddDays(-7);
             FilterEndDate = DateTime.Today;
             RefreshFilteredView();
+            LogActivity("FILTER", "This week");
         }
 
         [RelayCommand]
@@ -587,6 +776,7 @@ namespace ProGlassAutomation.ViewModels
             FilterStartDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
             FilterEndDate = DateTime.Today;
             RefreshFilteredView();
+            LogActivity("FILTER", "This month");
         }
 
         [RelayCommand]
@@ -595,6 +785,7 @@ namespace ProGlassAutomation.ViewModels
             FilterStartDate = null;
             FilterEndDate = null;
             RefreshFilteredView();
+            LogActivity("FILTER", "All time");
         }
 
         // PATCH 134: Export presets
@@ -626,9 +817,9 @@ namespace ProGlassAutomation.ViewModels
                     StatusMessage = "Exporting...";
 
                     var lines = new List<string>
-            {
-                "Date,Company,PI Number,Color,Cust Ref,Type of Work,Production,QTY,SQM,Status,Salesman,Notes"
-            };
+                    {
+                        "Date,Company,PI Number,Color,Cust Ref,Type of Work,Production,QTY,SQM,Status,Salesman,Notes"
+                    };
 
                     // PATCH 91 FIX: Export FILTERED records, not all records
                     var filteredList = FilteredDataView?.Cast<DailyWorkModel>().ToList() ?? DailyWorks.ToList();
@@ -642,6 +833,7 @@ namespace ProGlassAutomation.ViewModels
                     await System.IO.File.WriteAllLinesAsync(dialog.FileName, lines);
                     // PATCH 111: Add export timestamp
                     StatusMessage = $"Exported {filteredList.Count} records at {DateTime.Now:HH:mm:ss}!";
+                    LogActivity("EXPORT CSV", $"Exported {filteredList.Count} records");
                 }
             }
             catch (Exception ex)
@@ -693,6 +885,7 @@ namespace ProGlassAutomation.ViewModels
 
                     await System.IO.File.WriteAllLinesAsync(dialog.FileName, lines);
                     StatusMessage = $"Exported {selectedList.Count} selected records!";
+                    LogActivity("EXPORT SELECTED", $"Exported {selectedList.Count} records");
                 }
             }
             catch (Exception ex)
@@ -705,7 +898,61 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // PATCH 46: Import from CSV (command created in constructor)
+        // PATCH 144: Export to Excel
+        private async Task ExecuteExportToExcelAsync()
+        {
+            try
+            {
+                var dialog = new Microsoft.Win32.SaveFileDialog
+                {
+                    Filter = "Excel Files|*.xlsx",
+                    DefaultExt = ".xlsx",
+                    FileName = $"DailyWorks_{DateTime.Now:yyyyMMdd_HHmmss}"
+                };
+
+                if (dialog.ShowDialog() == true)
+                {
+                    IsBusy = true;
+                    StatusMessage = "Exporting to Excel...";
+
+                    // Note: Requires EPPlus NuGet package
+                    var file = new System.IO.FileInfo(dialog.FileName);
+                    using var package = new OfficeOpenXml.ExcelPackage(file);
+                    var sheet = package.Workbook.Worksheets.Add("Daily Works");
+
+                    var data = FilteredDataView?.Cast<DailyWorkModel>().ToList() ?? DailyWorks.ToList();
+                    var cols = typeof(DailyWorkModel).GetProperties();
+
+                    // Headers
+                    for (int i = 0; i < cols.Length; i++)
+                        sheet.Cells[1, i + 1].Value = cols[i].Name;
+
+                    // Data
+                    for (int row = 0; row < data.Count; row++)
+                    {
+                        for (int col = 0; col < cols.Length; col++)
+                        {
+                            var value = cols[col].GetValue(data[row]);
+                            sheet.Cells[row + 2, col + 1].Value = value?.ToString();
+                        }
+                    }
+
+                    package.Save();
+                    StatusMessage = "Excel exported successfully!";
+                    LogActivity("EXPORT EXCEL", $"Exported {data.Count} records");
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Export failed: {ex.Message}";
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        // PATCH 46: Import from CSV
         private async Task ImportFromCsvAsync()
         {
             try
@@ -731,7 +978,7 @@ namespace ProGlassAutomation.ViewModels
                     var imported = 0;
                     var skipped = 0;
 
-                    foreach (var line in lines.Skip(1)) // Skip header
+                    foreach (var line in lines.Skip(1))
                     {
                         try
                         {
@@ -770,6 +1017,7 @@ namespace ProGlassAutomation.ViewModels
 
                     await LoadDataAsync();
                     StatusMessage = $"Imported {imported} records, skipped {skipped}!";
+                    LogActivity("IMPORT", $"Imported {imported} records");
                 }
             }
             catch (Exception ex)
@@ -811,8 +1059,8 @@ namespace ProGlassAutomation.ViewModels
                 var printDialog = new PrintDialog();
                 if (printDialog.ShowDialog() == true)
                 {
-                    // Will be handled in code-behind with DataGrid reference
                     StatusMessage = "Printing...";
+                    LogActivity("PRINT", "Printing report");
                 }
             }
             catch (Exception ex)
@@ -878,7 +1126,7 @@ namespace ProGlassAutomation.ViewModels
             _ = LoadDataAsync();
         }
 
-        // PATCH 16: Debounce filter refresh to prevent excessive refreshes
+        // PATCH 16: Debounce filter refresh
         private async void DebounceFilterRefreshAsync()
         {
             _filterDebounceToken?.Cancel();
@@ -948,14 +1196,14 @@ namespace ProGlassAutomation.ViewModels
             UpdateStatistics();
         }
 
-        // PATCH 17, 70: Update cached statistics including unique counts
+        // PATCH 17, 70: Update cached statistics
         private void UpdateStatistics()
         {
             TotalRecords = DailyWorks.Count;
             TotalSQM = DailyWorks.Sum(w => w.Sqm);
             TotalQty = DailyWorks.Sum(w => w.Qty);
 
-            // PATCH 70: Add unique counts for stats display
+            // PATCH 70: Unique counts
             TotalCompanies = DailyWorks.Select(w => w.Company).Distinct().Count();
             TotalPINumbers = DailyWorks.Select(w => w.PiNumber).Where(p => !string.IsNullOrWhiteSpace(p)).Distinct().Count();
 
@@ -972,7 +1220,6 @@ namespace ProGlassAutomation.ViewModels
             OnPropertyChanged(nameof(InProgressCount));
         }
 
-        // Add these fields and properties
         private int _totalCompanies;
         public int TotalCompanies
         {
@@ -995,7 +1242,7 @@ namespace ProGlassAutomation.ViewModels
             set => SetProperty(ref _bulkProductionStatus, value);
         }
 
-        // PATCH 119: Batch clone template for multi-edit
+        // PATCH 119: Batch clone template
         private DailyWorkModel? _batchCloneTemplate;
         public DailyWorkModel? BatchCloneTemplate
         {
@@ -1010,7 +1257,6 @@ namespace ProGlassAutomation.ViewModels
             var selectedIds = _selectedIds?.ToList() ?? new List<int>();
             if (selectedIds.Count == 0)
             {
-                // Try from grid
                 var grid = Application.Current.MainWindow?.FindName("MainDataGrid") as DataGrid;
                 if (grid != null)
                 {
@@ -1043,7 +1289,7 @@ namespace ProGlassAutomation.ViewModels
                     if (original != null)
                     {
                         var clone = original.Clone();
-                        clone.Id = 0; // Reset ID for new record
+                        clone.Id = 0;
                         clone.PiNumber = clone.PiNumber + "-CLONE";
                         clone.CreatedDate = DateTime.Now;
                         clone.Date = DateTime.Today;
@@ -1054,6 +1300,7 @@ namespace ProGlassAutomation.ViewModels
 
                 await LoadDataAsync();
                 StatusMessage = $"Cloned {cloned} records!";
+                LogActivity("BATCH CLONE", $"Cloned {cloned} records");
             }
             catch (Exception ex)
             {
@@ -1069,7 +1316,6 @@ namespace ProGlassAutomation.ViewModels
             var selectedIds = _selectedIds?.ToList() ?? new List<int>();
             if (selectedIds.Count == 0)
             {
-                // Try from grid - PATCH 107
                 var grid = Application.Current.MainWindow?.FindName("MainDataGrid") as DataGrid;
                 if (grid != null)
                 {
@@ -1111,6 +1357,7 @@ namespace ProGlassAutomation.ViewModels
                 _selectedIds.Clear();
                 OnPropertyChanged(nameof(SelectedCount));
                 StatusMessage = $"Updated {selectedIds.Count} records to '{BulkProductionStatus}'!";
+                LogActivity("BULK UPDATE", $"Updated {selectedIds.Count} records to {BulkProductionStatus}");
             }
             catch (Exception ex)
             {
@@ -1118,7 +1365,7 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // PATCH 121: Save column widths to settings
+        // PATCH 121: Save column widths
         public void SaveColumnWidths(string widths)
         {
             var settings = AppSettings.Load();
@@ -1126,22 +1373,20 @@ namespace ProGlassAutomation.ViewModels
             settings.Save();
         }
 
-        // PATCH 121: Load column widths from settings
         public string GetColumnWidths()
         {
             var settings = AppSettings.Load();
             return settings.ColumnWidths ?? "";
         }
 
-        // PATCH 12: Prevent UI thread blocking with parallel loading
+        // PATCH 12: Load data async
         public async Task LoadDataAsync()
         {
-            if (IsBusy) return; // PATCH 104: Prevent concurrent LoadDataAsync
+            if (IsBusy) return;
 
             IsBusy = true;
             try
             {
-                // PATCH 13: Use Task.WhenAll for parallel loading
                 var loadTask = Task.Run(async () =>
                 {
                     var dbItems = await _repository.GetAllAsync();
@@ -1207,21 +1452,20 @@ namespace ProGlassAutomation.ViewModels
         }
 
         // Constructor
-        // PATCH 56-60: Proper disposal
         public DailyWorksViewModel()
         {
             _isBusy = false;
             _repository = new DailyWorkRepository();
 
-            // PATCH 45-46: Initialize commands manually
+            // PATCH 45-46: Initialize commands
             ExportSelectedToCsvCommand = new RelayCommand(async () => await ExportSelectedToCsvAsync());
             ImportFromCsvCommand = new RelayCommand(async () => await ImportFromCsvAsync());
-            // ToggleDarkModeCommand is auto-generated
+            ExportToExcelCommand = new RelayCommand(async () => await ExecuteExportToExcelAsync());
 
             _ = LoadDataAsync();
         }
 
-        // PATCH 54: Implement IDisposable for proper cleanup
+        // PATCH 54: IDisposable
         public void Dispose()
         {
             Dispose(true);
@@ -1236,7 +1480,6 @@ namespace ProGlassAutomation.ViewModels
                 _searchDebounceTimer?.Dispose();
                 _searchDebounceTimer = null;
 
-                // PATCH 95: Auto-refresh timer cleanup
                 _autoRefreshTimer?.Stop();
                 _autoRefreshTimer?.Dispose();
                 _autoRefreshTimer = null;

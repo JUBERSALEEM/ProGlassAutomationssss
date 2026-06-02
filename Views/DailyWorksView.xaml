@@ -100,6 +100,36 @@
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="BorderBrush" Value="#334155"/>
             <Setter Property="BorderThickness" Value="0,0,1,2"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridColumnHeader">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Background="{TemplateBinding Background}" 
+                            Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
+                            </Border>
+                            <Path x:Name="SortArrow" Grid.Column="1" 
+                          Data="M 0,4 L 4,0 L 8,4" 
+                          Fill="White" Visibility="Collapsed" 
+                          Margin="4,0,4,0" VerticalAlignment="Center"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="SortDirection" Value="Ascending">
+                                <Setter TargetName="SortArrow" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="SortArrow" Property="Data" Value="M 0,0 L 4,4 L 8,0"/>
+                            </Trigger>
+                            <Trigger Property="SortDirection" Value="Descending">
+                                <Setter TargetName="SortArrow" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="SortArrow" Property="Data" Value="M 0,4 L 4,0 L 8,4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <!-- COLUMN TEXT STYLES -->
@@ -531,6 +561,7 @@
                     <Button Content="➕ Add" Style="{StaticResource SuccessButton}" Command="{Binding AddNewCommand}" Margin="0,0,6,0"/>
                     <Button Content="🔄 Refresh" Style="{StaticResource PrimaryButton}" Command="{Binding RefreshCommand}" Margin="0,0,6,0"/>
                     <Button Content="🖨️ Print" Style="{StaticResource SecondaryButton}" Click="PrintButton_Click" Margin="0,0,6,0"/>
+                    <Button Content="👁️ Preview" Style="{StaticResource SecondaryButton}" Click="PrintPreviewButton_Click" Margin="0,0,6,0"/>
                     <Button Content="📄 Export" Style="{StaticResource SecondaryButton}" Command="{Binding ExportToCsvCommand}" Margin="0,0,6,0"/>
                     <Button Content="📊 Export Selected" Style="{StaticResource SecondaryButton}" Command="{Binding ExportSelectedToCsvCommand}" Margin="0,0,6,0"/>
                     <Button Content="📥 Import CSV" Style="{StaticResource SecondaryButton}" Command="{Binding ImportFromCsvCommand}" Margin="0,0,6,0"/>
