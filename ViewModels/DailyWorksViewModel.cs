@@ -190,8 +190,9 @@ namespace ProGlassAutomation.ViewModels
             });
         }
 
-        // PATCH 35: Add debounce timer for search
-        private System.Timers.Timer? _searchDebounceTimer;
+        // PATCH 112: Unified debounce - single CancellationToken approach
+        private CancellationTokenSource? _searchDebounceToken;
+        private readonly TimeSpan _debounceDelay = TimeSpan.FromMilliseconds(300);
 
         // PATCH 153: Auto-save draft timer
         private System.Timers.Timer? _autoSaveTimer;
@@ -353,7 +354,7 @@ namespace ProGlassAutomation.ViewModels
                 {
                     AddRecentSearch(value); // PATCH 129: Track recent searches
 
-                    // PATCH 112: Check if instant search is enabled
+                    // PATCH 112: Unified debounce - CancellationToken approach
                     if (_instantSearch)
                     {
                         // Instant search - no debounce
@@ -361,20 +362,30 @@ namespace ProGlassAutomation.ViewModels
                     }
                     else
                     {
-                        // PATCH 112: Reuse timer to prevent memory leak
-                        if (_searchDebounceTimer == null)
-                        {
-                            _searchDebounceTimer = new System.Timers.Timer(300);
-                            _searchDebounceTimer.Elapsed += (s, e) =>
-                            {
-                                _searchDebounceTimer?.Stop();
-                                Application.Current?.Dispatcher.BeginInvoke(() => RefreshFilteredView(), System.Windows.Threading.DispatcherPriority.Background);
-                            };
-                        }
-                        _searchDebounceTimer.Stop();
-                        _searchDebounceTimer.Start();
+                        // Debounced search - cancel and restart
+                        _searchDebounceToken?.Cancel();
+                        _searchDebounceToken = new CancellationTokenSource();
+                        _ = DebounceSearchAsync(_searchDebounceToken.Token);
                     }
                 }
+            }
+        }
+
+        // PATCH 112: Async debounce helper
+        private async Task DebounceSearchAsync(CancellationToken token)
+        {
+            try
+            {
+                await Task.Delay(_debounceDelay, token);
+                // Only refresh if token wasn't cancelled
+                if (!token.IsCancellationRequested)
+                {
+                    RefreshFilteredView();
+                }
+            }
+            catch (TaskCanceledException)
+            {
+                // Expected - debounce cancelled
             }
         }
 
@@ -1868,10 +1879,6 @@ namespace ProGlassAutomation.ViewModels
             if (disposing)
             {
                 // Timer cleanup
-                _searchDebounceTimer?.Stop();
-                _searchDebounceTimer?.Dispose();
-                _searchDebounceTimer = null;
-
                 _autoRefreshTimer?.Stop();
                 _autoRefreshTimer?.Dispose();
                 _autoRefreshTimer = null;
@@ -1879,6 +1886,15 @@ namespace ProGlassAutomation.ViewModels
                 // PATCH 153: Cleanup auto-save timer
                 _autoSaveTimer?.Dispose();
                 _autoSaveTimer = null;
+
+                // PATCH 112: Cleanup debounce tokens
+                _searchDebounceToken?.Cancel();
+                _searchDebounceToken?.Dispose();
+                _searchDebounceToken = null;
+
+                _filterDebounceToken?.Cancel();
+                _filterDebounceToken?.Dispose();
+                _filterDebounceToken = null;
 
                 // PATCH 56: Unsubscribe all PropertyChanged events to prevent memory leaks
                 foreach (var work in DailyWorks)
