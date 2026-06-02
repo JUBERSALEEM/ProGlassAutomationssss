@@ -190,6 +190,33 @@ namespace ProGlassAutomation.ViewModels
         // PATCH 35: Add debounce timer for search
         private System.Timers.Timer? _searchDebounceTimer;
 
+        // PATCH 153: Auto-save draft timer
+        private System.Timers.Timer? _autoSaveTimer;
+
+        // PATCH 153: Start auto-save on construction
+        private void StartAutoSave()
+        {
+            _autoSaveTimer = new System.Timers.Timer(60000); // 60 seconds
+            _autoSaveTimer.Elapsed += async (s, e) => await SaveDraftAsync();
+            _autoSaveTimer.Start();
+        }
+
+        // PATCH 153: Save draft to local file
+        private async Task SaveDraftAsync()
+        {
+            try
+            {
+                if (EditingWork != null)
+                {
+                    var draft = System.Text.Json.JsonSerializer.Serialize(EditingWork);
+                    var draftPath = "draft.json";
+                    await System.IO.File.WriteAllTextAsync(draftPath, draft);
+                    System.Diagnostics.Debug.WriteLine($"[DailyWorksVM] Draft auto-saved at {DateTime.Now}");
+                }
+            }
+            catch { /* Ignore errors */ }
+        }
+
         // PATCH 45-46: Explicit command properties (source generator not creating them)
         public RelayCommand ExportSelectedToCsvCommand { get; private set; }
         public RelayCommand ImportFromCsvCommand { get; private set; }
@@ -206,6 +233,22 @@ namespace ProGlassAutomation.ViewModels
         {
             get => _instantSearch;
             set => SetProperty(ref _instantSearch, value);
+        }
+
+        // PATCH 154: Export format selection
+        public string ExportFormat { get; set; } = "CSV";
+
+        [RelayCommand]
+        private async Task ExportAsync(string format)
+        {
+            ExportFormat = format;
+
+            if (format == "CSV")
+                await ExportToCsvAsync();
+            else if (format == "Excel")
+                await ExecuteExportToExcelAsync();
+            else
+                await ExportToCsvAsync();
         }
 
         // PATCH 123: Dark mode toggle
@@ -399,6 +442,14 @@ namespace ProGlassAutomation.ViewModels
             set => SetProperty(ref _duplicateMessage, value);
         }
 
+        // PATCH 152: Validation error highlighted
+        private string _validationError = string.Empty;
+        public string ValidationError
+        {
+            get => _validationError;
+            set => SetProperty(ref _validationError, value);
+        }
+
         [RelayCommand]
         private async Task DeleteSelectedAsync(object? parameter)
         {
@@ -429,6 +480,17 @@ namespace ProGlassAutomation.ViewModels
                 StatusMessage = "No items selected! Please select items first.";
                 MessageBox.Show("Please select items to delete.", "No Selection", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
+            }
+
+            // PATCH 159: Extra confirmation for large batches
+            if (selectedIds.Count > 10)
+            {
+                var confirmLarge = MessageBox.Show(
+                    $"You are about to delete {selectedIds.Count} records.\nThis is a large number. Are you sure?",
+                    "Confirm Large Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+                if (confirmLarge != MessageBoxResult.Yes)
+                    return;
             }
 
             var result = MessageBox.Show($"Delete {selectedIds.Count} selected records?",
@@ -475,6 +537,98 @@ namespace ProGlassAutomation.ViewModels
         public ObservableCollection<string> ProductionStatusOptions { get; } = new();
         public ObservableCollection<string> SalesmanOptions { get; } = new();
         public ObservableCollection<string> ColorOptions { get; } = new();
+
+        // PATCH 155: Import preview collection
+        private ObservableCollection<DailyWorkModel> _importPreview = new();
+        public ObservableCollection<DailyWorkModel> ImportPreview
+        {
+            get => _importPreview;
+            set => SetProperty(ref _importPreview, value);
+        }
+
+        // PATCH 155: Preview import method
+        [RelayCommand]
+        private async Task PreviewImportAsync(string filePath)
+        {
+            try
+            {
+                var lines = await System.IO.File.ReadAllLinesAsync(filePath);
+                ImportPreview.Clear();
+
+                foreach (var line in lines.Skip(1).Take(10))
+                {
+                    try
+                    {
+                        var parts = ParseCsvLine(line);
+                        if (parts.Length >= 10)
+                        {
+                            var work = new DailyWorkModel
+                            {
+                                Company = parts[1].Trim('"'),
+                                PiNumber = parts[2].Trim('"'),
+                                Color = parts[3].Trim('"'),
+                                CustomerReference = parts[4].Trim('"'),
+                                TypeOfWork = parts[5].Trim('"'),
+                                ProductionStatus = parts[6].Trim('"'),
+                                Qty = int.TryParse(parts[7], out var qty) ? qty : 0,
+                                Sqm = double.TryParse(parts[8], out var sqm) ? sqm : 0,
+                                Status = parts[9].Trim('"')
+                            };
+                            ImportPreview.Add(work);
+                        }
+                    }
+                    catch { }
+                }
+
+                StatusMessage = $"Preview: {ImportPreview.Count} rows";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = "Preview failed: " + ex.Message;
+            }
+        }
+
+        // PATCH 156: Statistics export
+        [RelayCommand]
+        private async Task ExportStatsAsync()
+        {
+            try
+            {
+                var dialog = new Microsoft.Win32.SaveFileDialog
+                {
+                    Filter = "CSV files (*.csv)|*.csv",
+                    DefaultExt = ".csv",
+                    FileName = $"DailyWorks_Stats_{DateTime.Now:yyyyMMdd}"
+                };
+
+                if (dialog.ShowDialog() == true)
+                {
+                    var lines = new List<string>
+            {
+                "Metric,Value",
+                $"Total Records,{TotalRecords}",
+                $"Total Qty,{TotalQty}",
+                $"Total SQM,{TotalSQM:N2}",
+                $"Filtered Records,{FilteredRecords}",
+                $"Filtered Qty,{FilteredQty}",
+                $"Filtered SQM,{FilteredSQM:N2}",
+                $"Completed,{CompletedCount}",
+                $"Pending,{PendingCount}",
+                $"In Progress,{InProgressCount}",
+                $"Companies,{TotalCompanies}",
+                $"PI Numbers,{TotalPINumbers}"
+            };
+
+                    await System.IO.File.WriteAllLinesAsync(dialog.FileName, lines);
+                    StatusMessage = "Statistics exported!";
+                    LogActivity("EXPORT STATS", "Exported statistics");
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = "Export failed: " + ex.Message;
+            }
+        }
 
         // Commands - Source generators auto-create commands from [RelayCommand]
         [RelayCommand]
@@ -552,7 +706,14 @@ namespace ProGlassAutomation.ViewModels
             {
                 IsDuplicateWarning = true;
                 DuplicateMessage = $"Warning: PI Number '{EditingWork.PiNumber}' already exists ({duplicates.Count} duplicate(s)). Save anyway?";
-                return;
+
+                // PATCH 151: Ask user if they want to save anyway
+                var saveAnyway = MessageBox.Show(
+                    $"PI Number '{EditingWork.PiNumber}' already exists ({duplicates.Count} time(s)). Save anyway?",
+                    "Duplicate Warning", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+                if (saveAnyway != MessageBoxResult.Yes)
+                    return;
             }
 
             var dbEntity = DbDailyWork.FromUiModel(EditingWork);
@@ -1462,6 +1623,9 @@ namespace ProGlassAutomation.ViewModels
             ImportFromCsvCommand = new RelayCommand(async () => await ImportFromCsvAsync());
             ExportToExcelCommand = new RelayCommand(async () => await ExecuteExportToExcelAsync());
 
+            // PATCH 153: Start auto-save timer
+            StartAutoSave();
+
             _ = LoadDataAsync();
         }
 
@@ -1483,6 +1647,11 @@ namespace ProGlassAutomation.ViewModels
                 _autoRefreshTimer?.Stop();
                 _autoRefreshTimer?.Dispose();
                 _autoRefreshTimer = null;
+
+                // PATCH 153: Cleanup auto-save timer
+                _autoSaveTimer?.Stop();
+                _autoSaveTimer?.Dispose();
+                _autoSaveTimer = null;
             }
         }
     }

@@ -489,47 +489,49 @@ namespace ProGlassAutomation.Views
             }
         }
 
-        // PATCH 94: Keyboard shortcuts
-        protected override void OnKeyDown(KeyEventArgs e)
+        // PATCH 157: Record detail popup
+        private void ShowDetailPopup(DailyWorkModel work)
         {
-            base.OnKeyDown(e);
-
-            if (DataContext is not DailyWorksViewModel vm) return;
-
-            switch (e.Key)
+            var popup = new Window
             {
-                case Key.F5:
-                    vm.RefreshCommand.Execute(null);
-                    e.Handled = true;
-                    break;
+                Title = $"Details - {work.PiNumber}",
+                Width = 500,
+                Height = 450,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Background = Brushes.White
+            };
 
-                case Key.Insert:
-                    vm.AddNewCommand.Execute(null);
-                    e.Handled = true;
-                    break;
+            var stack = new StackPanel { Margin = new Thickness(20) };
 
-                case Key.Delete:
-                    if (vm.SelectedCount > 0)
-                        vm.DeleteSelectedCommand.Execute(null);
-                    e.Handled = true;
-                    break;
+            stack.Children.Add(new TextBlock
+            {
+                Text = work.PiNumber,
+                FontSize = 18,
+                FontWeight = FontWeights.Bold,
+                Foreground = new SolidColorBrush(Color.FromRgb(30, 64, 175)),
+                Margin = new Thickness(0, 0, 0, 15)
+            });
 
-                case Key.Escape:
-                    vm.CancelCommand.Execute(null);
-                    e.Handled = true;
-                    break;
+            stack.Children.Add(new TextBlock { Text = $"Company: {work.Company}", Margin = new Thickness(0, 0, 0, 5) });
+            stack.Children.Add(new TextBlock { Text = $"Date: {work.Date:dd-MM-yyyy}", Margin = new Thickness(0, 0, 0, 5) });
+            stack.Children.Add(new TextBlock { Text = $"Qty: {work.Qty} | SQM: {work.Sqm:N2}", Margin = new Thickness(0, 0, 0, 5) });
+            stack.Children.Add(new TextBlock { Text = $"Production: {work.ProductionStatus}", Margin = new Thickness(0, 0, 0, 5) });
+            stack.Children.Add(new TextBlock { Text = $"Status: {work.Status}", Margin = new Thickness(0, 0, 0, 5) });
+            stack.Children.Add(new TextBlock { Text = $"Notes: {work.Notes}", TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 10) });
 
-                case Key.S when Keyboard.Modifiers == ModifierKeys.Control:
-                    if (vm.IsEditing)
-                        vm.SaveCommand.Execute(null);
-                    e.Handled = true;
-                    break;
+            var closeBtn = new Button { Content = "Close", HorizontalAlignment = HorizontalAlignment.Right };
+            closeBtn.Click += (s, e) => popup.Close();
+            stack.Children.Add(closeBtn);
 
-                case Key.F when Keyboard.Modifiers == ModifierKeys.Control:
-                    SearchTextBox?.Focus();
-                    e.Handled = true;
-                    break;
-            }
+            popup.Content = stack;
+            popup.ShowDialog();
         }
+
+        // PATCH 158: Quick search dropdown
+        // Note: Requires XAML changes - add IsEditable="True" to SearchTextBox
+        // <ComboBox IsEditable="True" ItemsSource="{Binding RecentSearches}" Text="{Binding SearchText}"/>
+
+        // REMOVED: PATCH 94 - Duplicate of PATCH 108 UserControl_KeyDown
+        // This override conflicts with the existing KeyDown handler
     }
 }
