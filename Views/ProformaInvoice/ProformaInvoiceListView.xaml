@@ -357,10 +357,9 @@
                     <StackPanel>
                         <TextBlock Text="STATUS" FontSize="9" FontWeight="Bold" Foreground="#1E40AF" Margin="4,0,0,4"/>
                         <ComboBox ItemsSource="{Binding StatusOptions}" 
-                                 SelectedValue="{Binding SelectedStatus}"
-                                 SelectedValuePath="Value"
-                                 DisplayMemberPath="Label"
-                                 Style="{StaticResource ModernComboBox}"/>
+                 SelectedValue="{Binding SelectedStatus, Mode=TwoWay}"
+                 DisplayMemberPath="Label"
+                 Style="{StaticResource ModernComboBox}"/>
                     </StackPanel>
                 </Border>
 
@@ -369,10 +368,9 @@
                     <StackPanel>
                         <TextBlock Text="SALESMAN" FontSize="9" FontWeight="Bold" Foreground="#1E40AF" Margin="4,0,0,4"/>
                         <ComboBox ItemsSource="{Binding SalesmanOptions}" 
-                                 SelectedValue="{Binding SelectedSalesman}"
-                                 SelectedValuePath="Name"
-                                 DisplayMemberPath="Name"
-                                 Style="{StaticResource ModernComboBox}"/>
+                        SelectedValue="{Binding SelectedSalesman, Mode=TwoWay}"
+                        DisplayMemberPath="Name"
+                        Style="{StaticResource ModernComboBox}"/>
                     </StackPanel>
                 </Border>
 
