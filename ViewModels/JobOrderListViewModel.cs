@@ -1,9 +1,11 @@
 ﻿using ProGlassAutomation.Data.Database;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -16,6 +18,7 @@ namespace ProGlassAutomation.ViewModels
     {
         // Events
         public event Action<DbJobOrder>? OpenJobOrderRequested;
+        public event Action<DbJobOrder>? OpenJobOrderForEditRequested;
         public event Action<DbJobOrder>? OpenProformaInvoiceRequested;
         public event Action? NewJobOrderRequested;
 
@@ -23,11 +26,21 @@ namespace ProGlassAutomation.ViewModels
         private string _searchText = "";
         private string _selectedStatus = "All Status";
         private string _customerFilter = "";
+        private string _selectedSalesman = "";
         private DateTime? _fromDate;
         private DateTime? _toDate;
         private DbJobOrder? _selectedJobOrder;
         private bool _isLoading;
         private bool _isRefreshing;
+        private bool _suppressStatusUpdate;
+        private bool _isUpdatingStatus;
+
+        // Track pending status updates
+        private readonly Dictionary<int, string> _pendingStatusUpdates = new Dictionary<int, string>();
+        private readonly object _pendingUpdatesLock = new object();
+
+        // Debounce timer for filters
+        private DispatcherTimer? _filterDebounceTimer;
 
         // Collections
         public ObservableCollection<DbJobOrder> JobOrders { get; } = new ObservableCollection<DbJobOrder>();
@@ -38,35 +51,58 @@ namespace ProGlassAutomation.ViewModels
             "All Status", "Pending", "In Progress", "Completed", "On Hold", "Cancelled"
         };
 
+        public ObservableCollection<string> EditableStatusOptions { get; } = new ObservableCollection<string>
+        {
+            "Pending", "In Progress", "Completed", "On Hold", "Cancelled"
+        };
+
         // Properties
         public string SearchText
         {
             get => _searchText;
-            set { _searchText = value; OnPropertyChanged(); ApplyFilters(); }
+            set { _searchText = value; OnPropertyChanged(); DebouncedApplyFilters(); }
         }
 
         public string SelectedStatus
         {
             get => _selectedStatus;
-            set { _selectedStatus = value; OnPropertyChanged(); ApplyFilters(); }
+            set { _selectedStatus = value; OnPropertyChanged(); DebouncedApplyFilters(); }
         }
 
         public string CustomerFilter
         {
             get => _customerFilter;
-            set { _customerFilter = value; OnPropertyChanged(); ApplyFilters(); }
+            set { _customerFilter = value; OnPropertyChanged(); DebouncedApplyFilters(); }
+        }
+
+        public string SelectedSalesman
+        {
+            get => _selectedSalesman;
+            set { _selectedSalesman = value; OnPropertyChanged(); DebouncedApplyFilters(); }
         }
 
         public DateTime? FromDate
         {
             get => _fromDate;
-            set { _fromDate = value; OnPropertyChanged(); ApplyFilters(); }
+            set { _fromDate = value; OnPropertyChanged(); DebouncedApplyFilters(); }
         }
 
         public DateTime? ToDate
         {
             get => _toDate;
-            set { _toDate = value; OnPropertyChanged(); ApplyFilters(); }
+            set { _toDate = value; OnPropertyChanged(); DebouncedApplyFilters(); }
+        }
+
+        public bool SuppressStatusUpdate
+        {
+            get => _suppressStatusUpdate;
+            set { _suppressStatusUpdate = value; OnPropertyChanged(); }
+        }
+
+        public bool IsUpdatingStatus
+        {
+            get => _isUpdatingStatus;
+            set { _isUpdatingStatus = value; OnPropertyChanged(); }
         }
 
         public DbJobOrder? SelectedJobOrder
@@ -87,11 +123,74 @@ namespace ProGlassAutomation.ViewModels
             set { _isRefreshing = value; OnPropertyChanged(); }
         }
 
-        // Summary Counts
-        public int TotalJOCount => JobOrders.Count;
-        public int PendingCount => JobOrders.Count(j => j.Status == "Pending");
-        public int InProgressCount => JobOrders.Count(j => j.Status == "In Progress");
-        public int CompletedCount => JobOrders.Count(j => j.Status == "Completed");
+        // Stats with pending status consideration
+        public int TotalJOCount => JobOrders?.Count ?? 0;
+
+        public int PendingCount
+        {
+            get
+            {
+                int count = JobOrders?.Count(j =>
+                    (j?.Status ?? "") == "Pending" ||
+                    IsPendingStatusUpdate(j?.Id ?? 0, "Pending")) ?? 0;
+                return count;
+            }
+        }
+
+        public int InProgressCount
+        {
+            get
+            {
+                int count = JobOrders?.Count(j =>
+                    (j?.Status ?? "") == "In Progress" ||
+                    IsPendingStatusUpdate(j?.Id ?? 0, "In Progress")) ?? 0;
+                return count;
+            }
+        }
+
+        public int CompletedCount
+        {
+            get
+            {
+                int count = JobOrders?.Count(j =>
+                    (j?.Status ?? "") == "Completed" ||
+                    IsPendingStatusUpdate(j?.Id ?? 0, "Completed")) ?? 0;
+                return count;
+            }
+        }
+
+        // 🔴 ADD: OnHoldCount
+        public int OnHoldCount
+        {
+            get
+            {
+                int count = JobOrders?.Count(j =>
+                    (j?.Status ?? "") == "On Hold" ||
+                    IsPendingStatusUpdate(j?.Id ?? 0, "On Hold")) ?? 0;
+                return count;
+            }
+        }
+
+        // 🔴 ADD: CancelledCount
+        public int CancelledCount
+        {
+            get
+            {
+                int count = JobOrders?.Count(j =>
+                    (j?.Status ?? "") == "Cancelled" ||
+                    IsPendingStatusUpdate(j?.Id ?? 0, "Cancelled")) ?? 0;
+                return count;
+            }
+        }
+
+        private bool IsPendingStatusUpdate(int jobOrderId, string status)
+        {
+            lock (_pendingUpdatesLock)
+            {
+                return _pendingStatusUpdates.TryGetValue(jobOrderId, out var pendingStatus) &&
+                       pendingStatus == status;
+            }
+        }
 
         // Commands
         public ICommand CreateNewJobOrderCommand { get; }
@@ -102,9 +201,28 @@ namespace ProGlassAutomation.ViewModels
         public ICommand ExportReportCommand { get; }
         public ICommand ClearFiltersCommand { get; }
         public ICommand RefreshCommand { get; }
+        public ICommand FilterTodayCommand { get; }
+        public ICommand FilterThisWeekCommand { get; }
+        public ICommand FilterThisMonthCommand { get; }
+        public ICommand FilterThisYearCommand { get; }
+        public ICommand QuickFilterAllTimeCommand { get; }
+        public ICommand QuickFilterPendingCommand { get; }
+        public ICommand QuickFilterInProgressCommand { get; }
+        public ICommand QuickFilterCompletedCommand { get; }
+        public ICommand QuickFilterAllCommand { get; }
 
         public JobOrderListViewModel()
         {
+            _filterDebounceTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(200)
+            };
+            _filterDebounceTimer.Tick += (s, e) =>
+            {
+                _filterDebounceTimer.Stop();
+                ApplyFilters();
+            };
+
             CreateNewJobOrderCommand = new RelayCommand(_ => CreateNewJobOrder());
             ViewJobOrderCommand = new RelayCommand(param => ViewJobOrder(param as DbJobOrder));
             EditJobOrderCommand = new RelayCommand(param => EditJobOrder(param as DbJobOrder));
@@ -114,8 +232,24 @@ namespace ProGlassAutomation.ViewModels
             ClearFiltersCommand = new RelayCommand(_ => ClearFilters());
             RefreshCommand = new RelayCommand(_ => LoadJobOrdersAsync(), _ => !IsLoading);
 
-            // Initial load
+            FilterTodayCommand = new RelayCommand(_ => FilterToday());
+            FilterThisWeekCommand = new RelayCommand(_ => FilterThisWeek());
+            FilterThisMonthCommand = new RelayCommand(_ => FilterThisMonth());
+            FilterThisYearCommand = new RelayCommand(_ => FilterThisYear());
+            QuickFilterAllTimeCommand = new RelayCommand(_ => QuickFilterAllTime());
+
+            QuickFilterPendingCommand = new RelayCommand(_ => QuickFilterPending());
+            QuickFilterInProgressCommand = new RelayCommand(_ => QuickFilterInProgress());
+            QuickFilterCompletedCommand = new RelayCommand(_ => QuickFilterCompleted());
+            QuickFilterAllCommand = new RelayCommand(_ => QuickFilterAll());
+
             LoadJobOrdersAsync();
+        }
+
+        private void DebouncedApplyFilters()
+        {
+            _filterDebounceTimer?.Stop();
+            _filterDebounceTimer?.Start();
         }
 
         public async void LoadJobOrdersAsync()
@@ -138,13 +272,14 @@ namespace ProGlassAutomation.ViewModels
             {
                 IsLoading = true;
                 IsRefreshing = true;
+                SuppressStatusUpdate = true;
 
-                // Load data in background thread
                 var orders = await Task.Run(() =>
                 {
                     try
                     {
-                        return Data.Database.DbHelper.GetAllJobOrders();
+                        WaitForPendingUpdates();
+                        return DbHelper.GetAllJobOrders();
                     }
                     catch (Exception ex)
                     {
@@ -153,117 +288,112 @@ namespace ProGlassAutomation.ViewModels
                     }
                 });
 
-                // Clear on UI thread
                 await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
                     JobOrders.Clear();
                     FilteredJobOrders.Clear();
-                });
 
-                if (orders == null || orders.Count == 0)
-                {
-                    IsLoading = false;
-                    IsRefreshing = false;
-                    return;
-                }
-
-                // Add items in batches to avoid UI freeze
-                const int batchSize = 50;
-                var batches = orders
-                    .Select((item, index) => new { item, index })
-                    .GroupBy(x => x.index / batchSize)
-                    .Select(g => g.Select(x => x.item).ToList())
-                    .ToList();
-
-                foreach (var batch in batches)
-                {
-                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    if (orders != null)
                     {
-                        foreach (var order in batch)
+                        foreach (var order in orders)
                         {
-                            JobOrders.Add(order);
+                            if (order != null)
+                            {
+                                JobOrders.Add(order);
+                            }
                         }
-                    });
+                    }
 
-                    // Small delay to allow UI to breathe
-                    await Task.Delay(1);
-                }
-
-                // Apply filters
-                await Application.Current.Dispatcher.InvokeAsync(() =>
-                {
                     ApplyFilters();
                     RefreshCounts();
+                    IsLoading = false;
+                    IsRefreshing = false;
+                    SuppressStatusUpdate = false;
                 });
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[JobOrderListVM] LoadJobOrders Error: {ex.Message}");
-                System.Diagnostics.Debug.WriteLine(ex.StackTrace);
 
                 await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
+                    IsLoading = false;
+                    IsRefreshing = false;
+                    SuppressStatusUpdate = false;
                     System.Windows.MessageBox.Show($"Error loading job orders: {ex.Message}", "Error",
                         MessageBoxButton.OK, MessageBoxImage.Error);
                 });
             }
-            finally
+        }
+
+        private void WaitForPendingUpdates()
+        {
+            lock (_pendingUpdatesLock)
             {
-                IsLoading = false;
-                IsRefreshing = false;
+                var timeout = DateTime.Now.AddSeconds(5);
+                while (_pendingStatusUpdates.Count > 0 && DateTime.Now < timeout)
+                {
+                    Thread.Sleep(50);
+                }
             }
         }
 
         private void ApplyFilters()
         {
-            if (JobOrders == null) return;
+            if (JobOrders == null || JobOrders.Count == 0)
+            {
+                FilteredJobOrders.Clear();
+                return;
+            }
 
             try
             {
-                FilteredJobOrders.Clear();
-
                 var filtered = JobOrders.AsEnumerable();
 
-                // Search filter - CORRECTED property names
                 if (!string.IsNullOrWhiteSpace(SearchText))
                 {
                     var search = SearchText.ToLower();
                     filtered = filtered.Where(j =>
-                        (j.JONumber?.ToLower().Contains(search) ?? false) ||
-                        (j.ClientName?.ToLower().Contains(search) ?? false) ||
-                        (j.ProjectName?.ToLower().Contains(search) ?? false) ||
-                        (j.PINumber?.ToLower().Contains(search) ?? false));
+                        (j?.JONumber?.ToLower().Contains(search) ?? false) ||
+                        (j?.ClientName?.ToLower().Contains(search) ?? false) ||
+                        (j?.ProjectName?.ToLower().Contains(search) ?? false) ||
+                        (j?.PINumber?.ToLower().Contains(search) ?? false));
                 }
 
-                // Status filter
                 if (!string.IsNullOrWhiteSpace(SelectedStatus) && SelectedStatus != "All Status")
                 {
-                    filtered = filtered.Where(j => j.Status == SelectedStatus);
+                    filtered = filtered.Where(j => j?.Status == SelectedStatus);
                 }
 
-                // Customer filter - use ClientName
                 if (!string.IsNullOrWhiteSpace(CustomerFilter))
                 {
                     var customerSearch = CustomerFilter.ToLower();
                     filtered = filtered.Where(j =>
-                        j.ClientName?.ToLower().Contains(customerSearch) ?? false);
+                        j?.ClientName?.ToLower().Contains(customerSearch) ?? false);
                 }
 
-                // Date range filter - use JODate
+                if (!string.IsNullOrWhiteSpace(SelectedSalesman))
+                {
+                    filtered = filtered.Where(j => j?.Salesman == SelectedSalesman);
+                }
+
                 if (FromDate.HasValue)
                 {
-                    filtered = filtered.Where(j => j.JODate >= FromDate.Value);
+                    filtered = filtered.Where(j => j?.JODate >= FromDate.Value);
                 }
 
                 if (ToDate.HasValue)
                 {
-                    filtered = filtered.Where(j => j.JODate <= ToDate.Value.AddDays(1));
+                    filtered = filtered.Where(j => j?.JODate <= ToDate.Value.AddDays(1));
                 }
 
-                // Sort by date descending
-                foreach (var order in filtered.OrderByDescending(j => j.JODate))
+                FilteredJobOrders.Clear();
+                foreach (var order in filtered.OrderByDescending(j => j?.JODate ?? DateTime.MinValue))
                 {
-                    FilteredJobOrders.Add(order);
+                    if (order != null)
+                    {
+                        FilteredJobOrders.Add(order);
+                    }
                 }
             }
             catch (Exception ex)
@@ -280,12 +410,49 @@ namespace ProGlassAutomation.ViewModels
                 OnPropertyChanged(nameof(PendingCount));
                 OnPropertyChanged(nameof(InProgressCount));
                 OnPropertyChanged(nameof(CompletedCount));
+                OnPropertyChanged(nameof(OnHoldCount));      // 🔴 ADD
+                OnPropertyChanged(nameof(CancelledCount));  // 🔴 ADD
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[JobOrderListVM] RefreshCounts Error: {ex.Message}");
             }
         }
+
+        private void FilterToday()
+        {
+            FromDate = DateTime.Today;
+            ToDate = DateTime.Today;
+        }
+
+        private void FilterThisWeek()
+        {
+            FromDate = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek);
+            ToDate = DateTime.Today;
+        }
+
+        private void FilterThisMonth()
+        {
+            FromDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+            ToDate = DateTime.Today;
+        }
+
+        private void FilterThisYear()
+        {
+            FromDate = new DateTime(DateTime.Today.Year, 1, 1);
+            ToDate = DateTime.Today;
+        }
+
+        private void QuickFilterAllTime()
+        {
+            FromDate = null;
+            ToDate = null;
+        }
+
+        private void QuickFilterPending() => SelectedStatus = "Pending";
+        private void QuickFilterInProgress() => SelectedStatus = "In Progress";
+        private void QuickFilterCompleted() => SelectedStatus = "Completed";
+        private void QuickFilterAll() => SelectedStatus = "All Status";
 
         private void CreateNewJobOrder()
         {
@@ -317,7 +484,7 @@ namespace ProGlassAutomation.ViewModels
             if (jobOrder == null) return;
             try
             {
-                OpenJobOrderRequested?.Invoke(jobOrder);
+                OpenJobOrderForEditRequested?.Invoke(jobOrder);
             }
             catch (Exception ex)
             {
@@ -358,10 +525,8 @@ namespace ProGlassAutomation.ViewModels
         {
             try
             {
-                // Run delete on background thread
-                await Task.Run(() => Data.Database.DbHelper.DeleteJobOrder(jobOrder.Id));
+                await Task.Run(() => DbHelper.DeleteJobOrder(jobOrder.Id));
 
-                // Update UI on main thread
                 await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
                     JobOrders.Remove(jobOrder);
@@ -380,35 +545,59 @@ namespace ProGlassAutomation.ViewModels
                 await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
                     System.Windows.MessageBox.Show($"Error deleting: {ex.Message}", "Error",
-                        System.Windows.MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBoxButton.OK, MessageBoxImage.Error);
                 });
             }
         }
 
-        public void UpdateStatus(ProGlassAutomation.Data.Database.JobOrderModel jobOrder, string newStatus)
+        public void UpdateStatus(DbJobOrder jobOrder, string newStatus)
         {
             if (jobOrder == null || string.IsNullOrWhiteSpace(newStatus)) return;
+            if (_isUpdatingStatus) return;
+            if (SuppressStatusUpdate) return;
+            if (IsLoading) return;
+            if (jobOrder.Status == newStatus) return;
+
+            _isUpdatingStatus = true;
+
+            lock (_pendingUpdatesLock)
+            {
+                _pendingStatusUpdates[jobOrder.Id] = newStatus;
+            }
+
+            var oldStatus = jobOrder.Status;
 
             Task.Run(async () =>
             {
                 try
                 {
-                    jobOrder.Status = newStatus;
-                    await Task.Run(() =>
-                        Data.Database.DbHelper.UpdateJobOrderStatus(jobOrder.Id, newStatus));
+                    await Task.Run(() => DbHelper.UpdateJobOrderStatus(jobOrder.Id, newStatus));
+
+                    lock (_pendingUpdatesLock)
+                    {
+                        _pendingStatusUpdates.Remove(jobOrder.Id);
+                    }
 
                     await Application.Current.Dispatcher.InvokeAsync(() =>
                     {
+                        jobOrder.Status = newStatus;
                         ApplyFilters();
                         RefreshCounts();
+                        _isUpdatingStatus = false;
                     });
                 }
                 catch (Exception ex)
                 {
+                    lock (_pendingUpdatesLock)
+                    {
+                        _pendingStatusUpdates.Remove(jobOrder.Id);
+                    }
+
                     await Application.Current.Dispatcher.InvokeAsync(() =>
                     {
+                        _isUpdatingStatus = false;
                         System.Windows.MessageBox.Show($"Error updating status: {ex.Message}", "Error",
-                            System.Windows.MessageBoxButton.OK, MessageBoxImage.Error);
+                            MessageBoxButton.OK, MessageBoxImage.Error);
                     });
                 }
             });
@@ -417,7 +606,7 @@ namespace ProGlassAutomation.ViewModels
         private void ExportReport()
         {
             System.Windows.MessageBox.Show("Export feature coming soon!", "Export",
-                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void ClearFilters()
@@ -425,18 +614,21 @@ namespace ProGlassAutomation.ViewModels
             SearchText = "";
             SelectedStatus = "All Status";
             CustomerFilter = "";
+            SelectedSalesman = "";
             FromDate = null;
             ToDate = null;
         }
 
         public void Cleanup()
         {
-            // Called when leaving the view
             JobOrders.Clear();
             FilteredJobOrders.Clear();
+            lock (_pendingUpdatesLock)
+            {
+                _pendingStatusUpdates.Clear();
+            }
         }
 
-        // INotifyPropertyChanged
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
