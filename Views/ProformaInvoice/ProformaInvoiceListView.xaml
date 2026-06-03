@@ -291,13 +291,13 @@
                     </StackPanel>
                 </StackPanel>
 
-                <!-- Search Box -->
+                <!-- Search and Quick Filters -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <Border Background="White" CornerRadius="10" Padding="4" Margin="0,0,12,0" BorderBrush="#3B82F6" BorderThickness="1">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="200"/>
+                                <ColumnDefinition Width="180"/>
                             </Grid.ColumnDefinitions>
                             <Border Background="#1E40AF" CornerRadius="8" Padding="10,8" Margin="2">
                                 <TextBlock Text="🔍" FontSize="12"/>
@@ -311,10 +311,8 @@
                                      Background="Transparent"/>
                         </Grid>
                     </Border>
-                </StackPanel>
 
-                <!-- Quick Filters - PATCH 41-44 -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Quick Filters -->
                     <Button Content="This Week" Style="{StaticResource SecondaryButton}" 
                             Command="{Binding QuickFilterThisWeekCommand}" 
                             Padding="10,6" Margin="0,0,4,0" FontSize="10"/>

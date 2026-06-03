@@ -207,8 +207,11 @@ namespace ProGlassAutomation.ViewModels
 		public ICommand FilterThisWeekCommand { get; private set; }
 		public ICommand FilterThisMonthCommand { get; private set; }
 		public ICommand FilterThisYearCommand { get; private set; }
+        public ICommand QuickFilterThisWeekCommand { get; private set; }
+        public ICommand QuickFilterThisMonthCommand { get; private set; }
+        public ICommand QuickFilterAllTimeCommand { get; private set; }
 
-		private void InitializeCommands()
+        private void InitializeCommands()
 		{
 			NewInvoiceCommand = new RelayCommand(ExecuteNewInvoice);
 			EditInvoiceCommand = new RelayCommand<ProformaInvoiceModel>(ExecuteEditInvoice);
@@ -224,7 +227,28 @@ namespace ProGlassAutomation.ViewModels
 			FilterThisWeekCommand = new RelayCommand(() => { DateFrom = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek); DateTo = DateTime.Today; });
 			FilterThisMonthCommand = new RelayCommand(() => { DateFrom = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1); DateTo = DateTime.Today; });
 			FilterThisYearCommand = new RelayCommand(() => { DateFrom = new DateTime(DateTime.Today.Year, 1, 1); DateTo = DateTime.Today; });
-		}
+            // Quick Filters for List View
+            QuickFilterThisWeekCommand = new RelayCommand(() =>
+            {
+                DateFrom = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek);
+                DateTo = DateTime.Today;
+                ApplyFilters();
+            });
+
+            QuickFilterThisMonthCommand = new RelayCommand(() =>
+            {
+                DateFrom = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+                DateTo = DateTime.Today;
+                ApplyFilters();
+            });
+
+            QuickFilterAllTimeCommand = new RelayCommand(() =>
+            {
+                DateFrom = null;
+                DateTo = null;
+                ApplyFilters();
+            });
+        }
 
 		private void ExecuteNewInvoice(object? parameter)
 		{
