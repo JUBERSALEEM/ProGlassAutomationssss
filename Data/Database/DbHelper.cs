@@ -95,10 +95,15 @@ namespace ProGlassAutomation.Data.Database
         {
             try
             {
+                // Use structured logger
+                Logger.Error("Database error", ex);
+            }
+            catch
+            {
+                // Fallback to old method
                 string logPath = Path.Combine(Path.GetDirectoryName(DbPath)!, "db_log.txt");
                 File.AppendAllText(logPath, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {ex.Message}\n{ex.StackTrace}\n\n");
             }
-            catch { }
         }
 
         public static bool TestConnection()

@@ -88,26 +88,25 @@ namespace ProGlassAutomation
                 System.Diagnostics.Debug.WriteLine($"[App] Startup backup skipped: {ex.Message}");
             }
 
-            // ==================== STEP 4: CLEANUP OLD LOGS (if enabled) ====================
+            // ==================== STEP 4: INITIALIZE LOGGER ====================
             try
             {
-                if (AppConfiguration.Instance.Behavior.EnableMetrics)
+                Logger.Initialize();
+                Logger.Info("Application starting...");
+
+                if (AppConfiguration.Instance.Logging.EnableFileLogging)
                 {
                     // Run cleanup in background
                     Task.Run(() =>
                     {
-                        try
-                        {
-                            DbHelper.CleanupOldLogs(30);
-                            System.Diagnostics.Debug.WriteLine("[App] Log cleanup completed");
-                        }
+                        try { Logger.CleanupOldLogs(); }
                         catch { /* Silently fail */ }
                     });
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[App] Log cleanup skipped: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[App] Logger init skipped: {ex.Message}");
             }
         }
 
