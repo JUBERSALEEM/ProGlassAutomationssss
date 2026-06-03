@@ -33,20 +33,10 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
         private void ProformaInvoiceView_Unloaded(object sender, RoutedEventArgs e)
         {
-            // PATCH 18 - Unregister to prevent memory leaks
+            // PATCH 18 FIX - Proper cleanup to prevent memory leaks
             Unloaded -= ProformaInvoiceView_Unloaded;
 
-            // Clear DataGrid event handlers
-            if (DataContext != null)
-            {
-                // Let the shared VM handle cleanup
-                System.Diagnostics.Debug.WriteLine("[ProformaInvoiceView] Unloaded - Event handlers registered for cleanup");
-            }
-
-            // Force garbage collection hint
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-
+            // PATCH 18 FIX: Don't clear DataContext - shared VM handles its own cleanup
             System.Diagnostics.Debug.WriteLine("[ProformaInvoiceView] Unloaded - Cleanup complete");
         }
 
@@ -54,30 +44,21 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
         private void TextBox_GotFocus(object sender, RoutedEventArgs e)
         {
-            if (sender is TextBox tb)
-            {
-                tb.SelectAll();
-            }
+            if (sender is TextBox tb) tb.SelectAll();
         }
 
         private void TextBox_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (sender is TextBox tb)
+            if (sender is TextBox tb && !tb.IsFocused)
             {
-                if (!tb.IsFocused)
-                {
-                    tb.Focus();
-                    e.Handled = true;
-                }
+                tb.Focus();
+                e.Handled = true;
             }
         }
 
         private void ComboBox_GotFocus(object sender, RoutedEventArgs e)
         {
-            if (sender is ComboBox cb)
-            {
-                cb.IsDropDownOpen = true;
-            }
+            if (sender is ComboBox cb) cb.IsDropDownOpen = true;
         }
 
         // ==================== PHONE NUMBER VALIDATION ====================
@@ -99,10 +80,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
         private void PhoneNumber_LostFocus(object sender, RoutedEventArgs e)
         {
-            if (sender is TextBox tb && tb.Text == "+971-")
-            {
-                tb.Text = "";
-            }
+            if (sender is TextBox tb && tb.Text == "+971-") tb.Text = "";
         }
 
         // ==================== SMOOTH SCROLLING ====================
@@ -112,7 +90,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             if (sender is DataGrid dataGrid)
             {
                 e.Handled = true;
-
                 var scrollViewer = GetScrollViewer(dataGrid);
                 if (scrollViewer != null)
                 {
@@ -137,15 +114,12 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
         private ScrollViewer? GetScrollViewer(DependencyObject obj)
         {
-            if (obj is ScrollViewer scrollViewer)
-                return scrollViewer;
-
+            if (obj is ScrollViewer scrollViewer) return scrollViewer;
             for (int i = 0; i < VisualTreeHelper.GetChildrenCount(obj); i++)
             {
                 var child = VisualTreeHelper.GetChild(obj, i);
                 var result = GetScrollViewer(child);
-                if (result != null)
-                    return result;
+                if (result != null) return result;
             }
             return null;
         }
@@ -155,25 +129,19 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         private void AddRow_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button button && button.Tag is SpecificationModel spec)
-            {
                 _viewModel.AddItemWithPrice(spec);
-            }
         }
 
         private void ToggleLM_Click(object sender, RoutedEventArgs e)
         {
             if (DataContext is ProformaInvoiceViewModel vm)
-            {
                 vm.IsLMVisible = !vm.IsLMVisible;
-            }
         }
 
         private void DeleteRow_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button button && button.Tag is InvoiceItemModel item)
-            {
                 _viewModel.RemoveItem(item);
-            }
         }
 
         // ==================== PASTE FROM EXCEL ====================
@@ -195,30 +163,38 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     return;
                 }
 
+                // PATCH 18: Null check for ViewModel
+                if (_viewModel == null || _viewModel.Invoice == null)
+                {
+                    MessageBox.Show("Invoice not loaded. Please create or open an invoice first.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
                 var spec = _viewModel.SelectedTargetSpecification;
                 if (spec == null)
                 {
                     if (_viewModel.Invoice.Specifications.Count == 0)
                         _viewModel.AddSpecificationCommand.Execute(null);
+
+                    if (_viewModel.Invoice.Specifications.Count == 0)
+                    {
+                        MessageBox.Show("Could not create specification. Please add a specification manually.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
+                    }
+
                     spec = _viewModel.SelectedTargetSpecification ?? _viewModel.Invoice.Specifications[0];
                 }
 
                 var rows = clipboardText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-
                 if (rows.Length == 0)
                 {
                     MessageBox.Show("No data to paste!", "Paste", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
-                bool skipHeader = false;
-                var firstRowLower = rows[0].ToLower();
-                if (firstRowLower.Contains("glass") || firstRowLower.Contains("width") ||
-                    firstRowLower.Contains("height") || firstRowLower.Contains("qty") ||
-                    firstRowLower.Contains("ref"))
-                {
-                    skipHeader = true;
-                }
+                bool skipHeader = rows[0].ToLower().Contains("glass") || rows[0].ToLower().Contains("width") ||
+                                rows[0].ToLower().Contains("height") || rows[0].ToLower().Contains("qty") ||
+                                rows[0].ToLower().Contains("ref");
 
                 int startRow = spec.Items.Count > 0 ? spec.Items.Count : 0;
                 int itemsAdded = 0;
@@ -236,62 +212,33 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     defaultSurcharge = firstItem.SurchargePercent;
                 }
 
-                for (int i = startIndex; i < rows.Length; i++)
+                // PATCH 18 FIX: Use BulkUpdateScope() - returns IDisposable
+                using (spec.BulkUpdateScope())
                 {
-                    var row = rows[i];
-                    var columns = row.Split('\t');
-
-                    if (columns.Length == 0 || string.IsNullOrWhiteSpace(string.Join("", columns).Replace("\t", "")))
-                        continue;
-
-                    var item = new InvoiceItemModel
+                    for (int i = startIndex; i < rows.Length; i++)
                     {
-                        SrNo = startRow + itemsAdded + 1
-                    };
+                        var row = rows[i];
+                        var columns = row.Split('\t');
 
-                    if (columns.Length > 0)
-                        item.GlassRef = columns[0].Trim();
+                        if (columns.Length == 0 || string.IsNullOrWhiteSpace(string.Join("", columns).Replace("\t", "")))
+                            continue;
 
-                    if (columns.Length > 1 && double.TryParse(columns[1].Trim().Replace(",", ""), out double w1))
-                        item.Width1 = w1;
-                    else
-                        item.Width1 = defaultWidth1;
+                        var item = new InvoiceItemModel { SrNo = startRow + itemsAdded + 1 };
 
-                    if (columns.Length > 2 && double.TryParse(columns[2].Trim().Replace(",", ""), out double h1))
-                        item.Height1 = h1;
-                    else
-                        item.Height1 = defaultHeight1;
+                        if (columns.Length > 0) item.GlassRef = columns[0].Trim();
+                        if (columns.Length > 1 && double.TryParse(columns[1].Trim().Replace(",", ""), out double w1)) item.Width1 = w1; else item.Width1 = defaultWidth1;
+                        if (columns.Length > 2 && double.TryParse(columns[2].Trim().Replace(",", ""), out double h1)) item.Height1 = h1; else item.Height1 = defaultHeight1;
+                        if (columns.Length > 3 && double.TryParse(columns[3].Trim().Replace(",", ""), out double w2)) item.Width2 = w2; else item.Width2 = defaultWidth2;
+                        if (columns.Length > 4 && double.TryParse(columns[4].Trim().Replace(",", ""), out double h2)) item.Height2 = h2; else item.Height2 = defaultHeight2;
+                        if (columns.Length > 5 && int.TryParse(columns[5].Trim().Replace(",", ""), out int qty)) item.Qty = qty; else item.Qty = 1;
+                        if (columns.Length > 6 && double.TryParse(columns[6].Trim().Replace(",", ""), out double price)) item.Price = price; else item.Price = defaultPrice;
+                        if (columns.Length > 7 && double.TryParse(columns[7].Trim().Replace(",", "").Replace("%", ""), out double surcharge)) item.SurchargePercent = surcharge; else item.SurchargePercent = defaultSurcharge;
 
-                    if (columns.Length > 3 && double.TryParse(columns[3].Trim().Replace(",", ""), out double w2))
-                        item.Width2 = w2;
-                    else
-                        item.Width2 = defaultWidth2;
-
-                    if (columns.Length > 4 && double.TryParse(columns[4].Trim().Replace(",", ""), out double h2))
-                        item.Height2 = h2;
-                    else
-                        item.Height2 = defaultHeight2;
-
-                    if (columns.Length > 5 && int.TryParse(columns[5].Trim().Replace(",", ""), out int qty))
-                        item.Qty = qty;
-                    else
-                        item.Qty = 1;
-
-                    if (columns.Length > 6 && double.TryParse(columns[6].Trim().Replace(",", ""), out double price))
-                        item.Price = price;
-                    else
-                        item.Price = defaultPrice;
-
-                    if (columns.Length > 7 && double.TryParse(columns[7].Trim().Replace(",", "").Replace("%", ""), out double surcharge))
-                        item.SurchargePercent = surcharge;
-                    else
-                        item.SurchargePercent = defaultSurcharge;
-
-                    spec.Items.Add(item);
-                    itemsAdded++;
+                        spec.Items.Add(item);
+                        itemsAdded++;
+                    }
                 }
 
-                spec.CalculateTotals();
                 _viewModel.Invoice.CalculateTotals();
                 _viewModel.Invoice.IsDirty = true;
 
@@ -328,9 +275,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
                     if (contentWidth > 0 && contentHeight > 0)
                     {
-                        var scaleX = pageWidth / contentWidth;
-                        var scaleY = pageHeight / contentHeight;
-                        var scale = Math.Min(scaleX, scaleY);
+                        var scale = Math.Min(pageWidth / contentWidth, pageHeight / contentHeight);
                         previewWindow.LayoutTransform = new System.Windows.Media.ScaleTransform(scale, scale);
                     }
 
@@ -377,6 +322,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             try
             {
                 var cell = dataGrid.CurrentCell;
+                // FIX: DataGridCellInfo is a struct - use IsValid property
                 if (!cell.IsValid || cell.Column == null) return;
 
                 if (e.Key == Key.Enter)
@@ -395,7 +341,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     {
                         e.Handled = true;
                         HandleTabKey(dataGrid);
-                        return;
                     }
                 }
             }
@@ -406,6 +351,9 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         {
             try
             {
+                // FIX: Check IsValid instead of nullable check
+                if (dataGrid == null || !dataGrid.CurrentCell.IsValid) return;
+
                 var currentItem = dataGrid.CurrentCell.Item as InvoiceItemModel;
                 if (currentItem == null) return;
 
@@ -423,37 +371,42 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
                     int currentColIndex = dataGrid.CurrentCell.Column.DisplayIndex;
                     if (currentColIndex < dataGrid.Columns.Count)
-                    {
                         dataGrid.CurrentCell = new DataGridCellInfo(nextItem, dataGrid.Columns[currentColIndex]);
-                    }
+
                     dataGrid.BeginEdit();
                 }
                 else
                 {
                     _viewModel.AddItemWithPrice(spec);
 
-                    System.Threading.Tasks.Task.Delay(100).ContinueWith(_ =>
+                    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, new Action(() =>
                     {
-                        Dispatcher.Invoke(() =>
+                        try
                         {
                             int newIndex = spec.Items.Count - 1;
-                            if (newIndex >= 0)
+                            if (newIndex >= 0 && dataGrid != null)
                             {
                                 var newItem = spec.Items[newIndex];
                                 dataGrid.SelectedItem = newItem;
                                 dataGrid.ScrollIntoView(newItem);
 
                                 if (dataGrid.Columns.Count > 1)
-                                {
                                     dataGrid.CurrentCell = new DataGridCellInfo(newItem, dataGrid.Columns[1]);
-                                }
+
                                 dataGrid.BeginEdit();
                             }
-                        });
-                    });
+                        }
+                        catch (System.Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[HandleEnterKey] Error: {ex.Message}");
+                        }
+                    }));
                 }
             }
-            catch { }
+            catch (System.Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[HandleEnterKey] Error: {ex.Message}");
+            }
         }
 
         private void HandleTabKey(DataGrid dataGrid)
@@ -475,37 +428,42 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     dataGrid.ScrollIntoView(nextItem);
 
                     if (dataGrid.Columns.Count > 1)
-                    {
                         dataGrid.CurrentCell = new DataGridCellInfo(nextItem, dataGrid.Columns[1]);
-                    }
+
                     dataGrid.BeginEdit();
                 }
                 else
                 {
                     _viewModel.AddItemWithPrice(spec);
 
-                    System.Threading.Tasks.Task.Delay(100).ContinueWith(_ =>
+                    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, new Action(() =>
                     {
-                        Dispatcher.Invoke(() =>
+                        try
                         {
                             int newIndex = spec.Items.Count - 1;
-                            if (newIndex >= 0)
+                            if (newIndex >= 0 && dataGrid != null)
                             {
                                 var newItem = spec.Items[newIndex];
                                 dataGrid.SelectedItem = newItem;
                                 dataGrid.ScrollIntoView(newItem);
 
                                 if (dataGrid.Columns.Count > 1)
-                                {
                                     dataGrid.CurrentCell = new DataGridCellInfo(newItem, dataGrid.Columns[1]);
-                                }
+
                                 dataGrid.BeginEdit();
                             }
-                        });
-                    });
+                        }
+                        catch (System.Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[HandleTabKey] Error: {ex.Message}");
+                        }
+                    }));
                 }
             }
-            catch { }
+            catch (System.Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[HandleTabKey] Error: {ex.Message}");
+            }
         }
 
         private SpecificationModel? FindSpecification(InvoiceItemModel item)
@@ -515,9 +473,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             foreach (var spec in _viewModel.Invoice.Specifications)
             {
                 if (spec?.Items?.Contains(item) == true)
-                {
                     return spec;
-                }
             }
             return null;
         }
@@ -527,17 +483,13 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         private void SpecCheckBox_Click(object sender, RoutedEventArgs e)
         {
             if (DataContext is ProformaInvoiceViewModel vm)
-            {
                 vm.RefreshAllChargeAutoValues();
-            }
         }
 
         private void SpecDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (DataContext is ProformaInvoiceViewModel vm)
-            {
                 vm.RefreshAllChargeAutoValues();
-            }
         }
 
         private void ChargeSpecToggle_Click(object sender, RoutedEventArgs e)
@@ -549,14 +501,10 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 {
                     charge.TargetsAllSpecs = toggle.IsChecked == true;
                     if (toggle.IsChecked == true)
-                    {
                         charge.SetAllSpecs();
-                    }
 
                     if (DataContext is ProformaInvoiceViewModel vm)
-                    {
                         vm.RefreshAllChargeAutoValues();
-                    }
                 }
             }
         }
@@ -567,9 +515,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             {
                 var charge = FindChargeFromButton(button);
                 if (charge != null && DataContext is ProformaInvoiceViewModel vm)
-                {
                     ShowSpecSelectionDialog(charge, vm);
-                }
             }
         }
 
@@ -579,11 +525,9 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             {
                 if (DataContext is ProformaInvoiceViewModel vm)
                 {
-                    // If clicked on toggle, let the toggle handle it
                     if (e.OriginalSource is System.Windows.Controls.Primitives.ToggleButton)
                         return;
 
-                    // Otherwise open the spec selection dialog
                     charge.TargetsAllSpecs = false;
                     ShowSpecSelectionDialog(charge, vm);
                 }
@@ -636,14 +580,8 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     IsChecked = charge.SpecIndexList.Contains(i)
                 };
                 checkBox.Tag = specIndex;
-                checkBox.Checked += (s, ev) =>
-                {
-                    charge.AddSpec(specIndex);
-                };
-                checkBox.Unchecked += (s, ev) =>
-                {
-                    charge.RemoveSpec(specIndex);
-                };
+                checkBox.Checked += (s, ev) => charge.AddSpec(specIndex);
+                checkBox.Unchecked += (s, ev) => charge.RemoveSpec(specIndex);
                 checkBoxPanel.Children.Add(checkBox);
             }
             mainPanel.Children.Add(checkBoxPanel);
@@ -735,9 +673,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         private static void OnVerticalOffsetChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is ScrollViewer scrollViewer)
-            {
                 scrollViewer.ScrollToVerticalOffset((double)e.NewValue);
-            }
         }
     }
 }
