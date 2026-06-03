@@ -336,7 +336,7 @@
 
         <!-- 2. FILTER BAR -->
         <Border Grid.Row="1" CornerRadius="12" Padding="12,10" Margin="0,0,0,12"
-                BorderBrush="#3B82F6" BorderThickness="2">
+        BorderBrush="#3B82F6" BorderThickness="2">
             <Border.Background>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
                     <GradientStop Color="#DBEAFE" Offset="0"/>
@@ -349,6 +349,7 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
@@ -357,50 +358,64 @@
                     <StackPanel>
                         <TextBlock Text="STATUS" FontSize="9" FontWeight="Bold" Foreground="#1E40AF" Margin="4,0,0,4"/>
                         <ComboBox ItemsSource="{Binding StatusOptions}" 
-                 SelectedValue="{Binding SelectedStatus, Mode=TwoWay}"
-                 DisplayMemberPath="Label"
-                 Style="{StaticResource ModernComboBox}"/>
+                         SelectedValue="{Binding SelectedStatus, Mode=TwoWay}"
+                         DisplayMemberPath="Label"
+                         Style="{StaticResource ModernComboBox}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Filter: Customer -->
+                <Border Grid.Column="1" Margin="0,0,8,0">
+                    <StackPanel>
+                        <TextBlock Text="CUSTOMER" FontSize="9" FontWeight="Bold" Foreground="#1E40AF" Margin="4,0,0,4"/>
+                        <ComboBox ItemsSource="{Binding CustomerOptions}" 
+                         SelectedValue="{Binding SelectedCustomer, Mode=TwoWay}"
+                         DisplayMemberPath="Name"
+                         Style="{StaticResource ModernComboBox}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Filter: Cust Ref -->
+                <Border Grid.Column="2" Margin="0,0,8,0">
+                    <StackPanel>
+                        <TextBlock Text="CUST REF" FontSize="9" FontWeight="Bold" Foreground="#1E40AF" Margin="4,0,0,4"/>
+                        <ComboBox ItemsSource="{Binding CustRefOptions}" 
+                         SelectedValue="{Binding SelectedCustRef, Mode=TwoWay}"
+                         DisplayMemberPath="Reference"
+                         Style="{StaticResource ModernComboBox}"/>
                     </StackPanel>
                 </Border>
 
                 <!-- Filter: Salesman -->
-                <Border Grid.Column="1" Margin="0,0,8,0">
+                <Border Grid.Column="3" Margin="0,0,8,0">
                     <StackPanel>
                         <TextBlock Text="SALESMAN" FontSize="9" FontWeight="Bold" Foreground="#1E40AF" Margin="4,0,0,4"/>
                         <ComboBox ItemsSource="{Binding SalesmanOptions}" 
-                        SelectedValue="{Binding SelectedSalesman, Mode=TwoWay}"
-                        DisplayMemberPath="Name"
-                        Style="{StaticResource ModernComboBox}"/>
+                         SelectedValue="{Binding SelectedSalesman, Mode=TwoWay}"
+                         DisplayMemberPath="Name"
+                         Style="{StaticResource ModernComboBox}"/>
                     </StackPanel>
                 </Border>
 
                 <!-- Filter: Date From -->
-                <Border Grid.Column="2" Margin="0,0,8,0">
+                <Border Grid.Column="4" Margin="0,0,8,0">
                     <StackPanel>
                         <TextBlock Text="DATE FROM" FontSize="9" FontWeight="Bold" Foreground="#1E40AF" Margin="4,0,0,4"/>
                         <DatePicker SelectedDate="{Binding DateFrom}"/>
                     </StackPanel>
                 </Border>
 
-                <!-- Filter: Date To -->
-                <Border Grid.Column="3" Margin="0,0,8,0">
-                    <StackPanel>
-                        <TextBlock Text="DATE TO" FontSize="9" FontWeight="Bold" Foreground="#1E40AF" Margin="4,0,0,4"/>
-                        <DatePicker SelectedDate="{Binding DateTo}"/>
-                    </StackPanel>
-                </Border>
-
                 <!-- Clear All Button -->
-                <Border Grid.Column="4" CornerRadius="10" Background="#DC2626" VerticalAlignment="Bottom">
+                <Border Grid.Column="5" CornerRadius="10" Background="#DC2626" VerticalAlignment="Bottom">
                     <Button Content="Clear All" 
-                            Command="{Binding ClearFiltersCommand}" 
-                            Padding="20,10"
-                            MinWidth="100"
-                            Background="Transparent"
-                            Foreground="White"
-                            BorderThickness="0"
-                            FontWeight="SemiBold"
-                            Cursor="Hand"/>
+                    Command="{Binding ClearFiltersCommand}" 
+                    Padding="20,10"
+                    MinWidth="100"
+                    Background="Transparent"
+                    Foreground="White"
+                    BorderThickness="0"
+                    FontWeight="SemiBold"
+                    Cursor="Hand"/>
                 </Border>
             </Grid>
         </Border>
