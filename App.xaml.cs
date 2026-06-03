@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using System.Threading.Tasks;
 using System.Windows;
 using ProGlassAutomation.Data.Database;
 
@@ -9,21 +10,51 @@ namespace ProGlassAutomation
     {
         protected override void OnStartup(StartupEventArgs e)
         {
-            // Set date format to dd-MM-yyyy
+            // ==================== SET DATE FORMAT FIRST ====================
             CultureInfo culture = new CultureInfo("en-GB");
             culture.DateTimeFormat.ShortDatePattern = "dd-MM-yyyy";
             culture.DateTimeFormat.DateSeparator = "-";
             System.Threading.Thread.CurrentThread.CurrentCulture = culture;
             System.Threading.Thread.CurrentThread.CurrentUICulture = culture;
 
+            // Call base BEFORE our code
             base.OnStartup(e);
 
-            // Add global exception handlers FIRST
+            // ==================== ADD GLOBAL EXCEPTION HANDLERS ====================
             AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
             DispatcherUnhandledException += OnDispatcherUnhandledException;
             TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
 
-            // INITIALIZE DATABASE AT STARTUP
+            // ==================== STEP 1: LOAD CONFIGURATION ====================
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("[App] Loading configuration...");
+
+                // Determine which config file to load based on environment
+                var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+                var configPath = string.IsNullOrEmpty(environment)
+                    ? "appsettings.json"
+                    : $"appsettings.{environment}.json";
+
+                // Load configuration (falls back to defaults if file not found)
+                ConfigurationLoader.Load(configPath);
+
+                var dbPath = AppConfiguration.Instance.Database.DbPath;
+                System.Diagnostics.Debug.WriteLine($"[App] Configuration loaded: {dbPath}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[App] Configuration load error: {ex.Message}");
+
+                MessageBox.Show(
+                    $"Failed to load configuration:\n\n{ex.Message}\n\nThe application will now close.",
+                    "Configuration Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+                Environment.Exit(1);
+            }
+
+            // ==================== STEP 2: INITIALIZE DATABASE ====================
             try
             {
                 System.Diagnostics.Debug.WriteLine("[App] Starting database initialization...");
@@ -40,9 +71,47 @@ namespace ProGlassAutomation
                     MessageBoxImage.Error);
                 Environment.Exit(1);
             }
+
+            // ==================== STEP 3: OPTIONAL AUTO-BACKUP ====================
+            try
+            {
+                if (AppConfiguration.Instance.Backup.EnableAutoBackup &&
+                    AppConfiguration.Instance.Backup.BackupOnStartup)
+                {
+                    System.Diagnostics.Debug.WriteLine("[App] Performing startup backup...");
+                    DbHelper.AutoBackup();
+                    System.Diagnostics.Debug.WriteLine("[App] Startup backup complete!");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[App] Startup backup skipped: {ex.Message}");
+            }
+
+            // ==================== STEP 4: CLEANUP OLD LOGS (if enabled) ====================
+            try
+            {
+                if (AppConfiguration.Instance.Behavior.EnableMetrics)
+                {
+                    // Run cleanup in background
+                    Task.Run(() =>
+                    {
+                        try
+                        {
+                            DbHelper.CleanupOldLogs(30);
+                            System.Diagnostics.Debug.WriteLine("[App] Log cleanup completed");
+                        }
+                        catch { /* Silently fail */ }
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[App] Log cleanup skipped: {ex.Message}");
+            }
         }
 
-        // ==================== ADD THIS METHOD ====================
+        // ==================== SAVE DATA ON EXIT ====================
         protected override void OnExit(ExitEventArgs e)
         {
             // Save all ViewModels before exit
@@ -59,8 +128,13 @@ namespace ProGlassAutomation
                 System.Diagnostics.Debug.WriteLine($"[App] Error saving on exit: {ex.Message}");
             }
 
+            // Log application exit
+            System.Diagnostics.Debug.WriteLine("[App] Application exiting...");
+
             base.OnExit(e);
         }
+
+        // ==================== UNHANDLED EXCEPTION HANDLERS ====================
 
         private void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
@@ -68,7 +142,15 @@ namespace ProGlassAutomation
             string message = $"FATAL ERROR (UnhandledException):\n\n{ex?.Message}\n\n{ex?.StackTrace}";
 
             System.Diagnostics.Debug.WriteLine(message);
-            MessageBox.Show(message, "CRASH!", MessageBoxButton.OK, MessageBoxImage.Error);
+
+            // Log to file
+            LogErrorToFile(message);
+
+            MessageBox.Show(
+                message + "\n\nThe application will now close.",
+                "CRITICAL ERROR",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
 
             if (e.IsTerminating)
             {
@@ -82,10 +164,15 @@ namespace ProGlassAutomation
 
             System.Diagnostics.Debug.WriteLine(message);
 
-            // Also log to file for crash reports
+            // Log to file
             LogErrorToFile(message);
 
-            MessageBox.Show(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(
+                message,
+                "ERROR",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+
             e.Handled = true; // Prevent app from crashing
         }
 
@@ -94,21 +181,36 @@ namespace ProGlassAutomation
             string message = $"TASK ERROR (UnobservedTaskException):\n\n{e.Exception?.Message}\n\n{e.Exception?.StackTrace}";
 
             System.Diagnostics.Debug.WriteLine(message);
+
+            // Log to file
             LogErrorToFile(message);
 
-            MessageBox.Show(message, "Task Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(
+                message,
+                "TASK ERROR",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+
             e.SetObserved(); // Prevent app from crashing
         }
+
+        // ==================== HELPER METHOD ====================
 
         private void LogErrorToFile(string message)
         {
             try
             {
-                string logFile = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "error.log");
+                string logDirectory = System.IO.Path.Combine(
+                    AppDomain.CurrentDomain.BaseDirectory,
+                    "logs");
+
+                System.IO.Directory.CreateDirectory(logDirectory);
+
+                string logFile = System.IO.Path.Combine(logDirectory, "error.log");
                 string logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}\n\n";
                 System.IO.File.AppendAllText(logFile, logEntry);
             }
-            catch { }
+            catch { /* Fail silently */ }
         }
     }
 }

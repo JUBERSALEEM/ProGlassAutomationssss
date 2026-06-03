@@ -14,35 +14,44 @@ namespace ProGlassAutomation.Data.Database
 {
     public static class DbHelper
     {
-        private static readonly string DbPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "ProGlassAutomation", "glass.db");
+        // ✅ NEW: Get configuration from singleton
+        private static AppConfiguration Config => AppConfiguration.Instance;
 
-        private static readonly string ConnStr = $"Data Source={DbPath};Cache=Shared";
+        private static string DbPath => Config.Database.DbPath;
+        private static int CommandTimeout => Config.Database.CommandTimeout;
+        private static bool EnableWAL => Config.Database.EnableWAL;
+
+        // ✅ SIMPLE CONNECTION STRING (minimal - works with all SQLite)
+        private static string ConnectionString => $"Data Source={Config.Database.DbPath}";
+
         private static readonly int LatestVersion = 14;
 
+        // ✅ UPDATED: Connection creation with configuration
         private static SqliteConnection CreateConnection()
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(DbPath)!);
-            return new SqliteConnection(ConnStr);
+            var dbPath = Config.Database.DbPath;
+            Directory.CreateDirectory(Path.GetDirectoryName(dbPath)!);
+            return new SqliteConnection(ConnectionString);
         }
 
+        // ✅ UPDATED: Execute with configurable timeout
         private static void Execute(Action<SqliteConnection> action)
         {
             using var conn = CreateConnection();
             conn.Open();
             using var cmd = conn.CreateCommand();
-            cmd.CommandTimeout = 30;
+            cmd.CommandTimeout = CommandTimeout;
             try { action(conn); }
             catch (Exception ex) { Log(ex); throw; }
         }
 
+        // ✅ UPDATED: Execute with configurable timeout
         private static T Execute<T>(Func<SqliteConnection, T> func)
         {
             using var conn = CreateConnection();
             conn.Open();
             using var cmd = conn.CreateCommand();
-            cmd.CommandTimeout = 30;
+            cmd.CommandTimeout = CommandTimeout;
             try { return func(conn); }
             catch (Exception ex) { Log(ex); throw; }
         }
