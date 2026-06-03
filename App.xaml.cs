@@ -108,6 +108,19 @@ namespace ProGlassAutomation
             {
                 System.Diagnostics.Debug.WriteLine($"[App] Logger init skipped: {ex.Message}");
             }
+
+            // ==================== STEP 5: START BACKUP SCHEDULER ====================
+            try
+            {
+                if (AppConfiguration.Instance.Backup.EnableAutoBackup)
+                {
+                    BackupScheduler.Start();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"Backup scheduler init skipped: {ex.Message}");
+            }
         }
 
         // ==================== SAVE DATA ON EXIT ====================
@@ -127,7 +140,12 @@ namespace ProGlassAutomation
                 System.Diagnostics.Debug.WriteLine($"[App] Error saving on exit: {ex.Message}");
             }
 
+            // Stop backup scheduler
+            try { BackupScheduler.Stop(); }
+            catch { }
+
             // Log application exit
+            Logger.Info("Application exiting");
             System.Diagnostics.Debug.WriteLine("[App] Application exiting...");
 
             base.OnExit(e);
