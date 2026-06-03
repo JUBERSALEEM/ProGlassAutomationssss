@@ -7,6 +7,19 @@ using System.Runtime.CompilerServices;
 
 namespace ProGlassAutomation.Models
 {
+    /// <summary>
+    /// Represents a complete proforma invoice with customer details,
+    /// specifications, other charges, and calculated totals.
+    /// </summary>
+    /// <remarks>
+    /// PATCH 6: Added IDisposable for proper cleanup
+    /// PATCH 8: Added BulkUpdateScope for batch operations
+    /// PATCH 10: Added JsonIgnore for parent references
+    /// PATCH 15: Added DeepClone method
+    /// PATCH 17: Added Validate method
+    /// PATCH 18: Added thread-safe calculations
+    /// PATCH 19: Added thread lock for concurrent access
+    /// </remarks>
     public class ProformaInvoiceModel : INotifyPropertyChanged, IDisposable
     {
         public event PropertyChangedEventHandler PropertyChanged;

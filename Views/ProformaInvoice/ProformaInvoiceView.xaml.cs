@@ -10,6 +10,17 @@ using ProGlassAutomation.ViewModels;
 
 namespace ProGlassAutomation.Views.ProformaInvoice
 {
+    /// <summary>
+    /// Code-behind for ProformaInvoiceView.xaml
+    /// Handles UI interactions, clipboard paste, print, and navigation.
+    /// </summary>
+    /// <remarks>
+    /// PATCH 18: Fixed memory leak issues
+    /// - Simplified Unloaded cleanup
+    /// - Use BulkUpdateScope for paste
+    /// - Better error handling
+    /// - Use Dispatcher instead of Task.ContinueWith
+    /// </remarks>
     public partial class ProformaInvoiceView : UserControl
     {
         private ProformaInvoiceViewModel _viewModel;

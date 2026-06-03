@@ -7,7 +7,15 @@ using System.Runtime.CompilerServices;
 
 namespace ProGlassAutomation.Models
 {
-    public class OtherChargeModel : INotifyPropertyChanged
+    /// <summary>
+    /// Represents an additional charge (wastage, polish, holes, etc.)
+    /// that can be applied to specifications.
+    /// </summary>
+    /// <remarks>
+    /// PATCH 15: Added DeepClone method
+    /// PATCH 18: Added memory cleanup methods
+    /// </remarks>
+    public class OtherChargeModel : INotifyPropertyChanged, IDisposable
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -22,6 +30,29 @@ namespace ProGlassAutomation.Models
             field = value;
             OnPropertyChanged(propertyName);
             return true;
+        }
+
+        // ==================== DISPOSE PATTERN (PATCH 18) ====================
+
+        private bool _disposed = false;
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed) return;
+
+            if (disposing)
+            {
+                // Clear bound specs reference
+                _boundSpecs = null;
+            }
+
+            _disposed = true;
         }
 
         // ==================== BASIC PROPERTIES ====================
@@ -227,9 +258,8 @@ namespace ProGlassAutomation.Models
             }
         }
 
-        // ==================== AUTO VALUE - WEAKREFERENCE (PATCH 18 - Fixed) ====================
+        // ==================== AUTO VALUE - BOUND SPECS (PATCH 18) ====================
 
-        // Using simple nullable approach instead of WeakReference due to .NET5+ behavior
         [JsonIgnore]
         private List<SpecificationModel>? _boundSpecs;
 
@@ -257,7 +287,6 @@ namespace ProGlassAutomation.Models
 
         public void ClearBoundSpecs()
         {
-            // Help GC by clearing reference
             _boundSpecs = null;
         }
 

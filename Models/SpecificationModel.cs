@@ -7,6 +7,16 @@ using Newtonsoft.Json;
 
 namespace ProGlassAutomation.Models
 {
+    /// <summary>
+    /// Represents a glass specification in a proforma invoice.
+    /// Contains the glass configuration (SGU/DGU/LAM) and line items.
+    /// </summary>
+    /// <remarks>
+    /// PATCH 6: Added IDisposable for proper cleanup
+    /// PATCH 8: Added BulkUpdateScope for batch operations
+    /// PATCH 18: Added thread-safe calculations
+    /// PATCH 19: Added thread lock for concurrent access
+    /// </remarks>
     public class SpecificationModel : INotifyPropertyChanged, IDisposable
     {
         public event PropertyChangedEventHandler PropertyChanged;

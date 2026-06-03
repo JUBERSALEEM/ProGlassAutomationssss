@@ -5,6 +5,18 @@ using System.Text.Json.Serialization;
 
 namespace ProGlassAutomation.Models
 {
+    /// <summary>
+    /// Represents a single line item in a glass specification.
+    /// Contains dimensions, quantity, pricing and calculated values (SQM, LM, Price).
+    /// </summary>
+    /// <remarks>
+    /// PATCH 6: Added IDisposable for proper cleanup
+    /// PATCH 8: Added BulkUpdateScope for batch operations
+    /// PATCH 10: Added JsonIgnore for parent reference
+    /// PATCH 13: Added GetValueForChargeType method
+    /// PATCH 18: Added thread-safe property setters
+    /// PATCH 19: Added thread lock for concurrent access
+    /// </remarks>
     public class InvoiceItemModel : INotifyPropertyChanged, IDisposable
     {
         public event PropertyChangedEventHandler PropertyChanged;
