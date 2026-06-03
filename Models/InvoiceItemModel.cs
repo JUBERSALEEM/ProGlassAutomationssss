@@ -5,9 +5,33 @@ using System.Text.Json.Serialization;
 
 namespace ProGlassAutomation.Models
 {
-    public class InvoiceItemModel : INotifyPropertyChanged
+    public class InvoiceItemModel : INotifyPropertyChanged, IDisposable
     {
         public event PropertyChangedEventHandler PropertyChanged;
+        private bool _disposed = false;
+
+        // ==================== THREAD SAFETY (PATCH 19) ====================
+        private readonly object _threadLock = new object();
+
+        // ==================== DISPOSE METHOD (PATCH 18 - Memory Leak Fix) ====================
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed) return;
+
+            if (disposing)
+            {
+                // Break circular reference to prevent memory leak
+                _specification = null;
+            }
+
+            _disposed = true;
+        }
 
         // ==================== BULK UPDATE MODE (PATCH 8) ====================
         private bool _isBulkUpdating = false;
@@ -66,34 +90,125 @@ namespace ProGlassAutomation.Models
         private string _glassRef = "";
         public string GlassRef { get => _glassRef; set => SetProperty(ref _glassRef, value); }
 
-        // ==================== DIMENSIONS ====================
+        // ==================== DIMENSIONS (PATCH 19 Thread Safe) ====================
         private double _width1 = 0;
-        public double Width1 { get => _width1; set { if (SetProperty(ref _width1, value)) Recalculate(); } }
+        public double Width1
+        {
+            get => _width1;
+            set
+            {
+                lock (_threadLock)
+                {
+                    if (SetProperty(ref _width1, value))
+                        Recalculate();
+                }
+            }
+        }
 
         private double _height1 = 0;
-        public double Height1 { get => _height1; set { if (SetProperty(ref _height1, value)) Recalculate(); } }
+        public double Height1
+        {
+            get => _height1;
+            set
+            {
+                lock (_threadLock)
+                {
+                    if (SetProperty(ref _height1, value))
+                        Recalculate();
+                }
+            }
+        }
 
         private double _width2 = 0;
-        public double Width2 { get => _width2; set { if (SetProperty(ref _width2, value)) Recalculate(); } }
+        public double Width2
+        {
+            get => _width2;
+            set
+            {
+                lock (_threadLock)
+                {
+                    if (SetProperty(ref _width2, value))
+                        Recalculate();
+                }
+            }
+        }
 
         private double _height2 = 0;
-        public double Height2 { get => _height2; set { if (SetProperty(ref _height2, value)) Recalculate(); } }
+        public double Height2
+        {
+            get => _height2;
+            set
+            {
+                lock (_threadLock)
+                {
+                    if (SetProperty(ref _height2, value))
+                        Recalculate();
+                }
+            }
+        }
 
-        // ==================== QUANTITY ====================
+        // ==================== QUANTITY (PATCH 19 Thread Safe) ====================
         private int _qty = 1;
-        public int Qty { get => _qty; set { if (SetProperty(ref _qty, value)) { Recalculate(); OnPropertyChanged(nameof(RemainingQty)); } } }
+        public int Qty
+        {
+            get => _qty;
+            set
+            {
+                lock (_threadLock)
+                {
+                    if (SetProperty(ref _qty, value))
+                    {
+                        Recalculate();
+                        OnPropertyChanged(nameof(RemainingQty));
+                    }
+                }
+            }
+        }
 
         private int _deliveredQty = 0;
-        public int DeliveredQty { get => _deliveredQty; set { if (SetProperty(ref _deliveredQty, value)) OnPropertyChanged(nameof(RemainingQty)); } }
+        public int DeliveredQty
+        {
+            get => _deliveredQty;
+            set
+            {
+                lock (_threadLock)
+                {
+                    if (SetProperty(ref _deliveredQty, value))
+                        OnPropertyChanged(nameof(RemainingQty));
+                }
+            }
+        }
 
         public int RemainingQty => Qty - DeliveredQty;
 
-        // ==================== PRICE & CALCULATIONS ====================
+        // ==================== PRICE & CALCULATIONS (PATCH 19 Thread Safe) ====================
         private double _price = 0;
-        public double Price { get => _price; set { if (SetProperty(ref _price, value)) Recalculate(); } }
+        public double Price
+        {
+            get => _price;
+            set
+            {
+                lock (_threadLock)
+                {
+                    if (SetProperty(ref _price, value))
+                        Recalculate();
+                }
+            }
+        }
 
         private double _surchargePercent = 20;
-        public double SurchargePercent { get => _surchargePercent; set { if (SetProperty(ref _surchargePercent, value)) Recalculate(); } }
+        public double SurchargePercent
+        {
+            get => _surchargePercent;
+            set
+            {
+                lock (_threadLock)
+                {
+                    if (SetProperty(ref _surchargePercent, value))
+                        Recalculate();
+                }
+            }
+        }
 
         private double _surchargeAmount = 0;
         public double SurchargeAmount { get => _surchargeAmount; private set => SetProperty(ref _surchargeAmount, value); }
@@ -136,69 +251,72 @@ namespace ProGlassAutomation.Models
         private string _glassType = "";
         public string GlassType { get => _glassType; set => SetProperty(ref _glassType, value); }
 
-        // ==================== RECALCULATE ====================
+        // ==================== RECALCULATE (PATCH 19 Thread Safe) ====================
         public void Recalculate()
         {
             if (_isBulkUpdating) return;
 
-            double w1 = Width1 > 0 ? Width1 : 0;
-            double h1 = Height1 > 0 ? Height1 : 0;
-            double w2 = Width2 > 0 ? Width2 : 0;
-            double h2 = Height2 > 0 ? Height2 : 0;
-            double q = Qty > 0 ? Qty : 1;
-
-            // SQM calculations
-            double sqm1Val = (w1 * h1) / 1000000.0;
-            double sqm2Val = (w2 * h2) / 1000000.0;
-
-            // Minimum SQM of 0.5 for display
-            if (sqm1Val > 0 && sqm1Val < 0.5) sqm1Val = 0.5;
-            if (sqm2Val > 0 && sqm2Val < 0.5) sqm2Val = 0.5;
-
-            SQM1 = Math.Round(sqm1Val, 4);
-            SQM2 = Math.Round(sqm2Val, 4);
-            TotalSQM = Math.Round((SQM1 + SQM2) * q, 4);
-
-            // LM calculations (perimeter)
-            double lm1Val = 2 * ((w1 / 1000.0) + (h1 / 1000.0));
-            double lm2Val = 2 * ((w2 / 1000.0) + (h2 / 1000.0));
-            LM1 = Math.Round(lm1Val, 4);
-            LM2 = Math.Round(lm2Val, 4);
-            LM = LM1 + LM2;
-            TotalLM = Math.Round(LM * q, 4);
-
-            // Price calculations
-            double p = Price > 0 ? Price : 0;
-            double sp = SurchargePercent > 0 ? SurchargePercent : 0;
-            double itemSQM = TotalSQM;
-
-            double surcharge = 0;
-            if (itemSQM >= 4)
+            lock (_threadLock)
             {
-                if (p >= 160)
+                double w1 = Width1 > 0 ? Width1 : 0;
+                double h1 = Height1 > 0 ? Height1 : 0;
+                double w2 = Width2 > 0 ? Width2 : 0;
+                double h2 = Height2 > 0 ? Height2 : 0;
+                double q = Qty > 0 ? Qty : 1;
+
+                // SQM calculations
+                double sqm1Val = (w1 * h1) / 1000000.0;
+                double sqm2Val = (w2 * h2) / 1000000.0;
+
+                // Minimum SQM of 0.5 for display
+                if (sqm1Val > 0 && sqm1Val < 0.5) sqm1Val = 0.5;
+                if (sqm2Val > 0 && sqm2Val < 0.5) sqm2Val = 0.5;
+
+                SQM1 = Math.Round(sqm1Val, 4);
+                SQM2 = Math.Round(sqm2Val, 4);
+                TotalSQM = Math.Round((SQM1 + SQM2) * q, 4);
+
+                // LM calculations (perimeter)
+                double lm1Val = 2 * ((w1 / 1000.0) + (h1 / 1000.0));
+                double lm2Val = 2 * ((w2 / 1000.0) + (h2 / 1000.0));
+                LM1 = Math.Round(lm1Val, 4);
+                LM2 = Math.Round(lm2Val, 4);
+                LM = LM1 + LM2;
+                TotalLM = Math.Round(LM * q, 4);
+
+                // Price calculations
+                double p = Price > 0 ? Price : 0;
+                double sp = SurchargePercent > 0 ? SurchargePercent : 0;
+                double itemSQM = TotalSQM;
+
+                double surcharge = 0;
+                if (itemSQM >= 4)
                 {
-                    surcharge = Math.Round((p * 10) / 100, 2);
+                    if (p >= 160)
+                    {
+                        surcharge = Math.Round((p * 10) / 100, 2);
+                    }
+                    else
+                    {
+                        surcharge = Math.Round((p * sp) / 100, 2);
+                    }
                 }
-                else
+                SurchargeAmount = surcharge;
+
+                double dp = p + surcharge;
+
+                // Round UP if decimal
+                if (dp != Math.Floor(dp))
                 {
-                    surcharge = Math.Round((p * sp) / 100, 2);
+                    dp = Math.Ceiling(dp);
                 }
+
+                DisplayPrice = dp;
+
+                double tp = dp * TotalSQM;
+                TotalPrice = Math.Round(tp, 2);
+                FinalPrice = TotalPrice;
             }
-            SurchargeAmount = surcharge;
-
-            double dp = p + surcharge;
-
-            // Round UP if decimal
-            if (dp != Math.Floor(dp))
-            {
-                dp = Math.Ceiling(dp);
-            }
-
-            DisplayPrice = dp;
-
-            double tp = dp * TotalSQM;
-            TotalPrice = Math.Round(tp, 2);
-            FinalPrice = TotalPrice;
         }
 
         // ==================== NOTIFY SURCHARGE CHANGED ====================

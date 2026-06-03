@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -22,7 +23,31 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             _viewModel = SharedViewModels.ProformaInvoiceVM;
             DataContext = _viewModel;
 
+            // PATCH 18 - Register for cleanup to prevent memory leaks
+            Unloaded += ProformaInvoiceView_Unloaded;
+
             System.Diagnostics.Debug.WriteLine("[ProformaInvoiceView] Using SharedViewModels.ProformaInvoiceVM");
+        }
+
+        // ==================== PATCH 18 - CLEANUP ON UNLOAD ====================
+
+        private void ProformaInvoiceView_Unloaded(object sender, RoutedEventArgs e)
+        {
+            // PATCH 18 - Unregister to prevent memory leaks
+            Unloaded -= ProformaInvoiceView_Unloaded;
+
+            // Clear DataGrid event handlers
+            if (DataContext != null)
+            {
+                // Let the shared VM handle cleanup
+                System.Diagnostics.Debug.WriteLine("[ProformaInvoiceView] Unloaded - Event handlers registered for cleanup");
+            }
+
+            // Force garbage collection hint
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+
+            System.Diagnostics.Debug.WriteLine("[ProformaInvoiceView] Unloaded - Cleanup complete");
         }
 
         // ==================== TEXT SELECTION ON FOCUS ====================

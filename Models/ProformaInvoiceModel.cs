@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -29,6 +30,10 @@ namespace ProGlassAutomation.Models
         // ==================== STATIC RANDOM (Thread-Safe) ====================
         private static readonly object _invoiceLock = new object();
         private static int _lastGeneratedNumber;
+
+        // ==================== THREAD SAFETY (PATCH 19) ====================
+        private readonly object _threadLock = new object();
+        private bool _isCalculating = false;
 
         // ==================== BULK UPDATE MODE (PATCH 8) ====================
         private bool _isBulkUpdating = false;
@@ -197,7 +202,7 @@ namespace ProGlassAutomation.Models
             CalculateTotals();
         }
 
-        // ==================== PROPERTY CHANGED ====================
+        // ==================== PROPERTY CHANGED (PATCH 19 Thread Safe) ====================
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
@@ -205,16 +210,20 @@ namespace ProGlassAutomation.Models
 
         protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
         {
-            if (Equals(field, value)) return false;
-            field = value;
-            OnPropertyChanged(propertyName);
-
-            if (!IsBulkUpdating && propertyName != nameof(IsDirty) && propertyName != nameof(IsBulkUpdating))
+            // Thread-safe property set
+            lock (_threadLock)
             {
-                IsDirty = true;
-            }
+                if (Equals(field, value)) return false;
+                field = value;
+                OnPropertyChanged(propertyName);
 
-            return true;
+                if (!IsBulkUpdating && propertyName != nameof(IsDirty) && propertyName != nameof(IsBulkUpdating))
+                {
+                    _isDirty = true;
+                }
+
+                return true;
+            }
         }
 
         // ==================== INVOICE DETAILS ====================
@@ -367,10 +376,8 @@ namespace ProGlassAutomation.Models
             {
                 if (_status != value)
                 {
-                    // Skip validation during deserialization (when IsBulkUpdating)
                     if (!IsBulkUpdating && !IsValidStatusTransition(_status, value))
                     {
-                        // Don't throw during load, just log it
                         System.Diagnostics.Debug.WriteLine($"[PI] Invalid status transition from '{_status}' to '{value}'");
                     }
                     SetProperty(ref _status, value);
@@ -564,11 +571,25 @@ namespace ProGlassAutomation.Models
         private double _netTotal = 0;
         public double NetTotal { get => _netTotal; private set => SetProperty(ref _netTotal, value); }
 
+        // ==================== ISDIRTY (PATCH 19 Thread Safe) ====================
         private bool _isDirty = false;
         public bool IsDirty
         {
-            get => _isDirty;
-            set => SetProperty(ref _isDirty, value);
+            get
+            {
+                lock (_threadLock) { return _isDirty; }
+            }
+            set
+            {
+                lock (_threadLock)
+                {
+                    if (_isDirty != value)
+                    {
+                        _isDirty = value;
+                        OnPropertyChanged();
+                    }
+                }
+            }
         }
 
         // ==================== VALIDATION (PATCH 17) ====================
@@ -613,49 +634,67 @@ namespace ProGlassAutomation.Models
 
         public bool IsValid => Validate().IsValid;
 
-        // ==================== CALCULATIONS (PATCH: Add Specs notify) ====================
+        // ==================== CALCULATIONS (PATCH 19 Thread Safe) ====================
         public void CalculateTotals()
         {
             if (IsBulkUpdating) return;
 
-            double sqm1 = 0, sqm2 = 0, sqm = 0, lm = 0, lm1 = 0, lm2 = 0;
-            int qty = 0;
-            double specTotal = 0;
-            double otherCharges = 0;
-
-            foreach (var spec in Specifications)
+            // Prevent concurrent calculations (PATCH 19)
+            lock (_threadLock)
             {
-                if (spec == null) continue;
-
-                spec.CalculateSpecTotals();
-                spec.CalculateOtherChargesTotal();
-
-                sqm1 += spec.SpecTotalSQM1;
-                sqm2 += spec.SpecTotalSQM2;
-                sqm += spec.SpecTotalSQM;
-                lm += spec.SpecTotalLM;
-                lm1 += spec.SpecTotalLM1;
-                lm2 += spec.SpecTotalLM2;
-                qty += spec.SpecTotalQty;
-                specTotal += spec.SpecTotalPrice;
-                otherCharges += spec.OtherChargesTotal;
+                if (_isCalculating) return;
+                _isCalculating = true;
             }
 
-            TotalSQM1 = Math.Round(sqm1, 4);
-            TotalSQM2 = Math.Round(sqm2, 4);
-            TotalSQM = Math.Round(sqm, 4);
-            TotalLM = Math.Round(lm, 4);
-            TotalLM1 = Math.Round(lm1, 4);
-            TotalLM2 = Math.Round(lm2, 4);
-            TotalQty = qty;
-            OtherChargesTotal = Math.Round(otherCharges, 2);
-            GrandTotal = Math.Round(specTotal + otherCharges, 2);
-            VatAmount = Math.Round(GrandTotal * VatPercent / 100.0, 2);
-            NetTotal = Math.Round(GrandTotal + VatAmount, 2);
-            IsDirty = true;
+            try
+            {
+                double sqm1 = 0, sqm2 = 0, sqm = 0, lm = 0, lm1 = 0, lm2 = 0;
+                int qty = 0;
+                double specTotal = 0;
+                double otherCharges = 0;
 
-            // PATCH: Notify Specifications changed to refresh UI
-            OnPropertyChanged(nameof(Specifications));
+                foreach (var spec in Specifications)
+                {
+                    if (spec == null) continue;
+
+                    spec.CalculateSpecTotals();
+                    spec.CalculateOtherChargesTotal();
+
+                    sqm1 += spec.SpecTotalSQM1;
+                    sqm2 += spec.SpecTotalSQM2;
+                    sqm += spec.SpecTotalSQM;
+                    lm += spec.SpecTotalLM;
+                    lm1 += spec.SpecTotalLM1;
+                    lm2 += spec.SpecTotalLM2;
+                    qty += spec.SpecTotalQty;
+                    specTotal += spec.SpecTotalPrice;
+                    otherCharges += spec.OtherChargesTotal;
+                }
+
+                TotalSQM1 = Math.Round(sqm1, 4);
+                TotalSQM2 = Math.Round(sqm2, 4);
+                TotalSQM = Math.Round(sqm, 4);
+                TotalLM = Math.Round(lm, 4);
+                TotalLM1 = Math.Round(lm1, 4);
+                TotalLM2 = Math.Round(lm2, 4);
+                TotalQty = qty;
+                OtherChargesTotal = Math.Round(otherCharges, 2);
+                GrandTotal = Math.Round(specTotal + otherCharges, 2);
+                VatAmount = Math.Round(GrandTotal * VatPercent / 100.0, 2);
+                NetTotal = Math.Round(GrandTotal + VatAmount, 2);
+
+                // Thread-safe dirty flag
+                lock (_threadLock)
+                {
+                    _isDirty = true;
+                }
+
+                OnPropertyChanged(nameof(Specifications));
+            }
+            finally
+            {
+                lock (_threadLock) { _isCalculating = false; }
+            }
         }
 
         // ==================== BULK OPERATIONS (PATCH 8) ====================

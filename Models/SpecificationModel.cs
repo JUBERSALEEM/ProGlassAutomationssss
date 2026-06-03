@@ -12,6 +12,10 @@ namespace ProGlassAutomation.Models
         public event PropertyChangedEventHandler PropertyChanged;
         private bool _disposed;
 
+        // ==================== THREAD SAFETY (PATCH 19) ====================
+        private readonly object _threadLock = new object();
+        private bool _isCalculating = false;
+
         // ==================== BULK UPDATE MODE (PATCH 8) ====================
         private bool _isBulkUpdating = false;
         public bool IsBulkUpdating
@@ -268,11 +272,17 @@ namespace ProGlassAutomation.Models
 
         public double SpecTotalPriceWithOtherCharges => Math.Round(SpecTotalPrice + OtherChargesTotal, 2);
 
+        // ==================== CALCULATE OTHER CHARGES TOTAL (PATCH 19 Thread Safe) ====================
         public void CalculateOtherChargesTotal()
         {
             if (IsBulkUpdating) return;
-            double total = OtherCharges.Sum(c => c?.Amount ?? 0);
-            OtherChargesTotal = Math.Round(total, 2);
+
+            // Thread-safe calculation (PATCH 19)
+            lock (_threadLock)
+            {
+                double total = OtherCharges.Sum(c => c?.Amount ?? 0);
+                OtherChargesTotal = Math.Round(total, 2);
+            }
         }
 
         // ==================== GENERATED DESCRIPTION ====================
@@ -360,40 +370,53 @@ namespace ProGlassAutomation.Models
         private double _specTotalPrice = 0;
         public double SpecTotalPrice { get => _specTotalPrice; private set { if (_specTotalPrice != value) { _specTotalPrice = value; OnPropertyChanged(); OnPropertyChanged(nameof(SpecTotalPriceWithOtherCharges)); } } }
 
-        // ==================== CALCULATE SPEC TOTALS (PATCH 8 - Add Items refresh) ====================
+        // ==================== CALCULATE SPEC TOTALS (PATCH 19 Thread Safe) ====================
         public void CalculateSpecTotals()
         {
             if (IsBulkUpdating) return;
 
-            double sqm1 = 0, sqm2 = 0, sqm = 0, lm = 0, lm1 = 0, lm2 = 0;
-            int qty = 0;
-            double price = 0;
-
-            foreach (var item in Items)
+            // Prevent concurrent calculations (PATCH 19)
+            lock (_threadLock)
             {
-                if (item == null) continue;
-
-                sqm1 += item.SQM1 * item.Qty;
-                sqm2 += item.SQM2 * item.Qty;
-                sqm += item.TotalSQM;
-                lm += item.TotalLM;
-                lm1 += item.LM1 * item.Qty;
-                lm2 += item.LM2 * item.Qty;
-                qty += item.Qty;
-                price += item.TotalPrice;
+                if (_isCalculating) return;
+                _isCalculating = true;
             }
 
-            SpecTotalSQM1 = Math.Round(sqm1, 4);
-            SpecTotalSQM2 = Math.Round(sqm2, 4);
-            SpecTotalSQM = Math.Round(sqm, 4);
-            SpecTotalLM = Math.Round(lm, 4);
-            SpecTotalLM1 = Math.Round(lm1, 4);
-            SpecTotalLM2 = Math.Round(lm2, 4);
-            SpecTotalQty = qty;
-            SpecTotalPrice = Math.Round(price, 2);
+            try
+            {
+                double sqm1 = 0, sqm2 = 0, sqm = 0, lm = 0, lm1 = 0, lm2 = 0;
+                int qty = 0;
+                double price = 0;
 
-            // PATCH: Notify Items collection changed to refresh DataGrid
-            OnPropertyChanged(nameof(Items));
+                foreach (var item in Items)
+                {
+                    if (item == null) continue;
+
+                    sqm1 += item.SQM1 * item.Qty;
+                    sqm2 += item.SQM2 * item.Qty;
+                    sqm += item.TotalSQM;
+                    lm += item.TotalLM;
+                    lm1 += item.LM1 * item.Qty;
+                    lm2 += item.LM2 * item.Qty;
+                    qty += item.Qty;
+                    price += item.TotalPrice;
+                }
+
+                SpecTotalSQM1 = Math.Round(sqm1, 4);
+                SpecTotalSQM2 = Math.Round(sqm2, 4);
+                SpecTotalSQM = Math.Round(sqm, 4);
+                SpecTotalLM = Math.Round(lm, 4);
+                SpecTotalLM1 = Math.Round(lm1, 4);
+                SpecTotalLM2 = Math.Round(lm2, 4);
+                SpecTotalQty = qty;
+                SpecTotalPrice = Math.Round(price, 2);
+
+                OnPropertyChanged(nameof(Items));
+            }
+            finally
+            {
+                lock (_threadLock) { _isCalculating = false; }
+            }
         }
 
         // ==================== RENUMBER ITEMS (PATCH 9) ====================
@@ -422,77 +445,95 @@ namespace ProGlassAutomation.Models
             }
         }
 
-        // ==================== ADD ITEM METHOD ====================
+        // ==================== ADD ITEM METHOD (PATCH 19 Thread Safe) ====================
         public InvoiceItemModel AddItem(int nextSrNo)
         {
-            var item = new InvoiceItemModel
+            lock (_threadLock)
             {
-                Specification = this,
-                SrNo = nextSrNo
-            };
-            Items.Add(item);
-            return item;
+                var item = new InvoiceItemModel
+                {
+                    Specification = this,
+                    SrNo = nextSrNo
+                };
+                Items.Add(item);
+                return item;
+            }
         }
 
-        // ==================== REMOVE ITEM METHOD ====================
+        // ==================== REMOVE ITEM METHOD (PATCH 19 Thread Safe) ====================
         public void RemoveItem(InvoiceItemModel item)
         {
-            if (item != null && Items.Contains(item))
+            lock (_threadLock)
             {
-                item.PropertyChanged -= Item_PropertyChanged;
-                Items.Remove(item);
-                CalculateSpecTotals();
+                if (item != null && Items.Contains(item))
+                {
+                    item.PropertyChanged -= Item_PropertyChanged;
+                    Items.Remove(item);
+                    CalculateSpecTotals();
+                }
             }
         }
 
         // ==================== CLEAR ALL ITEMS (PATCH 6) ====================
         public void ClearAllItems()
         {
-            foreach (var item in Items)
+            lock (_threadLock)
             {
-                if (item != null)
+                foreach (var item in Items)
                 {
-                    item.PropertyChanged -= Item_PropertyChanged;
-                    item.Specification = null;
+                    if (item != null)
+                    {
+                        item.PropertyChanged -= Item_PropertyChanged;
+                        item.Specification = null;
+                    }
                 }
+                Items.Clear();
+                CalculateSpecTotals();
             }
-            Items.Clear();
-            CalculateSpecTotals();
         }
 
         // ==================== ADD/REMOVE CHARGE ====================
         public OtherChargeModel AddCharge(string name = null, string type = "lm")
         {
-            var charge = new OtherChargeModel
+            lock (_threadLock)
             {
-                Name = name ?? $"Charge {OtherCharges.Count + 1}",
-                Type = type,
-                LinkedSpecIndices = Id.ToString()
-            };
-            OtherCharges.Add(charge);
-            return charge;
+                var charge = new OtherChargeModel
+                {
+                    Name = name ?? $"Charge {OtherCharges.Count + 1}",
+                    Type = type,
+                    LinkedSpecIndices = Id.ToString()
+                };
+                OtherCharges.Add(charge);
+                return charge;
+            }
         }
 
         public void RemoveCharge(OtherChargeModel charge)
         {
-            if (charge != null && OtherCharges.Contains(charge))
+            lock (_threadLock)
             {
-                charge.PropertyChanged -= Charge_PropertyChanged;
-                OtherCharges.Remove(charge);
-                CalculateOtherChargesTotal();
+                if (charge != null && OtherCharges.Contains(charge))
+                {
+                    charge.PropertyChanged -= Charge_PropertyChanged;
+                    OtherCharges.Remove(charge);
+                    CalculateOtherChargesTotal();
+                }
             }
         }
 
         // ==================== CLEAR ALL CHARGES (PATCH 6) ====================
         public void ClearAllCharges()
         {
-            foreach (var charge in OtherCharges)
+            lock (_threadLock)
             {
-                if (charge != null)
-                    charge.PropertyChanged -= Charge_PropertyChanged;
+                foreach (var charge in OtherCharges)
+                {
+                    if (charge != null)
+                        charge.PropertyChanged -= Charge_PropertyChanged;
+                }
+                OtherCharges.Clear();
+                CalculateOtherChargesTotal();
             }
-            OtherCharges.Clear();
-            CalculateOtherChargesTotal();
         }
 
         // ==================== CALCULATE TOTALS ====================

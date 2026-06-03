@@ -81,7 +81,7 @@ namespace ProGlassAutomation.Models
         public double Amount
         {
             get => _amount;
-            set => SetProperty(ref _amount, value);  // Made public
+            set => SetProperty(ref _amount, value);
         }
 
         private string _lmDimType = "w1h1";
@@ -149,12 +149,11 @@ namespace ProGlassAutomation.Models
         public bool IsLMBased => Type == "lm" || Type == "sqm" || Type == "sqm1" || Type == "sqm2";
         public bool IsHoleType => Type == "1x" || Type == "2x";
 
-        // ==================== CALCULATE AMOUNT (PATCH: Add PropertyChanged) ====================
+        // ==================== CALCULATE AMOUNT ====================
 
         public void CalculateAmount()
         {
             Amount = Math.Round(Value * Rate, 2);
-            // PATCH: Notify Amount changed for UI update
             OnPropertyChanged(nameof(Amount));
             OnPropertyChanged(nameof(AmountDisplay));
         }
@@ -228,15 +227,17 @@ namespace ProGlassAutomation.Models
             }
         }
 
-        // ==================== AUTO VALUE ====================
+        // ==================== AUTO VALUE - WEAKREFERENCE (PATCH 18 - Fixed) ====================
+
+        // Using simple nullable approach instead of WeakReference due to .NET5+ behavior
+        [JsonIgnore]
+        private List<SpecificationModel>? _boundSpecs;
 
         [JsonIgnore]
-        private List<SpecificationModel> _boundSpecs = new List<SpecificationModel>();
-        [JsonIgnore]
-        public List<SpecificationModel> BoundSpecs
+        public List<SpecificationModel>? BoundSpecs
         {
             get => _boundSpecs;
-            set => _boundSpecs = value ?? new List<SpecificationModel>();
+            set => _boundSpecs = value;
         }
 
         private bool _isManualOverride = false;
@@ -251,6 +252,14 @@ namespace ProGlassAutomation.Models
         }
 
         public bool IsAutoMode => !_isManualOverride;
+
+        // ==================== CLEAR BOUND SPECS (PATCH 18) ====================
+
+        public void ClearBoundSpecs()
+        {
+            // Help GC by clearing reference
+            _boundSpecs = null;
+        }
 
         // ==================== SPEC INDEX MANAGEMENT ====================
 
@@ -306,7 +315,6 @@ namespace ProGlassAutomation.Models
             };
         }
 
-        // PATCH 15: Deep clone for proper cloning
         public OtherChargeModel DeepClone()
         {
             var clone = new OtherChargeModel
@@ -321,12 +329,10 @@ namespace ProGlassAutomation.Models
                 IsManualOverride = IsManualOverride
             };
 
-            // Amount will be recalculated from Value * Rate when used
             clone.CalculateAmount();
             return clone;
         }
 
-        // PATCH 15: Copy values from another charge
         public void CopyFrom(OtherChargeModel other)
         {
             if (other == null) return;
