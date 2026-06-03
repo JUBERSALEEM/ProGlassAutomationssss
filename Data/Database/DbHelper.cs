@@ -26,12 +26,47 @@ namespace ProGlassAutomation.Data.Database
 
         private static readonly int LatestVersion = 14;
 
-        // ✅ UPDATED: Connection creation with configuration
+        // ✅ UPDATED: Connection creation with PRAGMA settings (connection pooling)
         private static SqliteConnection CreateConnection()
         {
             var dbPath = Config.Database.DbPath;
-            Directory.CreateDirectory(Path.GetDirectoryName(dbPath)!);
-            return new SqliteConnection(ConnectionString);
+
+            // Ensure directory exists
+            var directory = Path.GetDirectoryName(dbPath);
+            if (!string.IsNullOrEmpty(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            // Create connection
+            var conn = new SqliteConnection(ConnectionString);
+            conn.Open();
+
+            // ✅ WAL mode via PRAGMA (better for concurrent access)
+            if (Config.Database.EnableWAL)
+            {
+                using var walCmd = conn.CreateCommand();
+                walCmd.CommandText = "PRAGMA journal_mode=Wal";
+                walCmd.ExecuteNonQuery();
+            }
+
+            // ✅ Foreign keys via PRAGMA
+            if (Config.Database.ForeignKeys)
+            {
+                using var fkCmd = conn.CreateCommand();
+                fkCmd.CommandText = "PRAGMA foreign_keys=ON";
+                fkCmd.ExecuteNonQuery();
+            }
+
+            // ✅ Cache size via PRAGMA
+            if (Config.Database.CacheSize != 0)
+            {
+                using var cacheCmd = conn.CreateCommand();
+                cacheCmd.CommandText = $"PRAGMA cache_size={Config.Database.CacheSize}";
+                cacheCmd.ExecuteNonQuery();
+            }
+
+            return conn;
         }
 
         // ✅ UPDATED: Execute with configurable timeout
