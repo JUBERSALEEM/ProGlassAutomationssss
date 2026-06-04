@@ -345,7 +345,7 @@ namespace ProGlassAutomation.ViewModels
         private void ExecuteCreateJobOrder(ProformaInvoiceModel? invoice)
         {
             if (invoice == null) return;
-            var result = MessageBox.Show($"Create Job Order from {invoice.InvoiceNo}?\nCustomer: {invoice.CustomerName}\nAmount: {invoice.GrandTotal:N0}",
+            var result = MessageBox.Show($"Create Job Order from {invoice.InvoiceNo}?\nCustomer: {invoice.CustomerName}\nAmount: {invoice.NetTotal:N0}",
                 "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (result != MessageBoxResult.Yes) return;
             try

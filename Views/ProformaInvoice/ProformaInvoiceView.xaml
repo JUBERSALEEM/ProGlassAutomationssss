@@ -408,7 +408,7 @@
                                                     </StackPanel>
                                                     <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="0,0,10,0">
                                                         <TextBlock Text="Sur. %:" FontSize="9" Foreground="#6B7280" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                                        <TextBox Text="{Binding SurchargePercent, UpdateSourceTrigger=LostFocus, StringFormat=N1}" Width="55" Padding="4,2" FontSize="10" Background="#FFFFFF" BorderBrush="#D1D5DB" BorderThickness="1"/>
+                                                        <TextBox Text="{Binding SurchargePercent, UpdateSourceTrigger=PropertyChanged, StringFormat=N1}" Width="55" Padding="4,2" FontSize="10" Background="#FFFFFF" BorderBrush="#D1D5DB" BorderThickness="1"/>
                                                     </StackPanel>
                                                     <Button Grid.Column="4" Content="+ Row" Style="{StaticResource SecondaryButton}" Click="AddRow_Click" Tag="{Binding}" Padding="8,4" FontSize="10"/>
                                                 </Grid>
@@ -532,14 +532,14 @@
                                                             <DataTemplate>
                                                                 <Border Background="#DBEAFE" Padding="0,0,6,0">
                                                                     <TextBlock Text="{Binding TotalPrice, Mode=OneWay, StringFormat=N2}" 
-                           HorizontalAlignment="Right" VerticalAlignment="Center"
-                           FontWeight="Bold" FontSize="10"/>
+                       HorizontalAlignment="Right" VerticalAlignment="Center"
+                       FontWeight="Bold" FontSize="10"/>
                                                                 </Border>
                                                             </DataTemplate>
                                                         </DataGridTemplateColumn.CellTemplate>
                                                         <DataGridTemplateColumn.Visibility>
                                                             <Binding Path="DataContext.IsJobOrder" RelativeSource="{RelativeSource AncestorType=UserControl}" 
-                 Converter="{StaticResource InverseBoolToVis}"/>
+             Converter="{StaticResource InverseBoolToVis}"/>
                                                         </DataGridTemplateColumn.Visibility>
                                                     </DataGridTemplateColumn>
 

@@ -151,7 +151,10 @@ namespace ProGlassAutomation.Models
                 e.PropertyName == nameof(InvoiceItemModel.TotalPrice) ||
                 e.PropertyName == nameof(InvoiceItemModel.Qty) ||
                 e.PropertyName == nameof(InvoiceItemModel.DisplayPrice) ||
-                e.PropertyName == nameof(InvoiceItemModel.FinalPrice))
+                e.PropertyName == nameof(InvoiceItemModel.FinalPrice) ||
+                // 🔴 ADDED: Catch surcharge changes
+                e.PropertyName == nameof(InvoiceItemModel.SurchargePercent) ||
+                e.PropertyName == nameof(InvoiceItemModel.SurchargeAmount))
             {
                 CalculateSpecTotals();
             }
@@ -348,6 +351,7 @@ namespace ProGlassAutomation.Models
         {
             foreach (var item in Items)
             {
+                item.SurchargePercent = _surchargePercent;  // Sync value to all items
                 item.NotifySurchargeChanged();
             }
             CalculateSpecTotals();
@@ -422,6 +426,9 @@ namespace ProGlassAutomation.Models
                 SpecTotalPrice = Math.Round(price, 2);
 
                 OnPropertyChanged(nameof(Items));
+
+                // 🔴 Notify parent Invoice to recalculate (for surcharge changes)
+                Invoice?.CalculateTotals();
             }
             finally
             {

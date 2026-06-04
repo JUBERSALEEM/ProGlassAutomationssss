@@ -16,6 +16,7 @@ namespace ProGlassAutomation.Models
     /// PATCH 13: Added GetValueForChargeType method
     /// PATCH 18: Added thread-safe property setters
     /// PATCH 19: Added thread lock for concurrent access
+    /// PATCH 20: Fixed surcharge - only applies when per-item SQM > 4
     /// </remarks>
     public class InvoiceItemModel : INotifyPropertyChanged, IDisposable
     {
@@ -217,7 +218,25 @@ namespace ProGlassAutomation.Models
                 lock (_threadLock)
                 {
                     if (SetProperty(ref _surchargePercent, value))
+                    {
+                        // Temporarily disable bulk update to ensure recalculation
+                        bool wasBulkUpdating = _isBulkUpdating;
+                        _isBulkUpdating = false;
+
                         Recalculate();
+
+                        // 🔴 Notify parent spec AND grandparent invoice
+                        Specification?.CalculateTotals();
+                        Specification?.Invoice?.CalculateTotals();
+
+                        // 🔴 Force all property notifications
+                        OnPropertyChanged(nameof(SurchargeAmount));
+                        OnPropertyChanged(nameof(DisplayPrice));
+                        OnPropertyChanged(nameof(TotalPrice));
+                        OnPropertyChanged(nameof(FinalPrice));
+
+                        _isBulkUpdating = wasBulkUpdating;
+                    }
                 }
             }
         }
@@ -263,7 +282,7 @@ namespace ProGlassAutomation.Models
         private string _glassType = "";
         public string GlassType { get => _glassType; set => SetProperty(ref _glassType, value); }
 
-        // ==================== RECALCULATE (PATCH 19 Thread Safe) ====================
+        // ==================== RECALCULATE (PATCH 19 + PATCH 20 Fix) ====================
         public void Recalculate()
         {
             if (_isBulkUpdating) return;
@@ -299,19 +318,15 @@ namespace ProGlassAutomation.Models
                 // Price calculations
                 double p = Price > 0 ? Price : 0;
                 double sp = SurchargePercent > 0 ? SurchargePercent : 0;
-                double itemSQM = TotalSQM;
+
+                // 🔴 FIX (PATCH 20): Check per-item SQM only (NOT including quantity)
+                double perItemSQM = SQM1 + SQM2;
 
                 double surcharge = 0;
-                if (itemSQM >= 4)
+                // 🔴 Only apply if per-item SQM > 4
+                if (perItemSQM > 4)
                 {
-                    if (p >= 160)
-                    {
-                        surcharge = Math.Round((p * 10) / 100, 2);
-                    }
-                    else
-                    {
-                        surcharge = Math.Round((p * sp) / 100, 2);
-                    }
+                    surcharge = Math.Round((p * sp) / 100, 2);
                 }
                 SurchargeAmount = surcharge;
 
@@ -331,10 +346,13 @@ namespace ProGlassAutomation.Models
             }
         }
 
-        // ==================== NOTIFY SURCHARGE CHANGED ====================
+        // ==================== NOTIFY SURCHARGE CHANGED (PATCH 20) ====================
         public void NotifySurchargeChanged()
         {
             Recalculate();
+
+            // 🔴 Notify parent specification to update totals
+            Specification?.CalculateTotals();
         }
 
         // ==================== BULK OPERATIONS (PATCH 8) ====================

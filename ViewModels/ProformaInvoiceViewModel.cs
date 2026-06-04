@@ -19,7 +19,7 @@ namespace ProGlassAutomation.ViewModels
     public class DimensionOption { public string Value { get; set; } = ""; public string Label { get; set; } = ""; }
     public class ChargeTypeOption { public string Value { get; set; } = ""; public string Label { get; set; } = ""; }
     public class AirSpacerOption { public string Thickness { get; set; } = ""; public string Type { get; set; } = ""; public double Price { get; set; } public string Display => $"{Thickness}mm {Type} - AED {Price:F2}"; }
-    public class FileListItem { public string FilePath { get; set; } = ""; public string InvoiceNo { get; set; } = ""; public string CustomerName { get; set; } = ""; public DateTime InvoiceDate { get; set; } public string FileName => Path.GetFileNameWithoutExtension(FilePath); public string DateDisplay => InvoiceDate.ToString("dd MMM yyyy"); }
+    public class FileListItem { public string FilePath { get; set; } = ""; public string InvoiceNo { get; set; } = ""; public string CustomerName { get; set; } = ""; public DateTime InvoiceDate { get; set; } public double NetTotal { get; set; } public string FileName => Path.GetFileNameWithoutExtension(FilePath); public string DateDisplay => InvoiceDate.ToString("dd MMM yyyy"); public string TotalDisplay => $"AED {NetTotal:N2}"; }
 
     public class GlassPriceCalculator
     {
@@ -1073,13 +1073,18 @@ namespace ProGlassAutomation.ViewModels
                     var json = File.ReadAllText(file);
                     var invoice = JsonConvert.DeserializeObject<ProformaInvoiceModel>(json, _jsonSettings);
                     if (invoice != null)
+                    {
+                        // Calculate NetTotal before adding to list
+                        invoice.CalculateTotals();
                         SavedFiles.Add(new FileListItem
                         {
                             FilePath = file,
                             InvoiceNo = invoice.InvoiceNo,
                             CustomerName = invoice.CustomerName,
-                            InvoiceDate = invoice.InvoiceDate
+                            InvoiceDate = invoice.InvoiceDate,
+                            NetTotal = invoice.NetTotal
                         });
+                    }
                 }
                 catch { }
             }
@@ -1151,7 +1156,7 @@ namespace ProGlassAutomation.ViewModels
                 var firstItem = new InvoiceItemModel
                 {
                     SrNo = nextSrNo,
-                    SurchargePercent = 20,
+                    SurchargePercent = spec.SurchargePercent,  // ✅ Use spec value
                     Specification = spec
                 };
                 spec.Items.Add(firstItem);
@@ -1672,12 +1677,13 @@ namespace ProGlassAutomation.ViewModels
 
             if (SelectedTargetSpecification.Items.Count > 0)
             {
-                SelectedTargetSpecification.SurchargePercent = SelectedTargetSpecification.Items[0].SurchargePercent;
-                SelectedTargetSpecification.Items[0].Price = CalculatedPrice;
+                // Sync surcharge FROM spec TO items
                 foreach (var item in SelectedTargetSpecification.Items)
                 {
+                    item.SurchargePercent = SelectedTargetSpecification.SurchargePercent;
                     if (item.Price == 0) item.Price = CalculatedPrice;
                 }
+                SelectedTargetSpecification.Items[0].Price = CalculatedPrice;
             }
 
             Invoice.CalculateTotals();
@@ -2235,7 +2241,7 @@ namespace ProGlassAutomation.ViewModels
                         GlassRef = item.GlassRef,
                         Qty = item.Qty,
                         Price = item.Price,
-                        SurchargePercent = 20,
+                        SurchargePercent = targetSpec.SurchargePercent,
                         Specification = targetSpec
                     };
                     newItem.Width1 = item.Width1;
@@ -2581,7 +2587,7 @@ namespace ProGlassAutomation.ViewModels
                     Width2 = 0,
                     Height2 = 0,
                     Qty = (int)qty,
-                    SurchargePercent = 20,
+                    SurchargePercent = spec.SurchargePercent,
                     Specification = spec
                 };
 

@@ -499,10 +499,10 @@
                     </DataGridTemplateColumn>
 
                     <!-- AMOUNT -->
-                    <DataGridTemplateColumn Header="AMOUNT" Width="110">
+                    <DataGridTemplateColumn Header="NET TOTAL" Width="110">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding GrandTotal, StringFormat=N0}" Style="{StaticResource CellAmount}"/>
+                                <TextBlock Text="{Binding NetTotal, StringFormat=N0}" Style="{StaticResource CellAmount}"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                         <DataGridTemplateColumn.HeaderStyle>

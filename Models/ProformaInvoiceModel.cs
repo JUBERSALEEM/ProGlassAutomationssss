@@ -200,7 +200,11 @@ namespace ProGlassAutomation.Models
             if (IsBulkUpdating) return;
 
             if (e.PropertyName == nameof(SpecificationModel.SpecTotalSQM) ||
+                e.PropertyName == nameof(SpecificationModel.SpecTotalSQM1) ||
+                e.PropertyName == nameof(SpecificationModel.SpecTotalSQM2) ||
                 e.PropertyName == nameof(SpecificationModel.SpecTotalLM) ||
+                e.PropertyName == nameof(SpecificationModel.SpecTotalLM1) ||
+                e.PropertyName == nameof(SpecificationModel.SpecTotalLM2) ||
                 e.PropertyName == nameof(SpecificationModel.SpecTotalQty) ||
                 e.PropertyName == nameof(SpecificationModel.SpecTotalPrice) ||
                 e.PropertyName == nameof(SpecificationModel.OtherChargesTotal))
