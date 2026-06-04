@@ -2,20 +2,24 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:ProGlassAutomation.Views.Print"
-        xmlns:converters="clr-namespace:ProGlassAutomation.Converters"
-        Title="Print Preview" Height="800" Width="1000"
+        Title="Print Preview - ProGlass Automation" 
+        Height="900" Width="1250"
         WindowStartupLocation="CenterScreen"
-        Background="#F5F5F5">
+        Background="#E5E7EB">
 
     <Window.Resources>
-        <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
+        <local:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
+        <FontFamily x:Key="PrimaryFont">Segoe UI</FontFamily>
 
-        <Style x:Key="PrintButton" TargetType="Button">
-            <Setter Property="Background" Value="#1E3A5F"/>
-            <Setter Property="Foreground" Value="#FFFFFF"/>
-            <Setter Property="Padding" Value="20,10"/>
+        <Style x:Key="ActionButton" TargetType="Button">
+            <Setter Property="Background" Value="#1E40AF"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -26,177 +30,251 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource ActionButton}">
+            <Setter Property="Background" Value="#4B5563"/>
+        </Style>
+
+        <Style x:Key="SuccessButton" TargetType="Button" BasedOn="{StaticResource ActionButton}">
+            <Setter Property="Background" Value="#059669"/>
+        </Style>
+
+        <Style x:Key="LabelStyle" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Foreground" Value="#374151"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,6,0"/>
+        </Style>
     </Window.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Header -->
-        <Border Grid.Row="0" Background="#FFFFFF" Padding="16" BorderBrush="#E5E7EB" BorderThickness="0,0,0,1">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="Print" Style="{StaticResource PrintButton}" Click="BtnPrint_Click" Margin="0,0,8,0"/>
-                <Button Content="Close" Style="{StaticResource PrintButton}" Background="#6B7280" Click="BtnClose_Click"/>
-            </StackPanel>
+        <!-- Toolbar -->
+        <Border Grid.Row="0" Background="#1F2937" Padding="16,12">
+            <WrapPanel>
+                <Button Content="PRINT" Style="{StaticResource SuccessButton}" Click="BtnPrint_Click"/>
+                <Button Content="PAGE SETUP" Style="{StaticResource ActionButton}" Click="BtnPageSetup_Click"/>
+                <Rectangle Width="1" Fill="#4B5563" Margin="12,0"/>
+                <TextBlock Text="Orientation:" Style="{StaticResource LabelStyle}" Foreground="#9CA3AF"/>
+                <Button x:Name="BtnOrientation" Content="LANDSCAPE" Style="{StaticResource ActionButton}" Click="BtnOrientation_Click" Width="100" Background="#3B82F6"/>
+                <TextBlock Text="Paper:" Style="{StaticResource LabelStyle}" Foreground="#9CA3AF" Margin="12,0,6,0"/>
+                <ComboBox x:Name="CmbPaperSize" SelectedIndex="0" Width="100" Padding="8,6" SelectionChanged="CmbPaperSize_SelectionChanged">
+                    <ComboBoxItem Content="A4"/>
+                    <ComboBoxItem Content="Letter"/>
+                    <ComboBoxItem Content="Legal"/>
+                </ComboBox>
+                <TextBlock Text="Scale:" Style="{StaticResource LabelStyle}" Foreground="#9CA3AF" Margin="12,0,6,0"/>
+                <ComboBox x:Name="CmbScale" SelectedIndex="2" Width="80" Padding="8,6" SelectionChanged="CmbScale_SelectionChanged">
+                    <ComboBoxItem Content="50%"/>
+                    <ComboBoxItem Content="75%"/>
+                    <ComboBoxItem Content="100%"/>
+                    <ComboBoxItem Content="Fit"/>
+                </ComboBox>
+                <Rectangle Width="1" Fill="#4B5563" Margin="12,0"/>
+                <TextBlock Text="Margins (in):" Style="{StaticResource LabelStyle}" Foreground="#9CA3AF"/>
+                <TextBox x:Name="TxtTopMargin" Text="0.50" Width="45" Padding="6,4" Margin="2,0" TextChanged="Margin_TextChanged"/>
+                <TextBox x:Name="TxtBottomMargin" Text="0.50" Width="45" Padding="6,4" Margin="2,0" TextChanged="Margin_TextChanged"/>
+                <TextBox x:Name="TxtLeftMargin" Text="0.50" Width="45" Padding="6,4" Margin="2,0" TextChanged="Margin_TextChanged"/>
+                <TextBox x:Name="TxtRightMargin" Text="0.50" Width="45" Padding="6,4" Margin="2,0" TextChanged="Margin_TextChanged"/>
+                <Rectangle Width="1" Fill="#4B5563" Margin="12,0"/>
+                <TextBlock Text="Zoom:" Style="{StaticResource LabelStyle}" Foreground="#9CA3AF"/>
+                <Slider x:Name="SldZoom" Minimum="25" Maximum="200" Value="100" Width="120" VerticalAlignment="Center" ValueChanged="SldZoom_ValueChanged"/>
+                <TextBlock x:Name="TxtZoom" Text="100%" Width="40" Foreground="White" VerticalAlignment="Center" Margin="4,0"/>
+                <Rectangle Width="1" Fill="#4B5563" Margin="12,0"/>
+                <Button Content="CLOSE" Style="{StaticResource SecondaryButton}" Click="BtnClose_Click"/>
+            </WrapPanel>
         </Border>
 
-        <!-- Content -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-            <Border Background="White" Margin="20" Padding="40" BorderBrush="#E5E7EB" BorderThickness="1" x:Name="PrintBorder">
-                <StackPanel MaxWidth="900">
+        <!-- Preview Area -->
+        <Border Grid.Row="1" Background="#374151" Padding="30">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                <!-- OLD professional layout: 816 width -->
+                <Border x:Name="PrintBorder" Background="White" HorizontalAlignment="Center">
+                    <Border.RenderTransform>
+                        <ScaleTransform x:Name="PreviewScale" ScaleX="1" ScaleY="1"/>
+                    </Border.RenderTransform>
 
-                    <!-- Company Header -->
-                    <Grid Margin="0,0,0,20">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <StackPanel>
-                            <TextBlock Text="{Binding CompanyName}" FontSize="18" FontWeight="Bold" Foreground="#1E3A5F"/>
-                            <TextBlock FontSize="10" Foreground="#6B7280">
-                                <Run Text="TRN: "/><Run Text="{Binding CompanyTRN}"/>
-                            </TextBlock>
-                            <TextBlock Text="{Binding CompanyLocation}" FontSize="10" Foreground="#6B7280"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="1" HorizontalAlignment="Right">
-                            <TextBlock Text="{Binding DocumentType}" FontSize="14" FontWeight="SemiBold" Foreground="#1E3A5F"/>
-                            <TextBlock FontSize="11" Foreground="#6B7280">
-                                <Run Text="No: "/><Run Text="{Binding DocumentNumber}"/>
-                            </TextBlock>
-                            <TextBlock FontSize="10" Foreground="#6B7280">
-                                <Run Text="Date: "/><Run Text="{Binding DocumentDate, StringFormat=dd MMM yyyy}"/>
-                            </TextBlock>
-                        </StackPanel>
-                    </Grid>
+                    <!-- OLD professional content: 816 width StackPanel -->
+                    <StackPanel x:Name="MainContentPanel" Width="816">
 
-                    <Rectangle Height="1" Fill="#1E3A5F" Margin="0,0,0,20"/>
-
-                    <!-- Customer Info -->
-                    <Grid Margin="0,0,0,20">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0">
-                            <TextBlock Text="RECEIVER" FontSize="10" FontWeight="Bold" Foreground="#1E3A5F" Margin="0,0,0,4"/>
-                            <TextBlock Text="{Binding CustomerName}" FontSize="12" FontWeight="SemiBold"/>
-                            <TextBlock FontSize="10" Foreground="#6B7280">
-                                <Run Text="TRN: "/><Run Text="{Binding CustomerTRN}"/>
-                            </TextBlock>
-                            <TextBlock Text="{Binding CustomerAddress}" FontSize="10" Foreground="#6B7280" TextWrapping="Wrap"/>
-                            <TextBlock FontSize="10" Foreground="#6B7280">
-                                <Run Text="Ref: "/><Run Text="{Binding CustomerReference}"/>
-                            </TextBlock>
-                        </StackPanel>
-                        <StackPanel Grid.Column="1">
-                            <TextBlock FontSize="10" Foreground="#6B7280">
-                                <Run Text="Project: "/><Run Text="{Binding ProjectName}"/>
-                            </TextBlock>
-                            <TextBlock FontSize="10" Foreground="#6B7280">
-                                <Run Text="Project No: "/><Run Text="{Binding ProjectNo}"/>
-                            </TextBlock>
-                            <TextBlock FontSize="10" Foreground="#6B7280">
-                                <Run Text="Location: "/><Run Text="{Binding ProjectLocation}"/>
-                            </TextBlock>
-                            <TextBlock FontSize="10" Foreground="#6B7280" Margin="0,8,0,0">
-                                <Run Text="LPO No: "/><Run Text="{Binding LPONo}"/>
-                            </TextBlock>
-                            <TextBlock FontSize="10" Foreground="#6B7280">
-                                <Run Text="Att: "/><Run Text="{Binding AttentionName}"/>
-                            </TextBlock>
-                            <TextBlock FontSize="10" Foreground="#6B7280">
-                                <Run Text="Contact: "/><Run Text="{Binding ContactNo}"/>
-                            </TextBlock>
-                            <TextBlock FontSize="10" Foreground="#6B7280">
-                                <Run Text="Salesman: "/><Run Text="{Binding Salesman}"/>
-                            </TextBlock>
-                        </StackPanel>
-                    </Grid>
-
-                    <!-- Specifications -->
-                    <TextBlock Text="SPECIFICATIONS" FontSize="11" FontWeight="Bold" Foreground="#1E3A5F" Margin="0,0,0,8"/>
-
-                    <!-- Table Header -->
-                    <Border Background="#1E3A5F" Padding="4">
-                        <Grid>
+                        <!-- Company Header -->
+                        <Grid Margin="30,25,30,20">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="40"/>
                                 <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="60"/>
-                                <ColumnDefinition Width="60"/>
-                                <ColumnDefinition Width="60"/>
-                                <ColumnDefinition Width="60"/>
-                                <ColumnDefinition Width="50"/>
-                                <ColumnDefinition Width="70"/>
-                                <ColumnDefinition Width="80"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="SR" Foreground="White" FontSize="10" FontWeight="SemiBold"/>
-                            <TextBlock Grid.Column="1" Text="GLASS REF" Foreground="White" FontSize="10" FontWeight="SemiBold"/>
-                            <TextBlock Grid.Column="2" Text="W1" Foreground="White" FontSize="10" FontWeight="SemiBold" TextAlignment="Center"/>
-                            <TextBlock Grid.Column="3" Text="H1" Foreground="White" FontSize="10" FontWeight="SemiBold" TextAlignment="Center"/>
-                            <TextBlock Grid.Column="4" Text="W2" Foreground="White" FontSize="10" FontWeight="SemiBold" TextAlignment="Center"/>
-                            <TextBlock Grid.Column="5" Text="H2" Foreground="White" FontSize="10" FontWeight="SemiBold" TextAlignment="Center"/>
-                            <TextBlock Grid.Column="6" Text="QTY" Foreground="White" FontSize="10" FontWeight="SemiBold" TextAlignment="Center"/>
-                            <TextBlock Grid.Column="7" Text="SQM" Foreground="White" FontSize="10" FontWeight="SemiBold" TextAlignment="Center"/>
-                            <TextBlock Grid.Column="8" Text="TOTAL SQM" Foreground="White" FontSize="10" FontWeight="SemiBold" TextAlignment="Center"/>
+                            <StackPanel>
+                                <TextBlock Text="{Binding CompanyName}" FontFamily="{StaticResource PrimaryFont}" FontSize="22" FontWeight="Bold" Foreground="#111827"/>
+                                <TextBlock FontFamily="{StaticResource PrimaryFont}" FontSize="10" Foreground="#4B5563">
+                                    <Run Text="TRN: "/><Run Text="{Binding CompanyTRN}"/>
+                                </TextBlock>
+                                <TextBlock Text="{Binding CompanyLocation}" FontFamily="{StaticResource PrimaryFont}" FontSize="10" Foreground="#4B5563"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                                <TextBlock Text="{Binding DocumentType}" FontFamily="{StaticResource PrimaryFont}" FontSize="18" FontWeight="Bold" Foreground="#111827"/>
+                                <TextBlock FontFamily="{StaticResource PrimaryFont}" FontSize="11" Foreground="#4B5563">
+                                    <Run Text="No: "/><Run Text="{Binding DocumentNumber}"/>
+                                </TextBlock>
+                                <TextBlock FontFamily="{StaticResource PrimaryFont}" FontSize="10" Foreground="#4B5563">
+                                    <Run Text="Date: "/><Run Text="{Binding DocumentDate, StringFormat=dd MMM yyyy}"/>
+                                </TextBlock>
+                            </StackPanel>
                         </Grid>
-                    </Border>
 
-                    <!-- Items -->
-                    <ItemsControl ItemsSource="{Binding Items}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border BorderBrush="#E5E7EB" BorderThickness="0,0,0,1" Padding="4">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="40"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="60"/>
-                                            <ColumnDefinition Width="60"/>
-                                            <ColumnDefinition Width="60"/>
-                                            <ColumnDefinition Width="60"/>
-                                            <ColumnDefinition Width="50"/>
-                                            <ColumnDefinition Width="70"/>
-                                            <ColumnDefinition Width="80"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" Text="{Binding SrNo}" FontSize="9"/>
-                                        <TextBlock Grid.Column="1" Text="{Binding GlassRef}" FontSize="9"/>
-                                        <TextBlock Grid.Column="2" Text="{Binding Width1, StringFormat=N0}" FontSize="9" TextAlignment="Center"/>
-                                        <TextBlock Grid.Column="3" Text="{Binding Height1, StringFormat=N0}" FontSize="9" TextAlignment="Center"/>
-                                        <TextBlock Grid.Column="4" Text="{Binding Width2, StringFormat=N0}" FontSize="9" TextAlignment="Center"/>
-                                        <TextBlock Grid.Column="5" Text="{Binding Height2, StringFormat=N0}" FontSize="9" TextAlignment="Center"/>
-                                        <TextBlock Grid.Column="6" Text="{Binding Qty, StringFormat=N0}" FontSize="9" TextAlignment="Center"/>
-                                        <TextBlock Grid.Column="7" Text="{Binding SQM, StringFormat=N4}" FontSize="9" TextAlignment="Center"/>
-                                        <TextBlock Grid.Column="8" Text="{Binding TotalSQM, StringFormat=N4}" FontSize="9" FontWeight="Bold" TextAlignment="Center"/>
-                                    </Grid>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                        <!-- Divider -->
+                        <Rectangle Height="3" Fill="#111827" Margin="30,0,30,20"/>
 
-                    <!-- Totals -->
-                    <StackPanel Orientation="Horizontal" Margin="0,12,0,20">
-                        <TextBlock Text="TOTALS: " FontSize="11" FontWeight="Bold" Foreground="#1E3A5F"/>
-                        <TextBlock FontSize="11" Margin="20,0">
-                            <Run Text="Qty: "/><Run Text="{Binding TotalQty, StringFormat=N0}" FontWeight="Bold"/>
-                        </TextBlock>
-                        <TextBlock FontSize="11">
-                            <Run Text="Total SQM: "/><Run Text="{Binding TotalSQM, StringFormat=N4}" FontWeight="Bold"/>
-                        </TextBlock>
+                        <!-- Customer & Project -->
+                        <Grid Margin="30,0,30,20">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="RECEIVER" FontFamily="{StaticResource PrimaryFont}" FontSize="10" FontWeight="Bold" Foreground="#111827" Margin="0,0,0,4"/>
+                                <TextBlock Text="{Binding CustomerName}" FontFamily="{StaticResource PrimaryFont}" FontSize="14" FontWeight="SemiBold" Foreground="#111827"/>
+                                <TextBlock FontFamily="{StaticResource PrimaryFont}" FontSize="10" Foreground="#4B5563">
+                                    <Run Text="TRN: "/><Run Text="{Binding CustomerTRN}"/>
+                                </TextBlock>
+                                <TextBlock Text="{Binding CustomerAddress}" FontFamily="{StaticResource PrimaryFont}" FontSize="10" Foreground="#4B5563" TextWrapping="Wrap" MaxWidth="350"/>
+                                <TextBlock FontFamily="{StaticResource PrimaryFont}" FontSize="10" Foreground="#4B5563">
+                                    <Run Text="Ref: "/><Run Text="{Binding CustomerReference}"/>
+                                </TextBlock>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock FontFamily="{StaticResource PrimaryFont}" FontSize="10" Foreground="#4B5563">
+                                    <Run Text="Project: "/><Run Text="{Binding ProjectName}" FontWeight="SemiBold"/>
+                                </TextBlock>
+                                <TextBlock FontFamily="{StaticResource PrimaryFont}" FontSize="10" Foreground="#4B5563">
+                                    <Run Text="Project No: "/><Run Text="{Binding ProjectNo}"/>
+                                </TextBlock>
+                                <TextBlock FontFamily="{StaticResource PrimaryFont}" FontSize="10" Foreground="#4B5563">
+                                    <Run Text="Location: "/><Run Text="{Binding ProjectLocation}"/>
+                                </TextBlock>
+                                <TextBlock FontFamily="{StaticResource PrimaryFont}" FontSize="10" Foreground="#4B5563" Margin="0,8,0,0">
+                                    <Run Text="LPO No: "/><Run Text="{Binding LPONo}"/>
+                                </TextBlock>
+                                <TextBlock FontFamily="{StaticResource PrimaryFont}" FontSize="10" Foreground="#4B5563">
+                                    <Run Text="Att: "/><Run Text="{Binding AttentionName}"/>
+                                </TextBlock>
+                                <TextBlock FontFamily="{StaticResource PrimaryFont}" FontSize="10" Foreground="#4B5563">
+                                    <Run Text="Contact: "/><Run Text="{Binding ContactNo}"/>
+                                </TextBlock>
+                                <TextBlock FontFamily="{StaticResource PrimaryFont}" FontSize="10" Foreground="#4B5563">
+                                    <Run Text="Salesman: "/><Run Text="{Binding Salesman}"/>
+                                </TextBlock>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Table Header -->
+                        <TextBlock Text="SPECIFICATIONS" FontFamily="{StaticResource PrimaryFont}" FontSize="11" FontWeight="Bold" Foreground="#111827" Margin="30,0,30,8"/>
+
+                        <Border Background="#111827" Margin="30,0,30,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="35"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="55"/>
+                                    <ColumnDefinition Width="55"/>
+                                    <ColumnDefinition Width="55"/>
+                                    <ColumnDefinition Width="55"/>
+                                    <ColumnDefinition Width="45"/>
+                                    <ColumnDefinition Width="65"/>
+                                    <ColumnDefinition Width="75"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="SR#" Foreground="White" FontFamily="{StaticResource PrimaryFont}" FontSize="10" FontWeight="Bold" Padding="4"/>
+                                <TextBlock Grid.Column="1" Text="GLASS REF" Foreground="White" FontFamily="{StaticResource PrimaryFont}" FontSize="10" FontWeight="Bold" Padding="4"/>
+                                <TextBlock Grid.Column="2" Text="W1" Foreground="White" FontFamily="{StaticResource PrimaryFont}" FontSize="10" FontWeight="Bold" Padding="4" TextAlignment="Center"/>
+                                <TextBlock Grid.Column="3" Text="H1" Foreground="White" FontFamily="{StaticResource PrimaryFont}" FontSize="10" FontWeight="Bold" Padding="4" TextAlignment="Center"/>
+                                <TextBlock Grid.Column="4" Text="W2" Foreground="White" FontFamily="{StaticResource PrimaryFont}" FontSize="10" FontWeight="Bold" Padding="4" TextAlignment="Center"/>
+                                <TextBlock Grid.Column="5" Text="H2" Foreground="White" FontFamily="{StaticResource PrimaryFont}" FontSize="10" FontWeight="Bold" Padding="4" TextAlignment="Center"/>
+                                <TextBlock Grid.Column="6" Text="QTY" Foreground="White" FontFamily="{StaticResource PrimaryFont}" FontSize="10" FontWeight="Bold" Padding="4" TextAlignment="Center"/>
+                                <TextBlock Grid.Column="7" Text="SQM" Foreground="White" FontFamily="{StaticResource PrimaryFont}" FontSize="10" FontWeight="Bold" Padding="4" TextAlignment="Center"/>
+                                <TextBlock Grid.Column="8" Text="TOTAL SQM" Foreground="White" FontFamily="{StaticResource PrimaryFont}" FontSize="10" FontWeight="Bold" Padding="4" TextAlignment="Center"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Items -->
+                        <ItemsControl ItemsSource="{Binding Items}" Margin="30,0,30,0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="#E5E7EB" BorderThickness="0,0,0,1">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="35"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="55"/>
+                                                <ColumnDefinition Width="55"/>
+                                                <ColumnDefinition Width="55"/>
+                                                <ColumnDefinition Width="55"/>
+                                                <ColumnDefinition Width="45"/>
+                                                <ColumnDefinition Width="65"/>
+                                                <ColumnDefinition Width="75"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="{Binding SrNo}" FontFamily="{StaticResource PrimaryFont}" FontSize="9" Padding="4"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding GlassRef}" FontFamily="{StaticResource PrimaryFont}" FontSize="9" Padding="4"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding Width1, StringFormat=N0}" FontFamily="{StaticResource PrimaryFont}" FontSize="9" Padding="4" TextAlignment="Center"/>
+                                            <TextBlock Grid.Column="3" Text="{Binding Height1, StringFormat=N0}" FontFamily="{StaticResource PrimaryFont}" FontSize="9" Padding="4" TextAlignment="Center"/>
+                                            <TextBlock Grid.Column="4" Text="{Binding Width2, StringFormat=N0}" FontFamily="{StaticResource PrimaryFont}" FontSize="9" Padding="4" TextAlignment="Center"/>
+                                            <TextBlock Grid.Column="5" Text="{Binding Height2, StringFormat=N0}" FontFamily="{StaticResource PrimaryFont}" FontSize="9" Padding="4" TextAlignment="Center"/>
+                                            <TextBlock Grid.Column="6" Text="{Binding Qty, StringFormat=N0}" FontFamily="{StaticResource PrimaryFont}" FontSize="9" Padding="4" TextAlignment="Center"/>
+                                            <TextBlock Grid.Column="7" Text="{Binding SQM, StringFormat=N4}" FontFamily="{StaticResource PrimaryFont}" FontSize="9" Padding="4" TextAlignment="Center"/>
+                                            <TextBlock Grid.Column="8" Text="{Binding TotalSQM, StringFormat=N4}" FontFamily="{StaticResource PrimaryFont}" FontSize="9" FontWeight="Bold" Padding="4" TextAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- Totals -->
+                        <Border Background="#F3F4F6" Margin="30,15,30,0" Padding="12">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="TOTALS: " FontFamily="{StaticResource PrimaryFont}" FontSize="12" FontWeight="Bold" Foreground="#111827"/>
+                                <TextBlock FontFamily="{StaticResource PrimaryFont}" FontSize="12" Margin="20,0">
+                                    <Run Text="Qty: "/><Run Text="{Binding TotalQty, StringFormat=N0}" FontWeight="Bold"/>
+                                </TextBlock>
+                                <TextBlock FontFamily="{StaticResource PrimaryFont}" FontSize="12">
+                                    <Run Text="Total SQM: "/><Run Text="{Binding TotalSQM, StringFormat=N4}" FontWeight="Bold"/>
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Notes -->
+                        <StackPanel Margin="30,20,30,0" Visibility="{Binding Notes, Converter={StaticResource StringToVisibilityConverter}}">
+                            <TextBlock Text="NOTES" FontFamily="{StaticResource PrimaryFont}" FontSize="10" FontWeight="Bold" Foreground="#111827" Margin="0,0,0,4"/>
+                            <TextBlock Text="{Binding Notes}" FontFamily="{StaticResource PrimaryFont}" FontSize="10" TextWrapping="Wrap" Foreground="#374151"/>
+                        </StackPanel>
+
+                        <!-- Footer -->
+                        <StackPanel Margin="30,25,30,20">
+                            <Rectangle Height="1" Fill="#E5E7EB" Margin="0,0,0,10"/>
+                            <TextBlock Text="PROGLASS AUTOMATION | Dubai, UAE | Tel: +971 4 887 6565" 
+                                      FontFamily="{StaticResource PrimaryFont}" FontSize="9" Foreground="#6B7280" HorizontalAlignment="Center"/>
+                        </StackPanel>
                     </StackPanel>
+                </Border>
+            </ScrollViewer>
+        </Border>
 
-                    <!-- Notes -->
-                    <StackPanel Visibility="{Binding Notes, Converter={StaticResource StringToVisibilityConverter}}" Margin="0,0,0,20">
-                        <TextBlock Text="NOTES" FontSize="10" FontWeight="Bold" Foreground="#1E3A5F" Margin="0,0,0,4"/>
-                        <TextBlock Text="{Binding Notes}" FontSize="10" TextWrapping="Wrap"/>
-                    </StackPanel>
-
-                    <!-- Footer -->
-                    <TextBlock Text="PROGLASS AUTOMATION | Dubai, UAE" FontSize="10" Foreground="#9CA3AF" HorizontalAlignment="Center"/>
+        <!-- Status Bar -->
+        <Border Grid.Row="2" Background="#1F2937" Padding="16,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="TxtStatus" Text="Ready to print" FontFamily="Segoe UI" FontSize="10" Foreground="#9CA3AF" VerticalAlignment="Center"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <TextBlock Text="Page: 1/1" FontFamily="Segoe UI" FontSize="10" Foreground="#9CA3AF" Margin="0,0,20,0"/>
+                    <TextBlock x:Name="TxtPageInfo" Text="A4 Portrait" FontFamily="Segoe UI" FontSize="10" Foreground="#9CA3AF"/>
                 </StackPanel>
-            </Border>
-        </ScrollViewer>
+            </Grid>
+        </Border>
     </Grid>
 </Window>
