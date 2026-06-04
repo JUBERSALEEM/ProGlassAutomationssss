@@ -55,41 +55,52 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
         private void ToggleFilePanel_Click(object sender, RoutedEventArgs e)
         {
-            FileContent.Visibility = FileContent.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+            if (_viewModel != null)
+            {
+                _viewModel.IsFilePanelOpen = !_viewModel.IsFilePanelOpen;
+                FileContent.Visibility = _viewModel.IsFilePanelOpen ? Visibility.Visible : Visibility.Collapsed;
+            }
         }
 
         private void ToggleSGUPanel_Click(object sender, RoutedEventArgs e)
         {
-            // Close other panels first
-            DGUContent.Visibility = Visibility.Collapsed;
-            LAMContent.Visibility = Visibility.Collapsed;
-            SGUContent.Visibility = SGUContent.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+            if (_viewModel != null)
+            {
+                // Just toggle - same as File/Opt/Summary
+                _viewModel.IsSGUSelected = !_viewModel.IsSGUSelected;
+            }
         }
 
         private void ToggleDGUPanel_Click(object sender, RoutedEventArgs e)
         {
-            // Close other panels first
-            SGUContent.Visibility = Visibility.Collapsed;
-            LAMContent.Visibility = Visibility.Collapsed;
-            DGUContent.Visibility = DGUContent.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+            if (_viewModel != null)
+            {
+                // Just toggle - same as File/Opt/Summary
+                _viewModel.IsDGUSelected = !_viewModel.IsDGUSelected;
+            }
         }
 
         private void ToggleLAMPanel_Click(object sender, RoutedEventArgs e)
         {
-            // Close other panels first
-            SGUContent.Visibility = Visibility.Collapsed;
-            DGUContent.Visibility = Visibility.Collapsed;
-            LAMContent.Visibility = LAMContent.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+            if (_viewModel != null)
+            {
+                // Just toggle - same as File/Opt/Summary
+                _viewModel.IsLAMSelected = !_viewModel.IsLAMSelected;
+            }
         }
 
         private void ToggleOptPanel_Click(object sender, RoutedEventArgs e)
         {
-            OptContent.Visibility = OptContent.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+            if (_viewModel != null)
+            {
+                _viewModel.IsOptimizationPanelOpen = !_viewModel.IsOptimizationPanelOpen;
+                OptContent.Visibility = _viewModel.IsOptimizationPanelOpen ? Visibility.Visible : Visibility.Collapsed;
+            }
         }
 
-        private void ToggleSummaryPanel_Click(object sender, RoutedEventArgs e)
+        private void ToggleRecentInvoices_Click(object sender, RoutedEventArgs e)
         {
-            SummaryContent.Visibility = SummaryContent.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+            RecentInvoicesContent.Visibility = RecentInvoicesContent.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
         }
 
         // ==================== TEXT SELECTION ON FOCUS ====================
@@ -696,7 +707,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             return null;
         }
 
-        private OtherChargeModel? FindChargeFromButton(Button button)
+                private OtherChargeModel? FindChargeFromButton(Button button)
         {
             var parent = button.Parent;
             while (parent != null)

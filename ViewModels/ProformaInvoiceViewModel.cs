@@ -223,12 +223,85 @@ namespace ProGlassAutomation.ViewModels
         public string CompanyLocation { get; set; } = "Dubai, UAE";
         public string CompanyPhone { get; set; } = "+971-50-123-4567";
 
+        // ==================== FILE PANEL ====================
+        private bool _isFilePanelOpen;
+        public bool IsFilePanelOpen
+        {
+            get => _isFilePanelOpen;
+            set
+            {
+                if (SetProperty(ref _isFilePanelOpen, value))
+                {
+                    OnPropertyChanged(nameof(IsFilePanelOpen));
+                }
+            }
+        }
+
+        // ==================== OPTIMIZATION PANEL ====================
+        private bool _isOptimizationPanelOpen;
+        public bool IsOptimizationPanelOpen
+        {
+            get => _isOptimizationPanelOpen;
+            set
+            {
+                if (SetProperty(ref _isOptimizationPanelOpen, value))
+                {
+                    OnPropertyChanged(nameof(IsOptimizationPanelOpen));
+                }
+            }
+        }
+
+        // ==================== SUMMARY PANEL ====================
+        // Remove No Need Separate Invoice Summary Already Have In MainViewModel //
+
+        // ==================== MODULE SELECTION (SGU/DGU/LAM) ====================
         private bool _isSGUSelected = true;
-        public bool IsSGUSelected { get => _isSGUSelected; set { if (SetProperty(ref _isSGUSelected, value) && value) { _isDGUSelected = false; OnPropertyChanged(nameof(IsDGUSelected)); _isLAMSelected = false; OnPropertyChanged(nameof(IsLAMSelected)); } } }
+        public bool IsSGUSelected
+        {
+            get => _isSGUSelected;
+            set
+            {
+                if (SetProperty(ref _isSGUSelected, value) && value)
+                {
+                    _isDGUSelected = false;
+                    OnPropertyChanged(nameof(IsDGUSelected));
+                    _isLAMSelected = false;
+                    OnPropertyChanged(nameof(IsLAMSelected));
+                }
+            }
+        }
+
         private bool _isDGUSelected;
-        public bool IsDGUSelected { get => _isDGUSelected; set { if (SetProperty(ref _isDGUSelected, value) && value) { _isSGUSelected = false; OnPropertyChanged(nameof(IsSGUSelected)); _isLAMSelected = false; OnPropertyChanged(nameof(IsLAMSelected)); } } }
+        public bool IsDGUSelected
+        {
+            get => _isDGUSelected;
+            set
+            {
+                if (SetProperty(ref _isDGUSelected, value) && value)
+                {
+                    _isSGUSelected = false;
+                    OnPropertyChanged(nameof(IsSGUSelected));
+                    _isLAMSelected = false;
+                    OnPropertyChanged(nameof(IsLAMSelected));
+                }
+            }
+        }
+
         private bool _isLAMSelected;
-        public bool IsLAMSelected { get => _isLAMSelected; set { if (SetProperty(ref _isLAMSelected, value) && value) { _isSGUSelected = false; OnPropertyChanged(nameof(IsSGUSelected)); _isDGUSelected = false; OnPropertyChanged(nameof(IsDGUSelected)); } } }
+        public bool IsLAMSelected
+        {
+            get => _isLAMSelected;
+            set
+            {
+                if (SetProperty(ref _isLAMSelected, value) && value)
+                {
+                    _isSGUSelected = false;
+                    OnPropertyChanged(nameof(IsSGUSelected));
+                    _isDGUSelected = false;
+                    OnPropertyChanged(nameof(IsDGUSelected));
+                }
+            }
+        }
 
         public ObservableCollection<string> ThicknessOptions { get; } = new() { "4", "5", "6", "8", "10", "12", "15", "19" };
         public ObservableCollection<string> ColorHistory { get; set; } = new() { "Clear", "Grey", "Green", "Blue", "Bronze", "Black" };

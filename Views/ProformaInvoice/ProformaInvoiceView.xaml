@@ -1439,58 +1439,6 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Invoice Summary Panel -->
-                    <Border BorderBrush="#E5E7EB" BorderThickness="0,0,0,1" Padding="16">
-                        <StackPanel>
-                            <Button Content="📊 INVOICE SUMMARY" Style="{StaticResource ModuleButtonSUMMARY}" Click="ToggleSummaryPanel_Click" Margin="0,0,0,8"/>
-                            <Border x:Name="SummaryContent" Visibility="Collapsed" Background="#FFFFFF" Padding="0,8,0,0">
-                                <StackPanel>
-                                    <Grid Margin="0,0,0,6">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Total SQM" Foreground="#6B7280"/>
-                                        <TextBlock Grid.Column="1" Text="{Binding InvoiceTotalSQM1, StringFormat=N4}" FontWeight="SemiBold"/>
-                                    </Grid>
-                                    <Grid Margin="0,0,0,6">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Total LM" Foreground="#6B7280"/>
-                                        <TextBlock Grid.Column="1" Text="{Binding InvoiceTotalLM1, StringFormat=N4}" FontWeight="SemiBold"/>
-                                    </Grid>
-                                    <Grid Margin="0,0,0,6">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Total Qty" Foreground="#6B7280"/>
-                                        <TextBlock Grid.Column="1" Text="{Binding InvoiceTotalQty, StringFormat=N0}" FontWeight="SemiBold"/>
-                                    </Grid>
-                                    <Separator Margin="0,8"/>
-                                    <Grid Margin="0,0,0,6">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Grand Total" FontWeight="SemiBold" Foreground="#1F2937"/>
-                                        <TextBlock Grid.Column="1" Text="{Binding InvoiceGrandTotal, StringFormat='AED {0:N2}'}" FontWeight="Bold" Foreground="#1E3A5F"/>
-                                    </Grid>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="VAT (5%)" Foreground="#6B7280"/>
-                                        <TextBlock Grid.Column="1" Text="{Binding InvoiceVatAmount, StringFormat='AED {0:N2}'}" Foreground="#6B7280"/>
-                                    </Grid>
-                                </StackPanel>
-                            </Border>
-                        </StackPanel>
-                    </Border>
-
                     <!-- Calculated Result -->
                     <Border Background="#1E3A8A" CornerRadius="6" Padding="16" Margin="16,8,16,16">
                         <StackPanel HorizontalAlignment="Center">
@@ -1516,46 +1464,50 @@
                     </Border>
 
                     <!-- Recent Invoices -->
-                    <Border Background="#F9FAFB" Padding="16">
+                    <Border BorderBrush="#E5E7EB" BorderThickness="0,0,0,1" Padding="16">
                         <StackPanel>
-                            <TextBlock Text="Recent Invoices" FontSize="12" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,12"/>
-                            <ListBox ItemsSource="{Binding SavedFiles}" 
-                                    Background="#FFFFFF" 
-                                    BorderThickness="1" 
-                                    BorderBrush="#E5E7EB" 
-                                    MaxHeight="200"
-                                    VirtualizingStackPanel.IsVirtualizing="True"
-                                    VirtualizingStackPanel.VirtualizationMode="Recycling"
-                                    ScrollViewer.CanContentScroll="True">
-                                <ListBox.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <VirtualizingStackPanel />
-                                    </ItemsPanelTemplate>
-                                </ListBox.ItemsPanel>
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border BorderBrush="#E5E7EB" BorderThickness="0,0,0,1" Padding="12,10" Cursor="Hand">
-                                            <Border.Style>
-                                                <Style TargetType="Border">
-                                                    <Style.Triggers>
-                                                        <Trigger Property="IsMouseOver" Value="True">
-                                                            <Setter Property="Background" Value="#F3F4F6"/>
-                                                        </Trigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Border.Style>
-                                            <StackPanel>
-                                                <TextBlock Text="{Binding InvoiceNo}" FontSize="12" FontWeight="SemiBold" Foreground="#1E3A5F"/>
-                                                <TextBlock Text="{Binding CustomerName}" FontSize="11" Foreground="#6B7280" Margin="0,4,0,0"/>
-                                                <TextBlock Text="{Binding DateDisplay}" FontSize="10" Foreground="#9CA3AF" Margin="0,4,0,0"/>
-                                            </StackPanel>
-                                        </Border>
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
-                            <StackPanel HorizontalAlignment="Center" Margin="0,16,0,0" Visibility="{Binding HasSavedFiles, Converter={StaticResource InverseBoolToVis}}">
-                                <TextBlock Text="No saved invoices" FontSize="12" Foreground="#9CA3AF" HorizontalAlignment="Center"/>
-                            </StackPanel>
+                            <Button Content="📋 RECENT INVOICES" Style="{StaticResource ModuleButtonSUMMARY}" Click="ToggleRecentInvoices_Click" Margin="0,0,0,8"/>
+                            <Border x:Name="RecentInvoicesContent" Visibility="Collapsed" Background="#FFFFFF" Padding="0,8,0,0">
+                                <StackPanel>
+                                    <ListBox ItemsSource="{Binding SavedFiles}" 
+                                            Background="#FFFFFF" 
+                                            BorderThickness="1" 
+                                            BorderBrush="#E5E7EB" 
+                                            MaxHeight="200"
+                                            VirtualizingStackPanel.IsVirtualizing="True"
+                                            VirtualizingStackPanel.VirtualizationMode="Recycling"
+                                            ScrollViewer.CanContentScroll="True">
+                                        <ListBox.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <VirtualizingStackPanel />
+                                            </ItemsPanelTemplate>
+                                        </ListBox.ItemsPanel>
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border BorderBrush="#E5E7EB" BorderThickness="0,0,0,1" Padding="12,10" Cursor="Hand">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Style.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter Property="Background" Value="#F3F4F6"/>
+                                                                </Trigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding InvoiceNo}" FontSize="12" FontWeight="SemiBold" Foreground="#1E3A5F"/>
+                                                        <TextBlock Text="{Binding CustomerName}" FontSize="11" Foreground="#6B7280" Margin="0,4,0,0"/>
+                                                        <TextBlock Text="{Binding DateDisplay}" FontSize="10" Foreground="#9CA3AF" Margin="0,4,0,0"/>
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                    <StackPanel HorizontalAlignment="Center" Margin="0,16,0,0" Visibility="{Binding HasSavedFiles, Converter={StaticResource InverseBoolToVis}}">
+                                        <TextBlock Text="No saved invoices" FontSize="12" Foreground="#9CA3AF" HorizontalAlignment="Center"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
                     </Border>
 
