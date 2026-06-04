@@ -51,6 +51,47 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             System.Diagnostics.Debug.WriteLine("[ProformaInvoiceView] Unloaded - Cleanup complete");
         }
 
+        // ==================== EXPANDABLE PANEL CLICK HANDLERS ====================
+
+        private void ToggleFilePanel_Click(object sender, RoutedEventArgs e)
+        {
+            FileContent.Visibility = FileContent.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        private void ToggleSGUPanel_Click(object sender, RoutedEventArgs e)
+        {
+            // Close other panels first
+            DGUContent.Visibility = Visibility.Collapsed;
+            LAMContent.Visibility = Visibility.Collapsed;
+            SGUContent.Visibility = SGUContent.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        private void ToggleDGUPanel_Click(object sender, RoutedEventArgs e)
+        {
+            // Close other panels first
+            SGUContent.Visibility = Visibility.Collapsed;
+            LAMContent.Visibility = Visibility.Collapsed;
+            DGUContent.Visibility = DGUContent.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        private void ToggleLAMPanel_Click(object sender, RoutedEventArgs e)
+        {
+            // Close other panels first
+            SGUContent.Visibility = Visibility.Collapsed;
+            DGUContent.Visibility = Visibility.Collapsed;
+            LAMContent.Visibility = LAMContent.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        private void ToggleOptPanel_Click(object sender, RoutedEventArgs e)
+        {
+            OptContent.Visibility = OptContent.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        private void ToggleSummaryPanel_Click(object sender, RoutedEventArgs e)
+        {
+            SummaryContent.Visibility = SummaryContent.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+        }
+
         // ==================== TEXT SELECTION ON FOCUS ====================
 
         private void TextBox_GotFocus(object sender, RoutedEventArgs e)
@@ -449,14 +490,14 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
                     Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, new Action(() =>
                     {
-                        try
+                    try
+                    {
+                        int newIndex = spec.Items.Count - 1;
+                        if (newIndex >= 0 && dataGrid != null)
                         {
-                            int newIndex = spec.Items.Count - 1;
-                            if (newIndex >= 0 && dataGrid != null)
-                            {
-                                var newItem = spec.Items[newIndex];
-                                dataGrid.SelectedItem = newItem;
-                                dataGrid.ScrollIntoView(newItem);
+                            var newItem = spec.Items[newIndex];
+                            dataGrid.SelectedItem = newItem;
+                            dataGrid.ScrollIntoView(newItem);
 
                                 if (dataGrid.Columns.Count > 1)
                                     dataGrid.CurrentCell = new DataGridCellInfo(newItem, dataGrid.Columns[1]);
