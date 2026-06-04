@@ -689,6 +689,9 @@ namespace ProGlassAutomation.ViewModels
             }
             CreateNewInvoice();
             StatusMessage = "✅ New invoice created";
+
+            // 🔴 Refresh list when creating new invoice
+            SharedViewModels.RequestInvoiceListRefresh();
         }
 
         private void SaveInvoice()
@@ -768,6 +771,10 @@ namespace ProGlassAutomation.ViewModels
                 // Raise event for other views to update
                 InvoiceSaved?.Invoke(Invoice);
                 System.Diagnostics.Debug.WriteLine("[ProformaInvoice] InvoiceSaved event raised");
+
+                // 🔴 TRIGGER LIST REFRESH - Notify List View to update stats
+                SharedViewModels.RequestInvoiceListRefresh();
+                System.Diagnostics.Debug.WriteLine("[ProformaInvoice] RequestInvoiceListRefresh called");
 
                 // === COLOR EXTRACTION ===
                 string extractedColor = "";

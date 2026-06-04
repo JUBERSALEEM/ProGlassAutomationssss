@@ -13,6 +13,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Diagnostics;
 using DbJobOrder = ProGlassAutomation.Data.Database.JobOrderModel;
 using ModelsInvoice = ProGlassAutomation.Models.ProformaInvoiceModel;
 
@@ -117,7 +118,7 @@ namespace ProGlassAutomation.ViewModels
                 "Deliveries" => new Views.Delivery.DeliveryView(),
                 "Profile" => new Views.Profile.ProfileView(),
                 "Users" => CreatePlaceholder("Users - Coming Soon!"),
-                "ProformaInvoice" => new ProformaInvoiceListView(),
+                "ProformaInvoice" => CreateProformaInvoiceListView(),
                 "JobOrders" => CreateJobOrdersListView(),
                 "JobOrderEdit" => CreateJobOrderEditView(),
                 _ => null
@@ -168,6 +169,13 @@ namespace ProGlassAutomation.ViewModels
         {
             var view = new Views.JobOrder.JobOrderView();
             view.DataContext = JobOrderVM;
+            return view;
+        }
+
+        private UserControl CreateProformaInvoiceListView()
+        {
+            var view = new ProformaInvoiceListView();
+            view.DataContext = SharedViewModels.ProformaInvoiceListVM;
             return view;
         }
 
@@ -493,16 +501,31 @@ namespace ProGlassAutomation.ViewModels
             try
             {
                 var listView = new ProformaInvoiceListView();
-                listView.DataContext = ProformaInvoiceListVM;
+
+                // 🔴 FIX: Use SHARED instance from SharedViewModels!
+                listView.DataContext = SharedViewModels.ProformaInvoiceListVM;
+
+                // Subscribe to refresh event for when returning from Editor
+                SharedViewModels.InvoiceListRefreshRequested -= OnInvoiceListRefreshRequested;
+                SharedViewModels.InvoiceListRefreshRequested += OnInvoiceListRefreshRequested;
 
                 SetCurrentView(listView);
                 CurrentViewName = "ProformaInvoice";
                 GetMainWindow()?.SetContent(listView);
+
+                Debug.WriteLine("[MainViewModel] ShowProformaInvoice using SharedViewModels");
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        // 🔴 Handle refresh when returning from Editor
+        private void OnInvoiceListRefreshRequested()
+        {
+            SharedViewModels.ProformaInvoiceListVM.ApplyFilters();
+            Debug.WriteLine("[MainViewModel] InvoiceListRefreshRequested - ApplyFilters called");
         }
 
         // Event for forwarding InvoiceSaved to DailyWorksViewModel
