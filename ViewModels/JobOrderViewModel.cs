@@ -125,8 +125,6 @@ namespace ProGlassAutomation.ViewModels
         public double TotalAmount { get { EnsureTotalsRefreshed(); return _cachedTotalAmount; } }
         public double TotalLM1 { get { EnsureTotalsRefreshed(); return _cachedTotalLM1 + _cachedTotalLM2; } }
         public double TotalLM2 { get { EnsureTotalsRefreshed(); return _cachedTotalLM2; } }
-
-        // Add this new property
         public double TotalLM { get { EnsureTotalsRefreshed(); return _cachedTotalLM1 + _cachedTotalLM2; } }
         public double AllOtherChargesTotal { get { EnsureTotalsRefreshed(); return _cachedAllOtherChargesTotal; } }
 
@@ -167,6 +165,7 @@ namespace ProGlassAutomation.ViewModels
             OnPropertyChanged(nameof(TotalAmount));
             OnPropertyChanged(nameof(TotalLM1));
             OnPropertyChanged(nameof(TotalLM2));
+            OnPropertyChanged(nameof(TotalLM));
             OnPropertyChanged(nameof(AllOtherChargesTotal));
         }
 
@@ -187,12 +186,10 @@ namespace ProGlassAutomation.ViewModels
         public string ProjectLocation { get => _projectLocation; set => SetProperty(ref _projectLocation, value); }
         public string LPONo { get => _lpoNo; set => SetProperty(ref _lpoNo, value); }
         public string AttentionName { get => _attentionName; set => SetProperty(ref _attentionName, value); }
-        // PATCH: Add CustomerName alias for XAML compatibility
         public string CustomerName { get => _clientName; set => SetProperty(ref _clientName, value); }
         public string CustomerTRN { get => _clientTRN; set => SetProperty(ref _clientTRN, value); }
         public string CustomerReference { get => _clientReference; set => SetProperty(ref _clientReference, value); }
         public string CustomerAddress { get => _clientAddress; set => SetProperty(ref _clientAddress, value); }
-
         public string ContactNo { get => _contactNo; set => SetProperty(ref _contactNo, value); }
         public string Notes { get => _notes; set => SetProperty(ref _notes, value); }
         public string PINumber { get => _piNumber; set => SetProperty(ref _piNumber, value); }
@@ -227,8 +224,6 @@ namespace ProGlassAutomation.ViewModels
         }
 
         public ObservableCollection<JobOrderOtherCharge> AllOtherCharges => _allOtherCharges;
-
-        // PATCH 5: HasNoCharges and HasOtherCharges properties
         public bool HasNoCharges => AllOtherCharges == null || AllOtherCharges.Count == 0;
         public bool HasOtherCharges => AllOtherCharges != null && AllOtherCharges.Count > 0;
 
@@ -243,10 +238,81 @@ namespace ProGlassAutomation.ViewModels
         public ICommand RemoveSpecificationCommand { get; }
         public ICommand AddOtherChargeCommand { get; }
         public ICommand DeleteOtherChargeCommand { get; }
-
-        // PATCH 1: Print Commands
         public ICommand PrintPreviewCommand { get; private set; }
         public ICommand PrintJobOrderCommand { get; private set; }
+
+        #endregion
+
+        #region Print Preview Methods
+
+        private void ExecutePrintPreview()
+        {
+            var printData = CreatePrintData();
+            var window = new Views.Print.PrintPreviewWindow(printData);
+            window.ShowDialog();
+        }
+
+        private void ExecutePrint()
+        {
+            var printData = CreatePrintData();
+            var window = new Views.Print.PrintPreviewWindow(printData);
+            window.ShowDialog();
+        }
+
+        private Views.Print.PrintData CreatePrintData()
+        {
+            var printData = new Views.Print.PrintData
+            {
+                DocumentType = "Job Order",
+                DocumentNumber = JobOrderNumber,
+                DocumentDate = JobOrderDate,
+                CompanyName = CompanyName,
+                CompanyTRN = CompanyTRN,
+                CompanyLocation = CompanyLocation,
+                CustomerName = ClientName,
+                CustomerTRN = ClientTRN,
+                CustomerAddress = ClientAddress,
+                CustomerReference = ClientReference,
+                Salesman = Salesman,
+                ProjectName = ProjectName,
+                ProjectNo = ProjectNo,
+                ProjectLocation = ProjectLocation,
+                LPONo = LPONo,
+                AttentionName = AttentionName,
+                ContactNo = ContactNo,
+                ReferencePI = PINumber,
+                Status = Status,
+                TotalQty = TotalQty,
+                TotalSQM = TotalSQM,
+                TotalLM = TotalLM1,
+                Notes = Notes
+            };
+
+            var itemsList = new System.Collections.Generic.List<Views.Print.PrintItemData>();
+            int srNo = 1;
+            foreach (var spec in Specifications)
+            {
+                if (spec?.Items == null) continue;
+                foreach (var item in spec.Items)
+                {
+                    itemsList.Add(new Views.Print.PrintItemData
+                    {
+                        SrNo = srNo++,
+                        GlassRef = item.GlassRef ?? "",
+                        Width1 = item.Width1,
+                        Height1 = item.Height1,
+                        Width2 = item.Width2,
+                        Height2 = item.Height2,
+                        Qty = item.Qty,
+                        SQM = item.SQM1,
+                        TotalSQM = item.TotalSQM
+                    });
+                }
+            }
+
+            printData.Items = itemsList.ToArray();
+            return printData;
+        }
 
         #endregion
 
@@ -263,7 +329,7 @@ namespace ProGlassAutomation.ViewModels
                 ClientName = pi.CustomerName ?? "";
                 ClientTRN = pi.CustomerTRN ?? "";
                 ClientReference = pi.CustomerReference ?? "";
-                Salesman = string.IsNullOrWhiteSpace(pi.Salesman) ? "Unknown" : pi.Salesman;  // FIX HERE
+                Salesman = string.IsNullOrWhiteSpace(pi.Salesman) ? "Unknown" : pi.Salesman;
                 ClientAddress = pi.CustomerAddress ?? "";
                 ProjectName = pi.ProjectName ?? "";
                 ProjectNo = pi.ProjectNo ?? "";
@@ -487,7 +553,6 @@ namespace ProGlassAutomation.ViewModels
                 foreach (var charge in spec.OtherCharges)
                     _allOtherCharges.Add(charge);
             OnPropertyChanged(nameof(AllOtherCharges));
-            // PATCH 5: Notify HasNoCharges and HasOtherCharges
             OnPropertyChanged(nameof(HasNoCharges));
             OnPropertyChanged(nameof(HasOtherCharges));
         }
@@ -519,7 +584,7 @@ namespace ProGlassAutomation.ViewModels
                     ContactPerson = AttentionName,
                     ContactNumber = ContactNo,
                     ProjectName = ProjectName,
-                    ProjectNo = ProjectNo,            // ✅ ADD THIS
+                    ProjectNo = ProjectNo,
                     ProjectLocation = ProjectLocation,
                     LPONumber = LPONo,
                     JODate = JobOrderDate,
@@ -530,7 +595,6 @@ namespace ProGlassAutomation.ViewModels
                     TotalAmount = TotalAmount
                 };
 
-                // Serialize specifications
                 try
                 {
                     var specsToSave = Specifications.Select(spec => new
@@ -584,7 +648,6 @@ namespace ProGlassAutomation.ViewModels
                     jobOrderModel.SpecificationsJson = "";
                 }
 
-                // Copy items
                 int srNo = 1;
                 foreach (var spec in Specifications)
                 {
@@ -740,19 +803,6 @@ namespace ProGlassAutomation.ViewModels
             if (result == MessageBoxResult.Yes) ClearAll();
         }
 
-        // PATCH 1: Print Methods
-        private void ExecutePrintPreview()
-        {
-            MessageBox.Show($"Print Preview for Job Order: {JobOrderNumber}\nTotal Items: {TotalQty}\nTotal SQM: {TotalSQM:F4}",
-                "Print Preview", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
-
-        private void ExecutePrint()
-        {
-            MessageBox.Show($"Printing Job Order: {JobOrderNumber}\nTotal Items: {TotalQty}\nTotal SQM: {TotalSQM:F4}",
-                "Print", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
-
         public JobOrder GetJobOrderById(int id) => JobOrders.FirstOrDefault(j => j.Id == id);
 
         #endregion
@@ -778,7 +828,7 @@ namespace ProGlassAutomation.ViewModels
                 ClientReference = jo.ClientReference ?? "";
                 Salesman = jo.Salesman ?? "";
                 ProjectName = jo.ProjectName ?? "";
-                ProjectNo = jo.ProjectNo ?? "";            // ✅ ADD THIS
+                ProjectNo = jo.ProjectNo ?? "";
                 ProjectLocation = jo.ProjectLocation ?? "";
                 LPONo = jo.LPONumber ?? "";
                 Notes = jo.Notes ?? "";
@@ -874,13 +924,11 @@ namespace ProGlassAutomation.ViewModels
                     }
                 }
 
-                // If no specifications from JSON, load from JobOrderModel.Items
                 if (Specifications.Count == 0)
                 {
                     var emptySpec = new JobOrderSpecification { Id = 1, SpecificationName = "Specification 1" };
                     SubscribeToSpecChanges(emptySpec);
 
-                    // Load items from JobOrderModel.Items
                     if (jo.Items != null && jo.Items.Count > 0)
                     {
                         int itemIndex = 0;
