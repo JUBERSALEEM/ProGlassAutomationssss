@@ -2,6 +2,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:converters="clr-namespace:ProGlassAutomation.Converters"
+             xmlns:opt="clr-namespace:ProGlassAutomation.Views.ProformaInvoice.Optimization"
              Background="#F5F5F5">
 
     <UserControl.Resources>
@@ -1298,6 +1299,11 @@
                             <ComboBox ItemsSource="{Binding Invoice.Specifications}" SelectedItem="{Binding SelectedTargetSpecification}" DisplayMemberPath="SpecificationName" Style="{StaticResource FormComboBox}" Margin="0,0,0,10"/>
                             <Button Content="Include in Spec" Style="{StaticResource PrimaryButton}" Command="{Binding IncludeInSpecificationCommand}" Padding="12,10"/>
                         </StackPanel>
+                    </Border>
+
+                    <!-- Glass Optimization Panel -->
+                    <Border Padding="0" Margin="0,0,0,8">
+                        <opt:GlassOptimizationPanel/>
                     </Border>
 
                     <Border Background="#F9FAFB" Padding="16">
