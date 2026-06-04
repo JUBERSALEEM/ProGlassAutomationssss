@@ -123,8 +123,11 @@ namespace ProGlassAutomation.ViewModels
         public double TotalSQM { get { EnsureTotalsRefreshed(); return _cachedTotalSQM; } }
         public double TotalSQM2 { get { EnsureTotalsRefreshed(); return _cachedTotalSQM2; } }
         public double TotalAmount { get { EnsureTotalsRefreshed(); return _cachedTotalAmount; } }
-        public double TotalLM1 { get { EnsureTotalsRefreshed(); return _cachedTotalLM1; } }
+        public double TotalLM1 { get { EnsureTotalsRefreshed(); return _cachedTotalLM1 + _cachedTotalLM2; } }
         public double TotalLM2 { get { EnsureTotalsRefreshed(); return _cachedTotalLM2; } }
+
+        // Add this new property
+        public double TotalLM { get { EnsureTotalsRefreshed(); return _cachedTotalLM1 + _cachedTotalLM2; } }
         public double AllOtherChargesTotal { get { EnsureTotalsRefreshed(); return _cachedAllOtherChargesTotal; } }
 
         private void EnsureTotalsRefreshed()

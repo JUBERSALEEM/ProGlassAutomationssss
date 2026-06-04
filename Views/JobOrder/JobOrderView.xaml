@@ -601,7 +601,7 @@
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="Total LM" FontSize="12" Foreground="#6B7280"/>
-                                        <TextBlock Grid.Column="1" Text="{Binding TotalLM1, Mode=OneWay, StringFormat=N4}" FontSize="12" FontWeight="SemiBold" Foreground="#4A6FA5"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding TotalLM, Mode=OneWay, StringFormat=N4}" FontSize="12" FontWeight="SemiBold" Foreground="#4A6FA5"/>
                                     </Grid>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -625,14 +625,7 @@
                                         <TextBlock Text="Total SQM" FontSize="12" Foreground="#6B7280"/>
                                         <TextBlock Grid.Column="1" Text="{Binding TotalSQM2, Mode=OneWay, StringFormat=N4}" FontSize="12" FontWeight="SemiBold" Foreground="#1F2937"/>
                                     </Grid>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Total LM" FontSize="12" Foreground="#6B7280"/>
-                                        <TextBlock Grid.Column="1" Text="{Binding TotalLM2, Mode=OneWay, StringFormat=N4}" FontSize="12" FontWeight="SemiBold" Foreground="#4A6FA5"/>
-                                    </Grid>
+                                    <!-- Glass 2 LM - removed, LM is now combined (LM1 + LM2) -->
                                 </StackPanel>
                             </Border>
                         </Grid>

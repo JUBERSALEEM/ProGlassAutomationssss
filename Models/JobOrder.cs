@@ -205,11 +205,11 @@ namespace ProGlassAutomation.Models
                 foreach (var item in _items)
                 {
                     _cachedTotalQty += item.Qty;
-                    _cachedTotalSQM1 += item.SQM1;
-                    _cachedTotalSQM2 += item.SQM2;
+                    _cachedTotalSQM1 += item.SQM1 * item.Qty;
+                    _cachedTotalSQM2 += item.SQM2 * item.Qty;
                     _cachedTotalSQM += item.TotalSQM;
-                    _cachedTotalLM1 += item.LM1;
-                    _cachedTotalLM2 += item.LM2;
+                    _cachedTotalLM1 += item.LM1 * item.Qty;
+                    _cachedTotalLM2 += item.LM2 * item.Qty;
                     _cachedTotalAmount += item.TotalAmount;
                 }
             }
