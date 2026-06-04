@@ -1,8 +1,10 @@
 ﻿using LiveChartsCore.SkiaSharpView.WPF;
+using Microsoft.VisualBasic;
 using Microsoft.Win32;
 using Newtonsoft.Json;
 using ProGlassAutomation.Models;
 using ProGlassAutomation.Services;
+using ProGlassAutomation.Views.ProformaInvoice;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -12,7 +14,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
-using Microsoft.VisualBasic;
 
 namespace ProGlassAutomation.ViewModels
 {
@@ -472,8 +473,8 @@ namespace ProGlassAutomation.ViewModels
             CalculatePriceCommand = new RelayCommand(_ => CalculatePrice());
             IncludeInSpecificationCommand = new RelayCommand(_ => IncludeInSpecification(), _ => CanIncludeInSpecification());
             PrintCommand = new RelayCommand(_ => PrintInvoice());
-            PrintPreviewCommand = new RelayCommand(_ => PrintPreview());
-            PrintInvoiceCommand = new RelayCommand(_ => PrintInvoice());
+            PrintPreviewCommand = new RelayCommand(_ => ShowPrintPreview(), _ => CanShowPrintPreview());
+            PrintInvoiceCommand = new RelayCommand(_ => ShowPrintPreview(), _ => CanShowPrintPreview());
             PasteFromExcelCommand = new RelayCommand(_ => PasteFromExcel());
             SelectSGUCommand = new RelayCommand(_ => { IsSGUSelected = true; });
             SelectDGUCommand = new RelayCommand(_ => { IsDGUSelected = true; });
@@ -1091,52 +1092,50 @@ namespace ProGlassAutomation.ViewModels
             OnPropertyChanged(nameof(HasSavedFiles));
         }
 
-        private void PrintInvoice()
+        // ============ PRINT METHODS ============
+
+        private bool CanShowPrintPreview()
         {
-            try
-            {
-                var window = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.DataContext == this);
-                if (window?.Content is System.Windows.Media.Visual visual)
-                {
-                    var printDialog = new System.Windows.Controls.PrintDialog();
-                    if (printDialog.ShowDialog() == true)
-                    {
-                        printDialog.PrintVisual(visual, "ProForma Invoice");
-                        StatusMessage = "✅ Printed successfully";
-                    }
-                }
-                else
-                {
-                    StatusMessage = "❌ Cannot find window to print";
-                }
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"❌ Print failed: {ex.Message}";
-            }
+            return Invoice?.Specifications?.Any() == true;
         }
 
-        // PATCH 1: PrintPreview method
-        private void PrintPreview()
+        private void ShowPrintPreview()
         {
             try
             {
-                var window = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.DataContext == this);
-                if (window?.Content is System.Windows.Media.Visual visual)
+                if (Invoice == null || Invoice.Specifications == null || Invoice.Specifications.Count == 0)
                 {
-                    var printDialog = new System.Windows.Controls.PrintDialog();
-                    printDialog.PrintVisual(visual, $"Preview: {Invoice?.InvoiceNo}");
-                    StatusMessage = "✅ Preview sent to printer";
+                    MessageBox.Show("No invoice data to preview!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
                 }
-                else
+
+                // Create a new window with the print preview view
+                var previewWindow = new Window
                 {
-                    StatusMessage = "❌ Cannot find window to print";
-                }
+                    Title = $"Print Preview - {Invoice.InvoiceNo}",
+                    Width = 900,
+                    Height = 700,
+                    MinWidth = 800,
+                    MinHeight = 600,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    Background = System.Windows.Media.Brushes.White,
+                    Content = new ProformaInvoicePrintPreviewView { DataContext = this }
+                };
+
+                previewWindow.Show();
+                StatusMessage = "✅ Preview opened";
             }
             catch (Exception ex)
             {
                 StatusMessage = $"❌ Preview failed: {ex.Message}";
+                MessageBox.Show($"Preview error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        // Keep legacy PrintInvoice for toolbar button compatibility
+        private void PrintInvoice()
+        {
+            ShowPrintPreview();
         }
 
         // ==================== SPECIFICATIONS ====================
