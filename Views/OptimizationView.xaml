@@ -1,0 +1,768 @@
+﻿<UserControl x:Class="ProGlassAutomation.Views.OptimizationView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="950" d:DesignWidth="1650"
+             Background="#1A1D23">
+
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="PanelBg" Color="#252A33"/>
+        <SolidColorBrush x:Key="PanelBorder" Color="#3A4150"/>
+        <SolidColorBrush x:Key="AccentOrange" Color="#F59E0B"/>
+        <SolidColorBrush x:Key="AccentGreen" Color="#10B981"/>
+        <SolidColorBrush x:Key="AccentRed" Color="#EF4444"/>
+        <SolidColorBrush x:Key="AccentBlue" Color="#3B82F6"/>
+        <SolidColorBrush x:Key="TextWhite" Color="#F9FAFB"/>
+        <SolidColorBrush x:Key="TextGray" Color="#9CA3AF"/>
+
+        <Style x:Key="TabActive" TargetType="Button">
+            <Setter Property="Background" Value="#F59E0B"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="14,8"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="TabInactive" TargetType="Button">
+            <Setter Property="Background" Value="#374151"/>
+            <Setter Property="Foreground" Value="#9CA3AF"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="14,8"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#4B5563"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="DataGridHeaderStyle" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#1E3A5F"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="8,6"/>
+        </Style>
+
+        <Style x:Key="DataGridCellStyle" TargetType="DataGridCell">
+            <Setter Property="Padding" Value="6,4"/>
+            <Setter Property="BorderThickness" Value="0,0,1,1"/>
+            <Setter Property="BorderBrush" Value="#374151"/>
+            <Setter Property="Background" Value="#252A33"/>
+            <Setter Property="Foreground" Value="#F9FAFB"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridCell">
+                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="8">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="420"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="320"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ================= LEFT PANEL ================= -->
+        <Border Background="#252A33" CornerRadius="6" BorderBrush="#3A4150" BorderThickness="1" Margin="5">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Header -->
+                <Border Background="#F59E0B" CornerRadius="6,6,0,0" Padding="15,12">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="🔲" FontSize="24" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="GLASS CUT OPTIMIZER" FontSize="15" FontWeight="Bold" Foreground="White"/>
+                            <TextBlock Text="Nirvana Glass Pattern" FontSize="10" Foreground="#FEF3C7"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Tabs -->
+                <Border Grid.Row="1" Background="#1A1D23" Padding="10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Button x:Name="btnStock" Content="STOCK" Click="OptTab_Click" Tag="Stock" Style="{StaticResource TabActive}"/>
+                        <Button x:Name="btnParts" Grid.Column="1" Content="PARTS" Click="OptTab_Click" Tag="Parts" Style="{StaticResource TabInactive}" Margin="4,0"/>
+                        <Button x:Name="btnSettings" Grid.Column="2" Content="SETTINGS" Click="OptTab_Click" Tag="Settings" Style="{StaticResource TabInactive}" Margin="4,0"/>
+                        <Button x:Name="btnSummary" Grid.Column="3" Content="LAYOUTS" Click="OptTab_Click" Tag="Summary" Style="{StaticResource TabInactive}" Margin="4,0,0,0"/>
+                    </Grid>
+                </Border>
+
+                <!-- ================= STOCK PANEL ================= -->
+                <Grid x:Name="pnlStock" Grid.Row="2" Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Margin="0,8,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="AVAILABLE STOCK SHEETS" FontSize="12" FontWeight="SemiBold" Foreground="#F9FAFB"/>
+                            <TextBlock Text="Paste from Excel: Width Height Qty" FontSize="10" Foreground="#6B7280"/>
+                        </StackPanel>
+                        <Button Grid.Column="1" Content="+ ADD" Click="AddStockSheet_Click" 
+                                Background="#10B981" Foreground="White" BorderThickness="0" Padding="12,6" FontSize="11" Cursor="Hand">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </Grid>
+
+                    <DataGrid x:Name="dgStock" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="True"
+                             Background="#252A33" BorderBrush="#3A4150" BorderThickness="1"
+                             GridLinesVisibility="All" HorizontalGridLinesBrush="#374151"
+                             RowHeight="32" ColumnHeaderStyle="{StaticResource DataGridHeaderStyle}"
+                             CellStyle="{StaticResource DataGridCellStyle}"
+                             AllowDrop="True" PreviewMouseLeftButtonDown="DG_PreviewMouseLeftButtonDown" Drop="DG_Drop">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="REF" Binding="{Binding Ref, UpdateSourceTrigger=LostFocus}" Width="80">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#F9FAFB"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Setter Property="Margin" Value="6,0"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="W (mm)" Binding="{Binding L, StringFormat=N0}" Width="80">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#10B981"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="H (mm)" Binding="{Binding W, StringFormat=N0}" Width="80">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#10B981"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="QTY" Binding="{Binding Qty, StringFormat=N0}" Width="60">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#F59E0B"/>
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTemplateColumn Header="" Width="28">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Content="✕" FontSize="10" Foreground="#EF4444" Background="Transparent" 
+                                                BorderThickness="0" Cursor="Hand" Click="DeleteStockRow_Click"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+
+                <!-- ================= PARTS PANEL ================= -->
+                <Grid x:Name="pnlParts" Grid.Row="2" Margin="10" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Margin="0,8,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="PIECES TO CUT" FontSize="12" FontWeight="SemiBold" Foreground="#F9FAFB"/>
+                            <TextBlock Text="Paste from Excel: Width Height Qty (Rot auto-on)" FontSize="10" Foreground="#6B7280"/>
+                        </StackPanel>
+                        <Button Grid.Column="1" Content="+ ADD" Click="AddPart_Click" 
+                                Background="#10B981" Foreground="White" BorderThickness="0" Padding="12,6" FontSize="11" Cursor="Hand">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </Grid>
+
+                    <DataGrid x:Name="dgParts" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="True"
+                             Background="#252A33" BorderBrush="#3A4150" BorderThickness="1"
+                             GridLinesVisibility="All" HorizontalGridLinesBrush="#374151"
+                             RowHeight="32" ColumnHeaderStyle="{StaticResource DataGridHeaderStyle}"
+                             CellStyle="{StaticResource DataGridCellStyle}"
+                             AllowDrop="True" PreviewMouseLeftButtonDown="DG_PreviewMouseLeftButtonDown" Drop="DG_Drop">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="REF" Binding="{Binding Ref, UpdateSourceTrigger=LostFocus}" Width="70">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#F9FAFB"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Setter Property="Margin" Value="6,0"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="W (mm)" Binding="{Binding L, StringFormat=N0}" Width="75">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#3B82F6"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="H (mm)" Binding="{Binding W, StringFormat=N0}" Width="75">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#3B82F6"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridCheckBoxColumn Header="ROT" Binding="{Binding Rot, UpdateSourceTrigger=PropertyChanged}" Width="45">
+                                <DataGridCheckBoxColumn.ElementStyle>
+                                    <Style TargetType="CheckBox">
+                                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridCheckBoxColumn.ElementStyle>
+                            </DataGridCheckBoxColumn>
+                            <DataGridTextColumn Header="QTY" Binding="{Binding Qty, StringFormat=N0}" Width="55">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#F59E0B"/>
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTemplateColumn Header="" Width="28">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Content="✕" FontSize="10" Foreground="#EF4444" Background="Transparent" 
+                                                BorderThickness="0" Cursor="Hand" Click="DeletePartRow_Click"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+
+                <!-- ================= SETTINGS PANEL ================= -->
+                <Grid x:Name="pnlSettings" Grid.Row="2" Margin="10" Visibility="Collapsed">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <TextBlock Text="CUTTING SETTINGS" FontSize="12" FontWeight="SemiBold" Foreground="#F9FAFB" Margin="0,8,0,15"/>
+
+                            <!-- Trim Margins -->
+                            <Border Background="#1A1D23" CornerRadius="4" Padding="12" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <TextBlock Text="TRIM / EDGE MARGINS (mm)" FontSize="10" Foreground="#6B7280" Margin="0,0,0,10"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <!-- First Row: LR BR TR RM -->
+                                        <StackPanel Grid.Column="0" Margin="0,0,5,8">
+                                            <TextBlock Text="Left (LR)" FontSize="9" Foreground="#9CA3AF" Margin="0,0,0,3"/>
+                                            <TextBox x:Name="txtLR" Text="15" Background="#374151" Foreground="White" Padding="6,5" FontSize="12" TextAlignment="Center"/>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="1" Margin="0,0,5,8">
+                                            <TextBlock Text="Bottom (BR)" FontSize="9" Foreground="#9CA3AF" Margin="0,0,0,3"/>
+                                            <TextBox x:Name="txtBR" Text="15" Background="#374151" Foreground="White" Padding="6,5" FontSize="12" TextAlignment="Center"/>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="2" Margin="0,0,5,8">
+                                            <TextBlock Text="Top (TR)" FontSize="9" Foreground="#9CA3AF" Margin="0,0,0,3"/>
+                                            <TextBox x:Name="txtTR" Text="15" Background="#374151" Foreground="White" Padding="6,5" FontSize="12" TextAlignment="Center"/>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="3" Margin="0,0,0,8">
+                                            <TextBlock Text="Right (RM)" FontSize="9" Foreground="#9CA3AF" Margin="0,0,0,3"/>
+                                            <TextBox x:Name="txtRM" Text="15" Background="#374151" Foreground="White" Padding="6,5" FontSize="12" TextAlignment="Center"/>
+                                        </StackPanel>
+
+                                        <!-- Second Row: Kerf + Breakout -->
+                                        <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,5,0">
+                                            <TextBlock Text="Kerf (mm)" FontSize="9" Foreground="#9CA3AF" Margin="0,0,0,3"/>
+                                            <TextBox x:Name="txtKerf" Text="15" Background="#374151" Foreground="White" Padding="6,5" FontSize="12" TextAlignment="Center"/>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3">
+                                            <TextBlock Text="Min Breakout (mm)" FontSize="9" Foreground="#9CA3AF" Margin="0,0,0,3"/>
+                                            <TextBox x:Name="txtBreakout" Text="15" Background="#374151" Foreground="White" Padding="6,5" FontSize="12" TextAlignment="Center"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Options -->
+                            <Border Background="#1A1D23" CornerRadius="4" Padding="12" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <TextBlock Text="OPTIONS" FontSize="10" Foreground="#6B7280" Margin="0,0,0,10"/>
+                                    <CheckBox x:Name="chkAutoRotate" Content="Auto-rotate parts for better fit" IsChecked="True" Foreground="#F9FAFB" Margin="0,0,0,8"/>
+                                    <CheckBox x:Name="chkQuickResult" Content="Quick mode (faster, less accurate)" Foreground="#F9FAFB"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Run Button -->
+                            <Button Content="▶ RUN OPTIMIZATION" Click="RunOptimization_Click" 
+                                    Background="#F59E0B" Foreground="White" BorderThickness="0" 
+                                    Padding="16,12" FontSize="12" FontWeight="Bold" Cursor="Hand" Margin="0,10,0,0">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                                            <ContentPresenter HorizontalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="border" Property="Background" Value="#D97706"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+
+                            <Button Content="Clear All" Click="ClearOptimization_Click" 
+                                    Background="#374151" Foreground="#EF4444" BorderThickness="0" 
+                                    Padding="16,10" FontSize="11" Cursor="Hand" Margin="0,8,0,0">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                                            <ContentPresenter HorizontalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+
+                            <!-- Quick Summary -->
+                            <Border Background="#1A1D23" CornerRadius="4" Padding="12" Margin="0,20,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="QUICK SUMMARY" FontSize="11" FontWeight="SemiBold" Foreground="#F59E0B" Margin="0,0,0,10"/>
+
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <Border Background="#252A33" CornerRadius="3" Padding="8" Margin="0,0,4,4">
+                                            <StackPanel>
+                                                <TextBlock Text="Sheets Used" FontSize="9" Foreground="#6B7280"/>
+                                                <TextBlock x:Name="txtSheetsUsed" Text="0" FontSize="18" FontWeight="Bold" Foreground="#F9FAFB"/>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <Border Grid.Column="1" Background="#252A33" CornerRadius="3" Padding="8" Margin="4,0,0,4">
+                                            <StackPanel>
+                                                <TextBlock Text="Sheets Left" FontSize="9" Foreground="#6B7280"/>
+                                                <TextBlock x:Name="txtSheetsRemaining" Text="0" FontSize="18" FontWeight="Bold" Foreground="#10B981"/>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <Border Grid.Row="1" Background="#252A33" CornerRadius="3" Padding="8" Margin="0,4,4,0">
+                                            <StackPanel>
+                                                <TextBlock Text="Utilization" FontSize="9" Foreground="#6B7280"/>
+                                                <TextBlock x:Name="txtUtilization" Text="0%" FontSize="18" FontWeight="Bold" Foreground="#10B981"/>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <Border Grid.Row="1" Grid.Column="1" Background="#252A33" CornerRadius="3" Padding="8" Margin="4,4,0,0">
+                                            <StackPanel>
+                                                <TextBlock Text="Wastage" FontSize="9" Foreground="#6B7280"/>
+                                                <TextBlock x:Name="txtWaste" Text="0%" FontSize="18" FontWeight="Bold" Foreground="#EF4444"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+
+                <!-- ================= LAYOUTS PANEL ================= -->
+                <Grid x:Name="pnlSummary" Grid.Row="2" Margin="10" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Margin="0,8,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="CUTTING LAYOUTS" FontSize="12" FontWeight="SemiBold" Foreground="#F9FAFB"/>
+                            <TextBlock Text="2D view with trim margins" FontSize="10" Foreground="#6B7280"/>
+                        </StackPanel>
+                        <Button Grid.Column="1" Content="&lt;" Click="PrevLayout_Click" 
+                                Background="#374151" Foreground="White" Padding="8,4" Margin="0,0,5,0">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" CornerRadius="3" Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                        <Button Grid.Column="2" Content="Export" Click="ExportResults_Click" 
+                                Background="#3B82F6" Foreground="White" BorderThickness="0" Padding="10,4" FontSize="10" Cursor="Hand">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </Grid>
+
+                    <!-- Layout selector and canvas -->
+                    <Grid Grid.Row="1">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <Button Content="&lt;" Click="PrevLayout_Click" Background="#374151" Foreground="White" Padding="10,5" Margin="0,0,5,0">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}" CornerRadius="3" Padding="{TemplateBinding Padding}">
+                                            <ContentPresenter HorizontalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                            <ComboBox x:Name="cmbSheetSelector" SelectionChanged="SheetSelector_Changed" Background="#374151" Foreground="White" Padding="6,4" MinWidth="150">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Foreground="White">
+                                            <Run Text="{Binding Ref}"/>
+                                            <Run Text=" ("/>
+                                            <Run Text="{Binding Used}"/>
+                                            <Run Text=")"/>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <TextBlock x:Name="txtLayoutNum" Text=" 1/35 " Foreground="#9CA3AF" VerticalAlignment="Center" Margin="8,0"/>
+                            <Button Content="&gt;" Click="NextLayout_Click" Background="#374151" Foreground="White" Padding="10,5">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}" CornerRadius="3" Padding="{TemplateBinding Padding}">
+                                            <ContentPresenter HorizontalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </StackPanel>
+
+                        <!-- 2D Canvas with trim shown -->
+                        <Border Grid.Row="1" Background="#0D1117" CornerRadius="4" Padding="10">
+                            <Grid>
+                                <!-- Trim indicator -->
+                                <Canvas x:Name="LayoutCanvas" Background="#0D1117"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Legend -->
+                        <Border Grid.Row="2" Background="#1A1D23" CornerRadius="4" Padding="10" Margin="0,8,0,0">
+                            <StackPanel Orientation="Horizontal">
+                                <Border Background="#EF4444" CornerRadius="2" Padding="6,2" Margin="0,0,10,0">
+                                    <TextBlock Text="TRIM" FontSize="9" Foreground="White" FontWeight="Bold"/>
+                                </Border>
+                                <Border Background="#3B82F6" CornerRadius="2" Padding="6,2" Margin="0,0,10,0">
+                                    <TextBlock Text="P1" FontSize="9" Foreground="White"/>
+                                </Border>
+                                <Border Background="#10B981" CornerRadius="2" Padding="6,2" Margin="0,0,10,0">
+                                    <TextBlock Text="P2" FontSize="9" Foreground="White"/>
+                                </Border>
+                                <Border Background="#8B5CF6" CornerRadius="2" Padding="6,2" Margin="0,0,10,0">
+                                    <TextBlock Text="P3" FontSize="9" Foreground="White"/>
+                                </Border>
+                                <Border Background="#F59E0B" CornerRadius="2" Padding="6,2">
+                                    <TextBlock Text="P4" FontSize="9" Foreground="White"/>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <!-- ================= CENTER PANEL ================= -->
+        <Border Grid.Column="1" Background="#252A33" CornerRadius="6" BorderBrush="#3A4150" BorderThickness="1" Margin="5">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Border Background="#1E3A5F" CornerRadius="6,6,0,0" Padding="15,10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="2D CUTTING LAYOUT" FontSize="14" FontWeight="Bold" Foreground="White"/>
+                            <TextBlock x:Name="txtCurrentSheet" Text="Run optimization to view layouts" FontSize="10" Foreground="#9CA3AF"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <Button Content="-" Click="ZoomOut_Click" Background="#374151" Foreground="White" Padding="10,5" Margin="0,0,8,0">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}" CornerRadius="3" Padding="{TemplateBinding Padding}">
+                                            <ContentPresenter HorizontalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                            <TextBlock x:Name="txtZoom" Text="100%" Foreground="White" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <Button Content="+" Click="ZoomIn_Click" Background="#374151" Foreground="White" Padding="10,5">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}" CornerRadius="3" Padding="{TemplateBinding Padding}">
+                                            <ContentPresenter HorizontalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Preview Canvas -->
+                <Border Grid.Row="1" Background="#0D1117" Margin="10">
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                        <Canvas x:Name="PreviewCanvas" Background="#0D1117"/>
+                    </ScrollViewer>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- ================= RIGHT PANEL ================= -->
+        <Border Grid.Column="2" Background="#252A33" CornerRadius="6" BorderBrush="#3A4150" BorderThickness="1" Margin="5">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Border Background="#10B981" CornerRadius="6,6,0,0" Padding="15,10">
+                    <StackPanel>
+                        <TextBlock Text="OPTIMIZATION RESULTS" FontSize="14" FontWeight="Bold" Foreground="White"/>
+                        <TextBlock x:Name="txtTotalStats" Text="0 sheets, 0 parts" FontSize="10" Foreground="#A7F3D0"/>
+                    </StackPanel>
+                </Border>
+
+                <ScrollViewer Grid.Row="1" Padding="10">
+                    <StackPanel>
+                        <!-- Summary -->
+                        <Border Background="#1A1D23" CornerRadius="4" Padding="12" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="SUMMARY" FontSize="11" FontWeight="SemiBold" Foreground="#F59E0B" Margin="0,0,0,10"/>
+
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Sheets Used:" Foreground="#9CA3AF" FontSize="11"/>
+                                    <TextBlock x:Name="txtTotalSheetsUsed" Grid.Column="1" Text="0" FontSize="16" FontWeight="Bold" Foreground="#F59E0B"/>
+                                </Grid>
+
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Parts Cut:" Foreground="#9CA3AF" FontSize="11"/>
+                                    <TextBlock x:Name="txtTotalPartsCut" Grid.Column="1" Text="0" FontSize="16" FontWeight="Bold" Foreground="#3B82F6"/>
+                                </Grid>
+
+                                <Separator Background="#374151" Margin="0,5"/>
+
+                                <Grid Margin="0,8,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Avg Utilization:" Foreground="#9CA3AF" FontSize="11"/>
+                                    <TextBlock x:Name="txtAvgUtilization" Grid.Column="1" Text="0%" FontSize="16" FontWeight="Bold" Foreground="#10B981"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Results by Sheet -->
+                        <TextBlock Text="BY SHEET SIZE" FontSize="11" FontWeight="SemiBold" Foreground="#F9FAFB" Margin="0,0,0,8"/>
+
+                        <ItemsControl x:Name="icResults">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#1A1D23" CornerRadius="4" Padding="10" Margin="0,0,0,6">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Ref}" FontSize="12" FontWeight="SemiBold" Foreground="#F9FAFB"/>
+                                                <TextBlock FontSize="10" Foreground="#6B7280">
+                                                    <Run Text="{Binding L, StringFormat=N0}"/>
+                                                    <Run Text=" × "/>
+                                                    <Run Text="{Binding W, StringFormat=N0}"/>
+                                                    <Run Text=" mm"/>
+                                                </TextBlock>
+                                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                                    <Border Background="#10B981" CornerRadius="2" Padding="4,2" Margin="0,0,6,0">
+                                                        <TextBlock FontSize="9" Foreground="White">
+                                                            <Run Text="U: "/>
+                                                            <Run Text="{Binding Util, StringFormat=N2}"/>
+                                                            <Run Text="%"/>
+                                                        </TextBlock>
+                                                    </Border>
+                                                    <Border Background="#EF4444" CornerRadius="2" Padding="4,2">
+                                                        <TextBlock FontSize="9" Foreground="White">
+                                                            <Run Text="W: "/>
+                                                            <Run Text="{Binding Waste, StringFormat=N2}"/>
+                                                            <Run Text="%"/>
+                                                        </TextBlock>
+                                                    </Border>
+                                                </StackPanel>
+                                            </StackPanel>
+
+                                            <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                                                <TextBlock Text="{Binding Used}" FontSize="20" FontWeight="Bold" Foreground="#F59E0B" HorizontalAlignment="Right"/>
+                                                <TextBlock Text="sheets" FontSize="9" Foreground="#6B7280" HorizontalAlignment="Right"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- Unplaced Warning -->
+                        <Border x:Name="pnlUnplaced" Background="#7F1D1D" CornerRadius="4" Padding="10" Margin="0,10,0,0" Visibility="Collapsed">
+                            <StackPanel>
+                                <TextBlock Text="⚠ UNPLACED PARTS" FontSize="11" FontWeight="Bold" Foreground="#FCA5A5"/>
+                                <TextBlock x:Name="txtUnplaced" Text="0 parts not placed" FontSize="10" Foreground="#FECACA"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- Action Buttons -->
+                <StackPanel Grid.Row="2" Margin="10,0,10,10">
+                    <Button Content="Export CSV" Click="ExportResults_Click" 
+                            Background="#3B82F6" Foreground="White" BorderThickness="0" 
+                            Padding="12,10" FontSize="11" Cursor="Hand" Margin="0,0,0,6">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter HorizontalAlignment="Center"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                    <Button Content="Print Layouts" Click="PrintLayouts_Click" 
+                            Background="#374151" Foreground="White" BorderThickness="0" 
+                            Padding="12,10" FontSize="11" Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter HorizontalAlignment="Center"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

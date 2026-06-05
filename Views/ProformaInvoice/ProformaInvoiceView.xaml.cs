@@ -7,6 +7,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using ProGlassAutomation.Models;
 using ProGlassAutomation.ViewModels;
+using ProGlassAutomation.Views;
 
 namespace ProGlassAutomation.Views.ProformaInvoice
 {
@@ -101,6 +102,31 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         private void ToggleRecentInvoices_Click(object sender, RoutedEventArgs e)
         {
             RecentInvoicesContent.Visibility = RecentInvoicesContent.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        // ==================== OPTIMIZATION POPUP ====================
+
+        private void OpenOptimization_Click(object sender, RoutedEventArgs e)
+        {
+            var optWindow = new Window
+            {
+                Title = "Glass Cut Optimizer - ProGlass Automation",
+                Content = new OptimizationView(),
+                WindowState = WindowState.Normal,
+                WindowStyle = WindowStyle.SingleBorderWindow,
+                ResizeMode = ResizeMode.CanResize,
+                Width = 1400,
+                Height = 900,
+                MinWidth = 1000,
+                MinHeight = 700,
+                Background = new SolidColorBrush(Color.FromRgb(30, 39, 46)),
+                WindowStartupLocation = WindowStartupLocation.CenterScreen
+            };
+
+            optWindow.Show();
+
+            // Make it full screen after showing
+            optWindow.WindowState = WindowState.Maximized;
         }
 
         // ==================== TEXT SELECTION ON FOCUS ====================

@@ -1073,9 +1073,29 @@
             </ScrollViewer>
         </Border>
 
-        <!-- ================= CENTER SECTION: EMPTY PLACEHOLDER ================= -->
-        <Border Grid.Column="1" BorderBrush="#CBD5E1" BorderThickness="2" CornerRadius="6" Background="#F8FAFC" Margin="7,0,7,0">
-            <TextBlock Text="CENTER SECTION" FontSize="14" Foreground="#94A3B8" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        <!-- ================= CENTER SECTION: OPTIMIZATION POPUP ================= -->
+        <Border Grid.Column="1" BorderBrush="#F59E0B" BorderThickness="2" CornerRadius="6" Background="#FFFFFF" Margin="7,0,7,0">
+            <Grid>
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <TextBlock Text="⚙" FontSize="48" Foreground="#F59E0B" HorizontalAlignment="Center" Margin="0,0,0,20"/>
+                    <TextBlock Text="GLASS CUT OPTIMIZER" FontSize="20" FontWeight="Bold" Foreground="#1F2937" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                    <TextBlock Text="Optimize your glass cutting layouts" FontSize="12" Foreground="#6B7280" HorizontalAlignment="Center" Margin="0,0,0,20"/>
+                    <Button Content="Open Optimizer" Click="OpenOptimization_Click" Padding="20,12" FontSize="14" Background="#F59E0B" Foreground="White" BorderThickness="0" Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#D97706"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </StackPanel>
+            </Grid>
         </Border>
 
         <!-- ================= RIGHT SECTION: CONFIGURATION (Blue Header) ================= -->
