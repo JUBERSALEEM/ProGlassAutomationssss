@@ -48,18 +48,13 @@
                                     <!-- Price Input -->
                                     <StackPanel Grid.Column="1" Margin="6,0">
                                         <TextBlock Text="SHEET PRICE" FontSize="9" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,6"/>
-                                        <Border Background="White" CornerRadius="8" BorderBrush="#CBD5E1" BorderThickness="1" Padding="8,0">
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="25"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Grid.Column="0" Text="AED" FontSize="11" Foreground="#64748B" VerticalAlignment="Center"/>
-                                                <TextBox Grid.Column="1" Text="{Binding PriceText, UpdateSourceTrigger=PropertyChanged}" 
-                                                        FontSize="14" FontWeight="SemiBold" Foreground="#1E293B" 
-                                                        Background="Transparent" BorderThickness="0" 
-                                                        VerticalContentAlignment="Center" Padding="4,8"/>
-                                            </Grid>
+                                        <Border Background="White" CornerRadius="8" BorderBrush="#CBD5E1" BorderThickness="1">
+                                            <TextBox Text="{Binding PriceText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                 FontSize="14" FontWeight="SemiBold" Foreground="#1E293B" 
+                 Background="Transparent" BorderThickness="0" 
+                 VerticalContentAlignment="Center" HorizontalContentAlignment="Right"
+                 Padding="12,8"
+                 IsReadOnly="False" IsEnabled="True"/>
                                         </Border>
                                     </StackPanel>
 
