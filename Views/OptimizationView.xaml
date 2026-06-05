@@ -682,9 +682,25 @@
                         <TextBlock Text="BY SHEET SIZE" FontSize="11" FontWeight="SemiBold" Foreground="#F9FAFB" Margin="0,0,0,8"/>
 
                         <ItemsControl x:Name="icResults">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Background="#1A1D23" CornerRadius="4" Padding="10" Margin="0,0,0,6">
+                                    <Border CornerRadius="4" Padding="10" Margin="0,0,0,6">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#1A1D23"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Ref}" Value="TOTAL">
+                                                        <Setter Property="Background" Value="#F59E0B"/>
+                                                        <Setter Property="Margin" Value="0,10,0,6"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>

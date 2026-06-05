@@ -18,12 +18,7 @@ namespace ProGlassAutomation.Views
 
         private double _zoomLevel = 1.0;
         private string _selectedSheetName = "";
-
-        // Navigation indices
-        private int _currentTypeIndex = 0;
-        private int _currentSheetNumWithinType = 0;
-
-        // Trim values
+        private int _currentIndex = 0;
         private double _lr = 15, _br = 15, _tr = 15, _rm = 15, _kerf = 15, _breakout = 15;
 
         public OptimizationView()
@@ -41,10 +36,8 @@ namespace ProGlassAutomation.Views
 
         private void LoadDefaultData()
         {
-            // Stock: 2875×2100 qty1, 2500×1675 qty9, 2800×1234 qty25
-            _stockSheets.Add(new StockSheet { Ref = "S1", L = 2875, W = 2100, Qty = 1 });
-            _stockSheets.Add(new StockSheet { Ref = "S2", L = 2500, W = 1675, Qty = 9 });
-            _stockSheets.Add(new StockSheet { Ref = "S3", L = 2800, W = 1234, Qty = 25 });
+            // Stock: 3210×2250 qty99999 (use large stock)
+            _stockSheets.Add(new StockSheet { Ref = "S1", L = 3210, W = 2250, Qty = 99999 });
 
             // Default parts
             _cutParts.Add(new CutPart { Ref = "P1", L = 1200, W = 900, Rot = true, Qty = 5 });
@@ -103,10 +96,7 @@ namespace ProGlassAutomation.Views
 
         // ================= PASTE FROM EXCEL =================
 
-        private void DG_PreviewMouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        {
-            // Enable paste
-        }
+        private void DG_PreviewMouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e) { }
 
         private void DG_Drop(object sender, DragEventArgs e)
         {
@@ -225,6 +215,7 @@ namespace ProGlassAutomation.Views
             _results.Clear();
             _allPlacedParts.Clear();
 
+            // Expand parts by quantity
             var allParts = new List<CutPart>();
             int partId = 1;
             foreach (var p in _cutParts)
@@ -244,10 +235,14 @@ namespace ProGlassAutomation.Views
                 }
             }
 
+            // Sort parts by largest dimension
+            allParts = allParts.OrderByDescending(x => Math.Max(x.L, x.W)).ToList();
+
             var sortedStock = _stockSheets.OrderByDescending(s => s.L * s.W).ToList();
 
             double totalUsedAreaAll = 0;
             double totalAreaUsedSheets = 0;
+            int totalSheetsUsed = 0;
 
             foreach (var stock in sortedStock)
             {
@@ -256,17 +251,12 @@ namespace ProGlassAutomation.Views
 
                 if (availableQty <= 0) continue;
 
-                double trimLR = _lr;
-                double trimRM = _rm;
-                double trimTR = _tr;
-                double trimBR = _br;
+                double usableW = stock.L - _lr - _rm;
+                double usableH = stock.W - _tr - _br;
 
-                double usableW = stock.L - trimLR - trimRM;
-                double usableH = stock.W - trimTR - trimBR;
+                int sheetsUsedForThisStock = 0;
 
-                int sheetsUsed = 0;
-                double usedArea = 0;
-
+                // Process each sheet
                 for (int sheetNum = 0; sheetNum < availableQty; sheetNum++)
                 {
                     var remaining = allParts.Where(p => !p.IsPlaced).ToList();
@@ -275,10 +265,11 @@ namespace ProGlassAutomation.Views
                     double currentX = 0;
                     double currentY = 0;
                     double rowHeight = 0;
-                    bool sheetFull = false;
                     int placedOnThisSheet = 0;
+                    double usedAreaThisSheet = 0;
 
-                    while (!sheetFull)
+                    // Shelf algorithm
+                    while (true)
                     {
                         CutPart placed = null;
                         double pWidth = 0, pHeight = 0;
@@ -290,9 +281,9 @@ namespace ProGlassAutomation.Views
                             double w = part.L;
                             double h = part.W;
 
-                            if (autoRotate && part.Rot && h <= usableW && w <= usableH)
+                            if (autoRotate && part.Rot && h <= usableW && w <= usableH && w > h)
                             {
-                                if (w > h) { double t = w; w = h; h = t; }
+                                double t = w; w = h; h = t;
                             }
 
                             double gapW = w + kerf;
@@ -314,12 +305,13 @@ namespace ProGlassAutomation.Views
                                 currentX = 0;
                                 currentY += rowHeight + kerf;
                                 rowHeight = 0;
-                                if (currentY >= usableH) sheetFull = true;
+                                if (currentY >= usableH) break;
                             }
-                            else { sheetFull = true; }
+                            else break;
                             continue;
                         }
 
+                        // Place the part
                         placed.IsPlaced = true;
                         placed.PlacedX = currentX;
                         placed.PlacedY = currentY;
@@ -329,8 +321,8 @@ namespace ProGlassAutomation.Views
                         _allPlacedParts.Add(new PlacedPart
                         {
                             Ref = placed.Ref,
-                            X = currentX + trimLR,
-                            Y = currentY + trimTR,
+                            X = currentX + _lr,
+                            Y = currentY + _tr,
                             L = pWidth,
                             W = pHeight,
                             Sheet = stock.Ref,
@@ -338,36 +330,37 @@ namespace ProGlassAutomation.Views
                         });
 
                         double partArea = (pWidth * pHeight) / 1000000.0;
-                        usedArea += partArea;
-                        totalUsedAreaAll += partArea;
+                        usedAreaThisSheet += partArea;
 
-                        double stepW = pWidth + kerf;
-                        double stepH = pHeight + kerf;
-                        currentX += stepW;
-                        rowHeight = Math.Max(rowHeight, stepH);
+                        currentX += pWidth + kerf;
+                        rowHeight = Math.Max(rowHeight, pHeight);
                         placedOnThisSheet++;
                     }
 
-                    if (placedOnThisSheet > 0) sheetsUsed++;
-                }
-
-                if (sheetsUsed > 0)
-                {
-                    double thisSheetTotalArea = oneSheetArea * sheetsUsed;
-                    double thisUtil = (usedArea / thisSheetTotalArea) * 100;
-                    double thisWaste = 100 - thisUtil;
-                    totalAreaUsedSheets += thisSheetTotalArea;
-
-                    _results.Add(new OptimizationResult
+                    if (placedOnThisSheet > 0)
                     {
-                        Ref = stock.Ref,
-                        L = stock.L,
-                        W = stock.W,
-                        Used = sheetsUsed,
-                        Area = usedArea,
-                        Util = thisUtil,
-                        Waste = thisWaste
-                    });
+                        sheetsUsedForThisStock++;
+                        totalSheetsUsed++;
+                        totalAreaUsedSheets += oneSheetArea;
+                        totalUsedAreaAll += usedAreaThisSheet;
+
+                        // Calculate utilization for THIS sheet (not cumulative)
+                        double thisSheetUtil = (usedAreaThisSheet / oneSheetArea) * 100;
+                        double thisSheetWaste = 100 - thisSheetUtil;
+
+                        _results.Add(new OptimizationResult
+                        {
+                            Ref = $"{stock.Ref}-{sheetsUsedForThisStock}",
+                            SheetRef = stock.Ref,
+                            SheetNum = sheetsUsedForThisStock,
+                            L = stock.L,
+                            W = stock.W,
+                            Used = 1,
+                            Area = usedAreaThisSheet,
+                            Util = thisSheetUtil,
+                            Waste = thisSheetWaste
+                        });
+                    }
                 }
             }
 
@@ -377,18 +370,32 @@ namespace ProGlassAutomation.Views
             double totalUtil = totalAreaUsedSheets > 0 ? (totalUsedAreaAll / totalAreaUsedSheets) * 100 : 0;
             double totalWaste = 100 - totalUtil;
 
-            int totalUsed = _results.Sum(r => r.Used);
             int totalAvailable = _stockSheets.Sum(s => s.Qty);
 
-            txtSheetsUsed.Text = totalUsed.ToString();
-            txtSheetsRemaining.Text = (totalAvailable - totalUsed).ToString();
+            // ADD TOTAL ROW
+            _results.Add(new OptimizationResult
+            {
+                Ref = "TOTAL",
+                SheetRef = "",
+                SheetNum = 0,
+                L = 0,
+                W = 0,
+                Used = totalSheetsUsed,
+                Area = totalUsedAreaAll,
+                Util = totalUtil,
+                Waste = totalWaste
+            });
+
+            // Update UI
+            txtSheetsUsed.Text = totalSheetsUsed.ToString();
+            txtSheetsRemaining.Text = (totalAvailable - totalSheetsUsed).ToString();
             txtUtilization.Text = $"{totalUtil:N2}%";
             txtWaste.Text = $"{totalWaste:N2}%";
 
-            txtTotalSheetsUsed.Text = totalUsed.ToString();
+            txtTotalSheetsUsed.Text = totalSheetsUsed.ToString();
             txtTotalPartsCut.Text = placedCount.ToString();
             txtAvgUtilization.Text = $"{totalUtil:N2}%";
-            txtTotalStats.Text = $"{totalUsed} sheets, {placedCount} parts";
+            txtTotalStats.Text = $"{totalSheetsUsed} sheets, {placedCount} parts";
 
             if (unplacedCount > 0)
             {
@@ -400,30 +407,17 @@ namespace ProGlassAutomation.Views
                 pnlUnplaced.Visibility = Visibility.Collapsed;
             }
 
-            Draw2DLayouts();
-
-            _currentTypeIndex = 0;
-            _currentSheetNumWithinType = 0;
+            _currentIndex = 0;
             if (_results.Count > 0)
             {
-                _selectedSheetName = _results[0].Ref;
                 cmbSheetSelector.SelectedIndex = 0;
             }
 
+            DrawCurrentLayout();
             UpdateLayoutCount();
         }
 
         // ================= 2D LAYOUT DRAWING =================
-
-        private void Draw2DLayouts()
-        {
-            PreviewCanvas.Children.Clear();
-            LayoutCanvas.Children.Clear();
-
-            if (_allPlacedParts.Count == 0) return;
-
-            DrawCurrentLayout();
-        }
 
         private void DrawCurrentLayout()
         {
@@ -431,25 +425,16 @@ namespace ProGlassAutomation.Views
             LayoutCanvas.Children.Clear();
 
             if (_results.Count == 0) return;
+            if (_currentIndex >= _results.Count) return;
 
-            var currentResult = _results[_currentTypeIndex];
+            var currentResult = _results[_currentIndex];
+            if (currentResult.Ref == "TOTAL") return;
+
             var partsOnSheet = _allPlacedParts
-                .Where(p => p.Sheet == currentResult.Ref && p.SheetNum == _currentSheetNumWithinType + 1)
+                .Where(p => p.Sheet == currentResult.SheetRef && p.SheetNum == currentResult.SheetNum)
                 .ToList();
 
-            if (partsOnSheet.Count == 0)
-            {
-                partsOnSheet = _allPlacedParts
-                    .Where(p => p.Sheet == currentResult.Ref)
-                    .ToList();
-
-                if (partsOnSheet.Count == 0) return;
-            }
-
-            double trimLR = _lr;
-            double trimRM = _rm;
-            double trimTR = _tr;
-            double trimBR = _br;
+            if (partsOnSheet.Count == 0) return;
 
             double sheetW = currentResult.L;
             double sheetH = currentResult.W;
@@ -474,7 +459,7 @@ namespace ProGlassAutomation.Views
             // Left trim
             Rectangle trimLeft = new Rectangle
             {
-                Width = trimLR * scale,
+                Width = _lr * scale,
                 Height = drawH,
                 Fill = new SolidColorBrush(Color.FromArgb(180, 239, 68, 68)),
                 Stroke = new SolidColorBrush(Color.FromRgb(185, 28, 28)),
@@ -488,14 +473,14 @@ namespace ProGlassAutomation.Views
             // Right trim
             Rectangle trimRight = new Rectangle
             {
-                Width = trimRM * scale,
+                Width = _rm * scale,
                 Height = drawH,
                 Fill = new SolidColorBrush(Color.FromArgb(180, 239, 68, 68)),
                 Stroke = new SolidColorBrush(Color.FromRgb(185, 28, 28)),
                 StrokeThickness = 2,
                 StrokeDashArray = new DoubleCollection { 4, 2 }
             };
-            Canvas.SetLeft(trimRight, startX + drawW - (trimRM * scale));
+            Canvas.SetLeft(trimRight, startX + drawW - (_rm * scale));
             Canvas.SetTop(trimRight, startY);
             PreviewCanvas.Children.Add(trimRight);
 
@@ -503,7 +488,7 @@ namespace ProGlassAutomation.Views
             Rectangle trimTop = new Rectangle
             {
                 Width = drawW,
-                Height = trimTR * scale,
+                Height = _tr * scale,
                 Fill = new SolidColorBrush(Color.FromArgb(180, 239, 68, 68)),
                 Stroke = new SolidColorBrush(Color.FromRgb(185, 28, 28)),
                 StrokeThickness = 2,
@@ -517,14 +502,14 @@ namespace ProGlassAutomation.Views
             Rectangle trimBottom = new Rectangle
             {
                 Width = drawW,
-                Height = trimBR * scale,
+                Height = _br * scale,
                 Fill = new SolidColorBrush(Color.FromArgb(180, 239, 68, 68)),
                 Stroke = new SolidColorBrush(Color.FromRgb(185, 28, 28)),
                 StrokeThickness = 2,
                 StrokeDashArray = new DoubleCollection { 4, 2 }
             };
             Canvas.SetLeft(trimBottom, startX);
-            Canvas.SetTop(trimBottom, startY + drawH - (trimBR * scale));
+            Canvas.SetTop(trimBottom, startY + drawH - (_br * scale));
             PreviewCanvas.Children.Add(trimBottom);
 
             // Sheet background
@@ -628,8 +613,7 @@ namespace ProGlassAutomation.Views
             PreviewCanvas.Height = canvasH;
 
             // Header
-            var result = _results[_currentTypeIndex];
-            txtCurrentSheet.Text = $"{result.Ref}: {result.L:N0} × {result.W:N0}mm - Sheet {_currentSheetNumWithinType + 1}/{result.Used} | U: {result.Util:N2}% W: {result.Waste:N2}%";
+            txtCurrentSheet.Text = $"{currentResult.Ref}: {currentResult.L:N0} × {currentResult.W:N0}mm | U: {currentResult.Util:N2}% W: {currentResult.Waste:N2}%";
             LayoutCanvas.Width = drawW;
             LayoutCanvas.Height = drawH;
         }
@@ -654,28 +638,22 @@ namespace ProGlassAutomation.Views
         {
             if (cmbSheetSelector.SelectedIndex >= 0 && cmbSheetSelector.SelectedIndex < _results.Count)
             {
-                _currentTypeIndex = cmbSheetSelector.SelectedIndex;
-                _currentSheetNumWithinType = 0;
-                _selectedSheetName = _results[_currentTypeIndex].Ref;
-                DrawCurrentLayout();
+                _currentIndex = cmbSheetSelector.SelectedIndex;
+
+                if (_results[_currentIndex].Ref != "TOTAL")
+                {
+                    DrawCurrentLayout();
+                }
                 UpdateLayoutCount();
             }
         }
 
         private void PrevLayout_Click(object sender, RoutedEventArgs e)
         {
-            if (_currentSheetNumWithinType > 0)
+            if (_currentIndex > 0)
             {
-                _currentSheetNumWithinType--;
-                DrawCurrentLayout();
-                UpdateLayoutCount();
-            }
-            else if (_currentTypeIndex > 0)
-            {
-                _currentTypeIndex--;
-                var prevType = _results[_currentTypeIndex];
-                _currentSheetNumWithinType = prevType.Used - 1;
-                cmbSheetSelector.SelectedIndex = _currentTypeIndex;
+                _currentIndex--;
+                cmbSheetSelector.SelectedIndex = _currentIndex;
                 DrawCurrentLayout();
                 UpdateLayoutCount();
             }
@@ -683,19 +661,10 @@ namespace ProGlassAutomation.Views
 
         private void NextLayout_Click(object sender, RoutedEventArgs e)
         {
-            var currentResult = _results[_currentTypeIndex];
-
-            if (_currentSheetNumWithinType < currentResult.Used - 1)
+            if (_currentIndex < _results.Count - 1)
             {
-                _currentSheetNumWithinType++;
-                DrawCurrentLayout();
-                UpdateLayoutCount();
-            }
-            else if (_currentTypeIndex < _results.Count - 1)
-            {
-                _currentTypeIndex++;
-                _currentSheetNumWithinType = 0;
-                cmbSheetSelector.SelectedIndex = _currentTypeIndex;
+                _currentIndex++;
+                cmbSheetSelector.SelectedIndex = _currentIndex;
                 DrawCurrentLayout();
                 UpdateLayoutCount();
             }
@@ -703,16 +672,10 @@ namespace ProGlassAutomation.Views
 
         private void UpdateLayoutCount()
         {
-            int totalSheets = _results.Sum(r => r.Used);
+            int totalSheets = _results.Count(r => r.Ref != "TOTAL");
+            int currentSheetNum = _currentIndex + 1;
 
-            int actualSheetNum = 0;
-            for (int i = 0; i < _currentTypeIndex; i++)
-            {
-                actualSheetNum += _results[i].Used;
-            }
-            actualSheetNum += _currentSheetNumWithinType + 1;
-
-            txtLayoutNum.Text = $" {actualSheetNum}/{totalSheets} ";
+            txtLayoutNum.Text = $" {currentSheetNum}/{totalSheets} ";
         }
 
         private void ClearOptimization_Click(object sender, RoutedEventArgs e)
@@ -762,12 +725,11 @@ namespace ProGlassAutomation.Views
                     using (var writer = new System.IO.StreamWriter(dialog.FileName))
                     {
                         writer.WriteLine("Sheet Ref,Length mm,Width mm,Used Qty,Util %,Waste %,Area sqm");
-                        foreach (var r in _results)
+                        foreach (var r in _results.Where(r => r.Ref != "TOTAL"))
                         {
                             writer.WriteLine($"{r.Ref},{r.L},{r.W},{r.Used},{r.Util:N2},{r.Waste:N2},{r.Area:N4}");
                         }
-                        int totalUsed = _results.Sum(r => r.Used);
-                        int totalAvailable = _stockSheets.Sum(s => s.Qty);
+                        int totalUsed = _results.Count(r => r.Ref != "TOTAL");
                         double totalUtil = double.Parse(txtAvgUtilization.Text.Replace("%", ""));
                         writer.WriteLine($"TOTAL,,,{totalUsed},,{totalUtil:N2},{100 - totalUtil:N2}");
                     }
@@ -808,7 +770,7 @@ namespace ProGlassAutomation.Views
                 Margin = new Thickness(0, 0, 0, 20)
             });
 
-            foreach (var r in _results)
+            foreach (var r in _results.Where(r => r.Ref != "TOTAL"))
             {
                 var border = new Border
                 {
@@ -821,13 +783,14 @@ namespace ProGlassAutomation.Views
 
                 var text = new TextBlock
                 {
-                    Text = $"{r.Ref}: {r.L:N0} × {r.W:N0} mm - Used: {r.Used} sheets\nUtilization: {r.Util:N2}%  |  Wastage: {r.Waste:N2}%  |  Area: {r.Area:N4} sqm",
+                    Text = $"{r.Ref}: {r.L:N0} × {r.W:N0} mm\nUtilization: {r.Util:N2}%  |  Wastage: {r.Waste:N2}%",
                     FontSize = 13
                 };
                 border.Child = text;
                 stack.Children.Add(border);
             }
 
+            int totalUsed = _results.Count(r => r.Ref != "TOTAL");
             var totalBorder = new Border
             {
                 Background = new SolidColorBrush(Color.FromRgb(245, 158, 11)),
@@ -836,7 +799,7 @@ namespace ProGlassAutomation.Views
             };
             var totalText = new TextBlock
             {
-                Text = $"TOTAL: {_results.Sum(r => r.Used)} sheets used",
+                Text = $"TOTAL: {totalUsed} sheets used",
                 FontSize = 14,
                 FontWeight = FontWeights.Bold,
                 Foreground = new SolidColorBrush(Colors.White)
@@ -880,6 +843,8 @@ namespace ProGlassAutomation.Views
     public class OptimizationResult
     {
         public string Ref { get; set; } = "";
+        public string SheetRef { get; set; } = "";
+        public int SheetNum { get; set; }
         public double L { get; set; }
         public double W { get; set; }
         public int Used { get; set; }
