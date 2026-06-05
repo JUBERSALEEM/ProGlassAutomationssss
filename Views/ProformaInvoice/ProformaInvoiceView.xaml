@@ -1522,16 +1522,6 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Optimization Panel -->
-                    <Border BorderBrush="#E5E7EB" BorderThickness="0,0,0,1" Padding="16">
-                        <StackPanel>
-                            <Button Content="⚙ OPTIMIZATION" Style="{StaticResource ModuleButtonOPT}" Click="ToggleOptPanel_Click" Margin="0,0,0,8"/>
-                            <Border x:Name="OptContent" Visibility="Collapsed" Background="#FFFFFF" Padding="0,8,0,0">
-                                <opt:GlassOptimizationPanel/>
-                            </Border>
-                        </StackPanel>
-                    </Border>
-
                     <!-- Calculated Result -->
                     <Border Background="#1E3A8A" CornerRadius="6" Padding="16" Margin="16,8,16,16">
                         <StackPanel HorizontalAlignment="Center">
@@ -1553,6 +1543,16 @@
                             <TextBlock Text="Select spec to apply price" Style="{StaticResource FieldLabel}"/>
                             <ComboBox ItemsSource="{Binding Invoice.Specifications}" SelectedItem="{Binding SelectedTargetSpecification}" DisplayMemberPath="SpecificationName" Style="{StaticResource FormComboBox}" Margin="0,0,0,10"/>
                             <Button Content="Include in Spec" Style="{StaticResource PrimaryButton}" Command="{Binding IncludeInSpecificationCommand}" Padding="12,10"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Optimization Panel -->
+                    <Border BorderBrush="#E5E7EB" BorderThickness="0,0,0,1" Padding="16">
+                        <StackPanel>
+                            <Button Content="⚙ OPTIMIZATION" Style="{StaticResource ModuleButtonOPT}" Click="ToggleOptPanel_Click" Margin="0,0,0,8"/>
+                            <Border x:Name="OptContent" Visibility="Collapsed" Background="#FFFFFF" Padding="0,8,0,0">
+                                <opt:GlassOptimizationPanel/>
+                            </Border>
                         </StackPanel>
                     </Border>
 
