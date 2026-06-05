@@ -1073,28 +1073,85 @@
             </ScrollViewer>
         </Border>
 
-        <!-- ================= CENTER SECTION: OPTIMIZATION POPUP ================= -->
+        <!-- ================= CENTER SECTION: OPTIMIZATION ================= -->
         <Border Grid.Column="1" BorderBrush="#F59E0B" BorderThickness="2" CornerRadius="6" Background="#FFFFFF" Margin="7,0,7,0">
             <Grid>
-                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                    <TextBlock Text="⚙" FontSize="48" Foreground="#F59E0B" HorizontalAlignment="Center" Margin="0,0,0,20"/>
-                    <TextBlock Text="GLASS CUT OPTIMIZER" FontSize="20" FontWeight="Bold" Foreground="#1F2937" HorizontalAlignment="Center" Margin="0,0,0,8"/>
-                    <TextBlock Text="Optimize your glass cutting layouts" FontSize="12" Foreground="#6B7280" HorizontalAlignment="Center" Margin="0,0,0,20"/>
-                    <Button Content="Open Optimizer" Click="OpenOptimization_Click" Padding="20,12" FontSize="14" Background="#F59E0B" Foreground="White" BorderThickness="0" Cursor="Hand">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
-                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="Background" Value="#D97706"/>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
-                </StackPanel>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="20">
+
+                        <TextBlock Text="⚙ GLASS CUT OPTIMIZER" FontSize="18" FontWeight="Bold" Foreground="#1F2937" HorizontalAlignment="Center" Margin="0,0,0,20"/>
+
+                        <!-- Sheet Size -->
+                        <Border Background="#F9FAFB" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,16">
+                            <StackPanel>
+                                <TextBlock Text="Stock Sheet Size" FontSize="12" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,10"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Width (mm)" FontSize="10" Foreground="#6B7280" Margin="0,0,0,4"/>
+                                        <TextBox x:Name="txtSheetWidth" Text="3660" Style="{StaticResource FormTextBox}" FontSize="14" FontWeight="SemiBold" TextAlignment="Center"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="Height (mm)" FontSize="10" Foreground="#6B7280" Margin="0,0,0,4"/>
+                                        <TextBox x:Name="txtSheetHeight" Text="2440" Style="{StaticResource FormTextBox}" FontSize="14" FontWeight="SemiBold" TextAlignment="Center"/>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Thickness -->
+                        <Border Background="#F9FAFB" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,16">
+                            <StackPanel>
+                                <TextBlock Text="Glass Thickness" FontSize="12" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,10"/>
+                                <ComboBox x:Name="cmbThickness" SelectedIndex="0" Style="{StaticResource FormComboBox}" FontSize="14">
+                                    <ComboBoxItem Content="6mm"/>
+                                    <ComboBoxItem Content="8mm"/>
+                                    <ComboBoxItem Content="10mm"/>
+                                    <ComboBoxItem Content="12mm"/>
+                                </ComboBox>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Results -->
+                        <Border Background="#1E3A5F" CornerRadius="6" Padding="16" Margin="0,0,0,16">
+                            <StackPanel>
+                                <TextBlock Text="Optimization Results" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                                        <TextBlock Text="Utilization" FontSize="10" Foreground="#9CA3AF" HorizontalAlignment="Center"/>
+                                        <TextBlock x:Name="txtUtilization" Text="--" FontSize="24" FontWeight="Bold" Foreground="#10B981" HorizontalAlignment="Center"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                                        <TextBlock Text="Sheets Used" FontSize="10" Foreground="#9CA3AF" HorizontalAlignment="Center"/>
+                                        <TextBlock x:Name="txtSheetsUsed" Text="--" FontSize="24" FontWeight="Bold" Foreground="#60A5FA" HorizontalAlignment="Center"/>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Run Button -->
+                        <Button Content="▶ RUN OPTIMIZATION" Click="RunOptimization_Click" Padding="16,14" FontSize="14" Background="#10B981" Foreground="White" BorderThickness="0" Cursor="Hand" FontWeight="SemiBold">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+
+                        <TextBlock x:Name="txtOptStatus" Text="Enter sheet size and click Run" FontSize="10" Foreground="#6B7280" HorizontalAlignment="Center" Margin="0,12,0,0"/>
+
+                    </StackPanel>
+                </ScrollViewer>
             </Grid>
         </Border>
 
