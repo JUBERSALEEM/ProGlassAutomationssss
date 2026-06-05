@@ -393,7 +393,7 @@
                             <Border Background="#1A1D23" CornerRadius="4" Padding="12" Margin="0,0,0,10">
                                 <StackPanel>
                                     <TextBlock Text="OPTIONS" FontSize="10" Foreground="#6B7280" Margin="0,0,0,10"/>
-                                    <CheckBox x:Name="chkAutoRotate" Content="Auto-rotate parts for better fit" IsChecked="True" Foreground="#F9FAFB" Margin="0,0,0,8"/>
+                                    <CheckBox x:Name="chkAutoRotate" Content="Auto-rotate parts for better fit" IsChecked="False" Foreground="#F9FAFB" Margin="0,0,0,8"/>
                                 </StackPanel>
                             </Border>
 
@@ -668,7 +668,7 @@
                                     <StackPanel/>
                                 </ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
+                                                        <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Border CornerRadius="4" Padding="10" Margin="0,0,0,6">
                                         <Border.Style>
