@@ -176,15 +176,15 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             public bool Rot { get; set; } = true;
         }
 
-        // ==================== RUN OPTIMIZATION ====================
+        // ==================== RUN OPTIMIZATION (QUICK RESULT) ====================
 
         private void RunOptimization_Click(object sender, RoutedEventArgs e)
         {
             try
             {
                 // Default sheet size if empty
-                if (string.IsNullOrWhiteSpace(txtSheetWidth.Text)) txtSheetWidth.Text = "3210";
-                if (string.IsNullOrWhiteSpace(txtSheetHeight.Text)) txtSheetHeight.Text = "2250";
+                if (string.IsNullOrWhiteSpace(txtSheetWidth.Text)) txtSheetWidth.Text = "3660";
+                if (string.IsNullOrWhiteSpace(txtSheetHeight.Text)) txtSheetHeight.Text = "2440";
 
                 // Get sheet size
                 if (!double.TryParse(txtSheetWidth.Text, out double sheetWidth) || sheetWidth <= 0)
@@ -203,7 +203,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
                 if (!_trimTable.ContainsKey(thickness))
                 {
-                    thickness = "6mm"; // fallback to default
+                    thickness = "6mm";
                 }
                 TrimSettings trim = _trimTable[thickness];
 
@@ -240,7 +240,105 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     Rot = true
                 }).ToList();
 
-                // Create and show new optimizer window
+                // Create optimizer view (don't show - just run for results)
+                var optView = new OptimizationView();
+
+                // Convert CutParts to InvoiceItemModel
+                var invoiceItems = parts.Select(p => new InvoiceItemModel
+                {
+                    GlassRef = p.Ref,
+                    Width1 = p.L,
+                    Height1 = p.W,
+                    Qty = p.Qty
+                }).ToList();
+
+                // Set data
+                optView.ImportInvoiceItems(invoiceItems);
+                optView.SetStockSheet(sheetWidth, sheetHeight);
+                optView.SetTrimSettings(trim.LM, trim.RM, trim.TM, trim.BM, trim.BreakoutMin, trim.Kerf);
+
+                // Run optimization
+                optView.RunOptimizationFromInvoice();
+
+                // Get results - update center section only
+                double utilization = optView.AverageUtilization;
+                int sheetsUsed = optView.SheetsUsed;
+
+                txtUtilization.Text = $"{utilization:N1}%";
+                txtSheetsUsed.Text = sheetsUsed.ToString();
+                txtOptStatus.Text = $"✓ Optimized ({txtSheetWidth.Text}×{txtSheetHeight.Text}mm)";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // ==================== VIEW FULL LAYOUTS ====================
+
+        private void ViewOptimizationLayouts_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Default sheet size if empty
+                if (string.IsNullOrWhiteSpace(txtSheetWidth.Text)) txtSheetWidth.Text = "3660";
+                if (string.IsNullOrWhiteSpace(txtSheetHeight.Text)) txtSheetHeight.Text = "2440";
+
+                // Get sheet size
+                if (!double.TryParse(txtSheetWidth.Text, out double sheetWidth) || sheetWidth <= 0)
+                {
+                    MessageBox.Show("Please enter valid sheet width!", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+                if (!double.TryParse(txtSheetHeight.Text, out double sheetHeight) || sheetHeight <= 0)
+                {
+                    MessageBox.Show("Please enter valid sheet height!", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // Get thickness with null safe check
+                string thickness = (cmbThickness.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "6mm";
+
+                if (!_trimTable.ContainsKey(thickness))
+                {
+                    thickness = "6mm";
+                }
+                TrimSettings trim = _trimTable[thickness];
+
+                // Get all items
+                var items = new List<InvoiceItemModel>();
+                if (_viewModel?.Invoice?.Specifications != null)
+                {
+                    foreach (var spec in _viewModel.Invoice.Specifications)
+                    {
+                        if (spec?.Items != null)
+                        {
+                            foreach (var item in spec.Items)
+                            {
+                                if (item != null)
+                                    items.Add(item);
+                            }
+                        }
+                    }
+                }
+
+                if (items.Count == 0)
+                {
+                    MessageBox.Show("No items to optimize!", "Info", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // Transform to CutParts
+                var parts = items.Select(i => new CutPart
+                {
+                    Ref = i.GlassRef ?? "P",
+                    L = i.Width1 > 0 ? i.Width1 : i.Width2,
+                    W = i.Height1 > 0 ? i.Height1 : i.Height2,
+                    Qty = i.Qty > 0 ? i.Qty : 1,
+                    Rot = true
+                }).ToList();
+
+                // Create and show FULL optimization window
                 var optWindow = new Window
                 {
                     Title = "Glass Cut Optimizer - ProGlass Automation",
@@ -253,7 +351,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
                 var optView = optWindow.Content as OptimizationView;
 
-                // Convert CutParts to InvoiceItemModel
                 var invoiceItems = parts.Select(p => new InvoiceItemModel
                 {
                     GlassRef = p.Ref,
@@ -264,16 +361,14 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
                 if (optView != null)
                 {
-                    // Set data BEFORE showing window
                     optView.ImportInvoiceItems(invoiceItems);
                     optView.SetStockSheet(sheetWidth, sheetHeight);
                     optView.SetTrimSettings(trim.LM, trim.RM, trim.TM, trim.BM, trim.BreakoutMin, trim.Kerf);
                     optView.RunOptimizationFromInvoice();
 
-                    // Show window
                     optWindow.Show();
 
-                    // Update UI results
+                    // Also update center section
                     double utilization = optView.AverageUtilization;
                     int sheetsUsed = optView.SheetsUsed;
 
@@ -290,41 +385,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             {
                 MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-        }
-
-        private void RunOptimizationProcess(double sheetWidth, double sheetHeight, TrimSettings trim, List<CutPart> parts, OptimizationView optimizerView1)
-        {
-            if (_optimizerView == null)
-            {
-                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background,
-                    new Action(() => RunOptimizationProcess(sheetWidth, sheetHeight, trim, parts, optimizerView1)), 200);
-                return;
-            }
-
-            // Send to optimizer - convert CutPart to InvoiceItemModel
-            var invoiceItems = parts.Select(p => new InvoiceItemModel
-            {
-                GlassRef = p.Ref,
-                Width1 = p.L,
-                Height1 = p.W,
-                Qty = p.Qty
-            }).ToList();
-
-            _optimizerView.ImportInvoiceItems(invoiceItems);
-            _optimizerView.SetStockSheet(sheetWidth, sheetHeight);
-            _optimizerView.SetTrimSettings(trim.LM, trim.RM, trim.TM, trim.BM, trim.BreakoutMin, trim.Kerf);
-
-            // Run optimization
-            _optimizerView.RunOptimizationFromInvoice();
-
-            // Get results
-            double utilization = _optimizerView.AverageUtilization;
-            int sheetsUsed = _optimizerView.SheetsUsed;
-
-            // Update center section
-            txtUtilization.Text = $"{utilization:N1}%";
-            txtSheetsUsed.Text = sheetsUsed.ToString();
-            txtOptStatus.Text = $"✓ Optimized ({txtSheetWidth.Text}×{txtSheetHeight.Text}mm, {cmbThickness.SelectedItem})";
         }
 
         // ==================== TEXT SELECTION ON FOCUS ====================
