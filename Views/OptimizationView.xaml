@@ -21,8 +21,8 @@
             <Setter Property="Background" Value="#F59E0B"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="14,8"/>
-            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="FontSize" Value="10"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
@@ -40,8 +40,8 @@
             <Setter Property="Background" Value="#374151"/>
             <Setter Property="Foreground" Value="#9CA3AF"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="14,8"/>
-            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="FontSize" Value="10"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
@@ -89,9 +89,9 @@
 
     <Grid Margin="8">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="420"/>
+            <ColumnDefinition Width="450"/>
             <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="320"/>
+            <ColumnDefinition Width="340"/>
         </Grid.ColumnDefinitions>
 
         <!-- ================= LEFT PANEL ================= -->
@@ -118,7 +118,7 @@
                     </Grid>
                 </Border>
 
-                <!-- Tabs -->
+                <!-- Tabs - NOW 5 TABS -->
                 <Border Grid.Row="1" Background="#1A1D23" Padding="10">
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -126,11 +126,13 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <Button x:Name="btnStock" Content="STOCK" Click="OptTab_Click" Tag="Stock" Style="{StaticResource TabActive}"/>
-                        <Button x:Name="btnParts" Grid.Column="1" Content="PARTS" Click="OptTab_Click" Tag="Parts" Style="{StaticResource TabInactive}" Margin="4,0"/>
-                        <Button x:Name="btnSettings" Grid.Column="2" Content="SETTINGS" Click="OptTab_Click" Tag="Settings" Style="{StaticResource TabInactive}" Margin="4,0"/>
-                        <Button x:Name="btnSummary" Grid.Column="3" Content="LAYOUTS" Click="OptTab_Click" Tag="Summary" Style="{StaticResource TabInactive}" Margin="4,0,0,0"/>
+                        <Button x:Name="btnParts" Grid.Column="1" Content="PARTS" Click="OptTab_Click" Tag="Parts" Style="{StaticResource TabInactive}" Margin="3,0"/>
+                        <Button x:Name="btnSettings" Grid.Column="2" Content="CONFIG" Click="OptTab_Click" Tag="Settings" Style="{StaticResource TabInactive}" Margin="3,0"/>
+                        <Button x:Name="btnSummary" Grid.Column="3" Content="LAYOUTS" Click="OptTab_Click" Tag="Summary" Style="{StaticResource TabInactive}" Margin="3,0"/>
+                        <Button x:Name="btnReport" Grid.Column="4" Content="REPORT" Click="OptTab_Click" Tag="Report" Style="{StaticResource TabInactive}" Margin="3,0,0,0"/>
                     </Grid>
                 </Border>
 
@@ -139,6 +141,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                     <Grid Margin="0,8,0,10">
@@ -169,7 +172,7 @@
                              CellStyle="{StaticResource DataGridCellStyle}"
                              AllowDrop="True" PreviewMouseLeftButtonDown="DG_PreviewMouseLeftButtonDown" Drop="DG_Drop">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="REF" Binding="{Binding Ref, UpdateSourceTrigger=LostFocus}" Width="80">
+                            <DataGridTextColumn Header="REF" Binding="{Binding Ref, UpdateSourceTrigger=LostFocus}" Width="70">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Foreground" Value="#F9FAFB"/>
@@ -178,7 +181,7 @@
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
-                            <DataGridTextColumn Header="W (mm)" Binding="{Binding L, StringFormat=N0}" Width="80">
+                            <DataGridTextColumn Header="W (mm)" Binding="{Binding L, StringFormat=N0}" Width="85">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Foreground" Value="#10B981"/>
@@ -188,7 +191,7 @@
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
-                            <DataGridTextColumn Header="H (mm)" Binding="{Binding W, StringFormat=N0}" Width="80">
+                            <DataGridTextColumn Header="H (mm)" Binding="{Binding W, StringFormat=N0}" Width="85">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Foreground" Value="#10B981"/>
@@ -198,7 +201,7 @@
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
-                            <DataGridTextColumn Header="QTY" Binding="{Binding Qty, StringFormat=N0}" Width="60">
+                            <DataGridTextColumn Header="QTY" Binding="{Binding Qty, StringFormat=N0}" Width="65">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Foreground" Value="#F59E0B"/>
@@ -208,7 +211,7 @@
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
-                            <DataGridTemplateColumn Header="" Width="28">
+                            <DataGridTemplateColumn Header="" Width="30">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Button Content="✕" FontSize="10" Foreground="#EF4444" Background="Transparent" 
@@ -218,6 +221,14 @@
                             </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
+
+                    <!-- STOCK SUMMARY -->
+                    <Border Grid.Row="2" Background="#1A1D23" CornerRadius="4" Padding="10" Margin="0,10,0,0">
+                        <StackPanel>
+                            <TextBlock Text="📋 STOCK SUMMARY" FontSize="11" FontWeight="SemiBold" Foreground="#10B981" Margin="0,0,0,8"/>
+                            <TextBlock x:Name="txtStockSummary" Text="No stock added" FontSize="10" Foreground="#9CA3AF" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
                 </Grid>
 
                 <!-- ================= PARTS PANEL ================= -->
@@ -225,6 +236,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                     <Grid Margin="0,8,0,10">
@@ -234,7 +246,7 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel>
                             <TextBlock Text="PIECES TO CUT" FontSize="12" FontWeight="SemiBold" Foreground="#F9FAFB"/>
-                            <TextBlock Text="Paste from Excel: Width Height Qty (Rot auto-on)" FontSize="10" Foreground="#6B7280"/>
+                            <TextBlock Text="Paste from Excel: Width Height Qty" FontSize="10" Foreground="#6B7280"/>
                         </StackPanel>
                         <Button Grid.Column="1" Content="+ ADD" Click="AddPart_Click" 
                                 Background="#10B981" Foreground="White" BorderThickness="0" Padding="12,6" FontSize="11" Cursor="Hand">
@@ -255,7 +267,7 @@
                              CellStyle="{StaticResource DataGridCellStyle}"
                              AllowDrop="True" PreviewMouseLeftButtonDown="DG_PreviewMouseLeftButtonDown" Drop="DG_Drop">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="REF" Binding="{Binding Ref, UpdateSourceTrigger=LostFocus}" Width="70">
+                            <DataGridTextColumn Header="REF" Binding="{Binding Ref, UpdateSourceTrigger=LostFocus}" Width="65">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Foreground" Value="#F9FAFB"/>
@@ -264,7 +276,7 @@
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
-                            <DataGridTextColumn Header="W (mm)" Binding="{Binding L, StringFormat=N0}" Width="75">
+                            <DataGridTextColumn Header="W (mm)" Binding="{Binding L, StringFormat=N0}" Width="80">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Foreground" Value="#3B82F6"/>
@@ -274,7 +286,7 @@
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
-                            <DataGridTextColumn Header="H (mm)" Binding="{Binding W, StringFormat=N0}" Width="75">
+                            <DataGridTextColumn Header="H (mm)" Binding="{Binding W, StringFormat=N0}" Width="80">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Foreground" Value="#3B82F6"/>
@@ -292,7 +304,7 @@
                                     </Style>
                                 </DataGridCheckBoxColumn.ElementStyle>
                             </DataGridCheckBoxColumn>
-                            <DataGridTextColumn Header="QTY" Binding="{Binding Qty, StringFormat=N0}" Width="55">
+                            <DataGridTextColumn Header="QTY" Binding="{Binding Qty, StringFormat=N0}" Width="60">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Foreground" Value="#F59E0B"/>
@@ -302,7 +314,7 @@
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
-                            <DataGridTemplateColumn Header="" Width="28">
+                            <DataGridTemplateColumn Header="" Width="30">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Button Content="✕" FontSize="10" Foreground="#EF4444" Background="Transparent" 
@@ -312,6 +324,14 @@
                             </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
+
+                    <!-- PARTS SUMMARY -->
+                    <Border Grid.Row="2" Background="#1A1D23" CornerRadius="4" Padding="10" Margin="0,10,0,0">
+                        <StackPanel>
+                            <TextBlock Text="✂️ PARTS SUMMARY" FontSize="11" FontWeight="SemiBold" Foreground="#3B82F6" Margin="0,0,0,8"/>
+                            <TextBlock x:Name="txtPartsSummary" Text="No parts added" FontSize="10" Foreground="#9CA3AF" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
                 </Grid>
 
                 <!-- ================= SETTINGS PANEL ================= -->
@@ -336,29 +356,27 @@
                                             <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
 
-                                        <!-- First Row: LR BR TR RM -->
-                                        <StackPanel Grid.Column="0" Margin="0,0,5,8">
-                                            <TextBlock Text="Left (LR)" FontSize="9" Foreground="#9CA3AF" Margin="0,0,0,3"/>
+                                        <StackPanel Grid.Column="0" Margin="0,0,4,8">
+                                            <TextBlock Text="Left" FontSize="9" Foreground="#9CA3AF" Margin="0,0,0,3"/>
                                             <TextBox x:Name="txtLR" Text="15" Background="#374151" Foreground="White" Padding="6,5" FontSize="12" TextAlignment="Center"/>
                                         </StackPanel>
 
-                                        <StackPanel Grid.Column="1" Margin="0,0,5,8">
-                                            <TextBlock Text="Bottom (BR)" FontSize="9" Foreground="#9CA3AF" Margin="0,0,0,3"/>
+                                        <StackPanel Grid.Column="1" Margin="0,0,4,8">
+                                            <TextBlock Text="Bottom" FontSize="9" Foreground="#9CA3AF" Margin="0,0,0,3"/>
                                             <TextBox x:Name="txtBR" Text="15" Background="#374151" Foreground="White" Padding="6,5" FontSize="12" TextAlignment="Center"/>
                                         </StackPanel>
 
-                                        <StackPanel Grid.Column="2" Margin="0,0,5,8">
-                                            <TextBlock Text="Top (TR)" FontSize="9" Foreground="#9CA3AF" Margin="0,0,0,3"/>
+                                        <StackPanel Grid.Column="2" Margin="0,0,4,8">
+                                            <TextBlock Text="Top" FontSize="9" Foreground="#9CA3AF" Margin="0,0,0,3"/>
                                             <TextBox x:Name="txtTR" Text="15" Background="#374151" Foreground="White" Padding="6,5" FontSize="12" TextAlignment="Center"/>
                                         </StackPanel>
 
                                         <StackPanel Grid.Column="3" Margin="0,0,0,8">
-                                            <TextBlock Text="Right (RM)" FontSize="9" Foreground="#9CA3AF" Margin="0,0,0,3"/>
+                                            <TextBlock Text="Right" FontSize="9" Foreground="#9CA3AF" Margin="0,0,0,3"/>
                                             <TextBox x:Name="txtRM" Text="15" Background="#374151" Foreground="White" Padding="6,5" FontSize="12" TextAlignment="Center"/>
                                         </StackPanel>
 
-                                        <!-- Second Row: Kerf + Breakout -->
-                                        <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,5,0">
+                                        <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,4,0">
                                             <TextBlock Text="Kerf (mm)" FontSize="9" Foreground="#9CA3AF" Margin="0,0,0,3"/>
                                             <TextBox x:Name="txtKerf" Text="15" Background="#374151" Foreground="White" Padding="6,5" FontSize="12" TextAlignment="Center"/>
                                         </StackPanel>
@@ -376,7 +394,6 @@
                                 <StackPanel>
                                     <TextBlock Text="OPTIONS" FontSize="10" Foreground="#6B7280" Margin="0,0,0,10"/>
                                     <CheckBox x:Name="chkAutoRotate" Content="Auto-rotate parts for better fit" IsChecked="True" Foreground="#F9FAFB" Margin="0,0,0,8"/>
-                                    <CheckBox x:Name="chkQuickResult" Content="Quick mode (faster, less accurate)" Foreground="#F9FAFB"/>
                                 </StackPanel>
                             </Border>
 
@@ -467,38 +484,13 @@
                     </Grid.RowDefinitions>
 
                     <Grid Margin="0,8,0,10">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
                         <StackPanel>
                             <TextBlock Text="CUTTING LAYOUTS" FontSize="12" FontWeight="SemiBold" Foreground="#F9FAFB"/>
-                            <TextBlock Text="2D view with trim margins" FontSize="10" Foreground="#6B7280"/>
+                            <TextBlock Text="2D view with per-sheet utilization" FontSize="10" Foreground="#6B7280"/>
                         </StackPanel>
-                        <Button Grid.Column="1" Content="&lt;" Click="PrevLayout_Click" 
-                                Background="#374151" Foreground="White" Padding="8,4" Margin="0,0,5,0">
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border Background="{TemplateBinding Background}" CornerRadius="3" Padding="{TemplateBinding Padding}">
-                                        <ContentPresenter HorizontalAlignment="Center"/>
-                                    </Border>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
-                        <Button Grid.Column="2" Content="Export" Click="ExportResults_Click" 
-                                Background="#3B82F6" Foreground="White" BorderThickness="0" Padding="10,4" FontSize="10" Cursor="Hand">
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
-                                        <ContentPresenter HorizontalAlignment="Center"/>
-                                    </Border>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
                     </Grid>
 
-                    <!-- Layout selector and canvas -->
+                    <!-- Layout selector -->
                     <Grid Grid.Row="1">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -507,7 +499,7 @@
                         </Grid.RowDefinitions>
 
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <Button Content="&lt;" Click="PrevLayout_Click" Background="#374151" Foreground="White" Padding="10,5" Margin="0,0,5,0">
+                            <Button Content="◀" Click="PrevLayout_Click" Background="#374151" Foreground="White" Padding="10,5" Margin="0,0,5,0">
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">
                                         <Border Background="{TemplateBinding Background}" CornerRadius="3" Padding="{TemplateBinding Padding}">
@@ -516,20 +508,17 @@
                                     </ControlTemplate>
                                 </Button.Template>
                             </Button>
-                            <ComboBox x:Name="cmbSheetSelector" SelectionChanged="SheetSelector_Changed" Background="#374151" Foreground="White" Padding="6,4" MinWidth="150">
+                            <ComboBox x:Name="cmbSheetSelector" SelectionChanged="SheetSelector_Changed" Background="#374151" Foreground="White" Padding="6,4" MinWidth="160" MaxWidth="200">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <TextBlock Foreground="White">
                                             <Run Text="{Binding Ref}"/>
-                                            <Run Text=" ("/>
-                                            <Run Text="{Binding Used}"/>
-                                            <Run Text=")"/>
                                         </TextBlock>
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <TextBlock x:Name="txtLayoutNum" Text=" 1/35 " Foreground="#9CA3AF" VerticalAlignment="Center" Margin="8,0"/>
-                            <Button Content="&gt;" Click="NextLayout_Click" Background="#374151" Foreground="White" Padding="10,5">
+                            <TextBlock x:Name="txtLayoutNum" Text=" 1/1 " Foreground="#9CA3AF" VerticalAlignment="Center" Margin="8,0"/>
+                            <Button Content="▶" Click="NextLayout_Click" Background="#374151" Foreground="White" Padding="10,5">
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">
                                         <Border Background="{TemplateBinding Background}" CornerRadius="3" Padding="{TemplateBinding Padding}">
@@ -540,35 +529,27 @@
                             </Button>
                         </StackPanel>
 
-                        <!-- 2D Canvas with trim shown -->
+                        <!-- Canvas -->
                         <Border Grid.Row="1" Background="#0D1117" CornerRadius="4" Padding="10">
-                            <Grid>
-                                <!-- Trim indicator -->
-                                <Canvas x:Name="LayoutCanvas" Background="#0D1117"/>
-                            </Grid>
+                            <Canvas x:Name="LayoutCanvas" Background="#0D1117"/>
                         </Border>
 
-                        <!-- Legend -->
+                        <!-- Current Layout Stats -->
                         <Border Grid.Row="2" Background="#1A1D23" CornerRadius="4" Padding="10" Margin="0,8,0,0">
-                            <StackPanel Orientation="Horizontal">
-                                <Border Background="#EF4444" CornerRadius="2" Padding="6,2" Margin="0,0,10,0">
-                                    <TextBlock Text="TRIM" FontSize="9" Foreground="White" FontWeight="Bold"/>
-                                </Border>
-                                <Border Background="#3B82F6" CornerRadius="2" Padding="6,2" Margin="0,0,10,0">
-                                    <TextBlock Text="P1" FontSize="9" Foreground="White"/>
-                                </Border>
-                                <Border Background="#10B981" CornerRadius="2" Padding="6,2" Margin="0,0,10,0">
-                                    <TextBlock Text="P2" FontSize="9" Foreground="White"/>
-                                </Border>
-                                <Border Background="#8B5CF6" CornerRadius="2" Padding="6,2" Margin="0,0,10,0">
-                                    <TextBlock Text="P3" FontSize="9" Foreground="White"/>
-                                </Border>
-                                <Border Background="#F59E0B" CornerRadius="2" Padding="6,2">
-                                    <TextBlock Text="P4" FontSize="9" Foreground="White"/>
-                                </Border>
+                            <StackPanel>
+                                <TextBlock x:Name="txtCurrentLayoutStats" Text="Select a layout to view" FontSize="10" Foreground="#9CA3AF" TextWrapping="Wrap"/>
                             </StackPanel>
                         </Border>
                     </Grid>
+                </Grid>
+
+                <!-- ================= REPORT PANEL (NEW) ================= -->
+                <Grid x:Name="pnlReport" Grid.Row="2" Margin="10" Visibility="Collapsed">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel x:Name="spReportDetails">
+                            <TextBlock Text="Run optimization to generate report" FontSize="12" Foreground="#6B7280" Margin="0,20,0,0"/>
+                        </StackPanel>
+                    </ScrollViewer>
                 </Grid>
             </Grid>
         </Border>
@@ -592,7 +573,7 @@
                             <TextBlock x:Name="txtCurrentSheet" Text="Run optimization to view layouts" FontSize="10" Foreground="#9CA3AF"/>
                         </StackPanel>
                         <StackPanel Grid.Column="1" Orientation="Horizontal">
-                            <Button Content="-" Click="ZoomOut_Click" Background="#374151" Foreground="White" Padding="10,5" Margin="0,0,8,0">
+                            <Button Content="−" Click="ZoomOut_Click" Background="#374151" Foreground="White" Padding="10,5" Margin="0,0,8,0">
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">
                                         <Border Background="{TemplateBinding Background}" CornerRadius="3" Padding="{TemplateBinding Padding}">
@@ -642,12 +623,12 @@
 
                 <ScrollViewer Grid.Row="1" Padding="10">
                     <StackPanel>
-                        <!-- Summary -->
+                        <!-- Overall Summary -->
                         <Border Background="#1A1D23" CornerRadius="4" Padding="12" Margin="0,0,0,10">
                             <StackPanel>
-                                <TextBlock Text="SUMMARY" FontSize="11" FontWeight="SemiBold" Foreground="#F59E0B" Margin="0,0,0,10"/>
+                                <TextBlock Text="OVERALL SUMMARY" FontSize="11" FontWeight="SemiBold" Foreground="#F59E0B" Margin="0,0,0,10"/>
 
-                                <Grid Margin="0,0,0,8">
+                                <Grid Margin="0,0,0,6">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
@@ -656,7 +637,7 @@
                                     <TextBlock x:Name="txtTotalSheetsUsed" Grid.Column="1" Text="0" FontSize="16" FontWeight="Bold" Foreground="#F59E0B"/>
                                 </Grid>
 
-                                <Grid Margin="0,0,0,8">
+                                <Grid Margin="0,0,0,6">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
@@ -667,7 +648,7 @@
 
                                 <Separator Background="#374151" Margin="0,5"/>
 
-                                <Grid Margin="0,8,0,0">
+                                <Grid Margin="0,6,0,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
@@ -719,14 +700,14 @@
                                                     <Border Background="#10B981" CornerRadius="2" Padding="4,2" Margin="0,0,6,0">
                                                         <TextBlock FontSize="9" Foreground="White">
                                                             <Run Text="U: "/>
-                                                            <Run Text="{Binding Util, StringFormat=N2}"/>
+                                                            <Run Text="{Binding Util, StringFormat=N1}"/>
                                                             <Run Text="%"/>
                                                         </TextBlock>
                                                     </Border>
                                                     <Border Background="#EF4444" CornerRadius="2" Padding="4,2">
                                                         <TextBlock FontSize="9" Foreground="White">
                                                             <Run Text="W: "/>
-                                                            <Run Text="{Binding Waste, StringFormat=N2}"/>
+                                                            <Run Text="{Binding Waste, StringFormat=N1}"/>
                                                             <Run Text="%"/>
                                                         </TextBlock>
                                                     </Border>
