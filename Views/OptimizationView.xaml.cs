@@ -31,18 +31,7 @@ namespace ProGlassAutomation.Views
             icResults.ItemsSource = _results;
             cmbSheetSelector.ItemsSource = _results;
 
-            LoadDefaultData();
-        }
-
-        private void LoadDefaultData()
-        {
-            // Stock: 3210×2250 qty99999 (use large stock)
-            _stockSheets.Add(new StockSheet { Ref = "S1", L = 3210, W = 2250, Qty = 99999 });
-
-            // Default parts
-            _cutParts.Add(new CutPart { Ref = "P1", L = 1200, W = 900, Rot = true, Qty = 5 });
-            _cutParts.Add(new CutPart { Ref = "P2", L = 800, W = 600, Rot = true, Qty = 8 });
-            _cutParts.Add(new CutPart { Ref = "P3", L = 1500, W = 800, Rot = true, Qty = 3 });
+            // NO DEFAULT DATA - start empty
         }
 
         // ================= TAB HANDLERS =================
@@ -94,7 +83,7 @@ namespace ProGlassAutomation.Views
                 _cutParts.Remove(part);
         }
 
-        // ================= PASTE FROM EXCEL =================
+        // ================= PASTE FROM EXCEL - STRING PARSER SAFETY PATCH =================
 
         private void DG_PreviewMouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e) { }
 
@@ -110,12 +99,13 @@ namespace ProGlassAutomation.Views
             }
         }
 
+        // STRING PARSER SAFETY - StringSplitOptions.RemoveEmptyEntries
         private void ParseStockData(string text)
         {
-            var lines = text.Split('\n', '\r');
+            var lines = text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
             foreach (var line in lines)
             {
-                var parts = line.Split('\t', ' ');
+                var parts = line.Split(new[] { '\t', ' ' }, StringSplitOptions.RemoveEmptyEntries);
                 if (parts.Length >= 3)
                 {
                     if (double.TryParse(parts[0].Trim(), out double w) &&
@@ -136,10 +126,10 @@ namespace ProGlassAutomation.Views
 
         private void ParsePartsData(string text)
         {
-            var lines = text.Split('\n', '\r');
+            var lines = text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
             foreach (var line in lines)
             {
-                var parts = line.Split('\t', ' ');
+                var parts = line.Split(new[] { '\t', ' ' }, StringSplitOptions.RemoveEmptyEntries);
                 if (parts.Length >= 3)
                 {
                     if (double.TryParse(parts[0].Trim(), out double w) &&
@@ -235,8 +225,10 @@ namespace ProGlassAutomation.Views
                 }
             }
 
-            // Sort parts by largest dimension
-            allParts = allParts.OrderByDescending(x => Math.Max(x.L, x.W)).ToList();
+            // Sort parts by LARGEST dimension (area descending)
+            allParts = allParts.OrderByDescending(x => x.L * x.W)
+                             .ThenByDescending(x => Math.Max(x.L, x.W))
+                             .ToList();
 
             var sortedStock = _stockSheets.OrderByDescending(s => s.L * s.W).ToList();
 
@@ -262,44 +254,89 @@ namespace ProGlassAutomation.Views
                     var remaining = allParts.Where(p => !p.IsPlaced).ToList();
                     if (remaining.Count == 0) break;
 
+                    // Guillotine shelf algorithm with BOTH orientations
                     double currentX = 0;
                     double currentY = 0;
                     double rowHeight = 0;
                     int placedOnThisSheet = 0;
                     double usedAreaThisSheet = 0;
 
-                    // Shelf algorithm
                     while (true)
                     {
+                        // GUILLOTINE BREAKOUT SAFETY PATCH - check remaining space
+                        double remainingW = usableW - currentX;
+                        double remainingH = usableH - currentY;
+
+                        if (remainingW < _breakout || remainingH < _breakout)
+                        {
+                            // Move to new row
+                            if (rowHeight > 0)
+                            {
+                                currentX = 0;
+                                currentY += rowHeight + kerf;
+                                rowHeight = 0;
+                                if (currentY >= usableH) break;
+                            }
+                            else break;
+                            continue;
+                        }
+
                         CutPart placed = null;
                         double pWidth = 0, pHeight = 0;
+                        bool rotated = false;
 
+                        // Find best fitting part - CHECK BOTH ORIENTATIONS
                         foreach (var part in remaining)
                         {
                             if (part.IsPlaced) continue;
 
-                            double w = part.L;
-                            double h = part.W;
+                            bool allowRotation = autoRotate && part.Rot;
 
-                            if (autoRotate && part.Rot && h <= usableW && w <= usableH && w > h)
+                            // Try ORIGINAL orientation first
+                            double w1 = part.L;
+                            double h1 = part.W;
+                            double gapW1 = w1 + kerf;
+                            double gapH1 = h1 + kerf;
+
+                            bool fit1 = (currentX + gapW1 <= usableW && currentY + gapH1 <= usableH);
+
+                            // Try ROTATED orientation if allowed
+                            bool fit2 = false;
+                            double w2 = 0, h2 = 0;
+                            if (allowRotation)
                             {
-                                double t = w; w = h; h = t;
+                                w2 = part.W;
+                                h2 = part.L;
+                                double gapW2 = w2 + kerf;
+                                double gapH2 = h2 + kerf;
+                                fit2 = (currentX + gapW2 <= usableW && currentY + gapH2 <= usableH);
                             }
 
-                            double gapW = w + kerf;
-                            double gapH = h + kerf;
-
-                            if (currentX + gapW <= usableW && currentY + gapH <= usableH)
+                            if (fit1 || fit2)
                             {
-                                placed = part;
-                                pWidth = w;
-                                pHeight = h;
+                                if (fit2 && (!fit1 || w2 > w1))
+                                {
+                                    // Use rotated if it fits better or ONLY fits rotated
+                                    placed = part;
+                                    pWidth = w2;
+                                    pHeight = h2;
+                                    rotated = true;
+                                }
+                                else
+                                {
+                                    // Use original
+                                    placed = part;
+                                    pWidth = w1;
+                                    pHeight = h1;
+                                    rotated = false;
+                                }
                                 break;
                             }
                         }
 
                         if (placed == null)
                         {
+                            // Move to next row
                             if (rowHeight > 0)
                             {
                                 currentX = 0;
@@ -325,6 +362,7 @@ namespace ProGlassAutomation.Views
                             Y = currentY + _tr,
                             L = pWidth,
                             W = pHeight,
+                            IsRotated = rotated,  // ROTATION TRACKING PATCH
                             Sheet = stock.Ref,
                             SheetNum = sheetNum + 1
                         });
@@ -332,6 +370,7 @@ namespace ProGlassAutomation.Views
                         double partArea = (pWidth * pHeight) / 1000000.0;
                         usedAreaThisSheet += partArea;
 
+                        // Advance position
                         currentX += pWidth + kerf;
                         rowHeight = Math.Max(rowHeight, pHeight);
                         placedOnThisSheet++;
@@ -344,7 +383,6 @@ namespace ProGlassAutomation.Views
                         totalAreaUsedSheets += oneSheetArea;
                         totalUsedAreaAll += usedAreaThisSheet;
 
-                        // Calculate utilization for THIS sheet (not cumulative)
                         double thisSheetUtil = (usedAreaThisSheet / oneSheetArea) * 100;
                         double thisSheetWaste = 100 - thisSheetUtil;
 
@@ -364,6 +402,7 @@ namespace ProGlassAutomation.Views
                 }
             }
 
+            // Total calculation
             int placedCount = allParts.Count(p => p.IsPlaced);
             int unplacedCount = allParts.Count - placedCount;
 
@@ -417,7 +456,7 @@ namespace ProGlassAutomation.Views
             UpdateLayoutCount();
         }
 
-        // ================= 2D LAYOUT DRAWING =================
+        // ================= 2D LAYOUT DRAWING - Z-ORDER & COORDINATE OFFSET PATCHES =================
 
         private void DrawCurrentLayout()
         {
@@ -425,7 +464,7 @@ namespace ProGlassAutomation.Views
             LayoutCanvas.Children.Clear();
 
             if (_results.Count == 0) return;
-            if (_currentIndex >= _results.Count) return;
+            if (_currentIndex < 0 || _currentIndex >= _results.Count) return;
 
             var currentResult = _results[_currentIndex];
             if (currentResult.Ref == "TOTAL") return;
@@ -456,63 +495,7 @@ namespace ProGlassAutomation.Views
             double startX = (canvasW - drawW) / 2;
             double startY = margin;
 
-            // Left trim
-            Rectangle trimLeft = new Rectangle
-            {
-                Width = _lr * scale,
-                Height = drawH,
-                Fill = new SolidColorBrush(Color.FromArgb(180, 239, 68, 68)),
-                Stroke = new SolidColorBrush(Color.FromRgb(185, 28, 28)),
-                StrokeThickness = 2,
-                StrokeDashArray = new DoubleCollection { 4, 2 }
-            };
-            Canvas.SetLeft(trimLeft, startX);
-            Canvas.SetTop(trimLeft, startY);
-            PreviewCanvas.Children.Add(trimLeft);
-
-            // Right trim
-            Rectangle trimRight = new Rectangle
-            {
-                Width = _rm * scale,
-                Height = drawH,
-                Fill = new SolidColorBrush(Color.FromArgb(180, 239, 68, 68)),
-                Stroke = new SolidColorBrush(Color.FromRgb(185, 28, 28)),
-                StrokeThickness = 2,
-                StrokeDashArray = new DoubleCollection { 4, 2 }
-            };
-            Canvas.SetLeft(trimRight, startX + drawW - (_rm * scale));
-            Canvas.SetTop(trimRight, startY);
-            PreviewCanvas.Children.Add(trimRight);
-
-            // Top trim
-            Rectangle trimTop = new Rectangle
-            {
-                Width = drawW,
-                Height = _tr * scale,
-                Fill = new SolidColorBrush(Color.FromArgb(180, 239, 68, 68)),
-                Stroke = new SolidColorBrush(Color.FromRgb(185, 28, 28)),
-                StrokeThickness = 2,
-                StrokeDashArray = new DoubleCollection { 4, 2 }
-            };
-            Canvas.SetLeft(trimTop, startX);
-            Canvas.SetTop(trimTop, startY);
-            PreviewCanvas.Children.Add(trimTop);
-
-            // Bottom trim
-            Rectangle trimBottom = new Rectangle
-            {
-                Width = drawW,
-                Height = _br * scale,
-                Fill = new SolidColorBrush(Color.FromArgb(180, 239, 68, 68)),
-                Stroke = new SolidColorBrush(Color.FromRgb(185, 28, 28)),
-                StrokeThickness = 2,
-                StrokeDashArray = new DoubleCollection { 4, 2 }
-            };
-            Canvas.SetLeft(trimBottom, startX);
-            Canvas.SetTop(trimBottom, startY + drawH - (_br * scale));
-            PreviewCanvas.Children.Add(trimBottom);
-
-            // Sheet background
+            // LAYER 1: SHEET BACKGROUND (DRAW FIRST)
             Rectangle sheet = new Rectangle
             {
                 Width = drawW,
@@ -524,6 +507,28 @@ namespace ProGlassAutomation.Views
             Canvas.SetLeft(sheet, startX);
             Canvas.SetTop(sheet, startY);
             PreviewCanvas.Children.Add(sheet);
+
+            // LAYER 2: USABLE AREA (inside trims)
+            double usableX = startX + _lr * scale;
+            double usableY = startY + _tr * scale;
+            double usableW_draw = drawW - (_lr + _rm) * scale;
+            double usableH_draw = drawH - (_tr + _br) * scale;
+
+            if (usableW_draw > 0 && usableH_draw > 0)
+            {
+                Rectangle usableArea = new Rectangle
+                {
+                    Width = usableW_draw,
+                    Height = usableH_draw,
+                    Fill = new SolidColorBrush(Color.FromArgb(25, 30, 130, 30)),
+                    Stroke = new SolidColorBrush(Color.FromArgb(80, 100, 200, 100)),
+                    StrokeThickness = 1,
+                    StrokeDashArray = new DoubleCollection { 2, 4 }
+                };
+                Canvas.SetLeft(usableArea, usableX);
+                Canvas.SetTop(usableArea, usableY);
+                PreviewCanvas.Children.Add(usableArea);
+            }
 
             // Grid lines
             for (int i = 1; i < 4; i++)
@@ -563,7 +568,11 @@ namespace ProGlassAutomation.Views
                 Color.FromRgb(139, 92, 246),
                 Color.FromRgb(245, 158, 11),
                 Color.FromRgb(239, 68, 68),
-                Color.FromRgb(6, 182, 212)
+                Color.FromRgb(6, 182, 212),
+                Color.FromRgb(236, 72, 153),
+                Color.FromRgb(34, 197, 94),
+                Color.FromRgb(168, 85, 247),
+                Color.FromRgb(251, 146, 60)
             };
 
             var partGroups = partsOnSheet.GroupBy(p => p.Ref).ToList();
@@ -571,9 +580,10 @@ namespace ProGlassAutomation.Views
             for (int i = 0; i < partGroups.Count(); i++)
                 colorMap[partGroups.ElementAt(i).Key] = partColors[i % partColors.Length];
 
-            // Draw parts
+            // LAYER 3: PARTS (with coordinate offset)
             foreach (var part in partsOnSheet)
             {
+                // COORDINATE OFFSET - parts already include trim offsets from algorithm
                 double px = startX + part.X * scale;
                 double py = startY + part.Y * scale;
                 double pw = part.L * scale;
@@ -581,44 +591,203 @@ namespace ProGlassAutomation.Views
 
                 var color = colorMap[part.Ref];
 
+                // Part rectangle
                 Rectangle partRect = new Rectangle
                 {
                     Width = pw,
                     Height = ph,
                     Fill = new SolidColorBrush(color),
                     Stroke = new SolidColorBrush(Colors.White),
-                    StrokeThickness = 1,
-                    Opacity = 0.85
+                    StrokeThickness = 1.5,
+                    Opacity = 0.9,
+                    RadiusX = 2,
+                    RadiusY = 2
                 };
                 Canvas.SetLeft(partRect, px);
                 Canvas.SetTop(partRect, py);
                 PreviewCanvas.Children.Add(partRect);
 
-                if (pw > 25 && ph > 15)
+                // Part reference label
+                if (pw > 30 && ph > 18)
                 {
                     TextBlock label = new TextBlock
                     {
                         Text = part.Ref,
-                        FontSize = Math.Max(7, pw / 18),
+                        FontSize = Math.Max(8, Math.Min(pw / 12, 14)),
                         FontWeight = FontWeights.Bold,
                         Foreground = new SolidColorBrush(Colors.White)
                     };
-                    Canvas.SetLeft(label, px + 2);
-                    Canvas.SetTop(label, py + 2);
+                    Canvas.SetLeft(label, px + 3);
+                    Canvas.SetTop(label, py + 3);
                     PreviewCanvas.Children.Add(label);
                 }
+
+                // Dimensions label
+                if (pw > 50 && ph > 32)
+                {
+                    TextBlock dims = new TextBlock
+                    {
+                        Text = $"{part.L:N0}×{part.W:N0}",
+                        FontSize = Math.Max(6, Math.Min(pw / 22, 10)),
+                        Foreground = new SolidColorBrush(Color.FromArgb(200, 255, 255, 255))
+                    };
+                    Canvas.SetLeft(dims, px + 3);
+                    Canvas.SetTop(dims, py + ph - 14);
+                    PreviewCanvas.Children.Add(dims);
+                }
+
+                // ROTATION TRACKING - show rotation indicator
+                if (part.IsRotated)
+                {
+                    TextBlock rotLabel = new TextBlock
+                    {
+                        Text = "↻",
+                        FontSize = 12,
+                        Foreground = new SolidColorBrush(Color.FromRgb(255, 200, 50)),
+                        FontWeight = FontWeights.Bold
+                    };
+                    Canvas.SetLeft(rotLabel, px + pw - 14);
+                    Canvas.SetTop(rotLabel, py + 2);
+                    PreviewCanvas.Children.Add(rotLabel);
+                }
+
+                // KERF cut lines (red)
+                double kerfScale = _kerf * scale;
+                double kerfMin = Math.Max(1.5, kerfScale);
+
+                Rectangle kerfRight = new Rectangle
+                {
+                    Width = kerfMin,
+                    Height = ph,
+                    Fill = new SolidColorBrush(Color.FromRgb(200, 50, 50)),
+                    Opacity = 0.7
+                };
+                Canvas.SetLeft(kerfRight, px + pw);
+                Canvas.SetTop(kerfRight, py);
+                PreviewCanvas.Children.Add(kerfRight);
+
+                Rectangle kerfBottom = new Rectangle
+                {
+                    Width = pw,
+                    Height = kerfMin,
+                    Fill = new SolidColorBrush(Color.FromRgb(200, 50, 50)),
+                    Opacity = 0.7
+                };
+                Canvas.SetLeft(kerfBottom, px);
+                Canvas.SetTop(kerfBottom, py + ph);
+                PreviewCanvas.Children.Add(kerfBottom);
             }
+
+            // LAYER 4: TRIM MARGINS (DRAW LAST - on top)
+            Brush trimBrush = new SolidColorBrush(Color.FromArgb(180, 239, 68, 68));
+            Brush trimStroke = new SolidColorBrush(Color.FromRgb(185, 28, 28));
+            var dashArray = new DoubleCollection { 4, 2 };
+
+            if (_lr > 0)
+            {
+                Rectangle trimLeft = new Rectangle
+                {
+                    Width = _lr * scale,
+                    Height = drawH,
+                    Fill = trimBrush,
+                    Stroke = trimStroke,
+                    StrokeThickness = 2,
+                    StrokeDashArray = dashArray
+                };
+                Canvas.SetLeft(trimLeft, startX);
+                Canvas.SetTop(trimLeft, startY);
+                PreviewCanvas.Children.Add(trimLeft);
+            }
+
+            if (_rm > 0)
+            {
+                Rectangle trimRight = new Rectangle
+                {
+                    Width = _rm * scale,
+                    Height = drawH,
+                    Fill = trimBrush,
+                    Stroke = trimStroke,
+                    StrokeThickness = 2,
+                    StrokeDashArray = dashArray
+                };
+                Canvas.SetLeft(trimRight, startX + drawW - (_rm * scale));
+                Canvas.SetTop(trimRight, startY);
+                PreviewCanvas.Children.Add(trimRight);
+            }
+
+            if (_tr > 0)
+            {
+                Rectangle trimTop = new Rectangle
+                {
+                    Width = drawW,
+                    Height = _tr * scale,
+                    Fill = trimBrush,
+                    Stroke = trimStroke,
+                    StrokeThickness = 2,
+                    StrokeDashArray = dashArray
+                };
+                Canvas.SetLeft(trimTop, startX);
+                Canvas.SetTop(trimTop, startY);
+                PreviewCanvas.Children.Add(trimTop);
+            }
+
+            if (_br > 0)
+            {
+                Rectangle trimBottom = new Rectangle
+                {
+                    Width = drawW,
+                    Height = _br * scale,
+                    Fill = trimBrush,
+                    Stroke = trimStroke,
+                    StrokeThickness = 2,
+                    StrokeDashArray = dashArray
+                };
+                Canvas.SetLeft(trimBottom, startX);
+                Canvas.SetTop(trimBottom, startY + drawH - (_br * scale));
+                PreviewCanvas.Children.Add(trimBottom);
+            }
+
+            // Dimension labels
+            TextBlock dimLeft = new TextBlock
+            {
+                Text = $"{currentResult.W:N0}",
+                FontSize = 10,
+                Foreground = new SolidColorBrush(Color.FromRgb(150, 150, 150))
+            };
+            Canvas.SetLeft(dimLeft, startX - 12);
+            Canvas.SetTop(dimLeft, startY + drawH / 2 - 7);
+            PreviewCanvas.Children.Add(dimLeft);
+
+            TextBlock dimTop = new TextBlock
+            {
+                Text = $"{currentResult.L:N0}",
+                FontSize = 10,
+                Foreground = new SolidColorBrush(Color.FromRgb(150, 150, 150))
+            };
+            Canvas.SetLeft(dimTop, startX + drawW / 2 - 20);
+            Canvas.SetTop(dimTop, startY - 18);
+            PreviewCanvas.Children.Add(dimTop);
+
+            TextBlock sheetInfo = new TextBlock
+            {
+                Text = $"{currentResult.Ref}",
+                FontSize = 12,
+                FontWeight = FontWeights.Bold,
+                Foreground = new SolidColorBrush(Color.FromRgb(59, 130, 246))
+            };
+            Canvas.SetLeft(sheetInfo, startX + drawW / 2 - 25);
+            Canvas.SetTop(sheetInfo, startY + drawH + 8);
+            PreviewCanvas.Children.Add(sheetInfo);
 
             PreviewCanvas.Width = canvasW;
             PreviewCanvas.Height = canvasH;
 
-            // Header
-            txtCurrentSheet.Text = $"{currentResult.Ref}: {currentResult.L:N0} × {currentResult.W:N0}mm | U: {currentResult.Util:N2}% W: {currentResult.Waste:N2}%";
+            txtCurrentSheet.Text = $"{currentResult.Ref}: {currentResult.L:N0} × {currentResult.W:N0}mm | Util: {currentResult.Util:N1}% | Waste: {currentResult.Waste:N1}%";
             LayoutCanvas.Width = drawW;
             LayoutCanvas.Height = drawH;
         }
 
-        // ================= CONTROLS =================
+        // ================= UI CONTROLS - NAVIGATION BOUND-CHECKING =================
 
         private void ZoomIn_Click(object sender, RoutedEventArgs e)
         {
@@ -634,12 +803,14 @@ namespace ProGlassAutomation.Views
             DrawCurrentLayout();
         }
 
+        // NAVIGATION BOUND-CHECKING
         private void SheetSelector_Changed(object sender, SelectionChangedEventArgs e)
         {
-            if (cmbSheetSelector.SelectedIndex >= 0 && cmbSheetSelector.SelectedIndex < _results.Count)
+            if (cmbSheetSelector.SelectedIndex >= 0 &&
+                cmbSheetSelector.SelectedIndex < _results.Count &&
+                _results.Count > 0)
             {
                 _currentIndex = cmbSheetSelector.SelectedIndex;
-
                 if (_results[_currentIndex].Ref != "TOTAL")
                 {
                     DrawCurrentLayout();
@@ -650,7 +821,7 @@ namespace ProGlassAutomation.Views
 
         private void PrevLayout_Click(object sender, RoutedEventArgs e)
         {
-            if (_currentIndex > 0)
+            if (_currentIndex > 0 && _results.Count > 0)
             {
                 _currentIndex--;
                 cmbSheetSelector.SelectedIndex = _currentIndex;
@@ -661,7 +832,7 @@ namespace ProGlassAutomation.Views
 
         private void NextLayout_Click(object sender, RoutedEventArgs e)
         {
-            if (_currentIndex < _results.Count - 1)
+            if (_currentIndex < _results.Count - 1 && _results.Count > 0)
             {
                 _currentIndex++;
                 cmbSheetSelector.SelectedIndex = _currentIndex;
@@ -673,15 +844,12 @@ namespace ProGlassAutomation.Views
         private void UpdateLayoutCount()
         {
             int totalSheets = _results.Count(r => r.Ref != "TOTAL");
-            int currentSheetNum = _currentIndex + 1;
-
-            txtLayoutNum.Text = $" {currentSheetNum}/{totalSheets} ";
+            txtLayoutNum.Text = $" {_currentIndex + 1}/{totalSheets} ";
         }
 
         private void ClearOptimization_Click(object sender, RoutedEventArgs e)
         {
-            var result = MessageBox.Show("Clear all data?", "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question);
-            if (result == MessageBoxResult.Yes)
+            if (MessageBox.Show("Clear all data?", "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
             {
                 _stockSheets.Clear();
                 _cutParts.Clear();
@@ -698,6 +866,7 @@ namespace ProGlassAutomation.Views
                 txtAvgUtilization.Text = "0%";
                 txtTotalStats.Text = "0 sheets, 0 parts";
 
+                _currentIndex = 0;
                 PreviewCanvas.Children.Clear();
                 LayoutCanvas.Children.Clear();
                 pnlUnplaced.Visibility = Visibility.Collapsed;
@@ -780,7 +949,6 @@ namespace ProGlassAutomation.Views
                     Margin = new Thickness(0, 0, 0, 15),
                     Background = new SolidColorBrush(Color.FromRgb(248, 250, 252))
                 };
-
                 var text = new TextBlock
                 {
                     Text = $"{r.Ref}: {r.L:N0} × {r.W:N0} mm\nUtilization: {r.Util:N2}%  |  Wastage: {r.Waste:N2}%",
@@ -853,6 +1021,7 @@ namespace ProGlassAutomation.Views
         public double Waste { get; set; }
     }
 
+    // PLACED PART - with IsRotated flag for ROTATION TRACKING
     public class PlacedPart
     {
         public string Ref { get; set; } = "";
@@ -860,6 +1029,7 @@ namespace ProGlassAutomation.Views
         public double Y { get; set; }
         public double L { get; set; }
         public double W { get; set; }
+        public bool IsRotated { get; set; }  // ROTATION TRACKING PATCH
         public string Sheet { get; set; } = "";
         public int SheetNum { get; set; }
     }
