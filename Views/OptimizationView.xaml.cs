@@ -17,9 +17,10 @@ namespace ProGlassAutomation.Views
         None = 0,
         Rotate90 = 1,
         BestFit = 2,
-        StripFill = 3,
-        ColumnFill = 4,
-        RowFill = 5
+        FirstFit = 3,  // Added - like PLUS 2D
+        StripFill = 4,
+        ColumnFill = 5,
+        RowFill = 6
     }
 
     public partial class OptimizationView : UserControl
@@ -293,6 +294,12 @@ namespace ProGlassAutomation.Views
                                 if (scoreRotated < scoreNormal) { pW = part.W; pH = part.L; rotated = true; }
                             }
                             else if (canFitRotated) { pW = part.W; pH = part.L; rotated = true; }
+                            else if (!canFitNormal) continue;
+                        }
+                        else if (rotationPolicy == RotationPolicy.FirstFit)
+                        {
+                            // First Fit - place in first available spot (like PLUS 2D)
+                            if (canFitRotated) { pW = part.W; pH = part.L; rotated = true; }
                             else if (!canFitNormal) continue;
                         }
                         else if (rotationPolicy == RotationPolicy.StripFill)

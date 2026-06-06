@@ -396,10 +396,11 @@
                                     <CheckBox x:Name="chkAutoRotate" Content="Auto-rotate parts for better fit" IsChecked="False" Foreground="#F9FAFB" Margin="0,0,0,8"/>
                                     <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
                                         <TextBlock Text="Rotation Style:" Foreground="#F9FAFB" VerticalAlignment="Center" Margin="0,0,10,0" FontSize="11"/>
-                                        <ComboBox x:Name="cmbRotation" Width="130" SelectedIndex="2">
+                                        <ComboBox x:Name="cmbRotation" Width="130" SelectedIndex="3">
                                             <ComboBoxItem Content="No Rotation"/>
                                             <ComboBoxItem Content="Rotate 90°"/>
                                             <ComboBoxItem Content="Best Fit"/>
+                                            <ComboBoxItem Content="First Fit"/>
                                             <ComboBoxItem Content="Strip Fill"/>
                                             <ComboBoxItem Content="Column Fill"/>
                                             <ComboBoxItem Content="Row Fill"/>
