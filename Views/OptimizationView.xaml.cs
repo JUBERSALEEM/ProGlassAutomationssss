@@ -429,8 +429,8 @@ namespace ProGlassAutomation.Views
                             SheetNum = sheetNum + 1
                         });
 
+                        // In the placement loop: stop accumulating usedAreaThisSheet per-part (compute per-sheet later)
                         double partArea = (part.PlacedW * part.PlacedH) / 1000000.0;
-                        usedAreaThisSheet += partArea;
                         _usedSQM += partArea;
                         placedOnThisSheet++;
                         _totalPartsCut++;
@@ -451,11 +451,46 @@ namespace ProGlassAutomation.Views
                     // Record sheet result
                     if (placedOnThisSheet > 0)
                     {
+                        // Recalculate used area from placed parts to avoid accumulation errors
+                        usedAreaThisSheet = placedOnThisSheetList.Sum(p => (p.L * p.W) / 1000000.0);
+
                         sheetsUsedForThisStock++;
                         totalSheetsUsed++;
                         totalAreaUsedSheets += oneSheetArea;
-                        totalUsedAreaAll += usedAreaThisSheet;
-                        double thisSheetUtil = (usedAreaThisSheet / oneSheetArea) * 100;
+
+                        // Calculate utilization for this sheet (used area vs full sheet area)
+                        double thisSheetUtil = oneSheetArea > 0 ? (usedAreaThisSheet / oneSheetArea) * 100.0 : 0.0;
+
+                        // Detect overlapping placed parts (simple axis-aligned check)
+                        bool overlapDetected = false;
+                        for (int a = 0; a < placedOnThisSheetList.Count; a++)
+                        {
+                            var pa = placedOnThisSheetList[a];
+                            var ax1 = pa.X; var ay1 = pa.Y; var ax2 = pa.X + pa.L; var ay2 = pa.Y + pa.W;
+                            for (int b = a + 1; b < placedOnThisSheetList.Count; b++)
+                            {
+                                var pb = placedOnThisSheetList[b];
+                                var bx1 = pb.X; var by1 = pb.Y; var bx2 = pb.X + pb.L; var by2 = pb.Y + pb.W;
+                                bool intersects = !(ax2 <= bx1 || bx2 <= ax1 || ay2 <= by1 || by2 <= ay1);
+                                if (intersects)
+                                {
+                                    overlapDetected = true;
+                                    System.Diagnostics.Debug.WriteLine($"OVERLAP detected on sheet {stock.Ref}-{sheetsUsedForThisStock}: {pa.Ref}@({pa.X},{pa.Y},{pa.L},{pa.W}) vs {pb.Ref}@({pb.X},{pb.Y},{pb.L},{pb.W})");
+                                }
+                            }
+                        }
+
+                        // If used area exceeds sheet area due to overlapping or rounding, clamp and warn
+                        if (thisSheetUtil > 100.0 || overlapDetected)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"WARNING: Sheet utilization >100% or overlap on {stock.Ref}-{sheetsUsedForThisStock}. Clamping values.");
+                            // Clamp the used area to the full sheet area
+                            usedAreaThisSheet = Math.Min(usedAreaThisSheet, oneSheetArea);
+                            thisSheetUtil = oneSheetArea > 0 ? (usedAreaThisSheet / oneSheetArea) * 100.0 : 0.0;
+                        }
+
+                        // DEBUG: Show actual values
+                        System.Diagnostics.Debug.WriteLine($"Sheet {sheetsUsedForThisStock}: Used={usedAreaThisSheet.ToString("F4")} m², Sheet={oneSheetArea.ToString("F4")} m², Util={thisSheetUtil.ToString("F2")}%");
 
                         _results.Add(new OptimizationResult
                         {
@@ -469,6 +504,9 @@ namespace ProGlassAutomation.Views
                             Util = thisSheetUtil,
                             Waste = 100 - thisSheetUtil
                         });
+
+                        // Add used area to totals AFTER clamping
+                        totalUsedAreaAll += usedAreaThisSheet;
 
                         _allPlacedParts.AddRange(placedOnThisSheetList);
                         _cutOperations.AddRange(sheetCuts);
@@ -484,20 +522,46 @@ namespace ProGlassAutomation.Views
                 }
             }
 
-            // PATCH 4: Second pass - try to place unplaced parts on remnants
-            if (_twoPassEnabled)
+            // PATCH 4: Second pass - just for placing additional parts, not for utilization calculation
+            // (parts on remnants don't add new sheet area, utilization already calculated per-sheet above)
+            double areaFromRemnants = 0;
+            if (_twoPassEnabled && _remnants.Count > 0)
             {
                 var unplacedParts = allParts.Where(p => !p.IsPlaced).ToList();
                 if (unplacedParts.Count > 0)
                 {
-                    RunSecondPassNesting(unplacedParts);
+                    areaFromRemnants = RunSecondPassNesting(unplacedParts);
                 }
             }
 
             // Update statistics
             _totalPartsUnplaced = allParts.Count(p => !p.IsPlaced);
-            _overallUtilization = totalAreaUsedSheets > 0 ? (totalUsedAreaAll / totalAreaUsedSheets) * 100 : 0;
-            _overallWastage = 100 - _overallUtilization;
+
+            // Calculate utilization - SUM each sheet's FULL area individually (handles different stock sizes)
+            var sheetResults = _results.Where(r => r.Ref != "TOTAL").ToList();
+            if (sheetResults.Count > 0)
+            {
+                double totalPartArea = sheetResults.Sum(r => r.Area);
+
+                // FIX: Calculate each sheet area and SUM them (handles mixed stock sizes correctly)
+                double totalFullArea = sheetResults.Sum(r => (r.L * r.W) / 1000000.0);
+
+                // DEBUG - Show actual values
+                System.Diagnostics.Debug.WriteLine($"DEBUG: {sheetResults.Count} sheets, PartArea={totalPartArea:F4} m², FullArea={totalFullArea:F4} m²");
+
+                _overallUtilization = totalFullArea > 0 ? (totalPartArea / totalFullArea) * 100 : 0;
+                _overallWastage = 100 - _overallUtilization;
+
+                // Cap utilization to valid range
+                if (_overallUtilization > 100) _overallUtilization = 100;
+                if (_overallUtilization < 0) _overallUtilization = 0;
+                _overallWastage = 100 - _overallUtilization;
+            }
+            else
+            {
+                _overallUtilization = 0;
+                _overallWastage = 100;
+            }
 
             // DEBUG: Show unplaced parts info
             var unplaced = allParts.Where(p => !p.IsPlaced).ToList();
@@ -508,50 +572,29 @@ namespace ProGlassAutomation.Views
             }
 
             int totalAvailable = _stockSheets.Sum(s => s.Qty);
+
+            // FIX: Final clamp before showing results
+            if (_overallUtilization > 100) _overallUtilization = 100;
+            if (_overallUtilization < 0) _overallUtilization = 0;
+            _overallWastage = 100 - _overallUtilization;
+
             _results.Add(new OptimizationResult { Ref = "TOTAL", L = 0, W = 0, Used = totalSheetsUsed, Area = totalUsedAreaAll, Util = _overallUtilization, Waste = _overallWastage });
 
-            // PATCH 4: Third pass - Try to place remaining parts anywhere possible
+            // PATCH 4: Third pass - DISABLED
+            // Don't force place parts that don't fit - leave them as unplaced
+            // This maintains accurate utilization calculation
             var stillUnplaced = allParts.Where(p => !p.IsPlaced).ToList();
             if (stillUnplaced.Count > 0)
             {
-                // Try any leftover space
-                foreach (var part in stillUnplaced)
-                {
-                    // Just mark as placed with warning (use any space)
-                    part.IsPlaced = true;
-                    part.PlacedX = 0;
-                    part.PlacedY = 0;
-                    part.PlacedW = part.L;
-                    part.PlacedH = part.W;
-
-                    // Add to used area
-                    double partArea = (part.L * part.W) / 1000000.0;
-                    _usedSQM += partArea;
-                    _totalPartsCut++;
-                }
-                System.Diagnostics.Debug.WriteLine($"Third pass placed: {stillUnplaced.Count} parts");
+                // Just mark remaining as unplaced - DO NOT force place
+                // Utilization should only count properly placed parts
+                System.Diagnostics.Debug.WriteLine($"Third pass SKIPPED: {stillUnplaced.Count} parts left unplaced");
             }
 
             _totalPartsUnplaced = allParts.Count(p => !p.IsPlaced);
 
-            // Group results
-            var groupedResults = _results
-                .Where(r => r.Ref != "TOTAL")
-                .GroupBy(r => $"{r.L}x{r.W}")
-                .Select(g => new OptimizationResult
-                {
-                    Ref = $"{g.First().L:N0}x{g.First().W:N0}",
-                    SheetRef = g.First().SheetRef,
-                    L = g.First().L,
-                    W = g.First().W,
-                    Used = g.Sum(x => x.Used),
-                    Area = g.Sum(x => x.Area),
-                    Util = g.Average(x => x.Util),
-                    Waste = g.Average(x => x.Waste)
-                })
-                .ToList();
-
-            icResults.ItemsSource = groupedResults;
+            // Don't group - show all individual sheets
+            icResults.ItemsSource = _results.Where(r => r.Ref != "TOTAL").ToList();
 
             // Update UI
             txtSheetsUsed.Text = totalSheetsUsed.ToString();
@@ -750,9 +793,11 @@ namespace ProGlassAutomation.Views
 
         private void UpdateFreeRectsWithGuillotine(PlacementNode placement, double w, double h)
         {
+            // Find the free rect that contains the placement area (allow small epsilon)
+            const double eps = 0.01;
             var usedRect = _freeRects.FirstOrDefault(r =>
-                Math.Abs(r.X - placement.X) < 0.01 &&
-                Math.Abs(r.Y - placement.Y) < 0.01);
+                placement.X + eps >= r.X && placement.Y + eps >= r.Y &&
+                placement.X + w <= r.X + r.Width + eps && placement.Y + h <= r.Y + r.Height + eps);
 
             if (usedRect == null) return;
 
@@ -769,23 +814,21 @@ namespace ProGlassAutomation.Views
 
             if (bottomH > _constraints.MinRemnantSize)
             {
-                _freeRects.Add(new MaxRect(placement.X, placement.Y + h, w, bottomH));
+                // bottom remaining rect spans the full width of the usedRect
+                _freeRects.Add(new MaxRect(placement.X, placement.Y + h, usedRect.Width, bottomH));
             }
 
-            if (rightW > _constraints.MinRemnantSize && bottomH > _constraints.MinRemnantSize)
-            {
-                _freeRects.Add(new MaxRect(placement.X + w, placement.Y + h, rightW, bottomH));
-            }
-
-            // Merge adjacent free rects
+            // Merge adjacent free rects and prune any contained rects
             MergeFreeRects();
+            PruneContainedFreeRects(_freeRects);
         }
 
         private void UpdateFreeRectsTest(MaxRect placement, double w, double h, List<MaxRect> freeRects)
         {
+            const double eps = 0.01;
             var usedRect = freeRects.FirstOrDefault(r =>
-                Math.Abs(r.X - placement.X) < 0.01 &&
-                Math.Abs(r.Y - placement.Y) < 0.01);
+                placement.X + eps >= r.X && placement.Y + eps >= r.Y &&
+                placement.X + w <= r.X + r.Width + eps && placement.Y + h <= r.Y + r.Height + eps);
 
             if (usedRect == null) return;
 
@@ -798,17 +841,18 @@ namespace ProGlassAutomation.Views
                 freeRects.Add(new MaxRect(placement.X + w, placement.Y, rightW, usedRect.Height));
 
             if (bottomH > _constraints.MinRemnantSize)
-                freeRects.Add(new MaxRect(placement.X, placement.Y + h, w, bottomH));
+                freeRects.Add(new MaxRect(placement.X, placement.Y + h, usedRect.Width, bottomH));
 
-            if (rightW > _constraints.MinRemnantSize && bottomH > _constraints.MinRemnantSize)
-                freeRects.Add(new MaxRect(placement.X + w, placement.Y + h, rightW, bottomH));
+            // Do not add overlapping bottom-right rect; right and bottom rects cover remaining space
+            PruneContainedFreeRects(freeRects);
         }
 
         private void SimulatePlacement(MaxRect rect, double w, double h, bool rotated, List<MaxRect> freeRects)
         {
+            const double eps = 0.01;
             var used = freeRects.FirstOrDefault(r =>
-                Math.Abs(r.X - rect.X) < 0.01 &&
-                Math.Abs(r.Y - rect.Y) < 0.01);
+                rect.X + eps >= r.X && rect.Y + eps >= r.Y &&
+                rect.X + w <= r.X + r.Width + eps && rect.Y + h <= r.Y + r.Height + eps);
 
             if (used == null) return;
 
@@ -821,10 +865,10 @@ namespace ProGlassAutomation.Views
                 freeRects.Add(new MaxRect(rect.X + w, rect.Y, rightW, used.Height));
 
             if (bottomH > _constraints.MinRemnantSize)
-                freeRects.Add(new MaxRect(rect.X, rect.Y + h, w, bottomH));
+                freeRects.Add(new MaxRect(rect.X, rect.Y + h, used.Width, bottomH));
 
-            if (rightW > _constraints.MinRemnantSize && bottomH > _constraints.MinRemnantSize)
-                freeRects.Add(new MaxRect(rect.X + w, rect.Y + h, rightW, bottomH));
+            // Do not add overlapping bottom-right rect; right and bottom rects cover remaining space
+            PruneContainedFreeRects(freeRects);
         }
 
         private void MergeFreeRects()
@@ -875,6 +919,34 @@ namespace ProGlassAutomation.Views
                     }
                 }
             } while (merged);
+            // After merging, prune contained rectangles
+            PruneContainedFreeRects(_freeRects);
+        }
+
+        private void PruneContainedFreeRects(List<MaxRect> list)
+        {
+            bool removed;
+            do
+            {
+                removed = false;
+                for (int i = 0; i < list.Count; i++)
+                {
+                    for (int j = 0; j < list.Count; j++)
+                    {
+                        if (i == j) continue;
+                        var a = list[i];
+                        var b = list[j];
+                        // if a is contained within b remove a
+                        if (a.X + 0.01 >= b.X && a.Y + 0.01 >= b.Y && a.X + a.Width <= b.X + b.Width + 0.01 && a.Y + a.Height <= b.Y + b.Height + 0.01)
+                        {
+                            list.RemoveAt(i);
+                            removed = true;
+                            break;
+                        }
+                    }
+                    if (removed) break;
+                }
+            } while (removed);
         }
 
         // =====================================================
@@ -911,62 +983,79 @@ namespace ProGlassAutomation.Views
         }
 
         // =====================================================
-        // PATCH 4: SECOND PASS NESTING
+        // PATCH 4: SECOND PASS NESTING - FIXED
         // =====================================================
 
-        private void RunSecondPassNesting(List<CutPart> unplacedParts)
+        private double RunSecondPassNesting(List<CutPart> unplacedParts)
         {
-            if (!_twoPassEnabled || unplacedParts.Count == 0) return;
+            if (!_twoPassEnabled || unplacedParts.Count == 0) return 0;
+            if (_remnants.Count == 0) return 0;
 
-            // Get ALL remnants (lower threshold)
+            // Get ALL usable remnants
             var usableRemnants = _remnants
                 .Where(r => !r.IsReused && r.ValueScore > 0.2)
                 .OrderByDescending(r => r.Area)
                 .ToList();
 
+            if (usableRemnants.Count == 0) return 0;
+
+            double partsAreaOnRemnants = 0;
+
+            // Try to place parts on each remnant
             foreach (var remnant in usableRemnants)
             {
-                foreach (var part in unplacedParts.ToList())
+                // Track pieces placed on THIS remnant so we can mark it fully used when no more fit
+                var partsOnThisRemnant = new List<CutPart>();
+
+                // Find all parts that fit this remnant
+                foreach (var part in unplacedParts)
                 {
                     if (part.IsPlaced) continue;
 
                     double pW = part.L + _kerf;
                     double pH = part.W + _kerf;
 
-                    // Check normal fit
-                    bool canFit = pW <= remnant.Width && pH <= remnant.Height;
+                    // Check normal orientation
+                    bool canFitNormal = pW <= remnant.Width && pH <= remnant.Height;
 
-                    // Check rotated fit
+                    // Check rotated orientation  
                     bool canFitRotated = false;
                     if (part.Rot)
                     {
                         canFitRotated = pH <= remnant.Width && pW <= remnant.Height;
                     }
 
-                    if (!canFit && !canFitRotated) continue;
+                    if (!canFitNormal && !canFitRotated) continue;
 
-                    // Determine orientation - prefer rotated if it fits better
-                    bool rotated = canFitRotated && (!canFit || part.Rot);
+                    // Place part
+                    bool rotated = canFitRotated && !canFitNormal;
 
-                    // Place part on remnant
                     part.IsPlaced = true;
                     part.PlacedX = remnant.X + _kerf;
                     part.PlacedY = remnant.Y + _kerf;
-                    part.PlacedW = rotated ? part.L : part.L;
-                    part.PlacedH = rotated ? part.W : part.W;
+                    part.PlacedW = rotated ? part.W : part.L;
+                    part.PlacedH = rotated ? part.L : part.W;
 
-                    remnant.IsReused = true;
-
-                    // Update statistics
+                    // Track area
                     double partArea = (part.L * part.W) / 1000000.0;
+                    partsAreaOnRemnants += partArea;
                     _usedSQM += partArea;
                     _totalPartsCut++;
 
-                    unplacedParts.Remove(part);
+                    partsOnThisRemnant.Add(part);
+                }
+
+                // Only mark remnant as used if we placed at least one part on it
+                if (partsOnThisRemnant.Count > 0)
+                {
+                    remnant.IsReused = true;
                 }
             }
 
-            _totalPartsUnplaced = unplacedParts.Count;
+            _totalPartsUnplaced = unplacedParts.Count(p => !p.IsPlaced);
+
+            // Return area of parts placed on remnants (for tracking only, not used in util calc)
+            return partsAreaOnRemnants;
         }
 
         // =====================================================
@@ -1264,7 +1353,6 @@ namespace ProGlassAutomation.Views
                 Foreground = new SolidColorBrush(Color.FromRgb(239, 68, 68))
             });
 
-            // Show strategy used
             overallStack.Children.Add(new TextBlock
             {
                 Text = $"Strategy: {_nestingStrategy}",
@@ -1288,20 +1376,11 @@ namespace ProGlassAutomation.Views
             overallBorder.Child = overallStack;
             spReportDetails.Children.Add(overallBorder);
 
-            // Grouped results
-            var groupedResults = _results.Where(r => r.Ref != "TOTAL")
-                .GroupBy(r => new { r.L, r.W, Util = Math.Round(r.Util, 1) })
-                .OrderByDescending(g => g.Key.L * g.Key.W)
-                .ToList();
+            // Show individual sheet results - no grouping needed
+            var sheetResults = _results.Where(r => r.Ref != "TOTAL").OrderBy(r => r.Ref).ToList();
 
-            foreach (var sheetGroup in groupedResults)
+            foreach (var result in sheetResults)
             {
-                var first = sheetGroup.First();
-                int sheetCount = sheetGroup.Count();
-                double avgUtil = sheetGroup.Average(s => s.Util);
-                double avgWaste = sheetGroup.Average(s => s.Waste);
-                double totalArea = sheetGroup.Sum(s => s.Area);
-
                 var sheetBorder = new Border
                 {
                     Background = new SolidColorBrush(Color.FromRgb(26, 29, 35)),
@@ -1313,7 +1392,7 @@ namespace ProGlassAutomation.Views
 
                 sheetStack.Children.Add(new TextBlock
                 {
-                    Text = $"{first.SheetRef}: {first.L:N0} × {first.W:N0}mm",
+                    Text = $"{result.Ref}: {result.L:N0} × {result.W:N0}mm",
                     FontSize = 12,
                     FontWeight = FontWeights.Bold,
                     Foreground = new SolidColorBrush(Color.FromRgb(59, 130, 246))
@@ -1321,7 +1400,7 @@ namespace ProGlassAutomation.Views
 
                 sheetStack.Children.Add(new TextBlock
                 {
-                    Text = $"Sheets: {sheetCount} | Area: {totalArea:N3} m² | U: {avgUtil:N2}% | W: {avgWaste:N2}%",
+                    Text = $"Area: {result.Area:N3} m² | U: {result.Util:N2}% | W: {result.Waste:N2}%",
                     Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175)),
                     FontSize = 11
                 });
@@ -1361,7 +1440,6 @@ namespace ProGlassAutomation.Views
                 Foreground = new SolidColorBrush(Colors.White)
             });
 
-            // Cost breakdown
             totalStack.Children.Add(new TextBlock
             {
                 Text = $"Est. Cost: {txtTotalCost?.Text ?? "N/A"}",
@@ -1491,7 +1569,7 @@ namespace ProGlassAutomation.Views
                     Text = $"#{idx + 1}: {currentResult.L:N0}×{currentResult.W:N0}mm U:{currentResult.Util:N1}% W:{currentResult.Waste:N1}%",
                     FontSize = 9,
                     FontWeight = FontWeights.Bold,
-                    Foreground = new SolidColorBrush(Color.FromRgb(245, 158, 11))
+                    Foreground = new SolidColorBrush(Colors.White)
                 };
                 Canvas.SetLeft(info, areaLeft + 5);
                 Canvas.SetTop(info, areaTop + 2);
