@@ -118,7 +118,7 @@
                     </Grid>
                 </Border>
 
-                <!-- Tabs - NOW 5 TABS -->
+                <!-- Tabs -->
                 <Border Grid.Row="1" Background="#1A1D23" Padding="10">
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -131,7 +131,7 @@
                         <Button x:Name="btnStock" Content="STOCK" Click="OptTab_Click" Tag="Stock" Style="{StaticResource TabActive}"/>
                         <Button x:Name="btnParts" Grid.Column="1" Content="PARTS" Click="OptTab_Click" Tag="Parts" Style="{StaticResource TabInactive}" Margin="3,0"/>
                         <Button x:Name="btnSettings" Grid.Column="2" Content="CONFIG" Click="OptTab_Click" Tag="Settings" Style="{StaticResource TabInactive}" Margin="3,0"/>
-                        <Button x:Name="btnSummary" Grid.Column="3" Content="LAYOUTS" Click="OptTab_Click" Tag="Summary" Style="{StaticResource TabInactive}" Margin="3,0"/>
+                        <Button x:Name="btnSummary" Grid.Column="3" Content="LAYOUTS" Click="OptTab_Click" Tag="Layouts" Style="{StaticResource TabInactive}" Margin="3,0"/>
                         <Button x:Name="btnReport" Grid.Column="4" Content="REPORT" Click="OptTab_Click" Tag="Report" Style="{StaticResource TabInactive}" Margin="3,0,0,0"/>
                     </Grid>
                 </Border>
@@ -378,7 +378,7 @@
 
                                         <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,4,0">
                                             <TextBlock Text="Kerf (mm)" FontSize="9" Foreground="#9CA3AF" Margin="0,0,0,3"/>
-                                            <TextBox x:Name="txtKerf" Text="15" Background="#374151" Foreground="White" Padding="6,5" FontSize="12" TextAlignment="Center"/>
+                                            <TextBox x:Name="txtKerf" Text="4" Background="#374151" Foreground="White" Padding="6,5" FontSize="12" TextAlignment="Center"/>
                                         </StackPanel>
 
                                         <StackPanel Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3">
@@ -394,6 +394,17 @@
                                 <StackPanel>
                                     <TextBlock Text="OPTIONS" FontSize="10" Foreground="#6B7280" Margin="0,0,0,10"/>
                                     <CheckBox x:Name="chkAutoRotate" Content="Auto-rotate parts for better fit" IsChecked="False" Foreground="#F9FAFB" Margin="0,0,0,8"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                        <TextBlock Text="Rotation Style:" Foreground="#F9FAFB" VerticalAlignment="Center" Margin="0,0,10,0" FontSize="11"/>
+                                        <ComboBox x:Name="cmbRotation" Width="130" SelectedIndex="2">
+                                            <ComboBoxItem Content="No Rotation"/>
+                                            <ComboBoxItem Content="Rotate 90°"/>
+                                            <ComboBoxItem Content="Best Fit"/>
+                                            <ComboBoxItem Content="Strip Fill"/>
+                                            <ComboBoxItem Content="Column Fill"/>
+                                            <ComboBoxItem Content="Row Fill"/>
+                                        </ComboBox>
+                                    </StackPanel>
                                 </StackPanel>
                             </Border>
 
@@ -431,7 +442,6 @@
                             <Border Background="#1A1D23" CornerRadius="4" Padding="12" Margin="0,20,0,0">
                                 <StackPanel>
                                     <TextBlock Text="QUICK SUMMARY" FontSize="11" FontWeight="SemiBold" Foreground="#F59E0B" Margin="0,0,0,10"/>
-
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
@@ -480,70 +490,66 @@
                 <Grid x:Name="pnlSummary" Grid.Row="2" Margin="10" Visibility="Collapsed">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                     <Grid Margin="0,8,0,10">
                         <StackPanel>
-                            <TextBlock Text="CUTTING LAYOUTS" FontSize="12" FontWeight="SemiBold" Foreground="#F9FAFB"/>
-                            <TextBlock Text="2D view with per-sheet utilization" FontSize="10" Foreground="#6B7280"/>
+                            <TextBlock Text="ALL LAYOUTS LIST" FontSize="12" FontWeight="SemiBold" Foreground="#F9FAFB"/>
+                            <TextBlock Text="Select sheet to view in 2D panel" FontSize="10" Foreground="#6B7280"/>
                         </StackPanel>
                     </Grid>
 
-                    <!-- Layout selector -->
-                    <Grid Grid.Row="1">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
+                    <!-- Navigation -->
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
+                        <Button Content="◀" Click="PrevLayout_Click" Background="#374151" Foreground="White" Padding="10,5" Margin="0,0,5,0">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" CornerRadius="3" Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                        <ComboBox x:Name="cmbSheetSelector" SelectionChanged="SheetSelector_Changed" Background="#374151" Foreground="White" Padding="6,4" MinWidth="160" MaxWidth="200">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Foreground="White">
+                        <Run Text="{Binding Ref}"/>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <TextBlock x:Name="txtLayoutNum" Text=" 1/1 " Foreground="#9CA3AF" VerticalAlignment="Center" Margin="8,0"/>
+                        <Button Content="▶" Click="NextLayout_Click" Background="#374151" Foreground="White" Padding="10,5">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" CornerRadius="3" Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </StackPanel>
 
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <Button Content="◀" Click="PrevLayout_Click" Background="#374151" Foreground="White" Padding="10,5" Margin="0,0,5,0">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border Background="{TemplateBinding Background}" CornerRadius="3" Padding="{TemplateBinding Padding}">
-                                            <ContentPresenter HorizontalAlignment="Center"/>
-                                        </Border>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
-                            <ComboBox x:Name="cmbSheetSelector" SelectionChanged="SheetSelector_Changed" Background="#374151" Foreground="White" Padding="6,4" MinWidth="160" MaxWidth="200">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Foreground="White">
-                                            <Run Text="{Binding Ref}"/>
-                                        </TextBlock>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                            <TextBlock x:Name="txtLayoutNum" Text=" 1/1 " Foreground="#9CA3AF" VerticalAlignment="Center" Margin="8,0"/>
-                            <Button Content="▶" Click="NextLayout_Click" Background="#374151" Foreground="White" Padding="10,5">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border Background="{TemplateBinding Background}" CornerRadius="3" Padding="{TemplateBinding Padding}">
-                                            <ContentPresenter HorizontalAlignment="Center"/>
-                                        </Border>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
+                    <!-- Canvas - Full list in left panel -->
+                    <Border Grid.Row="2" Background="#0D1117" CornerRadius="4">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <Canvas x:Name="PreviewCanvas" Background="#0D1117"/>
+                        </ScrollViewer>
+                    </Border>
+
+                    <!-- Stats -->
+                    <Border Grid.Row="3" Background="#1A1D23" CornerRadius="4" Padding="10" Margin="0,8,0,0">
+                        <StackPanel>
+                            <TextBlock x:Name="txtCurrentLayoutStats" Text="Select a layout to view" FontSize="10" Foreground="#9CA3AF" TextWrapping="Wrap"/>
                         </StackPanel>
-
-                        <!-- Canvas -->
-                        <Border Grid.Row="1" Background="#0D1117" CornerRadius="4" Padding="10">
-                            <Canvas x:Name="LayoutCanvas" Background="#0D1117"/>
-                        </Border>
-
-                        <!-- Current Layout Stats -->
-                        <Border Grid.Row="2" Background="#1A1D23" CornerRadius="4" Padding="10" Margin="0,8,0,0">
-                            <StackPanel>
-                                <TextBlock x:Name="txtCurrentLayoutStats" Text="Select a layout to view" FontSize="10" Foreground="#9CA3AF" TextWrapping="Wrap"/>
-                            </StackPanel>
-                        </Border>
-                    </Grid>
+                    </Border>
                 </Grid>
 
-                <!-- ================= REPORT PANEL (NEW) ================= -->
+                <!-- ================= REPORT PANEL ================= -->
                 <Grid x:Name="pnlReport" Grid.Row="2" Margin="10" Visibility="Collapsed">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel x:Name="spReportDetails">
@@ -573,7 +579,7 @@
                             <TextBlock x:Name="txtCurrentSheet" Text="Run optimization to view layouts" FontSize="10" Foreground="#9CA3AF"/>
                         </StackPanel>
                         <StackPanel Grid.Column="1" Orientation="Horizontal">
-                            <Button Content="−" Click="ZoomOut_Click" Background="#374151" Foreground="White" Padding="10,5" Margin="0,0,8,0">
+                            <Button Content="−" Click="ZoomOut_Click" Background="#374151" Foreground="White" Padding="8,4" Margin="0,0,5,0">
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">
                                         <Border Background="{TemplateBinding Background}" CornerRadius="3" Padding="{TemplateBinding Padding}">
@@ -582,8 +588,36 @@
                                     </ControlTemplate>
                                 </Button.Template>
                             </Button>
-                            <TextBlock x:Name="txtZoom" Text="100%" Foreground="White" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <Button Content="+" Click="ZoomIn_Click" Background="#374151" Foreground="White" Padding="10,5">
+                            <TextBlock x:Name="txtZoom" Text="100%" Foreground="White" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                            <Button Content="+" Click="ZoomIn_Click" Background="#374151" Foreground="White" Padding="8,4" Margin="0,0,10,0">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}" CornerRadius="3" Padding="{TemplateBinding Padding}">
+                                            <ContentPresenter HorizontalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                            <TextBlock Text="View:" Foreground="#9CA3AF" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                            <Button Content="4" Click="SheetsPerPage4_Click" Background="#374151" Foreground="White" Padding="6,3" FontSize="10" Margin="2,0">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}" CornerRadius="3" Padding="{TemplateBinding Padding}">
+                                            <ContentPresenter HorizontalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                            <Button Content="6" Click="SheetsPerPage6_Click" Background="#374151" Foreground="White" Padding="6,3" FontSize="10" Margin="2,0">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}" CornerRadius="3" Padding="{TemplateBinding Padding}">
+                                            <ContentPresenter HorizontalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                            <Button Content="8" Click="SheetsPerPage8_Click" Background="#374151" Foreground="White" Padding="6,3" FontSize="10" Margin="2,0">
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">
                                         <Border Background="{TemplateBinding Background}" CornerRadius="3" Padding="{TemplateBinding Padding}">
@@ -597,9 +631,12 @@
                 </Border>
 
                 <!-- Preview Canvas -->
-                <Border Grid.Row="1" Background="#0D1117" Margin="10">
-                    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-                        <Canvas x:Name="PreviewCanvas" Background="#0D1117"/>
+                <Border Grid.Row="1" Background="#0D1117" Margin="10" Padding="5">
+                    <ScrollViewer x:Name="LayoutScrollViewer" 
+                HorizontalScrollBarVisibility="Auto" 
+                VerticalScrollBarVisibility="Auto"
+                PanningMode="Both">
+                        <Canvas x:Name="LayoutCanvas" Background="#0D1117"/>
                     </ScrollViewer>
                 </Border>
             </Grid>
@@ -659,7 +696,7 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- Results by Sheet -->
+                        <!-- RESULTS BY SHEET -->
                         <TextBlock Text="BY SHEET SIZE" FontSize="11" FontWeight="SemiBold" Foreground="#F9FAFB" Margin="0,0,0,8"/>
 
                         <ItemsControl x:Name="icResults">
@@ -668,7 +705,7 @@
                                     <StackPanel/>
                                 </ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
-                                                        <ItemsControl.ItemTemplate>
+                            <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Border CornerRadius="4" Padding="10" Margin="0,0,0,6">
                                         <Border.Style>
@@ -724,20 +761,118 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <!-- Unplaced Warning -->
+                        <!-- UNPLACED WARNING -->
                         <Border x:Name="pnlUnplaced" Background="#7F1D1D" CornerRadius="4" Padding="10" Margin="0,10,0,0" Visibility="Collapsed">
                             <StackPanel>
                                 <TextBlock Text="⚠ UNPLACED PARTS" FontSize="11" FontWeight="Bold" Foreground="#FCA5A5"/>
                                 <TextBlock x:Name="txtUnplaced" Text="0 parts not placed" FontSize="10" Foreground="#FECACA"/>
                             </StackPanel>
                         </Border>
+
+                        <!-- COST CALCULATION -->
+                        <Border Background="#1A1D23" CornerRadius="4" Padding="12" Margin="0,10,0,0">
+                            <StackPanel>
+                                <TextBlock Text="💰 COST CALCULATION" FontSize="11" FontWeight="SemiBold" Foreground="#10B981" Margin="0,0,0,10"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Currency:" FontSize="9" Foreground="#6B7280" Margin="0,0,0,3"/>
+                                        <ComboBox x:Name="cmbCurrency" SelectedIndex="0" Background="#374151" Foreground="White" Padding="4,3">
+                                            <ComboBoxItem Content="AED"/>
+                                            <ComboBoxItem Content="USD"/>
+                                            <ComboBoxItem Content="EUR"/>
+                                            <ComboBoxItem Content="INR"/>
+                                            <ComboBoxItem Content="GBP"/>
+                                        </ComboBox>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="Price/m²" FontSize="9" Foreground="#6B7280" Margin="0,0,0,3"/>
+                                        <TextBox x:Name="txtStockPrice" Text="25" Background="#374151" Foreground="White" Padding="6,4" FontSize="11" TextAlignment="Center" TextChanged="txtStockPrice_TextChanged"/>
+                                    </StackPanel>
+                                </Grid>
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <TextBlock Text="Total Cost:" FontSize="10" Foreground="#9CA3AF" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="txtTotalCost" Text="AED 0.00" FontSize="14" FontWeight="Bold" Foreground="#10B981" Margin="8,0,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- REMNANTS TRACKING -->
+                        <Border Background="#1A1D23" CornerRadius="4" Padding="12" Margin="0,10,0,0">
+                            <StackPanel>
+                                <TextBlock Text="📦 REMNANTS" FontSize="11" FontWeight="SemiBold" Foreground="#F59E0B" Margin="0,0,0,10"/>
+                                <TextBlock x:Name="txtRemnants" Text="0 remnants > 100x100mm" FontSize="10" Foreground="#9CA3AF"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- SAVE/LOAD JOBS -->
+                        <Border Background="#1A1D23" CornerRadius="4" Padding="12" Margin="0,10,0,0">
+                            <StackPanel>
+                                <TextBlock Text="💾 SAVE/LOAD JOBS" FontSize="11" FontWeight="SemiBold" Foreground="#3B82F6" Margin="0,0,0,10"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="txtJobName" Background="#374151" Foreground="White" Padding="6,4" FontSize="11"/>
+                                    <Button Grid.Column="1" Content="Save" Click="SaveJob_Click" Background="#3B82F6" Foreground="White" Padding="8,4" Margin="5,0,0,0"/>
+                                </Grid>
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <ComboBox x:Name="cmbSavedJobs" Width="120" SelectionChanged="LoadJob_Selected">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Name}" Foreground="White"/>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                    <Button Content="Load" Click="LoadJob_Click" Background="#374151" Foreground="White" Padding="8,4" Margin="5,0,0,0"/>
+                                    <Button Content="Del" Click="DeleteJob_Click" Background="#EF4444" Foreground="White" Padding="8,4" Margin="5,0,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
 
-                <!-- Action Buttons -->
+                <!-- ACTION BUTTONS -->
                 <StackPanel Grid.Row="2" Margin="10,0,10,10">
                     <Button Content="Export CSV" Click="ExportResults_Click" 
                             Background="#3B82F6" Foreground="White" BorderThickness="0" 
+                            Padding="12,10" FontSize="11" Cursor="Hand" Margin="0,0,0,6">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter HorizontalAlignment="Center"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                    <Button x:Name="btnSimulate" Content="Simulate Cutting" Click="Simulate_Click" 
+        Background="#F59E0B" Foreground="White" BorderThickness="0" 
+        Padding="12,10" FontSize="11" Cursor="Hand" Margin="0,0,0,6">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter HorizontalAlignment="Center"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                    <Button Content="Export PDF" Click="ExportPDF_Click" 
+                            Background="#374151" Foreground="White" BorderThickness="0" 
+                            Padding="12,10" FontSize="11" Cursor="Hand" Margin="0,0,0,6">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter HorizontalAlignment="Center"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                    <Button Content="Print Labels" Click="PrintLabels_Click" 
+                            Background="#374151" Foreground="White" BorderThickness="0" 
                             Padding="12,10" FontSize="11" Cursor="Hand" Margin="0,0,0,6">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
