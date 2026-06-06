@@ -655,19 +655,17 @@ namespace ProGlassAutomation.Views
             var validResults = _results.Where(r => r.Ref != "TOTAL").ToList();
             if (validResults.Count == 0) return;
 
-            // Show ALL sheets in left list - full scrollable list
+            // Show ALL sheets in left list (single loop only)
             int sheetsToShow = validResults.Count;
-            if (sheetsToShow > 100) sheetsToShow = 100; // Cap at 100
+            if (sheetsToShow > 100) sheetsToShow = 100;
 
             PreviewCanvas.Width = 390;
             PreviewCanvas.Height = sheetsToShow * 26 + 10;
 
-            // Draw text list rows
+            // Draw rows ONCE only
             for (int i = 0; i < sheetsToShow; i++)
             {
-                int resultIdx = i;
-                if (resultIdx >= validResults.Count) break;
-                var result = validResults[resultIdx];
+                var result = validResults[i];
 
                 Border rowBorder = new Border
                 {
@@ -697,45 +695,8 @@ namespace ProGlassAutomation.Views
                 PreviewCanvas.Children.Add(info);
             }
 
-            // Left side shows FULL list count
+            // Single stats line
             txtCurrentLayoutStats.Text = $"Full List: {validResults.Count} sheets";
-
-            // SIMPLE TEXT LIST - LEFT ALIGNED
-            for (int i = 0; i < sheetsToShow; i++)
-            {
-                int resultIdx = startIndex + i;
-                if (resultIdx >= validResults.Count) break;
-                var result = validResults[resultIdx];
-
-                Border rowBorder = new Border
-                {
-                    Background = new SolidColorBrush(Color.FromRgb(30, 35, 45)),
-                    BorderBrush = new SolidColorBrush(Color.FromRgb(60, 70, 90)),
-                    BorderThickness = new Thickness(1),
-                    CornerRadius = new CornerRadius(3),
-                    Width = 345,
-                    Height = 22,
-                    HorizontalAlignment = HorizontalAlignment.Left
-                };
-                Canvas.SetLeft(rowBorder, 5);
-                Canvas.SetTop(rowBorder, 5 + i * 26);
-                PreviewCanvas.Children.Add(rowBorder);
-
-                TextBlock info = new TextBlock
-                {
-                    Text = $"#{resultIdx + 1} {result.Ref}: {result.L:N0}×{result.W:N0}mm | U:{result.Util:N1}% | W:{result.Waste:N1}%",
-                    FontSize = 10,
-                    Foreground = new SolidColorBrush(Color.FromRgb(245, 158, 11)),
-                    FontWeight = FontWeights.SemiBold,
-                    HorizontalAlignment = HorizontalAlignment.Left,
-                    VerticalAlignment = VerticalAlignment.Center
-                };
-                Canvas.SetLeft(info, 10);
-                Canvas.SetTop(info, 5 + i * 26 + 3);
-                PreviewCanvas.Children.Add(info);
-            }
-
-            txtCurrentLayoutStats.Text = $"Sheets: {validResults.Count} | Page {(_currentIndex / _sheetsPerPage) + 1}";
         }
 
         private void DrawSingleSheetLayout(int startIndex)
