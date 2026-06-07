@@ -86,6 +86,9 @@ namespace ProGlassAutomation.Views.Optimization
 
         private ObservableCollection<StockSheet> _stockSheets = new ObservableCollection<StockSheet>();
         private ObservableCollection<CutPart> _cutParts = new ObservableCollection<CutPart>();
+        private ObservableCollection<SpecificationModel> _specifications = new ObservableCollection<SpecificationModel>();
+        private ObservableCollection<CombinedSpecItem> _combinedItems = new ObservableCollection<CombinedSpecItem>();
+        private List<SpecificationModel> _selectedSpecs = new List<SpecificationModel>();
         private ObservableCollection<OptimizationResult> _results = new ObservableCollection<OptimizationResult>();
         private List<PlacedPart> _allPlacedParts = new List<PlacedPart>();
 
@@ -292,11 +295,134 @@ namespace ProGlassAutomation.Views.Optimization
         }
 
         // =====================================================
+        // MULTI-SPECIFICATION OPTIMIZATION
+        // =====================================================
+
+        public void LoadSpecificationsForOptimization(IEnumerable<SpecificationModel> specs)
+        {
+            _specifications.Clear();
+            if (specs != null)
+            {
+                foreach (var s in specs)
+                {
+                    _specifications.Add(s);
+                }
+            }
+            if (lstSpecSelect != null)
+            {
+                lstSpecSelect.ItemsSource = _specifications;
+                lstSpecSelect.DisplayMemberPath = "SpecificationName";
+            }
+            UpdateCombinedPreview();
+        }
+
+        private void UpdateCombinedPreview()
+        {
+            _combinedItems.Clear();
+            _selectedSpecs.Clear();
+
+            if (lstSpecSelect == null)
+            {
+                UpdateOptimizableItems();
+                return;
+            }
+
+            var selectedListBox = lstSpecSelect.SelectedItems;
+            if (selectedListBox == null || selectedListBox.Count == 0)
+            {
+                if (txtSelectedSpecCount != null)
+                    txtSelectedSpecCount.Text = "0 selected";
+                if (icCombinedPreview != null)
+                    icCombinedPreview.ItemsSource = null;
+                UpdateOptimizableItems();
+                return;
+            }
+
+            if (txtSelectedSpecCount != null)
+                txtSelectedSpecCount.Text = $"{selectedListBox.Count} selected";
+
+            bool useW1H1 = rbUseW1H1 != null && rbUseW1H1.IsChecked == true;
+
+            foreach (SpecificationModel spec in selectedListBox)
+            {
+                if (spec?.Items == null) continue;
+                _selectedSpecs.Add(spec);
+
+                foreach (var item in spec.Items)
+                {
+                    double useWidth = useW1H1 ? item.Width1 : item.Width2;
+                    double useHeight = useW1H1 ? item.Height1 : item.Height2;
+
+                    if (useWidth <= 0 || useHeight <= 0) continue;
+
+                    _combinedItems.Add(new CombinedSpecItem
+                    {
+                        GlassRef = !string.IsNullOrEmpty(item.GlassRef) ? item.GlassRef : spec.SpecificationName,
+                        Width = useWidth,
+                        Height = useHeight,
+                        Qty = item.Qty,
+                        SourceSpec = spec.SpecificationName
+                    });
+                }
+            }
+
+            if (icCombinedPreview != null)
+                icCombinedPreview.ItemsSource = _combinedItems;
+
+            UpdateOptimizableItems();
+        }
+
+        private void UpdateOptimizableItems()
+        {
+            _cutParts.Clear();
+
+            if (_combinedItems.Count == 0) return;
+
+            int idx = 1;
+            foreach (var item in _combinedItems)
+            {
+                if (item.Width <= 0 || item.Height <= 0 || item.Qty <= 0) continue;
+
+                _cutParts.Add(new CutPart
+                {
+                    Ref = item.GlassRef ?? $"P{idx++}",
+                    L = item.Width,
+                    W = item.Height,
+                    Rot = true,
+                    Qty = item.Qty
+                });
+            }
+
+            UpdatePartsSummary();
+        }
+
+        private void lstSpecSelect_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            UpdateCombinedPreview();
+        }
+
+        private void rbUseW1H1_Checked(object sender, RoutedEventArgs e)
+        {
+            UpdateCombinedPreview();
+        }
+
+        private void rbUseW2H2_Checked(object sender, RoutedEventArgs e)
+        {
+            UpdateCombinedPreview();
+        }
+
+        // =====================================================
         // OPTIMIZATION ENTRY POINT
         // =====================================================
 
         private void RunOptimization_Click(object sender, RoutedEventArgs e)
         {
+            // Check if we have multi-spec items selected
+            if (_combinedItems.Count > 0)
+            {
+                UpdateOptimizableItems();
+            }
+
             // Load settings from UI
             double.TryParse(txtLR.Text, out _lr); double.TryParse(txtBR.Text, out _br);
             double.TryParse(txtTR.Text, out _tr); double.TryParse(txtRM.Text, out _rm);
@@ -320,7 +446,9 @@ namespace ProGlassAutomation.Views.Optimization
                 UpdateReportSection();
                 UpdateResultsGrouping();
                 ShowTab("Layouts");
-                MessageBox.Show($"Optimization completed!\n{_results.Count(r => r.Ref != "TOTAL")} sheets @ {_overallUtilization:N2}%", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                string specInfo = _selectedSpecs.Count > 0 ? $" ({_selectedSpecs.Count} specs)" : "";
+                MessageBox.Show($"Optimization completed!\n{_results.Count(r => r.Ref != "TOTAL")} sheets @ {_overallUtilization:N2}%{specInfo}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex) { MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
         }
@@ -2110,6 +2238,34 @@ namespace ProGlassAutomation.Views.Optimization
             RunOptimizationFromInvoice();
         }
 
+        public void ImportSpecifications(List<SpecificationModel> specs)
+        {
+            _specifications.Clear();
+            _combinedItems.Clear();
+            _selectedSpecs.Clear();
+
+            if (specs == null || specs.Count == 0) return;
+
+            foreach (var spec in specs)
+            {
+                _specifications.Add(spec);
+            }
+
+            if (lstSpecSelect != null)
+            {
+                lstSpecSelect.ItemsSource = _specifications;
+                lstSpecSelect.DisplayMemberPath = "SpecificationName";
+            }
+
+            // Auto-select all specs
+            if (lstSpecSelect.Items.Count > 0)
+            {
+                lstSpecSelect.SelectAll();
+            }
+
+            UpdateCombinedPreview();
+        }
+
         public void SetStockSheet(double width, double height, int qty = 9999999)
         {
             _stockSheets.Clear();
@@ -2421,5 +2577,35 @@ namespace ProGlassAutomation.Views.Optimization
         {
             return CalculateTotalCutLength() / speedMmPerSec;
         }
+    }
+
+    // =====================================================
+    // MULTI-SPECIFICATION CLASSES
+    // =====================================================
+
+    public class SpecificationModel
+    {
+        public string SpecificationName { get; set; }
+        public bool IsSelected { get; set; }
+        public List<InvoiceItemModel> Items { get; set; } = new List<InvoiceItemModel>();
+    }
+
+    public class InvoiceItemModel
+    {
+        public string GlassRef { get; set; }
+        public double Width1 { get; set; }
+        public double Height1 { get; set; }
+        public double Width2 { get; set; }
+        public double Height2 { get; set; }
+        public int Qty { get; set; }
+    }
+
+    public class CombinedSpecItem
+    {
+        public string GlassRef { get; set; }
+        public double Width { get; set; }
+        public double Height { get; set; }
+        public int Qty { get; set; }
+        public string SourceSpec { get; set; }
     }
 }

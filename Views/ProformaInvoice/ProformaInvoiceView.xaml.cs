@@ -12,6 +12,9 @@ using ProGlassAutomation.Views.Optimization;
 using System.Linq;
 using System.Collections.Generic;
 
+// Aliases to avoid ambiguity
+using ModelInvoice = ProGlassAutomation.Models.InvoiceItemModel;
+
 namespace ProGlassAutomation.Views.ProformaInvoice
 {
     /// <summary>
@@ -210,7 +213,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 TrimSettings trim = _trimTable[thickness];
 
                 // Get all items from all specifications
-                var items = new List<InvoiceItemModel>();
+                var items = new List<Models.InvoiceItemModel>();
                 if (_viewModel?.Invoice?.Specifications != null)
                 {
                     foreach (var spec in _viewModel.Invoice.Specifications)
@@ -259,7 +262,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 var optView = new OptimizationView();
 
                 // Convert original items to InvoiceItemModel using chosen dims (avoid losing source fields)
-                var invoiceItems = items.Select(i => new InvoiceItemModel
+                var invoiceItems = items.Select(i => new ModelInvoice
                 {
                     GlassRef = i.GlassRef,
                     Width1 = useAlt ? (i.Width2 > 0 ? i.Width2 : i.Width1) : (i.Width1 > 0 ? i.Width1 : i.Width2),
@@ -321,11 +324,11 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 TrimSettings trim = _trimTable[thickness];
 
                 // Get selected specifications or all
-                var items = new List<InvoiceItemModel>();
-                var selectedSpecs = new List<SpecificationModel>();
+                var items = new List<Models.InvoiceItemModel>();
+                var selectedSpecs = new List<Models.SpecificationModel>();
                 if (chkSpecWise.IsChecked == true && lstSpecSelect.SelectedItems.Count > 0)
                 {
-                    foreach (SpecificationModel s in lstSpecSelect.SelectedItems)
+                    foreach (Models.SpecificationModel s in lstSpecSelect.SelectedItems)
                         selectedSpecs.Add(s);
                 }
                 else
@@ -371,7 +374,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
                 var optView = optWindow.Content as OptimizationView;
 
-                var invoiceItems = items.Select(i => new InvoiceItemModel
+                var invoiceItems = items.Select(i => new Models.InvoiceItemModel
                 {
                     GlassRef = i.GlassRef,
                     Width1 = useAlt ? (i.Width2 > 0 ? i.Width2 : i.Width1) : (i.Width1 > 0 ? i.Width1 : i.Width2),
@@ -495,7 +498,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
         private void AddRow_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button button && button.Tag is SpecificationModel spec)
+            if (sender is Button button && button.Tag is Models.SpecificationModel spec)
                 _viewModel.AddItemWithPrice(spec);
         }
 
@@ -507,7 +510,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
         private void DeleteRow_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button button && button.Tag is InvoiceItemModel item)
+            if (sender is Button button && button.Tag is Models.InvoiceItemModel item)
                 _viewModel.RemoveItem(item);
         }
 
@@ -590,7 +593,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                         if (columns.Length == 0 || string.IsNullOrWhiteSpace(string.Join("", columns).Replace("\t", "")))
                             continue;
 
-                        var item = new InvoiceItemModel { SrNo = startRow + itemsAdded + 1 };
+                        var item = new ModelInvoice { SrNo = startRow + itemsAdded + 1 };
 
                         if (columns.Length > 0) item.GlassRef = columns[0].Trim();
                         if (columns.Length > 1 && double.TryParse(columns[1].Trim().Replace(",", ""), out double w1)) item.Width1 = w1; else item.Width1 = defaultWidth1;
@@ -721,7 +724,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 // FIX: Check IsValid instead of nullable check
                 if (dataGrid == null || !dataGrid.CurrentCell.IsValid) return;
 
-                var currentItem = dataGrid.CurrentCell.Item as InvoiceItemModel;
+                var currentItem = dataGrid.CurrentCell.Item as Models.InvoiceItemModel;
                 if (currentItem == null) return;
 
                 var spec = FindSpecification(currentItem);
@@ -780,7 +783,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         {
             try
             {
-                var currentItem = dataGrid.CurrentCell.Item as InvoiceItemModel;
+                var currentItem = dataGrid.CurrentCell.Item as Models.InvoiceItemModel;
                 if (currentItem == null) return;
 
                 var spec = FindSpecification(currentItem);
@@ -833,7 +836,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             }
         }
 
-        private SpecificationModel? FindSpecification(InvoiceItemModel item)
+        private Models.SpecificationModel? FindSpecification(Models.InvoiceItemModel item)
         {
             if (_viewModel?.Invoice == null) return null;
 

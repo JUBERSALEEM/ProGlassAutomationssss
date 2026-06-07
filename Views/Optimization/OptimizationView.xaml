@@ -566,6 +566,8 @@
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
@@ -631,12 +633,89 @@
                     </Grid>
                 </Border>
 
+                <!-- SPECIFICATION SELECTOR SECTION -->
+                <Border Grid.Row="1" Background="#1A1D23" Margin="10,5" Padding="10" CornerRadius="4">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="120"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="SELECT SPECIFICATIONS" FontSize="12" FontWeight="SemiBold" Foreground="#F59E0B"/>
+                                <TextBlock Text="Multi-select specs to combine for optimization" FontSize="9" Foreground="#6B7280"/>
+                            </StackPanel>
+                            <TextBlock x:Name="txtSelectedSpecCount" Grid.Column="1" Text="0 selected" FontSize="10" Foreground="#10B981" VerticalAlignment="Center"/>
+                        </Grid>
+
+                        <!-- Spec ListBox with Multi-Select -->
+                        <ListBox x:Name="lstSpecSelect" Grid.Row="1" 
+                                 Background="#252A33" Foreground="#F9FAFB"
+                                 BorderBrush="#374151" BorderThickness="1"
+                                 SelectionMode="Multiple"
+                                 SelectionChanged="lstSpecSelect_SelectionChanged">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" Content="{Binding SpecificationName}" Foreground="#F9FAFB" Margin="4,2"/>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                        <!-- Dimension Selection -->
+                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,4">
+                            <TextBlock Text="Use Dimensions:" Foreground="#9CA3AF" FontSize="10" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <RadioButton x:Name="rbUseW1H1" GroupName="SpecDims" IsChecked="True" 
+                                        Content="W1 / H1" Foreground="#F9FAFB" FontSize="10"
+                                        Checked="rbUseW1H1_Checked"/>
+                            <RadioButton x:Name="rbUseW2H2" GroupName="SpecDims" 
+                                        Content="W2 / H2" Foreground="#F9FAFB" FontSize="10" Margin="15,0,0,0"
+                                        Checked="rbUseW2H2_Checked"/>
+                        </StackPanel>
+
+                        <!-- Combined Preview -->
+                        <TextBlock Grid.Row="3" Text="COMBINED ITEMS PREVIEW:" FontSize="10" Foreground="#6B7280" Margin="0,8,0,4"/>
+                    </Grid>
+                </Border>
+
+                <!-- Combined Preview ItemsControl -->
+                <Border Grid.Row="2" Background="#1A1D23" Margin="10,0" Padding="8" CornerRadius="4" MaxHeight="150">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ItemsControl x:Name="icCombinedPreview">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="#374151" BorderThickness="1" Padding="6,3" Margin="0,1" Background="#252A33" CornerRadius="2">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="50"/>
+                                                <ColumnDefinition Width="50"/>
+                                                <ColumnDefinition Width="35"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="{Binding GlassRef}" FontSize="9" Foreground="#F9FAFB"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Width, StringFormat=N0}" FontSize="9" Foreground="#3B82F6" HorizontalAlignment="Right" Margin="0,0,4,0"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding Height, StringFormat=N0}" FontSize="9" Foreground="#3B82F6" HorizontalAlignment="Right" Margin="0,0,4,0"/>
+                                            <TextBlock Grid.Column="3" Text="{Binding Qty}" FontSize="9" Foreground="#F59E0B" HorizontalAlignment="Center" FontWeight="SemiBold"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Border>
+
                 <!-- Preview Canvas -->
-                <Border Grid.Row="1" Background="#0D1117" Margin="10" Padding="5">
+                <Border Grid.Row="3" Background="#0D1117" Margin="10" Padding="5">
                     <ScrollViewer x:Name="LayoutScrollViewer" 
-                HorizontalScrollBarVisibility="Auto" 
-                VerticalScrollBarVisibility="Auto"
-                PanningMode="Both">
+                                  HorizontalScrollBarVisibility="Auto" 
+                                  VerticalScrollBarVisibility="Auto"
+                                  PanningMode="Both">
                         <Canvas x:Name="LayoutCanvas" Background="#0D1117"/>
                     </ScrollViewer>
                 </Border>
