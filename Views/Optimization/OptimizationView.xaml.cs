@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using ProGlassAutomation.Models;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
@@ -10,7 +9,7 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 
-namespace ProGlassAutomation.Views
+namespace ProGlassAutomation.Views.Optimization
 {
     // =====================================================
     // ROTATION POLICIES

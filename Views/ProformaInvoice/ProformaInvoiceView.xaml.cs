@@ -8,6 +8,7 @@ using System.Windows.Media.Animation;
 using ProGlassAutomation.Models;
 using ProGlassAutomation.ViewModels;
 using ProGlassAutomation.Views;
+using ProGlassAutomation.Views.Optimization;
 using System.Collections.Generic;
 
 namespace ProGlassAutomation.Views.ProformaInvoice
