@@ -1189,36 +1189,9 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
         // ==================== PER-SPEC DIMENSION SELECTION ====================
 
-        private void lstSpecSelect_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            try
-            {
-                // Track ONLY newly selected specs - don't clear existing choices
-                foreach (Models.SpecificationModel spec in lstSpecSelect.SelectedItems)
-                {
-                    if (spec != null && !_specDimChoice.ContainsKey(spec.SpecificationName))
-                    {
-                        _specDimChoice[spec.SpecificationName] = false; // Default to W1/H1
-                    }
-                }
+        // Flag to block selection changed handler during programmatic updates
+        private bool _isUpdatingSpecSelection = false;
 
-                // Remove any unselected specs from tracking
-                var selectedSpecs = lstSpecSelect.SelectedItems.Cast<Models.SpecificationModel>()
-                    .Select(s => s.SpecificationName).ToHashSet();
-                var toRemove = _specDimChoice.Keys.Where(k => !selectedSpecs.Contains(k)).ToList();
-                foreach (var key in toRemove)
-                {
-                    _specDimChoice.Remove(key);
-                }
-
-                System.Diagnostics.Debug.WriteLine($"[lstSpecSelect_SelectionChanged] Tracked specs: {_specDimChoice.Count}");
-                UpdateOptStatus();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[lstSpecSelect_SelectionChanged] ERROR: {ex.Message}");
-            }
-        }
 
         private void OptSpecDim_Click(object sender, RoutedEventArgs e)
         {
@@ -1236,7 +1209,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                         return;
                     }
 
-                    bool useAlt = (dimTag == "W2H2");
+                    bool useAlt = (dimTag == "W2/H2");  // ← FIXED!
 
                     // Store the choice
                     _specDimChoice[specName] = useAlt;
@@ -1253,6 +1226,8 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
                     System.Diagnostics.Debug.WriteLine($"[OptSpecDim_Click] ✓ Spec='{specName}', Dim={dimTag}, UseAlt={useAlt}");
 
+                    // Update the RadioButton visual state
+                    UpdateListBoxRadioButtons(lstSpecSelect);
                     UpdateOptStatus();
                 }
                 catch (Exception ex)
@@ -1291,6 +1266,196 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             lstSpecSelect.SelectedItems.Clear();
             _specDimChoice.Clear();
             txtOptStatus.Text = "Select specs and choose dimensions";
+
+            // Also clear UI selections
+            UpdateSpecSelectUIRadioButtons();
+        }
+
+        // ==================== FALLBACK DIMENSION CLICK ====================
+
+        private void FallbackDim_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is RadioButton rb)
+            {
+                string fallbackType = rb.Name;
+                bool useAltW2H2 = (fallbackType == "rbUseW2H2");
+
+                System.Diagnostics.Debug.WriteLine($"[FallbackDim_Click] Fallback changed: {fallbackType}, useAltW2H2={useAltW2H2}");
+
+                // If custom mode, don't auto-change - let user manually select
+                if (fallbackType == "rbUseCustom")
+                {
+                    txtOptStatus.Text = "Select specs and choose dimensions";
+                    return;
+                }
+
+                // Update all tracked specs to the fallback choice
+                if (_viewModel?.Invoice?.Specifications != null)
+                {
+                    foreach (var spec in _viewModel.Invoice.Specifications)
+                    {
+                        if (spec != null && !string.IsNullOrEmpty(spec.SpecificationName))
+                        {
+                            _specDimChoice[spec.SpecificationName] = useAltW2H2;
+                        }
+                    }
+                }
+
+                // Auto-select all specs in the ListBox and refresh UI
+                lstSpecSelect.SelectedItems.Clear();
+                if (_viewModel?.Invoice?.Specifications != null)
+                {
+                    foreach (var spec in _viewModel.Invoice.Specifications)
+                    {
+                        if (spec != null)
+                            lstSpecSelect.SelectedItems.Add(spec);
+                    }
+                }
+
+                // Update status
+                txtOptStatus.Text = useAltW2H2 ? "All specs: W2/H2" : "All specs: W1/H1";
+
+                // Force UI refresh
+                UpdateSpecSelectUIRadioButtons();
+
+                // FIX: Now update RadioButton visual states to show W1/H1 or W2/H2 as selected
+                UpdateListBoxRadioButtons(lstSpecSelect);
+
+                System.Diagnostics.Debug.WriteLine($"[FallbackDim_Click] Updated {_specDimChoice.Count} specs to {(useAltW2H2 ? "W2/H2" : "W1/H1")}");
+            }
+        }
+
+        private void UpdateSpecSelectUIRadioButtons()
+        {
+            try
+            {
+                // Set flag to prevent selection changed from resetting dictionary
+                _isUpdatingSpecSelection = true;
+
+                // Force visual update - dispatch to ensure ListBox items are rendered
+                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, new Action(() =>
+                {
+                    try
+                    {
+                        // Save current selection
+                        var selectedSpecs = lstSpecSelect.SelectedItems.Cast<Models.SpecificationModel>().ToList();
+
+                        // Clear and refresh ListBox items to force re-render
+                        var items = lstSpecSelect.ItemsSource;
+                        lstSpecSelect.ItemsSource = null;
+                        lstSpecSelect.ItemsSource = items;
+
+                        // Clear dictionary and rebuild from scratch using ALL specs from VM
+                        _specDimChoice.Clear();
+                        if (_viewModel?.Invoice?.Specifications != null)
+                        {
+                            foreach (var spec in _viewModel.Invoice.Specifications)
+                            {
+                                if (spec != null && !string.IsNullOrEmpty(spec.SpecificationName))
+                                {
+                                    // Default to W1/H1 (false), unless user explicitly chose W2/H2 before
+                                    _specDimChoice[spec.SpecificationName] = false;
+                                }
+                            }
+                        }
+
+                        // Restore selection
+                        lstSpecSelect.SelectedItems.Clear();
+                        foreach (var spec in selectedSpecs)
+                        {
+                            if (spec != null)
+                                lstSpecSelect.SelectedItems.Add(spec);
+                        }
+
+                        // Force update RadioButtons with delay to ensure visual tree is ready
+                        System.Threading.Thread.Sleep(50); // Brief delay for visual tree to build
+                        UpdateListBoxRadioButtons(lstSpecSelect);
+
+                        // Update status
+                        UpdateOptStatus();
+
+                        System.Diagnostics.Debug.WriteLine($"[UpdateSpecSelectUIRadioButtons] UI refreshed");
+                    }
+                    catch (Exception ex2)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[UpdateSpecSelectUIRadioButtons] Inner ERROR: {ex2.Message}");
+                    }
+                    finally
+                    {
+                        _isUpdatingSpecSelection = false;
+                    }
+                }));
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[UpdateSpecSelectUIRadioButtons] ERROR: {ex.Message}");
+                _isUpdatingSpecSelection = false;
+            }
+        }
+
+        private void UpdateListBoxRadioButtons(ListBox listBox)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"[UpdateListBoxRadioButtons] Processing {listBox.Items.Count} items...");
+
+                // Iterate through ListBox items and find RadioButtons
+                for (int i = 0; i < listBox.Items.Count; i++)
+                {
+                    var container = listBox.ItemContainerGenerator.ContainerFromIndex(i);
+                    if (container == null)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[UpdateListBoxRadioButtons] Container {i} is NULL");
+                        continue;
+                    }
+
+                    // Find RadioButtons in this container
+                    var radios = FindVisualChildren<System.Windows.Controls.RadioButton>(container);
+                    foreach (var rb in radios)
+                    {
+                        string specName = rb.GroupName;
+                        string tag = rb.Tag?.ToString() ?? "";
+
+                        System.Diagnostics.Debug.WriteLine($"[UpdateListBoxRadioButtons] Found RB: Group={specName}, Tag={tag}");
+
+                        if (string.IsNullOrEmpty(specName) || !_specDimChoice.ContainsKey(specName))
+                            continue;
+
+                        bool useAlt = _specDimChoice[specName];
+
+                        // FIX: Use correct tags with forward slash!
+                        if (tag == "W1/H1")
+                        {
+                            rb.IsChecked = !useAlt; // Check if NOT using alt (W1/H1)
+                            System.Diagnostics.Debug.WriteLine($"[UpdateListBoxRadioButtons] W1/H1 IsChecked={!useAlt}");
+                        }
+                        else if (tag == "W2/H2")
+                        {
+                            rb.IsChecked = useAlt; // Check if using alt (W2/H2)
+                            System.Diagnostics.Debug.WriteLine($"[UpdateListBoxRadioButtons] W2/H2 IsChecked={useAlt}");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[UpdateListBoxRadioButtons] ERROR: {ex.Message}");
+            }
+        }
+
+        private static IEnumerable<T> FindVisualChildren<T>(DependencyObject depObj) where T : DependencyObject
+        {
+            if (depObj == null) yield break;
+
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(depObj); i++)
+            {
+                var child = VisualTreeHelper.GetChild(depObj, i);
+                if (child is T t)
+                    yield return t;
+
+                foreach (var childOfChild in FindVisualChildren<T>(child))
+                    yield return childOfChild;
+            }
         }
 
         private bool FindSpecForItem(Models.InvoiceItemModel item, out string specName)
@@ -1303,6 +1468,33 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 return true;
             }
             return false;
+        }
+
+        // ==================== SPEC LIST SELECTION CHANGED ====================
+
+        private void lstSpecSelect_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // Skip if we're doing programmatic update
+            if (_isUpdatingSpecSelection) return;
+
+            try
+            {
+                // Just remove unselected specs from tracking - don't add new ones automatically
+                var selectedSpecs = lstSpecSelect.SelectedItems.Cast<Models.SpecificationModel>()
+                    .Select(s => s.SpecificationName).ToHashSet();
+                var toRemove = _specDimChoice.Keys.Where(k => !selectedSpecs.Contains(k)).ToList();
+                foreach (var key in toRemove)
+                {
+                    _specDimChoice.Remove(key);
+                }
+
+                System.Diagnostics.Debug.WriteLine($"[lstSpecSelect_SelectionChanged] Tracked specs: {_specDimChoice.Count}");
+                UpdateOptStatus();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[lstSpecSelect_SelectionChanged] ERROR: {ex.Message}");
+            }
         }
     }
 
