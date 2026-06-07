@@ -1194,19 +1194,55 @@
                                     </StackPanel>
                                 </Grid>
 
-                                <!-- Specification selection area -->
+                                <!-- Specification selection area WITH PER-SPEC DIMENSION SELECTION -->
                                 <Border Background="#F3F4F6" CornerRadius="6" Padding="8" Margin="0,8,0,0">
                                     <StackPanel>
                                         <TextBlock Text="Select Specifications to Optimize" FontSize="11" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,6"/>
-                                        <ListBox x:Name="lstSpecSelect" ItemsSource="{Binding Invoice.Specifications}" DisplayMemberPath="SpecificationName" SelectionMode="Multiple" Height="100"/>
+                                        <ListBox x:Name="lstSpecSelect" 
+                                                ItemsSource="{Binding Invoice.Specifications}" 
+                                                SelectionMode="Multiple" 
+                                                Height="120"
+                                                SelectionChanged="lstSpecSelect_SelectionChanged">
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border BorderBrush="#E5E7EB" BorderThickness="0,0,0,1" Padding="6,4" Margin="0,1">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="70"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock Grid.Column="0" Text="{Binding SpecificationName}" Foreground="#1F2937" FontSize="10" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="8,0,0,0">
+                                                                <RadioButton Content="W1/H1" GroupName="{Binding SpecificationName}" 
+              Tag="W1H1" Click="OptSpecDim_Click"
+              Foreground="#059669" FontSize="9" FontWeight="SemiBold" VerticalAlignment="Center">
+                                                                    <RadioButton.Style>
+                                                                        <Style TargetType="RadioButton">
+                                                                            <Setter Property="IsChecked" Value="True"/>
+                                                                        </Style>
+                                                                    </RadioButton.Style>
+                                                                </RadioButton>
+                                                                <RadioButton Content="W2/H2" GroupName="{Binding SpecificationName}"
+              Tag="W2H2" Click="OptSpecDim_Click"
+              Foreground="#DC2626" FontSize="9" FontWeight="SemiBold" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                                                            </StackPanel>
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,6,0,0">
-                                            <Button x:Name="btnSelectAllSpecs" Content="Select All" Style="{StaticResource SecondaryButton}" Padding="8,4" Margin="0,0,8,0"/>
-                                            <Button x:Name="btnClearSpecSelection" Content="Clear" Style="{StaticResource SecondaryButton}" Padding="8,4"/>
+                                            <Button x:Name="btnSelectAllSpecs" Content="Select All" Style="{StaticResource SecondaryButton}" Padding="8,4" Margin="0,0,8,0" Click="btnSelectAllSpecs_Click"/>
+                                            <Button x:Name="btnClearSpecSelection" Content="Clear" Style="{StaticResource SecondaryButton}" Padding="8,4" Click="btnClearSpecSelection_Click"/>
                                         </StackPanel>
+
+                                        <!-- Global fallback dimension -->
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" Margin="0,8,0,0">
-                                            <TextBlock Text="Dimension source:" VerticalAlignment="Center" Foreground="#6B7280" Margin="0,0,8,0"/>
-                                            <RadioButton x:Name="rbUseW1H1" GroupName="SpecDims" IsChecked="True" Content="W1/H1" Margin="0,0,8,0"/>
-                                            <RadioButton x:Name="rbUseW2H2" GroupName="SpecDims" Content="W2/H2"/>
+                                            <TextBlock Text="Fallback:" VerticalAlignment="Center" Foreground="#9CA3AF" Margin="0,0,8,0" FontSize="9"/>
+                                            <RadioButton x:Name="rbUseW1H1" GroupName="GlobalDims" IsChecked="True" Content="W1/H1" Foreground="#059669" FontSize="9" FontWeight="SemiBold" Margin="0,0,6,0"/>
+                                            <RadioButton x:Name="rbUseW2H2" GroupName="GlobalDims" Content="W2/H2" Foreground="#DC2626" FontSize="9" FontWeight="SemiBold" Margin="0,0,6,0"/>
+                                            <RadioButton x:Name="rbUseCustom" GroupName="GlobalDims" Content="Per-Spec" Foreground="#7C3AED" FontSize="9" FontWeight="SemiBold"/>
                                         </StackPanel>
                                     </StackPanel>
                                 </Border>

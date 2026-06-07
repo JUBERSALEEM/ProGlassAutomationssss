@@ -181,6 +181,9 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             public bool Rot { get; set; } = true;
         }
 
+        // Track which dimension EACH spec uses (false = W1/H1, true = W2/H2)
+        private Dictionary<string, bool> _specDimChoice = new Dictionary<string, bool>();
+
         // ==================== RUN OPTIMIZATION (QUICK RESULT) ====================
 
         private void RunOptimization_Click(object sender, RoutedEventArgs e)
@@ -235,40 +238,129 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     return;
                 }
 
-                // Transform to CutParts — decide dimension source
-                // Use alternate dims if either spec-level or main dims radio selects W2/H2
-                bool useAlt = (rbUseW2H2 != null && rbUseW2H2.IsChecked == true) || (rbDimsW2H2 != null && rbDimsW2H2.IsChecked == true);
-                var parts = items.Select(i => new CutPart
+                // Determine which mode we're in
+                bool globalUseAlt = (rbUseW2H2 != null && rbUseW2H2.IsChecked == true);
+                bool useCustom = (rbUseCustom != null && rbUseCustom.IsChecked == true);
+
+                // Also check checkbox in results area
+                if (!globalUseAlt && rbDimsW2H2 != null && rbDimsW2H2.IsChecked == true)
+                    globalUseAlt = true;
+
+                System.Diagnostics.Debug.WriteLine($"[RunOptimization] START - globalUseAlt={globalUseAlt}, useCustom={useCustom}, trackedSpecs={_specDimChoice.Count}");
+
+                // Get all items with their spec info
+                var allItems = new List<(Models.SpecificationModel spec, Models.InvoiceItemModel item)>();
+
+                if (_viewModel?.Invoice?.Specifications != null)
                 {
-                    Ref = i.GlassRef ?? "P",
-                    L = useAlt ? (i.Width2 > 0 ? i.Width2 : i.Width1) : (i.Width1 > 0 ? i.Width1 : i.Width2),
-                    W = useAlt ? (i.Height2 > 0 ? i.Height2 : i.Height1) : (i.Height1 > 0 ? i.Height1 : i.Height2),
-                    Qty = i.Qty > 0 ? i.Qty : 1,
-                    Rot = true
-                }).ToList();
+                    foreach (var spec in _viewModel.Invoice.Specifications)
+                    {
+                        if (spec?.Items == null) continue;
+                        foreach (var item in spec.Items)
+                        {
+                            if (item != null)
+                                allItems.Add((spec, item));
+                        }
+                    }
+                }
+
+                if (allItems.Count == 0)
+                {
+                    MessageBox.Show("No items to optimize!", "Info", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // Build parts list using appropriate dimensions
+                var parts = new List<CutPart>();
+
+                foreach (var (spec, item) in allItems)
+                {
+                    bool useAlt = false;
+
+                    if (useCustom && _specDimChoice.ContainsKey(spec.SpecificationName))
+                    {
+                        // USE PER-SPEC SELECTION from dictionary
+                        useAlt = _specDimChoice[spec.SpecificationName];
+                        System.Diagnostics.Debug.WriteLine($"[RunOptimization] Per-spec: {spec.SpecificationName} → {(useAlt ? "W2/H2" : "W1/H1")}");
+                    }
+                    else
+                    {
+                        // USE GLOBAL SELECTION
+                        useAlt = globalUseAlt;
+                        System.Diagnostics.Debug.WriteLine($"[RunOptimization] Global: {spec.SpecificationName} → {(useAlt ? "W2/H2" : "W1/H1")}");
+                    }
+
+                    double width = useAlt
+                        ? (item.Width2 > 0 ? item.Width2 : item.Width1)
+                        : (item.Width1 > 0 ? item.Width1 : item.Width2);
+                    double height = useAlt
+                        ? (item.Height2 > 0 ? item.Height2 : item.Height1)
+                        : (item.Height1 > 0 ? item.Height1 : item.Height2);
+
+                    parts.Add(new CutPart
+                    {
+                        Ref = item.GlassRef ?? "P",
+                        L = width,
+                        W = height,
+                        Qty = item.Qty > 0 ? item.Qty : 1,
+                        Rot = true
+                    });
+                }
+
+                // Build status message
+                string dimStatus;
+                if (useCustom)
+                {
+                    var altCount = _specDimChoice.Count(kvp => kvp.Value);
+                    if (altCount == 0)
+                        dimStatus = "W1/H1 (all)";
+                    else if (altCount == _specDimChoice.Count)
+                        dimStatus = "W2/H2 (all)";
+                    else
+                        dimStatus = $"Mixed ({altCount} specs W2/H2)";
+                }
+                else if (globalUseAlt)
+                    dimStatus = "W2/H2";
+                else
+                    dimStatus = "W1/H1";
+
+                System.Diagnostics.Debug.WriteLine($"[RunOptimization] Total items: {parts.Count}, Mode: {dimStatus}");
 
                 // Logging: how many items actually have alternate dims and radio states
                 int altAvailable = items.Count(i => (i.Width2 > 0 || i.Height2 > 0));
-                System.Diagnostics.Debug.WriteLine($"[RunOptimization] useAlt={useAlt}, rbUseW2H2={(rbUseW2H2?.IsChecked==true)}, rbDimsW2H2={(rbDimsW2H2?.IsChecked==true)}, itemsWithAltDims={altAvailable}/{items.Count}");
+                System.Diagnostics.Debug.WriteLine($"[RunOptimization] AltAvailable={altAvailable}/{items.Count}, rbUseW2H2={(rbUseW2H2?.IsChecked == true)}, rbDimsW2H2={(rbDimsW2H2?.IsChecked == true)}");
 
                 // If user selected W2/H2 but no items contain W2/H2, warn and fall back to W1/H1
-                if (useAlt && altAvailable == 0)
+                if (globalUseAlt && altAvailable == 0)
                 {
                     MessageBox.Show("W2/H2 selected but no alternate dimensions found in items. Falling back to W1/H1.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
-                    useAlt = false;
+                    globalUseAlt = false;
                 }
 
                 // Create optimizer view (don't show - just run for results)
                 var optView = new OptimizationView();
 
-                // Convert original items to InvoiceItemModel using chosen dims (avoid losing source fields)
-                var invoiceItems = items.Select(i => new ModelInvoice
+                // Convert original items using appropriate dimensions per item
+                var invoiceItems = new List<Models.InvoiceItemModel>();
+
+                foreach (var i in items)
                 {
-                    GlassRef = i.GlassRef,
-                    Width1 = useAlt ? (i.Width2 > 0 ? i.Width2 : i.Width1) : (i.Width1 > 0 ? i.Width1 : i.Width2),
-                    Height1 = useAlt ? (i.Height2 > 0 ? i.Height2 : i.Height1) : (i.Height1 > 0 ? i.Height1 : i.Height2),
-                    Qty = i.Qty > 0 ? i.Qty : 1
-                }).ToList();
+                    bool useAltForItem = globalUseAlt;
+
+                    // Check per-spec selection if custom mode
+                    if (useCustom && FindSpecForItem(i, out string sn) && _specDimChoice.ContainsKey(sn))
+                    {
+                        useAltForItem = _specDimChoice[sn];
+                    }
+
+                    invoiceItems.Add(new Models.InvoiceItemModel
+                    {
+                        GlassRef = i.GlassRef,
+                        Width1 = useAltForItem ? (i.Width2 > 0 ? i.Width2 : i.Width1) : (i.Width1 > 0 ? i.Width1 : i.Width2),
+                        Height1 = useAltForItem ? (i.Height2 > 0 ? i.Height2 : i.Height1) : (i.Height1 > 0 ? i.Height1 : i.Height2),
+                        Qty = i.Qty > 0 ? i.Qty : 1
+                    });
+                }
 
                 // Set data
                 optView.ImportInvoiceItems(invoiceItems);
@@ -284,7 +376,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
                 txtUtilization.Text = $"{utilization:N1}%";
                 txtSheetsUsed.Text = sheetsUsed.ToString();
-                txtOptStatus.Text = $"✓ Optimized ({txtSheetWidth.Text}×{txtSheetHeight.Text}mm) — Dims: {(useAlt ? "W2/H2" : "W1/H1")}";
+                txtOptStatus.Text = $"✓ Optimized ({txtSheetWidth.Text}×{txtSheetHeight.Text}mm) — {dimStatus}";
             }
             catch (Exception ex)
             {
@@ -350,16 +442,74 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     return;
                 }
 
-                // Transform to CutParts — respect selected dimension source (W1/H1 or W2/H2)
-                bool useAlt = (rbUseW2H2 != null && rbUseW2H2.IsChecked == true) || (rbDimsW2H2 != null && rbDimsW2H2.IsChecked == true);
-                var parts = items.Select(i => new CutPart
+                // Determine mode
+                bool globalUseAlt = (rbUseW2H2 != null && rbUseW2H2.IsChecked == true);
+                bool useCustom = (rbUseCustom != null && rbUseCustom.IsChecked == true);
+
+                if (!globalUseAlt && rbDimsW2H2 != null && rbDimsW2H2.IsChecked == true)
+                    globalUseAlt = true;
+
+                System.Diagnostics.Debug.WriteLine($"[ViewOptimizationLayouts] START - globalUseAlt={globalUseAlt}, useCustom={useCustom}");
+
+                // Build parts using appropriate dimensions (reuse existing items list)
+                var parts = new List<CutPart>();
+
+                foreach (var item in items)
                 {
-                    Ref = i.GlassRef ?? "P",
-                    L = useAlt ? (i.Width2 > 0 ? i.Width2 : i.Width1) : (i.Width1 > 0 ? i.Width1 : i.Width2),
-                    W = useAlt ? (i.Height2 > 0 ? i.Height2 : i.Height1) : (i.Height1 > 0 ? i.Height1 : i.Height2),
-                    Qty = i.Qty > 0 ? i.Qty : 1,
-                    Rot = true
-                }).ToList();
+                    bool useAlt = false;
+
+                    // Find which spec this item belongs to
+                    if (FindSpecForItem(item, out string specName))
+                    {
+                        if (useCustom && _specDimChoice.ContainsKey(specName))
+                        {
+                            // Use per-spec selection
+                            useAlt = _specDimChoice[specName];
+                        }
+                        else
+                        {
+                            // Use global selection
+                            useAlt = globalUseAlt;
+                        }
+                    }
+                    else
+                    {
+                        useAlt = globalUseAlt;
+                    }
+
+                    double width = useAlt
+                        ? (item.Width2 > 0 ? item.Width2 : item.Width1)
+                        : (item.Width1 > 0 ? item.Width1 : item.Width2);
+                    double height = useAlt
+                        ? (item.Height2 > 0 ? item.Height2 : item.Height1)
+                        : (item.Height1 > 0 ? item.Height1 : item.Height2);
+
+                    parts.Add(new CutPart
+                    {
+                        Ref = item.GlassRef ?? "P",
+                        L = width,
+                        W = height,
+                        Qty = item.Qty > 0 ? item.Qty : 1,
+                        Rot = true
+                    });
+                }
+
+                // Build status message
+                string dimStatus;
+                if (useCustom)
+                {
+                    var altCount = _specDimChoice.Count(kvp => kvp.Value);
+                    if (altCount == 0)
+                        dimStatus = "W1/H1 (all)";
+                    else if (altCount == _specDimChoice.Count)
+                        dimStatus = "W2/H2 (all)";
+                    else
+                        dimStatus = $"Mixed ({altCount} specs W2/H2)";
+                }
+                else if (globalUseAlt)
+                    dimStatus = "W2/H2";
+                else
+                    dimStatus = "W1/H1";
 
                 // Create and show FULL optimization window
                 var optWindow = new Window
@@ -374,12 +524,20 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
                 var optView = optWindow.Content as OptimizationView;
 
-                var invoiceItems = items.Select(i => new Models.InvoiceItemModel
+                // Convert using appropriate dims
+                var invoiceItems = items.Select(i =>
                 {
-                    GlassRef = i.GlassRef,
-                    Width1 = useAlt ? (i.Width2 > 0 ? i.Width2 : i.Width1) : (i.Width1 > 0 ? i.Width1 : i.Width2),
-                    Height1 = useAlt ? (i.Height2 > 0 ? i.Height2 : i.Height1) : (i.Height1 > 0 ? i.Height1 : i.Height2),
-                    Qty = i.Qty > 0 ? i.Qty : 1
+                    bool useAltForItem = globalUseAlt;
+                    if (FindSpecForItem(i, out string sn) && useCustom && _specDimChoice.ContainsKey(sn))
+                        useAltForItem = _specDimChoice[sn];
+
+                    return new Models.InvoiceItemModel
+                    {
+                        GlassRef = i.GlassRef,
+                        Width1 = useAltForItem ? (i.Width2 > 0 ? i.Width2 : i.Width1) : (i.Width1 > 0 ? i.Width1 : i.Width2),
+                        Height1 = useAltForItem ? (i.Height2 > 0 ? i.Height2 : i.Height1) : (i.Height1 > 0 ? i.Height1 : i.Height2),
+                        Qty = i.Qty > 0 ? i.Qty : 1
+                    };
                 }).ToList();
 
                 if (optView != null)
@@ -397,7 +555,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
                     txtUtilization.Text = $"{utilization:N1}%";
                     txtSheetsUsed.Text = sheetsUsed.ToString();
-                    txtOptStatus.Text = $"✓ Optimized ({txtSheetWidth.Text}×{txtSheetHeight.Text}mm) — Dims: {(useAlt ? "W2/H2" : "W1/H1")}";
+                    txtOptStatus.Text = $"✓ Optimized ({txtSheetWidth.Text}×{txtSheetHeight.Text}mm) — {dimStatus}";
                 }
                 else
                 {
@@ -1014,7 +1172,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             return null;
         }
 
-                private OtherChargeModel? FindChargeFromButton(Button button)
+        private OtherChargeModel? FindChargeFromButton(Button button)
         {
             var parent = button.Parent;
             while (parent != null)
@@ -1027,6 +1185,124 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     break;
             }
             return null;
+        }
+
+        // ==================== PER-SPEC DIMENSION SELECTION ====================
+
+        private void lstSpecSelect_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            try
+            {
+                // Track ONLY newly selected specs - don't clear existing choices
+                foreach (Models.SpecificationModel spec in lstSpecSelect.SelectedItems)
+                {
+                    if (spec != null && !_specDimChoice.ContainsKey(spec.SpecificationName))
+                    {
+                        _specDimChoice[spec.SpecificationName] = false; // Default to W1/H1
+                    }
+                }
+
+                // Remove any unselected specs from tracking
+                var selectedSpecs = lstSpecSelect.SelectedItems.Cast<Models.SpecificationModel>()
+                    .Select(s => s.SpecificationName).ToHashSet();
+                var toRemove = _specDimChoice.Keys.Where(k => !selectedSpecs.Contains(k)).ToList();
+                foreach (var key in toRemove)
+                {
+                    _specDimChoice.Remove(key);
+                }
+
+                System.Diagnostics.Debug.WriteLine($"[lstSpecSelect_SelectionChanged] Tracked specs: {_specDimChoice.Count}");
+                UpdateOptStatus();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[lstSpecSelect_SelectionChanged] ERROR: {ex.Message}");
+            }
+        }
+
+        private void OptSpecDim_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is RadioButton rb && rb.Tag is string dimTag)
+            {
+                try
+                {
+                    // Get spec name from the RadioButton's GroupName (set in XAML binding)
+                    string specName = rb.GroupName;
+
+                    // Validate spec name
+                    if (string.IsNullOrEmpty(specName))
+                    {
+                        System.Diagnostics.Debug.WriteLine("[OptSpecDim_Click] WARN: Empty GroupName, skipping");
+                        return;
+                    }
+
+                    bool useAlt = (dimTag == "W2H2");
+
+                    // Store the choice
+                    _specDimChoice[specName] = useAlt;
+
+                    // Auto-select this spec in the ListBox if not already selected
+                    if (_viewModel?.Invoice?.Specifications != null)
+                    {
+                        var spec = _viewModel.Invoice.Specifications.FirstOrDefault(s => s?.SpecificationName == specName);
+                        if (spec != null && !lstSpecSelect.SelectedItems.Contains(spec))
+                        {
+                            lstSpecSelect.SelectedItems.Add(spec);
+                        }
+                    }
+
+                    System.Diagnostics.Debug.WriteLine($"[OptSpecDim_Click] ✓ Spec='{specName}', Dim={dimTag}, UseAlt={useAlt}");
+
+                    UpdateOptStatus();
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[OptSpecDim_Click] ERROR: {ex.Message}");
+                }
+            }
+        }
+
+        private void UpdateOptStatus()
+        {
+            if (_specDimChoice.Count == 0)
+            {
+                txtOptStatus.Text = "Select specs and choose dimensions";
+                return;
+            }
+
+            var w2h2Count = _specDimChoice.Count(kvp => kvp.Value);
+            var w1h1Count = _specDimChoice.Count - w2h2Count;
+
+            if (w2h2Count == 0)
+                txtOptStatus.Text = "All specs: W1/H1";
+            else if (w1h1Count == 0)
+                txtOptStatus.Text = "All specs: W2/H2";
+            else
+                txtOptStatus.Text = $"W1/H1: {w1h1Count} specs, W2/H2: {w2h2Count} specs";
+        }
+
+        private void btnSelectAllSpecs_Click(object sender, RoutedEventArgs e)
+        {
+            lstSpecSelect.SelectAll();
+        }
+
+        private void btnClearSpecSelection_Click(object sender, RoutedEventArgs e)
+        {
+            lstSpecSelect.SelectedItems.Clear();
+            _specDimChoice.Clear();
+            txtOptStatus.Text = "Select specs and choose dimensions";
+        }
+
+        private bool FindSpecForItem(Models.InvoiceItemModel item, out string specName)
+        {
+            specName = "";
+            var spec = FindSpecification(item);
+            if (spec != null)
+            {
+                specName = spec.SpecificationName;
+                return true;
+            }
+            return false;
         }
     }
 
