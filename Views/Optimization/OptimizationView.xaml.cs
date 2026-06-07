@@ -25,7 +25,6 @@ namespace ProGlassAutomation.Views.Optimization
         ColumnFill = 5,
         RowFill = 6
     }
-
     // =====================================================
     // NESTING STRATEGIES (PATCH 2)
     // =====================================================
@@ -43,6 +42,44 @@ namespace ProGlassAutomation.Views.Optimization
 
     public partial class OptimizationView : UserControl
     {
+
+        // Public helpers for external callers (Proforma view integration)
+        public void SetStockSheets(IEnumerable<StockSheet> sheets)
+        {
+            _stockSheets.Clear();
+            if (sheets == null) return;
+            int idx = 1;
+            foreach (var s in sheets)
+            {
+                var copy = new StockSheet { Ref = string.IsNullOrEmpty(s.Ref) ? $"S{idx++}" : s.Ref, L = s.L, W = s.W, Qty = s.Qty };
+                _stockSheets.Add(copy);
+            }
+            UpdateStockSummary();
+        }
+
+        public void AddStockSheet(double width, double height, int qty = 9999999)
+        {
+            int idx = _stockSheets.Count + 1;
+            _stockSheets.Add(new StockSheet { Ref = $"S{idx}", L = width, W = height, Qty = qty });
+            UpdateStockSummary();
+        }
+
+        public void ClearStockSheets()
+        {
+            _stockSheets.Clear();
+            UpdateStockSummary();
+        }
+
+        public List<OptimizationResult> GetResultsList()
+        {
+            return _results.Where(r => r.Ref != "TOTAL").ToList();
+        }
+
+        public OptimizationResult GetTotalResult()
+        {
+            return _results.FirstOrDefault(r => r.Ref == "TOTAL");
+        }
+
         // =====================================================
         // MAIN DATA COLLECTIONS
         // =====================================================
@@ -120,6 +157,10 @@ namespace ProGlassAutomation.Views.Optimization
 
             PreviewCanvas.Width = 900;
             PreviewCanvas.Height = 650;
+
+            // ensure stock/results collections are initialized
+            if (_stockSheets == null) _stockSheets = new ObservableCollection<StockSheet>();
+            if (_results == null) _results = new ObservableCollection<OptimizationResult>();
 
             // Initialize default cost settings (PATCH 6)
             _costModel.StockPricePerSQM = 250;
@@ -307,6 +348,9 @@ namespace ProGlassAutomation.Views.Optimization
         // =====================================================
         // PATCH 1-10: ADVANCED NESTING ALGORITHM
         // =====================================================
+
+        // Helper: current remaining parts when evaluating placements (populated per-sheet)
+        private List<CutPart> _simRemainingParts = new List<CutPart>();
 
         private void RunAdvancedNesting(double kerf, RotationPolicy rotationPolicy)
         {
@@ -680,55 +724,80 @@ namespace ProGlassAutomation.Views.Optimization
 
         private PlacementNode EvaluatePlacementWithLookahead(CutPart part, double kerf)
         {
-            double pW = part.L + kerf;
-            double pH = part.W + kerf;
-            double pWRot = part.W + kerf;
-            double pHRot = part.L + kerf;
+            // Deterministic placement using current NestingStrategy with optional light lookahead tiebreaker
+            double w = part.L + kerf;
+            double h = part.W + kerf;
+            double wRot = part.W + kerf;
+            double hRot = part.L + kerf;
 
-            // Find any available space - try normal first
-            var normalCandidates = FindMatchingMaxRects(pW, pH, _freeRects);
+            double bestPlacementScore = double.MaxValue;
+            PlacementNode bestPlacement = null;
 
-            if (normalCandidates.Count > 0)
+            foreach (var rect in _freeRects)
             {
-                // Take the first available spot
-                var rect = normalCandidates.First();
-                return new PlacementNode
+                // try non-rotated
+                if (rect.Fits(w, h))
                 {
-                    X = rect.X,
-                    Y = rect.Y,
-                    Width = part.L,
-                    Height = part.W,
-                    IsRotated = false,
-                    Score = 0
-                };
-            }
-
-            // Try rotated if allowed
-            if (part.Rot)
-            {
-                var rotatedCandidates = FindMatchingMaxRects(pWRot, pHRot, _freeRects);
-                if (rotatedCandidates.Count > 0)
-                {
-                    var rect = rotatedCandidates.First();
-                    return new PlacementNode
+                    double score = ScorePlacement(rect, w, h, _nestingStrategy);
+                    // small tiebreaker using lookahead
+                    double tieBreaker = 0;
+                    var simFree = _freeRects.Select(fr => fr.Clone()).ToList();
+                    SimulatePlacement(new MaxRect(rect.X, rect.Y, rect.Width, rect.Height), w, h, false, simFree);
+                    tieBreaker = -ScoreLookahead(simFree, part);
+                    double final = score + tieBreaker * 1e-3; // tiny influence
+                    if (final < bestPlacementScore)
                     {
-                        X = rect.X,
-                        Y = rect.Y,
-                        Width = part.W,
-                        Height = part.L,
-                        IsRotated = true,
-                        Score = 0
-                    };
+                        bestPlacementScore = final;
+                        bestPlacement = new PlacementNode { X = rect.X, Y = rect.Y, Width = part.L, Height = part.W, IsRotated = false, Score = final };
+                    }
+                }
+
+                // try rotated
+                if (part.Rot && _constraints.AllowRotation && rect.Fits(wRot, hRot))
+                {
+                    double score = ScorePlacement(rect, wRot, hRot, _nestingStrategy);
+                    var simFree = _freeRects.Select(fr => fr.Clone()).ToList();
+                    SimulatePlacement(new MaxRect(rect.X, rect.Y, rect.Width, rect.Height), wRot, hRot, true, simFree);
+                    double tieBreaker = -ScoreLookahead(simFree, part);
+                    double final = score + tieBreaker * 1e-3;
+                    if (final < bestPlacementScore)
+                    {
+                        bestPlacementScore = final;
+                        bestPlacement = new PlacementNode { X = rect.X, Y = rect.Y, Width = part.W, Height = part.L, IsRotated = true, Score = final };
+                    }
                 }
             }
 
-            return null;
+            return bestPlacement;
         }
 
         private double ScoreLookahead(List<MaxRect> freeRects, CutPart currentPart)
         {
-            // Simple heuristic: prefer placements that leave larger usable areas
-            return freeRects.Sum(r => r.Area);
+            // Improved heuristic:
+            // - prefer larger total usable area
+            // - penalize highly elongated (sliver) rects
+            // - penalize many very small rects (below remnant threshold)
+            if (freeRects == null || freeRects.Count == 0) return 0;
+
+            double totalArea = freeRects.Sum(r => r.Area);
+
+            // fragmentation penalty: larger when short side << long side
+            double fragPenalty = 0;
+            foreach (var r in freeRects)
+            {
+                double shortSide = Math.Min(r.Width, r.Height);
+                double longSide = Math.Max(r.Width, r.Height);
+                if (longSide <= 0) continue;
+                double aspectFactor = 1.0 - (shortSide / longSide); // 0..1, larger means more elongated
+                fragPenalty += r.Area * aspectFactor;
+            }
+
+            // small rect penalty: count rects likely unusable for typical parts
+            double smallCount = freeRects.Count(r => Math.Min(r.Width, r.Height) < Math.Max(_constraints.MinRemnantSize, Math.Min(currentPart.L, currentPart.W) * 0.5));
+
+            // Compose score: more total area good, fragmentation and small rects bad
+            double score = totalArea - (fragPenalty * 0.35) - (smallCount * (currentPart.L * currentPart.W) * 0.5);
+            return score;
         }
 
         // =====================================================

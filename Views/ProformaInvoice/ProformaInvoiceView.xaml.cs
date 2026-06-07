@@ -9,6 +9,7 @@ using ProGlassAutomation.Models;
 using ProGlassAutomation.ViewModels;
 using ProGlassAutomation.Views;
 using ProGlassAutomation.Views.Optimization;
+using System.Linq;
 using System.Collections.Generic;
 
 namespace ProGlassAutomation.Views.ProformaInvoice
@@ -231,26 +232,39 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     return;
                 }
 
-                // Transform to CutParts
+                // Transform to CutParts — decide dimension source
+                // Use alternate dims if either spec-level or main dims radio selects W2/H2
+                bool useAlt = (rbUseW2H2 != null && rbUseW2H2.IsChecked == true) || (rbDimsW2H2 != null && rbDimsW2H2.IsChecked == true);
                 var parts = items.Select(i => new CutPart
                 {
                     Ref = i.GlassRef ?? "P",
-                    L = i.Width1 > 0 ? i.Width1 : i.Width2,
-                    W = i.Height1 > 0 ? i.Height1 : i.Height2,
+                    L = useAlt ? (i.Width2 > 0 ? i.Width2 : i.Width1) : (i.Width1 > 0 ? i.Width1 : i.Width2),
+                    W = useAlt ? (i.Height2 > 0 ? i.Height2 : i.Height1) : (i.Height1 > 0 ? i.Height1 : i.Height2),
                     Qty = i.Qty > 0 ? i.Qty : 1,
                     Rot = true
                 }).ToList();
 
+                // Logging: how many items actually have alternate dims and radio states
+                int altAvailable = items.Count(i => (i.Width2 > 0 || i.Height2 > 0));
+                System.Diagnostics.Debug.WriteLine($"[RunOptimization] useAlt={useAlt}, rbUseW2H2={(rbUseW2H2?.IsChecked==true)}, rbDimsW2H2={(rbDimsW2H2?.IsChecked==true)}, itemsWithAltDims={altAvailable}/{items.Count}");
+
+                // If user selected W2/H2 but no items contain W2/H2, warn and fall back to W1/H1
+                if (useAlt && altAvailable == 0)
+                {
+                    MessageBox.Show("W2/H2 selected but no alternate dimensions found in items. Falling back to W1/H1.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                    useAlt = false;
+                }
+
                 // Create optimizer view (don't show - just run for results)
                 var optView = new OptimizationView();
 
-                // Convert CutParts to InvoiceItemModel
-                var invoiceItems = parts.Select(p => new InvoiceItemModel
+                // Convert original items to InvoiceItemModel using chosen dims (avoid losing source fields)
+                var invoiceItems = items.Select(i => new InvoiceItemModel
                 {
-                    GlassRef = p.Ref,
-                    Width1 = p.L,
-                    Height1 = p.W,
-                    Qty = p.Qty
+                    GlassRef = i.GlassRef,
+                    Width1 = useAlt ? (i.Width2 > 0 ? i.Width2 : i.Width1) : (i.Width1 > 0 ? i.Width1 : i.Width2),
+                    Height1 = useAlt ? (i.Height2 > 0 ? i.Height2 : i.Height1) : (i.Height1 > 0 ? i.Height1 : i.Height2),
+                    Qty = i.Qty > 0 ? i.Qty : 1
                 }).ToList();
 
                 // Set data
@@ -267,7 +281,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
                 txtUtilization.Text = $"{utilization:N1}%";
                 txtSheetsUsed.Text = sheetsUsed.ToString();
-                txtOptStatus.Text = $"✓ Optimized ({txtSheetWidth.Text}×{txtSheetHeight.Text}mm)";
+                txtOptStatus.Text = $"✓ Optimized ({txtSheetWidth.Text}×{txtSheetHeight.Text}mm) — Dims: {(useAlt ? "W2/H2" : "W1/H1")}";
             }
             catch (Exception ex)
             {
@@ -306,21 +320,25 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 }
                 TrimSettings trim = _trimTable[thickness];
 
-                // Get all items
+                // Get selected specifications or all
                 var items = new List<InvoiceItemModel>();
-                if (_viewModel?.Invoice?.Specifications != null)
+                var selectedSpecs = new List<SpecificationModel>();
+                if (chkSpecWise.IsChecked == true && lstSpecSelect.SelectedItems.Count > 0)
                 {
-                    foreach (var spec in _viewModel.Invoice.Specifications)
-                    {
-                        if (spec?.Items != null)
-                        {
-                            foreach (var item in spec.Items)
-                            {
-                                if (item != null)
-                                    items.Add(item);
-                            }
-                        }
-                    }
+                    foreach (SpecificationModel s in lstSpecSelect.SelectedItems)
+                        selectedSpecs.Add(s);
+                }
+                else
+                {
+                    if (_viewModel?.Invoice?.Specifications != null)
+                        selectedSpecs.AddRange(_viewModel.Invoice.Specifications);
+                }
+
+                foreach (var spec in selectedSpecs)
+                {
+                    if (spec?.Items == null) continue;
+                    foreach (var item in spec.Items)
+                        if (item != null) items.Add(item);
                 }
 
                 if (items.Count == 0)
@@ -329,12 +347,13 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     return;
                 }
 
-                // Transform to CutParts
+                // Transform to CutParts — respect selected dimension source (W1/H1 or W2/H2)
+                bool useAlt = (rbUseW2H2 != null && rbUseW2H2.IsChecked == true) || (rbDimsW2H2 != null && rbDimsW2H2.IsChecked == true);
                 var parts = items.Select(i => new CutPart
                 {
                     Ref = i.GlassRef ?? "P",
-                    L = i.Width1 > 0 ? i.Width1 : i.Width2,
-                    W = i.Height1 > 0 ? i.Height1 : i.Height2,
+                    L = useAlt ? (i.Width2 > 0 ? i.Width2 : i.Width1) : (i.Width1 > 0 ? i.Width1 : i.Width2),
+                    W = useAlt ? (i.Height2 > 0 ? i.Height2 : i.Height1) : (i.Height1 > 0 ? i.Height1 : i.Height2),
                     Qty = i.Qty > 0 ? i.Qty : 1,
                     Rot = true
                 }).ToList();
@@ -352,12 +371,12 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
                 var optView = optWindow.Content as OptimizationView;
 
-                var invoiceItems = parts.Select(p => new InvoiceItemModel
+                var invoiceItems = items.Select(i => new InvoiceItemModel
                 {
-                    GlassRef = p.Ref,
-                    Width1 = p.L,
-                    Height1 = p.W,
-                    Qty = p.Qty
+                    GlassRef = i.GlassRef,
+                    Width1 = useAlt ? (i.Width2 > 0 ? i.Width2 : i.Width1) : (i.Width1 > 0 ? i.Width1 : i.Width2),
+                    Height1 = useAlt ? (i.Height2 > 0 ? i.Height2 : i.Height1) : (i.Height1 > 0 ? i.Height1 : i.Height2),
+                    Qty = i.Qty > 0 ? i.Qty : 1
                 }).ToList();
 
                 if (optView != null)
@@ -375,7 +394,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
                     txtUtilization.Text = $"{utilization:N1}%";
                     txtSheetsUsed.Text = sheetsUsed.ToString();
-                    txtOptStatus.Text = $"✓ Optimized ({txtSheetWidth.Text}×{txtSheetHeight.Text}mm)";
+                    txtOptStatus.Text = $"✓ Optimized ({txtSheetWidth.Text}×{txtSheetHeight.Text}mm) — Dims: {(useAlt ? "W2/H2" : "W1/H1")}";
                 }
                 else
                 {
