@@ -33,14 +33,14 @@
             <Setter Property="Background" Value="#1E3A5F"/>
             <Setter Property="Foreground" Value="#FFFFFF"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="Padding" Value="12,8"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="4">
+                        <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="12">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -61,14 +61,14 @@
             <Setter Property="Foreground" Value="#1E3A5F"/>
             <Setter Property="BorderBrush" Value="#D1D5DB"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="Padding" Value="12,8"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}" CornerRadius="4">
+                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}" CornerRadius="12">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -85,14 +85,14 @@
             <Setter Property="Background" Value="#DC2626"/>
             <Setter Property="Foreground" Value="#FFFFFF"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="Padding" Value="12,8"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="4">
+                        <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="12">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -337,7 +337,7 @@
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
-            <Setter Property="Foreground" Value="#1F2937"/>
+            <Setter Property="Foreground" Value="#234E52"/>
             <Setter Property="Margin" Value="0,0,0,12"/>
         </Style>
 
@@ -378,34 +378,34 @@
     </UserControl.Resources>
 
     <!-- 3-Column Grid Layout -->
-    <Grid Margin="15">
+    <Grid Margin="8">
         <Grid.ColumnDefinitions>
-            <!-- Left: 60%, Center:20%, Right:20% -->
-            <ColumnDefinition Width="3*"/>
-            <ColumnDefinition Width="1*"/>
-            <ColumnDefinition Width="1*"/>
+            <!-- Left: 55%, Center:25%, Right:20% -->
+            <ColumnDefinition Width="55*"/>
+            <ColumnDefinition Width="25*"/>
+            <ColumnDefinition Width="20*"/>
         </Grid.ColumnDefinitions>
 
         <!-- ================= LEFT SECTION: PROFORMA INVOICE (Green Header) ================= -->
-        <Border Grid.Column="0" BorderBrush="#2E7D32" BorderThickness="2" CornerRadius="6" Background="White" Margin="0,0,7,0">
+        <Border Grid.Column="0" BorderBrush="#234E52" BorderThickness="2" CornerRadius="6" Background="#FFFFFF" Margin="0,0,8,0" Padding="0">
             <ScrollViewer VerticalScrollBarVisibility="Auto" CanContentScroll="False" PanningMode="VerticalOnly">
                 <StackPanel Margin="24">
 
-                    <Grid Margin="0,0,0,16">
+                    <Grid Margin="0,0,0,12">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0">
-                            <TextBlock Text="Proforma Invoice" FontSize="20" FontWeight="Light" Foreground="#1F2937" FontFamily="{StaticResource PrimaryFont}"/>
-                            <TextBlock Text="Create and manage professional invoices" FontSize="11" Foreground="#6B7280" Margin="0,2,0,0" FontFamily="{StaticResource PrimaryFont}"/>
+                            <TextBlock Text="Proforma Invoice" FontSize="22" FontWeight="SemiBold" Foreground="#0F3A3A" FontFamily="{StaticResource PrimaryFont}"/>
+                            <TextBlock Text="Create and manage professional invoices" FontSize="12" Foreground="#3F5760" Margin="0,2,0,0" FontFamily="{StaticResource PrimaryFont}"/>
                         </StackPanel>
                         <StackPanel Grid.Column="1" Orientation="Horizontal">
                             <Button Content="+ Create Job Order" Style="{StaticResource PrimaryButton}" Command="{Binding CreateJobOrderCommand}" Padding="16,10"/>
                         </StackPanel>
                     </Grid>
 
-                    <Border Background="#FFFFFF" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,12">
+                        <Border Background="#FAFEFF" BorderBrush="#E6F3F3" BorderThickness="1" CornerRadius="6" Padding="14" Margin="0,0,0,10">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -415,8 +415,8 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0">
-                                <TextBlock Text="Company Name" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                <TextBox Text="{Binding CompanyName, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                <TextBlock Text="Company Name" FontSize="11" Foreground="#234E52" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding CompanyName, UpdateSourceTrigger=LostFocus}" FontSize="13" Padding="8,6" BorderBrush="#DDEEEE" BorderThickness="1" Background="#FFFFFF"/>
                             </StackPanel>
                             <StackPanel Grid.Column="2">
                                 <TextBlock Text="TRN Number" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
@@ -429,7 +429,7 @@
                         </Grid>
                     </Border>
 
-                    <Border Background="#FFFFFF" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,12">
+                    <Border Background="#FAFEFF" BorderBrush="#E6F3F3" BorderThickness="1" CornerRadius="6" Padding="14" Margin="0,0,0,10">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -439,8 +439,8 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0">
-                                <TextBlock Text="Invoice No" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                <TextBox Text="{Binding Invoice.InvoiceNo, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                <TextBlock Text="Invoice No" FontSize="11" Foreground="#234E52" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding Invoice.InvoiceNo, UpdateSourceTrigger=LostFocus}" FontSize="13" Padding="8,6" BorderBrush="#DDEEEE" BorderThickness="1" Background="#FFFFFF"/>
                             </StackPanel>
                             <StackPanel Grid.Column="2">
                                 <TextBlock Text="Date" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
@@ -1078,15 +1078,15 @@
         <Border Grid.Column="1" BorderBrush="#F59E0B" BorderThickness="2" CornerRadius="6" Background="#FFFFFF" Margin="7,0,7,0">
             <Grid>
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <StackPanel Margin="12">
+                <StackPanel Margin="8">
 
                         <TextBlock Text="⚙ GLASS CUT OPTIMIZER" FontSize="18" FontWeight="Bold" Foreground="#1F2937" HorizontalAlignment="Center" Margin="0,0,0,12"/>
 
                         <!-- Stock Sheets Manager -->
-                        <Border Background="#F9FAFB" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,12">
+                        <Border Background="#F9FAFB" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Padding="8" Margin="0,0,0,8">
                             <StackPanel>
-                                <TextBlock Text="Stock Sheets" FontSize="12" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,8"/>
-                                <Grid Margin="0,0,8,8">
+                                <TextBlock Text="Stock Sheets" FontSize="11" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,6"/>
+                                <Grid Margin="0,0,8,6">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="8"/>
@@ -1096,7 +1096,7 @@
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0">
                                         <TextBlock Text="Width (mm)" FontSize="10" Foreground="#6B7280"/>
-                                        <TextBox x:Name="txtSheetWidth" Text="3210" Style="{StaticResource FormTextBox}" FontSize="13" FontWeight="SemiBold" TextAlignment="Center"/>
+                                        <TextBox x:Name="txtSheetWidth" Text="3210" Style="{StaticResource FormTextBox}" FontSize="12" FontWeight="SemiBold" TextAlignment="Center"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
                                         <TextBlock Text="Height (mm)" FontSize="10" Foreground="#6B7280"/>
@@ -1137,9 +1137,9 @@
                         </Border>
 
                         <!-- Thickness -->
-                        <Border Background="#F9FAFB" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,16">
+                        <Border Background="#F9FAFB" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Padding="8" Margin="0,0,0,12">
                             <StackPanel>
-                                <TextBlock Text="Glass Thickness" FontSize="12" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,10"/>
+                                <TextBlock Text="Glass Thickness" FontSize="11" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,8"/>
                                 <ComboBox x:Name="cmbThickness" SelectedIndex="0" Style="{StaticResource FormComboBox}" FontSize="14">
                                     <ComboBoxItem Content="6mm"/>
                                     <ComboBoxItem Content="8mm"/>
@@ -1150,9 +1150,9 @@
                         </Border>
 
                         <!-- Results -->
-                        <Border Background="#1E3A5F" CornerRadius="6" Padding="12" Margin="0,0,0,16">
+                        <Border Background="#1E3A5F" CornerRadius="6" Padding="8" Margin="0,0,0,12">
                             <StackPanel>
-                                <TextBlock Text="Optimization Results" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                                <TextBlock Text="Optimization Results" FontSize="11" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center" Margin="0,0,0,6"/>
                                 <Grid Margin="0,0,0,8">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -1160,7 +1160,7 @@
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0" HorizontalAlignment="Center">
                                         <TextBlock Text="Utilization" FontSize="10" Foreground="#9CA3AF" HorizontalAlignment="Center"/>
-                                        <TextBlock x:Name="txtUtilization" Text="--" FontSize="20" FontWeight="Bold" Foreground="#10B981" HorizontalAlignment="Center"/>
+                                        <TextBlock x:Name="txtUtilization" Text="--" FontSize="18" FontWeight="Bold" Foreground="#10B981" HorizontalAlignment="Center"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" HorizontalAlignment="Center">
                                         <TextBlock Text="Sheets Used" FontSize="10" Foreground="#9CA3AF" HorizontalAlignment="Center"/>
@@ -1168,7 +1168,7 @@
                                     </StackPanel>
                                 </Grid>
 
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" Margin="0,0,0,8">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" Margin="0,0,0,6">
                                     <CheckBox x:Name="chkSortBestFirst" Content="Sort Best First" Foreground="White" Margin="0,0,12,0"/>
                                     <CheckBox x:Name="chkSpecWise" Content="Specification-wise" Foreground="White" Margin="0,0,12,0"/>
                                     <TextBlock Text="Dims:" Foreground="White" VerticalAlignment="Center" Margin="6,0,6,0"/>
@@ -1186,7 +1186,7 @@
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0">
                                         <TextBlock Text="Sheet-wise Results" FontSize="11" Foreground="#DBEAFE" Margin="0,0,0,6"/>
-                                        <ListBox x:Name="lstResults" Height="120" Background="#0F1724" BorderBrush="#0B1220" Foreground="White"/>
+                                        <ListBox x:Name="lstResults" Height="100" Background="#0F1724" BorderBrush="#0B1220" Foreground="White"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
                                         <TextBlock Text="Total Summary" FontSize="11" Foreground="#DBEAFE" Margin="0,0,0,6"/>
@@ -1325,8 +1325,11 @@
                         </Grid>
                     </StackPanel>
 
-                    <!-- SGU Configuration Panel -->
-                    <Border x:Name="SGUContent" Background="#F9FAFB" BorderBrush="#E5E7EB" BorderThickness="0,0,0,1" Padding="16" Margin="0,0,0,8" Visibility="{Binding IsSGUSelected, Converter={StaticResource BoolToVis}}">
+                    <!-- Calculation (collapsible): contains SGU / DGU / LAM panels -->
+                    <Expander Header="Calculation" IsExpanded="False" Margin="8,0,8,8">
+                        <StackPanel>
+                            <!-- SGU Configuration Panel -->
+                            <Border x:Name="SGUContent" Background="#F9FAFB" BorderBrush="#E5E7EB" BorderThickness="0,0,0,1" Padding="16" Margin="0,0,0,8" Visibility="{Binding IsSGUSelected, Converter={StaticResource BoolToVis}}">
                         <StackPanel>
                             <TextBlock Text="SGU Configuration" FontSize="12" FontWeight="SemiBold" Foreground="#059669" Margin="0,0,0,10"/>
                             <TextBlock Text="Thickness" Style="{StaticResource FieldLabel}"/>
@@ -1373,8 +1376,8 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- DGU Configuration Panel -->
-                    <Border x:Name="DGUContent" Background="#F9FAFB" BorderBrush="#E5E7EB" BorderThickness="0,0,0,1" Padding="16" Margin="0,0,0,8" Visibility="{Binding IsDGUSelected, Converter={StaticResource BoolToVis}}">
+                            <!-- DGU Configuration Panel -->
+                            <Border x:Name="DGUContent" Background="#F9FAFB" BorderBrush="#E5E7EB" BorderThickness="0,0,0,1" Padding="16" Margin="0,0,0,8" Visibility="{Binding IsDGUSelected, Converter={StaticResource BoolToVis}}">
                         <StackPanel>
                             <TextBlock Text="DGU Configuration" FontSize="12" FontWeight="SemiBold" Foreground="#1E3A5F" Margin="0,0,0,10"/>
                             <TextBlock Text="Outer Glass" Style="{StaticResource FieldLabel}"/>
@@ -1475,8 +1478,8 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- LAM Configuration Panel -->
-                    <Border x:Name="LAMContent" Background="#F9FAFB" BorderBrush="#E5E7EB" BorderThickness="0,0,0,1" Padding="16" Margin="0,0,0,8" Visibility="{Binding IsLAMSelected, Converter={StaticResource BoolToVis}}">
+                            <!-- LAM Configuration Panel -->
+                            <Border x:Name="LAMContent" Background="#F9FAFB" BorderBrush="#E5E7EB" BorderThickness="0,0,0,1" Padding="16" Margin="0,0,0,8" Visibility="{Binding IsLAMSelected, Converter={StaticResource BoolToVis}}">
                         <StackPanel>
                             <TextBlock Text="LAM Configuration" FontSize="12" FontWeight="SemiBold" Foreground="#7C3AED" Margin="0,0,0,10"/>
                             <TextBlock Text="Outer Glass" Style="{StaticResource FieldLabel}"/>
@@ -1605,6 +1608,8 @@
                             </Grid>
                         </StackPanel>
                     </Border>
+                        </StackPanel>
+                    </Expander>
 
                     <!-- Calculated Result -->
                     <Border Background="#1E3A8A" CornerRadius="6" Padding="16" Margin="16,8,16,16">
