@@ -335,15 +335,17 @@ namespace ProGlassAutomation.ViewModels
             new() { Value = "2h2", Label = "2×H2" }
         };
         public ObservableCollection<ChargeTypeOption> ChargeTypeOptions { get; } = new()
-        {
-            new() { Value = "lm", Label = "LM" },
-            new() { Value = "sqm", Label = "SQM" },
-            new() { Value = "sqm1", Label = "SQM1" },
-            new() { Value = "sqm2", Label = "SQM2" },
-            new() { Value = "qty", Label = "QTY" },
-            new() { Value = "1x", Label = "1X" },
-            new() { Value = "2x", Label = "2X" }
-        };
+{
+    new() { Value = "lm", Label = "LM (W1+H1)" },
+    new() { Value = "lm1", Label = "LM1 (W1+H1)" },
+    new() { Value = "lm2", Label = "LM2 (W2+H2)" },
+    new() { Value = "sqm", Label = "SQM (W1+H1)" },
+    new() { Value = "sqm1", Label = "SQM1 (W1+H1)" },
+    new() { Value = "sqm2", Label = "SQM2 (W2+H2)" },
+    new() { Value = "qty", Label = "QTY" },
+    new() { Value = "1x", Label = "1X" },
+    new() { Value = "2x", Label = "2X" }
+};
 
         private string _selectedThickness = "6";
         public string SelectedThickness { get => _selectedThickness; set => SetProperty(ref _selectedThickness, value); }
@@ -1888,6 +1890,12 @@ namespace ProGlassAutomation.ViewModels
                 case "lm":
                     charge.Value = CalculateTotalLMValue(linkedSpecs, "w1h1");
                     break;
+                case "lm1":
+                    charge.Value = CalculateTotalLM1Value(linkedSpecs);
+                    break;
+                case "lm2":
+                    charge.Value = CalculateTotalLM2Value(linkedSpecs);
+                    break;
                 case "sqm":
                     charge.Value = CalculateTotalSQMValue(linkedSpecs);
                     break;
@@ -1917,7 +1925,11 @@ namespace ProGlassAutomation.ViewModels
             switch (charge.Type?.ToLower())
             {
                 case "lm":
+                case "lm1":
+                case "lm2":
                 case "sqm":
+                case "sqm1":
+                case "sqm2":
                 case "qty":
                 case "1x":
                 case "2x":
@@ -2002,6 +2014,32 @@ namespace ProGlassAutomation.ViewModels
             foreach (var spec in specs)
                 totalSQM2 += spec.SpecTotalSQM2;
             return Math.Round(totalSQM2, 4);
+        }
+
+        private double CalculateTotalLM1Value(List<SpecificationModel> specs)
+        {
+            double totalLM1 = 0;
+            foreach (var spec in specs)
+            {
+                foreach (var item in spec.Items)
+                {
+                    totalLM1 += item.LM1 * item.Qty;
+                }
+            }
+            return Math.Round(totalLM1, 4);
+        }
+
+        private double CalculateTotalLM2Value(List<SpecificationModel> specs)
+        {
+            double totalLM2 = 0;
+            foreach (var spec in specs)
+            {
+                foreach (var item in spec.Items)
+                {
+                    totalLM2 += item.LM2 * item.Qty;
+                }
+            }
+            return Math.Round(totalLM2, 4);
         }
 
         private double CalculateRowLM(InvoiceItemModel item, string dimType)

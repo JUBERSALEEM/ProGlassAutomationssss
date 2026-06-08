@@ -17,6 +17,7 @@ namespace ProGlassAutomation.Models
     /// PATCH 18: Added thread-safe property setters
     /// PATCH 19: Added thread lock for concurrent access
     /// PATCH 20: Fixed surcharge - only applies when per-item SQM > 4
+    /// PATCH 21: Fixed TotalSQM/TotalLM - now uses only W1×H1 (not sum of both)
     /// </remarks>
     public class InvoiceItemModel : INotifyPropertyChanged, IDisposable
     {
@@ -225,11 +226,11 @@ namespace ProGlassAutomation.Models
 
                         Recalculate();
 
-                        // 🔴 Notify parent spec AND grandparent invoice
+                        // Notify parent spec AND grandparent invoice
                         Specification?.CalculateTotals();
                         Specification?.Invoice?.CalculateTotals();
 
-                        // 🔴 Force all property notifications
+                        // Force all property notifications
                         OnPropertyChanged(nameof(SurchargeAmount));
                         OnPropertyChanged(nameof(DisplayPrice));
                         OnPropertyChanged(nameof(TotalPrice));
@@ -282,7 +283,7 @@ namespace ProGlassAutomation.Models
         private string _glassType = "";
         public string GlassType { get => _glassType; set => SetProperty(ref _glassType, value); }
 
-        // ==================== RECALCULATE (PATCH 19 + PATCH 20 Fix) ====================
+        // ==================== RECALCULATE (PATCH 21 - Fixed SQM/LM to use only W1×H1) ====================
         public void Recalculate()
         {
             if (_isBulkUpdating) return;
@@ -295,7 +296,7 @@ namespace ProGlassAutomation.Models
                 double h2 = Height2 > 0 ? Height2 : 0;
                 double q = Qty > 0 ? Qty : 1;
 
-                // SQM calculations
+                // SQM calculations - store both for Other Charges reference
                 double sqm1Val = (w1 * h1) / 1000000.0;
                 double sqm2Val = (w2 * h2) / 1000000.0;
 
@@ -305,25 +306,30 @@ namespace ProGlassAutomation.Models
 
                 SQM1 = Math.Round(sqm1Val, 4);
                 SQM2 = Math.Round(sqm2Val, 4);
-                TotalSQM = Math.Round((SQM1 + SQM2) * q, 4);
 
-                // LM calculations (perimeter)
+                // FIX PATCH 21: Use only W1×H1 (SQM1) for main TotalSQM
+                // W2/H2 is kept separately for Other Charges like sqm2
+                TotalSQM = Math.Round(SQM1 * q, 4);
+
+                // LM calculations - store both for Other Charges reference
                 double lm1Val = 2 * ((w1 / 1000.0) + (h1 / 1000.0));
                 double lm2Val = 2 * ((w2 / 1000.0) + (h2 / 1000.0));
                 LM1 = Math.Round(lm1Val, 4);
                 LM2 = Math.Round(lm2Val, 4);
-                LM = LM1 + LM2;
+
+                // FIX PATCH 21: Use only LM1 for main LM
+                // LM2 is kept separately for Other Charges like lm2
+                LM = LM1;
                 TotalLM = Math.Round(LM * q, 4);
 
                 // Price calculations
                 double p = Price > 0 ? Price : 0;
                 double sp = SurchargePercent > 0 ? SurchargePercent : 0;
 
-                // 🔴 FIX (PATCH 20): Check per-item SQM only (NOT including quantity)
-                double perItemSQM = SQM1 + SQM2;
+                // Surcharge applies to per-item SQM (only W1×H1)
+                double perItemSQM = SQM1;
 
                 double surcharge = 0;
-                // 🔴 Only apply if per-item SQM > 4
                 if (perItemSQM > 4)
                 {
                     surcharge = Math.Round((p * sp) / 100, 2);
@@ -351,7 +357,7 @@ namespace ProGlassAutomation.Models
         {
             Recalculate();
 
-            // 🔴 Notify parent specification to update totals
+            // Notify parent specification to update totals
             Specification?.CalculateTotals();
         }
 
