@@ -1,14 +1,9 @@
-﻿using ProGlassAutomation.Data.Database;
+﻿using CommunityToolkit.Mvvm.Input;
+using ProGlassAutomation.Data.Database;
 using ProGlassAutomation.Models;
-
-// Add these aliases to disambiguate:
-using DbDelivery = ProGlassAutomation.Data.Database.Delivery;
-using DbDeliveryItem = ProGlassAutomation.Data.Database.DeliveryItem;
-using JobOrder = ProGlassAutomation.Models.JobOrder;
-using DbDailyWork = ProGlassAutomation.Data.DbDailyWork;
 using System;
-using System.Collections.ObjectModel;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
 using System.Globalization;
@@ -17,10 +12,15 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using DbDailyWork = ProGlassAutomation.Data.DbDailyWork;
+// Add these aliases to disambiguate:
+using DbDelivery = ProGlassAutomation.Data.Database.Delivery;
+using DbDeliveryItem = ProGlassAutomation.Data.Database.DeliveryItem;
+using JobOrder = ProGlassAutomation.Models.JobOrder;
 
 namespace ProGlassAutomation.ViewModels
 {
-    public class DeliveryViewModel : ViewModelBase
+    public partial class DeliveryViewModel : ViewModelBase
     {
         private ObservableCollection<DbDelivery> _deliveryOrders;
         private ObservableCollection<DbDailyWork> _sourceOrders;
@@ -805,6 +805,25 @@ namespace ProGlassAutomation.ViewModels
                         }
 
                         // NEW entry - add it
+                        // FIX: Don't filter by status here - let import filter handle it
+
+                        // FIX: Skip records with empty Company and PINumber (prevents blank rows)
+                        if (string.IsNullOrWhiteSpace(work.Company) &&
+                            string.IsNullOrWhiteSpace(work.PINumber))
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Skipping empty file: {fileName}");
+                            skippedCount++;
+                            continue;
+                        }
+
+                        // FIX: Require Company field (skip if empty)
+                        if (string.IsNullOrWhiteSpace(work.Company))
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Skipping file without Company: {fileName}");
+                            skippedCount++;
+                            continue;
+                        }
+
                         SourceOrders.Add(work);
                         existingPiNumbers.Add(jsonPINumber); // Add to HashSet
                         addedCount++;
@@ -898,19 +917,152 @@ namespace ProGlassAutomation.ViewModels
 
         #endregion
 
+        // NEW: Import directly from DailyWorks database table
+        [RelayCommand]
+        private void ImportFromDailyWorksDatabase()
+        {
+            try
+            {
+                var result = MessageBox.Show(
+                    "Import all records from DailyWorks database table?\nThis imports directly from the database instead of JSON.",
+                    "Confirm Database Import",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+
+                if (result != MessageBoxResult.Yes) return;
+
+                // Get all records from DailyWorks database
+                var dbRecords = DbHelper.GetAllDailyWork();
+
+                // Filter for confirmed status
+                var confirmedOrders = dbRecords
+                    .Where(w => w.Status == "Confirmed" ||
+                               w.Status == "COMPLETED" ||
+                               w.ProductionStatus == "COMPLETED")
+                    .ToList();
+
+                if (confirmedOrders.Count == 0)
+                {
+                    MessageBox.Show("No confirmed orders found in DailyWorks database.",
+                        "Import", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                // Import logic similar to ExecuteImportConfirmed
+                int importedCount = 0;
+                int updatedCount = 0;
+
+                foreach (var sourceOrder in confirmedOrders)
+                {
+                    var existingDelivery = DeliveryOrders.FirstOrDefault(d =>
+                        d.PINumber == sourceOrder.PINumber &&
+                        !string.IsNullOrEmpty(sourceOrder.PINumber));
+
+                    if (existingDelivery != null)
+                    {
+                        // Check for changes (same logic as ExecuteImportConfirmed)
+                        bool hasChanges = existingDelivery.OrderQty != sourceOrder.Qty ||
+                                       existingDelivery.Company != sourceOrder.Company ||
+                                       existingDelivery.TypeOfWork != sourceOrder.TypeOfWork;
+
+                        if (hasChanges)
+                        {
+                            existingDelivery.OrderQty = sourceOrder.Qty;
+                            existingDelivery.OrderSQM = sourceOrder.SQM;
+                            existingDelivery.Company = sourceOrder.Company ?? "";
+                            existingDelivery.TypeOfWork = sourceOrder.TypeOfWork ?? "";
+                            existingDelivery.Salesman = sourceOrder.Salesman ?? "";
+                            existingDelivery.Color = sourceOrder.Color ?? "";
+                            existingDelivery.Notes = sourceOrder.Notes ?? "";
+                            existingDelivery.UpdatedDate = DateTime.Today;
+                            UpdateOrderStatus(existingDelivery);
+
+                            DbHelper.UpdateDelivery(existingDelivery);
+                            updatedCount++;
+                        }
+                        continue;
+                    }
+
+                    // Create new delivery order
+                    var newDelivery = new DbDelivery
+                    {
+                        SourceId = sourceOrder.Id,
+                        Date = sourceOrder.Date,
+                        Company = sourceOrder.Company ?? "",
+                        PINumber = sourceOrder.PINumber ?? "",
+                        CustomerReference = sourceOrder.CustomerReference ?? "",
+                        TypeOfWork = sourceOrder.TypeOfWork ?? "",
+                        OrderQty = sourceOrder.Qty,
+                        OrderSQM = sourceOrder.SQM,
+                        Salesman = sourceOrder.Salesman ?? "",
+                        Color = sourceOrder.Color ?? "",
+                        ProductionStatus = sourceOrder.ProductionStatus ?? "",
+                        Status = "Pending",
+                        Notes = sourceOrder.Notes ?? "",
+                        CreatedDate = DateTime.Now,
+                        UpdatedDate = DateTime.Now,
+                        DeliveryItems = new ObservableCollection<DbDeliveryItem>()
+                    };
+
+                    DbHelper.SaveDelivery(newDelivery);
+                    DeliveryOrders.Add(newDelivery);
+                    importedCount++;
+                }
+
+                RefreshDataView();
+                UpdateAllStats();
+
+                MessageBox.Show($"Import Complete!\n\nNew: {importedCount} orders\nUpdated: {updatedCount} orders",
+                    "Import Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Import failed: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         #region Import from Confirmed Orders
 
         private void ExecuteImportConfirmed(object parameter)
         {
             try
             {
+                // DEBUG: Show all orders and their status
+                System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Total SourceOrders: {SourceOrders.Count}");
+
+                foreach (var order in SourceOrders.Take(5))
+                {
+                    System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Order: {order.PINumber}, Status: '{order.Status}', ProdStatus: '{order.ProductionStatus}'");
+                }
+
+                // Import any order where Status is NOT "Pending"
+                // This will catch Confirmed, COMPLETED, Done, COMPLETE, IN PROGRESS, etc.
                 var confirmedOrders = SourceOrders
-                    .Where(w => w.Status == "Confirmed")
+                    .Where(w =>
+                    {
+                        // FIX: First require Company field
+                        if (string.IsNullOrWhiteSpace(w.Company))
+                            return false;
+
+                        var status = (w.Status ?? "").Trim();
+                        var prodStatus = (w.ProductionStatus ?? "").Trim();
+
+                        // Skip empty or Pending status (case-insensitive)
+                        if (string.IsNullOrWhiteSpace(status)) return false;
+                        if (status.Equals("Pending", StringComparison.OrdinalIgnoreCase)) return false;
+
+                        // Accept any status that's NOT Pending
+                        return true;
+                    })
                     .ToList();
+
+                System.Diagnostics.Debug.WriteLine($"[DeliveryViewModel] Orders to import: {confirmedOrders.Count}");
 
                 if (confirmedOrders.Count == 0)
                 {
-                    MessageBox.Show("No confirmed orders found in Daily Works to import.",
+                    MessageBox.Show("No confirmed orders found in Daily Works to import.\n\n" +
+                    "Orders must have Status = 'Confirmed' (not 'Pending') in Daily Works.",
                         "Import", MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
@@ -990,7 +1142,6 @@ namespace ProGlassAutomation.ViewModels
                         continue;
                     }
 
-                    // PATCH-02: Remove manual ID generation - database will use AUTOINCREMENT
                     var newDelivery = new DbDelivery
                     {
                         SourceId = sourceOrder.Id,
@@ -1048,6 +1199,7 @@ namespace ProGlassAutomation.ViewModels
 
         #region Filter Implementation
 
+        // FIXED: SQL Injection Protection - Escape single quotes in all filter values
         private void ApplyFilters()
         {
             if (FilteredDataView == null) return;
@@ -1055,24 +1207,26 @@ namespace ProGlassAutomation.ViewModels
 
             if (!string.IsNullOrWhiteSpace(SearchText))
             {
+                // FIXED: Escape single quotes in search text
                 var searchLower = SearchText.Replace("'", "''");
                 filterExpressions.Add($"(Company LIKE '%{searchLower}%' OR PINumber LIKE '%{searchLower}%' OR Salesman LIKE '%{searchLower}%' OR Notes LIKE '%{searchLower}%')");
             }
 
+            // FIXED: Escape single quotes in ALL filter fields
             if (!string.IsNullOrWhiteSpace(FilterStatus))
-                filterExpressions.Add($"Status = '{FilterStatus}'");
+                filterExpressions.Add($"Status = '{FilterStatus.Replace("'", "''")}'");
 
             if (!string.IsNullOrWhiteSpace(FilterTypeOfWork))
-                filterExpressions.Add($"TypeOfWork = '{FilterTypeOfWork}'");
+                filterExpressions.Add($"TypeOfWork = '{FilterTypeOfWork.Replace("'", "''")}'");
 
             if (!string.IsNullOrWhiteSpace(FilterSalesman))
-                filterExpressions.Add($"Salesman = '{FilterSalesman}'");
+                filterExpressions.Add($"Salesman = '{FilterSalesman.Replace("'", "''")}'");
 
             if (!string.IsNullOrWhiteSpace(FilterCompany))
-                filterExpressions.Add($"Company = '{FilterCompany}'");
+                filterExpressions.Add($"Company = '{FilterCompany.Replace("'", "''")}'");
 
             if (!string.IsNullOrWhiteSpace(FilterColor))
-                filterExpressions.Add($"Color = '{FilterColor}'");
+                filterExpressions.Add($"Color = '{FilterColor.Replace("'", "''")}'");
 
             if (FilterStartDate.HasValue)
                 filterExpressions.Add($"Date >= #{FilterStartDate.Value:yyyy-MM-dd}#");
@@ -1267,12 +1421,49 @@ namespace ProGlassAutomation.ViewModels
         // PATCH-04: Use GetCurrentOrder()
         private void ExecuteDelete(object parameter)
         {
-            var orderToDelete = GetCurrentOrder();
+            // Determine which item to delete
+            var orderToDelete = parameter as DbDelivery;  // Try parameter first
 
+            // If parameter is null or wrong type, use selected row
+            if (orderToDelete == null)
+            {
+                orderToDelete = GetCurrentOrder();
+            }
+
+            // If still null, try using selected IDs
+            if (orderToDelete == null && _selectedIds != null && _selectedIds.Count > 0)
+            {
+                var result = MessageBox.Show(
+                    $"Delete {_selectedIds.Count} selected order(s)?\n\nThis will also delete all delivery items.\n\nThis action cannot be undone.",
+                    "Confirm Delete",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    foreach (var id in _selectedIds.ToList())
+                    {
+                        if (ExecuteDbOperation(() => DbHelper.DeleteDelivery(id), "Delete Delivery"))
+                        {
+                            var item = DeliveryOrders.FirstOrDefault(w => w.Id == id);
+                            if (item != null)
+                                DeliveryOrders.Remove(item);
+                        }
+                    }
+
+                    _selectedIds.Clear();
+                    _selectedCount = 0;
+                    RefreshDataView();
+                    UpdateAllStats();
+                    return;
+                }
+            }
+
+            // Single item delete
             if (orderToDelete != null)
             {
                 var result = MessageBox.Show(
-                    $"Delete delivery order for {orderToDelete.Company}?\nPI: {orderToDelete.PINumber}\n\nThis will also delete all delivery items.",
+                    $"Delete order for {orderToDelete.Company}?\nPI: {orderToDelete.PINumber}\n\nThis will also delete all delivery items.",
                     "Confirm Delete",
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Warning);
@@ -1285,15 +1476,31 @@ namespace ProGlassAutomation.ViewModels
                         RefreshDataView();
                         UpdateAllStats();
                         SelectedOrder = null;
-                        SelectedDataRowView = null;
+                        _selectedDataRowView = null;
+
+                        // Clear selection
+                        if (_selectedIds != null)
+                        {
+                            _selectedIds.Clear();
+                            _selectedCount = 0;
+                        }
                     }
                 }
+            }
+            else
+            {
+                MessageBox.Show("Please select an item to delete.", "No Selection",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
 
         private bool CanExecuteDelete(object parameter)
         {
-            return parameter != null || SelectedDataRowView != null || SelectedOrder != null;
+            // Accept if parameter is passed OR there's a selected row in DataGrid
+            return parameter != null ||
+                   _selectedDataRowView != null ||
+                   SelectedOrder != null ||
+                   (_selectedIds != null && _selectedIds.Count > 0);
         }
 
         private void ExecuteSave(object parameter)
@@ -1369,6 +1576,9 @@ namespace ProGlassAutomation.ViewModels
 
         private void ExecuteRefresh(object parameter)
         {
+            // FIX: Clear SourceOrders to prevent duplicates on refresh
+            SourceOrders.Clear();
+
             LoadDataFromDatabase();
             LoadOptionsFromDatabase();
             LoadSourceOrdersFromJson();
@@ -1900,57 +2110,83 @@ namespace ProGlassAutomation.ViewModels
 
         private void ExecuteDeleteSelected(object parameter)
         {
-            if (parameter is System.Windows.Controls.DataGrid dataGrid)
+            // Get DataGrid - could be passed directly or need to find it
+            var dataGrid = parameter as System.Windows.Controls.DataGrid;
+
+            if (dataGrid == null)
             {
-                var selectedIds = new List<int>();
+                // Try to find DataGrid in main window
+                dataGrid = System.Windows.Application.Current.MainWindow?.FindName("DeliveryDataGrid")
+                    as System.Windows.Controls.DataGrid;
+            }
 
-                foreach (var item in dataGrid.SelectedItems)
+            if (dataGrid == null)
+            {
+                // Use internal selected IDs if already tracked
+                if (_selectedIds.Count > 0)
                 {
-                    if (item is DataRowView rowView)
-                    {
-                        selectedIds.Add(Convert.ToInt32(rowView["Id"]));
-                    }
-                }
-
-                if (selectedIds.Count == 0)
-                {
-                    MessageBox.Show("Please select rows to delete.", "No Selection",
-                        MessageBoxButton.OK, MessageBoxImage.Information);
+                    ExecuteDeleteByIds(_selectedIds);
                     return;
                 }
 
-                var result = MessageBox.Show(
-                    $"Delete {selectedIds.Count} selected order(s)?\n\nThis will also delete all delivery items.\n\nThis action cannot be undone.",
-                    "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                MessageBox.Show("Please select rows to delete.", "No Selection",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
 
-                if (result == MessageBoxResult.Yes)
+            var selectedIds = new List<int>();
+            foreach (var item in dataGrid.SelectedItems)
+            {
+                if (item is DataRowView rowView)
                 {
-                    foreach (var id in selectedIds)
+                    selectedIds.Add(Convert.ToInt32(rowView["Id"]));
+                }
+            }
+
+            if (selectedIds.Count == 0)
+            {
+                MessageBox.Show("Please select rows to delete.", "No Selection",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            ExecuteDeleteByIds(selectedIds);
+        }
+
+        private void ExecuteDeleteByIds(List<int> selectedIds)
+        {
+            var result = MessageBox.Show(
+                $"Delete {selectedIds.Count} selected order(s)?\n\nThis will also delete all delivery items.\n\nThis action cannot be undone.",
+                "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                foreach (var id in selectedIds)
+                {
+                    if (ExecuteDbOperation(() => DbHelper.DeleteDelivery(id), "Delete Delivery"))
                     {
-                        if (ExecuteDbOperation(() => DbHelper.DeleteDelivery(id), "Delete Delivery"))
+                        var item = DeliveryOrders.FirstOrDefault(w => w.Id == id);
+                        if (item != null)
                         {
-                            var item = DeliveryOrders.FirstOrDefault(w => w.Id == id);
-                            if (item != null)
-                            {
-                                DeliveryOrders.Remove(item);
-                            }
+                            DeliveryOrders.Remove(item);
                         }
                     }
-
-                    _selectedIds.Clear();
-                    _selectedCount = 0;
-
-                    RefreshDataView();
-                    UpdateAllStats();
-                    SelectedOrder = null;
-                    SelectedDataRowView = null;
                 }
+
+                _selectedIds.Clear();
+                _selectedCount = 0;
+
+                RefreshDataView();
+                UpdateAllStats();
+                SelectedOrder = null;
+                SelectedDataRowView = null;
             }
         }
 
         private bool CanExecuteDeleteSelected(object parameter)
         {
-            return _selectedCount > 0;
+            return _selectedCount > 0 ||
+                   (parameter is System.Windows.Controls.DataGrid dg && dg.SelectedItems.Count > 0);
         }
 
         #endregion

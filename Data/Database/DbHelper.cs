@@ -187,7 +187,7 @@ CREATE TABLE IF NOT EXISTS LaminationRecords (Id INTEGER PRIMARY KEY AUTOINCREME
                     {
                         cmd.CommandText = @"
 CREATE TABLE IF NOT EXISTS DailyWork (Id INTEGER PRIMARY KEY AUTOINCREMENT, Date TEXT, UpdateDate TEXT, Company TEXT, PINumber TEXT, CustomerReference TEXT, TypeOfWork TEXT, ProductionStatus TEXT, DailyReportStatus TEXT, Qty INTEGER, SQM REAL, Status TEXT, Salesman TEXT, Color TEXT, Notes TEXT, CreatedDate TEXT);
-CREATE TABLE IF NOT EXISTS Deliveries (Id INTEGER PRIMARY KEY AUTOINCREMENT, SourceId INTEGER, Date TEXT, Company TEXT, PINumber TEXT, CustomerReference TEXT, TypeOfWork TEXT, OrderQty INTEGER, OrderSQM REAL, Salesman TEXT, Status TEXT, Notes TEXT, CreatedDate TEXT, UpdatedDate TEXT);
+CREATE TABLE IF NOT EXISTS Deliveries (Id INTEGER PRIMARY KEY AUTOINCREMENT, SourceId INTEGER, Date TEXT, Company TEXT, PINumber TEXT, CustomerReference TEXT, TypeOfWork TEXT, Color TEXT, OrderQty INTEGER, OrderSQM REAL, Salesman TEXT, Status TEXT, Notes TEXT, CreatedDate TEXT, UpdatedDate TEXT);
 CREATE TABLE IF NOT EXISTS DeliveryItems (Id INTEGER PRIMARY KEY AUTOINCREMENT, OrderId INTEGER, DeliveryDate TEXT, DeliveredQty INTEGER, DeliveredSQM REAL, ReturnedQty INTEGER, ReturnedSQM REAL, Driver TEXT, Vehicle TEXT, Notes TEXT, CreatedDate TEXT);";
                         cmd.ExecuteNonQuery();
                     }
@@ -700,6 +700,140 @@ VALUES ($d, $ud, $c, $pi, $cr, $t, $ps, $drs, $q, $s, $st, $sm, $cl, $n, $cd)";
                 cmd.CommandText = "DELETE FROM DailyWork WHERE Id = $id";
                 cmd.Parameters.AddWithValue("$id", id);
                 cmd.ExecuteNonQuery();
+            });
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════════
+        // NEW: Filtered query with SQL injection protection
+        // ═══════════════════════════════════════════════════════════════════════════
+
+        public static List<DailyWork> GetFilteredDailyWork(
+            string? searchText = null,
+            string? status = null,
+            string? productionStatus = null,
+            string? company = null,
+            string? typeOfWork = null,
+            string? salesman = null,
+            string? color = null,
+            string? piNumber = null,
+            string? customerReference = null,
+            DateTime? startDate = null,
+            DateTime? endDate = null)
+        {
+            return Execute(conn =>
+            {
+                var list = new List<DailyWork>();
+                var conditions = new List<string>();
+                var parameters = new List<Microsoft.Data.Sqlite.SqliteParameter>();
+
+                // Build WHERE clause dynamically with SAFE parameterization
+                if (!string.IsNullOrWhiteSpace(searchText))
+                {
+                    conditions.Add("(Company LIKE $search OR PINumber LIKE $search OR CustomerReference LIKE $search OR TypeOfWork LIKE $search OR Salesman LIKE $search OR Notes LIKE $search)");
+                    parameters.Add(new Microsoft.Data.Sqlite.SqliteParameter("$search", $"%{searchText}%"));
+                }
+
+                if (!string.IsNullOrWhiteSpace(status))
+                {
+                    conditions.Add("Status = $status");
+                    parameters.Add(new Microsoft.Data.Sqlite.SqliteParameter("$status", status));
+                }
+
+                if (!string.IsNullOrWhiteSpace(productionStatus))
+                {
+                    conditions.Add("ProductionStatus = $productionStatus");
+                    parameters.Add(new Microsoft.Data.Sqlite.SqliteParameter("$productionStatus", productionStatus));
+                }
+
+                if (!string.IsNullOrWhiteSpace(company))
+                {
+                    conditions.Add("Company = $company");
+                    parameters.Add(new Microsoft.Data.Sqlite.SqliteParameter("$company", company));
+                }
+
+                if (!string.IsNullOrWhiteSpace(typeOfWork))
+                {
+                    conditions.Add("TypeOfWork = $typeOfWork");
+                    parameters.Add(new Microsoft.Data.Sqlite.SqliteParameter("$typeOfWork", typeOfWork));
+                }
+
+                if (!string.IsNullOrWhiteSpace(salesman))
+                {
+                    conditions.Add("Salesman = $salesman");
+                    parameters.Add(new Microsoft.Data.Sqlite.SqliteParameter("$salesman", salesman));
+                }
+
+                if (!string.IsNullOrWhiteSpace(color))
+                {
+                    conditions.Add("Color = $color");
+                    parameters.Add(new Microsoft.Data.Sqlite.SqliteParameter("$color", color));
+                }
+
+                if (!string.IsNullOrWhiteSpace(piNumber))
+                {
+                    conditions.Add("PINumber = $piNumber");
+                    parameters.Add(new Microsoft.Data.Sqlite.SqliteParameter("$piNumber", piNumber));
+                }
+
+                if (!string.IsNullOrWhiteSpace(customerReference))
+                {
+                    conditions.Add("CustomerReference = $customerReference");
+                    parameters.Add(new Microsoft.Data.Sqlite.SqliteParameter("$customerReference", customerReference));
+                }
+
+                if (startDate.HasValue)
+                {
+                    conditions.Add("Date >= $startDate");
+                    parameters.Add(new Microsoft.Data.Sqlite.SqliteParameter("$startDate", startDate.Value.ToString("yyyy-MM-dd HH:mm:ss")));
+                }
+
+                if (endDate.HasValue)
+                {
+                    conditions.Add("Date <= $endDate");
+                    parameters.Add(new Microsoft.Data.Sqlite.SqliteParameter("$endDate", endDate.Value.ToString("yyyy-MM-dd HH:mm:ss")));
+                }
+
+                // Build query
+                var sql = "SELECT * FROM DailyWork";
+                if (conditions.Count > 0)
+                {
+                    sql += " WHERE " + string.Join(" AND ", conditions);
+                }
+                sql += " ORDER BY Id DESC";
+
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = sql;
+
+                // Add parameters
+                foreach (var param in parameters)
+                {
+                    cmd.Parameters.Add(param);
+                }
+
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                {
+                    list.Add(new DailyWork
+                    {
+                        Id = r.GetInt32(0),
+                        Date = DateTime.TryParse(r.GetString(1), out var d) ? d : DateTime.Today,
+                        UpdateDate = DateTime.TryParse(r.GetString(2), out var ud) ? ud : DateTime.Today,
+                        Company = r.IsDBNull(3) ? "" : r.GetString(3),
+                        PINumber = r.IsDBNull(4) ? "" : r.GetString(4),
+                        CustomerReference = r.IsDBNull(5) ? "" : r.GetString(5),
+                        TypeOfWork = r.IsDBNull(6) ? "" : r.GetString(6),
+                        ProductionStatus = r.IsDBNull(7) ? "" : r.GetString(7),
+                        DailyReportStatus = r.IsDBNull(8) ? "" : r.GetString(8),
+                        Qty = r.GetInt32(9),
+                        SQM = r.GetDouble(10),
+                        Status = r.IsDBNull(11) ? "" : r.GetString(11),
+                        Salesman = r.IsDBNull(12) ? "" : r.GetString(12),
+                        Color = r.IsDBNull(13) ? "" : r.GetString(13),
+                        Notes = r.IsDBNull(14) ? "" : r.GetString(14),
+                        CreatedDate = DateTime.TryParse(r.GetString(15), out var cd) ? cd : DateTime.Today
+                    });
+                }
+                return list;
             });
         }
 

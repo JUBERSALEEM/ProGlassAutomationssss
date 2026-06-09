@@ -13,6 +13,21 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 
+// Add aliases to disambiguate
+using DbHelper = ProGlassAutomation.Data.Database.DbHelper;
+using DbDailyWork = ProGlassAutomation.Data.DbDailyWork;  // ✅ CORRECT
+
+// ================================================================
+// INTERFACE - Add before namespace
+// ================================================================
+public interface IDailyWorkRepository
+{
+    Task<List<DailyWorkModel>> GetAllAsync();
+    Task<int> InsertAsync(DbDailyWork entity);
+    Task UpdateAsync(DbDailyWork entity);
+    Task DeleteAsync(int id);
+}
+
 namespace ProGlassAutomation.ViewModels
 {
     /// <summary>
@@ -69,6 +84,7 @@ namespace ProGlassAutomation.ViewModels
         // PATCH 78: Individual filter methods - each handles one field
         private bool MatchesSearchFilter(DailyWorkModel work)
         {
+            if (work == null) return false;
             if (string.IsNullOrWhiteSpace(SearchText)) return true;
             return MatchesSearch(work, SearchText.ToLowerInvariant());
         }
@@ -286,6 +302,8 @@ namespace ProGlassAutomation.ViewModels
         public RelayCommand ImportFromCsvCommand { get; private set; }
         // PATCH 144: Export to Excel command
         public RelayCommand ExportToExcelCommand { get; private set; }
+        // DELETE BUTTON FIX: Add DeleteCommand property
+        public RelayCommand DeleteCommand { get; private set; }
         // PATCH 167: Export with preset command
         public RelayCommand ExportWithPresetCommand { get; private set; }
         // PATCH 168: Backup/Restore commands
@@ -401,6 +419,118 @@ namespace ProGlassAutomation.ViewModels
                 }
             }
             catch { /* Ignore errors */ }
+        }
+
+        // NEW: Import directly from DailyWorks database table
+        [RelayCommand]
+        private async Task ImportFromDatabaseAsync()
+        {
+            try
+            {
+                var result = MessageBox.Show(
+                    "Import all records from DailyWorks database table?\nThis will add records that don't exist in JSON.",
+                    "Confirm Database Import",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+
+                if (result != MessageBoxResult.Yes) return;
+
+                IsBusy = true;
+                StatusMessage = "Importing from database...";
+
+                // Get all records from database - returns Database.DailyWork objects
+                var dbRecords = ProGlassAutomation.Data.Database.DbHelper.GetAllDailyWork();
+                var imported = 0;
+                var skipped = 0;
+
+                foreach (var dbRecord in dbRecords)
+                {
+                    // Check if already exists (by PI Number and Customer Reference)
+                    var existing = DailyWorks.FirstOrDefault(w =>
+                        string.Equals(w.PiNumber?.Trim(), dbRecord.PINumber?.Trim(), StringComparison.OrdinalIgnoreCase) &&
+                        string.Equals(w.CustomerReference?.Trim(), dbRecord.CustomerReference?.Trim(), StringComparison.OrdinalIgnoreCase));
+
+                    if (existing == null)
+                    {
+                        // Convert DbHelper DailyWork to DailyWorkModel
+                        var newWork = new DailyWorkModel
+                        {
+                            Id = dbRecord.Id,
+                            Date = dbRecord.Date,
+                            Company = dbRecord.Company,
+                            PiNumber = dbRecord.PINumber,
+                            Color = dbRecord.Color,
+                            CustomerReference = dbRecord.CustomerReference,
+                            TypeOfWork = dbRecord.TypeOfWork,
+                            ProductionStatus = dbRecord.ProductionStatus,
+                            Qty = dbRecord.Qty,
+                            Sqm = dbRecord.SQM,
+                            Status = dbRecord.Status,
+                            Salesman = dbRecord.Salesman,
+                            Notes = dbRecord.Notes,
+                            CreatedDate = dbRecord.CreatedDate
+                        };
+                        DailyWorks.Add(newWork);
+                        imported++;
+                    }
+                    else
+                    {
+                        skipped++;
+                    }
+                }
+
+                RefreshFilteredView();
+                UpdateStatistics();
+                StatusMessage = $"Imported {imported} records, skipped {skipped} existing!";
+                LogActivity("DB IMPORT", $"Imported {imported} records from database");
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = "Import failed: " + ex.Message;
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        // NEW: Combined import - JSON + Database
+        [RelayCommand]
+        private async Task ImportAllAsync()
+        {
+            try
+            {
+                var result = MessageBox.Show(
+                    "Import all records from both JSON files AND database?\nThis ensures complete data.",
+                    "Confirm Full Import",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+
+                if (result != MessageBoxResult.Yes) return;
+
+                IsBusy = true;
+                StatusMessage = "Loading all data...";
+
+                // Reload from database (master source)
+                await LoadDataAsync();
+
+                // Also export to JSON for Delivery
+                foreach (var work in DailyWorks)
+                {
+                    await ExportToJsonFileAsync(work);
+                }
+
+                StatusMessage = "Full import complete!";
+                LogActivity("FULL IMPORT", "Imported from database and exported to JSON");
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = "Import failed: " + ex.Message;
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         // Note: SearchText needs custom setter for debounce, so keep manual
@@ -765,34 +895,13 @@ namespace ProGlassAutomation.ViewModels
             LogActivity("EDIT", $"Editing {SelectedItem.PiNumber}");
         }
 
-        [RelayCommand]
-        private async Task DeleteAsync()
-        {
-            if (SelectedItem == null) return;
-            var result = MessageBox.Show($"Delete {SelectedItem.Company}?", "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-            if (result == MessageBoxResult.Yes)
-            {
-                // PATCH 116: Store for undo before deleting
-                var deletedWork = SelectedItem.Clone();
-                _deletedItems.Push(deletedWork);
-
-                await _repository.DeleteAsync(SelectedItem.Id);
-                DailyWorks.Remove(SelectedItem);
-                RefreshFilteredView();
-                SelectedItem = null;
-                UpdateStatistics();
-
-                StatusMessage = $"Deleted {deletedWork.Company}. Use Undo to restore.";
-                LogActivity("DELETE", $"Deleted {deletedWork.PiNumber}");
-            }
-        }
-
+        // FIX: Save record with JSON export for Delivery import
         [RelayCommand]
         private async Task SaveAsync()
         {
             if (EditingWork == null) return;
 
-            // PATCH 147: Required field validation
+            // Validate
             var (isValid, message) = ValidateWork(EditingWork);
             if (!isValid)
             {
@@ -801,41 +910,38 @@ namespace ProGlassAutomation.ViewModels
                 return;
             }
 
-            // PATCH 113: Check for duplicate before saving
+            // Check duplicates
             var duplicate = CheckForDuplicate();
             if (duplicate != null)
             {
                 IsDuplicateWarning = true;
-                DuplicateMessage = $"Duplicate found: {duplicate.Company} (PI: {duplicate.PiNumber}, Ref: {duplicate.CustomerReference}) - ID: {duplicate.Id}";
+                DuplicateMessage = $"Duplicate: {duplicate.Company} (PI: {duplicate.PiNumber}, Ref: {duplicate.CustomerReference})";
                 return;
             }
 
-            // PATCH 146: Additional duplicate check
-            var duplicates = DailyWorks.Where(w =>
-                w.PiNumber == EditingWork.PiNumber &&
-                w.Id != EditingWork.Id).ToList();
+            var dbEntity = DbDailyWork.FromUiModel(EditingWork);
 
-            if (duplicates.Any())
+            // FIX: Auto-set Status to "Confirmed" when ProductionStatus is "COMPLETED"
+            if (!string.IsNullOrWhiteSpace(EditingWork.ProductionStatus) &&
+                EditingWork.ProductionStatus.Equals("COMPLETED", StringComparison.OrdinalIgnoreCase))
             {
-                IsDuplicateWarning = true;
-                DuplicateMessage = $"Warning: PI Number '{EditingWork.PiNumber}' already exists ({duplicates.Count} duplicate(s)). Save anyway?";
-
-                // PATCH 151: Ask user if they want to save anyway
-                var saveAnyway = MessageBox.Show(
-                    $"PI Number '{EditingWork.PiNumber}' already exists ({duplicates.Count} time(s)). Save anyway?",
-                    "Duplicate Warning", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-
-                if (saveAnyway != MessageBoxResult.Yes)
-                    return;
+                EditingWork.Status = "Confirmed";
+                dbEntity.Status = "Confirmed";
+            }
+            // FIX: Set default Status for new records
+            if (EditingWork.Id == 0 && string.IsNullOrWhiteSpace(EditingWork.Status))
+            {
+                EditingWork.Status = "Pending";
+                dbEntity.Status = "Pending";
             }
 
-            var dbEntity = DbDailyWork.FromUiModel(EditingWork);
             if (EditingWork.Id == 0)
             {
                 EditingWork.Id = DailyWorks.Count > 0 ? DailyWorks.Max(w => w.Id) + 1 : 1;
+                EditingWork.CreatedDate = DateTime.Now;
                 await _repository.InsertAsync(dbEntity);
                 DailyWorks.Add(EditingWork);
-                LogActivity("SAVE", $"Created new record: {EditingWork.PiNumber}");
+                LogActivity("SAVE", $"Created: {EditingWork.PiNumber}");
             }
             else
             {
@@ -847,12 +953,103 @@ namespace ProGlassAutomation.ViewModels
                     var index = DailyWorks.IndexOf(existing);
                     DailyWorks[index] = EditingWork;
                 }
-                LogActivity("SAVE", $"Updated record: {EditingWork.PiNumber}");
+                LogActivity("SAVE", $"Updated: {EditingWork.PiNumber}");
             }
+
+            // FIX: Export to JSON file for Delivery import
+            await ExportToJsonFileAsync(EditingWork);
+
             IsEditing = false;
             EditingWork = null;
             RefreshFilteredView();
             UpdateStatistics();
+            StatusMessage = "Saved successfully!";
+        }
+
+        // IMPROVED: Export individual JSON file for Delivery import
+        private async Task ExportToJsonFileAsync(DailyWorkModel work)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(work.PiNumber)) return;
+
+                string dataFolder = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data");
+                if (!System.IO.Directory.Exists(dataFolder))
+                {
+                    System.IO.Directory.CreateDirectory(dataFolder);
+                }
+
+                // Use PI Number for filename (sanitize for file system)
+                // FIX: More comprehensive sanitization for filenames
+                string safePiNumber = work.PiNumber
+                    .Replace("/", "_")
+                    .Replace("\\", "_")
+                    .Replace(":", "_")
+                    .Replace("*", "_")
+                    .Replace("?", "_")
+                    .Replace("\"", "_")
+                    .Replace("<", "_")
+                    .Replace(">", "_")
+                    .Replace("|", "_");
+
+                // Also handle apostrophes and special chars
+                safePiNumber = System.Text.RegularExpressions.Regex.Replace(safePiNumber, @"[^\w\-_]", "_");
+
+                string jsonFileName = $"PI-{safePiNumber}.json";
+                string jsonPath = System.IO.Path.Combine(dataFolder, jsonFileName);
+
+                var jsonSettings = new Newtonsoft.Json.JsonSerializerSettings
+                {
+                    ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore,
+                    NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore,
+                    DateFormatString = "yyyy-MM-ddTHH:mm:ss",
+                    Formatting = Newtonsoft.Json.Formatting.Indented
+                };
+
+                var json = Newtonsoft.Json.JsonConvert.SerializeObject(work, jsonSettings);
+                await System.IO.File.WriteAllTextAsync(jsonPath, json);
+
+                System.Diagnostics.Debug.WriteLine($"[DailyWorksVM] Exported JSON: {jsonFileName}");
+
+                // Log successful export for debugging
+                LogActivity("JSON EXPORT", $"Exported {jsonFileName}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DailyWorksVM] JSON export error: {ex.Message}");
+                // Don't show error to user - non-critical
+            }
+        }
+
+        // NEW: Bulk export all DailyWorks to JSON
+        [RelayCommand]
+        private async Task ExportAllToJsonAsync()
+        {
+            try
+            {
+                string dataFolder = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data");
+                if (!System.IO.Directory.Exists(dataFolder))
+                {
+                    System.IO.Directory.CreateDirectory(dataFolder);
+                }
+
+                var exported = 0;
+                foreach (var work in DailyWorks)
+                {
+                    if (!string.IsNullOrWhiteSpace(work.PiNumber))
+                    {
+                        await ExportToJsonFileAsync(work);
+                        exported++;
+                    }
+                }
+
+                StatusMessage = $"Exported {exported} records to JSON!";
+                LogActivity("BULK JSON EXPORT", $"Exported {exported} records");
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = "Bulk export failed: " + ex.Message;
+            }
         }
 
         // PATCH 147: Validate required fields
@@ -1776,35 +1973,27 @@ namespace ProGlassAutomation.ViewModels
             IsBusy = true;
             try
             {
-                var loadTask = Task.Run(async () =>
+                var dbItems = await _repository.GetAllAsync();
+
+                // Unsubscribe from old items before clearing
+                foreach (var work in DailyWorks)
                 {
-                    var dbItems = await _repository.GetAllAsync();
-                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                    work.PropertyChanged -= OnDailyWorkPropertyChanged;
+                }
+
+                DailyWorks.Clear();
+                foreach (var item in dbItems)
+                {
+                    if (item != null)
                     {
-                        // Unsubscribe from old items before clearing
-                        foreach (var work in DailyWorks)
-                        {
-                            work.PropertyChanged -= OnDailyWorkPropertyChanged;
-                        }
+                        DailyWorks.Add(item);
+                    }
+                }
+                _filteredView = null;
+                OnPropertyChanged(nameof(FilteredDataView));
+                LoadFilterOptions();
+                UpdateStatistics();
 
-                        DailyWorks.Clear();
-                        foreach (var item in dbItems)
-                        {
-                            var piNum = item.PINumber?.Trim() ?? "";
-                            var custRef = item.CustomerReference?.Trim() ?? "";
-                            if (!string.IsNullOrWhiteSpace(piNum) || !string.IsNullOrWhiteSpace(custRef))
-                            {
-                                DailyWorks.Add(item.ToUiModel());
-                            }
-                        }
-                        _filteredView = null;
-                        OnPropertyChanged(nameof(FilteredDataView));
-                        LoadFilterOptions();
-                        UpdateStatistics();  // Will subscribe to new items
-                    }, System.Windows.Threading.DispatcherPriority.Background);
-                });
-
-                await loadTask;
                 StatusMessage = "Ready";
             }
             catch (Exception ex)
@@ -1856,6 +2045,7 @@ namespace ProGlassAutomation.ViewModels
             ExportSelectedToCsvCommand = new RelayCommand(async () => await ExportSelectedToCsvAsync());
             ImportFromCsvCommand = new RelayCommand(async () => await ImportFromCsvAsync());
             ExportToExcelCommand = new RelayCommand(async () => await ExecuteExportToExcelAsync());
+            DeleteCommand = new RelayCommand(async () => await DeleteSelectedAsync(null));
 
             // PATCH 167: Export with presets
             ExportWithPresetCommand = new RelayCommand((object? preset) => ExportPresetAsync(preset?.ToString() ?? "Default"));
@@ -1968,6 +2158,107 @@ namespace ProGlassAutomation.ViewModels
                 _filterDebounceToken?.Dispose();
                 _filterDebounceToken = null;
             }
+        }
+    }
+
+    // ================================================================
+    // REPOSITORY IMPLEMENTATION - Add at end of file
+    // ================================================================
+    public class DailyWorkRepository : IDailyWorkRepository
+    {
+        public Task<List<DailyWorkModel>> GetAllAsync()
+        {
+            return Task.Run(() =>
+            {
+                var dbRecords = ProGlassAutomation.Data.Database.DbHelper.GetAllDailyWork();
+                var models = new List<DailyWorkModel>();
+
+                foreach (var record in dbRecords)
+                {
+                    models.Add(new DailyWorkModel
+                    {
+                        Id = record.Id,
+                        Date = record.Date,
+                        Company = record.Company,
+                        PiNumber = record.PINumber,
+                        CustomerReference = record.CustomerReference,
+                        TypeOfWork = record.TypeOfWork,
+                        ProductionStatus = record.ProductionStatus,
+                        Qty = record.Qty,
+                        Sqm = record.SQM,
+                        Status = record.Status,
+                        Salesman = record.Salesman,
+                        Color = record.Color,
+                        Notes = record.Notes,
+                        CreatedDate = record.CreatedDate,
+                        UpdateDate = record.UpdateDate
+                    });
+                }
+
+                return models;
+            });
+        }
+
+        public Task<int> InsertAsync(DbDailyWork entity)
+        {
+            return Task.Run(() =>
+            {
+                var dbRecord = new ProGlassAutomation.Data.Database.DailyWork
+                {
+                    Date = entity.Date,
+                    UpdateDate = entity.UpdateDate,
+                    Company = entity.Company,
+                    PINumber = entity.PINumber,
+                    CustomerReference = entity.CustomerReference,
+                    TypeOfWork = entity.TypeOfWork,
+                    ProductionStatus = entity.ProductionStatus,
+                    Qty = entity.Qty,
+                    SQM = entity.SQM,
+                    Status = entity.Status,
+                    Salesman = entity.Salesman,
+                    Color = entity.Color,
+                    Notes = entity.Notes,
+                    CreatedDate = entity.CreatedDate
+                };
+
+                ProGlassAutomation.Data.Database.DbHelper.SaveDailyWork(dbRecord);
+                return dbRecord.Id;
+            });
+        }
+
+        public Task UpdateAsync(DbDailyWork entity)
+        {
+            return Task.Run(() =>
+            {
+                var dbRecord = new ProGlassAutomation.Data.Database.DailyWork
+                {
+                    Id = entity.Id,
+                    Date = entity.Date,
+                    UpdateDate = entity.UpdateDate,
+                    Company = entity.Company,
+                    PINumber = entity.PINumber,
+                    CustomerReference = entity.CustomerReference,
+                    TypeOfWork = entity.TypeOfWork,
+                    ProductionStatus = entity.ProductionStatus,
+                    Qty = entity.Qty,
+                    SQM = entity.SQM,
+                    Status = entity.Status,
+                    Salesman = entity.Salesman,
+                    Color = entity.Color,
+                    Notes = entity.Notes,
+                    CreatedDate = entity.CreatedDate
+                };
+
+                ProGlassAutomation.Data.Database.DbHelper.UpdateDailyWork(dbRecord);
+            });
+        }
+
+        public Task DeleteAsync(int id)
+        {
+            return Task.Run(() =>
+            {
+                ProGlassAutomation.Data.Database.DbHelper.DeleteDailyWork(id);
+            });
         }
     }
 }
