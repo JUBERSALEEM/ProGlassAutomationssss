@@ -5,9 +5,13 @@
         Title="ProGlass ERP System" Height="1000" Width="1700"
         WindowStartupLocation="CenterScreen" Background="#0B1120"
         UseLayoutRounding="True" SnapsToDevicePixels="True"
-        TextOptions.TextFormattingMode="Display">
-
-    <!-- DataContext set in MainWindow.xaml.cs constructor -->
+        TextOptions.TextFormattingMode="Display"
+        WindowStyle="SingleBorderWindow"
+        AllowsTransparency="False"
+        ResizeMode="CanResizeWithGrip"
+        Focusable="True"
+        ShowInTaskbar="True"
+        Loaded="Window_Loaded">
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
@@ -24,9 +28,13 @@
         <SolidColorBrush x:Key="TextGray" Color="#94A3B8"/>
         <SolidColorBrush x:Key="TextMuted" Color="#64748B"/>
 
-        <DropShadowEffect x:Key="CardShadow" BlurRadius="15" ShadowDepth="3" Opacity="0.3"/>
+        <!-- GPU-Optimized Shadow Effect -->
+        <DropShadowEffect x:Key="CardShadow" BlurRadius="15" ShadowDepth="3" Opacity="0.3" Color="#000000" Direction="270"/>
+        <DropShadowEffect x:Key="LogoShadow" BlurRadius="10" ShadowDepth="2" Opacity="0.25" Color="#000000" Direction="270"/>
+        <DropShadowEffect x:Key="MenuShadow" BlurRadius="15" ShadowDepth="4" Opacity="0.4" Color="#000000" Direction="270"/>
+        <DropShadowEffect x:Key="ButtonGlow" BlurRadius="8" ShadowDepth="2" Opacity="0.3" Color="#2563EB" Direction="270"/>
 
-        <!-- Menu Item Style -->
+        <!-- Menu Item Style with GPU Caching -->
         <Style x:Key="DarkMenuItem" TargetType="MenuItem">
             <Setter Property="Foreground" Value="#E2E8F0"/>
             <Setter Property="FontSize" Value="13"/>
@@ -36,23 +44,28 @@
             <Setter Property="BorderBrush" Value="#334155"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="MenuItem">
-                        <Border x:Name="border" Background="{TemplateBinding Background}"
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="10" Margin="0,2">
+                                CornerRadius="10" Margin="0,2"
+                                CacheMode="BitmapCache">
                             <Grid>
-                                <ContentPresenter Margin="14,10" ContentSource="Header"/>
+                                <ContentPresenter Margin="14,10" ContentSource="Header" RecognizesAccessKey="True"/>
                                 <Popup x:Name="PART_Popup"
                                        Placement="Right"
                                        AllowsTransparency="True"
                                        Focusable="False"
                                        IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}"
-                                       PopupAnimation="Fade">
+                                       PopupAnimation="Fade"
+                                       StaysOpen="False">
                                     <Border Background="#111827" BorderBrush="#334155" BorderThickness="1"
-                                            CornerRadius="12" Padding="6" MinWidth="200">
+                                            CornerRadius="12" Padding="6" MinWidth="200"
+                                            CacheMode="BitmapCache">
                                         <Border.Effect>
                                             <DropShadowEffect BlurRadius="15" ShadowDepth="4" Opacity="0.4"/>
                                         </Border.Effect>
@@ -68,13 +81,16 @@
                             <Trigger Property="IsSubmenuOpen" Value="True">
                                 <Setter TargetName="border" Property="Background" Value="#334155"/>
                             </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.5"/>
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
 
-        <!-- Dropdown Menu Item Style -->
+        <!-- Dropdown Menu Item Style with GPU Caching -->
         <Style x:Key="DropdownMenuItemStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="#E2E8F0"/>
@@ -83,16 +99,21 @@
             <Setter Property="Padding" Value="14,10"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="border" Background="{TemplateBinding Background}" 
-                                Padding="{TemplateBinding Padding}" CornerRadius="8" Margin="2">
-                            <ContentPresenter/>
+                                Padding="{TemplateBinding Padding}" CornerRadius="8" Margin="2"
+                                CacheMode="BitmapCache">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="border" Property="Background" Value="#334155"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#1E293B"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -100,7 +121,7 @@
             </Setter>
         </Style>
 
-        <!-- License Warning Style -->
+        <!-- License Warning Style with GPU Caching -->
         <Style x:Key="LicenseWarningStyle" TargetType="Border">
             <Setter Property="Background" Value="#7F1D1D"/>
             <Setter Property="BorderBrush" Value="#991B1B"/>
@@ -108,18 +129,20 @@
             <Setter Property="CornerRadius" Value="10"/>
             <Setter Property="Padding" Value="12,8"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="CacheMode" Value="BitmapCache"/>
         </Style>
 
-        <!-- License Active Style -->
+        <!-- License Active Style with GPU Caching -->
         <Style x:Key="LicenseActiveStyle" TargetType="Border">
             <Setter Property="Background" Value="#064E3B"/>
             <Setter Property="BorderBrush" Value="#065F46"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="10"/>
             <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="CacheMode" Value="BitmapCache"/>
         </Style>
 
-        <!-- Module Button Style -->
+        <!-- Module Button Style with GPU Caching -->
         <Style x:Key="ModuleButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="#E2E8F0"/>
@@ -127,16 +150,21 @@
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Padding" Value="16,10"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="border" Background="{TemplateBinding Background}" 
-                                CornerRadius="10" Padding="{TemplateBinding Padding}">
+                                CornerRadius="10" Padding="{TemplateBinding Padding}"
+                                CacheMode="BitmapCache">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="border" Property="Background" Value="#334155"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#1E293B"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -144,7 +172,7 @@
             </Setter>
         </Style>
 
-        <!-- Screenshot Button Style -->
+        <!-- Screenshot Button Style with GPU Caching -->
         <Style x:Key="ScreenshotButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="#1E293B"/>
             <Setter Property="Foreground" Value="#E2E8F0"/>
@@ -152,11 +180,13 @@
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Padding" Value="14,10"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="border" Background="{TemplateBinding Background}" 
-                                CornerRadius="10" Padding="{TemplateBinding Padding}">
+                                CornerRadius="10" Padding="{TemplateBinding Padding}"
+                                CacheMode="BitmapCache">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="📸" FontSize="13" Margin="0,0,6,0"/>
                                 <TextBlock Text="Screenshot" VerticalAlignment="Center"/>
@@ -166,10 +196,48 @@
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="border" Property="Background" Value="#334155"/>
                             </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#1E293B"/>
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+        </Style>
+
+        <!-- Nav Button Style with Glow Effect -->
+        <Style x:Key="NavButtonStyle" TargetType="Border">
+            <Setter Property="Background" Value="#2563EB"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="18,10"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="CacheMode" Value="BitmapCache"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.3" Color="#2563EB"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Content Border Style with GPU Caching -->
+        <Style x:Key="ContentBorderStyle" TargetType="Border">
+            <Setter Property="Background" Value="#111827"/>
+            <Setter Property="Margin" Value="16"/>
+            <Setter Property="CornerRadius" Value="16"/>
+            <Setter Property="CacheMode" Value="BitmapCache"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="15" ShadowDepth="3" Opacity="0.3"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- DateTime Border Style with GPU Caching -->
+        <Style x:Key="DateTimeBorderStyle" TargetType="Border">
+            <Setter Property="Background" Value="#1E293B"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="14,8"/>
+            <Setter Property="CacheMode" Value="BitmapCache"/>
         </Style>
     </Window.Resources>
 
@@ -190,9 +258,10 @@
 
                 <!-- LEFT: LOGO -->
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <!-- Logo Box -->
+                    <!-- Logo Box with GPU Caching -->
                     <Border Width="68" Height="58" CornerRadius="10" Background="White" Cursor="Hand"
-                            Padding="5" MouseLeftButtonDown="Logo_Click">
+                            Padding="5" MouseLeftButtonDown="Logo_Click"
+                            CacheMode="BitmapCache">
                         <Border.Effect>
                             <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.25"/>
                         </Border.Effect>
@@ -203,9 +272,10 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <!-- PROGLASS Badge -->
+                            <!-- PROGLASS Badge with GPU Caching -->
                             <Border Grid.Row="0" Background="#2563EB" CornerRadius="4" Padding="5,2" 
-                                    HorizontalAlignment="Center" Margin="0,2,0,3">
+                                    HorizontalAlignment="Center" Margin="0,2,0,3"
+                                    CacheMode="BitmapCache">
                                 <TextBlock Text="PROGLASS" FontSize="8" FontWeight="Bold" Foreground="White"/>
                             </Border>
 
@@ -233,7 +303,11 @@
 
                     <!-- Dashboard Button -->
                     <Border Background="#2563EB" CornerRadius="10" Padding="18,10" Cursor="Hand"
-                            MouseLeftButtonDown="BtnHome_Click">
+                            MouseLeftButtonDown="BtnHome_Click"
+                            CacheMode="BitmapCache">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.3" Color="#2563EB"/>
+                        </Border.Effect>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="📊" FontSize="14" Margin="0,0,8,0"/>
                             <TextBlock Text="Dashboard" Foreground="White" FontWeight="SemiBold"/>
@@ -293,20 +367,25 @@
                 <!-- RIGHT SECTION -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
 
-                    <!-- License Status -->
+                    <!-- License Warning Border with GPU Caching -->
                     <Border x:Name="LicenseWarningBorder" Style="{StaticResource LicenseWarningStyle}" 
-                            Margin="0,0,14,0" MouseLeftButtonDown="LicenseWarningBorder_Click">
+                            Margin="0,0,14,0" MouseLeftButtonDown="LicenseWarningBorder_Click"
+                            CacheMode="BitmapCache">
                         <StackPanel Orientation="Horizontal">
-                            <Border Width="8" Height="8" CornerRadius="4" Background="#EF4444" Margin="0,0,8,0"/>
+                            <Border Width="8" Height="8" CornerRadius="4" Background="#EF4444" 
+                                    Margin="0,0,8,0" CacheMode="BitmapCache"/>
                             <TextBlock Text="⚠" FontSize="11" Margin="0,0,4,0" Foreground="#FCA5A5"/>
                             <TextBlock Text="Activate License" FontSize="11" FontWeight="SemiBold" Foreground="#FCA5A5"/>
                         </StackPanel>
                     </Border>
 
+                    <!-- License Active Border with GPU Caching -->
                     <Border x:Name="LicenseActiveBorder" Style="{StaticResource LicenseActiveStyle}" 
-                            Margin="0,0,14,0" Visibility="Collapsed">
+                            Margin="0,0,14,0" Visibility="Collapsed"
+                            CacheMode="BitmapCache">
                         <StackPanel Orientation="Horizontal">
-                            <Border Width="8" Height="8" CornerRadius="4" Background="#10B981" Margin="0,0,8,0"/>
+                            <Border Width="8" Height="8" CornerRadius="4" Background="#10B981" 
+                                    Margin="0,0,8,0" CacheMode="BitmapCache"/>
                             <TextBlock Text="✓" FontSize="11" Foreground="#6EE7B7" Margin="0,0,4,0"/>
                             <TextBlock Text="Active" FontSize="11" FontWeight="SemiBold" Foreground="#6EE7B7"/>
                         </StackPanel>
@@ -316,8 +395,8 @@
                     <Button x:Name="ScreenshotBtn" Style="{StaticResource ScreenshotButtonStyle}" 
                             Click="ScreenshotBtn_Click" Margin="0,0,14,0"/>
 
-                    <!-- Date & Time -->
-                    <Border Background="#1E293B" CornerRadius="10" Padding="14,8">
+                    <!-- Date & Time Border with GPU Caching -->
+                    <Border Style="{StaticResource DateTimeBorderStyle}">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -349,8 +428,7 @@
         </Border>
 
         <!-- ==================== CONTENT AREA ==================== -->
-        <Border x:Name="MainContentBorder" Grid.Row="1" Background="#111827" Margin="16" 
-                CornerRadius="16" Effect="{StaticResource CardShadow}">
+        <Border x:Name="MainContentBorder" Grid.Row="1" Style="{StaticResource ContentBorderStyle}">
             <ContentControl x:Name="MainContent" Content="{Binding CurrentView}"/>
         </Border>
     </Grid>
