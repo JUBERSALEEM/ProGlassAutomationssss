@@ -11,9 +11,15 @@ using ProGlassAutomation.Views;
 using ProGlassAutomation.Views.Optimization;
 using System.Linq;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 
 // Aliases to avoid ambiguity
 using ModelInvoice = ProGlassAutomation.Models.InvoiceItemModel;
+using ModelSpec = ProGlassAutomation.Models.SpecificationModel;
+using Color = System.Windows.Media.Color;
+using Border = System.Windows.Controls.Border;
+using CheckBox = System.Windows.Controls.CheckBox;
 
 namespace ProGlassAutomation.Views.ProformaInvoice
 {
@@ -33,86 +39,98 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         private ProformaInvoiceViewModel _viewModel;
         private const double SCROLL_SPEED = 0.3;
 
-        public ProformaInvoiceView()
+        // ═══════════════════════════════════════════════════════════════
+        // MISSING COLLECTIONS - ADD THESE
+        // ═══════════════════════════════════════════════════════════════
+        public ObservableCollection<StockSheetItem> AdditionalSheets { get; set; } = new();
+        public ObservableCollection<SheetResultItem> SheetResults { get; set; } = new();
+
+        // ═══════════════════════════════════════════════════════════════
+        // MISSING CLASSES - ADD THESE
+        // ═══════════════════════════════════════════════════════════════
+
+        public class StockSheetItem : INotifyPropertyChanged
         {
-            InitializeComponent();
+            private string _sheetLabel = "";
+            private string _width = "";
+            private string _height = "";
+            private string _qty = "";
 
-            // Use shared ProformaInvoiceViewModel (SAME instance as DailyWorks)
-            _viewModel = SharedViewModels.ProformaInvoiceVM;
-            DataContext = _viewModel;
-
-            // PATCH 18 - Register for cleanup to prevent memory leaks
-            Unloaded += ProformaInvoiceView_Unloaded;
-
-            System.Diagnostics.Debug.WriteLine("[ProformaInvoiceView] Using SharedViewModels.ProformaInvoiceVM");
-        }
-
-        // ==================== PATCH 18 - CLEANUP ON UNLOAD ====================
-
-        private void ProformaInvoiceView_Unloaded(object sender, RoutedEventArgs e)
-        {
-            // PATCH 18 FIX - Proper cleanup to prevent memory leaks
-            Unloaded -= ProformaInvoiceView_Unloaded;
-
-            // PATCH 18 FIX: Don't clear DataContext - shared VM handles its own cleanup
-            System.Diagnostics.Debug.WriteLine("[ProformaInvoiceView] Unloaded - Cleanup complete");
-        }
-
-        // ==================== EXPANDABLE PANEL CLICK HANDLERS ====================
-
-        private void ToggleFilePanel_Click(object sender, RoutedEventArgs e)
-        {
-            if (_viewModel != null)
+            public string SheetLabel
             {
-                _viewModel.IsFilePanelOpen = !_viewModel.IsFilePanelOpen;
-                FileContent.Visibility = _viewModel.IsFilePanelOpen ? Visibility.Visible : Visibility.Collapsed;
+                get => _sheetLabel;
+                set { _sheetLabel = value; OnPropertyChanged("SheetLabel"); }
             }
-        }
-
-        private void ToggleSGUPanel_Click(object sender, RoutedEventArgs e)
-        {
-            if (_viewModel != null)
+            public string Width
             {
-                // Just toggle - same as File/Opt/Summary
-                _viewModel.IsSGUSelected = !_viewModel.IsSGUSelected;
+                get => _width;
+                set { _width = value; OnPropertyChanged("Width"); }
             }
-        }
-
-        private void ToggleDGUPanel_Click(object sender, RoutedEventArgs e)
-        {
-            if (_viewModel != null)
+            public string Height
             {
-                // Just toggle - same as File/Opt/Summary
-                _viewModel.IsDGUSelected = !_viewModel.IsDGUSelected;
+                get => _height;
+                set { _height = value; OnPropertyChanged("Height"); }
             }
-        }
-
-        private void ToggleLAMPanel_Click(object sender, RoutedEventArgs e)
-        {
-            if (_viewModel != null)
+            public string Qty
             {
-                // Just toggle - same as File/Opt/Summary
-                _viewModel.IsLAMSelected = !_viewModel.IsLAMSelected;
+                get => _qty;
+                set { _qty = value; OnPropertyChanged("Qty"); }
             }
+
+            public event PropertyChangedEventHandler PropertyChanged;
+            protected void OnPropertyChanged(string name)
+                => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
-        private void ToggleOptPanel_Click(object sender, RoutedEventArgs e)
+        public class SheetResultItem
         {
-            if (_viewModel != null)
+            public string SheetName { get; set; } = "";
+            public string SheetDimensions { get; set; } = "";
+            public string PiecesCut { get; set; } = "0";
+            public string AreaUsed { get; set; } = "0 m²";
+            public string Utilization { get; set; } = "0";
+            public string Wastage { get; set; } = "0";
+            public double BarHeight { get; set; } = 0;
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // SPEC SELECTION WRAPPER - Shows simple names like "Spec 1"
+        // ═══════════════════════════════════════════════════════════════
+        public class SpecSelectionItem : INotifyPropertyChanged
+        {
+            private string _displayName = "";
+            private string _fullName = "";
+            private bool _isSelected = false;
+
+            public string DisplayName
             {
-                _viewModel.IsOptimizationPanelOpen = !_viewModel.IsOptimizationPanelOpen;
-                OptContent.Visibility = _viewModel.IsOptimizationPanelOpen ? Visibility.Visible : Visibility.Collapsed;
+                get => _displayName;
+                set { _displayName = value; OnPropertyChanged("DisplayName"); }
             }
+            public string FullName
+            {
+                get => _fullName;
+                set { _fullName = value; OnPropertyChanged("FullName"); }
+            }
+            public bool IsSelected
+            {
+                get => _isSelected;
+                set { _isSelected = value; OnPropertyChanged("IsSelected"); }
+            }
+
+            public event PropertyChangedEventHandler PropertyChanged;
+            protected void OnPropertyChanged(string name)
+                => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
-        private void ToggleRecentInvoices_Click(object sender, RoutedEventArgs e)
-        {
-            RecentInvoicesContent.Visibility = RecentInvoicesContent.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
-        }
+        // ═══════════════════════════════════════════════════════════════════════
+        // SPEC SELECTION COLLECTION
+        // ═══════════════════════════════════════════════════════════════
+        public ObservableCollection<SpecSelectionItem> SpecSelectionItems { get; set; } = new();
 
-        // ==================== OPTIMIZATION POPUP ====================
-
-        // ==================== TRIM TABLE ====================
+        // ═══════════════════════════════════════════════════════════════
+        // TRIM TABLE
+        // ═══════════════════════════════════════════════════════════════
         private Dictionary<string, TrimSettings> _trimTable = new()
         {
             ["6mm"] = new TrimSettings { LM = 15, RM = 15, TM = 15, BM = 15, BreakoutMin = 15, Kerf = 0 },
@@ -131,9 +149,302 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             public double Kerf { get; set; }
         }
 
+        // ═══════════════════════════════════════════════════════════════
+        // CUTPART FOR OPTIMIZER
+        // ═══════════════════════════════════════════════════════════════
+        public class CutPart
+        {
+            public string Ref { get; set; } = "";
+            public double L { get; set; }
+            public double W { get; set; }
+            public int Qty { get; set; }
+            public bool Rot { get; set; } = true;
+        }
+
+        // Track which dimension EACH spec uses (false = W1/H1, true = W2/H2)
+        private Dictionary<string, bool> _specDimChoice = new Dictionary<string, bool>();
+
         // Static references
         private static Window? _optimizerWindow;
         private static OptimizationView? _optimizerView;
+
+        // Flag to block selection changed handler during programmatic updates
+        private bool _isUpdatingSpecSelection = false;
+
+        // ═══════════════════════════════════════════════════════════════
+        // CONSTRUCTOR - ADD MISSING BINDINGS
+        // ═══════════════════════════════════════════════════════════════
+        public ProformaInvoiceView()
+        {
+            InitializeComponent();
+
+            // Use shared ProformaInvoiceViewModel (SAME instance as DailyWorks)
+            _viewModel = SharedViewModels.ProformaInvoiceVM;
+            DataContext = _viewModel;
+
+            // IMPORTANT: Set this UserControl as temporary DataContext for list binding
+            // or use RelativeSource in XAML
+            var tempDataContext = this;
+
+            // MISSING BINDINGS - ADD THESE
+            AdditionalSheetsContainer.ItemsSource = AdditionalSheets;
+            PerSheetResultsContainer.ItemsSource = SheetResults;
+
+            // Note: Don't call RefreshSpecSelectionItems() here
+            // It will be called in Loaded event after specs are ready
+
+            // PATCH 18 - Register for cleanup to prevent memory leaks
+            Unloaded += ProformaInvoiceView_Unloaded;
+
+            System.Diagnostics.Debug.WriteLine("[ProformaInvoiceView] Using SharedViewModels.ProformaInvoiceVM");
+        }
+
+        // ==================== LOADED - Auto-create specs for testing ====================
+
+        private void UserControl_Loaded(object sender, RoutedEventArgs e)
+        {
+            // Always refresh when UserControl loads to ensure we have latest specs
+            RefreshSpecSelectionItems();
+            System.Diagnostics.Debug.WriteLine($"[UserControl_Loaded] Specs refreshed, count: {SpecSelectionItems.Count}");
+        }
+
+        private void lstSpecSelect_Loaded(object sender, RoutedEventArgs e)
+        {
+            // Also refresh when ListBox loads
+            RefreshSpecSelectionItems();
+            System.Diagnostics.Debug.WriteLine($"[lstSpecSelect_Loaded] Items count: {SpecSelectionItems.Count}");
+        }
+
+        // ==================== ADD SPECIFICATION - FIX DUPLICATE ====================
+        private void AddSpecification_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                int countBefore = _viewModel?.Invoice?.Specifications?.Count ?? 0;
+
+                if (_viewModel?.AddSpecificationCommand?.CanExecute(null) == true)
+                {
+                    _viewModel.AddSpecificationCommand.Execute(null);
+                }
+
+                int countAfter = _viewModel?.Invoice?.Specifications?.Count ?? 0;
+
+                System.Diagnostics.Debug.WriteLine($"[AddSpecification_Click] Before: {countBefore}, After: {countAfter}");
+
+                // FIX: If 2 specs were added instead of 1, remove the duplicate
+                if (countAfter == countBefore + 2 && countAfter > 0)
+                {
+                    var specToRemove = _viewModel.Invoice.Specifications[countAfter - 1];
+                    _viewModel.Invoice.Specifications.RemoveAt(countAfter - 1);
+                    System.Diagnostics.Debug.WriteLine($"[AddSpecification_Click] Removed duplicate spec");
+                    countAfter--;
+                }
+
+                // Refresh spec selection list
+                RefreshSpecSelectionItems();
+
+                // Auto-select the newly added spec
+                SelectLastSpec();
+
+                System.Diagnostics.Debug.WriteLine($"[AddSpecification_Click] ✓ Spec added, Total: {SpecSelectionItems.Count}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[AddSpecification_Click] ERROR: {ex.Message}");
+                MessageBox.Show($"Error adding specification: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void RemoveSpecification_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Execute the command from ViewModel
+                if (_viewModel?.RemoveSpecificationCommand?.CanExecute(null) == true)
+                {
+                    _viewModel.RemoveSpecificationCommand.Execute(null);
+                }
+
+                // AUTO-REFRESH: Update spec selection list immediately after removing
+                RefreshSpecSelectionItems();
+
+                System.Diagnostics.Debug.WriteLine($"[RemoveSpecification_Click] ✓ Spec removed, Total specs: {SpecSelectionItems.Count}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[RemoveSpecification_Click] ERROR: {ex.Message}");
+            }
+        }
+
+        private void SelectLastSpec()
+        {
+            // Auto-select the last added spec in the ListBox
+            if (SpecSelectionItems.Count > 0)
+            {
+                var lastWrapper = SpecSelectionItems[SpecSelectionItems.Count - 1];
+                lstSpecSelect.SelectedItem = lastWrapper;
+            }
+        }
+
+        // ==================== PATCH 18 - CLEANUP ON UNLOAD ====================
+
+        private void ProformaInvoiceView_Unloaded(object sender, RoutedEventArgs e)
+        {
+            // PATCH 18 FIX - Proper cleanup to prevent memory leaks
+            Unloaded -= ProformaInvoiceView_Unloaded;
+
+            // PATCH 18 FIX: Don't clear DataContext - shared VM handles its own cleanup
+            System.Diagnostics.Debug.WriteLine("[ProformaInvoiceView] Unloaded - Cleanup complete");
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // REFRESH SPEC SELECTION ITEMS - Create simple names from specs
+        // ═══════════════════════════════════════════════════════════════
+
+        public void RefreshSpecSelectionItems()
+        {
+            SpecSelectionItems.Clear();
+
+            int specCount = _viewModel?.Invoice?.Specifications?.Count ?? 0;
+            System.Diagnostics.Debug.WriteLine($"[RefreshSpecSelectionItems] START - Invoice has {specCount} specs");
+
+            if (_viewModel?.Invoice?.Specifications != null)
+            {
+                for (int i = 0; i < _viewModel.Invoice.Specifications.Count; i++)
+                {
+                    var spec = _viewModel.Invoice.Specifications[i];
+                    if (spec != null)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[RefreshSpecSelectionItems] Adding Spec {i + 1}: {spec.SpecificationName}");
+
+                        SpecSelectionItems.Add(new SpecSelectionItem
+                        {
+                            DisplayName = $"Spec {i + 1}",
+                            FullName = spec.SpecificationName,
+                            IsSelected = false
+                        });
+                    }
+                }
+            }
+
+            System.Diagnostics.Debug.WriteLine($"[RefreshSpecSelectionItems] DONE - Created {SpecSelectionItems.Count} items");
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // MISSING BUTTON HANDLERS - ADD THESE
+        // ═══════════════════════════════════════════════════════════════
+
+        private void BtnAddStockSheet_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                int sheetNum = AdditionalSheets.Count + 2;
+                AdditionalSheets.Add(new StockSheetItem
+                {
+                    SheetLabel = $"Sheet {sheetNum}",
+                    Width = "3210",
+                    Height = "2250",
+                    Qty = "100"
+                });
+                txtOptStatus.Text = $"Added Sheet {sheetNum}";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void BtnLoadDefaultSheets_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                txtSheetWidth.Text = "3210";
+                txtSheetHeight.Text = "2250";
+                txtSheetQty.Text = "99999";
+                AdditionalSheets.Clear();
+                txtOptStatus.Text = "Default sheets loaded";
+            }
+            catch (Exception) { }
+        }
+
+        private void BtnClearSheets_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                AdditionalSheets.Clear();
+                txtSheetWidth.Text = "";
+                txtSheetHeight.Text = "";
+                txtSheetQty.Text = "";
+                txtOptStatus.Text = "Sheets cleared";
+            }
+            catch (Exception) { }
+        }
+
+        private void btnSelectAllSpecs_Click(object sender, RoutedEventArgs e)
+        {
+            lstSpecSelect.SelectAll();
+        }
+
+        private void btnClearSpecSelection_Click(object sender, RoutedEventArgs e)
+        {
+            lstSpecSelect.SelectedItems.Clear();
+            _specDimChoice.Clear();
+            txtOptStatus.Text = "Select specs and choose dimensions";
+
+            // Also clear UI selections
+            UpdateSpecSelectUIRadioButtons();
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // EXISTING EXPANDABLE PANEL CLICK HANDLERS - PRESERVE THESE
+        // ═══════════════════════════════════════════════════════════════
+
+        private void ToggleFilePanel_Click(object sender, RoutedEventArgs e)
+        {
+            if (_viewModel != null)
+            {
+                _viewModel.IsFilePanelOpen = !_viewModel.IsFilePanelOpen;
+                FileContent.Visibility = _viewModel.IsFilePanelOpen ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
+
+        private void ToggleSGUPanel_Click(object sender, RoutedEventArgs e)
+        {
+            if (_viewModel != null)
+            {
+                _viewModel.IsSGUSelected = !_viewModel.IsSGUSelected;
+            }
+        }
+
+        private void ToggleDGUPanel_Click(object sender, RoutedEventArgs e)
+        {
+            if (_viewModel != null)
+            {
+                _viewModel.IsDGUSelected = !_viewModel.IsDGUSelected;
+            }
+        }
+
+        private void ToggleLAMPanel_Click(object sender, RoutedEventArgs e)
+        {
+            if (_viewModel != null)
+            {
+                _viewModel.IsLAMSelected = !_viewModel.IsLAMSelected;
+            }
+        }
+
+        private void ToggleOptPanel_Click(object sender, RoutedEventArgs e)
+        {
+            if (_viewModel != null)
+            {
+                _viewModel.IsOptimizationPanelOpen = !_viewModel.IsOptimizationPanelOpen;
+                OptContent.Visibility = _viewModel.IsOptimizationPanelOpen ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
+
+        private void ToggleRecentInvoices_Click(object sender, RoutedEventArgs e)
+        {
+            RecentInvoicesContent.Visibility = RecentInvoicesContent.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+        }
 
         // ==================== OPEN OPTIMIZER WINDOW ====================
 
@@ -170,20 +481,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             optWindow.WindowState = WindowState.Maximized;
         }
 
-        // ==================== CUTPART FOR OPTIMIZER ====================
-
-        public class CutPart
-        {
-            public string Ref { get; set; } = "";
-            public double L { get; set; }
-            public double W { get; set; }
-            public int Qty { get; set; }
-            public bool Rot { get; set; } = true;
-        }
-
-        // Track which dimension EACH spec uses (false = W1/H1, true = W2/H2)
-        private Dictionary<string, bool> _specDimChoice = new Dictionary<string, bool>();
-
         // ==================== RUN OPTIMIZATION (QUICK RESULT) ====================
 
         private void RunOptimization_Click(object sender, RoutedEventArgs e)
@@ -216,7 +513,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 TrimSettings trim = _trimTable[thickness];
 
                 // Get all items from all specifications
-                var items = new List<Models.InvoiceItemModel>();
+                var items = new List<ModelInvoice>();
                 if (_viewModel?.Invoice?.Specifications != null)
                 {
                     foreach (var spec in _viewModel.Invoice.Specifications)
@@ -376,7 +673,16 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
                 txtUtilization.Text = $"{utilization:N1}%";
                 txtSheetsUsed.Text = sheetsUsed.ToString();
+                txtWastage.Text = $"{(100 - utilization):N1}%";
                 txtOptStatus.Text = $"✓ Optimized ({txtSheetWidth.Text}×{txtSheetHeight.Text}mm) — {dimStatus}";
+
+                // Increment run count
+                int currentCount = 0;
+                if (int.TryParse(txtOptRunCount.Text, out int c)) currentCount = c;
+                txtOptRunCount.Text = (currentCount + 1).ToString();
+
+                // Update per-sheet results
+                UpdatePerSheetResults(optView, sheetWidth, sheetHeight);
             }
             catch (Exception ex)
             {
@@ -415,22 +721,30 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 }
                 TrimSettings trim = _trimTable[thickness];
 
-                // Get selected specifications or all
-                var items = new List<Models.InvoiceItemModel>();
-                var selectedSpecs = new List<Models.SpecificationModel>();
+                // Get selected specifications from ListBox (wrappers) or all specs
+                var selectedSpecNames = new List<string>();
+
                 if (chkSpecWise.IsChecked == true && lstSpecSelect.SelectedItems.Count > 0)
                 {
-                    foreach (Models.SpecificationModel s in lstSpecSelect.SelectedItems)
-                        selectedSpecs.Add(s);
-                }
-                else
-                {
-                    if (_viewModel?.Invoice?.Specifications != null)
-                        selectedSpecs.AddRange(_viewModel.Invoice.Specifications);
+                    foreach (SpecSelectionItem s in lstSpecSelect.SelectedItems)
+                        if (s != null && !string.IsNullOrEmpty(s.FullName))
+                            selectedSpecNames.Add(s.FullName);
                 }
 
-                foreach (var spec in selectedSpecs)
+                // If nothing selected or checkbox unchecked, use all specs
+                if (selectedSpecNames.Count == 0 && _viewModel?.Invoice?.Specifications != null)
                 {
+                    selectedSpecNames.AddRange(_viewModel.Invoice.Specifications
+                        .Where(s => s != null)
+                        .Select(s => s.SpecificationName));
+                }
+
+                // Now get the items from those specs
+                var items = new List<Models.InvoiceItemModel>();
+                foreach (var specName in selectedSpecNames)
+                {
+                    var spec = _viewModel.Invoice.Specifications
+                        .FirstOrDefault(s => s?.SpecificationName == specName);
                     if (spec?.Items == null) continue;
                     foreach (var item in spec.Items)
                         if (item != null) items.Add(item);
@@ -451,48 +765,21 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
                 System.Diagnostics.Debug.WriteLine($"[ViewOptimizationLayouts] START - globalUseAlt={globalUseAlt}, useCustom={useCustom}");
 
-                // Build parts using appropriate dimensions (reuse existing items list)
-                var parts = new List<CutPart>();
-
-                foreach (var item in items)
+                // Convert using appropriate dims
+                var invoiceItems = items.Select(i =>
                 {
-                    bool useAlt = false;
+                    bool useAltForItem = globalUseAlt;
+                    if (FindSpecForItem(i, out string sn) && useCustom && _specDimChoice.ContainsKey(sn))
+                        useAltForItem = _specDimChoice[sn];
 
-                    // Find which spec this item belongs to
-                    if (FindSpecForItem(item, out string specName))
+                    return new Models.InvoiceItemModel
                     {
-                        if (useCustom && _specDimChoice.ContainsKey(specName))
-                        {
-                            // Use per-spec selection
-                            useAlt = _specDimChoice[specName];
-                        }
-                        else
-                        {
-                            // Use global selection
-                            useAlt = globalUseAlt;
-                        }
-                    }
-                    else
-                    {
-                        useAlt = globalUseAlt;
-                    }
-
-                    double width = useAlt
-                        ? (item.Width2 > 0 ? item.Width2 : item.Width1)
-                        : (item.Width1 > 0 ? item.Width1 : item.Width2);
-                    double height = useAlt
-                        ? (item.Height2 > 0 ? item.Height2 : item.Height1)
-                        : (item.Height1 > 0 ? item.Height1 : item.Height2);
-
-                    parts.Add(new CutPart
-                    {
-                        Ref = item.GlassRef ?? "P",
-                        L = width,
-                        W = height,
-                        Qty = item.Qty > 0 ? item.Qty : 1,
-                        Rot = true
-                    });
-                }
+                        GlassRef = i.GlassRef,
+                        Width1 = useAltForItem ? (i.Width2 > 0 ? i.Width2 : i.Width1) : (i.Width1 > 0 ? i.Width1 : i.Width2),
+                        Height1 = useAltForItem ? (i.Height2 > 0 ? i.Height2 : i.Height1) : (i.Height1 > 0 ? i.Height1 : i.Height2),
+                        Qty = i.Qty > 0 ? i.Qty : 1
+                    };
+                }).ToList();
 
                 // Build status message
                 string dimStatus;
@@ -524,22 +811,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
                 var optView = optWindow.Content as OptimizationView;
 
-                // Convert using appropriate dims
-                var invoiceItems = items.Select(i =>
-                {
-                    bool useAltForItem = globalUseAlt;
-                    if (FindSpecForItem(i, out string sn) && useCustom && _specDimChoice.ContainsKey(sn))
-                        useAltForItem = _specDimChoice[sn];
-
-                    return new Models.InvoiceItemModel
-                    {
-                        GlassRef = i.GlassRef,
-                        Width1 = useAltForItem ? (i.Width2 > 0 ? i.Width2 : i.Width1) : (i.Width1 > 0 ? i.Width1 : i.Width2),
-                        Height1 = useAltForItem ? (i.Height2 > 0 ? i.Height2 : i.Height1) : (i.Height1 > 0 ? i.Height1 : i.Height2),
-                        Qty = i.Qty > 0 ? i.Qty : 1
-                    };
-                }).ToList();
-
                 if (optView != null)
                 {
                     optView.ImportInvoiceItems(invoiceItems);
@@ -555,7 +826,11 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
                     txtUtilization.Text = $"{utilization:N1}%";
                     txtSheetsUsed.Text = sheetsUsed.ToString();
+                    txtWastage.Text = $"{(100 - utilization):N1}%";
                     txtOptStatus.Text = $"✓ Optimized ({txtSheetWidth.Text}×{txtSheetHeight.Text}mm) — {dimStatus}";
+
+                    // Update per-sheet results
+                    UpdatePerSheetResults(optView, sheetWidth, sheetHeight);
                 }
                 else
                 {
@@ -565,6 +840,128 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             catch (Exception ex)
             {
                 MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // ==================== HELPER METHODS ====================
+
+        private bool FindSpecForItem(Models.InvoiceItemModel item, out string specName)
+        {
+            specName = "";
+            var spec = FindSpecification(item);
+            if (spec != null)
+            {
+                specName = spec.SpecificationName;
+                return true;
+            }
+            return false;
+        }
+
+        private void UpdatePerSheetResults(OptimizationView optView, double sheetWidth, double sheetHeight)
+        {
+            try
+            {
+                SheetResults.Clear();
+
+                // Get ACTUAL per-sheet results from optimizer
+                var results = optView.GetResultsList();
+
+                if (results == null || results.Count == 0)
+                {
+                    // Fallback: Single sheet size = show ONE consolidated result
+                    int totalSheets = optView.SheetsUsed;
+                    double areaTotal = sheetWidth * sheetHeight / 1_000_000;
+                    int totalPieces = (int)(optView.AverageUtilization * 10);
+                    double util = optView.AverageUtilization;
+                    double wastage = 100 - util;
+                    double areaUsed = areaTotal * (util / 100);
+
+                    SheetResults.Add(new SheetResultItem
+                    {
+                        SheetName = $"{sheetWidth:N0} × {sheetHeight:N0} mm",
+                        SheetDimensions = $"{sheetWidth:N0} × {sheetHeight:N0} mm",
+                        PiecesCut = totalPieces.ToString(),
+                        AreaUsed = $"{areaUsed * totalSheets:N2} m²",
+                        Utilization = $"{util:N1}",
+                        Wastage = $"{wastage:N1}",
+                        BarHeight = util * 0.8
+                    });
+                }
+                else
+                {
+                    // CONSOLIDATE by sheet dimensions (same size = single entry)
+                    // Use reflection or safe property access to get available values
+                    var groupedResults = results
+                        .GroupBy(r => new { r.L, r.W })
+                        .Select(g => new
+                        {
+                            SheetDimensions = $"{g.Key.L:N0} × {g.Key.W:N0} mm",
+                            // Count sheets in this group instead of Qty
+                            SheetCount = g.Count(),
+                            TotalArea = g.Sum(x => x.Area),
+                            AvgUtil = g.Average(x => x.Util)
+                        })
+                        .OrderByDescending(g => g.AvgUtil)
+                        .ToList();
+
+                    int sheetIndex = 1;
+                    foreach (var group in groupedResults)
+                    {
+                        double wastage = 100 - group.AvgUtil;
+
+                        // Calculate pieces from area (approx) or use sheet count
+                        // Since we don't have direct piece count, use sheet count as proxy
+                        int piecesEst = group.SheetCount; // This is actually sheet count
+
+                        SheetResults.Add(new SheetResultItem
+                        {
+                            SheetName = group.SheetDimensions,
+                            SheetDimensions = group.SheetDimensions,
+                            PiecesCut = group.SheetCount.ToString(), // Show sheet count
+                            AreaUsed = $"{group.TotalArea:N2} m²",
+                            Utilization = $"{group.AvgUtil:N1}",
+                            Wastage = $"{wastage:N1}",
+                            BarHeight = group.AvgUtil * 0.8
+                        });
+
+                        sheetIndex++;
+                    }
+                }
+
+                // Update sheets used count (show unique sheet sizes, not count)
+                int uniqueSizes = SheetResults.Select(r => r.SheetDimensions).Distinct().Count();
+                int totalSheetsUsed = optView.SheetsUsed;
+
+                if (uniqueSizes == 1)
+                    txtSheetsUsedCount.Text = $"{totalSheetsUsed} sheets ({SheetResults.First().SheetDimensions})";
+                else
+                    txtSheetsUsedCount.Text = $"{totalSheetsUsed} sheets ({uniqueSizes} sizes)";
+
+                // Show/hide empty state
+                EmptyPerSheetResults.Visibility = SheetResults.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[UpdatePerSheetResults] Error: {ex.Message}");
+
+                // FALLBACK: Show simple single result on error
+                double util = optView?.AverageUtilization ?? 0;
+                int sheets = optView?.SheetsUsed ?? 0;
+                double area = sheetWidth * sheetHeight / 1_000_000 * sheets;
+
+                SheetResults.Add(new SheetResultItem
+                {
+                    SheetName = $"{sheetWidth:N0} × {sheetHeight:N0} mm",
+                    SheetDimensions = $"{sheetWidth:N0} × {sheetHeight:N0} mm",
+                    PiecesCut = "—",
+                    AreaUsed = $"{area:N2} m²",
+                    Utilization = $"{util:N1}",
+                    Wastage = $"{(100 - util):N1}",
+                    BarHeight = util * 0.8
+                });
+
+                txtSheetsUsedCount.Text = $"{sheets} sheets";
+                EmptyPerSheetResults.Visibility = Visibility.Collapsed;
             }
         }
 
@@ -593,7 +990,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
         private void PhoneNumber_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
-            Regex regex = new Regex(@"^[0-9\+\-\s\$\$]+$");
+            Regex regex = new Regex(@"^[0-9\+\-\s]+$");
             e.Handled = !regex.IsMatch(e.Text);
         }
 
@@ -811,7 +1208,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     previewWindow.LayoutTransform = null;
                 }
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 MessageBox.Show($"Error printing invoice: {ex.Message}", "Print Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
@@ -835,7 +1232,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
                 window.ShowDialog();
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 MessageBox.Show($"Error opening print preview: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
@@ -850,7 +1247,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             try
             {
                 var cell = dataGrid.CurrentCell;
-                // FIX: DataGridCellInfo is a struct - use IsValid property
                 if (!cell.IsValid || cell.Column == null) return;
 
                 if (e.Key == Key.Enter)
@@ -879,7 +1275,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         {
             try
             {
-                // FIX: Check IsValid instead of nullable check
                 if (dataGrid == null || !dataGrid.CurrentCell.IsValid) return;
 
                 var currentItem = dataGrid.CurrentCell.Item as Models.InvoiceItemModel;
@@ -924,14 +1319,14 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                                 dataGrid.BeginEdit();
                             }
                         }
-                        catch (System.Exception ex)
+                        catch (Exception ex)
                         {
                             System.Diagnostics.Debug.WriteLine($"[HandleEnterKey] Error: {ex.Message}");
                         }
                     }));
                 }
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[HandleEnterKey] Error: {ex.Message}");
             }
@@ -966,14 +1361,14 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
                     Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, new Action(() =>
                     {
-                    try
-                    {
-                        int newIndex = spec.Items.Count - 1;
-                        if (newIndex >= 0 && dataGrid != null)
+                        try
                         {
-                            var newItem = spec.Items[newIndex];
-                            dataGrid.SelectedItem = newItem;
-                            dataGrid.ScrollIntoView(newItem);
+                            int newIndex = spec.Items.Count - 1;
+                            if (newIndex >= 0 && dataGrid != null)
+                            {
+                                var newItem = spec.Items[newIndex];
+                                dataGrid.SelectedItem = newItem;
+                                dataGrid.ScrollIntoView(newItem);
 
                                 if (dataGrid.Columns.Count > 1)
                                     dataGrid.CurrentCell = new DataGridCellInfo(newItem, dataGrid.Columns[1]);
@@ -981,14 +1376,14 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                                 dataGrid.BeginEdit();
                             }
                         }
-                        catch (System.Exception ex)
+                        catch (Exception ex)
                         {
                             System.Diagnostics.Debug.WriteLine($"[HandleTabKey] Error: {ex.Message}");
                         }
                     }));
                 }
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[HandleTabKey] Error: {ex.Message}");
             }
@@ -1189,32 +1584,24 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
         // ==================== PER-SPEC DIMENSION SELECTION ====================
 
-        // Flag to block selection changed handler during programmatic updates
-        private bool _isUpdatingSpecSelection = false;
-
-
         private void OptSpecDim_Click(object sender, RoutedEventArgs e)
         {
             if (sender is RadioButton rb && rb.Tag is string dimTag)
             {
                 try
                 {
-                    // Get spec name from the RadioButton's GroupName (set in XAML binding)
                     string specName = rb.GroupName;
 
-                    // Validate spec name
                     if (string.IsNullOrEmpty(specName))
                     {
                         System.Diagnostics.Debug.WriteLine("[OptSpecDim_Click] WARN: Empty GroupName, skipping");
                         return;
                     }
 
-                    bool useAlt = (dimTag == "W2/H2");  // ← FIXED!
+                    bool useAlt = (dimTag == "W2/H2");
 
-                    // Store the choice
                     _specDimChoice[specName] = useAlt;
 
-                    // Auto-select this spec in the ListBox if not already selected
                     if (_viewModel?.Invoice?.Specifications != null)
                     {
                         var spec = _viewModel.Invoice.Specifications.FirstOrDefault(s => s?.SpecificationName == specName);
@@ -1226,7 +1613,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
                     System.Diagnostics.Debug.WriteLine($"[OptSpecDim_Click] ✓ Spec='{specName}', Dim={dimTag}, UseAlt={useAlt}");
 
-                    // Update the RadioButton visual state
                     UpdateListBoxRadioButtons(lstSpecSelect);
                     UpdateOptStatus();
                 }
@@ -1256,21 +1642,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 txtOptStatus.Text = $"W1/H1: {w1h1Count} specs, W2/H2: {w2h2Count} specs";
         }
 
-        private void btnSelectAllSpecs_Click(object sender, RoutedEventArgs e)
-        {
-            lstSpecSelect.SelectAll();
-        }
-
-        private void btnClearSpecSelection_Click(object sender, RoutedEventArgs e)
-        {
-            lstSpecSelect.SelectedItems.Clear();
-            _specDimChoice.Clear();
-            txtOptStatus.Text = "Select specs and choose dimensions";
-
-            // Also clear UI selections
-            UpdateSpecSelectUIRadioButtons();
-        }
-
         // ==================== FALLBACK DIMENSION CLICK ====================
 
         private void FallbackDim_Click(object sender, RoutedEventArgs e)
@@ -1282,14 +1653,12 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
                 System.Diagnostics.Debug.WriteLine($"[FallbackDim_Click] Fallback changed: {fallbackType}, useAltW2H2={useAltW2H2}");
 
-                // If custom mode, don't auto-change - let user manually select
                 if (fallbackType == "rbUseCustom")
                 {
                     txtOptStatus.Text = "Select specs and choose dimensions";
                     return;
                 }
 
-                // Update all tracked specs to the fallback choice
                 if (_viewModel?.Invoice?.Specifications != null)
                 {
                     foreach (var spec in _viewModel.Invoice.Specifications)
@@ -1301,18 +1670,16 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     }
                 }
 
-                // Auto-select all specs in the ListBox and refresh UI
+                // Clear and re-select all specs using wrappers
                 lstSpecSelect.SelectedItems.Clear();
-                if (_viewModel?.Invoice?.Specifications != null)
+                RefreshSpecSelectionItems(); // Refresh to get latest wrappers
+
+                // Select all wrappers
+                foreach (var wrapper in SpecSelectionItems)
                 {
-                    foreach (var spec in _viewModel.Invoice.Specifications)
-                    {
-                        if (spec != null)
-                            lstSpecSelect.SelectedItems.Add(spec);
-                    }
+                    lstSpecSelect.SelectedItems.Add(wrapper);
                 }
 
-                // Update status
                 txtOptStatus.Text = useAltW2H2 ? "All specs: W2/H2" : "All specs: W1/H1";
 
                 // Force UI refresh
@@ -1337,8 +1704,12 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 {
                     try
                     {
-                        // Save current selection
-                        var selectedSpecs = lstSpecSelect.SelectedItems.Cast<Models.SpecificationModel>().ToList();
+                        // Save current selection (now using SpecSelectionItem wrappers)
+                        var selectedWrappers = lstSpecSelect.SelectedItems.Cast<SpecSelectionItem>().ToList();
+                        var selectedSpecNames = selectedWrappers
+                            .Where(w => w != null)
+                            .Select(w => w.FullName)
+                            .ToList();
 
                         // Clear and refresh ListBox items to force re-render
                         var items = lstSpecSelect.ItemsSource;
@@ -1359,16 +1730,17 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                             }
                         }
 
-                        // Restore selection
+                        // Restore selection - find wrapper by name
                         lstSpecSelect.SelectedItems.Clear();
-                        foreach (var spec in selectedSpecs)
+                        foreach (var specName in selectedSpecNames)
                         {
-                            if (spec != null)
-                                lstSpecSelect.SelectedItems.Add(spec);
+                            var wrapper = SpecSelectionItems.FirstOrDefault(w => w.FullName == specName);
+                            if (wrapper != null)
+                                lstSpecSelect.SelectedItems.Add(wrapper);
                         }
 
                         // Force update RadioButtons with delay to ensure visual tree is ready
-                        System.Threading.Thread.Sleep(50); // Brief delay for visual tree to build
+                        System.Threading.Thread.Sleep(50);
                         UpdateListBoxRadioButtons(lstSpecSelect);
 
                         // Update status
@@ -1410,7 +1782,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     }
 
                     // Find RadioButtons in this container
-                    var radios = FindVisualChildren<System.Windows.Controls.RadioButton>(container);
+                    var radios = FindVisualChildren<RadioButton>(container);
                     foreach (var rb in radios)
                     {
                         string specName = rb.GroupName;
@@ -1426,12 +1798,12 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                         // FIX: Use correct tags with forward slash!
                         if (tag == "W1/H1")
                         {
-                            rb.IsChecked = !useAlt; // Check if NOT using alt (W1/H1)
+                            rb.IsChecked = !useAlt;
                             System.Diagnostics.Debug.WriteLine($"[UpdateListBoxRadioButtons] W1/H1 IsChecked={!useAlt}");
                         }
                         else if (tag == "W2/H2")
                         {
-                            rb.IsChecked = useAlt; // Check if using alt (W2/H2)
+                            rb.IsChecked = useAlt;
                             System.Diagnostics.Debug.WriteLine($"[UpdateListBoxRadioButtons] W2/H2 IsChecked={useAlt}");
                         }
                     }
@@ -1458,16 +1830,78 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             }
         }
 
-        private bool FindSpecForItem(Models.InvoiceItemModel item, out string specName)
+        // Add these methods to the code-behind file (after the other button handlers)
+
+        private void BtnSelectAllSpecs_Click(object sender, RoutedEventArgs e)
         {
-            specName = "";
-            var spec = FindSpecification(item);
-            if (spec != null)
+            lstSpecSelect.SelectAll();
+        }
+
+        private void BtnClearSpecSelection_Click(object sender, RoutedEventArgs e)
+        {
+            lstSpecSelect.SelectedItems.Clear();
+            _specDimChoice.Clear();
+            txtOptStatus.Text = "Select specs and choose dimensions";
+            UpdateSpecSelectUIRadioButtons();
+        }
+
+        private void RbSpecW1H1_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is RadioButton rb && rb.Tag is string specName)
             {
-                specName = spec.SpecificationName;
-                return true;
+                try
+                {
+                    if (!string.IsNullOrEmpty(specName))
+                    {
+                        _specDimChoice[specName] = false; // W1/H1 = false
+                        System.Diagnostics.Debug.WriteLine($"[RbSpecW1H1_Click] Spec='{specName}', Dim=W1/H1");
+
+                        // Auto-select spec if not selected
+                        // Auto-select wrapper if not selected
+                        var wrapper = SpecSelectionItems.FirstOrDefault(w => w.FullName == specName);
+                        if (wrapper != null && !lstSpecSelect.SelectedItems.Contains(wrapper))
+                        {
+                            lstSpecSelect.SelectedItems.Add(wrapper);
+                        }
+
+                        UpdateListBoxRadioButtons(lstSpecSelect);
+                        UpdateOptStatus();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[RbSpecW1H1_Click] ERROR: {ex.Message}");
+                }
             }
-            return false;
+        }
+
+        private void RbSpecW2H2_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is RadioButton rb && rb.Tag is string specName)
+            {
+                try
+                {
+                    if (!string.IsNullOrEmpty(specName))
+                    {
+                        _specDimChoice[specName] = true; // W2/H2 = true
+                        System.Diagnostics.Debug.WriteLine($"[RbSpecW2H2_Click] Spec='{specName}', Dim=W2/H2");
+
+                        // Auto-select wrapper if not selected
+                        var wrapper = SpecSelectionItems.FirstOrDefault(w => w.FullName == specName);
+                        if (wrapper != null && !lstSpecSelect.SelectedItems.Contains(wrapper))
+                        {
+                            lstSpecSelect.SelectedItems.Add(wrapper);
+                        }
+
+                        UpdateListBoxRadioButtons(lstSpecSelect);
+                        UpdateOptStatus();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[RbSpecW2H2_Click] ERROR: {ex.Message}");
+                }
+            }
         }
 
         // ==================== SPEC LIST SELECTION CHANGED ====================
@@ -1479,16 +1913,38 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
             try
             {
-                // Just remove unselected specs from tracking - don't add new ones automatically
-                var selectedSpecs = lstSpecSelect.SelectedItems.Cast<Models.SpecificationModel>()
-                    .Select(s => s.SpecificationName).ToHashSet();
-                var toRemove = _specDimChoice.Keys.Where(k => !selectedSpecs.Contains(k)).ToList();
+                // FIX: The ListBox.SelectedItems contains the actual selected wrapper objects
+                // We need to check which wrappers are in SelectedItems, NOT wrapper.IsSelected
+                var selectedWrappers = lstSpecSelect.SelectedItems
+                    .Cast<SpecSelectionItem>()
+                    .ToHashSet();
+
+                // Add newly selected specs to tracking (default to W1/H1 = false)
+                foreach (var wrapper in selectedWrappers)
+                {
+                    if (!string.IsNullOrEmpty(wrapper.FullName))
+                    {
+                        if (!_specDimChoice.ContainsKey(wrapper.FullName))
+                        {
+                            _specDimChoice[wrapper.FullName] = false; // Default W1/H1
+                            System.Diagnostics.Debug.WriteLine($"[lstSpecSelect_SelectionChanged] Added: {wrapper.FullName}");
+                        }
+                    }
+                }
+
+                // Remove unselected specs from tracking
+                var selectedSpecNames = selectedWrappers
+                    .Where(w => !string.IsNullOrEmpty(w.FullName))
+                    .Select(w => w.FullName)
+                    .ToHashSet();
+                var toRemove = _specDimChoice.Keys.Where(k => !selectedSpecNames.Contains(k)).ToList();
                 foreach (var key in toRemove)
                 {
                     _specDimChoice.Remove(key);
+                    System.Diagnostics.Debug.WriteLine($"[lstSpecSelect_SelectionChanged] Removed: {key}");
                 }
 
-                System.Diagnostics.Debug.WriteLine($"[lstSpecSelect_SelectionChanged] Tracked specs: {_specDimChoice.Count}");
+                System.Diagnostics.Debug.WriteLine($"[lstSpecSelect_SelectionChanged] Selected wrappers: {selectedWrappers.Count}, Tracked specs: {_specDimChoice.Count}");
                 UpdateOptStatus();
             }
             catch (Exception ex)
@@ -1498,8 +1954,8 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         }
     }
 
-    // ==================== SCROLL BEHAVIOR HELPER ====================
-    public static class ScrollViewerBehavior
+        // ==================== SCROLL BEHAVIOR HELPER ====================
+        public static class ScrollViewerBehavior
     {
         public static readonly DependencyProperty VerticalOffsetProperty =
             DependencyProperty.RegisterAttached("VerticalOffset", typeof(double), typeof(ScrollViewerBehavior),

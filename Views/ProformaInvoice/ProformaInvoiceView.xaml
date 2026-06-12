@@ -574,8 +574,8 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" Text="Specifications" FontSize="12" FontWeight="SemiBold" Foreground="#1F2937" Margin="0"/>
                                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                    <Button Content="+ Add" Style="{StaticResource PrimaryButton}" Command="{Binding AddSpecificationCommand}" Padding="10,4" Margin="0,0,6,0" FontSize="10"/>
-                                    <Button Content="- Remove" Style="{StaticResource DangerButton}" Command="{Binding RemoveSpecificationCommand}" Padding="10,4" FontSize="10"/>
+                                    <Button Content="+ Add" Style="{StaticResource PrimaryButton}" Click="AddSpecification_Click" Padding="10,4" Margin="0,0,6,0" FontSize="10"/>
+                                    <Button Content="- Remove" Style="{StaticResource DangerButton}" Click="RemoveSpecification_Click" Padding="10,4" FontSize="10"/>
                                 </StackPanel>
                             </Grid>
 
@@ -1076,212 +1076,550 @@
             </ScrollViewer>
         </Border>
 
-        <!-- ================= CENTER SECTION: OPTIMIZATION ================= -->
-        <Border Grid.Column="1" BorderBrush="#F59E0B" BorderThickness="2" CornerRadius="6" Background="#FFFFFF" Margin="7,0,7,0">
+        <!-- ================= CENTER SECTION: OPTIMIZATION (Complete Fixed Version) ================= -->
+        <Border Grid.Column="1" Background="#F8FAFC" CornerRadius="12" Margin="6,0,6,0">
             <Grid>
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <StackPanel Margin="8">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" PanningMode="VerticalFirst">
+                    <StackPanel Margin="16">
 
-                        <TextBlock Text="⚙ GLASS CUT OPTIMIZER" FontSize="18" FontWeight="Bold" Foreground="#1F2937" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                        <!-- ═══════════════════════════════════════════════════════════════ -->
+                        <!-- SECTION 1: HEADER -->
+                        <!-- ═══════════════════════════════════════════════════════════════ -->
+                        <Border CornerRadius="12" Padding="20,16" Margin="0,0,0,16">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#10B981" Offset="0"/>
+                                    <GradientStop Color="#059669" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="⚙ Glass Cut Optimizer" FontSize="18" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                    <TextBlock Text="Maximize sheet utilization with intelligent nesting" FontSize="11" Foreground="#A7F3D0" Margin="0,2,0,0"/>
+                                </StackPanel>
+                                <Border Grid.Column="1" CornerRadius="8" Padding="12,8" VerticalAlignment="Center">
+                                    <Border.Background>
+                                        <SolidColorBrush Color="#065F46"/>
+                                    </Border.Background>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="📐" FontSize="16" Margin="0,0,6,0"/>
+                                        <TextBlock x:Name="txtOptRunCount" Text="0" FontSize="14" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </Border>
 
-                        <!-- Stock Sheets Manager -->
-                        <Border Background="#F9FAFB" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Padding="8" Margin="0,0,0,8">
+                        <!-- ═══════════════════════════════════════════════════════════════ -->
+                        <!-- SECTION 2: STOCK SHEETS MANAGER -->
+                        <!-- ═══════════════════════════════════════════════════════════════ -->
+                        <Border Background="#FFFFFF" CornerRadius="12" Padding="16" Margin="0,0,0,12">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#000000" BlurRadius="8" ShadowDepth="2" Opacity="0.08"/>
+                            </Border.Effect>
                             <StackPanel>
-                                <TextBlock Text="Stock Sheets" FontSize="11" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,6"/>
-                                <Grid Margin="0,0,8,6">
+                                <Grid Margin="0,0,0,12">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="8"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="8"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0">
-                                        <TextBlock Text="Width (mm)" FontSize="10" Foreground="#6B7280"/>
-                                        <TextBox x:Name="txtSheetWidth" Text="3210" Style="{StaticResource FormTextBox}" FontSize="12" FontWeight="SemiBold" TextAlignment="Center"/>
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="2">
-                                        <TextBlock Text="Height (mm)" FontSize="10" Foreground="#6B7280"/>
-                                        <TextBox x:Name="txtSheetHeight" Text="2250" Style="{StaticResource FormTextBox}" FontSize="13" FontWeight="SemiBold" TextAlignment="Center"/>
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="4" Orientation="Vertical">
-                                        <TextBlock Text="Qty" FontSize="10" Foreground="#6B7280"/>
-                                        <TextBox x:Name="txtSheetQty" Text="99999" Style="{StaticResource FormTextBox}" FontSize="13" FontWeight="SemiBold" Width="70" TextAlignment="Center"/>
-                                    </StackPanel>
-                                </Grid>
-
-                                <Grid Margin="0,0,0,8">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="8"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0">
-                                        <TextBlock Text="Add Additional Sheet" FontSize="11" Foreground="#6B7280" Margin="0,0,0,6"/>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBox x:Name="txtExtraSheetWidth" Width="80" Style="{StaticResource FormTextBox}"/>
-                                            <TextBox x:Name="txtExtraSheetHeight" Width="80" Margin="8,0,0,0" Style="{StaticResource FormTextBox}"/>
-                                            <TextBox x:Name="txtExtraSheetQty" Width="60" Margin="8,0,0,0" Style="{StaticResource FormTextBox}"/>
-                                            <Button x:Name="btnAddExtraSheet" Content="Add" Style="{StaticResource SecondaryButton}" Margin="8,0,0,0" Padding="8,4"/>
-                                        </StackPanel>
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="2">
-                                        <TextBlock Text="Defined Sheets" FontSize="11" Foreground="#6B7280" Margin="0,0,0,6"/>
-                                        <ListBox x:Name="lstStockSheets" Height="80" Background="White" BorderBrush="#E5E7EB" BorderThickness="1"/>
-                                    </StackPanel>
-                                </Grid>
-
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                    <Button x:Name="btnLoadDefaultSheet" Content="Load Default" Style="{StaticResource SecondaryButton}" Padding="10,6" Margin="0,0,8,0"/>
-                                    <Button x:Name="btnClearSheets" Content="Clear" Style="{StaticResource DangerButton}" Padding="10,6"/>
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Thickness -->
-                        <Border Background="#F9FAFB" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Padding="8" Margin="0,0,0,12">
-                            <StackPanel>
-                                <TextBlock Text="Glass Thickness" FontSize="11" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,8"/>
-                                <ComboBox x:Name="cmbThickness" SelectedIndex="0" Style="{StaticResource FormComboBox}" FontSize="14">
-                                    <ComboBoxItem Content="6mm"/>
-                                    <ComboBoxItem Content="8mm"/>
-                                    <ComboBoxItem Content="10mm"/>
-                                    <ComboBoxItem Content="12mm"/>
-                                </ComboBox>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Results -->
-                        <Border Background="#1E3A5F" CornerRadius="6" Padding="8" Margin="0,0,0,12">
-                            <StackPanel>
-                                <TextBlock Text="Optimization Results" FontSize="11" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center" Margin="0,0,0,6"/>
-                                <Grid Margin="0,0,0,8">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0" HorizontalAlignment="Center">
-                                        <TextBlock Text="Utilization" FontSize="10" Foreground="#9CA3AF" HorizontalAlignment="Center"/>
-                                        <TextBlock x:Name="txtUtilization" Text="--" FontSize="18" FontWeight="Bold" Foreground="#10B981" HorizontalAlignment="Center"/>
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="1" HorizontalAlignment="Center">
-                                        <TextBlock Text="Sheets Used" FontSize="10" Foreground="#9CA3AF" HorizontalAlignment="Center"/>
-                                        <TextBlock x:Name="txtSheetsUsed" Text="--" FontSize="20" FontWeight="Bold" Foreground="#60A5FA" HorizontalAlignment="Center"/>
-                                    </StackPanel>
-                                </Grid>
-
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" Margin="0,0,0,6">
-                                    <CheckBox x:Name="chkSortBestFirst" Content="Sort Best First" Foreground="White" Margin="0,0,12,0"/>
-                                    <CheckBox x:Name="chkSpecWise" Content="Specification-wise" Foreground="White" Margin="0,0,12,0"/>
-                                    <TextBlock Text="Dims:" Foreground="White" VerticalAlignment="Center" Margin="6,0,6,0"/>
-                                    <StackPanel Orientation="Horizontal">
-                                        <RadioButton x:Name="rbDimsW1H1" GroupName="Dims" IsChecked="True" Content="W1/H1" Foreground="White" Margin="0,0,6,0"/>
-                                        <RadioButton x:Name="rbDimsW2H2" GroupName="Dims" Content="W2/H2" Foreground="White"/>
-                                    </StackPanel>
-                                </StackPanel>
-
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="8"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0">
-                                        <TextBlock Text="Sheet-wise Results" FontSize="11" Foreground="#DBEAFE" Margin="0,0,0,6"/>
-                                        <ListBox x:Name="lstResults" Height="100" Background="#0F1724" BorderBrush="#0B1220" Foreground="White"/>
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="2">
-                                        <TextBlock Text="Total Summary" FontSize="11" Foreground="#DBEAFE" Margin="0,0,0,6"/>
-                                        <TextBlock x:Name="txtTotalSummary" Text="--" Foreground="#FFFFFF" TextWrapping="Wrap"/>
-                                    </StackPanel>
-                                </Grid>
-
-                                <!-- Specification selection area WITH PER-SPEC DIMENSION SELECTION -->
-                                <Border Background="#F3F4F6" CornerRadius="6" Padding="8" Margin="0,8,0,0">
                                     <StackPanel>
-                                        <TextBlock Text="Select Specifications to Optimize" FontSize="11" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,6"/>
+                                        <TextBlock Text="📦 Stock Sheets" FontSize="14" FontWeight="SemiBold" Foreground="#1E293B"/>
+                                        <TextBlock Text="Define available glass sheets for cutting" FontSize="11" Foreground="#64748B" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <Button x:Name="btnAddStockSheet" Grid.Column="1" Content="+ Add Sheet" 
+                                    Background="#10B981" Foreground="#FFFFFF" 
+                                    BorderThickness="0" Padding="14,8" FontSize="12" FontWeight="SemiBold"
+                                    Cursor="Hand" Click="BtnAddStockSheet_Click">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="border" Background="{TemplateBinding Background}" 
+                                                CornerRadius="8" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="border" Property="Background" Value="#059669"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                </Grid>
+
+                                <!-- Sheet 1 (Default Always Visible) -->
+                                <Border Background="#F1F5F9" CornerRadius="8" Padding="12" Margin="0,0,0,8">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="Sheet 1" FontSize="10" FontWeight="SemiBold" Foreground="#10B981" Margin="0,0,0,4"/>
+                                            <TextBox x:Name="txtSheetWidth" Text="3210" Style="{StaticResource FormTextBox}" 
+                                            FontSize="13" FontWeight="SemiBold" TextAlignment="Center" Padding="8,6"/>
+                                            <TextBlock Text="Width (mm)" FontSize="9" Foreground="#64748B" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="" FontSize="10" Foreground="#10B981" Margin="0,0,0,4"/>
+                                            <TextBox x:Name="txtSheetHeight" Text="2250" Style="{StaticResource FormTextBox}" 
+                                            FontSize="13" FontWeight="SemiBold" TextAlignment="Center" Padding="8,6"/>
+                                            <TextBlock Text="Height (mm)" FontSize="9" Foreground="#64748B" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="4">
+                                            <TextBlock Text="" FontSize="10" Foreground="#10B981" Margin="0,0,0,4"/>
+                                            <TextBox x:Name="txtSheetQty" Text="99999" Style="{StaticResource FormTextBox}" 
+                                            FontSize="13" FontWeight="SemiBold" TextAlignment="Center" Padding="8,6" Width="70"/>
+                                            <TextBlock Text="Qty" FontSize="9" Foreground="#64748B" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+
+                                <!-- Additional Sheets Container (Dynamically Added) -->
+                                <ItemsControl x:Name="AdditionalSheetsContainer">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="#F1F5F9" CornerRadius="8" Padding="12" Margin="0,0,0,8">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="8"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="8"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <StackPanel Grid.Column="0">
+                                                        <TextBlock Text="{Binding SheetLabel}" FontSize="10" FontWeight="SemiBold" Foreground="#10B981" Margin="0,0,0,4"/>
+                                                        <TextBox Text="{Binding Width, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" 
+                                                        FontSize="13" FontWeight="SemiBold" TextAlignment="Center" Padding="8,6"/>
+                                                    </StackPanel>
+
+                                                    <StackPanel Grid.Column="2">
+                                                        <TextBlock Text="" FontSize="10" Foreground="#10B981" Margin="0,0,0,4"/>
+                                                        <TextBox Text="{Binding Height, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" 
+                                                        FontSize="13" FontWeight="SemiBold" TextAlignment="Center" Padding="8,6"/>
+                                                    </StackPanel>
+
+                                                    <StackPanel Grid.Column="4">
+                                                        <TextBlock Text="" FontSize="10" Foreground="#10B981" Margin="0,0,0,4"/>
+                                                        <TextBox Text="{Binding Qty, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" 
+                                                        FontSize="13" FontWeight="SemiBold" TextAlignment="Center" Padding="8,6" Width="70"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <!-- Quick Actions -->
+                                <Grid Margin="0,8,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Button x:Name="btnLoadDefaultSheet" Grid.Column="0" Content="Load Default" Style="{StaticResource SecondaryButton}" 
+                                    Padding="10,6" FontSize="11" Click="BtnLoadDefaultSheets_Click"/>
+                                    <Button x:Name="btnClearSheets" Grid.Column="2" Content="Clear All" Style="{StaticResource DangerButton}" 
+                                    Padding="10,6" FontSize="11" Click="BtnClearSheets_Click"/>
+                                    <Button x:Name="btnAddExtraSheet" Grid.Column="4" Content="Presets" Style="{StaticResource SecondaryButton}" 
+                                    Padding="10,6" FontSize="11"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ═══════════════════════════════════════════════════════════════ -->
+                        <!-- SECTION 3: SETTINGS -->
+                        <!-- ═══════════════════════════════════════════════════════════════ -->
+                        <Border Background="#FFFFFF" CornerRadius="12" Padding="16" Margin="0,0,0,12">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#000000" BlurRadius="8" ShadowDepth="2" Opacity="0.08"/>
+                            </Border.Effect>
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="16"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- ROW 1: Glass Thickness -->
+                                <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,16">
+                                    <TextBlock Text="Glass Thickness" FontSize="12" FontWeight="SemiBold" Foreground="#1E293B" Margin="0,0,0,8"/>
+                                    <ComboBox x:Name="cmbThickness" SelectedIndex="0" Style="{StaticResource FormComboBox}" FontSize="13">
+                                        <ComboBoxItem Content="6mm"/>
+                                        <ComboBoxItem Content="8mm"/>
+                                        <ComboBoxItem Content="10mm"/>
+                                        <ComboBoxItem Content="12mm"/>
+                                        <ComboBoxItem Content="15mm"/>
+                                        <ComboBoxItem Content="19mm"/>
+                                    </ComboBox>
+                                </StackPanel>
+
+                                <!-- ROW 1: Primary Dimension -->
+                                <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,16">
+                                    <TextBlock Text="Primary Dimension" FontSize="12" FontWeight="SemiBold" Foreground="#1E293B" Margin="0,0,0,8"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <RadioButton x:Name="rbDimsW1H1" GroupName="PrimaryDims" IsChecked="True" Content="W1/H1" 
+                    Foreground="#1E293B" FontSize="12" Margin="0,0,16,0" VerticalContentAlignment="Center"/>
+                                        <RadioButton x:Name="rbDimsW2H2" GroupName="PrimaryDims" Content="W2/H2" 
+                    Foreground="#1E293B" FontSize="12" VerticalContentAlignment="Center"/>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <!-- ROW 2: Fallback (Full Width) -->
+                                <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3">
+                                    <TextBlock Text="Fallback Mode" FontSize="12" FontWeight="SemiBold" Foreground="#1E293B" Margin="0,0,0,8"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <RadioButton x:Name="rbUseW1H1" GroupName="GlobalDims" IsChecked="True" Content="W1/H1" 
+                   Foreground="#059669" FontSize="12" Margin="0,0,20,0" VerticalContentAlignment="Center"/>
+                                        <RadioButton x:Name="rbUseW2H2" GroupName="GlobalDims" Content="W2/H2" 
+                   Foreground="#DC2626" FontSize="12" Margin="0,0,20,0" VerticalContentAlignment="Center"/>
+                                        <RadioButton x:Name="rbUseCustom" GroupName="GlobalDims" Content="Per Spec" 
+                   Foreground="#7C3AED" FontSize="12" VerticalContentAlignment="Center"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- ═══════════════════════════════════════════════════════════════ -->
+                        <!-- SECTION 4: RUN OPTIMIZATION -->
+                        <!-- ═══════════════════════════════════════════════════════════════ -->
+                        <Border Background="#FFFFFF" CornerRadius="12" Padding="16" Margin="0,0,0,12">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#000000" BlurRadius="8" ShadowDepth="2" Opacity="0.08"/>
+                            </Border.Effect>
+                            <StackPanel>
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="Run Optimization" FontSize="14" FontWeight="SemiBold" Foreground="#1E293B"/>
+                                        <TextBlock Text="Select specs and generate cutting pattern" FontSize="11" Foreground="#64748B" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <CheckBox x:Name="chkSpecWise" Grid.Column="1" Content="Spec-wise" 
+                                      Foreground="#1E293B" FontSize="11" VerticalContentAlignment="Center"/>
+                                </Grid>
+
+                                <!-- Specification Selection -->
+                                <Border Background="#F8FAFC" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                                    <StackPanel>
+                                        <Grid Margin="0,0,0,8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="Select Specifications" FontSize="11" FontWeight="SemiBold" Foreground="#475569"/>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                                <Button x:Name="btnSelectAllSpecs" Content="All" Style="{StaticResource SecondaryButton}" 
+                                                Padding="8,4" FontSize="10" Margin="0,0,4,0" Click="BtnSelectAllSpecs_Click"/>
+                                                <Button x:Name="btnClearSpecSelection" Content="Clear" Style="{StaticResource SecondaryButton}" 
+                                                Padding="8,4" FontSize="10" Click="BtnClearSpecSelection_Click"/>
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <!-- Spec List with Simple Names -->
                                         <ListBox x:Name="lstSpecSelect" 
-                ItemsSource="{Binding Invoice.Specifications}" 
-                SelectionMode="Multiple" 
-                Height="120"
-                SelectionChanged="lstSpecSelect_SelectionChanged">
+ItemsSource="{Binding SpecSelectionItems, RelativeSource={RelativeSource AncestorType=UserControl}}"
+Loaded="lstSpecSelect_Loaded"
+SelectionChanged="lstSpecSelect_SelectionChanged"
+SelectionMode="Multiple" 
+MaxHeight="120"
+BorderThickness="1"
+BorderBrush="#E2E8F0"
+Background="#FFFFFF">
                                             <ListBox.ItemTemplate>
                                                 <DataTemplate>
-                                                    <Border BorderBrush="#E5E7EB" BorderThickness="0,0,0,1" Padding="6,4" Margin="0,1">
+                                                    <Border BorderBrush="#E2E8F0" BorderThickness="0,0,0,1" Padding="8,6" Margin="0,1">
                                                         <Grid>
                                                             <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="70"/>
+                                                                <ColumnDefinition Width="30"/>
                                                                 <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="Auto"/>
                                                             </Grid.ColumnDefinitions>
-                                                            <TextBlock Grid.Column="0" Text="{Binding SpecificationName}" Foreground="#1F2937" FontSize="10" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                                                            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="8,0,0,0">
-                                                                <RadioButton Content="W1/H1" GroupName="{Binding SpecificationName}" 
-    Tag="W1/H1" Click="OptSpecDim_Click"
-    Foreground="#059669" FontSize="9" FontWeight="SemiBold" VerticalAlignment="Center"
-    IsChecked="True"/>
-                                                                <RadioButton Content="W2/H2" GroupName="{Binding SpecificationName}"
-    Tag="W2/H2" Click="OptSpecDim_Click"
-    Foreground="#DC2626" FontSize="9" FontWeight="SemiBold" VerticalAlignment="Center" Margin="12,0,0,0"/>
+
+                                                            <!-- Checkbox -->
+                                                            <CheckBox Grid.Column="0" x:Name="chkSpecSelect" 
+                                                            IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                            VerticalAlignment="Center"/>
+
+                                                            <!-- Spec Name - Shows simple name like "Spec 1" -->
+                                                            <TextBlock Grid.Column="1" Text="{Binding DisplayName}" 
+                                                            FontSize="11" FontWeight="SemiBold" Foreground="#1E293B" 
+                                                            VerticalAlignment="Center" Margin="8,0,0,0"/>
+
+                                                            <!-- Per-Spec Dimension - Uses FullName as Tag -->
+                                                            <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="8,0,0,0">
+                                                                <RadioButton x:Name="rbSpecW1H1" 
+                                                                   Content="W1/H1" 
+                                                                   Tag="{Binding FullName}"
+                                                                   Click="RbSpecW1H1_Click"
+                                                                   Foreground="#059669" FontSize="10" FontWeight="SemiBold" 
+                                                                   VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                                <RadioButton x:Name="rbSpecW2H2" 
+                                                                   Content="W2/H2" 
+                                                                   Tag="{Binding FullName}"
+                                                                   Click="RbSpecW2H2_Click"
+                                                                   Foreground="#DC2626" FontSize="10" FontWeight="SemiBold" 
+                                                                   VerticalAlignment="Center"/>
                                                             </StackPanel>
                                                         </Grid>
                                                     </Border>
                                                 </DataTemplate>
                                             </ListBox.ItemTemplate>
                                         </ListBox>
+                                    </StackPanel>
+                                </Border>
 
-                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,6,0,0">
-                                            <Button x:Name="btnSelectAllSpecs" Content="Select All" Style="{StaticResource SecondaryButton}" Padding="8,4" Margin="0,0,8,0" Click="btnSelectAllSpecs_Click"/>
-                                            <Button x:Name="btnClearSpecSelection" Content="Clear" Style="{StaticResource SecondaryButton}" Padding="8,4" Click="btnClearSpecSelection_Click"/>
-                                        </StackPanel>
+                                <!-- Run Buttons -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Button x:Name="btnRunOptimization" Grid.Column="0" Content="▶ Run Optimization" 
+                                    Click="RunOptimization_Click"
+                                    Padding="14,12" FontSize="13" Background="#10B981" Foreground="#FFFFFF" 
+                                    BorderThickness="0" Cursor="Hand" FontWeight="SemiBold">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="border" Background="{TemplateBinding Background}" 
+                                                CornerRadius="10" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="border" Property="Background" Value="#059669"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsPressed" Value="True">
+                                                        <Setter TargetName="border" Property="Background" Value="#047857"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                    <Button x:Name="btnViewLayouts" Grid.Column="2" Content="📐 View Layouts" 
+                                    Click="ViewOptimizationLayouts_Click"
+                                    Padding="14,12" FontSize="13" Background="#1E40AF" Foreground="#FFFFFF" 
+                                    BorderThickness="0" Cursor="Hand" FontWeight="SemiBold">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="border" Background="{TemplateBinding Background}" 
+                                                CornerRadius="10" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="border" Property="Background" Value="#1E3A8A"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsPressed" Value="True">
+                                                        <Setter TargetName="border" Property="Background" Value="#1E3A5F"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                </Grid>
 
-                                        <!-- Global fallback dimension -->
-                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" Margin="0,8,0,0">
-                                            <TextBlock Text="Fallback:" VerticalAlignment="Center" Foreground="#9CA3AF" Margin="0,0,8,0" FontSize="9"/>
-                                            <RadioButton x:Name="rbUseW1H1" GroupName="GlobalDims" IsChecked="True" Content="W1/H1" Foreground="#059669" FontSize="9" FontWeight="SemiBold" Margin="0,0,6,0" Click="FallbackDim_Click"/>
-                                            <RadioButton x:Name="rbUseW2H2" GroupName="GlobalDims" Content="W2/H2" Foreground="#DC2626" FontSize="9" FontWeight="SemiBold" Margin="0,0,6,0" Click="FallbackDim_Click"/>
-                                            <RadioButton x:Name="rbUseCustom" GroupName="GlobalDims" Content="Per-Spec" Foreground="#7C3AED" FontSize="9" FontWeight="SemiBold" Click="FallbackDim_Click"/>
+                                <!-- Status Text -->
+                                <TextBlock x:Name="txtOptStatus" Text="Ready to optimize - Enter sheet size and click Run" 
+                                   FontSize="11" Foreground="#64748B" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+                        <!-- SECTION 5: OVERALL RESULTS SUMMARY -->
+                        <!-- ═══════════════════════════════════════════════════════════════ -->
+                        <Border Background="#1E40AF" CornerRadius="12" Padding="16" Margin="0,0,0,12">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#000000" BlurRadius="12" ShadowDepth="3" Opacity="0.15"/>
+                            </Border.Effect>
+                            <StackPanel>
+                                <TextBlock Text="📊 Overall Results" FontSize="14" FontWeight="Bold" Foreground="#FFFFFF" Margin="0,0,0,12"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Border Grid.Column="0" CornerRadius="8" Padding="12" Margin="0,0,6,0">
+                                        <Border.Background>
+                                            <SolidColorBrush Color="#1E3A8A"/>
+                                        </Border.Background>
+                                        <StackPanel HorizontalAlignment="Center">
+                                            <TextBlock Text="Utilization" FontSize="10" Foreground="#93C5FD" HorizontalAlignment="Center"/>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0">
+                                                <TextBlock x:Name="txtUtilization" Text="--" FontSize="22" FontWeight="Bold" Foreground="#34D399"/>
+                                                <TextBlock Text="%" FontSize="14" FontWeight="SemiBold" Foreground="#34D399" Margin="2,4,0,0"/>
+                                            </StackPanel>
                                         </StackPanel>
+                                    </Border>
+
+                                    <Border Grid.Column="1" CornerRadius="8" Padding="12" Margin="0,0,6,0">
+                                        <Border.Background>
+                                            <SolidColorBrush Color="#1E3A8A"/>
+                                        </Border.Background>
+                                        <StackPanel HorizontalAlignment="Center">
+                                            <TextBlock Text="Sheets Used" FontSize="10" Foreground="#93C5FD" HorizontalAlignment="Center"/>
+                                            <TextBlock x:Name="txtSheetsUsed" Text="--" FontSize="22" FontWeight="Bold" Foreground="#60A5FA" 
+                                               HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Grid.Column="2" CornerRadius="8" Padding="12">
+                                        <Border.Background>
+                                            <SolidColorBrush Color="#1E3A8A"/>
+                                        </Border.Background>
+                                        <StackPanel HorizontalAlignment="Center">
+                                            <TextBlock Text="Wastage" FontSize="10" Foreground="#93C5FD" HorizontalAlignment="Center"/>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0">
+                                                <TextBlock x:Name="txtWastage" Text="--" FontSize="22" FontWeight="Bold" Foreground="#FCA5A5"/>
+                                                <TextBlock Text="%" FontSize="14" FontWeight="SemiBold" Foreground="#FCA5A5" Margin="2,4,0,0"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+                        <!-- SECTION 6: PER-SHEET RESULTS -->
+                        <!-- ═══════════════════════════════════════════════════════════════ -->
+                        <Border Background="#FFFFFF" CornerRadius="12" Padding="16" Margin="0,0,0,16">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#000000" BlurRadius="8" ShadowDepth="2" Opacity="0.08"/>
+                            </Border.Effect>
+                            <StackPanel>
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="📋 Per-Sheet Results" FontSize="14" FontWeight="SemiBold" Foreground="#1E293B"/>
+                                        <TextBlock Text="Detailed breakdown for each sheet used" FontSize="11" Foreground="#64748B" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <TextBlock x:Name="txtSheetsUsedCount" Grid.Column="1" Text="0 sheets" 
+                                  FontSize="11" FontWeight="SemiBold" Foreground="#10B981" VerticalAlignment="Center"
+                                  TextWrapping="Wrap" MaxWidth="120"/>
+                                </Grid>
+
+                                <!-- Per-Sheet Results ItemsControl -->
+                                <ItemsControl x:Name="PerSheetResultsContainer">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Margin="0,0,0,8" CornerRadius="10" Padding="14"
+                                            Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <StackPanel Grid.Column="0">
+                                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                                            <Border CornerRadius="6" Padding="10,4" Margin="0,0,8,0">
+                                                                <Border.Background>
+                                                                    <SolidColorBrush Color="#10B981"/>
+                                                                </Border.Background>
+                                                                <TextBlock Text="{Binding SheetName}" FontSize="11" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                                            </Border>
+                                                            <TextBlock Text="{Binding SheetDimensions}" FontSize="11" Foreground="#64748B" VerticalAlignment="Center"/>
+                                                        </StackPanel>
+
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                            </Grid.ColumnDefinitions>
+
+                                                            <!-- Pieces Cut -->
+                                                            <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                                                                <TextBlock Text="Pieces" FontSize="9" Foreground="#94A3B8" HorizontalAlignment="Center"/>
+                                                                <TextBlock Text="{Binding PiecesCut}" FontSize="14" FontWeight="Bold" Foreground="#1E293B" HorizontalAlignment="Center"/>
+                                                            </StackPanel>
+
+                                                            <!-- Area Used -->
+                                                            <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                                                                <TextBlock Text="Area Used" FontSize="9" Foreground="#94A3B8" HorizontalAlignment="Center"/>
+                                                                <TextBlock Text="{Binding AreaUsed}" FontSize="14" FontWeight="Bold" Foreground="#059669" HorizontalAlignment="Center"/>
+                                                            </StackPanel>
+
+                                                            <!-- Utilization -->
+                                                            <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                                                                <TextBlock Text="Utilization" FontSize="9" Foreground="#94A3B8" HorizontalAlignment="Center"/>
+                                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                                    <TextBlock Text="{Binding Utilization}" FontSize="14" FontWeight="Bold" Foreground="#10B981"/>
+                                                                    <TextBlock Text="%" FontSize="10" FontWeight="SemiBold" Foreground="#10B981" Margin="1,0,0,1"/>
+                                                                </StackPanel>
+                                                            </StackPanel>
+
+                                                            <!-- Wastage -->
+                                                            <StackPanel Grid.Column="3" HorizontalAlignment="Center">
+                                                                <TextBlock Text="Wastage" FontSize="9" Foreground="#94A3B8" HorizontalAlignment="Center"/>
+                                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                                    <TextBlock Text="{Binding Wastage}" FontSize="14" FontWeight="Bold" Foreground="#DC2626"/>
+                                                                    <TextBlock Text="%" FontSize="10" FontWeight="SemiBold" Foreground="#DC2626" Margin="1,0,0,1"/>
+                                                                </StackPanel>
+                                                            </StackPanel>
+                                                        </Grid>
+                                                    </StackPanel>
+
+                                                    <!-- Visual Bar -->
+                                                    <Border Grid.Column="1" Width="40" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                        <Grid>
+                                                            <Border CornerRadius="6" Height="80">
+                                                                <Border.Background>
+                                                                    <SolidColorBrush Color="#E2E8F0"/>
+                                                                </Border.Background>
+                                                            </Border>
+                                                            <Border CornerRadius="6" Height="{Binding BarHeight}" VerticalAlignment="Bottom">
+                                                                <Border.Background>
+                                                                    <LinearGradientBrush StartPoint="0,1" EndPoint="0,0">
+                                                                        <GradientStop Color="#10B981" Offset="0"/>
+                                                                        <GradientStop Color="#34D399" Offset="1"/>
+                                                                    </LinearGradientBrush>
+                                                                </Border.Background>
+                                                            </Border>
+                                                        </Grid>
+                                                    </Border>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <!-- Empty State -->
+                                <Border x:Name="EmptyPerSheetResults" Background="#F1F5F9" CornerRadius="10" Padding="24" Margin="0,4,0,0">
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <TextBlock Text="📐" FontSize="32" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                                        <TextBlock Text="No optimization results yet" FontSize="13" FontWeight="SemiBold" Foreground="#64748B" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="Run optimization to see per-sheet results" FontSize="11" Foreground="#94A3B8" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
                         </Border>
-
-                        <!-- Run Buttons -->
-                        <Grid Margin="0,0,0,12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="6"/>
-                                <ColumnDefinition Width="Auto" MinWidth="120"/>
-                            </Grid.ColumnDefinitions>
-                            <Button Grid.Column="0" Content="▶ RUN" Click="RunOptimization_Click" Padding="12,14" FontSize="13" Background="#10B981" Foreground="White" BorderThickness="0" Cursor="Hand" FontWeight="SemiBold">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border Background="{TemplateBinding Background}" CornerRadius="6 0 0 6" Padding="{TemplateBinding Padding}">
-                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Border>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
-                            <Button Grid.Column="2" Content="📐 VIEW" Click="ViewOptimizationLayouts_Click" Padding="12,14" FontSize="13" Background="#1E3A5F" Foreground="White" BorderThickness="0" Cursor="Hand" FontWeight="SemiBold">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border Background="{TemplateBinding Background}" CornerRadius="0 6 6 0" Padding="{TemplateBinding Padding}">
-                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Border>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
-                        </Grid>
-
-                        <!-- Specification & Options -->
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,8">
-                            <TextBlock Text="Spec:" VerticalAlignment="Center" Foreground="#6B7280" Margin="0,0,6,0"/>
-                            <ComboBox x:Name="cmbSpecFilter" ItemsSource="{Binding Invoice.Specifications}" DisplayMemberPath="SpecificationName" SelectedItem="{Binding SelectedTargetSpecification}" Width="160" Style="{StaticResource FormComboBox}"/>
-                            <CheckBox x:Name="chkSpecOnly" Content="Apply Spec Only" VerticalAlignment="Center" Foreground="#6B7280" Margin="8,0,0,0"/>
-                            <CheckBox x:Name="chkOptimizeRightSide" Content="Optimize Right Side Separately" VerticalAlignment="Center" Foreground="#6B7280" Margin="12,0,0,0"/>
-                        </StackPanel>
-
-                        <TextBlock x:Name="txtOptStatus" Text="Enter sheet size and click Run" FontSize="10" Foreground="#6B7280" HorizontalAlignment="Center" Margin="0,6,0,0"/>
 
                     </StackPanel>
                 </ScrollViewer>

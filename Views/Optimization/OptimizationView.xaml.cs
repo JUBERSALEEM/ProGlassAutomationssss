@@ -2310,6 +2310,18 @@ namespace ProGlassAutomation.Views.Optimization
             }
             catch { }
         }
+
+        // =====================================================
+        // PUBLIC API - Returns all placed parts for external callers
+        // =====================================================
+
+        /// <summary>
+        /// Returns all placed parts from the last optimization run
+        /// </summary>
+        public List<PlacedPart> GetAllPlacedParts()
+        {
+            return _allPlacedParts;
+        }
     }
 
     // =====================================================
