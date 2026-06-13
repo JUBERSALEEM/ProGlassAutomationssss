@@ -83,6 +83,9 @@ namespace ProGlassAutomation.ViewModels
         private readonly Queue<string> _statusMessageQueue = new();
         private bool _isProcessingStatusQueue = false;
 
+        // PATCH 2: Event handler guard to prevent duplicates
+        private readonly HashSet<string> _attachedHandlers = new();
+
         private static readonly JsonSerializerSettings _jsonSettings = new JsonSerializerSettings
         {
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
