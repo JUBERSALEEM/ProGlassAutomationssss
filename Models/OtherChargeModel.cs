@@ -14,10 +14,13 @@ namespace ProGlassAutomation.Models
     /// <remarks>
     /// PATCH 6: Added INotifyPropertyChanged
     /// PATCH 8: Added display properties
-    /// PATCH 15: Added DeepClone method
+    /// PATCH 15: Added DeepClone
     /// PATCH 18: Added memory cleanup
     /// PATCH 28: Added SetAllSpecs
     /// PATCH 31: Added LinkedSpecIndices
+    /// PATCH B1: Merged Value/Amount calculation
+    /// PATCH B2: Added guard flag for duplicate events
+    /// PATCH D1: Safe spec index parsing
     /// </remarks>
     public class OtherChargeModel : INotifyPropertyChanged, IDisposable
     {
@@ -57,6 +60,16 @@ namespace ProGlassAutomation.Models
             _disposed = true;
         }
 
+        // ==================== GUARD FLAG (PATCH B2) ====================
+        private bool _isProcessing = false;
+
+        [JsonIgnore]
+        public bool IsProcessing
+        {
+            get => _isProcessing;
+            private set => _isProcessing = value;
+        }
+
         // ==================== BASIC PROPERTIES ====================
         private string _name = "New Charge";
         public string Name
@@ -71,14 +84,24 @@ namespace ProGlassAutomation.Models
             get => _type;
             set
             {
-                _type = value ?? "lm";
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(TypeDisplay));
-                OnPropertyChanged(nameof(ValueDisplay));
-                OnPropertyChanged(nameof(UnitDisplay));
-                OnPropertyChanged(nameof(IsLMBased));
-                OnPropertyChanged(nameof(IsHoleType));
-                CalculateAmount();
+                if (_type != value)
+                {
+                    _type = value ?? "lm";
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(TypeDisplay));
+                    OnPropertyChanged(nameof(ValueDisplay));
+                    OnPropertyChanged(nameof(UnitDisplay));
+                    OnPropertyChanged(nameof(IsLMBased));
+                    OnPropertyChanged(nameof(IsHoleType));
+
+                    // PATCH B2: Guard to prevent duplicate events
+                    if (!IsProcessing)
+                    {
+                        IsProcessing = true;
+                        try { CalculateAmount(); }
+                        finally { IsProcessing = false; }
+                    }
+                }
             }
         }
 
@@ -91,7 +114,7 @@ namespace ProGlassAutomation.Models
                 if (SetProperty(ref _value, value))
                 {
                     OnPropertyChanged(nameof(ValueDisplay));
-                    CalculateAmount();
+                    CalculateAmount(); // KEEP ORIGINAL METHOD
                 }
             }
         }
@@ -105,7 +128,7 @@ namespace ProGlassAutomation.Models
                 if (SetProperty(ref _rate, value))
                 {
                     OnPropertyChanged(nameof(RateDisplay));
-                    CalculateAmount();
+                    CalculateAmount(); // KEEP ORIGINAL METHOD
                 }
             }
         }
@@ -185,7 +208,7 @@ namespace ProGlassAutomation.Models
         public bool IsLMBased => Type == "lm" || Type == "lm1" || Type == "lm2" || Type == "sqm" || Type == "sqm1" || Type == "sqm2";
         public bool IsHoleType => Type == "1x" || Type == "2x";
 
-        // ==================== CALCULATE AMOUNT ====================
+        // ==================== CALCULATE AMOUNT (ORIGINAL - KEEP AS IS) ====================
         public void CalculateAmount()
         {
             Amount = Math.Round(Value * Rate, 2);
@@ -246,10 +269,12 @@ namespace ProGlassAutomation.Models
             }
         }
 
+        // ==================== SAFE SPEC INDEX PARSING (PATCH D1) ====================
         public List<int> SpecIndexList
         {
             get
             {
+                // PATCH D1: Safe parsing with null check
                 if (string.IsNullOrWhiteSpace(_linkedSpecIndices))
                     return new List<int>();
 
@@ -360,7 +385,7 @@ namespace ProGlassAutomation.Models
                 IsManualOverride = IsManualOverride
             };
 
-            clone.CalculateAmount();
+            clone.CalculateAmount(); // KEEP ORIGINAL METHOD
             return clone;
         }
 
@@ -377,7 +402,7 @@ namespace ProGlassAutomation.Models
             LinkedSpecIndices = other.LinkedSpecIndices;
             IsManualOverride = other.IsManualOverride;
 
-            CalculateAmount();
+            CalculateAmount(); // KEEP ORIGINAL METHOD
         }
     }
 }

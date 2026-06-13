@@ -227,9 +227,9 @@ namespace ProGlassAutomation.Models
 
                         Recalculate();
 
-                        // Notify parent spec AND grandparent invoice
+                        // PATCH A2: Only notify spec level - invoice handled by ViewModel
                         Specification?.CalculateTotals();
-                        Specification?.Invoice?.CalculateTotals();
+                        // REMOVED: Specification?.Invoice?.CalculateTotals(); // Caused StackOverflow!
 
                         // Force all property notifications
                         OnPropertyChanged(nameof(SurchargeAmount));
@@ -308,8 +308,9 @@ namespace ProGlassAutomation.Models
                 SQM1 = Math.Round(sqm1Val, 4);
                 SQM2 = Math.Round(sqm2Val, 4);
 
-                // FIX PATCH 21: Use only W1×H1 (SQM1) for main TotalSQM
-                TotalSQM = Math.Round(SQM1 * q, 4);
+                // UPDATE: TotalSQM = (SQM1 + SQM2) × Qty (sum of both dimensions)
+                double totalSqmPerItem = SQM1 + SQM2;
+                TotalSQM = Math.Round(totalSqmPerItem * q, 4);
 
                 // LM calculations - store both for Other Charges reference
                 double lm1Val = 2 * ((w1 / 1000.0) + (h1 / 1000.0));
@@ -317,16 +318,17 @@ namespace ProGlassAutomation.Models
                 LM1 = Math.Round(lm1Val, 4);
                 LM2 = Math.Round(lm2Val, 4);
 
-                // FIX PATCH 21: Use only LM1 for main LM
-                LM = LM1;
+                // UPDATE: TotalLM = (LM1 + LM2) × Qty (sum of both dimensions)
+                double totalLmPerItem = LM1 + LM2;
+                LM = totalLmPerItem;
                 TotalLM = Math.Round(LM * q, 4);
 
                 // Price calculations
                 double p = Price > 0 ? Price : 0;
                 double sp = SurchargePercent > 0 ? SurchargePercent : 0;
 
-                // PATCH 20: Surcharge applies to per-item SQM (only W1×H1, > 4 SQM)
-                double perItemSQM = SQM1;
+                // UPDATE: Surcharge applies to per-item total SQM (SQM1 + SQM2, > 4 SQM)
+                double perItemSQM = SQM1 + SQM2;
 
                 double surcharge = 0;
                 if (perItemSQM > 4)

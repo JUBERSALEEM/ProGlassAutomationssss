@@ -21,6 +21,7 @@ namespace ProGlassAutomation.Models
     /// PATCH 17: Added Validate
     /// PATCH 18: Added thread-safe calculations
     /// PATCH 19: Added thread lock
+    /// PATCH E1: Safe Invoice Recalculation Gate
     /// </remarks>
     public class ProformaInvoiceModel : INotifyPropertyChanged, IDisposable
     {
@@ -31,6 +32,9 @@ namespace ProGlassAutomation.Models
         private readonly object _threadLock = new object();
         private static readonly object _invoiceLock = new object();
         private bool _isCalculating = false;
+
+        // ==================== GUARD FLAG (PATCH E1) ====================
+        private bool _isRecalculating = false;
 
         // ==================== ID ====================
         private int _id = 0;
@@ -419,7 +423,7 @@ namespace ProGlassAutomation.Models
             return _statusTransitions.TryGetValue(from, out var transitions) && transitions.Contains(to);
         }
 
-        // ==================== JOB ORDER TRACKING (PATCH 1) - COMPLETE ====================
+        // ==================== JOB ORDER TRACKING (PATCH 1) ====================
         private bool _isConvertedToJobOrder;
         public bool IsConvertedToJobOrder
         {
@@ -642,10 +646,11 @@ namespace ProGlassAutomation.Models
 
         public bool IsValid => Validate().IsValid;
 
-        // ==================== CALCULATIONS (PATCH 19) ====================
+        // ==================== CALCULATIONS (PATCH E1) ====================
         public void CalculateTotals()
         {
-            if (IsBulkUpdating) return;
+            // PATCH E1: Guard flag to prevent recursive calls
+            if (IsBulkUpdating || _isRecalculating) return;
 
             lock (_threadLock)
             {
@@ -655,18 +660,24 @@ namespace ProGlassAutomation.Models
 
             try
             {
+                // PATCH E1: Set guard FIRST before any processing
+                _isRecalculating = true;
+
                 double sqm1 = 0, sqm2 = 0, sqm = 0, lm = 0, lm1 = 0, lm2 = 0;
                 int qty = 0;
                 double specTotal = 0;
                 double otherCharges = 0;
 
+                // FIX: Don't call spec.Recalculate() for ALL specs
+                // Each spec already recalculates when its items change
+                // Just read existing totals - don't trigger re-calculation
                 foreach (var spec in Specifications)
                 {
                     if (spec == null) continue;
 
-                    spec.CalculateSpecTotals();
-                    spec.CalculateOtherChargesTotal();
+                    // REMOVED: spec.Recalculate(); // This was causing cascading events!
 
+                    // Just read the existing calculated values
                     sqm1 += spec.SpecTotalSQM1;
                     sqm2 += spec.SpecTotalSQM2;
                     sqm += spec.SpecTotalSQM;
@@ -700,6 +711,7 @@ namespace ProGlassAutomation.Models
             finally
             {
                 lock (_threadLock) { _isCalculating = false; }
+                _isRecalculating = false; // PATCH E1: Clear guard
             }
         }
 
@@ -851,7 +863,7 @@ namespace ProGlassAutomation.Models
         }
     }
 
-    // ==================== MODEL VALIDATION RESULT (RENAMED TO AVOID DUPLICATE) ====================
+    // ==================== MODEL VALIDATION RESULT ====================
     public class ModelValidationResult
     {
         public bool IsValid => _errors.Count == 0;

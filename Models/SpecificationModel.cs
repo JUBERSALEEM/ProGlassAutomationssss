@@ -1,9 +1,10 @@
-﻿using System;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using Newtonsoft.Json;
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using Newtonsoft.Json;
 
 namespace ProGlassAutomation.Models
 {
@@ -18,6 +19,8 @@ namespace ProGlassAutomation.Models
     /// PATCH 17: Added Validate
     /// PATCH 18: Added thread-safe calculations
     /// PATCH 19: Added thread lock
+    /// PATCH A1: Centralized Recalculate() method
+    /// PATCH A2: Removed Invoice cascade from spec
     /// </remarks>
     public class SpecificationModel : INotifyPropertyChanged, IDisposable
     {
@@ -27,6 +30,15 @@ namespace ProGlassAutomation.Models
         // ==================== THREAD SAFETY (PATCH 19) ====================
         private readonly object _threadLock = new object();
         private bool _isCalculating = false;
+
+        // ==================== GUARD FLAG (PATCH A1) ====================
+        private bool _isRecalculating = false;
+
+        private bool IsRecalculating
+        {
+            get => _isRecalculating;
+            set => _isRecalculating = value;
+        }
 
         // ==================== EVENT SUPPRESSION (PATCH 18) ====================
         private bool _suppressEvents = false;
@@ -44,7 +56,7 @@ namespace ProGlassAutomation.Models
                     OnPropertyChanged();
 
                     if (!value)
-                        CalculateSpecTotals();
+                        Recalculate();
                 }
             }
         }
@@ -138,7 +150,7 @@ namespace ProGlassAutomation.Models
                 }
             }
 
-            CalculateSpecTotals();
+            Recalculate();
             RenumberItems();
         }
 
@@ -159,7 +171,7 @@ namespace ProGlassAutomation.Models
                 e.PropertyName == nameof(InvoiceItemModel.FinalPrice) ||
                 e.PropertyName == nameof(InvoiceItemModel.SurchargePercent))
             {
-                CalculateSpecTotals();
+                Recalculate();
             }
         }
 
@@ -185,7 +197,7 @@ namespace ProGlassAutomation.Models
                 }
             }
 
-            CalculateOtherChargesTotal();
+            Recalculate();
         }
 
         private void Charge_PropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -193,7 +205,7 @@ namespace ProGlassAutomation.Models
             if (IsBulkUpdating) return;
 
             if (e.PropertyName == nameof(OtherChargeModel.Amount))
-                CalculateOtherChargesTotal();
+                Recalculate();
         }
 
         // ==================== PARENT INVOICE REFERENCE ====================
@@ -288,18 +300,6 @@ namespace ProGlassAutomation.Models
 
         public double SpecTotalPriceWithOtherCharges => Math.Round(SpecTotalPrice + OtherChargesTotal, 2);
 
-        // ==================== CALCULATE OTHER CHARGES TOTAL (PATCH 19) ====================
-        public void CalculateOtherChargesTotal()
-        {
-            if (IsBulkUpdating) return;
-
-            lock (_threadLock)
-            {
-                double total = OtherCharges.Sum(c => c?.Amount ?? 0);
-                OtherChargesTotal = Math.Round(total, 2);
-            }
-        }
-
         // ==================== BIND CHARGES TO SPECS (PATCH 28) ====================
         public void BindChargesToSpecs()
         {
@@ -367,7 +367,7 @@ namespace ProGlassAutomation.Models
                 item.SurchargePercent = _surchargePercent;
                 item.NotifySurchargeChanged();
             }
-            CalculateSpecTotals();
+            Recalculate();
         }
 
         public double SurchargeThreshold => 4;
@@ -395,58 +395,81 @@ namespace ProGlassAutomation.Models
         public int SpecTotalQty { get => _specTotalQty; private set { if (_specTotalQty != value) { _specTotalQty = value; OnPropertyChanged(); } } }
 
         private double _specTotalPrice = 0;
-        public double SpecTotalPrice { get => _specTotalPrice; private set { if (_specTotalPrice != value) { _specTotalPrice = value; OnPropertyChanged(); OnPropertyChanged(nameof(SpecTotalPriceWithOtherCharges)); } } }
-
-        // ==================== CALCULATE SPEC TOTALS (PATCH 19) ====================
-        public void CalculateSpecTotals()
+        public double SpecTotalPrice
         {
-            if (IsBulkUpdating || _suppressEvents) return;
+            get => _specTotalPrice; private set { if (_specTotalPrice != value) { _specTotalPrice = value; OnPropertyChanged(); OnPropertyChanged(nameof(SpecTotalPriceWithOtherCharges)); } }
+        }
 
-            lock (_threadLock)
-            {
-                if (_isCalculating) return;
-                _isCalculating = true;
-            }
+        // ==================== CENTRALIZED RECALCULATION (PATCH A1) ====================
+        public void Recalculate()
+        {
+            if (IsBulkUpdating || _suppressEvents || IsRecalculating) return;
 
             try
             {
-                double sqm1 = 0, sqm2 = 0, sqm = 0, lm = 0, lm1 = 0, lm2 = 0;
-                int qty = 0;
-                double price = 0;
+                IsRecalculating = true;
 
-                foreach (var item in Items)
+                lock (_threadLock)
                 {
-                    if (item == null) continue;
-
-                    sqm1 += item.SQM1 * item.Qty;
-                    sqm2 += item.SQM2 * item.Qty;
-                    sqm += item.TotalSQM;
-                    lm += item.TotalLM;
-                    lm1 += item.LM1 * item.Qty;
-                    lm2 += item.LM2 * item.Qty;
-                    qty += item.Qty;
-                    price += item.TotalPrice;
+                    if (_isCalculating) return;
+                    _isCalculating = true;
                 }
 
-                SpecTotalSQM1 = Math.Round(sqm1, 4);
-                SpecTotalSQM2 = Math.Round(sqm2, 4);
-                SpecTotalSQM = Math.Round(sqm, 4);
-                SpecTotalLM = Math.Round(lm, 4);
-                SpecTotalLM1 = Math.Round(lm1, 4);
-                SpecTotalLM2 = Math.Round(lm2, 4);
-                SpecTotalQty = qty;
-                SpecTotalPrice = Math.Round(price, 2);
+                try
+                {
+                    double sqm1 = 0, sqm2 = 0, sqm = 0, lm = 0, lm1 = 0, lm2 = 0;
+                    int qty = 0;
+                    double price = 0;
 
-                OnPropertyChanged(nameof(Items));
+                    foreach (var item in Items)
+                    {
+                        if (item == null) continue;
 
-                // Notify parent Invoice to recalculate
-                Invoice?.CalculateTotals();
+                        sqm1 += item.SQM1 * item.Qty;
+                        sqm2 += item.SQM2 * item.Qty;
+                        sqm += item.TotalSQM;
+                        lm += item.TotalLM;
+                        lm1 += item.LM1 * item.Qty;
+                        lm2 += item.LM2 * item.Qty;
+                        qty += item.Qty;
+                        price += item.TotalPrice;
+                    }
+
+                    SpecTotalSQM1 = Math.Round(sqm1, 4);
+                    SpecTotalSQM2 = Math.Round(sqm2, 4);
+                    SpecTotalSQM = Math.Round(sqm, 4);
+                    SpecTotalLM = Math.Round(lm, 4);
+                    SpecTotalLM1 = Math.Round(lm1, 4);
+                    SpecTotalLM2 = Math.Round(lm2, 4);
+                    SpecTotalQty = qty;
+                    SpecTotalPrice = Math.Round(price, 2);
+
+                    double chargesTotal = 0;
+                    foreach (var charge in OtherCharges)
+                    {
+                        chargesTotal += charge?.Amount ?? 0;
+                    }
+                    OtherChargesTotal = Math.Round(chargesTotal, 2);
+
+                    OnPropertyChanged(nameof(Items));
+                }
+                finally
+                {
+                    lock (_threadLock) { _isCalculating = false; }
+                }
             }
             finally
             {
-                lock (_threadLock) { _isCalculating = false; }
+                IsRecalculating = false;
             }
         }
+
+        // ==================== LEGACY METHODS (KEEP FOR BACKWARDS COMPATIBILITY) ====================
+        public void CalculateSpecTotals() => Recalculate();
+
+        public void CalculateOtherChargesTotal() => Recalculate();
+
+        public void CalculateTotals() => Recalculate();
 
         // ==================== RENUMBER ITEMS ====================
         public void RenumberItems()
@@ -474,7 +497,7 @@ namespace ProGlassAutomation.Models
             }
         }
 
-        // ==================== ADD/REMOVE ITEM (PATCH 19) ====================
+        // ==================== ADD/REMOVE ITEM ====================
         public InvoiceItemModel AddItem(int nextSrNo)
         {
             lock (_threadLock)
@@ -497,7 +520,7 @@ namespace ProGlassAutomation.Models
                 {
                     item.PropertyChanged -= Item_PropertyChanged;
                     Items.Remove(item);
-                    CalculateSpecTotals();
+                    Recalculate();
                 }
             }
         }
@@ -515,7 +538,7 @@ namespace ProGlassAutomation.Models
                     }
                 }
                 Items.Clear();
-                CalculateSpecTotals();
+                Recalculate();
             }
         }
 
@@ -543,7 +566,7 @@ namespace ProGlassAutomation.Models
                 {
                     charge.PropertyChanged -= Charge_PropertyChanged;
                     OtherCharges.Remove(charge);
-                    CalculateOtherChargesTotal();
+                    Recalculate();
                 }
             }
         }
@@ -558,25 +581,17 @@ namespace ProGlassAutomation.Models
                         charge.PropertyChanged -= Charge_PropertyChanged;
                 }
                 OtherCharges.Clear();
-                CalculateOtherChargesTotal();
+                Recalculate();
             }
         }
 
-        // ==================== CALCULATE TOTALS ====================
-        public void CalculateTotals()
-        {
-            CalculateSpecTotals();
-            CalculateOtherChargesTotal();
-        }
-
-        // ==================== BULK OPERATIONS (PATCH 8) ====================
+        // ==================== BULK OPERATIONS ====================
         public void BeginBulkUpdate() => IsBulkUpdating = true;
 
         public void EndBulkUpdate()
         {
             IsBulkUpdating = false;
-            CalculateSpecTotals();
-            CalculateOtherChargesTotal();
+            Recalculate();
         }
 
         public IDisposable BulkUpdateScope()
@@ -600,7 +615,7 @@ namespace ProGlassAutomation.Models
             }
         }
 
-        // ==================== DEEP CLONE (PATCH 15) ====================
+        // ==================== DEEP CLONE ====================
         public SpecificationModel DeepClone()
         {
             if (Items == null) return new SpecificationModel();
@@ -627,7 +642,6 @@ namespace ProGlassAutomation.Models
                 SurchargePercent = SurchargePercent
             };
 
-            // Clone items
             foreach (var item in Items)
             {
                 if (item != null)
@@ -638,7 +652,6 @@ namespace ProGlassAutomation.Models
                 }
             }
 
-            // Clone other charges
             foreach (var charge in OtherCharges)
             {
                 if (charge != null)
@@ -648,12 +661,12 @@ namespace ProGlassAutomation.Models
                 }
             }
 
-            clone.CalculateTotals();
+            clone.Recalculate();
             clone.BindChargesToSpecs();
             return clone;
         }
 
-        // ==================== VALIDATION (PATCH 17) ====================
+        // ==================== VALIDATION ====================
         public ModelValidationResult Validate()
         {
             var result = new ModelValidationResult();
