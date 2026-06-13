@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
+using System.Threading;
 
 namespace ProGlassAutomation.Models
 {
@@ -27,7 +28,7 @@ namespace ProGlassAutomation.Models
         // ==================== THREAD SAFETY (PATCH 19) ====================
         private readonly object _threadLock = new object();
 
-        // ==================== DISPOSE METHOD (PATCH 18 - Memory Leak Fix) ====================
+        // ==================== DISPOSE METHOD (PATCH 18) ====================
         public void Dispose()
         {
             Dispose(true);
@@ -62,7 +63,7 @@ namespace ProGlassAutomation.Models
             }
         }
 
-        // ==================== PARENT SPECIFICATION REFERENCE (PATCH 10 + FIX) ====================
+        // ==================== PARENT SPECIFICATION REFERENCE (PATCH 10) ====================
         [JsonIgnore]
         private SpecificationModel? _specification;
         [JsonIgnore]
@@ -195,7 +196,7 @@ namespace ProGlassAutomation.Models
 
         public int RemainingQty => Qty - DeliveredQty;
 
-        // ==================== PRICE & CALCULATIONS (PATCH 19 Thread Safe) ====================
+        // ==================== PRICE (PATCH 19 Thread Safe) ====================
         private double _price = 0;
         public double Price
         {
@@ -283,7 +284,7 @@ namespace ProGlassAutomation.Models
         private string _glassType = "";
         public string GlassType { get => _glassType; set => SetProperty(ref _glassType, value); }
 
-        // ==================== RECALCULATE (PATCH 21 - Fixed SQM/LM to use only W1×H1) ====================
+        // ==================== RECALCULATE (PATCH 21 - Uses only W1×H1) ====================
         public void Recalculate()
         {
             if (_isBulkUpdating) return;
@@ -308,7 +309,6 @@ namespace ProGlassAutomation.Models
                 SQM2 = Math.Round(sqm2Val, 4);
 
                 // FIX PATCH 21: Use only W1×H1 (SQM1) for main TotalSQM
-                // W2/H2 is kept separately for Other Charges like sqm2
                 TotalSQM = Math.Round(SQM1 * q, 4);
 
                 // LM calculations - store both for Other Charges reference
@@ -318,7 +318,6 @@ namespace ProGlassAutomation.Models
                 LM2 = Math.Round(lm2Val, 4);
 
                 // FIX PATCH 21: Use only LM1 for main LM
-                // LM2 is kept separately for Other Charges like lm2
                 LM = LM1;
                 TotalLM = Math.Round(LM * q, 4);
 
@@ -326,7 +325,7 @@ namespace ProGlassAutomation.Models
                 double p = Price > 0 ? Price : 0;
                 double sp = SurchargePercent > 0 ? SurchargePercent : 0;
 
-                // Surcharge applies to per-item SQM (only W1×H1)
+                // PATCH 20: Surcharge applies to per-item SQM (only W1×H1, > 4 SQM)
                 double perItemSQM = SQM1;
 
                 double surcharge = 0;
@@ -356,22 +355,12 @@ namespace ProGlassAutomation.Models
         public void NotifySurchargeChanged()
         {
             Recalculate();
-
-            // Notify parent specification to update totals
             Specification?.CalculateTotals();
         }
 
         // ==================== BULK OPERATIONS (PATCH 8) ====================
-        public void BeginBulkUpdate()
-        {
-            IsBulkUpdating = true;
-        }
-
-        public void EndBulkUpdate()
-        {
-            IsBulkUpdating = false;
-            Recalculate();
-        }
+        public void BeginBulkUpdate() => IsBulkUpdating = true;
+        public void EndBulkUpdate() { IsBulkUpdating = false; Recalculate(); }
 
         public IDisposable BulkUpdateScope()
         {
@@ -437,31 +426,6 @@ namespace ProGlassAutomation.Models
                 GlassType = other.GlassType;
             }
         }
-
-        // ==================== VALIDATION (PATCH 17) ====================
-        public ValidationResult Validate()
-        {
-            var result = new ValidationResult();
-
-            if (Width1 <= 0)
-                result.AddError("Width1", "Width must be greater than 0");
-
-            if (Height1 <= 0)
-                result.AddError("Height1", "Height must be greater than 0");
-
-            if (Qty <= 0)
-                result.AddError("Qty", "Quantity must be greater than 0");
-
-            if (Price < 0)
-                result.AddError("Price", "Price cannot be negative");
-
-            if (SurchargePercent < 0)
-                result.AddError("SurchargePercent", "Surcharge cannot be negative");
-
-            return result;
-        }
-
-        public bool IsValid => Validate().IsValid;
 
         // ==================== GET VALUES FOR OTHER CHARGES (PATCH 13) ====================
         public double GetValueForChargeType(string chargeType)

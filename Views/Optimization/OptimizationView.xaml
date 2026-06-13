@@ -582,6 +582,20 @@
                             <TextBlock x:Name="txtCurrentSheet" Text="Run optimization to view layouts" FontSize="10" Foreground="#9CA3AF"/>
                         </StackPanel>
                         <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <!-- FIND CONTROLS -->
+                            <TextBlock Text="Find:" Foreground="#9CA3AF" VerticalAlignment="Center" Margin="0,0,5,0" FontSize="10"/>
+                            <TextBox x:Name="txtFindPart" Width="100" Background="#374151" Foreground="White" Padding="4,3" FontSize="10" Margin="0,0,4,0"
+                                    TextChanged="txtFindPart_TextChanged" KeyDown="txtFindPart_KeyDown"/>
+                            <Button Content="🔍" Click="btnFindNext_Click" Background="#F59E0B" Foreground="White" Padding="6,3" FontSize="10" Margin="0,0,10,0">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}" CornerRadius="3" Padding="{TemplateBinding Padding}">
+                                            <ContentPresenter HorizontalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                            <!-- EXISTING ZOOM CONTROLS -->
                             <Button Content="−" Click="ZoomOut_Click" Background="#374151" Foreground="White" Padding="8,4" Margin="0,0,5,0">
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">

@@ -12,10 +12,12 @@ namespace ProGlassAutomation.Models
     /// Contains the glass configuration (SGU/DGU/LAM) and line items.
     /// </summary>
     /// <remarks>
-    /// PATCH 6: Added IDisposable for proper cleanup
-    /// PATCH 8: Added BulkUpdateScope for batch operations
+    /// PATCH 6: Added IDisposable
+    /// PATCH 8: Added BulkUpdateScope
+    /// PATCH 15: Added DeepClone
+    /// PATCH 17: Added Validate
     /// PATCH 18: Added thread-safe calculations
-    /// PATCH 19: Added thread lock for concurrent access
+    /// PATCH 19: Added thread lock
     /// </remarks>
     public class SpecificationModel : INotifyPropertyChanged, IDisposable
     {
@@ -152,9 +154,7 @@ namespace ProGlassAutomation.Models
                 e.PropertyName == nameof(InvoiceItemModel.Qty) ||
                 e.PropertyName == nameof(InvoiceItemModel.DisplayPrice) ||
                 e.PropertyName == nameof(InvoiceItemModel.FinalPrice) ||
-                // 🔴 ADDED: Catch surcharge changes
-                e.PropertyName == nameof(InvoiceItemModel.SurchargePercent) ||
-                e.PropertyName == nameof(InvoiceItemModel.SurchargeAmount))
+                e.PropertyName == nameof(InvoiceItemModel.SurchargePercent))
             {
                 CalculateSpecTotals();
             }
@@ -285,12 +285,11 @@ namespace ProGlassAutomation.Models
 
         public double SpecTotalPriceWithOtherCharges => Math.Round(SpecTotalPrice + OtherChargesTotal, 2);
 
-        // ==================== CALCULATE OTHER CHARGES TOTAL (PATCH 19 Thread Safe) ====================
+        // ==================== CALCULATE OTHER CHARGES TOTAL (PATCH 19) ====================
         public void CalculateOtherChargesTotal()
         {
             if (IsBulkUpdating) return;
 
-            // Thread-safe calculation (PATCH 19)
             lock (_threadLock)
             {
                 double total = OtherCharges.Sum(c => c?.Amount ?? 0);
@@ -351,7 +350,7 @@ namespace ProGlassAutomation.Models
         {
             foreach (var item in Items)
             {
-                item.SurchargePercent = _surchargePercent;  // Sync value to all items
+                item.SurchargePercent = _surchargePercent;
                 item.NotifySurchargeChanged();
             }
             CalculateSpecTotals();
@@ -384,12 +383,11 @@ namespace ProGlassAutomation.Models
         private double _specTotalPrice = 0;
         public double SpecTotalPrice { get => _specTotalPrice; private set { if (_specTotalPrice != value) { _specTotalPrice = value; OnPropertyChanged(); OnPropertyChanged(nameof(SpecTotalPriceWithOtherCharges)); } } }
 
-        // ==================== CALCULATE SPEC TOTALS (PATCH 19 Thread Safe) ====================
+        // ==================== CALCULATE SPEC TOTALS (PATCH 19) ====================
         public void CalculateSpecTotals()
         {
             if (IsBulkUpdating) return;
 
-            // Prevent concurrent calculations (PATCH 19)
             lock (_threadLock)
             {
                 if (_isCalculating) return;
@@ -427,7 +425,7 @@ namespace ProGlassAutomation.Models
 
                 OnPropertyChanged(nameof(Items));
 
-                // 🔴 Notify parent Invoice to recalculate (for surcharge changes)
+                // Notify parent Invoice to recalculate
                 Invoice?.CalculateTotals();
             }
             finally
@@ -436,7 +434,7 @@ namespace ProGlassAutomation.Models
             }
         }
 
-        // ==================== RENUMBER ITEMS (PATCH 9) ====================
+        // ==================== RENUMBER ITEMS ====================
         public void RenumberItems()
         {
             int srNo = 1;
@@ -462,7 +460,7 @@ namespace ProGlassAutomation.Models
             }
         }
 
-        // ==================== ADD ITEM METHOD (PATCH 19 Thread Safe) ====================
+        // ==================== ADD/REMOVE ITEM (PATCH 19) ====================
         public InvoiceItemModel AddItem(int nextSrNo)
         {
             lock (_threadLock)
@@ -477,7 +475,6 @@ namespace ProGlassAutomation.Models
             }
         }
 
-        // ==================== REMOVE ITEM METHOD (PATCH 19 Thread Safe) ====================
         public void RemoveItem(InvoiceItemModel item)
         {
             lock (_threadLock)
@@ -491,7 +488,6 @@ namespace ProGlassAutomation.Models
             }
         }
 
-        // ==================== CLEAR ALL ITEMS (PATCH 6) ====================
         public void ClearAllItems()
         {
             lock (_threadLock)
@@ -538,7 +534,6 @@ namespace ProGlassAutomation.Models
             }
         }
 
-        // ==================== CLEAR ALL CHARGES (PATCH 6) ====================
         public void ClearAllCharges()
         {
             lock (_threadLock)
@@ -561,10 +556,7 @@ namespace ProGlassAutomation.Models
         }
 
         // ==================== BULK OPERATIONS (PATCH 8) ====================
-        public void BeginBulkUpdate()
-        {
-            IsBulkUpdating = true;
-        }
+        public void BeginBulkUpdate() => IsBulkUpdating = true;
 
         public void EndBulkUpdate()
         {
@@ -645,9 +637,9 @@ namespace ProGlassAutomation.Models
         }
 
         // ==================== VALIDATION (PATCH 17) ====================
-        public ValidationResult Validate()
+        public ModelValidationResult Validate()
         {
-            var result = new ValidationResult();
+            var result = new ModelValidationResult();
 
             if (string.IsNullOrWhiteSpace(SpecificationName))
                 result.AddError("SpecificationName", "Specification name is required");

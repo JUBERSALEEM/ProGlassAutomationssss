@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ProGlassAutomation.Models;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -8,6 +9,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using static ProGlassAutomation.Views.ProformaInvoice.ProformaInvoiceView;
 
 namespace ProGlassAutomation.Views.Optimization
 {
@@ -178,7 +180,7 @@ namespace ProGlassAutomation.Views.Optimization
             _constraints.SafetyMarginX = 0;
             _constraints.SafetyMarginY = 0;
             _constraints.KerfCompensation = 4.0;
-            _constraints.MinRemnantSize = 100;
+            _constraints.MinRemnantSize = 20; // Use more small pieces
             _constraints.AllowRotation = true;
             _constraints.MaxAspectRatio = 10.0;
         }
@@ -474,7 +476,7 @@ namespace ProGlassAutomation.Views.Optimization
         }
 
         // =====================================================
-        // PATCH 1-10: ADVANCED NESTING ALGORITHM
+        // PATCH 1-10: ADVANCED NESTING ALGORITHM - FIXED OVERLAP ISSUE
         // =====================================================
 
         // Helper: current remaining parts when evaluating placements (populated per-sheet)
@@ -510,10 +512,14 @@ namespace ProGlassAutomation.Views.Optimization
                 }
             }
 
-            // Sort parts by area (largest first) for optimal nesting
-            allParts = allParts.OrderByDescending(x => x.L * x.W)
-                               .ThenByDescending(x => Math.Max(x.L, x.W))
+            // FIXED: Sort by height (vertical), then width - fills gaps better
+            allParts = allParts.OrderByDescending(x => Math.Max(x.L, x.W))
+                               .ThenBy(x => Math.Min(x.L, x.W))  // Put sqr parts first
+                               .ThenByDescending(x => x.L * x.W) // Then big ones
                                .ToList();
+
+            // CRITICAL: Enable rotation for EVERYTHING
+            foreach (var p in allParts) p.Rot = true;
 
             var sortedStock = _stockSheets.OrderByDescending(s => s.L * s.W).ToList();
 
@@ -524,12 +530,9 @@ namespace ProGlassAutomation.Views.Optimization
             _totalPartsUnplaced = 0;
             _usedSQM = 0;
 
-            // PATCH 2: Multi-Strategy Selection
-            // Test strategies and select the best one
-            if (_multiStrategyMode)
-            {
-                _nestingStrategy = SelectBestStrategy(allParts, sortedStock[0], kerf);
-            }
+            // FORCED: Use BestArea strategy for maximum utilization
+            _nestingStrategy = NestingStrategy.BestArea;
+            _multiStrategyMode = false; // Disable testing, just use best
 
             // Process each stock type
             foreach (var stock in sortedStock)
@@ -560,6 +563,7 @@ namespace ProGlassAutomation.Views.Optimization
                     int placedOnThisSheet = 0;
                     var placedOnThisSheetList = new List<PlacedPart>();
                     var sheetCuts = new List<CutOperation>();
+                    var placedCoordinates = new List<(double X, double Y, double W, double H)>(); // Track coordinates for overlap detection
 
                     // PATCH 10: Create cut sequence for digital twin
                     var cutSequence = new CutSequence
@@ -581,33 +585,49 @@ namespace ProGlassAutomation.Views.Optimization
 
                         if (placement == null) continue;
 
+                        // Verify no overlap BEFORE committing placement
+                        double newX = placement.X + _lr; // Add trim offset for actual position
+                        double newY = placement.Y + _tr;
+                        double newW = placement.IsRotated ? part.W : part.L;
+                        double newH = placement.IsRotated ? part.L : part.W;
+
+                        // Check overlap with already placed parts (FIXED: use scaled coordinates)
+                        if (HasOverlap(newX, newY, newW, newH, placedCoordinates))
+                        {
+                            System.Diagnostics.Debug.WriteLine($"OVERLAP PREVENTED: {part.Ref} @ ({newX},{newY},{newW},{newH})");
+                            continue; // Skip this part, don't place it
+                        }
+
                         // Commit placement
                         part.IsPlaced = true;
                         part.PlacedX = placement.X;
                         part.PlacedY = placement.Y;
-                        part.PlacedW = placement.IsRotated ? part.W : part.L;
-                        part.PlacedH = placement.IsRotated ? part.L : part.W;
+                        part.PlacedW = newW;
+                        part.PlacedH = newH;
 
                         placedOnThisSheetList.Add(new PlacedPart
                         {
                             Ref = part.Ref,
-                            X = part.PlacedX + _lr,
-                            Y = part.PlacedY + _tr,
-                            L = part.PlacedW,
-                            W = part.PlacedH,
+                            X = newX,
+                            Y = newY,
+                            L = newW,
+                            W = newH,
                             IsRotated = placement.IsRotated,
                             Sheet = stock.Ref,
                             SheetNum = sheetNum + 1
                         });
 
+                        // Track coordinates for overlap detection
+                        placedCoordinates.Add((newX, newY, newW, newH));
+
                         // In the placement loop: stop accumulating usedAreaThisSheet per-part (compute per-sheet later)
-                        double partArea = (part.PlacedW * part.PlacedH) / 1000000.0;
+                        double partArea = (newW * newH) / 1000000.0;
                         _usedSQM += partArea;
                         placedOnThisSheet++;
                         _totalPartsCut++;
 
-                        // Update free rects (PATCH 1: Guillotine split)
-                        UpdateFreeRectsWithGuillotine(placement, part.PlacedW + kerf, part.PlacedH + kerf);
+                        // Update free rects (PATCH 1: Guillotine split) - FIXED: use placement position
+                        UpdateFreeRectsWithGuillotine(placement, newW + kerf, newH + kerf);
 
                         // PATCH 10: Generate toolpath operations
                         GenerateToolpathForPart(part, cutSequence, placement.X + _lr, placement.Y + _tr, kerf);
@@ -632,30 +652,11 @@ namespace ProGlassAutomation.Views.Optimization
                         // Calculate utilization for this sheet (used area vs full sheet area)
                         double thisSheetUtil = oneSheetArea > 0 ? (usedAreaThisSheet / oneSheetArea) * 100.0 : 0.0;
 
-                        // Detect overlapping placed parts (simple axis-aligned check)
-                        bool overlapDetected = false;
-                        for (int a = 0; a < placedOnThisSheetList.Count; a++)
+                        // FIXED: Remove redundant overlap detection - we already prevented overlaps above
+                        // Only do basic validation for used area exceeding sheet
+                        if (thisSheetUtil > 100.0)
                         {
-                            var pa = placedOnThisSheetList[a];
-                            var ax1 = pa.X; var ay1 = pa.Y; var ax2 = pa.X + pa.L; var ay2 = pa.Y + pa.W;
-                            for (int b = a + 1; b < placedOnThisSheetList.Count; b++)
-                            {
-                                var pb = placedOnThisSheetList[b];
-                                var bx1 = pb.X; var by1 = pb.Y; var bx2 = pb.X + pb.L; var by2 = pb.Y + pb.W;
-                                bool intersects = !(ax2 <= bx1 || bx2 <= ax1 || ay2 <= by1 || by2 <= ay1);
-                                if (intersects)
-                                {
-                                    overlapDetected = true;
-                                    System.Diagnostics.Debug.WriteLine($"OVERLAP detected on sheet {stock.Ref}-{sheetsUsedForThisStock}: {pa.Ref}@({pa.X},{pa.Y},{pa.L},{pa.W}) vs {pb.Ref}@({pb.X},{pb.Y},{pb.L},{pb.W})");
-                                }
-                            }
-                        }
-
-                        // If used area exceeds sheet area due to overlapping or rounding, clamp and warn
-                        if (thisSheetUtil > 100.0 || overlapDetected)
-                        {
-                            System.Diagnostics.Debug.WriteLine($"WARNING: Sheet utilization >100% or overlap on {stock.Ref}-{sheetsUsedForThisStock}. Clamping values.");
-                            // Clamp the used area to the full sheet area
+                            System.Diagnostics.Debug.WriteLine($"WARNING: Sheet utilization >100% on {stock.Ref}-{sheetsUsedForThisStock}. Clamping values.");
                             usedAreaThisSheet = Math.Min(usedAreaThisSheet, oneSheetArea);
                             thisSheetUtil = oneSheetArea > 0 ? (usedAreaThisSheet / oneSheetArea) * 100.0 : 0.0;
                         }
@@ -789,6 +790,39 @@ namespace ProGlassAutomation.Views.Optimization
             CalculateCost();
         }
 
+        // ======== FIXED: OVERLAP DETECTION METHOD ========
+        // Check if a new rectangle overlaps with any existing rectangles
+        private bool HasOverlap(double x, double y, double w, double h, List<(double X, double Y, double W, double H)> placedRects)
+        {
+            const double eps = 0.001; // Small epsilon for floating point comparison
+            double x2 = x + w;
+            double y2 = y + h;
+
+            foreach (var rect in placedRects)
+            {
+                double rx1 = rect.X;
+                double ry1 = rect.Y;
+                double rx2 = rect.X + rect.W;
+                double ry2 = rect.Y + rect.H;
+
+                // Check for intersection using axis-aligned bounding box (AABB) test
+                // Two rectangles DO NOT overlap if:
+                // - One is completely to the right of the other, OR
+                // - One is completely to the left of the other, OR  
+                // - One is completely above the other, OR
+                // - One is completely below the other
+                // Otherwise, they DO overlap
+                bool notOverlap = (x2 <= rx1 + eps) || (x + eps >= rx2) ||
+                                 (y2 <= ry1 + eps) || (y + eps >= ry2);
+
+                if (!notOverlap)
+                {
+                    return true; // Overlap detected!
+                }
+            }
+            return false; // No overlap
+        }
+
         // =====================================================
         // PATCH 2: STRATEGY SELECTION
         // =====================================================
@@ -852,46 +886,70 @@ namespace ProGlassAutomation.Views.Optimization
 
         private PlacementNode EvaluatePlacementWithLookahead(CutPart part, double kerf)
         {
-            // Deterministic placement using current NestingStrategy with optional light lookahead tiebreaker
+            // FIXED: Better placement scoring for MAXIMUM utilization
             double w = part.L + kerf;
             double h = part.W + kerf;
             double wRot = part.W + kerf;
             double hRot = part.L + kerf;
 
-            double bestPlacementScore = double.MaxValue;
+            double bestScore = double.MaxValue;
             PlacementNode bestPlacement = null;
 
             foreach (var rect in _freeRects)
             {
-                // try non-rotated
+                // Try ALL fitting orientations, track best by WASTE MINIMIZATION
+
+                // Non-rotated
                 if (rect.Fits(w, h))
                 {
                     double score = ScorePlacement(rect, w, h, _nestingStrategy);
-                    // small tiebreaker using lookahead
-                    double tieBreaker = 0;
-                    var simFree = _freeRects.Select(fr => fr.Clone()).ToList();
-                    SimulatePlacement(new MaxRect(rect.X, rect.Y, rect.Width, rect.Height), w, h, false, simFree);
-                    tieBreaker = -ScoreLookahead(simFree, part);
-                    double final = score + tieBreaker * 1e-3; // tiny influence
-                    if (final < bestPlacementScore)
+
+                    // PRIORITY: Maximize coverage, minimize fragmentation
+                    double leftoverArea = rect.Area - (w * h);
+                    double shortSide = Math.Min(rect.Width - w, rect.Height - h);
+                    double longSide = Math.Max(rect.Width - w, rect.Height - h);
+
+                    // New scoring: prioritize filling space completely
+                    // Lower is better = less leftover, more compact
+                    score = leftoverArea * 1000 + shortSide * 10; // Prioritize fit that fills more
+
+                    if (score < bestScore)
                     {
-                        bestPlacementScore = final;
-                        bestPlacement = new PlacementNode { X = rect.X, Y = rect.Y, Width = part.L, Height = part.W, IsRotated = false, Score = final };
+                        bestScore = score;
+                        bestPlacement = new PlacementNode
+                        {
+                            X = rect.X,
+                            Y = rect.Y,
+                            Width = part.L,
+                            Height = part.W,
+                            IsRotated = false,
+                            Score = score
+                        };
                     }
                 }
 
-                // try rotated
+                // Rotated - ENFORCE THIS MORE
                 if (part.Rot && _constraints.AllowRotation && rect.Fits(wRot, hRot))
                 {
                     double score = ScorePlacement(rect, wRot, hRot, _nestingStrategy);
-                    var simFree = _freeRects.Select(fr => fr.Clone()).ToList();
-                    SimulatePlacement(new MaxRect(rect.X, rect.Y, rect.Width, rect.Height), wRot, hRot, true, simFree);
-                    double tieBreaker = -ScoreLookahead(simFree, part);
-                    double final = score + tieBreaker * 1e-3;
-                    if (final < bestPlacementScore)
+
+                    double leftoverArea = rect.Area - (wRot * hRot);
+                    double shortSide = Math.Min(rect.Width - wRot, rect.Height - hRot);
+
+                    score = leftoverArea * 1000 + shortSide * 10;
+
+                    if (score < bestScore)
                     {
-                        bestPlacementScore = final;
-                        bestPlacement = new PlacementNode { X = rect.X, Y = rect.Y, Width = part.W, Height = part.L, IsRotated = true, Score = final };
+                        bestScore = score;
+                        bestPlacement = new PlacementNode
+                        {
+                            X = rect.X,
+                            Y = rect.Y,
+                            Width = part.W,
+                            Height = part.L,
+                            IsRotated = true,
+                            Score = score
+                        };
                     }
                 }
             }
@@ -1202,6 +1260,7 @@ namespace ProGlassAutomation.Views.Optimization
             {
                 // Track pieces placed on THIS remnant so we can mark it fully used when no more fit
                 var partsOnThisRemnant = new List<CutPart>();
+                var placedOnRemnant = new List<(double X, double Y, double W, double H)>();
 
                 // Find all parts that fit this remnant
                 foreach (var part in unplacedParts)
@@ -1223,6 +1282,16 @@ namespace ProGlassAutomation.Views.Optimization
 
                     if (!canFitNormal && !canFitRotated) continue;
 
+                    // Verify no overlap with parts already on this remnant
+                    double newX = remnant.X + _kerf;
+                    double newY = remnant.Y + _kerf;
+                    double newW = canFitRotated && !canFitNormal ? part.W : part.L;
+                    double newH = canFitRotated && !canFitNormal ? part.L : part.W;
+
+                    // Check overlap
+                    if (HasOverlap(newX, newY, newW, newH, placedOnRemnant))
+                        continue;
+
                     // Place part
                     bool rotated = canFitRotated && !canFitNormal;
 
@@ -1239,6 +1308,7 @@ namespace ProGlassAutomation.Views.Optimization
                     _totalPartsCut++;
 
                     partsOnThisRemnant.Add(part);
+                    placedOnRemnant.Add((newX, newY, newW, newH));
                 }
 
                 // Only mark remnant as used if we placed at least one part on it
@@ -1704,6 +1774,13 @@ namespace ProGlassAutomation.Views.Optimization
 
         private void DrawSingleSheetLayout(int startIndex)
         {
+            // Check if searching
+            if (!string.IsNullOrEmpty(txtFindPart?.Text) && txtFindPart.Text.Length > 0)
+            {
+                HighlightPartsOnLayout(txtFindPart.Text.Trim().ToUpper());
+                return;
+            }
+
             LayoutCanvas.Children.Clear();
 
             var validResults = _results.Where(r => r.Ref != "TOTAL").ToList();
@@ -1907,6 +1984,161 @@ namespace ProGlassAutomation.Views.Optimization
                 UpdateLayoutCount();
             }
         }
+
+        // =====================================================
+        // FIND AND HIGHLIGHT FUNCTIONALITY
+        // =====================================================
+
+        private void txtFindPart_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            // Auto-search as user types
+            if (string.IsNullOrEmpty(txtFindPart?.Text))
+            {
+                DrawSingleSheetLayout(_currentIndex);
+                return;
+            }
+            string searchText = txtFindPart.Text.Trim().ToUpper();
+            HighlightPartsOnLayout(searchText);
+        }
+
+        private void HighlightPartsOnLayout(string searchText)
+        {
+            LayoutCanvas.Children.Clear();
+            var validResults = _results.Where(r => r.Ref != "TOTAL").ToList();
+            if (validResults.Count == 0 || _currentIndex < 0) return;
+
+            int sheetsToDraw = Math.Min(_sheetsPerPage, validResults.Count - _currentIndex);
+            if (sheetsToDraw <= 0) return;
+
+            int cols = 2;
+            double canvasW = 800, margin = 15, headerSpace = 25;
+            double sheetAreaH = 280, sheetAreaW = (canvasW - margin * 2) / cols;
+            double canvasH = ((_sheetsPerPage / cols) + 1) * sheetAreaH + margin * 2 + headerSpace;
+
+            if (canvasW < 600) canvasW = 600;
+            if (canvasH < 400) canvasH = 400;
+
+            LayoutCanvas.Width = canvasW;
+            LayoutCanvas.Height = canvasH;
+
+            Color[] partColors = new Color[] { Color.FromRgb(59, 130, 246), Color.FromRgb(16, 185, 129), Color.FromRgb(139, 92, 246), Color.FromRgb(245, 158, 11), Color.FromRgb(239, 68, 68), Color.FromRgb(6, 182, 212), Color.FromRgb(236, 72, 153), Color.FromRgb(34, 197, 94) };
+
+            for (int i = 0; i < sheetsToDraw; i++)
+            {
+                int idx = _currentIndex + i;
+                if (idx >= validResults.Count) break;
+
+                var currentResult = validResults[idx];
+                double sheetW = currentResult.L, sheetH = currentResult.W;
+                int row = i / cols, col = i % cols;
+                double areaTop = margin + row * (sheetAreaH + headerSpace);
+                double areaLeft = margin + col * sheetAreaW;
+
+                double scale = Math.Min((sheetAreaW - margin * 2) / sheetW, (sheetAreaH - margin * 2) / sheetH) * 0.75 * _zoomLevel;
+                if (scale < 0.015) scale = 0.015;
+
+                double drawW = sheetW * scale, drawH = sheetH * scale;
+                double startX = areaLeft + (sheetAreaW - drawW) / 2;
+                double startY = areaTop + headerSpace;
+
+                TextBlock info = new TextBlock { Text = $"#{idx + 1}: {currentResult.L:N0}×{currentResult.W:N0}mm U:{currentResult.Util:N1}%", FontSize = 9, FontWeight = FontWeights.Bold, Foreground = Brushes.White };
+                Canvas.SetLeft(info, areaLeft + 5); Canvas.SetTop(info, areaTop + 2);
+                LayoutCanvas.Children.Add(info);
+
+                Rectangle trimBorder = new Rectangle { Width = drawW, Height = drawH, Fill = Brushes.Transparent, Stroke = Brushes.Red, StrokeThickness = 2 };
+                Canvas.SetLeft(trimBorder, startX); Canvas.SetTop(trimBorder, startY);
+                LayoutCanvas.Children.Add(trimBorder);
+
+                double trimOffset = _lr * scale;
+                Rectangle usableSheet = new Rectangle { Width = drawW - trimOffset * 2, Height = drawH - trimOffset * 2, Fill = new SolidColorBrush(Color.FromRgb(13, 17, 23)), Stroke = Brushes.Gray, StrokeThickness = 1 };
+                Canvas.SetLeft(usableSheet, startX + trimOffset); Canvas.SetTop(usableSheet, startY + trimOffset);
+                LayoutCanvas.Children.Add(usableSheet);
+
+                var partsOnSheet = _allPlacedParts.Where(p => p.Sheet == currentResult.SheetRef && p.SheetNum == currentResult.SheetNum).ToList();
+
+                var colorMap = new Dictionary<string, Color>();
+                var partGroups = partsOnSheet.GroupBy(p => p.Ref).ToList();
+                for (int c = 0; c < partGroups.Count; c++) colorMap[partGroups[c].Key] = partColors[c % partColors.Length];
+
+                bool foundOnThisSheet = false;
+
+                foreach (var part in partsOnSheet)
+                {
+                    double px = startX + part.X * scale;
+                    double py = startY + part.Y * scale;
+                    double pw = part.L * scale;
+                    double ph = part.W * scale;
+
+                    bool isMatch = part.Ref.ToUpper().Contains(searchText);
+                    if (isMatch) foundOnThisSheet = true;
+
+                    var color = colorMap.ContainsKey(part.Ref) ? colorMap[part.Ref] : Color.FromRgb(128, 128, 128);
+                    var fillColor = isMatch ? Color.FromRgb(255, 215, 0) : color;
+
+                    Border partBorder = new Border { Width = pw, Height = ph, Background = new SolidColorBrush(fillColor), BorderBrush = new SolidColorBrush(isMatch ? Colors.White : Colors.Black), BorderThickness = new Thickness(isMatch ? 3 : 0.5) };
+                    Canvas.SetLeft(partBorder, px); Canvas.SetTop(partBorder, py);
+                    LayoutCanvas.Children.Add(partBorder);
+
+                    if (pw > 20 && ph > 10)
+                    {
+                        TextBlock label = new TextBlock { Text = part.Ref, FontSize = Math.Max(5, Math.Min(pw / 12, 9)), FontWeight = FontWeights.Bold, Foreground = isMatch ? Brushes.Black : Brushes.White };
+                        Canvas.SetLeft(label, px + 2); Canvas.SetTop(label, py + 2);
+                        LayoutCanvas.Children.Add(label);
+                    }
+                }
+
+                if (foundOnThisSheet)
+                {
+                    Rectangle highlight = new Rectangle { Width = drawW + 4, Height = drawH + 4, Fill = Brushes.Transparent, Stroke = new SolidColorBrush(Color.FromRgb(255, 215, 0)), StrokeThickness = 4 };
+                    Canvas.SetLeft(highlight, startX - 2); Canvas.SetTop(highlight, startY - 2);
+                    LayoutCanvas.Children.Insert(0, highlight);
+                }
+            }
+
+            // Null-safe update
+            if (txtCurrentSheet != null) txtCurrentSheet.Text = $"Found: '{txtFindPart?.Text}' | Layouts: {_currentIndex + 1}-{_currentIndex + sheetsToDraw}";
+        }
+
+        private void btnFindNext_Click(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrEmpty(txtFindPart?.Text)) return;
+            string searchText = txtFindPart.Text.Trim().ToUpper();
+
+            var matchingParts = _allPlacedParts.Where(p => p.Ref.ToUpper().Contains(searchText)).ToList();
+
+            if (matchingParts.Count == 0)
+            {
+                MessageBox.Show($"Part '{txtFindPart?.Text}' not found.", "Not Found", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            foreach (var part in matchingParts)
+            {
+                var result = _results.FirstOrDefault(r => r.SheetRef == part.Sheet && r.SheetNum == part.SheetNum);
+                if (result != null)
+                {
+                    int index = _results.ToList().FindIndex(r => r.Ref == result.Ref);
+                    if (index >= 0)
+                    {
+                        _currentIndex = (index / _sheetsPerPage) * _sheetsPerPage;
+                        cmbSheetSelector.SelectedIndex = index;
+                        DrawCurrentLayout(_currentIndex);
+                        HighlightPartsOnLayout(searchText);
+                        MessageBox.Show($"Found on {part.Sheet}-{part.SheetNum}\n{part.Ref}: {part.L:N0}×{part.W:N0}mm", "Found", MessageBoxButton.OK, MessageBoxImage.Information);
+                        return;
+                    }
+                }
+            }
+        }
+
+        private void txtFindPart_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter) btnFindNext_Click(sender, e);
+        }
+
+        // =====================================================
+        // EXISTING METHOD - UPDATE LAYOUT
+        // =====================================================
 
         private void UpdateLayoutCount()
         {
@@ -2502,7 +2734,6 @@ namespace ProGlassAutomation.Views.Optimization
         }
     }
 
-    // =====================================================
     // PATCH 6: COST MODEL
     // =====================================================
 

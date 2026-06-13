@@ -64,6 +64,10 @@ namespace ProGlassAutomation.ViewModels
         private static readonly object _invoiceLock = new object();
         private static int _lastGeneratedNumber;
 
+        // PATCH 29: Status message queue for batching
+        private readonly Queue<string> _statusMessageQueue = new();
+        private bool _isProcessingStatusQueue = false;
+
         private static readonly JsonSerializerSettings _jsonSettings = new JsonSerializerSettings
         {
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
@@ -89,7 +93,7 @@ namespace ProGlassAutomation.ViewModels
 
         public ProformaInvoiceViewModel()
         {
-            _excelCsvService.StatusChanged += status => Application.Current?.Dispatcher.Invoke(() => StatusMessage = status);
+            _excelCsvService.StatusChanged += status => EnqueueStatus(status);
             InitializeCommands();
             LoadSavedFiles();
             CreateNewInvoice();
@@ -98,32 +102,57 @@ namespace ProGlassAutomation.ViewModels
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = null) { if (Equals(field, value)) return false; field = value; OnPropertyChanged(propertyName); return true; }
 
+        // PATCH 29: Status message queue
+        private void EnqueueStatus(string message)
+        {
+            lock (_statusMessageQueue)
+            {
+                _statusMessageQueue.Enqueue(message);
+            }
+            ProcessStatusQueue();
+        }
+
+        private async void ProcessStatusQueue()
+        {
+            if (_isProcessingStatusQueue) return;
+            _isProcessingStatusQueue = true;
+
+            try
+            {
+                while (_statusMessageQueue.Count > 0)
+                {
+                    lock (_statusMessageQueue)
+                    {
+                        if (_statusMessageQueue.Count > 0)
+                            _statusMessage = _statusMessageQueue.Dequeue();
+                    }
+                    OnPropertyChanged(nameof(StatusMessage));
+                    await Task.Delay(50);
+                }
+            }
+            finally
+            {
+                _isProcessingStatusQueue = false;
+            }
+        }
+
         private void OnInvoicePropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(ProformaInvoiceModel.IsDirty))
                 OnPropertyChanged(nameof(HasUnsavedChanges));
 
-            if (e.PropertyName == nameof(SpecificationModel.SpecTotalSQM) ||
-                e.PropertyName == nameof(SpecificationModel.SpecTotalQty) ||
-                e.PropertyName == nameof(SpecificationModel.SpecTotalSQM1) ||
-                e.PropertyName == nameof(SpecificationModel.SpecTotalSQM2))
-            {
-                OnPropertyChanged(nameof(SpecTotalLM1));
-                OnPropertyChanged(nameof(SpecTotalLM2));
-            }
-
-            // Notify all total properties when any total-related property changes
-            if (e.PropertyName == nameof(ProformaInvoiceModel.GrandTotal) ||
-                e.PropertyName == nameof(ProformaInvoiceModel.VatAmount) ||
-                e.PropertyName == nameof(ProformaInvoiceModel.NetTotal) ||
-                e.PropertyName == nameof(ProformaInvoiceModel.OtherChargesTotal) ||
-                e.PropertyName == nameof(ProformaInvoiceModel.TotalSQM) ||
-                e.PropertyName == nameof(ProformaInvoiceModel.TotalQty) ||
-                e.PropertyName == nameof(ProformaInvoiceModel.TotalSQM1) ||
-                e.PropertyName == nameof(ProformaInvoiceModel.TotalSQM2) ||
-                e.PropertyName == nameof(ProformaInvoiceModel.TotalLM) ||
-                e.PropertyName == nameof(ProformaInvoiceModel.TotalLM1) ||
-                e.PropertyName == nameof(ProformaInvoiceModel.TotalLM2))
+            string propName = e.PropertyName;
+            if (propName == nameof(ProformaInvoiceModel.GrandTotal) ||
+                propName == nameof(ProformaInvoiceModel.VatAmount) ||
+                propName == nameof(ProformaInvoiceModel.NetTotal) ||
+                propName == nameof(ProformaInvoiceModel.OtherChargesTotal) ||
+                propName == nameof(ProformaInvoiceModel.TotalSQM) ||
+                propName == nameof(ProformaInvoiceModel.TotalQty) ||
+                propName == nameof(ProformaInvoiceModel.TotalSQM1) ||
+                propName == nameof(ProformaInvoiceModel.TotalSQM2) ||
+                propName == nameof(ProformaInvoiceModel.TotalLM) ||
+                propName == nameof(ProformaInvoiceModel.TotalLM1) ||
+                propName == nameof(ProformaInvoiceModel.TotalLM2))
             {
                 OnPropertyChanged(nameof(InvoiceGrandTotal));
                 OnPropertyChanged(nameof(InvoiceVatAmount));
@@ -182,7 +211,6 @@ namespace ProGlassAutomation.ViewModels
         public string CompanyName { get; set; } = "PROGLASS AUTOMATION";
 
         // ==================== JOB ORDER CONVERSION (PATCH 1) ====================
-
         private bool _isJobOrder;
         public bool IsJobOrder
         {
@@ -213,11 +241,7 @@ namespace ProGlassAutomation.ViewModels
         public bool IsNetTotalSectionVisible => !IsJobOrder;
 
         private JobOrderViewModel _jobOrderVM;
-        public JobOrderViewModel JobOrderVM
-        {
-            get => _jobOrderVM;
-            set => SetProperty(ref _jobOrderVM, value);
-        }
+        public JobOrderViewModel JobOrderVM { get => _jobOrderVM; set => SetProperty(ref _jobOrderVM, value); }
 
         public string CompanyTRN { get; set; } = "100458979400003";
         public string CompanyLocation { get; set; } = "Dubai, UAE";
@@ -225,34 +249,11 @@ namespace ProGlassAutomation.ViewModels
 
         // ==================== FILE PANEL ====================
         private bool _isFilePanelOpen;
-        public bool IsFilePanelOpen
-        {
-            get => _isFilePanelOpen;
-            set
-            {
-                if (SetProperty(ref _isFilePanelOpen, value))
-                {
-                    OnPropertyChanged(nameof(IsFilePanelOpen));
-                }
-            }
-        }
+        public bool IsFilePanelOpen { get => _isFilePanelOpen; set => SetProperty(ref _isFilePanelOpen, value); }
 
         // ==================== OPTIMIZATION PANEL ====================
         private bool _isOptimizationPanelOpen;
-        public bool IsOptimizationPanelOpen
-        {
-            get => _isOptimizationPanelOpen;
-            set
-            {
-                if (SetProperty(ref _isOptimizationPanelOpen, value))
-                {
-                    OnPropertyChanged(nameof(IsOptimizationPanelOpen));
-                }
-            }
-        }
-
-        // ==================== SUMMARY PANEL ====================
-        // Remove No Need Separate Invoice Summary Already Have In MainViewModel //
+        public bool IsOptimizationPanelOpen { get => _isOptimizationPanelOpen; set => SetProperty(ref _isOptimizationPanelOpen, value); }
 
         // ==================== MODULE SELECTION (SGU/DGU/LAM) ====================
         private bool _isSGUSelected = true;
@@ -335,17 +336,17 @@ namespace ProGlassAutomation.ViewModels
             new() { Value = "2h2", Label = "2×H2" }
         };
         public ObservableCollection<ChargeTypeOption> ChargeTypeOptions { get; } = new()
-{
-    new() { Value = "lm", Label = "LM (W1+H1)" },
-    new() { Value = "lm1", Label = "LM1 (W1+H1)" },
-    new() { Value = "lm2", Label = "LM2 (W2+H2)" },
-    new() { Value = "sqm", Label = "SQM (W1+H1)" },
-    new() { Value = "sqm1", Label = "SQM1 (W1+H1)" },
-    new() { Value = "sqm2", Label = "SQM2 (W2+H2)" },
-    new() { Value = "qty", Label = "QTY" },
-    new() { Value = "1x", Label = "1X" },
-    new() { Value = "2x", Label = "2X" }
-};
+        {
+            new() { Value = "lm", Label = "LM (W1+H1)" },
+            new() { Value = "lm1", Label = "LM1 (W1+H1)" },
+            new() { Value = "lm2", Label = "LM2 (W2+H2)" },
+            new() { Value = "sqm", Label = "SQM (W1+H1)" },
+            new() { Value = "sqm1", Label = "SQM1 (W1+H1)" },
+            new() { Value = "sqm2", Label = "SQM2 (W2+H2)" },
+            new() { Value = "qty", Label = "QTY" },
+            new() { Value = "1x", Label = "1X" },
+            new() { Value = "2x", Label = "2X" }
+        };
 
         private string _selectedThickness = "6";
         public string SelectedThickness { get => _selectedThickness; set => SetProperty(ref _selectedThickness, value); }
@@ -430,7 +431,6 @@ namespace ProGlassAutomation.ViewModels
         }
 
         public string ASPPriceModeText => IsASPPriceManual ? "MANUAL ✓" : "AUTO";
-
         public string DGUInnerThickness { get; set; } = "6";
         public string DGUInnerColor { get; set; } = "Clear";
         public double DGUInnerPrice { get; set; } = 100;
@@ -487,13 +487,8 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // Currently selected charge for multi-spec editing
         private OtherChargeModel _selectedCharge;
-        public OtherChargeModel SelectedCharge
-        {
-            get => _selectedCharge;
-            set => SetProperty(ref _selectedCharge, value);
-        }
+        public OtherChargeModel SelectedCharge { get => _selectedCharge; set => SetProperty(ref _selectedCharge, value); }
 
         // ==================== COMMANDS ====================
         public ICommand NewInvoiceCommand { get; set; }
@@ -507,8 +502,6 @@ namespace ProGlassAutomation.ViewModels
         public ICommand CalculatePriceCommand { get; private set; } = null!;
         public ICommand IncludeInSpecificationCommand { get; private set; } = null!;
         public ICommand PrintCommand { get; private set; } = null!;
-
-        // PATCH 1: Print commands
         public ICommand PrintPreviewCommand { get; private set; } = null!;
         public ICommand PrintInvoiceCommand { get; private set; } = null!;
         public ICommand PasteFromExcelCommand { get; private set; } = null!;
@@ -524,15 +517,9 @@ namespace ProGlassAutomation.ViewModels
         public ICommand ResetASPPriceCommand { get; private set; } = null!;
         public ICommand DebugCsvCommand { get; private set; } = null!;
         public ICommand TestCsvRoundTripCommand { get; private set; } = null!;
-        public ICommand AddSpecToChargeCommand { get; private set; } = null!;
-        public ICommand RemoveSpecFromChargeCommand { get; private set; } = null!;
-        public ICommand ToggleSpecForChargeCommand { get; private set; } = null!;
         public ICommand RefreshChargesCommand { get; private set; } = null!;
 
-        // Event raised when invoice is saved
         public event Action<ProformaInvoiceModel>? InvoiceSaved;
-
-        // PATCH: Event for main view to subscribe
         public event Action<ProformaInvoiceModel>? InvoiceToBeAdded;
 
         private void InitializeCommands()
@@ -566,28 +553,14 @@ namespace ProGlassAutomation.ViewModels
             RefreshChargesCommand = new RelayCommand(_ => RefreshAllChargeAutoValues());
         }
 
-        // ==================== BULK OPERATIONS (PATCH 8) ====================
-        public IDisposable BulkUpdateScope()
-        {
-            return new ViewModelBulkUpdateScope(this);
-        }
+        // PATCH 8: Bulk Operations
+        public IDisposable BulkUpdateScope() => new ViewModelBulkUpdateScope(this);
 
         private class ViewModelBulkUpdateScope : IDisposable
         {
             private readonly ProformaInvoiceViewModel _vm;
-
-            public ViewModelBulkUpdateScope(ProformaInvoiceViewModel vm)
-            {
-                _vm = vm;
-                _vm.IsBulkUpdating = true;
-                _vm.Invoice?.BeginBulkUpdate();
-            }
-
-            public void Dispose()
-            {
-                _vm.Invoice?.EndBulkUpdate();
-                _vm.IsBulkUpdating = false;
-            }
+            public ViewModelBulkUpdateScope(ProformaInvoiceViewModel vm) { _vm = vm; _vm.IsBulkUpdating = true; _vm.Invoice?.BeginBulkUpdate(); }
+            public void Dispose() { _vm.Invoice?.EndBulkUpdate(); _vm.IsBulkUpdating = false; }
         }
 
         // ==================== METHODS ====================
@@ -598,57 +571,42 @@ namespace ProGlassAutomation.ViewModels
             UpdateAirSpacerPrice();
         }
 
-        private bool CanExecuteSaveInvoice()
-        {
-            return Invoice != null;
-        }
+        private bool CanExecuteSaveInvoice() => Invoice != null;
 
         private void ExecuteCreateJobOrder()
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("[PIViewModel] ExecuteCreateJobOrder called");
-
+                Debug.WriteLine("[PIViewModel] ExecuteCreateJobOrder called");
                 if (Invoice == null)
                 {
-                    MessageBox.Show("Please create or load an invoice first.", "No Invoice",
-                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show("Please create or load an invoice first.", "No Invoice", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
-
                 if (Invoice.Specifications == null || Invoice.Specifications.Count == 0)
                 {
-                    MessageBox.Show("Please add at least one specification before creating job order.",
-                        "No Specifications", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show("Please add at least one specification before creating job order.", "No Specifications", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
-
-                // Set default customer name if empty
                 if (string.IsNullOrWhiteSpace(Invoice.CustomerName))
-                {
                     Invoice.CustomerName = "New Customer";
-                }
 
-                // Navigate to Job Order and create from PI
                 var mainWindow = Application.Current.MainWindow;
                 if (mainWindow?.DataContext is MainViewModel mainVM)
                 {
-                    System.Diagnostics.Debug.WriteLine("[PIViewModel] Calling mainVM.CreateJobOrderFromProformaInvoice");
+                    Debug.WriteLine("[PIViewModel] Calling mainVM.CreateJobOrderFromProformaInvoice");
                     mainVM.CreateJobOrderFromProformaInvoice(Invoice);
                 }
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine("[PIViewModel] MainWindow or DataContext is null!");
-                    MessageBox.Show($"Creating Job Order from PI: {Invoice.InvoiceNo}\nCustomer: {Invoice.CustomerName}",
-                        "Create Job Order", MessageBoxButton.OK, MessageBoxImage.Information);
+                    Debug.WriteLine("[PIViewModel] MainWindow or DataContext is null!");
+                    MessageBox.Show($"Creating Job Order from PI: {Invoice.InvoiceNo}\nCustomer: {Invoice.CustomerName}", "Create Job Order", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[PIViewModel] CreateJobOrder error: {ex.Message}");
-                System.Diagnostics.Debug.WriteLine($"Stack: {ex.StackTrace}");
-                MessageBox.Show($"Failed to create job order: {ex.Message}\n\n{ex.StackTrace}", "Error",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                Debug.WriteLine($"[PIViewModel] CreateJobOrder error: {ex.Message}");
+                MessageBox.Show($"Failed to create job order: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -672,32 +630,27 @@ namespace ProGlassAutomation.ViewModels
                 InvoiceNo = GetNextSequentialInvoiceNo(),
                 InvoiceDate = DateTime.Now,
                 ValidUntil = DateTime.Now.AddDays(2),
-                // Copy Company fields from ViewModel
                 CompanyName = CompanyName,
                 CompanyTRN = CompanyTRN,
                 CompanyLocation = CompanyLocation,
                 CompanyPhone = CompanyPhone
             };
             CurrentFileName = "Untitled";
-
             AddSpecification();
             if (Invoice.Specifications.Count > 0)
                 Invoice.Specifications[0].Invoice = Invoice;
-
             Invoice.IsDirty = false;
-            System.Diagnostics.Debug.WriteLine($"[ProformaInvoiceVM] Created new invoice: {Invoice.InvoiceNo}");
+            Debug.WriteLine($"[ProformaInvoiceVM] Created new invoice: {Invoice.InvoiceNo}");
         }
 
         public void LoadFromExistingInvoice(ProformaInvoiceModel invoice)
         {
             if (invoice == null)
             {
-                System.Diagnostics.Debug.WriteLine("[ProformaInvoiceVM] LoadFromExistingInvoice: invoice is null!");
+                Debug.WriteLine("[ProformaInvoiceVM] LoadFromExistingInvoice: invoice is null!");
                 return;
             }
-
-            System.Diagnostics.Debug.WriteLine($"[ProformaInvoiceVM] Loading invoice: {invoice.InvoiceNo}");
-
+            Debug.WriteLine($"[ProformaInvoiceVM] Loading invoice: {invoice.InvoiceNo}");
             using (BulkUpdateScope())
             {
                 Invoice.InvoiceNo = invoice.InvoiceNo;
@@ -718,13 +671,10 @@ namespace ProGlassAutomation.ViewModels
                 Invoice.Notes = invoice.Notes ?? "";
                 Invoice.Status = invoice.Status ?? "Pending";
                 Invoice.IsConvertedToJobOrder = invoice.IsConvertedToJobOrder;
-
-                // Load Company fields from Invoice to ViewModel
                 CompanyName = invoice.CompanyName ?? "PROGLASS AUTOMATION";
                 CompanyTRN = invoice.CompanyTRN ?? "100458979400003";
                 CompanyLocation = invoice.CompanyLocation ?? "Dubai, UAE";
                 CompanyPhone = invoice.CompanyPhone ?? "+971-50-123-4567";
-
                 Invoice.Specifications.Clear();
                 if (invoice.Specifications != null)
                 {
@@ -732,27 +682,19 @@ namespace ProGlassAutomation.ViewModels
                     {
                         var newSpec = srcSpec.DeepClone();
                         newSpec.Invoice = Invoice;
-
                         foreach (var item in newSpec.Items)
-                        {
                             item.Specification = newSpec;
-                        }
-
                         Invoice.Specifications.Add(newSpec);
                     }
                 }
             }
-
             ReconstructAfterLoad();
-
             SelectedTargetSpecification = Invoice.Specifications.FirstOrDefault();
             SelectedSpecificationId = SelectedTargetSpecification?.Id ?? 0;
-
             Invoice.CalculateTotals();
             Invoice.IsDirty = false;
             CurrentFileName = invoice.InvoiceNo ?? "Loaded Invoice";
-
-            System.Diagnostics.Debug.WriteLine($"[ProformaInvoiceVM] Loaded: {Invoice.InvoiceNo}");
+            Debug.WriteLine($"[ProformaInvoiceVM] Loaded: {Invoice.InvoiceNo}");
         }
 
         private void NewInvoice()
@@ -765,8 +707,6 @@ namespace ProGlassAutomation.ViewModels
             }
             CreateNewInvoice();
             StatusMessage = "✅ New invoice created";
-
-            // 🔴 Refresh list when creating new invoice
             SharedViewModels.RequestInvoiceListRefresh();
         }
 
@@ -774,99 +714,75 @@ namespace ProGlassAutomation.ViewModels
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("[ProformaInvoice] ===== SAVE STARTED =====");
-
-                // Auto-set default customer if empty
+                Debug.WriteLine("[ProformaInvoice] ===== SAVE STARTED =====");
                 if (string.IsNullOrWhiteSpace(Invoice?.CustomerName))
                 {
                     Invoice!.CustomerName = "New Customer";
-                    System.Diagnostics.Debug.WriteLine("[ProformaInvoice] Set default customer name");
+                    Debug.WriteLine("[ProformaInvoice] Set default customer name");
                 }
-
-                // Copy Company fields from ViewModel to Invoice before saving
                 Invoice!.CompanyName = CompanyName;
                 Invoice.CompanyTRN = CompanyTRN;
                 Invoice.CompanyLocation = CompanyLocation;
                 Invoice.CompanyPhone = CompanyPhone;
-                System.Diagnostics.Debug.WriteLine("[ProformaInvoice] Copied company fields");
-
                 Invoice.CalculateTotals();
-                System.Diagnostics.Debug.WriteLine($"[ProformaInvoice] Calculated totals: SQM={Invoice.TotalSQM}, Qty={Invoice.TotalQty}");
+                Debug.WriteLine($"[ProformaInvoice] Calculated totals: SQM={Invoice.TotalSQM}, Qty={Invoice.TotalQty}");
 
-                // PATCH: Add to main view model's list FIRST
                 AddToMainViewModelList();
-                System.Diagnostics.Debug.WriteLine("[ProformaInvoice] Added to main list");
+                Debug.WriteLine("[ProformaInvoice] Added to main list");
 
-                // === SAVE TO FILE ===
                 string folder = GetDataFolder();
-                System.Diagnostics.Debug.WriteLine($"[ProformaInvoice] Data folder: {folder}");
+                Debug.WriteLine($"[ProformaInvoice] Data folder: {folder}");
 
                 string filePath = Path.Combine(folder, $"{Invoice.InvoiceNo}.json");
 
-                // Check if file already exists
                 if (File.Exists(filePath))
                 {
-                    System.Diagnostics.Debug.WriteLine($"[ProformaInvoice] File EXISTS: {filePath}");
-
-                    // Ask user to confirm overwrite
+                    Debug.WriteLine($"[ProformaInvoice] File EXISTS: {filePath}");
                     var result = MessageBox.Show(
                         $"Invoice '{Invoice.InvoiceNo}' already exists.\n\nDo you want to overwrite it?",
-                        "Confirm Overwrite",
-                        MessageBoxButton.YesNo,
-                        MessageBoxImage.Question);
-
+                        "Confirm Overwrite", MessageBoxButton.YesNo, MessageBoxImage.Question);
                     if (result != MessageBoxResult.Yes)
                     {
-                        System.Diagnostics.Debug.WriteLine("[ProformaInvoice] Save cancelled by user");
-                        return; // User cancelled
+                        Debug.WriteLine("[ProformaInvoice] Save cancelled by user");
+                        return;
                     }
                 }
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine($"[ProformaInvoice] File is NEW: {filePath}");
+                    Debug.WriteLine($"[ProformaInvoice] File is NEW: {filePath}");
                 }
 
                 string json = JsonConvert.SerializeObject(Invoice, Formatting.Indented, _jsonSettings);
-                System.Diagnostics.Debug.WriteLine($"[ProformaInvoice] JSON length: {json.Length}");
+                Debug.WriteLine($"[ProformaInvoice] JSON length: {json.Length}");
 
                 File.WriteAllText(filePath, json);
-                System.Diagnostics.Debug.WriteLine($"[ProformaInvoice] File saved: {filePath}");
-                System.Diagnostics.Debug.WriteLine("[ProformaInvoice] File written successfully!");
+                Debug.WriteLine($"[ProformaInvoice] File saved: {filePath}");
+                Debug.WriteLine("[ProformaInvoice] File written successfully!");
 
                 CurrentFileName = Invoice.InvoiceNo;
-                System.Diagnostics.Debug.WriteLine($"[ProformaInvoice] CurrentFileName set to: {CurrentFileName}");
+                Debug.WriteLine($"[ProformaInvoice] CurrentFileName set to: {CurrentFileName}");
 
-                // Refresh the saved files list
                 LoadSavedFiles();
-                System.Diagnostics.Debug.WriteLine("[ProformaInvoice] Loaded saved files");
+                Debug.WriteLine("[ProformaInvoice] Loaded saved files");
 
                 Invoice.IsDirty = false;
                 StatusMessage = $"✅ Saved: {CurrentFileName}";
-                System.Diagnostics.Debug.WriteLine("[ProformaInvoice] Status message set");
+                Debug.WriteLine("[ProformaInvoice] Status message set");
 
-                // Raise event for other views to update
                 InvoiceSaved?.Invoke(Invoice);
-                System.Diagnostics.Debug.WriteLine("[ProformaInvoice] InvoiceSaved event raised");
+                Debug.WriteLine("[ProformaInvoice] InvoiceSaved event raised");
 
-                // 🔴 TRIGGER LIST REFRESH - Notify List View to update stats
                 SharedViewModels.RequestInvoiceListRefresh();
-                System.Diagnostics.Debug.WriteLine("[ProformaInvoice] RequestInvoiceListRefresh called");
+                Debug.WriteLine("[ProformaInvoice] RequestInvoiceListRefresh called");
 
-                // === COLOR EXTRACTION ===
                 string extractedColor = "";
-
-                // Try to extract from Notes/Description
                 if (!string.IsNullOrWhiteSpace(Invoice?.Notes))
-                {
                     extractedColor = ProGlassAutomation.Helpers.ColorExtractor.ExtractColors(Invoice.Notes);
-                }
 
-                // If nothing found in Notes, try specifications
                 if (string.IsNullOrEmpty(extractedColor) && Invoice?.Specifications != null)
                 {
                     foreach (var spec in Invoice.Specifications)
                     {
-                        // Try from SpecificationName (e.g., "6mm Clear + 6mm HD Grey FT Glass")
                         if (!string.IsNullOrWhiteSpace(spec.SpecificationName))
                         {
                             extractedColor = ProGlassAutomation.Helpers.ColorExtractor.ExtractColors(spec.SpecificationName);
@@ -875,46 +791,33 @@ namespace ProGlassAutomation.ViewModels
                     }
                 }
 
-                // === Get the final color (extracted or fallback) ===
-                var finalColor = !string.IsNullOrEmpty(extractedColor)
-                    ? extractedColor
-                    : (Invoice?.Color ?? "Clear");
+                var finalColor = !string.IsNullOrEmpty(extractedColor) ? extractedColor : (Invoice?.Color ?? "Clear");
 
-                // === AUTO-SYNC: Save to DailyWorks via DbHelper ===
-                System.Diagnostics.Debug.WriteLine("[PI] Starting DailyWorks save...");
-
+                Debug.WriteLine("[PI] Starting DailyWorks save...");
                 try
                 {
                     var piNumber = Invoice?.InvoiceNo ?? "";
                     var totalSqm = Invoice?.TotalSQM ?? 0;
                     var totalQty = Invoice?.TotalQty ?? 0;
 
-                    System.Diagnostics.Debug.WriteLine($"[PI] Before Save: PINumber={piNumber}, SQM={totalSqm}, Qty={totalQty}");
+                    Debug.WriteLine($"[PI] Before Save: PINumber={piNumber}, SQM={totalSqm}, Qty={totalQty}");
 
                     if (string.IsNullOrEmpty(piNumber))
-                    {
-                        System.Diagnostics.Debug.WriteLine("[PI] ERROR: PI Number is empty!");
-                    }
+                        Debug.WriteLine("[PI] ERROR: PI Number is empty!");
 
-                    // Check if this PI Number already exists in DailyWorks
                     var existingWork = ProGlassAutomation.Data.Database.DbHelper.GetDailyWorkByPINumber(piNumber);
 
                     if (existingWork != null)
                     {
-                        // Ask user to overwrite
                         var result = MessageBox.Show(
                             $"PI Number '{piNumber}' already exists in DailyWorks.\n\nDo you want to overwrite the existing record?",
-                            "Duplicate PI Number",
-                            MessageBoxButton.YesNo,
-                            MessageBoxImage.Question);
-
+                            "Duplicate PI Number", MessageBoxButton.YesNo, MessageBoxImage.Question);
                         if (result != MessageBoxResult.Yes)
                         {
-                            System.Diagnostics.Debug.WriteLine($"[PI] DailyWorks save skipped by user: {piNumber}");
+                            Debug.WriteLine($"[PI] DailyWorks save skipped by user: {piNumber}");
                         }
                         else
                         {
-                            // FALLBACK: Calculate SQM manually if Totals are 0
                             double calculatedSQM = Invoice?.TotalSQM ?? 0;
                             int calculatedQty = Invoice?.TotalQty ?? 0;
 
@@ -933,7 +836,6 @@ namespace ProGlassAutomation.ViewModels
                                 }
                             }
 
-                            // Update existing record
                             existingWork.Date = DateTime.Now;
                             existingWork.UpdateDate = DateTime.Now;
                             existingWork.Company = Invoice?.CustomerName ?? "";
@@ -948,12 +850,11 @@ namespace ProGlassAutomation.ViewModels
                             existingWork.Notes = Invoice?.Notes ?? "";
 
                             ProGlassAutomation.Data.Database.DbHelper.UpdateDailyWork(existingWork);
-                            System.Diagnostics.Debug.WriteLine($"[PI] Updated DailyWorks: {piNumber}");
+                            Debug.WriteLine($"[PI] Updated DailyWorks: {piNumber}");
                         }
                     }
                     else
                     {
-                        // FALLBACK: Calculate SQM manually if Totals are 0
                         double calculatedSQM = Invoice?.TotalSQM ?? 0;
                         int calculatedQty = Invoice?.TotalQty ?? 0;
 
@@ -970,10 +871,9 @@ namespace ProGlassAutomation.ViewModels
                                     }
                                 }
                             }
-                            System.Diagnostics.Debug.WriteLine($"[PI] Fallback calc: SQM={calculatedSQM}, Qty={calculatedQty}");
+                            Debug.WriteLine($"[PI] Fallback calc: SQM={calculatedSQM}, Qty={calculatedQty}");
                         }
 
-                        // Create new record
                         var dailyWork = new ProGlassAutomation.Data.Database.DailyWork
                         {
                             Date = DateTime.Now,
@@ -993,45 +893,39 @@ namespace ProGlassAutomation.ViewModels
                         };
 
                         ProGlassAutomation.Data.Database.DbHelper.SaveDailyWork(dailyWork);
-                        System.Diagnostics.Debug.WriteLine($"[PI] Saved to DailyWorks: {piNumber}");
+                        Debug.WriteLine($"[PI] Saved to DailyWorks: {piNumber}");
                     }
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"[PI] DailyWorks save error: {ex.Message}");
+                    Debug.WriteLine($"[PI] DailyWorks save error: {ex.Message}");
                 }
 
-                // Check and convert to Job Order if status is Confirmed
                 CheckAndConvertToJobOrder();
-
-                System.Diagnostics.Debug.WriteLine("[ProformaInvoice] ===== SAVE COMPLETE =====");
+                Debug.WriteLine("[ProformaInvoice] ===== SAVE COMPLETE =====");
 
                 MessageBox.Show($"Saved successfully!\n\n{filePath}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[ProformaInvoice] ERROR: {ex.Message}");
-                System.Diagnostics.Debug.WriteLine($"[ProformaInvoice] STACK: {ex.StackTrace}");
+                Debug.WriteLine($"[ProformaInvoice] ERROR: {ex.Message}");
+                Debug.WriteLine($"[ProformaInvoice] STACK: {ex.StackTrace}");
                 StatusMessage = $"❌ Error: {ex.Message}";
                 MessageBox.Show($"Error: {ex.Message}\n\n{ex.StackTrace}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        // PATCH: Add current invoice to main view model's list
         private void AddToMainViewModelList()
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine($"[PIViewModel] About to raise InvoiceToBeAdded event for: {Invoice?.InvoiceNo}");
-
-                // Raise event for main view to handle
+                Debug.WriteLine($"[PIViewModel] About to raise InvoiceToBeAdded event for: {Invoice?.InvoiceNo}");
                 InvoiceToBeAdded?.Invoke(Invoice);
-
-                System.Diagnostics.Debug.WriteLine($"[PIViewModel] InvoiceToBeAdded event raised");
+                Debug.WriteLine($"[PIViewModel] InvoiceToBeAdded event raised");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[PIViewModel] AddToMainViewModelList error: {ex.Message}");
+                Debug.WriteLine($"[PIViewModel] AddToMainViewModelList error: {ex.Message}");
             }
         }
 
@@ -1048,19 +942,12 @@ namespace ProGlassAutomation.ViewModels
                     {
                         Invoice = invoice;
                         CurrentFileName = Path.GetFileNameWithoutExtension(dialog.FileName);
-
-                        // Load Company fields from Invoice to ViewModel
                         CompanyName = invoice.CompanyName ?? "PROGLASS AUTOMATION";
                         CompanyTRN = invoice.CompanyTRN ?? "100458979400003";
                         CompanyLocation = invoice.CompanyLocation ?? "Dubai, UAE";
                         CompanyPhone = invoice.CompanyPhone ?? "+971-50-123-4567";
-
-                        // PATCH: Add to main view model's list
                         AddToMainViewModelList();
-
-                        // PATCH: Reconstruct after load
                         ReconstructAfterLoad();
-
                         Invoice.CalculateTotals();
                         StatusMessage = $"✅ Opened: {CurrentFileName}";
                     }
@@ -1078,12 +965,7 @@ namespace ProGlassAutomation.ViewModels
             try
             {
                 ProformaInvoiceModel? invoiceToDelete = param as ProformaInvoiceModel;
-
-                if (invoiceToDelete == null)
-                {
-                    invoiceToDelete = Invoice;
-                }
-
+                if (invoiceToDelete == null) invoiceToDelete = Invoice;
                 if (invoiceToDelete == null)
                 {
                     MessageBox.Show("No invoice selected to delete.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -1091,39 +973,29 @@ namespace ProGlassAutomation.ViewModels
                 }
 
                 string invoiceInfo = $"{invoiceToDelete.InvoiceNo} - {invoiceToDelete.CustomerName}";
-
-                // Confirm before delete
                 var result = MessageBox.Show(
                     $"Are you sure you want to delete this invoice?\n\n{invoiceInfo}\n\nThis action cannot be undone!",
-                    "⚠️ Confirm Delete",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Warning);
+                    "⚠️ Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
 
                 if (result == MessageBoxResult.Yes)
                 {
-                    // Delete the file
                     string filePath = Path.Combine(GetDataFolder(), $"{invoiceToDelete.InvoiceNo}.json");
                     if (File.Exists(filePath))
                     {
                         File.Delete(filePath);
-                        System.Diagnostics.Debug.WriteLine($"[PIViewModel] Deleted: {filePath}");
+                        Debug.WriteLine($"[PIViewModel] Deleted: {filePath}");
                     }
 
-                    // Remove from list if it's the current invoice
                     if (Invoice?.InvoiceNo == invoiceToDelete.InvoiceNo)
-                    {
                         CreateNewInvoice();
-                    }
 
-                    // Refresh the list
                     LoadSavedFiles();
-
                     StatusMessage = $"✅ Deleted: {invoiceToDelete.InvoiceNo}";
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[PIViewModel] Delete error: {ex.Message}");
+                Debug.WriteLine($"[PIViewModel] Delete error: {ex.Message}");
                 StatusMessage = $"❌ Delete failed: {ex.Message}";
             }
         }
@@ -1150,7 +1022,6 @@ namespace ProGlassAutomation.ViewModels
                     var invoice = JsonConvert.DeserializeObject<ProformaInvoiceModel>(json, _jsonSettings);
                     if (invoice != null)
                     {
-                        // Calculate NetTotal before adding to list
                         invoice.CalculateTotals();
                         SavedFiles.Add(new FileListItem
                         {
@@ -1167,12 +1038,7 @@ namespace ProGlassAutomation.ViewModels
             OnPropertyChanged(nameof(HasSavedFiles));
         }
 
-        // ============ PRINT METHODS ============
-
-        private bool CanShowPrintPreview()
-        {
-            return Invoice?.Specifications?.Any() == true;
-        }
+        private bool CanShowPrintPreview() => Invoice?.Specifications?.Any() == true;
 
         private void ShowPrintPreview()
         {
@@ -1184,7 +1050,6 @@ namespace ProGlassAutomation.ViewModels
                     return;
                 }
 
-                // Create a new window with the print preview view
                 var previewWindow = new Window
                 {
                     Title = $"Print Preview - {Invoice.InvoiceNo}",
@@ -1207,11 +1072,7 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // Keep legacy PrintInvoice for toolbar button compatibility
-        private void PrintInvoice()
-        {
-            ShowPrintPreview();
-        }
+        private void PrintInvoice() => ShowPrintPreview();
 
         // ==================== SPECIFICATIONS ====================
 
@@ -1230,7 +1091,7 @@ namespace ProGlassAutomation.ViewModels
                 var firstItem = new InvoiceItemModel
                 {
                     SrNo = nextSrNo,
-                    SurchargePercent = spec.SurchargePercent,  // ✅ Use spec value
+                    SurchargePercent = spec.SurchargePercent,
                     Specification = spec
                 };
                 spec.Items.Add(firstItem);
@@ -1238,11 +1099,8 @@ namespace ProGlassAutomation.ViewModels
 
             Invoice.Specifications.Add(spec);
 
-            // Keep Other Charges section visible - only auto-select if no spec was selected
             if (SelectedTargetSpecification == null)
-            {
                 SelectedTargetSpecification = spec;
-            }
 
             SubscribeToOtherChargeChanges();
             RefreshAllChargeAutoValues();
@@ -1257,19 +1115,15 @@ namespace ProGlassAutomation.ViewModels
             RefreshAllChargeAutoValues();
         }
 
-        // ==================== SR NUMBERING (PATCH 9) ====================
-
         public int GetNextSrNo()
         {
             int maxSr = 0;
             if (Invoice?.Specifications == null) return 1;
-
             foreach (var spec in Invoice.Specifications)
             {
                 foreach (var item in spec.Items)
                 {
-                    if (item.SrNo > maxSr)
-                        maxSr = item.SrNo;
+                    if (item.SrNo > maxSr) maxSr = item.SrNo;
                 }
             }
             return maxSr + 1;
@@ -1278,7 +1132,6 @@ namespace ProGlassAutomation.ViewModels
         public void RenumberAllSrNumbers()
         {
             if (Invoice?.Specifications == null) return;
-
             int srNo = 1;
             foreach (var spec in Invoice.Specifications)
             {
@@ -1293,11 +1146,9 @@ namespace ProGlassAutomation.ViewModels
         public void RefreshAllChargeAutoValues()
         {
             if (Invoice?.Specifications == null) return;
-
             foreach (var spec in Invoice.Specifications)
             {
                 if (spec?.OtherCharges == null) continue;
-
                 foreach (var charge in spec.OtherCharges)
                 {
                     if (charge != null)
@@ -1307,42 +1158,33 @@ namespace ProGlassAutomation.ViewModels
                     }
                 }
             }
-
             Invoice.CalculateTotals();
         }
 
-        // ==================== PATCH 3: RECONSTRUCT AFTER LOAD ====================
+        // PATCH 3: RECONSTRUCT AFTER LOAD
         public void ReconstructAfterLoad()
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("[PIViewModel] Reconstructing after load...");
+                Debug.WriteLine("[PIViewModel] Reconstructing after load...");
 
-                // 1. Rebuild Invoice-Specification relationships
                 if (Invoice?.Specifications != null)
                 {
                     foreach (var spec in Invoice.Specifications)
-                    {
                         spec.Invoice = Invoice;
-                    }
                 }
 
-                // 2. Rebuild Specification-Item relationships
                 if (Invoice?.Specifications != null)
                 {
                     foreach (var spec in Invoice.Specifications)
                     {
                         foreach (var item in spec.Items)
-                        {
                             item.Specification = spec;
-                        }
                     }
                 }
 
-                // 3. Reattach event handlers
                 AttachAllEventHandlers();
 
-                // 4. Rebuild OtherCharge relationships
                 if (Invoice?.Specifications != null)
                 {
                     foreach (var spec in Invoice.Specifications)
@@ -1350,51 +1192,37 @@ namespace ProGlassAutomation.ViewModels
                         if (spec.OtherCharges != null)
                         {
                             foreach (var charge in spec.OtherCharges)
-                            {
                                 charge.BoundSpecs = Invoice.Specifications.ToList();
-                            }
                         }
                     }
                 }
 
-                // 5. Refresh charge auto values
                 RefreshAllChargeAutoValues();
-
-                // 6. Renumber SR numbers
                 RenumberAllSrNumbers();
-
-                // 7. Recalculate all totals
                 Invoice?.CalculateTotals();
 
-                System.Diagnostics.Debug.WriteLine("[PIViewModel] Reconstruction complete");
+                Debug.WriteLine("[PIViewModel] Reconstruction complete");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[PIViewModel] Reconstruction error: {ex.Message}");
+                Debug.WriteLine($"[PIViewModel] Reconstruction error: {ex.Message}");
             }
         }
 
-        // ==================== PATCH 6: ATTACH ALL HANDLERS ====================
+        // PATCH 6: ATTACH ALL HANDLERS
         private void AttachAllEventHandlers()
         {
-            // Detach first to prevent duplicates
             DetachAllEventHandlers();
-
             if (Invoice == null) return;
 
-            // Attach to Invoice
             Invoice.PropertyChanged -= OnInvoicePropertyChanged;
             Invoice.PropertyChanged += OnInvoicePropertyChanged;
 
-            // Attach to Specifications
             if (Invoice.Specifications != null)
             {
                 foreach (var spec in Invoice.Specifications)
-                {
                     AttachSpecificationHandlers(spec);
-                }
 
-                // Attach to Specification collection changes
                 Invoice.Specifications.CollectionChanged -= Specifications_CollectionChanged;
                 Invoice.Specifications.CollectionChanged += Specifications_CollectionChanged;
             }
@@ -1403,16 +1231,13 @@ namespace ProGlassAutomation.ViewModels
         private void AttachSpecificationHandlers(SpecificationModel spec)
         {
             if (spec == null) return;
-
             spec.PropertyChanged -= Spec_PropertyChanged;
             spec.PropertyChanged += Spec_PropertyChanged;
 
-            // Items
             if (spec.Items != null)
             {
                 spec.Items.CollectionChanged -= SpecItems_CollectionChanged;
                 spec.Items.CollectionChanged += SpecItems_CollectionChanged;
-
                 foreach (var item in spec.Items)
                 {
                     item.PropertyChanged -= Item_PropertyChanged;
@@ -1420,12 +1245,10 @@ namespace ProGlassAutomation.ViewModels
                 }
             }
 
-            // Other Charges
             if (spec.OtherCharges != null)
             {
                 spec.OtherCharges.CollectionChanged -= OtherCharges_CollectionChanged;
                 spec.OtherCharges.CollectionChanged += OtherCharges_CollectionChanged;
-
                 foreach (var charge in spec.OtherCharges)
                 {
                     charge.PropertyChanged -= Charge_PropertyChanged;
@@ -1437,63 +1260,49 @@ namespace ProGlassAutomation.ViewModels
         private void DetachAllEventHandlers()
         {
             if (Invoice == null) return;
-
-            // Detach Invoice
             Invoice.PropertyChanged -= OnInvoicePropertyChanged;
 
             if (Invoice.Specifications != null)
             {
                 Invoice.Specifications.CollectionChanged -= Specifications_CollectionChanged;
-
                 foreach (var spec in Invoice.Specifications)
-                {
                     DetachSpecificationHandlers(spec);
-                }
             }
         }
 
         private void DetachSpecificationHandlers(SpecificationModel spec)
         {
             if (spec == null) return;
-
             spec.PropertyChanged -= Spec_PropertyChanged;
 
             if (spec.Items != null)
             {
                 spec.Items.CollectionChanged -= SpecItems_CollectionChanged;
                 foreach (var item in spec.Items)
-                {
                     item.PropertyChanged -= Item_PropertyChanged;
-                }
             }
 
             if (spec.OtherCharges != null)
             {
                 spec.OtherCharges.CollectionChanged -= OtherCharges_CollectionChanged;
                 foreach (var charge in spec.OtherCharges)
-                {
                     charge.PropertyChanged -= Charge_PropertyChanged;
-                }
             }
         }
 
-        // ==================== PATCH 6: EVENT HANDLERS ====================
+        // PATCH 6: EVENT HANDLERS
         private void Specifications_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
             if (e.NewItems != null)
             {
                 foreach (SpecificationModel spec in e.NewItems)
-                {
                     AttachSpecificationHandlers(spec);
-                }
             }
 
             if (e.OldItems != null)
             {
                 foreach (SpecificationModel spec in e.OldItems)
-                {
                     DetachSpecificationHandlers(spec);
-                }
             }
 
             Invoice?.CalculateTotals();
@@ -1523,17 +1332,13 @@ namespace ProGlassAutomation.ViewModels
             if (e.NewItems != null)
             {
                 foreach (InvoiceItemModel item in e.NewItems)
-                {
                     item.PropertyChanged += Item_PropertyChanged;
-                }
             }
 
             if (e.OldItems != null)
             {
                 foreach (InvoiceItemModel item in e.OldItems)
-                {
                     item.PropertyChanged -= Item_PropertyChanged;
-                }
             }
 
             Invoice?.CalculateTotals();
@@ -1555,17 +1360,13 @@ namespace ProGlassAutomation.ViewModels
             if (e.NewItems != null)
             {
                 foreach (OtherChargeModel charge in e.NewItems)
-                {
                     charge.PropertyChanged += Charge_PropertyChanged;
-                }
             }
 
             if (e.OldItems != null)
             {
                 foreach (OtherChargeModel charge in e.OldItems)
-                {
                     charge.PropertyChanged -= Charge_PropertyChanged;
-                }
             }
 
             Invoice?.CalculateTotals();
@@ -1590,7 +1391,6 @@ namespace ProGlassAutomation.ViewModels
                         Invoice.CalculateTotals();
                         Invoice.IsDirty = true;
 
-                        // Notify all total properties
                         OnPropertyChanged(nameof(InvoiceGrandTotal));
                         OnPropertyChanged(nameof(InvoiceVatAmount));
                         OnPropertyChanged(nameof(InvoiceNetTotal));
@@ -1610,13 +1410,10 @@ namespace ProGlassAutomation.ViewModels
         public void AddItemWithPrice(SpecificationModel spec)
         {
             if (spec == null) return;
-
             int nextSrNo = GetNextSrNo();
             var newItem = spec.AddItem(nextSrNo);
             newItem.Price = spec.BasePrice;
             newItem.SurchargePercent = spec.SurchargePercent;
-
-            // PATCH 9: Trigger automatic renumbering of all specs
             spec.RenumberItems();
             Invoice.IsDirty = true;
         }
@@ -1648,7 +1445,6 @@ namespace ProGlassAutomation.ViewModels
                 SGUSheetPrice, SGUCutting, SGUTempering, SGUWasteFactor, SGUProfitPercent,
                 SelectedThickness, SelectedColor, WorkTypeText,
                 out string description, out string summary);
-
             GeneratedDescription = description;
             PriceCalculationSummary = summary;
         }
@@ -1661,7 +1457,6 @@ namespace ProGlassAutomation.ViewModels
                 DGUAirSpacerThickness, DGUAirSpacerType, IsDGUIncludeInSpec,
                 DGUInnerThickness, DGUInnerColor,
                 out string description, out string summary);
-
             GeneratedDescription = description;
             PriceCalculationSummary = summary;
         }
@@ -1674,11 +1469,9 @@ namespace ProGlassAutomation.ViewModels
                 LAMOuterThickness, LAMOuterColor, LAMWorkTypeText,
                 LAMPVBThickness, LAMPVBColor, LAMInnerThickness, LAMInnerColor,
                 out string description, out string summary);
-
             GeneratedDescription = description;
             PriceCalculationSummary = summary;
 
-            // Update selected spec's generated description immediately
             if (SelectedTargetSpecification != null && IsLAMSelected)
             {
                 SelectedTargetSpecification.PVBThickness = LAMPVBThickness;
@@ -1736,13 +1529,9 @@ namespace ProGlassAutomation.ViewModels
                 SelectedTargetSpecification.InnerThickness = LAMInnerThickness;
                 SelectedTargetSpecification.InnerColor = LAMInnerColor;
                 SelectedTargetSpecification.InnerPrice = LAMInnerPrice.ToString();
-
-                // PVB Layer - critical for Lamination
                 SelectedTargetSpecification.PVBThickness = LAMPVBThickness;
                 SelectedTargetSpecification.PVBColor = LAMPVBColor;
                 SelectedTargetSpecification.PVBPrice = LAMPVBPrice.ToString();
-
-                // Trigger recalculation of GeneratedDescription for LAM
                 OnPropertyChanged(nameof(GeneratedDescription));
             }
 
@@ -1751,7 +1540,6 @@ namespace ProGlassAutomation.ViewModels
 
             if (SelectedTargetSpecification.Items.Count > 0)
             {
-                // Sync surcharge FROM spec TO items
                 foreach (var item in SelectedTargetSpecification.Items)
                 {
                     item.SurchargePercent = SelectedTargetSpecification.SurchargePercent;
@@ -1770,11 +1558,9 @@ namespace ProGlassAutomation.ViewModels
         private void SubscribeToOtherChargeChanges()
         {
             if (Invoice?.Specifications == null) return;
-
             foreach (var spec in Invoice.Specifications)
             {
                 if (spec?.OtherCharges == null) continue;
-
                 foreach (var charge in spec.OtherCharges)
                 {
                     if (charge != null)
@@ -1826,14 +1612,11 @@ namespace ProGlassAutomation.ViewModels
                 LinkedSpecIndices = specIndex.ToString()
             };
 
-            // Bind specs for auto-calculation
             charge.BoundSpecs = Invoice.Specifications.ToList();
-
             SelectedTargetSpecification.OtherCharges.Add(charge);
             charge.PropertyChanged += OtherCharge_PropertyChanged;
             Invoice.IsDirty = true;
             OnPropertyChanged(nameof(SelectedSpecificationOtherCharges));
-
             SelectedCharge = charge;
             UpdateChargeValue(charge);
         }
@@ -1841,7 +1624,6 @@ namespace ProGlassAutomation.ViewModels
         private void RemoveOtherCharge(OtherChargeModel? charge)
         {
             if (charge == null || SelectedTargetSpecification == null) return;
-
             charge.PropertyChanged -= OtherCharge_PropertyChanged;
             SelectedTargetSpecification.OtherCharges.Remove(charge);
             SelectedTargetSpecification.CalculateOtherChargesTotal();
@@ -1853,7 +1635,6 @@ namespace ProGlassAutomation.ViewModels
         private void CalculateAllOtherCharges()
         {
             if (SelectedTargetSpecification == null) return;
-
             foreach (var charge in SelectedTargetSpecification.OtherCharges)
             {
                 var linkedSpecs = GetLinkedSpecifications(charge);
@@ -1864,7 +1645,6 @@ namespace ProGlassAutomation.ViewModels
             Invoice.CalculateTotals();
             Invoice.IsDirty = true;
 
-            // Notify all total properties
             OnPropertyChanged(nameof(InvoiceGrandTotal));
             OnPropertyChanged(nameof(InvoiceVatAmount));
             OnPropertyChanged(nameof(InvoiceNetTotal));
@@ -1881,47 +1661,27 @@ namespace ProGlassAutomation.ViewModels
         private void UpdateChargeValue(OtherChargeModel charge)
         {
             if (charge == null) return;
-
             var linkedSpecs = GetLinkedSpecifications(charge);
             if (linkedSpecs.Count == 0) return;
 
             switch (charge.Type?.ToLower())
             {
-                case "lm":
-                    charge.Value = CalculateTotalLMValue(linkedSpecs, "w1h1");
-                    break;
-                case "lm1":
-                    charge.Value = CalculateTotalLM1Value(linkedSpecs);
-                    break;
-                case "lm2":
-                    charge.Value = CalculateTotalLM2Value(linkedSpecs);
-                    break;
-                case "sqm":
-                    charge.Value = CalculateTotalSQMValue(linkedSpecs);
-                    break;
-                case "sqm1":
-                    charge.Value = CalculateTotalSQM1Value(linkedSpecs);
-                    break;
-                case "sqm2":
-                    charge.Value = CalculateTotalSQM2Value(linkedSpecs);
-                    break;
+                case "lm": charge.Value = CalculateTotalLMValue(linkedSpecs, "w1h1"); break;
+                case "lm1": charge.Value = CalculateTotalLM1Value(linkedSpecs); break;
+                case "lm2": charge.Value = CalculateTotalLM2Value(linkedSpecs); break;
+                case "sqm": charge.Value = CalculateTotalSQMValue(linkedSpecs); break;
+                case "sqm1": charge.Value = CalculateTotalSQM1Value(linkedSpecs); break;
+                case "sqm2": charge.Value = CalculateTotalSQM2Value(linkedSpecs); break;
                 case "qty":
-                case "1x":
-                    charge.Value = CalculateTotalQtyValue(linkedSpecs);
-                    break;
-                case "2x":
-                    charge.Value = CalculateTotalQtyValue(linkedSpecs) * 2;
-                    break;
-                default:
-                    charge.Value = 0;
-                    break;
+                case "1x": charge.Value = CalculateTotalQtyValue(linkedSpecs); break;
+                case "2x": charge.Value = CalculateTotalQtyValue(linkedSpecs) * 2; break;
+                default: charge.Value = 0; break;
             }
         }
 
         private void CalculateOtherChargeValue(OtherChargeModel charge, SpecificationModel spec)
         {
             if (charge == null) return;
-
             switch (charge.Type?.ToLower())
             {
                 case "lm":
@@ -1935,9 +1695,7 @@ namespace ProGlassAutomation.ViewModels
                 case "2x":
                     charge.Amount = Math.Round(charge.Value * charge.Rate, 2);
                     break;
-                default:
-                    charge.Amount = 0;
-                    break;
+                default: charge.Amount = 0; break;
             }
         }
 
@@ -1946,7 +1704,6 @@ namespace ProGlassAutomation.ViewModels
             var specs = new List<SpecificationModel>();
             if (Invoice?.Specifications == null) return specs;
 
-            // Parse comma-separated indices from LinkedSpecIndices
             if (!string.IsNullOrEmpty(charge.LinkedSpecIndices))
             {
                 var indices = charge.LinkedSpecIndices
@@ -2022,9 +1779,7 @@ namespace ProGlassAutomation.ViewModels
             foreach (var spec in specs)
             {
                 foreach (var item in spec.Items)
-                {
                     totalLM1 += item.LM1 * item.Qty;
-                }
             }
             return Math.Round(totalLM1, 4);
         }
@@ -2035,9 +1790,7 @@ namespace ProGlassAutomation.ViewModels
             foreach (var spec in specs)
             {
                 foreach (var item in spec.Items)
-                {
                     totalLM2 += item.LM2 * item.Qty;
-                }
             }
             return Math.Round(totalLM2, 4);
         }
@@ -2071,165 +1824,10 @@ namespace ProGlassAutomation.ViewModels
             _ => 1
         };
 
-        // ==================== MULTI-SPEC CHARGE MANAGEMENT ====================
-
-        private void AddSpecToCharge(object? param)
-        {
-            var charge = param as OtherChargeModel ?? SelectedCharge;
-            if (charge == null || Invoice?.Specifications == null) return;
-
-            var availableIndices = new List<int>();
-            for (int i = 0; i < Invoice.Specifications.Count; i++)
-            {
-                var existingIndices = string.IsNullOrEmpty(charge.LinkedSpecIndices)
-                    ? new List<int>()
-                    : charge.LinkedSpecIndices.Split(',').Select(s => int.TryParse(s.Trim(), out int idx) ? idx : -1).Where(idx => idx >= 0).ToList();
-
-                if (!existingIndices.Contains(i))
-                    availableIndices.Add(i);
-            }
-
-            if (availableIndices.Count == 0)
-            {
-                MessageBox.Show("All specifications are already linked to this charge!", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
-            }
-
-            var specsText = string.Join("\n", availableIndices.Select(i => $"  {i}: {Invoice.Specifications[i].SpecificationName}"));
-
-            var input = Interaction.InputBox(
-                $"Available Specifications:\n{specsText}\n\nEnter spec index to add (e.g., 0, 1, 2):",
-                "Add Spec to Charge", "");
-
-            if (string.IsNullOrWhiteSpace(input)) return;
-
-            var newIndices = input.Split(',')
-                .Select(s => s.Trim())
-                .Where(s => int.TryParse(s, out int idx) && idx >= 0 && idx < Invoice.Specifications.Count && availableIndices.Contains(idx))
-                .Select(s => int.Parse(s))
-                .ToList();
-
-            if (newIndices.Count == 0) return;
-
-            var existing = string.IsNullOrEmpty(charge.LinkedSpecIndices)
-                ? new List<string>()
-                : charge.LinkedSpecIndices.Split(',').Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
-
-            var allIndices = existing.Union(newIndices.Select(i => i.ToString())).ToList();
-            charge.LinkedSpecIndices = string.Join(",", allIndices);
-
-            UpdateChargeValue(charge);
-            Invoice.CalculateTotals();
-        }
-
-        private void RemoveSpecFromCharge()
-        {
-            if (SelectedCharge == null || Invoice?.Specifications == null) return;
-
-            if (string.IsNullOrEmpty(SelectedCharge.LinkedSpecIndices))
-            {
-                MessageBox.Show("No specifications linked to this charge!", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
-            }
-
-            var linkedIndices = SelectedCharge.LinkedSpecIndices.Split(',')
-                .Where(s => !string.IsNullOrWhiteSpace(s) && int.TryParse(s.Trim(), out int idx))
-                .Select(s => int.Parse(s.Trim()))
-                .ToList();
-
-            if (linkedIndices.Count <= 1)
-            {
-                MessageBox.Show("Charge must target at least one specification!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            var linkedText = string.Join("\n", linkedIndices.Select(i => $"  {i}: {Invoice.Specifications[i].SpecificationName}"));
-
-            var input = Interaction.InputBox(
-                $"Currently Linked Specifications:\n{linkedText}\n\nEnter spec index to remove:",
-                "Remove Spec from Charge", "");
-
-            if (string.IsNullOrWhiteSpace(input)) return;
-
-            var toRemove = input.Split(',')
-                .Select(s => s.Trim())
-                .Where(s => int.TryParse(s, out int idx) && linkedIndices.Contains(idx))
-                .Select(s => int.Parse(s))
-                .ToHashSet();
-
-            var remaining = linkedIndices.Where(i => !toRemove.Contains(i)).ToList();
-
-            if (remaining.Count == 0)
-            {
-                MessageBox.Show("Charge must target at least one specification!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            SelectedCharge.LinkedSpecIndices = string.Join(",", remaining);
-            UpdateChargeValue(SelectedCharge);
-            Invoice.CalculateTotals();
-        }
-
-        private void ToggleSpecForCharge(object? param)
-        {
-            var charge = param as OtherChargeModel ?? SelectedCharge;
-            if (charge == null || Invoice?.Specifications == null) return;
-
-            var allSpecs = string.Join("\n", Invoice.Specifications.Select((s, i) =>
-            {
-                bool isLinked = string.IsNullOrEmpty(charge.LinkedSpecIndices)
-                    ? false
-                    : charge.LinkedSpecIndices.Split(',').Any(idx => int.TryParse(idx.Trim(), out int parsedIdx) && parsedIdx == i);
-                string check = isLinked ? "[X]" : "[ ]";
-                return $"  {check} {i}: {s.SpecificationName}";
-            }));
-
-            var input = Interaction.InputBox(
-                $"Toggle specifications for this charge:\n{allSpecs}\n\nEnter indices to toggle (e.g., 0,2,3):",
-                "Toggle Specs for Charge", "");
-
-            if (string.IsNullOrWhiteSpace(input)) return;
-
-            var toToggle = input.Split(',')
-                .Select(s => s.Trim())
-                .Where(s => int.TryParse(s, out int idx) && idx >= 0 && idx < Invoice.Specifications.Count)
-                .Select(s => int.Parse(s))
-                .ToHashSet();
-
-            if (toToggle.Count == 0) return;
-
-            var current = string.IsNullOrEmpty(charge.LinkedSpecIndices)
-                ? new HashSet<int>()
-                : charge.LinkedSpecIndices.Split(',')
-                    .Where(s => !string.IsNullOrWhiteSpace(s) && int.TryParse(s.Trim(), out int idx))
-                    .Select(s => int.Parse(s.Trim()))
-                    .ToHashSet();
-
-            foreach (var idx in toToggle)
-            {
-                if (current.Contains(idx))
-                    current.Remove(idx);
-                else
-                    current.Add(idx);
-            }
-
-            if (current.Count == 0)
-            {
-                MessageBox.Show("Charge must target at least one specification!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            charge.LinkedSpecIndices = string.Join(",", current.OrderBy(x => x));
-            UpdateChargeValue(charge);
-            Invoice.CalculateTotals();
-        }
-
-        // ==================== LM TOTALS ====================
         public double SpecTotalLM1 => SelectedTargetSpecification?.Items?.Sum(x => x.LM1 * x.Qty) ?? 0;
         public double SpecTotalLM2 => SelectedTargetSpecification?.Items?.Sum(x => x.LM2 * x.Qty) ?? 0;
 
         // ==================== INVOICE TOTALS ====================
-
         public double InvoiceGrandTotal => Invoice?.GrandTotal ?? 0;
         public double InvoiceVatAmount => Invoice?.VatAmount ?? 0;
         public double InvoiceNetTotal => Invoice?.NetTotal ?? 0;
@@ -2243,7 +1841,6 @@ namespace ProGlassAutomation.ViewModels
         public double InvoiceTotalLM2 => Invoice?.TotalLM2 ?? 0;
 
         // ==================== CSV IMPORT/EXPORT ====================
-
         private void ExportToCsv()
         {
             if (Invoice == null || Invoice.Specifications.Count == 0)
@@ -2287,31 +1884,22 @@ namespace ProGlassAutomation.ViewModels
                     Specifications = importedInvoice.Specifications
                 };
 
-                // PATCH 10: Ensure all specs are properly linked to Invoice BEFORE renumbering
                 foreach (var spec in Invoice.Specifications)
                 {
                     spec.Invoice = Invoice;
-                    // PATCH 9: Reset SrNo to 0 so RenumberAllSrNumbers can set proper values
                     foreach (var item in spec.Items)
-                    {
                         item.SrNo = 0;
-                    }
                     spec.CalculateTotals();
                 }
 
-                // PATCH 9: Now renumber all SRs in sequence
                 RenumberAllSrNumbers();
-
                 SubscribeToOtherChargeChanges();
-
                 SelectedTargetSpecification = Invoice.Specifications.FirstOrDefault();
                 SelectedSpecificationId = SelectedTargetSpecification?.Id ?? 0;
                 CurrentFileName = "Imported";
-
                 OnPropertyChanged(nameof(Invoice));
                 OnPropertyChanged(nameof(SelectedTargetSpecification));
                 OnPropertyChanged(nameof(SelectedSpecificationId));
-
                 Invoice.CalculateTotals();
                 Invoice.IsDirty = true;
 
@@ -2358,21 +1946,13 @@ namespace ProGlassAutomation.ViewModels
                     newItem.Height1 = item.Height1;
                     newItem.Width2 = item.Width2;
                     newItem.Height2 = item.Height2;
-
                     targetSpec.Items.Add(newItem);
-                    newItem.PropertyChanged += (s, e) =>
-                    {
-                        targetSpec.CalculateTotals();
-                        Invoice.CalculateTotals();
-                        Invoice.IsDirty = true;
-                    };
                 }
 
                 RenumberAllSrNumbers();
                 Invoice.CalculateTotals();
                 Invoice.IsDirty = true;
 
-                // Notify all total properties
                 OnPropertyChanged(nameof(InvoiceGrandTotal));
                 OnPropertyChanged(nameof(InvoiceVatAmount));
                 OnPropertyChanged(nameof(InvoiceNetTotal));
@@ -2445,15 +2025,10 @@ namespace ProGlassAutomation.ViewModels
                 for (int i = startIndex; i < rows.Length; i++)
                 {
                     var columns = rows[i].Split('\t').Select(c => c.Trim()).ToArray();
-                    if (columns.Length < 6)
-                    {
-                        Debug.WriteLine($"[Import Skip] Invalid row: {rows[i]}");
-                        continue;
-                    }
+                    if (columns.Length < 6) continue;
                     if (columns.Length == 0 || string.IsNullOrWhiteSpace(string.Join("", columns))) continue;
 
                     var item = new InvoiceItemModel { SrNo = itemsAdded + 1, Specification = spec };
-
                     if (columns.Length > 0) item.GlassRef = columns[0].Trim();
                     if (columns.Length > 1 && TryParseNumber(columns[1], out double w1)) item.Width1 = Math.Max(0, w1); else item.Width1 = defaultWidth1;
                     if (columns.Length > 2 && TryParseNumber(columns[2], out double h1)) item.Height1 = Math.Max(0, h1); else item.Height1 = defaultHeight1;
@@ -2463,49 +2038,19 @@ namespace ProGlassAutomation.ViewModels
                     if (columns.Length > 6 && TryParseNumber(columns[6], out double price)) item.Price = Math.Max(0, price); else item.Price = defaultPrice;
                     if (columns.Length > 7 && TryParseNumber(columns[7].Replace("%", ""), out double surcharge)) item.SurchargePercent = Math.Clamp(surcharge, 0, 100); else item.SurchargePercent = defaultSurcharge;
 
-                    item.PropertyChanged += (s, e) =>
-                    {
-                        spec.CalculateTotals();
-                        Invoice.CalculateTotals();
-                        OnPropertyChanged(nameof(Invoice));
-                        OnPropertyChanged(nameof(SelectedTargetSpecification));
-                        OnPropertyChanged(nameof(Invoice.Specifications));
-                        Invoice.IsDirty = true;
-                    };
-
                     spec.Items.Add(item);
                     itemsAdded++;
-                }
-
-                if (spec.Items.Count == 0)
-                {
-                    int nextSr = GetNextSrNo();
-                    spec.Items.Add(new InvoiceItemModel
-                    {
-                        SrNo = nextSr,
-                        Qty = 1,
-                        SurchargePercent = defaultSurcharge,
-                        Price = defaultPrice,
-                        Width1 = defaultWidth1,
-                        Height1 = defaultHeight1,
-                        Width2 = defaultWidth2,
-                        Height2 = defaultHeight2
-                    });
                 }
 
                 RenumberAllSrNumbers();
                 spec.CalculateTotals();
                 Invoice.CalculateTotals();
-
                 OnPropertyChanged(nameof(Invoice));
                 OnPropertyChanged(nameof(SelectedTargetSpecification));
                 OnPropertyChanged(nameof(Invoice.Specifications));
                 OnPropertyChanged(nameof(SelectedSpecificationOtherCharges));
-
                 Invoice.IsDirty = true;
                 StatusMessage = $"✅ Pasted {itemsAdded} items from Excel";
-
-                // Refresh auto-values for all charges
                 RefreshAllChargeAutoValues();
             }
             catch (Exception ex)
@@ -2523,8 +2068,7 @@ namespace ProGlassAutomation.ViewModels
             return double.TryParse(cleaned, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out result);
         }
 
-        // ==================== DEBUG & TEST METHODS ====================
-
+        // ==================== DEBUG & TEST ====================
         private void TestRoundTrip()
         {
             try
@@ -2553,11 +2097,8 @@ namespace ProGlassAutomation.ViewModels
                 {
                     int totalItems = imported.Specifications.Sum(s => s.Items.Count);
                     StatusMessage = $"✅ Imported: {totalItems} items";
-                    if (imported.Specifications.Count > 0 && imported.Specifications[0].Items.Count > 0)
-                        MessageBox.Show($"First item Qty: {imported.Specifications[0].Items[0].Qty}\n\nIf Qty = 99, import works!", "Test Result");
+                    MessageBox.Show($"First item Qty: {imported.Specifications[0].Items[0].Qty}", "Test Result");
                 }
-                else
-                    MessageBox.Show("Import FAILED - returned null", "Error");
             }
             catch (Exception ex)
             {
@@ -2574,7 +2115,6 @@ namespace ProGlassAutomation.ViewModels
 
                 string filePath = dialog.FileName;
                 var lines = File.ReadAllLines(filePath, System.Text.Encoding.UTF8);
-
                 string report = $"File: {Path.GetFileName(filePath)}\nLines: {lines.Length}\n\n=== RAW CONTENT ===\n";
                 for (int i = 0; i < Math.Min(lines.Length, 40); i++)
                     report += $"[{i:D2}] {lines[i]}\n";
@@ -2587,11 +2127,7 @@ namespace ProGlassAutomation.ViewModels
                 {
                     report += $"RESULT: {imported.Specifications.Count} specs\n";
                     foreach (var spec in imported.Specifications)
-                    {
                         report += $"\nSpec: {spec.SpecificationName}\n  Items: {spec.Items.Count}\n";
-                        foreach (var item in spec.Items)
-                            report += $"    SR:{item.SrNo}, Glass:{item.GlassRef}, W:{item.Width1}, H:{item.Height1}, Qty:{item.Qty}\n";
-                    }
                 }
                 MessageBox.Show(report, "CSV Debug Report", MessageBoxButton.OK, MessageBoxImage.Information);
             }
@@ -2607,7 +2143,6 @@ namespace ProGlassAutomation.ViewModels
             {
                 string testPath = @"C:\Temp\TestInvoice.csv";
                 _excelCsvService.ExportToCsv(Invoice, testPath);
-
                 var lines = File.ReadAllLines(testPath, System.Text.Encoding.UTF8);
                 string rawContent = "=== EXPORTED CSV RAW CONTENT ===\n\n";
                 for (int i = 0; i < lines.Length; i++)
@@ -2626,68 +2161,47 @@ namespace ProGlassAutomation.ViewModels
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error: {ex.Message}\n{ex.StackTrace}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
         // ==================== LOAD FROM DAILY WORK ====================
-
         public void LoadFromDailyWork(Data.Database.DailyWork dailyWork)
         {
             if (dailyWork == null) return;
 
-            // Generate PI Number from DailyWork
             Invoice.InvoiceNo = string.IsNullOrEmpty(dailyWork.PINumber)
                 ? $"PI-{DateTime.Now:yyyyMMdd}-{dailyWork.Id:D4}"
                 : dailyWork.PINumber;
 
             Invoice.InvoiceDate = DateTime.Now;
             Invoice.ValidUntil = DateTime.Now.AddDays(30);
-
-            // Fix: Use Company for CustomerName
             Invoice.CustomerName = dailyWork.Company ?? "New Customer";
-
-            // Keep CustomerReference from DailyWork
             Invoice.CustomerReference = dailyWork.CustomerReference ?? "";
             Invoice.Salesman = dailyWork.Salesman ?? "";
             Invoice.ProjectName = ExtractProjectName(dailyWork.Notes);
             Invoice.ProjectNo = dailyWork.PINumber ?? "";
-            Invoice.ProjectLocation = "";
-            Invoice.LPONo = "";
-            Invoice.AttentionName = "";
-            Invoice.ContactNo = "";
             Invoice.Color = dailyWork.Color ?? "";
             Invoice.Notes = dailyWork.Notes ?? "";
 
-            // Calculate SQM - create specifications from DailyWork qty
             if (dailyWork.SQM > 0 || dailyWork.Qty > 0)
             {
-                // Clear existing specs and create new one
                 Invoice.Specifications.Clear();
-
-                // Add specification with SQM info
                 var spec = new SpecificationModel
                 {
-                    SpecificationName = $"Load from DailyWork",
+                    SpecificationName = "Load from DailyWork",
                     Id = 0,
                     Invoice = Invoice
                 };
 
-                // Calculate dimensions: assume square panels for simplicity
-                // SQM = (Width * Height * Qty) / 1,000,000
-                // So Height = (SQM * 1,000,000) / (Width * Qty)
                 double qty = dailyWork.Qty > 0 ? dailyWork.Qty : 1;
                 double sqm = dailyWork.SQM > 0 ? dailyWork.SQM : 1;
-                double widthMm = 1000; // Default 1m width
-                double heightMm = (sqm * 1000000) / (widthMm * qty); // Calculate height from SQM
+                double widthMm = 1000;
+                double heightMm = (sqm * 1000000) / (widthMm * qty);
 
-                // Handle edge cases
-                if (double.IsNaN(heightMm) || double.IsInfinity(heightMm))
-                    heightMm = 1000;
-                if (heightMm <= 0)
+                if (double.IsNaN(heightMm) || double.IsInfinity(heightMm) || heightMm <= 0)
                     heightMm = 1000;
 
-                // Add item with dimensions calculated from SQM
                 var item = new InvoiceItemModel
                 {
                     SrNo = 1,
@@ -2701,15 +2215,11 @@ namespace ProGlassAutomation.ViewModels
                     Specification = spec
                 };
 
-                // CRITICAL: Call Recalculate to set TotalSQM
                 item.Recalculate();
-
                 spec.Items.Add(item);
                 Invoice.Specifications.Add(spec);
 
-                System.Diagnostics.Debug.WriteLine($"[PIViewModel] Created item from DailyWork: Width1={item.Width1}, Height1={item.Height1}, Qty={item.Qty}, TotalSQM={item.TotalSQM}");
-
-                // Subscribe to changes
+                Debug.WriteLine($"[PIViewModel] Created item from DailyWork: Width1={item.Width1}, Height1={item.Height1}, Qty={item.Qty}, TotalSQM={item.TotalSQM}");
                 SubscribeToOtherChargeChanges();
             }
 
@@ -2717,7 +2227,7 @@ namespace ProGlassAutomation.ViewModels
             Invoice.IsDirty = true;
             OnPropertyChanged(nameof(Invoice));
 
-            System.Diagnostics.Debug.WriteLine($"[PIViewModel] Loaded from DailyWorks: PINumber={dailyWork.PINumber}, SQM={Invoice.TotalSQM}, Qty={Invoice.TotalQty}");
+            Debug.WriteLine($"[PIViewModel] Loaded from DailyWorks: PINumber={dailyWork.PINumber}, SQM={Invoice.TotalSQM}, Qty={Invoice.TotalQty}");
         }
 
         private string ExtractProjectName(string notes)
@@ -2731,57 +2241,44 @@ namespace ProGlassAutomation.ViewModels
             return notes;
         }
 
-        // ==================== JOB ORDER CONVERSION (PATCH 1) ====================
-
+        // ==================== JOB ORDER CONVERSION ====================
         public void CheckAndConvertToJobOrder()
         {
-            // Check if status is "Confirmed" and not already converted
             if (Invoice != null &&
                 Invoice.Status == "Confirmed" &&
                 !IsJobOrder &&
                 !string.IsNullOrEmpty(Invoice.InvoiceNo))
             {
-                // Check if already converted (prevent double conversion)
                 if (Invoice.IsConvertedToJobOrder)
                 {
-                    System.Diagnostics.Debug.WriteLine("[ProformaInvoice] Already converted to Job Order");
+                    Debug.WriteLine("[ProformaInvoice] Already converted to Job Order");
                     return;
                 }
 
-                // Mark as converted
                 Invoice.IsConvertedToJobOrder = true;
 
-                // Create Job Order
                 if (_jobOrderVM != null)
                 {
-                    // Job Order creation is handled via MainViewModel.CreateJobOrderFromProformaInvoice
-
-                    // Update UI to Job Order mode
                     IsJobOrder = true;
-
-                    System.Diagnostics.Debug.WriteLine($"[ProformaInvoice] ✅ Converted to Job Order: {Invoice.InvoiceNo}");
+                    Debug.WriteLine($"[ProformaInvoice] ✅ Converted to Job Order: {Invoice.InvoiceNo}");
                 }
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine("[ProformaInvoice] ❌ JobOrderVM not set!");
+                    Debug.WriteLine("[ProformaInvoice] ❌ JobOrderVM not set!");
                 }
             }
         }
 
-        // ==================== LOAD FROM EXISTING PROFORMA INVOICE (PATCH 15) ====================
-
+        // ==================== LOAD FROM EXISTING PROFORMA INVOICE ====================
         public void LoadFromProformaInvoice(ProformaInvoiceModel pi)
         {
             if (pi == null) return;
-
-            System.Diagnostics.Debug.WriteLine($"[PIViewModel] LoadFromProformaInvoice: {pi.InvoiceNo}");
+            Debug.WriteLine($"[PIViewModel] LoadFromProformaInvoice: {pi.InvoiceNo}");
 
             try
             {
-                // PATCH 8: Use bulk update for better performance
                 using (BulkUpdateScope())
                 {
-                    // Copy all properties from the loaded PI
                     Invoice.InvoiceNo = pi.InvoiceNo;
                     Invoice.InvoiceDate = pi.InvoiceDate;
                     Invoice.ValidUntil = pi.ValidUntil;
@@ -2800,7 +2297,6 @@ namespace ProGlassAutomation.ViewModels
                     Invoice.Notes = pi.Notes ?? "";
                     Invoice.Status = pi.Status ?? "Pending";
 
-                    // Copy specifications using DeepClone (PATCH 15)
                     Invoice.Specifications.Clear();
                     if (pi.Specifications != null)
                     {
@@ -2808,45 +2304,33 @@ namespace ProGlassAutomation.ViewModels
                         {
                             var newSpec = piSpec.DeepClone();
                             newSpec.Invoice = Invoice;
-
-                            // PATCH 10: Ensure all items have proper parent reference
                             foreach (var item in newSpec.Items)
-                            {
                                 item.Specification = newSpec;
-                            }
-
                             Invoice.Specifications.Add(newSpec);
                         }
                     }
                 }
 
-                // PATCH 3: Reconstruct after load (reattach handlers, rebuild relationships)
                 ReconstructAfterLoad();
-
-                // Set first spec as selected
                 SelectedTargetSpecification = Invoice.Specifications.FirstOrDefault();
                 SelectedSpecificationId = SelectedTargetSpecification?.Id ?? 0;
-
                 Invoice.CalculateTotals();
                 Invoice.IsDirty = false;
                 CurrentFileName = pi.InvoiceNo ?? "Loaded Invoice";
 
-                System.Diagnostics.Debug.WriteLine($"[PIViewModel] Loaded {Invoice.Specifications.Count} specs with full reconstruction");
+                Debug.WriteLine($"[PIViewModel] Loaded {Invoice.Specifications.Count} specs with full reconstruction");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[PIViewModel] LoadFromProformaInvoice ERROR: {ex.Message}");
-                MessageBox.Show($"Error loading invoice: {ex.Message}", "Error",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                Debug.WriteLine($"[PIViewModel] LoadFromProformaInvoice ERROR: {ex.Message}");
+                MessageBox.Show($"Error loading invoice: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-
         // ==================== VALIDATION (PATCH 17) ====================
-
-        public ValidationResult ValidateInvoice()
+        public ModelValidationResult ValidateInvoice()
         {
-            return Invoice?.Validate() ?? new ValidationResult();
+            return Invoice?.Validate() ?? new ModelValidationResult();
         }
 
         public bool CanSaveInvoice()

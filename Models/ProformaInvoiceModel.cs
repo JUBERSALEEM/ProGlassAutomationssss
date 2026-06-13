@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Newtonsoft.Json;
 
 namespace ProGlassAutomation.Models
 {
@@ -12,41 +13,32 @@ namespace ProGlassAutomation.Models
     /// specifications, other charges, and calculated totals.
     /// </summary>
     /// <remarks>
-    /// PATCH 6: Added IDisposable for proper cleanup
-    /// PATCH 8: Added BulkUpdateScope for batch operations
-    /// PATCH 10: Added JsonIgnore for parent references
-    /// PATCH 15: Added DeepClone method
-    /// PATCH 17: Added Validate method
+    /// PATCH 1: Added Job Order tracking
+    /// PATCH 6: Added IDisposable
+    /// PATCH 8: Added BulkUpdateScope
+    /// PATCH 15: Added DeepClone
+    /// PATCH 16: Added Status transitions
+    /// PATCH 17: Added Validate
     /// PATCH 18: Added thread-safe calculations
-    /// PATCH 19: Added thread lock for concurrent access
+    /// PATCH 19: Added thread lock
     /// </remarks>
     public class ProformaInvoiceModel : INotifyPropertyChanged, IDisposable
     {
         public event PropertyChangedEventHandler PropertyChanged;
         private bool _disposed;
 
-        // ==================== ID (For DB Linkage) ====================
+        // ==================== THREAD SAFETY (PATCH 19) ====================
+        private readonly object _threadLock = new object();
+        private static readonly object _invoiceLock = new object();
+        private bool _isCalculating = false;
+
+        // ==================== ID ====================
         private int _id = 0;
         public int Id
         {
             get => _id;
-            set
-            {
-                if (_id != value)
-                {
-                    _id = value;
-                    OnPropertyChanged();
-                }
-            }
+            set => SetProperty(ref _id, value);
         }
-
-        // ==================== STATIC RANDOM (Thread-Safe) ====================
-        private static readonly object _invoiceLock = new object();
-        private static int _lastGeneratedNumber;
-
-        // ==================== THREAD SAFETY (PATCH 19) ====================
-        private readonly object _threadLock = new object();
-        private bool _isCalculating = false;
 
         // ==================== BULK UPDATE MODE (PATCH 8) ====================
         private bool _isBulkUpdating = false;
@@ -129,6 +121,7 @@ namespace ProGlassAutomation.Models
         {
             if (spec == null) return;
 
+            spec.Invoice = this;
             spec.PropertyChanged += OnSpecificationPropertyChanged;
             spec.Items.CollectionChanged += OnItemsCollectionChanged;
 
@@ -150,9 +143,7 @@ namespace ProGlassAutomation.Models
             spec.PropertyChanged -= OnSpecificationPropertyChanged;
 
             if (spec.Items != null)
-            {
                 spec.Items.CollectionChanged -= OnItemsCollectionChanged;
-            }
 
             if (spec.OtherCharges != null)
             {
@@ -199,15 +190,16 @@ namespace ProGlassAutomation.Models
         {
             if (IsBulkUpdating) return;
 
-            if (e.PropertyName == nameof(SpecificationModel.SpecTotalSQM) ||
-                e.PropertyName == nameof(SpecificationModel.SpecTotalSQM1) ||
-                e.PropertyName == nameof(SpecificationModel.SpecTotalSQM2) ||
-                e.PropertyName == nameof(SpecificationModel.SpecTotalLM) ||
-                e.PropertyName == nameof(SpecificationModel.SpecTotalLM1) ||
-                e.PropertyName == nameof(SpecificationModel.SpecTotalLM2) ||
-                e.PropertyName == nameof(SpecificationModel.SpecTotalQty) ||
-                e.PropertyName == nameof(SpecificationModel.SpecTotalPrice) ||
-                e.PropertyName == nameof(SpecificationModel.OtherChargesTotal))
+            string propName = e.PropertyName;
+            if (propName == nameof(SpecificationModel.SpecTotalSQM) ||
+                propName == nameof(SpecificationModel.SpecTotalSQM1) ||
+                propName == nameof(SpecificationModel.SpecTotalSQM2) ||
+                propName == nameof(SpecificationModel.SpecTotalLM) ||
+                propName == nameof(SpecificationModel.SpecTotalLM1) ||
+                propName == nameof(SpecificationModel.SpecTotalLM2) ||
+                propName == nameof(SpecificationModel.SpecTotalQty) ||
+                propName == nameof(SpecificationModel.SpecTotalPrice) ||
+                propName == nameof(SpecificationModel.OtherChargesTotal))
             {
                 CalculateTotals();
             }
@@ -219,7 +211,7 @@ namespace ProGlassAutomation.Models
             CalculateTotals();
         }
 
-        // ==================== PROPERTY CHANGED (PATCH 19 Thread Safe) ====================
+        // ==================== PROPERTY CHANGED (PATCH 19) ====================
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
@@ -227,7 +219,6 @@ namespace ProGlassAutomation.Models
 
         protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
         {
-            // Thread-safe property set
             lock (_threadLock)
             {
                 if (Equals(field, value)) return false;
@@ -384,7 +375,7 @@ namespace ProGlassAutomation.Models
             set => SetProperty(ref _companyPhone, value);
         }
 
-        // ============ STATUS MANAGEMENT (PATCH 16) ============
+        // ==================== STATUS MANAGEMENT (PATCH 16) ====================
         private string _status = "Draft";
         public string Status
         {
@@ -428,7 +419,7 @@ namespace ProGlassAutomation.Models
             return _statusTransitions.TryGetValue(from, out var transitions) && transitions.Contains(to);
         }
 
-        // ============ JOB ORDER TRACKING (PATCH 1) ============
+        // ==================== JOB ORDER TRACKING (PATCH 1) - COMPLETE ====================
         private bool _isConvertedToJobOrder;
         public bool IsConvertedToJobOrder
         {
@@ -588,7 +579,7 @@ namespace ProGlassAutomation.Models
         private double _netTotal = 0;
         public double NetTotal { get => _netTotal; private set => SetProperty(ref _netTotal, value); }
 
-        // ==================== ISDIRTY (PATCH 19 Thread Safe) ====================
+        // ==================== ISDIRTY (PATCH 19) ====================
         private bool _isDirty = false;
         public bool IsDirty
         {
@@ -610,9 +601,9 @@ namespace ProGlassAutomation.Models
         }
 
         // ==================== VALIDATION (PATCH 17) ====================
-        public ValidationResult Validate()
+        public ModelValidationResult Validate()
         {
-            var result = new ValidationResult();
+            var result = new ModelValidationResult();
 
             if (string.IsNullOrWhiteSpace(InvoiceNo))
                 result.AddError("InvoiceNo", "Invoice number is required");
@@ -651,12 +642,11 @@ namespace ProGlassAutomation.Models
 
         public bool IsValid => Validate().IsValid;
 
-        // ==================== CALCULATIONS (PATCH 19 Thread Safe) ====================
+        // ==================== CALCULATIONS (PATCH 19) ====================
         public void CalculateTotals()
         {
             if (IsBulkUpdating) return;
 
-            // Prevent concurrent calculations (PATCH 19)
             lock (_threadLock)
             {
                 if (_isCalculating) return;
@@ -700,7 +690,6 @@ namespace ProGlassAutomation.Models
                 VatAmount = Math.Round(GrandTotal * VatPercent / 100.0, 2);
                 NetTotal = Math.Round(GrandTotal + VatAmount, 2);
 
-                // Thread-safe dirty flag
                 lock (_threadLock)
                 {
                     _isDirty = true;
@@ -715,10 +704,7 @@ namespace ProGlassAutomation.Models
         }
 
         // ==================== BULK OPERATIONS (PATCH 8) ====================
-        public void BeginBulkUpdate()
-        {
-            IsBulkUpdating = true;
-        }
+        public void BeginBulkUpdate() => IsBulkUpdating = true;
 
         public void EndBulkUpdate()
         {
@@ -798,6 +784,8 @@ namespace ProGlassAutomation.Models
         }
 
         // ==================== INVOICE NUMBER GENERATION ====================
+        private static int _lastGeneratedNumber;
+
         public static string GenerateInvoiceNo()
         {
             lock (_invoiceLock)
@@ -847,6 +835,33 @@ namespace ProGlassAutomation.Models
             ConvertedDate = null;
             ConvertedBy = "";
             Revision = 0;
+        }
+    }
+
+    // ==================== MODEL VALIDATION RESULT (RENAMED TO AVOID DUPLICATE) ====================
+    public class ModelValidationResult
+    {
+        public bool IsValid => _errors.Count == 0;
+        private readonly List<(string Property, string Message)> _errors = new();
+
+        public void AddError(string property, string message)
+        {
+            _errors.Add((property, message));
+        }
+
+        public IEnumerable<(string Property, string Message)> Errors => _errors;
+
+        public string GetErrorSummary()
+        {
+            if (IsValid) return "✓ Validation passed";
+
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("❌ Validation Failed:");
+            foreach (var error in Errors)
+            {
+                sb.AppendLine($"  • {error.Property}: {error.Message}");
+            }
+            return sb.ToString();
         }
     }
 }

@@ -12,8 +12,12 @@ namespace ProGlassAutomation.Models
     /// that can be applied to specifications.
     /// </summary>
     /// <remarks>
+    /// PATCH 6: Added INotifyPropertyChanged
+    /// PATCH 8: Added display properties
     /// PATCH 15: Added DeepClone method
-    /// PATCH 18: Added memory cleanup methods
+    /// PATCH 18: Added memory cleanup
+    /// PATCH 28: Added SetAllSpecs
+    /// PATCH 31: Added LinkedSpecIndices
     /// </remarks>
     public class OtherChargeModel : INotifyPropertyChanged, IDisposable
     {
@@ -33,7 +37,6 @@ namespace ProGlassAutomation.Models
         }
 
         // ==================== DISPOSE PATTERN (PATCH 18) ====================
-
         private bool _disposed = false;
 
         public void Dispose()
@@ -48,7 +51,6 @@ namespace ProGlassAutomation.Models
 
             if (disposing)
             {
-                // Clear bound specs reference
                 _boundSpecs = null;
             }
 
@@ -56,7 +58,6 @@ namespace ProGlassAutomation.Models
         }
 
         // ==================== BASIC PROPERTIES ====================
-
         private string _name = "New Charge";
         public string Name
         {
@@ -77,6 +78,7 @@ namespace ProGlassAutomation.Models
                 OnPropertyChanged(nameof(UnitDisplay));
                 OnPropertyChanged(nameof(IsLMBased));
                 OnPropertyChanged(nameof(IsHoleType));
+                CalculateAmount();
             }
         }
 
@@ -122,8 +124,7 @@ namespace ProGlassAutomation.Models
             set => SetProperty(ref _lmDimType, value ?? "w1h1");
         }
 
-        // ==================== DISPLAY PROPERTIES ====================
-
+        // ==================== DISPLAY PROPERTIES (PATCH 8) ====================
         public string ValueDisplay
         {
             get
@@ -185,7 +186,6 @@ namespace ProGlassAutomation.Models
         public bool IsHoleType => Type == "1x" || Type == "2x";
 
         // ==================== CALCULATE AMOUNT ====================
-
         public void CalculateAmount()
         {
             Amount = Math.Round(Value * Rate, 2);
@@ -193,8 +193,7 @@ namespace ProGlassAutomation.Models
             OnPropertyChanged(nameof(AmountDisplay));
         }
 
-        // ==================== SPEC TARGETING ====================
-
+        // ==================== SPEC TARGETING (PATCH 31) ====================
         private int _linkedSpecIndex = -1;
         public int LinkedSpecIndex
         {
@@ -236,7 +235,7 @@ namespace ProGlassAutomation.Models
         {
             get
             {
-                if (string.IsNullOrWhiteSpace(_linkedSpecIndices))
+                if (TargetsAllSpecs || string.IsNullOrWhiteSpace(_linkedSpecIndices))
                     return "All Specs";
 
                 var indices = SpecIndexList;
@@ -263,7 +262,6 @@ namespace ProGlassAutomation.Models
         }
 
         // ==================== AUTO VALUE - BOUND SPECS (PATCH 18) ====================
-
         [JsonIgnore]
         private List<SpecificationModel>? _boundSpecs;
 
@@ -288,14 +286,13 @@ namespace ProGlassAutomation.Models
         public bool IsAutoMode => !_isManualOverride;
 
         // ==================== CLEAR BOUND SPECS (PATCH 18) ====================
-
         public void ClearBoundSpecs()
         {
             _boundSpecs = null;
+            OnPropertyChanged(nameof(BoundSpecs));
         }
 
-        // ==================== SPEC INDEX MANAGEMENT ====================
-
+        // ==================== SPEC INDEX MANAGEMENT (PATCH 28) ====================
         public void AddSpec(int index)
         {
             var indices = SpecIndexList;
@@ -304,15 +301,15 @@ namespace ProGlassAutomation.Models
                 indices.Add(index);
                 indices.Sort();
                 LinkedSpecIndices = string.Join(",", indices);
+                TargetsAllSpecs = false;
             }
         }
 
         public void RemoveSpec(int index)
         {
             var indices = SpecIndexList;
-            if (indices.Contains(index))
+            if (indices.Remove(index))
             {
-                indices.Remove(index);
                 LinkedSpecIndices = indices.Count > 0 ? string.Join(",", indices) : "";
             }
         }
@@ -327,11 +324,11 @@ namespace ProGlassAutomation.Models
 
         public void SetAllSpecs()
         {
+            TargetsAllSpecs = true;
             LinkedSpecIndices = "";
         }
 
         // ==================== CLONE (PATCH 15) ====================
-
         public OtherChargeModel Clone()
         {
             return new OtherChargeModel
