@@ -884,7 +884,7 @@
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
                                         <TextBlock Text="Price/m²" FontSize="9" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                        <TextBox x:Name="txtStockPrice" Text="25" Background="#374151" Foreground="White" Padding="6,4" FontSize="11" TextAlignment="Center" TextChanged="txtStockPrice_TextChanged"/>
+                                        <TextBox x:Name="txtStockPrice" Text="25" Background="#374151" Foreground="White" Padding="6,4" FontSize="11" TextAlignment="Center"/>
                                     </StackPanel>
                                 </Grid>
                                 <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
@@ -915,7 +915,7 @@
                                     <Button Grid.Column="1" Content="Save" Click="SaveJob_Click" Background="#3B82F6" Foreground="White" Padding="8,4" Margin="5,0,0,0"/>
                                 </Grid>
                                 <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                    <ComboBox x:Name="cmbSavedJobs" Width="120" SelectionChanged="LoadJob_Selected">
+                                    <ComboBox x:Name="cmbSavedJobs" Width="120">
                                         <ComboBox.ItemTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Name}" Foreground="White"/>
@@ -943,7 +943,7 @@
                             </ControlTemplate>
                         </Button.Template>
                     </Button>
-                    <Button x:Name="btnSimulate" Content="Simulate Cutting" Click="Simulate_Click" 
+                    <Button x:Name="btnSimulate" Content="Simulate Cutting" Click="StartSimulation_Click" 
         Background="#F59E0B" Foreground="White" BorderThickness="0" 
         Padding="12,10" FontSize="11" Cursor="Hand" Margin="0,0,0,6">
                         <Button.Template>
