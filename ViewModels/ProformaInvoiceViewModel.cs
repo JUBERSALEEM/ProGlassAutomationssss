@@ -68,6 +68,9 @@ namespace ProGlassAutomation.ViewModels
         private readonly Queue<string> _statusMessageQueue = new();
         private bool _isProcessingStatusQueue = false;
 
+        // PATCH 2: Event handler guard to prevent duplicates
+        private readonly HashSet<string> _attachedHandlers = new();
+
         private static readonly JsonSerializerSettings _jsonSettings = new JsonSerializerSettings
         {
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
@@ -1231,6 +1234,12 @@ namespace ProGlassAutomation.ViewModels
         private void AttachSpecificationHandlers(SpecificationModel spec)
         {
             if (spec == null) return;
+
+            // PATCH 2: Prevent duplicate event handler registration
+            string handlerKey = $"Spec_{spec.Id}";
+            if (_attachedHandlers.Contains(handlerKey)) return;
+            _attachedHandlers.Add(handlerKey);
+
             spec.PropertyChanged -= Spec_PropertyChanged;
             spec.PropertyChanged += Spec_PropertyChanged;
 
@@ -1260,6 +1269,10 @@ namespace ProGlassAutomation.ViewModels
         private void DetachAllEventHandlers()
         {
             if (Invoice == null) return;
+
+            // PATCH 2: Clear handler tracking
+            _attachedHandlers.Clear();
+
             Invoice.PropertyChanged -= OnInvoicePropertyChanged;
 
             if (Invoice.Specifications != null)
@@ -1661,6 +1674,8 @@ namespace ProGlassAutomation.ViewModels
         private void UpdateChargeValue(OtherChargeModel charge)
         {
             if (charge == null) return;
+            if (SelectedTargetSpecification == null) return;
+
             var linkedSpecs = GetLinkedSpecifications(charge);
             if (linkedSpecs.Count == 0) return;
 
@@ -1707,9 +1722,10 @@ namespace ProGlassAutomation.ViewModels
             if (!string.IsNullOrEmpty(charge.LinkedSpecIndices))
             {
                 var indices = charge.LinkedSpecIndices
-                    .Split(',')
+                    .Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries)
                     .Select(s => int.TryParse(s.Trim(), out int idx) ? idx : -1)
                     .Where(idx => idx >= 0 && idx < Invoice.Specifications.Count)
+                    .Distinct()
                     .ToList();
 
                 foreach (var idx in indices)

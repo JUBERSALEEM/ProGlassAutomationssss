@@ -678,12 +678,12 @@ namespace ProGlassAutomation.Models
                     otherCharges += spec.OtherChargesTotal;
                 }
 
-                TotalSQM1 = Math.Round(sqm1, 4);
-                TotalSQM2 = Math.Round(sqm2, 4);
-                TotalSQM = Math.Round(sqm, 4);
-                TotalLM = Math.Round(lm, 4);
-                TotalLM1 = Math.Round(lm1, 4);
-                TotalLM2 = Math.Round(lm2, 4);
+                TotalSQM1 = Math.Round(sqm1, 4, MidpointRounding.AwayFromZero);
+                TotalSQM2 = Math.Round(sqm2, 4, MidpointRounding.AwayFromZero);
+                TotalSQM = Math.Round(sqm, 4, MidpointRounding.AwayFromZero);
+                TotalLM = Math.Round(lm, 4, MidpointRounding.AwayFromZero);
+                TotalLM1 = Math.Round(lm1, 4, MidpointRounding.AwayFromZero);
+                TotalLM2 = Math.Round(lm2, 4, MidpointRounding.AwayFromZero);
                 TotalQty = qty;
                 OtherChargesTotal = Math.Round(otherCharges, 2);
                 GrandTotal = Math.Round(specTotal + otherCharges, 2);
@@ -701,6 +701,17 @@ namespace ProGlassAutomation.Models
             {
                 lock (_threadLock) { _isCalculating = false; }
             }
+        }
+
+        // ==================== NOTIFY TOTALS (PATCH 33) ====================
+        public void NotifyTotals()
+        {
+            OnPropertyChanged(nameof(GrandTotal));
+            OnPropertyChanged(nameof(NetTotal));
+            OnPropertyChanged(nameof(VatAmount));
+            OnPropertyChanged(nameof(TotalSQM));
+            OnPropertyChanged(nameof(TotalQty));
+            OnPropertyChanged(nameof(OtherChargesTotal));
         }
 
         // ==================== BULK OPERATIONS (PATCH 8) ====================
@@ -736,6 +747,8 @@ namespace ProGlassAutomation.Models
         // ==================== DEEP CLONE (PATCH 15) ====================
         public ProformaInvoiceModel DeepClone()
         {
+            if (Specifications == null) return new ProformaInvoiceModel();
+
             var clone = new ProformaInvoiceModel
             {
                 InvoiceNo = InvoiceNo,

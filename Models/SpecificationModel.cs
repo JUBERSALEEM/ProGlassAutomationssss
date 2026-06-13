@@ -28,6 +28,9 @@ namespace ProGlassAutomation.Models
         private readonly object _threadLock = new object();
         private bool _isCalculating = false;
 
+        // ==================== EVENT SUPPRESSION (PATCH 18) ====================
+        private bool _suppressEvents = false;
+
         // ==================== BULK UPDATE MODE (PATCH 8) ====================
         private bool _isBulkUpdating = false;
         public bool IsBulkUpdating
@@ -109,7 +112,7 @@ namespace ProGlassAutomation.Models
         // ==================== COLLECTION HANDLERS ====================
         private void Items_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
-            if (IsBulkUpdating) return;
+            if (IsBulkUpdating || _suppressEvents) return;
 
             if (e.NewItems != null)
             {
@@ -297,6 +300,17 @@ namespace ProGlassAutomation.Models
             }
         }
 
+        // ==================== BIND CHARGES TO SPECS (PATCH 28) ====================
+        public void BindChargesToSpecs()
+        {
+            if (Invoice?.Specifications == null) return;
+            foreach (var charge in OtherCharges)
+            {
+                if (charge != null)
+                    charge.BoundSpecs = Invoice.Specifications.ToList();
+            }
+        }
+
         // ==================== GENERATED DESCRIPTION ====================
         public string GeneratedDescription
         {
@@ -386,7 +400,7 @@ namespace ProGlassAutomation.Models
         // ==================== CALCULATE SPEC TOTALS (PATCH 19) ====================
         public void CalculateSpecTotals()
         {
-            if (IsBulkUpdating) return;
+            if (IsBulkUpdating || _suppressEvents) return;
 
             lock (_threadLock)
             {
@@ -589,6 +603,8 @@ namespace ProGlassAutomation.Models
         // ==================== DEEP CLONE (PATCH 15) ====================
         public SpecificationModel DeepClone()
         {
+            if (Items == null) return new SpecificationModel();
+
             var clone = new SpecificationModel
             {
                 Id = Id,
@@ -633,6 +649,7 @@ namespace ProGlassAutomation.Models
             }
 
             clone.CalculateTotals();
+            clone.BindChargesToSpecs();
             return clone;
         }
 

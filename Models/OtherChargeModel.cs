@@ -254,9 +254,10 @@ namespace ProGlassAutomation.Models
                     return new List<int>();
 
                 return _linkedSpecIndices
-                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries)
                     .Select(s => int.TryParse(s.Trim(), out int i) ? i : -1)
                     .Where(i => i >= 0)
+                    .Distinct()
                     .ToList();
             }
         }
