@@ -19,6 +19,14 @@ namespace ProGlassAutomation.ViewModels
 {
     public class DimensionOption { public string Value { get; set; } = ""; public string Label { get; set; } = ""; }
     public class ChargeTypeOption { public string Value { get; set; } = ""; public string Label { get; set; } = ""; }
+
+    // PATCH 8: Charge type enum
+    public enum ChargeType
+    {
+        LM, LM1, LM2,
+        SQM, SQM1, SQM2,
+        QTY, MULTI2
+    }
     public class AirSpacerOption { public string Thickness { get; set; } = ""; public string Type { get; set; } = ""; public double Price { get; set; } public string Display => $"{Thickness}mm {Type} - AED {Price:F2}"; }
     public class FileListItem { public string FilePath { get; set; } = ""; public string InvoiceNo { get; set; } = ""; public string CustomerName { get; set; } = ""; public DateTime InvoiceDate { get; set; } public double NetTotal { get; set; } public string FileName => Path.GetFileNameWithoutExtension(FilePath); public string DateDisplay => InvoiceDate.ToString("dd MMM yyyy"); public string TotalDisplay => $"AED {NetTotal:N2}"; }
 
@@ -61,15 +69,19 @@ namespace ProGlassAutomation.ViewModels
         public event PropertyChangedEventHandler PropertyChanged;
         private readonly ExcelCsvService _excelCsvService = new ExcelCsvService();
         private readonly GlassPriceCalculator _priceCalculator = new GlassPriceCalculator();
+
+        // PATCH 15: Dictionary mapping for LINQ optimization
+        private readonly Dictionary<InvoiceItemModel, SpecificationModel> _itemSpecMap = new();
+
+        // PATCH 32: Strategy dictionary for charge calculation
+        private readonly Dictionary<string, Func<List<SpecificationModel>, double>> _chargeCalcMap = new();
+
         private static readonly object _invoiceLock = new object();
         private static int _lastGeneratedNumber;
 
         // PATCH 29: Status message queue for batching
         private readonly Queue<string> _statusMessageQueue = new();
         private bool _isProcessingStatusQueue = false;
-
-        // PATCH 2: Event handler guard to prevent duplicates
-        private readonly HashSet<string> _attachedHandlers = new();
 
         private static readonly JsonSerializerSettings _jsonSettings = new JsonSerializerSettings
         {
@@ -96,6 +108,17 @@ namespace ProGlassAutomation.ViewModels
 
         public ProformaInvoiceViewModel()
         {
+            // PATCH 32: Initialize charge calculation strategies
+            _chargeCalcMap["lm"] = specs => CalculateTotalLMValue(specs, "w1h1");
+            _chargeCalcMap["lm1"] = CalculateTotalLM1Value;
+            _chargeCalcMap["lm2"] = CalculateTotalLM2Value;
+            _chargeCalcMap["sqm"] = CalculateTotalSQMValue;
+            _chargeCalcMap["sqm1"] = CalculateTotalSQM1Value;
+            _chargeCalcMap["sqm2"] = CalculateTotalSQM2Value;
+            _chargeCalcMap["qty"] = specs => (double)CalculateTotalQtyValue(specs);
+            _chargeCalcMap["1x"] = specs => (double)CalculateTotalQtyValue(specs);
+            _chargeCalcMap["2x"] = specs => CalculateTotalQtyValue(specs) * 2;
+
             _excelCsvService.StatusChanged += status => EnqueueStatus(status);
             InitializeCommands();
             LoadSavedFiles();
@@ -1563,7 +1586,8 @@ namespace ProGlassAutomation.ViewModels
 
             Invoice.CalculateTotals();
             Invoice.IsDirty = true;
-            StatusMessage = $"✅ Applied '{GeneratedDescription}' @ AED {CalculatedPrice:N2}";
+            int itemsCount = SelectedTargetSpecification?.Items?.Count ?? 0;
+            StatusMessage = $"✅ Applied specification with {itemsCount} items";
         }
 
         // ==================== OTHER CHARGES ====================
@@ -1613,7 +1637,20 @@ namespace ProGlassAutomation.ViewModels
                 return;
             }
 
+            // PATCH 13: Input validation
+            if (Invoice?.Specifications == null || !Invoice.Specifications.Any())
+            {
+                MessageBox.Show("Invalid selection - no specifications available", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             int specIndex = Invoice.Specifications.IndexOf(SelectedTargetSpecification);
+            if (specIndex < 0)
+            {
+                MessageBox.Show("Invalid specification selection", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             var charge = new OtherChargeModel
             {
                 Name = "New Charge",
@@ -1671,47 +1708,47 @@ namespace ProGlassAutomation.ViewModels
             OnPropertyChanged(nameof(InvoiceTotalLM2));
         }
 
+        // PATCH 11: Single pipeline for charge calculation
         private void UpdateChargeValue(OtherChargeModel charge)
         {
             if (charge == null) return;
-            if (SelectedTargetSpecification == null) return;
-
             var linkedSpecs = GetLinkedSpecifications(charge);
             if (linkedSpecs.Count == 0) return;
 
-            switch (charge.Type?.ToLower())
+            // Calculate value based on type
+            CalculateChargeValue(charge, linkedSpecs);
+
+            // PATCH 4: Thread-safe UI update
+            Application.Current.Dispatcher.Invoke(() =>
             {
-                case "lm": charge.Value = CalculateTotalLMValue(linkedSpecs, "w1h1"); break;
-                case "lm1": charge.Value = CalculateTotalLM1Value(linkedSpecs); break;
-                case "lm2": charge.Value = CalculateTotalLM2Value(linkedSpecs); break;
-                case "sqm": charge.Value = CalculateTotalSQMValue(linkedSpecs); break;
-                case "sqm1": charge.Value = CalculateTotalSQM1Value(linkedSpecs); break;
-                case "sqm2": charge.Value = CalculateTotalSQM2Value(linkedSpecs); break;
-                case "qty":
-                case "1x": charge.Value = CalculateTotalQtyValue(linkedSpecs); break;
-                case "2x": charge.Value = CalculateTotalQtyValue(linkedSpecs) * 2; break;
-                default: charge.Value = 0; break;
-            }
+                charge.Amount = Math.Round(charge.Value * charge.Rate, 2);
+            });
         }
 
-        private void CalculateOtherChargeValue(OtherChargeModel charge, SpecificationModel spec)
+        private void CalculateChargeValue(OtherChargeModel charge, List<SpecificationModel> linkedSpecs)
         {
             if (charge == null) return;
-            switch (charge.Type?.ToLower())
+
+            var type = charge.Type?.ToLower() ?? "";
+            charge.Value = type switch
             {
-                case "lm":
-                case "lm1":
-                case "lm2":
-                case "sqm":
-                case "sqm1":
-                case "sqm2":
-                case "qty":
-                case "1x":
-                case "2x":
-                    charge.Amount = Math.Round(charge.Value * charge.Rate, 2);
-                    break;
-                default: charge.Amount = 0; break;
-            }
+                "lm" => CalculateTotalLMValue(linkedSpecs, "w1h1"),
+                "lm1" => CalculateTotalLM1Value(linkedSpecs),
+                "lm2" => CalculateTotalLM2Value(linkedSpecs),
+                "sqm" => CalculateTotalSQMValue(linkedSpecs),
+                "sqm1" => CalculateTotalSQM1Value(linkedSpecs),
+                "sqm2" => CalculateTotalSQM2Value(linkedSpecs),
+                "qty" or "1x" => CalculateTotalQtyValue(linkedSpecs),
+                "2x" => CalculateTotalQtyValue(linkedSpecs) * 2,
+                _ => 0
+            };
+        }
+
+        // PATCH 11: Legacy method kept for compatibility
+        private void CalculateOtherChargeValue(OtherChargeModel charge, SpecificationModel? spec)
+        {
+            if (charge == null) return;
+            charge.Amount = Math.Round(charge.Value * charge.Rate, 2);
         }
 
         private List<SpecificationModel> GetLinkedSpecifications(OtherChargeModel charge)
@@ -1932,6 +1969,9 @@ namespace ProGlassAutomation.ViewModels
 
         private void ImportItemsFromCsv()
         {
+            // PATCH 16: Backup before import
+            var backup = Invoice?.DeepClone();
+
             try
             {
                 var items = _excelCsvService.ImportItemsFromCsv();
@@ -1981,7 +2021,8 @@ namespace ProGlassAutomation.ViewModels
                 OnPropertyChanged(nameof(InvoiceTotalLM1));
                 OnPropertyChanged(nameof(InvoiceTotalLM2));
 
-                StatusMessage = $"✅ Applied '{GeneratedDescription}' @ AED {CalculatedPrice:N2}";
+                int importedCount = items.Count;
+                StatusMessage = $"✅ Imported {importedCount} items successfully";
             }
             catch (Exception ex)
             {
@@ -2036,7 +2077,7 @@ namespace ProGlassAutomation.ViewModels
                 }
 
                 spec.Items.Clear();
-                int itemsAdded = 0;
+                int totalItemsAdded = 0;
 
                 for (int i = startIndex; i < rows.Length; i++)
                 {
@@ -2044,7 +2085,7 @@ namespace ProGlassAutomation.ViewModels
                     if (columns.Length < 6) continue;
                     if (columns.Length == 0 || string.IsNullOrWhiteSpace(string.Join("", columns))) continue;
 
-                    var item = new InvoiceItemModel { SrNo = itemsAdded + 1, Specification = spec };
+                    var item = new InvoiceItemModel { SrNo = totalItemsAdded + 1, Specification = spec };
                     if (columns.Length > 0) item.GlassRef = columns[0].Trim();
                     if (columns.Length > 1 && TryParseNumber(columns[1], out double w1)) item.Width1 = Math.Max(0, w1); else item.Width1 = defaultWidth1;
                     if (columns.Length > 2 && TryParseNumber(columns[2], out double h1)) item.Height1 = Math.Max(0, h1); else item.Height1 = defaultHeight1;
@@ -2055,7 +2096,7 @@ namespace ProGlassAutomation.ViewModels
                     if (columns.Length > 7 && TryParseNumber(columns[7].Replace("%", ""), out double surcharge)) item.SurchargePercent = Math.Clamp(surcharge, 0, 100); else item.SurchargePercent = defaultSurcharge;
 
                     spec.Items.Add(item);
-                    itemsAdded++;
+                    totalItemsAdded++;
                 }
 
                 RenumberAllSrNumbers();
@@ -2066,7 +2107,7 @@ namespace ProGlassAutomation.ViewModels
                 OnPropertyChanged(nameof(Invoice.Specifications));
                 OnPropertyChanged(nameof(SelectedSpecificationOtherCharges));
                 Invoice.IsDirty = true;
-                StatusMessage = $"✅ Pasted {itemsAdded} items from Excel";
+                StatusMessage = $"✅ Pasted {totalItemsAdded} items from Excel";
                 RefreshAllChargeAutoValues();
             }
             catch (Exception ex)
