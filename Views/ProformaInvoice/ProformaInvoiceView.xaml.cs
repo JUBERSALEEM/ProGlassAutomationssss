@@ -129,15 +129,30 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         public ObservableCollection<SpecSelectionItem> SpecSelectionItems { get; set; } = new();
 
         // ═══════════════════════════════════════════════════════════════
-        // TRIM TABLE
+        // TRIM TABLE - AUTO-APPLY DEFAULT 15mm FOR ALL
         // ═══════════════════════════════════════════════════════════════
-        private Dictionary<string, TrimSettings> _trimTable = new()
+        private Dictionary<string, TrimSettings> _trimTable = new();
+
+        // Auto-initialize trim table with correct values per thickness
+        public void InitializeTrimTable()
         {
-            ["6mm"] = new TrimSettings { LM = 15, RM = 15, TM = 15, BM = 15, BreakoutMin = 15, Kerf = 0 },
-            ["8mm"] = new TrimSettings { LM = 30, RM = 30, TM = 30, BM = 30, BreakoutMin = 30, Kerf = 0 },
-            ["10mm"] = new TrimSettings { LM = 50, RM = 50, TM = 0, BM = 50, BreakoutMin = 40, Kerf = 0 },
-            ["12mm"] = new TrimSettings { LM = 50, RM = 50, TM = 0, BM = 50, BreakoutMin = 40, Kerf = 0 }
-        };
+            _trimTable = new Dictionary<string, TrimSettings>
+            {
+                // 6mm glass: 15mm trim all around
+                ["6mm"] = new TrimSettings { LM = 15, RM = 15, TM = 15, BM = 15, BreakoutMin = 15, Kerf = 0 },
+                // 8mm glass: 30mm trim all around
+                ["8mm"] = new TrimSettings { LM = 30, RM = 30, TM = 30, BM = 30, BreakoutMin = 30, Kerf = 0 },
+                // 10mm glass: 50mm trim (LM/RM/BM), 0 top (unframed edge)
+                ["10mm"] = new TrimSettings { LM = 50, RM = 50, TM = 0, BM = 50, BreakoutMin = 40, Kerf = 0 },
+                // 12mm glass: 50mm trim (LM/RM/BM), 0 top
+                ["12mm"] = new TrimSettings { LM = 50, RM = 50, TM = 0, BM = 50, BreakoutMin = 40, Kerf = 0 },
+                // 15mm glass: 60mm trim, 0 top
+                ["15mm"] = new TrimSettings { LM = 60, RM = 60, TM = 0, BM = 60, BreakoutMin = 50, Kerf = 0 },
+                // 19mm glass: 70mm trim, 0 top
+                ["19mm"] = new TrimSettings { LM = 70, RM = 70, TM = 0, BM = 70, BreakoutMin = 60, Kerf = 0 }
+            };
+            System.Diagnostics.Debug.WriteLine("[InitializeTrimTable] ✓ Trim table initialized with 6 thicknesses");
+        }
 
         public class TrimSettings
         {
@@ -147,6 +162,19 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             public double BM { get; set; }
             public double BreakoutMin { get; set; }
             public double Kerf { get; set; }
+        }
+
+        // Get current trim based on selected thickness
+        private TrimSettings GetCurrentTrim()
+        {
+            try
+            {
+                string thickness = (cmbThickness?.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "6mm";
+                if (_trimTable.TryGetValue(thickness, out TrimSettings trim))
+                    return trim;
+            }
+            catch { }
+            return _trimTable.ContainsKey("6mm") ? _trimTable["6mm"] : new TrimSettings { LM = 15, RM = 15, TM = 15, BM = 15, Kerf = 0 };
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -183,20 +211,41 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             DataContext = _viewModel;
 
             // IMPORTANT: Set this UserControl as temporary DataContext for list binding
-            // or use RelativeSource in XAML
             var tempDataContext = this;
 
-            // MISSING BINDINGS - ADD THESE
+            // MISSING BINDINGS
             AdditionalSheetsContainer.ItemsSource = AdditionalSheets;
             PerSheetResultsContainer.ItemsSource = SheetResults;
-
-            // Note: Don't call RefreshSpecSelectionItems() here
-            // It will be called in Loaded event after specs are ready
 
             // PATCH 18 - Register for cleanup to prevent memory leaks
             Unloaded += ProformaInvoiceView_Unloaded;
 
+            // AUTO-INIT: Initialize trim table and auto-select first thickness
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                InitializeTrimTable();
+                AutoSelectFirstThickness();
+            }), System.Windows.Threading.DispatcherPriority.Loaded);
+
             System.Diagnostics.Debug.WriteLine("[ProformaInvoiceView] Using SharedViewModels.ProformaInvoiceVM");
+            System.Diagnostics.Debug.WriteLine("[ProformaInvoiceView] ✓ Automatic thickness trim ready");
+        }
+
+        // Auto-select first thickness on load
+        private void AutoSelectFirstThickness()
+        {
+            try
+            {
+                if (cmbThickness?.Items.Count > 0 && cmbThickness.SelectedIndex < 0)
+                {
+                    cmbThickness.SelectedIndex = 0;
+                    System.Diagnostics.Debug.WriteLine("[AutoSelectFirstThickness] ✓ First thickness auto-selected");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[AutoSelectFirstThickness] ERROR: {ex.Message}");
+            }
         }
 
         // ==================== LOADED - Auto-create specs for testing ====================
@@ -503,14 +552,12 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     return;
                 }
 
-                // Get thickness with null safe check
-                string thickness = (cmbThickness.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "6mm";
+                // AUTO-GET: Use GetCurrentTrim() for automatic thickness-based trim
+                TrimSettings trim = GetCurrentTrim();
+                string thickness = (cmbThickness?.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "6mm";
 
-                if (!_trimTable.ContainsKey(thickness))
-                {
-                    thickness = "6mm";
-                }
-                TrimSettings trim = _trimTable[thickness];
+                // DEBUG: Log trim values being applied
+                System.Diagnostics.Debug.WriteLine($"[RunOptimization] ✓ Using trim for {thickness}: LM={trim.LM}, RM={trim.RM}, TM={trim.TM}, BM={trim.BM}, Kerf={trim.Kerf}");
 
                 // Get all items from all specifications
                 var items = new List<ModelInvoice>();
@@ -662,7 +709,8 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 // Set data
                 optView.ImportInvoiceItems(invoiceItems);
                 optView.SetStockSheet(sheetWidth, sheetHeight);
-                optView.SetTrimSettings(trim.LM, trim.RM, trim.TM, trim.BM, trim.BreakoutMin, trim.Kerf);
+                // FIXED: Correct parameter order to match OptimizationView.SetTrimSettings(lr, br, tr, rm, kerf, breakout)
+                optView.SetTrimSettings(trim.LM, trim.BM, trim.TM, trim.RM, trim.Kerf, trim.BreakoutMin);
 
                 // Run optimization
                 optView.RunOptimizationFromInvoice();
@@ -674,7 +722,9 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 txtUtilization.Text = $"{utilization:N1}%";
                 txtSheetsUsed.Text = sheetsUsed.ToString();
                 txtWastage.Text = $"{(100 - utilization):N1}%";
-                txtOptStatus.Text = $"✓ Optimized ({txtSheetWidth.Text}×{txtSheetHeight.Text}mm) — {dimStatus}";
+
+                // AUTO-UPDATE: Status with trim info
+                txtOptStatus.Text = $"✓ Optimized | {thickness} | Trim: {trim.LM}/{trim.RM}/{trim.TM}/{trim.BM}mm | {dimStatus}";
 
                 // Increment run count
                 int currentCount = 0;
@@ -687,6 +737,29 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             catch (Exception ex)
             {
                 MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // THICKNESS SELECTION CHANGED - AUTO-UPDATE TRIM AND STATUS
+        // ═══════════════════════════════════════════════════════════════
+
+        private void cmbThickness_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            try
+            {
+                // AUTO-UPDATE: Get trim based on selected thickness
+                TrimSettings trim = GetCurrentTrim();
+                string thickness = (cmbThickness?.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "6mm";
+
+                // Display current trim in status
+                txtOptStatus.Text = $"Thickness: {thickness} | Trim: LM={trim.LM}mm RM={trim.RM}mm TM={trim.TM}mm BM={trim.BM}mm";
+
+                System.Diagnostics.Debug.WriteLine($"[cmbThickness_SelectionChanged] ✓ Thickness={thickness}, Trim auto-applied: LM={trim.LM}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[cmbThickness_SelectionChanged] ERROR: {ex.Message}");
             }
         }
 
@@ -712,14 +785,9 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     return;
                 }
 
-                // Get thickness with null safe check
-                string thickness = (cmbThickness.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "6mm";
-
-                if (!_trimTable.ContainsKey(thickness))
-                {
-                    thickness = "6mm";
-                }
-                TrimSettings trim = _trimTable[thickness];
+                // AUTO-GET: Use GetCurrentTrim() for automatic thickness-based trim
+                TrimSettings trim = GetCurrentTrim();
+                string thickness = (cmbThickness?.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "6mm";
 
                 // Get selected specifications from ListBox (wrappers) or all specs
                 var selectedSpecNames = new List<string>();
@@ -815,7 +883,8 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 {
                     optView.ImportInvoiceItems(invoiceItems);
                     optView.SetStockSheet(sheetWidth, sheetHeight);
-                    optView.SetTrimSettings(trim.LM, trim.RM, trim.TM, trim.BM, trim.BreakoutMin, trim.Kerf);
+                    // FIXED: Correct parameter order to match OptimizationView.SetTrimSettings(lr, br, tr, rm, kerf, breakout)
+                    optView.SetTrimSettings(trim.LM, trim.BM, trim.TM, trim.RM, trim.Kerf, trim.BreakoutMin);
                     optView.RunOptimizationFromInvoice();
 
                     optWindow.Show();
@@ -827,7 +896,9 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     txtUtilization.Text = $"{utilization:N1}%";
                     txtSheetsUsed.Text = sheetsUsed.ToString();
                     txtWastage.Text = $"{(100 - utilization):N1}%";
-                    txtOptStatus.Text = $"✓ Optimized ({txtSheetWidth.Text}×{txtSheetHeight.Text}mm) — {dimStatus}";
+
+                    // Use existing thickness and trim from earlier in this method
+                    txtOptStatus.Text = $"✓ Optimized | {thickness} | Trim: {trim.LM}/{trim.RM}/{trim.TM}/{trim.BM}mm Kerf={trim.Kerf} | {dimStatus}";
 
                     // Update per-sheet results
                     UpdatePerSheetResults(optView, sheetWidth, sheetHeight);
@@ -1940,6 +2011,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 var toRemove = _specDimChoice.Keys.Where(k => !selectedSpecNames.Contains(k)).ToList();
                 foreach (var key in toRemove)
                 {
+                    _specDimChoice.Remove(key);
                     _specDimChoice.Remove(key);
                     System.Diagnostics.Debug.WriteLine($"[lstSpecSelect_SelectionChanged] Removed: {key}");
                 }
