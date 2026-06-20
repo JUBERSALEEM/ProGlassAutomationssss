@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
+using System.Windows.Threading;
 using System.Windows.Controls.Primitives;
 using static ProGlassAutomation.Views.ProformaInvoice.ProformaInvoiceView;
 
@@ -13,7 +14,7 @@ namespace ProGlassAutomation.Views.Optimization
     // =====================================================
 
     public enum RotationPolicy
-    {   
+    {
         None = 0, Rotate90 = 1, BestFit = 2, FirstFit = 3, StripFill = 4, ColumnFill = 5, RowFill = 6
     }
 
@@ -30,8 +31,8 @@ namespace ProGlassAutomation.Views.Optimization
         Genetic = 2,     // Genetic algorithm  
         DeepBeam = 3,     // Deep beam 250
         Simulation = 4,   // With penalties
-        AutoSelect = 5,   // NEW: Test all, pick best
-        BestOf3 = 6       // NEW: Run 3 times, pick best
+        AutoSelect = 5,   // Test all, pick best
+        BestOf3 = 6       // Run 3 times, pick best
     }
 
     // =====================================================
@@ -48,13 +49,12 @@ namespace ProGlassAutomation.Views.Optimization
         private RotationPolicy _rotationPolicy = RotationPolicy.BestFit;
         private NestingStrategy _nestingStrategy = NestingStrategy.ComplexIQ200V7;
 
-        // RULE [17]: Deterministic RNG
         private Random _rng = new Random(42);
         private EngineMode _engineMode = EngineMode.IQ200V7;
 
-        // RULE [12]: Constraint constants
-        private const double MIN_PART_SIZE = 99999;
+        private const double MAX_PART_SIZE = 99999;
         private const double MIN_SHEET_SIZE = 100;
+        private const double EPSILON = 0.0001;
 
         // =====================================================
         // ENGINE STATE
@@ -63,7 +63,6 @@ namespace ProGlassAutomation.Views.Optimization
         private List<RemnantPiece> _remnants = new List<RemnantPiece>();
         private CostModel _costModel = new CostModel();
         private PlacementConstraint _constraints = new PlacementConstraint();
-        // Disable second pass - don't reuse remnants (creates more waste)
         private bool _twoPassEnabled = false;
         private bool _remnantReuseEnabled = false;
         private List<CutSequence> _cutSequences = new List<CutSequence>();
@@ -91,23 +90,63 @@ namespace ProGlassAutomation.Views.Optimization
         public void SetRotationPolicy(RotationPolicy policy) { _rotationPolicy = policy; }
         public void SetStrategy(NestingStrategy strategy) { _nestingStrategy = strategy; }
 
-        // RULE [17]: Set deterministic mode
         public void SetDeterministic() { _rng = new Random(42); }
 
         public void SetEngineMode(EngineMode mode) { _engineMode = mode; }
+        public void SetCostModel(CostModel model) { _costModel = model; }
 
-        // RULE [13]: SINGLE unified cost function
         private double ComputeCost(double usedArea, double sheetArea, double fragmentCount, double kerfLength)
         {
-            double stockCost = (usedArea / 1000000) * 250;
-            double wastePenalty = ((sheetArea - usedArea) / 1000000) * 50;
-            double fragmentPenalty = fragmentCount * 100; // RULE [20]: Fragment penalty
-            double kerfPenalty = (kerfLength / 1000) * 0.5; // RULE [16]: Kerf penalty
+            double stockCost = (usedArea / 1000000.0) * _costModel.StockPricePerSQM;
+            double wastePenalty = ((sheetArea - usedArea) / 1000000.0) * _costModel.WastePenaltyPerSQM;
+            double fragmentPenalty = fragmentCount * 0.0;
+            double kerfPenalty = (kerfLength / 1000.0) * _costModel.KerfCostPerMm;
             return stockCost + wastePenalty + fragmentPenalty + kerfPenalty;
         }
 
         // =====================================================
-        // RULE [11]: ExecuteIQ200V7 (main entry point)
+        // ROTATION HELPER (ENABLED BY DEFAULT)
+        // =====================================================
+
+        private struct Orientation
+        {
+            public double Width { get; set; }
+            public double Height { get; set; }
+            public bool IsRotated { get; set; }
+        }
+
+        private List<Orientation> GetAllowedOrientations(CutPart part)
+        {
+            var list = new List<Orientation>();
+
+            if (_rotationPolicy == RotationPolicy.None)
+            {
+                list.Add(new Orientation { Width = part.L, Height = part.W, IsRotated = false });
+                return list;
+            }
+
+            if (_rotationPolicy == RotationPolicy.Rotate90)
+            {
+                list.Add(new Orientation { Width = part.W, Height = part.L, IsRotated = true });
+                return list;
+            }
+
+            list.Add(new Orientation { Width = part.L, Height = part.W, IsRotated = false });
+
+            if (part.Rot || _rotationPolicy == RotationPolicy.BestFit ||
+                _rotationPolicy == RotationPolicy.FirstFit ||
+                _rotationPolicy == RotationPolicy.StripFill ||
+                _rotationPolicy == RotationPolicy.ColumnFill ||
+                _rotationPolicy == RotationPolicy.RowFill)
+            {
+                list.Add(new Orientation { Width = part.W, Height = part.L, IsRotated = true });
+            }
+
+            return list;
+        }
+
+        // =====================================================
+        // RUNTIME STRATEGY DISPATCHER
         // =====================================================
 
         public void ExecuteIQ200V7(List<StockSheet> stockSheets, List<CutPart> cutParts,
@@ -115,7 +154,6 @@ namespace ProGlassAutomation.Views.Optimization
                             List<PlacedPart> allPlacedParts,
                             ObservableCollection<OptimizationJob> savedJobs)
         {
-            // Route to selected engine mode
             switch (_engineMode)
             {
                 case EngineMode.IQ200V7:
@@ -133,10 +171,10 @@ namespace ProGlassAutomation.Views.Optimization
                 case EngineMode.Simulation:
                     ExecuteSimulation(stockSheets, cutParts, results, allPlacedParts, savedJobs);
                     break;
-                case EngineMode.AutoSelect:       // NEW
+                case EngineMode.AutoSelect:
                     ExecuteMultiAlgorithm(stockSheets, cutParts, results, allPlacedParts, savedJobs);
                     break;
-                case EngineMode.BestOf3:          // NEW
+                case EngineMode.BestOf3:
                     ExecuteAutoSelect(stockSheets, cutParts, results, allPlacedParts, savedJobs);
                     break;
                 default:
@@ -145,7 +183,6 @@ namespace ProGlassAutomation.Views.Optimization
             }
         }
 
-        // Keep backward compatibility - calls IQ200V7
         public void ExecuteNesting(List<StockSheet> stockSheets, List<CutPart> cutParts,
                                 ObservableCollection<OptimizationResult> results,
                                 List<PlacedPart> allPlacedParts,
@@ -163,97 +200,68 @@ namespace ProGlassAutomation.Views.Optimization
                                 List<PlacedPart> allPlacedParts,
                                 ObservableCollection<OptimizationJob> savedJobs)
         {
-            results.Clear();
-            allPlacedParts.Clear();
+            var allParts = ExpandAndConstrainParts(cutParts);
+            if (allParts.Count == 0) return;
+
+            // FIX: Evaluate 4 different heuristic sequences and automatically execute the layout using the fewest sheets
+            var sequences = new List<List<CutPart>>
+            {
+                allParts.OrderByDescending(x => x.L * x.W).ThenByDescending(x => Math.Max(x.L, x.W)).ToList(), // Area Desc
+                allParts.OrderBy(x => x.L * x.W).ThenBy(x => Math.Min(x.L, x.W)).ToList(),                    // Area Asc (Small first)
+                allParts.OrderByDescending(x => Math.Max(x.L, x.W)).ThenByDescending(x => x.L * x.W).ToList(), // Max Dim Desc
+                allParts.OrderBy(x => Math.Min(x.L, x.W)).ThenBy(x => x.L * x.W).ToList()                     // Min Dim Asc
+            };
+
+            List<CutPart> bestSeq = sequences[0];
+            double bestUtil = -1;
+
+            foreach (var seq in sequences)
+            {
+                var tempResults = new ObservableCollection<OptimizationResult>();
+                var tempPlaced = new List<PlacedPart>();
+
+                RunPlacementWithSequence(seq, stockSheets, tempResults, tempPlaced);
+
+                if (_overallUtilization > bestUtil)
+                {
+                    bestUtil = _overallUtilization;
+                    bestSeq = seq;
+                }
+            }
+
+            RunPlacementWithSequence(bestSeq, stockSheets, results, allPlacedParts);
+        }
+
+        // =====================================================
+        // UNIFIED PLACEMENT ENGINE (THREAD-SAFE MEMORY PLACEMENT)
+        // =====================================================
+
+        private void RunPlacementWithSequence(List<CutPart> orderedParts, List<StockSheet> stockSheets,
+                                              ICollection<OptimizationResult> results,
+                                              List<PlacedPart> allPlacedParts)
+        {
+            Application.Current.Dispatcher.Invoke(() => {
+                results.Clear();
+                allPlacedParts.Clear();
+            });
+
             _remnants.Clear();
             _cutSequences.Clear();
             _freeRects.Clear();
 
-            // Expand parts by quantity
-            var allParts = new List<CutPart>();
-            int partId = 1;
-            foreach (var p in cutParts)
-            {
-                for (int i = 0; i < p.Qty; i++)
-                {
-                    allParts.Add(new CutPart
-                    {
-                        Id = partId++,
-                        Ref = p.Ref,
-                        L = p.L,
-                        W = p.W,
-                        Rot = p.Rot,
-                        Qty = 1,
-                        IsPlaced = false
-                    });
-                }
-            }
-
-            // RULE [12]: Apply constraints - reject parts >= 99999mm (disabled)
-            allParts = ApplyConstraints(allParts);
-
-            // IMPROVED: Better sorting for higher utilization
-            // Try multiple sort orders and pick best
-            var sortResults = new List<List<CutPart>>();
-
-            // Sort 1: Largest first (area)
-            var sort1 = allParts.OrderByDescending(x => x.L * x.W)
-                .ThenByDescending(x => Math.Min(x.L, x.W))
-                .ToList();
-            sortResults.Add(sort1);
-
-            // Sort 2: Max dimension first
-            var sort2 = allParts.OrderByDescending(x => Math.Max(x.L, x.W))
-                .ThenByDescending(x => x.L * x.W)
-                .ToList();
-            sortResults.Add(sort2);
-
-            // Sort 3: Best fit approach - mix of sorting
-            var sort3 = allParts.OrderByDescending(x => Math.Max(x.L, x.W))
-                .ThenBy(x => Math.Min(x.L, x.W))
-                .ThenByDescending(x => x.L * x.W)
-                .ToList();
-            sortResults.Add(sort3);
-
-            // Use best first sorting (will be refined during placement)
-            allParts = sort1;
-
-            // IMPROVED: Try multiple part orderings to find best utilization
-            var testOrders = new List<List<CutPart>>();
-
-            // Order 1: Largest by area
-            testOrders.Add(allParts.OrderByDescending(x => x.L * x.W).ToList());
-
-            // Order 2: Max dimension first
-            testOrders.Add(allParts.OrderByDescending(x => Math.Max(x.L, x.W)).ToList());
-
-            // Order 3: Mixed (max then min)
-            testOrders.Add(allParts.OrderByDescending(x => Math.Max(x.L, x.W))
-                .ThenBy(x => Math.Min(x.L, x.W)).ToList());
-
-            // Order 4: Width then height
-            testOrders.Add(allParts.OrderByDescending(x => x.L)
-                .ThenByDescending(x => x.W).ToList());
-
-            // Use best order - pick first one (area first works best for glass)
-            allParts = testOrders[0];
-
-            // Enable rotation - placement logic will handle rotation automatically
-            foreach (var p in allParts)
-            {
-                p.Rot = true; // Allow rotation when placing
-            }
+            foreach (var p in orderedParts) p.IsPlaced = false;
 
             var sortedStock = stockSheets.OrderByDescending(s => s.L * s.W).ToList();
 
-            double totalUsedAreaAll = 0, totalAreaUsedSheets = 0;
+            double totalUsedAreaAll = 0;
+            double totalAreaUsedSheets = 0;
             int totalSheetsUsed = 0;
             _totalPartsCut = 0;
             _totalPartsUnplaced = 0;
             _usedSQM = 0;
 
-            // Use Skyline - MUCH better for glass cutting (fills rows)
-            _nestingStrategy = NestingStrategy.Skyline;
+            var localResults = new List<OptimizationResult>();
+            var localPlacedList = new List<PlacedPart>();
 
             foreach (var stock in sortedStock)
             {
@@ -270,7 +278,7 @@ namespace ProGlassAutomation.Views.Optimization
 
                 for (int sheetNum = 0; sheetNum < availableQty; sheetNum++)
                 {
-                    var remaining = allParts.Where(p => !p.IsPlaced).ToList();
+                    var remaining = orderedParts.Where(p => !p.IsPlaced).ToList();
                     if (remaining.Count == 0) break;
 
                     _freeRects.Clear();
@@ -287,50 +295,40 @@ namespace ProGlassAutomation.Views.Optimization
                     {
                         if (part.IsPlaced) continue;
 
-                        // RULE [12]: Validate constraints
                         if (!_constraints.ValidatePlacement(part.L, part.W))
                             continue;
 
                         var placement = EvaluatePlacementWithLookahead(part, _kerf);
-
                         if (placement == null) continue;
 
-                        // Get dimensions based on rotation
-                        double placeW = placement.IsRotated ? part.W : part.L;
-                        double placeH = placement.IsRotated ? part.L : part.W;
+                        double placeW = placement.Width;
+                        double placeH = placement.Height;
 
-                        // X,Y from placement are already in usable area coordinates (no trim)
                         double storeX = placement.X;
                         double storeY = placement.Y;
 
-                        // BOUNDS CHECK: Within usable area
                         if (storeX < 0 || storeY < 0 ||
-                            storeX + placeW > usableW || storeY + placeH > usableH)
+                            storeX + placeW > usableW + EPSILON || storeY + placeH > usableH + EPSILON)
                         {
-                            System.Diagnostics.Debug.WriteLine($"PART OUT OF BOUNDS: {part.Ref} X:{storeX}+{placeW} Y:{storeY}+{placeH} > Usable:{usableW}x{usableH}");
                             continue;
                         }
 
-                        // OVERLAP CHECK
                         if (HasOverlap(storeX, storeY, placeW, placeH, placedCoordinates))
                         {
-                            System.Diagnostics.Debug.WriteLine($"PART OVERLAPS: {part.Ref} at X:{storeX}, Y:{storeY}");
                             continue;
                         }
 
-                        // Mark as placed
                         part.IsPlaced = true;
                         part.PlacedX = storeX;
                         part.PlacedY = storeY;
                         part.PlacedW = placeW;
                         part.PlacedH = placeH;
 
-                        // Store EXACT position - trim added ONLY when drawing
                         placedOnThisSheetList.Add(new PlacedPart
                         {
                             Ref = part.Ref,
-                            X = storeX,      // Relative to usable origin
-                            Y = storeY,      // Relative to usable origin
+                            X = storeX,
+                            Y = storeY,
                             L = placeW,
                             W = placeH,
                             IsRotated = placement.IsRotated,
@@ -361,12 +359,13 @@ namespace ProGlassAutomation.Views.Optimization
 
                         double thisSheetUtil = oneSheetArea > 0 ? (usedAreaThisSheet / oneSheetArea) * 100.0 : 0.0;
 
-                        // RULE [13]: Use unified cost
                         double fragmentCount = CountFragments(placedOnThisSheetList);
-                        double kerfLength = placedOnThisSheetList.Sum(p => 2 * (p.L + p.W));
+                        double kerfLength = cutSequence.CalculateTotalCutLength();
+                        cutSequence.TotalKerfLength = kerfLength;
+
                         double cost = ComputeCost(usedAreaThisSheet * 1000000, oneSheetArea * 1000000, fragmentCount, kerfLength);
 
-                        results.Add(new OptimizationResult
+                        localResults.Add(new OptimizationResult
                         {
                             Ref = $"{stock.Ref}-{sheetsUsedForThisStock}",
                             SheetRef = stock.Ref,
@@ -380,7 +379,7 @@ namespace ProGlassAutomation.Views.Optimization
                         });
 
                         totalUsedAreaAll += usedAreaThisSheet;
-                        allPlacedParts.AddRange(placedOnThisSheetList);
+                        localPlacedList.AddRange(placedOnThisSheetList);
                         _cutSequences.Add(cutSequence);
                     }
 
@@ -388,45 +387,27 @@ namespace ProGlassAutomation.Views.Optimization
                 }
             }
 
-            // DEBUG: List unplaced parts with MORE details
-            var debugUnplaced = allParts.Where(p => !p.IsPlaced).ToList();
-            if (debugUnplaced.Count > 0)
-            {
-                System.Diagnostics.Debug.WriteLine($"=== UNPLACED PARTS: {debugUnplaced.Count} ===");
-                foreach (var up in debugUnplaced.Take(10))
-                {
-                    // Check what constraint rejected it
-                    string reason = "";
-                    if (up.L >= MIN_PART_SIZE || up.W >= MIN_PART_SIZE) reason = " (TOO BIG)";
-                    else if (up.L < _breakout || up.W < _breakout) reason = " (TOO SMALL)";
-                    System.Diagnostics.Debug.WriteLine($"  {up.Ref}: {up.L}x{up.W}{reason}");
-                }
-            }
-
-            // Second pass for remnants
             if (_twoPassEnabled && _remnants.Count > 0)
             {
-                var remainingParts = allParts.Where(p => !p.IsPlaced).ToList();
+                var remainingParts = orderedParts.Where(p => !p.IsPlaced).ToList();
                 if (remainingParts.Count > 0)
                     RunSecondPassNesting(remainingParts);
             }
 
-            _totalPartsUnplaced = allParts.Count(p => !p.IsPlaced);
+            _totalPartsUnplaced = orderedParts.Count(p => !p.IsPlaced);
 
-            // FIX: Remove empty/zero-area sheet results
-            var emptyResults = results.Where(r => r.Ref != "TOTAL" && r.Area <= 0).ToList();
+            var emptyResults = localResults.Where(r => r.Ref != "TOTAL" && r.Area <= 0).ToList();
             foreach (var empty in emptyResults)
             {
-                results.Remove(empty);
+                localResults.Remove(empty);
                 totalSheetsUsed--;
             }
 
-            // FIX: Calculate utilization as AVERAGE of per-sheet utilization
-            var sheetResults = results.Where(r => r.Ref != "TOTAL").ToList();
-            if (sheetResults.Count > 0)
+            if (localResults.Count > 0)
             {
-                _overallUtilization = sheetResults.Average(r => r.Util);
-                _overallWastage = 100 - _overallUtilization;
+                double totalSheetArea = localResults.Sum(r => (r.L * r.W) / 1000000.0);
+                _overallUtilization = totalSheetArea > 0 ? (totalUsedAreaAll / totalSheetArea) * 100.0 : 0.0;
+                _overallWastage = 100.0 - _overallUtilization;
             }
             else
             {
@@ -434,7 +415,7 @@ namespace ProGlassAutomation.Views.Optimization
                 _overallWastage = 100;
             }
 
-            results.Add(new OptimizationResult
+            var totalRecord = new OptimizationResult
             {
                 Ref = "TOTAL",
                 L = 0,
@@ -443,95 +424,94 @@ namespace ProGlassAutomation.Views.Optimization
                 Area = totalUsedAreaAll,
                 Util = _overallUtilization,
                 Waste = _overallWastage
+            };
+            localResults.Add(totalRecord);
+
+            // Thread-safe dispatch back to UI collection lists
+            Application.Current.Dispatcher.Invoke(() => {
+                foreach (var r in localResults) results.Add(r);
+                foreach (var p in localPlacedList) allPlacedParts.Add(p);
             });
         }
-
-        // =====================================================
-        // RULE [12]: CONSTRAINT SOLVER - L >= 3185 rejection
-        // =====================================================
 
         private List<CutPart> ApplyConstraints(List<CutPart> parts)
         {
             var valid = new List<CutPart>();
             foreach (var p in parts)
             {
-                // RULE [12]: L >= 3185 rejection
-                if (p.L >= MIN_PART_SIZE || p.W >= MIN_PART_SIZE)
+                if (p.L >= MAX_PART_SIZE || p.W >= MAX_PART_SIZE)
                 {
-                    System.Diagnostics.Debug.WriteLine($"REJECTED: {p.Ref} L={p.L} >= {MIN_PART_SIZE}");
                     _totalPartsUnplaced++;
                     continue;
                 }
-                // Overlap validation
                 if (p.L <= 0 || p.W <= 0) continue;
-                // Boundary checks
                 if (p.L < _breakout || p.W < _breakout) continue;
                 valid.Add(p);
             }
             return valid;
         }
 
-        // RULE [14]: BEAM SEARCH ENGINE
-        private void ExecuteBeamSearch(List<StockSheet> stockSheets, List<CutPart> cutParts,
-                                    ObservableCollection<OptimizationResult> results,
-                                    List<PlacedPart> allPlacedParts,
-                                    ObservableCollection<OptimizationJob> savedJobs)
+        private List<CutPart> ExpandAndConstrainParts(List<CutPart> cutParts)
         {
-            results.Clear();
-            allPlacedParts.Clear();
-
             var allParts = new List<CutPart>();
             int partId = 1;
             foreach (var p in cutParts)
             {
                 for (int i = 0; i < p.Qty; i++)
-                    allParts.Add(new CutPart { Id = partId++, Ref = p.Ref, L = p.L, W = p.W, Rot = p.Rot, Qty = 1, IsPlaced = false });
-            }
-            allParts = ApplyConstraints(allParts);
-            var sortedStock = stockSheets.OrderByDescending(s => s.L * s.W).ToList();
-
-            var beamSolutions = new List<Genome>();
-            int beamWidth = 5;
-
-            // Generate initial solutions
-            foreach (var stock in sortedStock.Take(10))
-            {
-                var solution = new Genome();
-                var placed = new List<PlacedPart>();
-                PlacePartsGuillotine(allParts, stock.L - _lr - _rm, stock.W - _tr - _br, stock.Ref, 1, placed);
-                solution.Placed = placed;
-                solution.Cost = ComputeSolutionCost(placed);
-                solution.Utilization = ComputeUtilization(placed, stock);
-                beamSolutions.Add(solution);
-            }
-
-            // RULE [14]: Deterministic OrderBy(ComputeCost)
-            beamSolutions = beamSolutions.OrderBy(s => s.Cost).Take(beamWidth).ToList();
-
-            // Expand beam
-            foreach (var beam in beamSolutions)
-            {
-                foreach (var stock in sortedStock.Skip(10))
                 {
-                    var newSolution = new Genome();
-                    var placed = new List<PlacedPart>(beam.Placed);
-                    PlacePartsGuillotine(allParts, stock.L - _lr - _rm, stock.W - _tr - _br, stock.Ref, 1, placed);
-                    newSolution.Placed = placed;
-                    newSolution.Cost = ComputeSolutionCost(placed);
-                    newSolution.Utilization = ComputeUtilization(placed, stock);
-                    beamSolutions.Add(newSolution);
+                    allParts.Add(new CutPart
+                    {
+                        Id = partId++,
+                        Ref = p.Ref,
+                        L = p.L,
+                        W = p.W,
+                        Rot = p.Rot,
+                        Qty = 1,
+                        IsPlaced = false
+                    });
                 }
             }
-
-            // RULE [14]: Final selection
-            var bestBeam = beamSolutions.OrderBy(s => s.Cost).ThenByDescending(s => s.Utilization).First();
-
-            allPlacedParts.AddRange(bestBeam.Placed);
-            // Copy to results - add your result copying logic here
+            return ApplyConstraints(allParts);
         }
 
         // =====================================================
-        // RULE [15]: GENETIC ENGINE
+        // BEAM SEARCH ENGINE
+        // =====================================================
+
+        private void ExecuteBeamSearch(List<StockSheet> stockSheets, List<CutPart> cutParts,
+                                    ObservableCollection<OptimizationResult> results,
+                                    List<PlacedPart> allPlacedParts,
+                                    ObservableCollection<OptimizationJob> savedJobs)
+        {
+            var allParts = ExpandAndConstrainParts(cutParts);
+            if (allParts.Count == 0) return;
+
+            var candidates = new List<List<CutPart>>
+            {
+                allParts.OrderByDescending(x => x.L * x.W).ToList(),
+                allParts.OrderByDescending(x => Math.Max(x.L, x.W)).ToList(),
+                allParts.OrderByDescending(x => Math.Min(x.L, x.W)).ToList(),
+                allParts.OrderBy(x => x.L * x.W).ToList()
+            };
+
+            List<CutPart> bestSequence = candidates[0];
+            double bestCost = double.MaxValue;
+
+            foreach (var sequence in candidates)
+            {
+                double cost = EvaluateSequenceCost(sequence, stockSheets);
+                if (cost < bestCost)
+                {
+                    bestCost = cost;
+                    bestSequence = sequence;
+                }
+            }
+
+            RunPlacementWithSequence(bestSequence, stockSheets, results, allPlacedParts);
+        }
+
+        // =====================================================
+        // UPGRADED GENETIC ENGINE (HEURISTIC INITIALIZATION)
         // =====================================================
 
         private void ExecuteGenetic(List<StockSheet> stockSheets, List<CutPart> cutParts,
@@ -539,66 +519,64 @@ namespace ProGlassAutomation.Views.Optimization
                                 List<PlacedPart> allPlacedParts,
                                 ObservableCollection<OptimizationJob> savedJobs)
         {
-            results.Clear();
-            allPlacedParts.Clear();
+            var allParts = ExpandAndConstrainParts(cutParts);
+            if (allParts.Count == 0) return;
 
-            var allParts = new List<CutPart>();
-            int partId = 1;
-            foreach (var p in cutParts)
-            {
-                for (int i = 0; i < p.Qty; i++)
-                    allParts.Add(new CutPart { Id = partId++, Ref = p.Ref, L = p.L, W = p.W, Rot = p.Rot, Qty = 1, IsPlaced = false });
-            }
-            allParts = ApplyConstraints(allParts);
-
-            int populationSize = 50;
+            int populationSize = 100;
             int generations = 100;
             var population = new List<Genome>();
 
-            // Initialize population
-            for (int i = 0; i < populationSize; i++)
+            var seededSequences = new List<List<CutPart>>
             {
-                var genome = new Genome();
-                genome.PartOrder = allParts.OrderBy(x => _rng.Next()).ToList();
-                genome.Fitness = EvaluateGenome(genome, stockSheets);
+                allParts.OrderByDescending(x => x.L * x.W).ToList(), // Large Area Descending
+                allParts.OrderBy(x => x.L * x.W).ToList(),           // Small Area Descending (forces tight 13/14-stack sheets first)
+                allParts.OrderByDescending(x => Math.Max(x.L, x.W)).ToList(),
+                allParts.OrderByDescending(x => Math.Min(x.L, x.W)).ToList()
+            };
+
+            foreach (var seq in seededSequences)
+            {
+                population.Add(new Genome { PartOrder = seq, Fitness = EvaluateSequenceUtilization(seq, stockSheets) });
+            }
+
+            while (population.Count < populationSize)
+            {
+                var genome = new Genome
+                {
+                    PartOrder = allParts.OrderBy(x => _rng.Next()).ToList()
+                };
+                genome.Fitness = EvaluateSequenceUtilization(genome.PartOrder, stockSheets);
                 population.Add(genome);
             }
 
-            // Evolution loop
             for (int g = 0; g < generations; g++)
             {
-                // Selection
                 population = population.OrderByDescending(p => p.Fitness).Take(populationSize / 2).ToList();
+                var nextGen = new List<Genome>(population);
 
-                // Crossover + Mutation
-                var newPopulation = new List<Genome>(population);
-                while (newPopulation.Count < populationSize)
+                while (nextGen.Count < populationSize)
                 {
                     var parent1 = population[_rng.Next(population.Count)];
                     var parent2 = population[_rng.Next(population.Count)];
 
-                    // RULE [15]: Crossover
                     var child = Crossover(parent1, parent2);
-
-                    // RULE [15]: Mutation (10% chance)
-                    if (_rng.NextDouble() < 0.1)
+                    if (_rng.NextDouble() < 0.20)
+                    {
                         Mutate(child);
+                    }
 
-                    child.Fitness = EvaluateGenome(child, stockSheets);
-                    newPopulation.Add(child);
+                    child.Fitness = EvaluateSequenceUtilization(child.PartOrder, stockSheets);
+                    nextGen.Add(child);
                 }
-
-                population = newPopulation;
+                population = nextGen;
             }
 
-            // Best genome to results
             var best = population.OrderByDescending(p => p.Fitness).First();
-            allPlacedParts.AddRange(best.Placed);
-            // Copy to results...
+            RunPlacementWithSequence(best.PartOrder, stockSheets, results, allPlacedParts);
         }
 
         // =====================================================
-        // RULE [18]: DEEP BEAM (250 iterations)
+        // DEEP BEAM ENGINE
         // =====================================================
 
         private void ExecuteDeepBeam(List<StockSheet> stockSheets, List<CutPart> cutParts,
@@ -606,52 +584,32 @@ namespace ProGlassAutomation.Views.Optimization
                                 List<PlacedPart> allPlacedParts,
                                 ObservableCollection<OptimizationJob> savedJobs)
         {
-            results.Clear();
-            allPlacedParts.Clear();
+            var allParts = ExpandAndConstrainParts(cutParts);
+            if (allParts.Count == 0) return;
 
-            var allParts = new List<CutPart>();
-            int partId = 1;
-            foreach (var p in cutParts)
-            {
-                for (int i = 0; i < p.Qty; i++)
-                    allParts.Add(new CutPart { Id = partId++, Ref = p.Ref, L = p.L, W = p.W, Rot = p.Rot, Qty = 1, IsPlaced = false });
-            }
-            allParts = ApplyConstraints(allParts);
-
-            var sortedStock = stockSheets.OrderByDescending(s => s.L * s.W).ToList();
-
+            List<CutPart> bestSequence = null;
             double bestCost = double.MaxValue;
-            List<PlacedPart> bestPlacement = null;
 
-            // RULE [18]: 250 iterations depth loop
             for (int iteration = 0; iteration < 250; iteration++)
             {
-                var testParts = allParts.OrderBy(x => _rng.Next()).ToList();
-
-                var placed = new List<PlacedPart>();
-                foreach (var stock in sortedStock)
-                {
-                    PlacePartsGuillotine(testParts, stock.L - _lr - _rm, stock.W - _tr - _br, stock.Ref, 1, placed);
-                }
-
-                double cost = ComputeSolutionCost(placed);
+                var randomizedSequence = allParts.OrderBy(x => _rng.Next()).ToList();
+                double cost = EvaluateSequenceCost(randomizedSequence, stockSheets);
 
                 if (cost < bestCost)
                 {
                     bestCost = cost;
-                    bestPlacement = new List<PlacedPart>(placed);
+                    bestSequence = randomizedSequence;
                 }
             }
 
-            if (bestPlacement != null)
+            if (bestSequence != null)
             {
-                allPlacedParts.AddRange(bestPlacement);
-                // Copy to results...
+                RunPlacementWithSequence(bestSequence, stockSheets, results, allPlacedParts);
             }
         }
 
         // =====================================================
-        // RULE [16]: SIMULATION ENGINE
+        // SIMULATION ENGINE
         // =====================================================
 
         private void ExecuteSimulation(List<StockSheet> stockSheets, List<CutPart> cutParts,
@@ -659,10 +617,8 @@ namespace ProGlassAutomation.Views.Optimization
                             List<PlacedPart> allPlacedParts,
                             ObservableCollection<OptimizationJob> savedJobs)
         {
-            // Run base engine first
             ExecuteIQ200V7Core(stockSheets, cutParts, results, allPlacedParts, savedJobs);
 
-            // Add penalties
             foreach (var placed in allPlacedParts)
             {
                 double thermalPenalty = (placed.L * placed.W) * 0.000001;
@@ -671,7 +627,7 @@ namespace ProGlassAutomation.Views.Optimization
         }
 
         // =====================================================
-        // MULTI-ALGORITHM: Test all strategies, pick best
+        // MULTI-ALGORITHM
         // =====================================================
 
         private void ExecuteMultiAlgorithm(List<StockSheet> stockSheets, List<CutPart> cutParts,
@@ -682,18 +638,17 @@ namespace ProGlassAutomation.Views.Optimization
             results.Clear();
             allPlacedParts.Clear();
 
-            // Test all strategies
             var strategies = new List<NestingStrategy>
-    {
-        NestingStrategy.BestArea,
-        NestingStrategy.ShortSideFit,
-        NestingStrategy.LongSideFit,
-        NestingStrategy.Guillotine,
-        NestingStrategy.Skyline,
-        NestingStrategy.BottomLeft,
-        NestingStrategy.ComplexSkyline,
-        NestingStrategy.ComplexBestFit
-    };
+            {
+                NestingStrategy.BestArea,
+                NestingStrategy.ShortSideFit,
+                NestingStrategy.LongSideFit,
+                NestingStrategy.Guillotine,
+                NestingStrategy.Skyline,
+                NestingStrategy.BottomLeft,
+                NestingStrategy.ComplexSkyline,
+                NestingStrategy.ComplexBestFit
+            };
 
             double bestUtil = 0;
             NestingStrategy bestStrategy = NestingStrategy.Skyline;
@@ -704,15 +659,12 @@ namespace ProGlassAutomation.Views.Optimization
             {
                 _nestingStrategy = strategy;
 
-                // Test this strategy
                 var testResults = new ObservableCollection<OptimizationResult>();
                 var testPlaced = new List<PlacedPart>();
 
                 ExecuteIQ200V7Core(stockSheets, cutParts, testResults, testPlaced, savedJobs);
 
                 double util = _overallUtilization;
-
-                System.Diagnostics.Debug.WriteLine($"Strategy: {strategy} | Utilization: {util:F2}%");
 
                 if (util > bestUtil)
                 {
@@ -723,8 +675,7 @@ namespace ProGlassAutomation.Views.Optimization
                 }
             }
 
-            // Use best result
-            System.Diagnostics.Debug.WriteLine($"BEST STRATEGY: {bestStrategy} | {bestUtil:F2}%");
+            _nestingStrategy = bestStrategy;
 
             results.Clear();
             allPlacedParts.Clear();
@@ -736,7 +687,7 @@ namespace ProGlassAutomation.Views.Optimization
         }
 
         // =====================================================
-        // AUTO-SELECT: Run multiple seeds, pick best
+        // AUTO-SELECT
         // =====================================================
 
         private void ExecuteAutoSelect(List<StockSheet> stockSheets, List<CutPart> cutParts,
@@ -747,8 +698,8 @@ namespace ProGlassAutomation.Views.Optimization
             double bestUtil = 0;
             List<PlacedPart> bestPlacement = null;
             List<OptimizationResult> bestResults = null;
+            var allParts = ExpandAndConstrainParts(cutParts);
 
-            // Try different seeds
             for (int seed = 42; seed < 100; seed += 15)
             {
                 _rng = new Random(seed);
@@ -756,9 +707,8 @@ namespace ProGlassAutomation.Views.Optimization
                 var testResults = new ObservableCollection<OptimizationResult>();
                 var testPlaced = new List<PlacedPart>();
 
-                ExecuteIQ200V7Core(stockSheets, cutParts, testResults, testPlaced, savedJobs);
-
-                System.Diagnostics.Debug.WriteLine($"Seed {seed}: {_overallUtilization:F2}%");
+                var shuffledSequence = allParts.OrderBy(x => _rng.Next()).ToList();
+                RunPlacementWithSequence(shuffledSequence, stockSheets, testResults, testPlaced);
 
                 if (_overallUtilization > bestUtil)
                 {
@@ -768,7 +718,6 @@ namespace ProGlassAutomation.Views.Optimization
                 }
             }
 
-            // Apply best
             results.Clear();
             allPlacedParts.Clear();
 
@@ -784,17 +733,13 @@ namespace ProGlassAutomation.Views.Optimization
 
         private bool HasOverlap(double x, double y, double w, double h, List<(double X, double Y, double W, double H)> placedRects)
         {
-            const double eps = 0.001;
             double x2 = x + w;
             double y2 = y + h;
 
             foreach (var rect in placedRects)
             {
-                double rx2 = rect.X + rect.W;
-                double ry2 = rect.Y + rect.H;
-
-                bool notOverlap = (x2 <= rect.X + eps) || (x + eps >= rx2) ||
-                                 (y2 <= rect.Y + eps) || (y + eps >= ry2);
+                bool notOverlap = (x2 <= rect.X + EPSILON) || (x >= rect.X + rect.W - EPSILON) ||
+                                 (y2 <= rect.Y + EPSILON) || (y >= rect.Y + rect.H - EPSILON);
 
                 if (!notOverlap) return true;
             }
@@ -805,10 +750,54 @@ namespace ProGlassAutomation.Views.Optimization
         // HELPER METHODS
         // =====================================================
 
-        // RULE [20]: Fragment count
         private int CountFragments(List<PlacedPart> placed)
         {
             return placed.Count(p => (p.L * p.W) < 100000);
+        }
+
+        private double EvaluateSequenceCost(List<CutPart> sequence, List<StockSheet> stockSheets)
+        {
+            foreach (var p in sequence) p.IsPlaced = false;
+            double totalArea = 0;
+            int placedCount = 0;
+            double totalStockArea = 0;
+
+            foreach (var stock in stockSheets)
+            {
+                if (stock.Qty <= 0) continue;
+                for (int i = 1; i <= stock.Qty; i++)
+                {
+                    var tempPlaced = new List<PlacedPart>();
+                    PlacePartsGuillotine(sequence, stock.L - _lr - _rm, stock.W - _tr - _br, stock.Ref, i, tempPlaced);
+                    totalArea += tempPlaced.Sum(p => p.L * p.W);
+                    placedCount += tempPlaced.Count;
+                    totalStockArea += stock.L * stock.W;
+                }
+            }
+
+            double kerfLength = sequence.Where(p => p.IsPlaced).Sum(p => 2 * (p.L + p.W));
+            return ComputeCost(totalArea, totalStockArea, sequence.Count - placedCount, kerfLength);
+        }
+
+        private double EvaluateSequenceUtilization(List<CutPart> sequence, List<StockSheet> stockSheets)
+        {
+            foreach (var p in sequence) p.IsPlaced = false;
+            double totalUsed = 0;
+            double totalStockArea = 0;
+
+            foreach (var stock in stockSheets)
+            {
+                if (stock.Qty <= 0) continue;
+                for (int i = 1; i <= stock.Qty; i++)
+                {
+                    var tempPlaced = new List<PlacedPart>();
+                    PlacePartsGuillotine(sequence, stock.L - _lr - _rm, stock.W - _tr - _br, stock.Ref, i, tempPlaced);
+                    totalUsed += tempPlaced.Sum(p => p.L * p.W);
+                    totalStockArea += (stock.L * stock.W);
+                }
+            }
+
+            return totalStockArea > 0 ? (totalUsed / totalStockArea) : 0;
         }
 
         private double ComputeSolutionCost(List<PlacedPart> placed)
@@ -842,53 +831,50 @@ namespace ProGlassAutomation.Views.Optimization
                 if (part.IsPlaced) continue;
                 if (part.L < _breakout || part.W < _breakout) continue;
 
-                double pw = part.L + _kerf;
-                double ph = part.W + _kerf;
-                double pwRot = part.W + _kerf;
-                double phRot = part.L + _kerf;
+                var orientations = GetAllowedOrientations(part);
 
-                bool rotated = false;
                 MaxRect bestRect = null;
-                double minScore = double.MaxValue;
-
+                bool rotated = false;
                 double bestScore = double.MaxValue;
+                Orientation bestO = new Orientation();
 
-                // Try ALL positions with complex scoring
                 foreach (var rect in freeRects)
                 {
-                    // Normal orientation
-                    if (rect.Fits(pw, ph))
+                    foreach (var o in orientations)
                     {
-                        double score;
-                        if (_nestingStrategy == NestingStrategy.ComplexSkyline)
-                            score = ScorePlacementSkyline(rect, pw, ph);
-                        else if (_nestingStrategy == NestingStrategy.Guillotine)
-                            score = ScorePlacementGuillotine(rect, pw, ph);
-                        else
-                            score = ScorePlacement(rect, pw, ph, _nestingStrategy);
+                        double pw = o.Width + _kerf;
+                        double ph = o.Height + _kerf;
 
-                        if (score < bestScore) { bestScore = score; bestRect = rect; rotated = false; }
-                    }
+                        if (rect.Fits(pw, ph))
+                        {
+                            double score;
+                            if (_nestingStrategy == NestingStrategy.ComplexSkyline)
+                                score = ScorePlacementSkyline(rect, pw, ph);
+                            else if (_nestingStrategy == NestingStrategy.Guillotine)
+                                score = ScorePlacementGuillotine(rect, pw, ph);
+                            else
+                                score = ScorePlacement(rect, pw, ph, _nestingStrategy);
 
-                    // Rotated orientation (ALWAYS check for complex)
-                    if (part.Rot && rect.Fits(pwRot, phRot))
-                    {
-                        double score;
-                        if (_nestingStrategy == NestingStrategy.ComplexSkyline)
-                            score = ScorePlacementSkyline(rect, pwRot, phRot);
-                        else if (_nestingStrategy == NestingStrategy.Guillotine)
-                            score = ScorePlacementGuillotine(rect, pwRot, phRot);
-                        else
-                            score = ScorePlacement(rect, pwRot, phRot, _nestingStrategy);
+                            if (_rotationPolicy == RotationPolicy.FirstFit && o.IsRotated)
+                            {
+                                score += 1000;
+                            }
 
-                        if (score < bestScore) { bestScore = score; bestRect = rect; rotated = true; }
+                            if (score < bestScore)
+                            {
+                                bestScore = score;
+                                bestRect = rect;
+                                rotated = o.IsRotated;
+                                bestO = o;
+                            }
+                        }
                     }
                 }
 
                 if (bestRect != null)
                 {
-                    double placeW = rotated ? part.W : part.L;
-                    double placeH = rotated ? part.L : part.W;
+                    double placeW = bestO.Width;
+                    double placeH = bestO.Height;
 
                     part.IsPlaced = true;
                     part.PlacedX = bestRect.X + _kerf;
@@ -915,229 +901,202 @@ namespace ProGlassAutomation.Views.Optimization
             return placed;
         }
 
-        // ADVANCED Multi-Factor Scoring
         private double ScorePlacement(MaxRect rect, double w, double h, NestingStrategy strategy)
         {
-            double score = 0;
+            double remW = rect.Width - w;
+            double remH = rect.Height - h;
+
+            // FIX: If the remaining gap matches standard rounding or kerf cuts, bypass waste penalties entirely (perfect flush)
+            double wasteW = 0;
+            if (remW > 0.1)
+            {
+                if (remW < _breakout)
+                {
+                    if (Math.Abs(remW - _kerf) < 1.0 || remW < _kerf + 0.1)
+                        wasteW = 0;
+                    else
+                        wasteW = remW * rect.Height;
+                }
+            }
+
+            double wasteH = 0;
+            if (remH > 0.1)
+            {
+                if (remH < _breakout)
+                {
+                    if (Math.Abs(remH - _kerf) < 1.0 || remH < _kerf + 0.1)
+                        wasteH = 0;
+                    else
+                        wasteH = remH * rect.Width;
+                }
+            }
+
+            double localWaste = wasteW + wasteH;
+
+            double rectAspect = rect.Width / rect.Height;
+            double partAspect = w / h;
+            double aspectDiff = Math.Abs(rectAspect - partAspect);
+
+            double matchW = Math.Abs(rect.Width - w);
+            double matchH = Math.Abs(rect.Height - h);
+            double edgeMatchBonus = 0;
+
+            if (matchW < _kerf + 0.1 || matchW < _breakout)
+                edgeMatchBonus -= 50000;
+
+            if (matchH < _kerf + 0.1 || matchH < _breakout)
+                edgeMatchBonus -= 50000;
+
+            double score = edgeMatchBonus;
+
+            if (_rotationPolicy == RotationPolicy.ColumnFill)
+            {
+                score += (rect.X * 5000) + rect.Y + (rect.Width - w) * 10;
+                return score;
+            }
+            if (_rotationPolicy == RotationPolicy.RowFill)
+            {
+                score += (rect.Y * 5000) + rect.X + (rect.Height - h) * 10;
+                return score;
+            }
+            if (_rotationPolicy == RotationPolicy.StripFill)
+            {
+                score += Math.Min(rect.Width - w, rect.Height - h) * 5 + (rect.Y * 100) + rect.X;
+                return score;
+            }
 
             switch (strategy)
             {
                 case NestingStrategy.BestArea:
-                    // Minimize leftover area
-                    score = rect.Area - (w * h);
+                    score += rect.Area - (w * h) + localWaste * 10.0;
                     break;
 
                 case NestingStrategy.ShortSideFit:
-                    // Prefer fits where short side aligns with short side
-                    double shortGap = Math.Min(rect.Width - w, rect.Height - h);
-                    score = shortGap > 0 ? shortGap * 10 : -shortGap * 50;
-                    score += rect.Y * 50 + rect.X;
+                    double shortGap = Math.Min(remW, remH);
+                    score += shortGap > 0 ? shortGap * 10 : -shortGap * 50;
+                    score += localWaste * 5.0 + rect.Y * 50 + rect.X;
                     break;
 
                 case NestingStrategy.LongSideFit:
-                    // Prefer fits where long side aligns with long side
-                    double longGap = Math.Max(rect.Width - w, rect.Height - h);
-                    score = longGap > 0 ? longGap * 10 : -longGap * 50;
-                    score += rect.Y * 50 + rect.X;
+                    double longGap = Math.Max(remW, remH);
+                    score += longGap > 0 ? longGap * 10 : -longGap * 50;
+                    score += localWaste * 5.0 + rect.Y * 50 + rect.X;
                     break;
 
                 case NestingStrategy.BottomLeft:
-                    // Bottom-left first
-                    score = rect.Y * 1000 + rect.X;
+                    score += rect.Y * 1000 + rect.X + localWaste * 2.0;
                     break;
 
                 case NestingStrategy.Guillotine:
-                    // Best for guillotine cuts
                     double rightWaste = rect.Width - w;
                     double bottomWaste = rect.Height - h;
 
-                    // Prefer cuts that create clean rectangles
                     if (rightWaste == 0) score -= 1000;
                     if (bottomWaste == 0) score -= 1000;
 
                     score += (rightWaste + bottomWaste) * 5;
-                    score += rect.Y * 100 + rect.X;
+                    score += rect.Y * 100 + rect.X + localWaste * 5.0;
                     break;
 
                 case NestingStrategy.Skyline:
                 case NestingStrategy.ComplexSkyline:
-                    // Row-by-row filling
                     double skylineScore = rect.Y * 10000;
 
-                    // Prefer positions that fill row completely
                     if (rect.Height >= h && rect.Width >= w)
                     {
                         skylineScore -= (w * h) / 100;
                     }
 
-                    // Bonus for tight horizontal fit
                     if (rect.Width - w < 10) skylineScore -= 500;
 
-                    score = skylineScore;
+                    score += skylineScore + localWaste * 5.0;
                     break;
 
                 case NestingStrategy.ComplexBestFit:
                 case NestingStrategy.BestPerimeter:
-                    // Best perimeter fit
                     double perimeter = 2 * (w + h);
                     double fitRatio = Math.Min(rect.Width / w, rect.Height / h);
-                    score = -perimeter * fitRatio;
-                    score += rect.Y * 50 + rect.X;
+                    score += -perimeter * fitRatio;
+                    score += rect.Y * 50 + rect.X + localWaste * 5.0;
                     break;
 
+                case NestingStrategy.ComplexIQ200V7:
                 default:
-                    // Default: minimize leftover area
-                    score = rect.Area - (w * h);
+                    score += (localWaste * 150.0) + (aspectDiff * 80.0) + (rect.Y * 800.0) + (rect.X * 15.0) + (rect.Area - (w * h)) * 0.05;
                     break;
             }
 
             return score;
         }
 
-        // IMPROVED Skyline - Row by Row with better fill
         private double ScorePlacementSkyline(MaxRect rect, double w, double h)
         {
-            // Factor 1: Y position (lower = better)
             double posScore = rect.Y * 10000;
-
-            // Factor 2: Fill ratio (bigger fills = better)
             double fillScore = 0;
             if (rect.Height >= h && rect.Width >= w)
             {
-                fillScore = -(w * h) / 100; // Bigger = better
+                fillScore = -(w * h) / 100;
 
-                // Bonus for tight fits
                 if (rect.Width - w < 5) fillScore -= 200;
                 if (rect.Height - h < 5) fillScore -= 200;
             }
 
-            // Factor 3: Prefer bottom-left
             posScore += rect.X;
-
             return posScore + fillScore;
         }
 
-        // Guillotine Complex - Best Area Fit
         private double ScorePlacementGuillotine(MaxRect rect, double w, double h)
         {
             double score = 0;
-
-            // Best Area: minimize leftover
             double areaFit = rect.Area - (w * h);
             score = areaFit;
 
-            // Short side fit preference
             double shortSide = Math.Min(rect.Width - w, rect.Height - h);
             if (shortSide >= 0) score += shortSide * 2;
-            else score -= shortSide * 5; // Penalty for too big
+            else score -= shortSide * 5;
 
-            // Position preference
             score += rect.Y * 10 + rect.X;
-
             return score;
         }
 
-        // REMOVED - Already defined above (line 793)
-        // This was duplicate
-
         private PlacementNode EvaluatePlacementWithLookahead(CutPart part, double kerf)
         {
-            double w = part.L;
-            double h = part.W;
-            double wRot = part.W;
-            double hRot = part.L;
-
             double bestScore = double.MaxValue;
             PlacementNode bestPlacement = null;
 
-            // IMPROVED: Try more positions with better scoring
-            const double step = 10; // Smaller step = better fits (10mm)
-
-            // Try BOTH guillotine and sky_line positions
-            bool tryGuillotine = true;
-            bool trySkyline = true;
+            var orientations = GetAllowedOrientations(part);
 
             foreach (var rect in _freeRects)
             {
-                // Skip tiny rectangles
-                if (rect.Area < 10000) continue;
-
-                // Try multiple positions within this free rect
-                for (double py = rect.Y; py <= rect.Y + rect.Height - h; py += step)
+                foreach (var o in orientations)
                 {
-                    for (double px = rect.X; px <= rect.X + rect.Width - w; px += step)
+                    double neededW = o.Width + kerf;
+                    double neededH = o.Height + kerf;
+
+                    if (rect.Fits(neededW, neededH))
                     {
-                        // Check NORMAL orientation at this position
-                        if (px + w <= rect.X + rect.Width && py + h <= rect.Y + rect.Height)
+                        double score = ScorePlacement(rect, neededW, neededH, _nestingStrategy);
+
+                        if (_rotationPolicy == RotationPolicy.FirstFit && o.IsRotated)
                         {
-                            double leftoverArea = rect.Area - (w * h);
-                            double shortSide = Math.Min(rect.Width - w, rect.Height - h);
-                            double fitScore = shortSide >= 0 ? shortSide : -shortSide * 10;
-
-                            // Bonus for tight fits
-                            if (rect.Width - w < 20) fitScore -= 100;
-                            if (rect.Height - h < 20) fitScore -= 100;
-
-                            double score = leftoverArea + fitScore;
-
-                            if (score < bestScore)
-                            {
-                                bestScore = score;
-                                bestPlacement = new PlacementNode { X = px, Y = py, Width = w, Height = h, IsRotated = false, Score = score };
-                            }
+                            score += 1000;
                         }
 
-                        // Check ROTATED orientation at this position
-                        if (part.Rot && px + wRot <= rect.X + rect.Width && py + hRot <= rect.Y + rect.Height)
+                        if (score < bestScore)
                         {
-                            double leftoverArea = rect.Area - (wRot * hRot);
-                            double shortSide = Math.Min(rect.Width - wRot, rect.Height - hRot);
-                            double fitScore = shortSide >= 0 ? shortSide : -shortSide * 10;
-
-                            if (rect.Width - wRot < 20) fitScore -= 100;
-                            if (rect.Height - hRot < 20) fitScore -= 100;
-                            double score = leftoverArea + fitScore;
-
-                            if (score < bestScore)
+                            bestScore = score;
+                            bestPlacement = new PlacementNode
                             {
-                                bestScore = score;
-                                bestPlacement = new PlacementNode { X = px, Y = py, Width = wRot, Height = hRot, IsRotated = true, Score = score };
-                            }
+                                X = rect.X,
+                                Y = rect.Y,
+                                Width = o.Width,
+                                Height = o.Height,
+                                IsRotated = o.IsRotated,
+                                Score = score
+                            };
                         }
                     }
                 }
-
-                // Also try at rectangle origins (original logic)
-                if (rect.Fits(w, h))
-                {
-                    double leftoverArea = rect.Area - (w * h);
-                    double shortSide = Math.Min(rect.Width - w, rect.Height - h);
-                    double score = leftoverArea + shortSide;
-
-                    if (score < bestScore)
-                    {
-                        bestScore = score;
-                        bestPlacement = new PlacementNode { X = rect.X, Y = rect.Y, Width = w, Height = h, IsRotated = false, Score = score };
-                    }
-                }
-
-                if (part.Rot && rect.Fits(wRot, hRot))
-                {
-                    double leftoverArea = rect.Area - (wRot * hRot);
-                    double shortSide = Math.Min(rect.Width - wRot, rect.Height - hRot);
-                    double score = leftoverArea + shortSide;
-
-                    if (score < bestScore)
-                    {
-                        bestScore = score;
-                        bestPlacement = new PlacementNode { X = rect.X, Y = rect.Y, Width = wRot, Height = hRot, IsRotated = true, Score = score };
-                    }
-                }
-            }
-
-            if (bestPlacement == null)
-            {
-                System.Diagnostics.Debug.WriteLine($"NO FIT: {part.Ref} {part.L}x{part.W}");
             }
 
             return bestPlacement;
@@ -1154,28 +1113,37 @@ namespace ProGlassAutomation.Views.Optimization
 
             _freeRects.Remove(usedRect);
 
-            double rightW = usedRect.Width - w;
-            double bottomH = usedRect.Height - h;
-            double splitX = placement.X + w;
-            double splitY = placement.Y + h;
+            double splitX = placement.X + w + _kerf;
+            double splitY = placement.Y + h + _kerf;
 
-            // IMPROVED: Create RIGHT rectangle (full height remaining)
-            if (rightW > _breakout && usedRect.Height > _breakout)
-                _freeRects.Add(new MaxRect(splitX, placement.Y, rightW, usedRect.Height));
+            double rightW = (usedRect.X + usedRect.Width) - splitX;
+            double bottomH = (usedRect.Y + usedRect.Height) - splitY;
 
-            // IMPROVED: Create BOTTOM rectangle (full width remaining)
-            if (bottomH > _breakout && usedRect.Width > _breakout)
-                _freeRects.Add(new MaxRect(placement.X, splitY, usedRect.Width, bottomH));
+            // FIX: Disjoint non-overlapping splits that use full leftover dimensions
+            if (rightW * usedRect.Height > bottomH * usedRect.Width)
+            {
+                if (rightW > _breakout && usedRect.Height > _breakout)
+                    _freeRects.Add(new MaxRect(splitX, usedRect.Y, rightW, usedRect.Height));
 
-            // IMPROVED: Merge adjacent rectangles to reduce fragmentation
+                double leftW = usedRect.Width - rightW;
+                if (bottomH > _breakout && leftW > _breakout)
+                    _freeRects.Add(new MaxRect(usedRect.X, splitY, leftW, bottomH));
+            }
+            else
+            {
+                if (rightW > _breakout && (usedRect.Height - bottomH) > _breakout)
+                    _freeRects.Add(new MaxRect(splitX, usedRect.Y, rightW, usedRect.Height - bottomH));
+
+                if (bottomH > _breakout && usedRect.Width > _breakout)
+                    _freeRects.Add(new MaxRect(usedRect.X, splitY, usedRect.Width, bottomH));
+            }
+
             MergeFreeRectsImproved(_freeRects);
 
-            // Remove tiny fragments (prune small waste)
             _freeRects.RemoveAll(r => r.Area < _breakout * _breakout * 2);
             PruneContainedFreeRects(_freeRects);
         }
 
-        // IMPROVED: Guillotine split - better rectangle management
         private void UpdateFreeRectsTest(MaxRect placement, double w, double h, List<MaxRect> freeRects)
         {
             const double eps = 0.01;
@@ -1187,22 +1155,32 @@ namespace ProGlassAutomation.Views.Optimization
 
             freeRects.Remove(usedRect);
 
-            double rightW = usedRect.Width - w;
-            double bottomH = usedRect.Height - h;
-            double rightX = placement.X + w;
-            double bottomY = placement.Y + h;
+            double splitX = placement.X + w;
+            double splitY = placement.Y + h;
 
-            // IMPROVED: Create right and bottom rectangles
-            if (rightW > _breakout && usedRect.Height > _breakout)
-                freeRects.Add(new MaxRect(rightX, placement.Y, rightW, usedRect.Height));
+            double rightW = (usedRect.X + usedRect.Width) - splitX;
+            double bottomH = (usedRect.Y + usedRect.Height) - splitY;
 
-            if (bottomH > _breakout && usedRect.Width > _breakout)
-                freeRects.Add(new MaxRect(placement.X, bottomY, usedRect.Width, bottomH));
+            // FIX: Disjoint non-overlapping splits that use full leftover dimensions
+            if (rightW * usedRect.Height > bottomH * usedRect.Width)
+            {
+                if (rightW > _breakout && usedRect.Height > _breakout)
+                    freeRects.Add(new MaxRect(splitX, usedRect.Y, rightW, usedRect.Height));
 
-            // Merge adjacent rectangles to reduce fragmentation
+                double leftW = usedRect.Width - rightW;
+                if (bottomH > _breakout && leftW > _breakout)
+                    freeRects.Add(new MaxRect(usedRect.X, splitY, leftW, bottomH));
+            }
+            else
+            {
+                if (rightW > _breakout && (usedRect.Height - bottomH) > _breakout)
+                    freeRects.Add(new MaxRect(splitX, usedRect.Y, rightW, usedRect.Height - bottomH));
+
+                if (bottomH > _breakout && usedRect.Width > _breakout)
+                    freeRects.Add(new MaxRect(usedRect.X, splitY, usedRect.Width, bottomH));
+            }
+
             MergeFreeRectsImproved(freeRects);
-
-            // Remove tiny fragments that waste memory
             freeRects.RemoveAll(r => r.Area < 50000);
         }
 
@@ -1219,7 +1197,6 @@ namespace ProGlassAutomation.Views.Optimization
                         var a = rects[i];
                         var b = rects[j];
 
-                        // Horizontal merge
                         if (Math.Abs(a.Y - b.Y) < 0.1 && Math.Abs(a.Height - b.Height) < 0.1)
                         {
                             if (Math.Abs(a.X + a.Width - b.X) < 0.1 || Math.Abs(b.X + b.Width - a.X) < 0.1)
@@ -1230,7 +1207,6 @@ namespace ProGlassAutomation.Views.Optimization
                                 merged = true;
                             }
                         }
-                        // Vertical merge
                         else if (Math.Abs(a.X - b.X) < 0.1 && Math.Abs(a.Width - b.Width) < 0.1)
                         {
                             if (Math.Abs(a.Y + a.Height - b.Y) < 0.1 || Math.Abs(b.Y + b.Height - a.Y) < 0.1)
@@ -1244,16 +1220,6 @@ namespace ProGlassAutomation.Views.Optimization
                     }
                 }
             } while (merged);
-        }
-
-        // DISABLED - Don't merge rectangles (keeps fragmented waste areas)
-        private void MergeFreeRects()
-        {
-            // Do nothing - keep rectangles separate (more waste!)
-            // Skipping merge entirely
-
-            // Optional: Just prune tiny ones > 50000
-            _freeRects.RemoveAll(r => r.Area < 50000);
         }
 
         private void PruneContainedFreeRects(List<MaxRect> list)
@@ -1318,44 +1284,69 @@ namespace ProGlassAutomation.Views.Optimization
 
             foreach (var remnant in usableRemnants)
             {
+                var remnantFreeRects = new List<MaxRect> { new MaxRect(remnant.X, remnant.Y, remnant.Width, remnant.Height) };
                 var placedOnRemnant = new List<(double X, double Y, double W, double H)>();
 
                 foreach (var part in unplacedParts)
                 {
                     if (part.IsPlaced) continue;
 
-                    double pW = part.L + _kerf;
-                    double pH = part.W + _kerf;
+                    var orientations = GetAllowedOrientations(part);
 
-                    bool canFitNormal = pW <= remnant.Width && pH <= remnant.Height;
-                    bool canFitRotated = false;
-                    if (part.Rot)
-                        canFitRotated = pH <= remnant.Width && pW <= remnant.Height;
+                    MaxRect bestRect = null;
+                    bool rotated = false;
+                    Orientation bestO = new Orientation();
 
-                    if (!canFitNormal && !canFitRotated) continue;
+                    foreach (var rect in remnantFreeRects)
+                    {
+                        foreach (var o in orientations)
+                        {
+                            double pW = o.Width + _kerf;
+                            double pH = o.Height + _kerf;
 
-                    double newX = remnant.X + _kerf;
-                    double newY = remnant.Y + _kerf;
-                    double newW = canFitRotated && !canFitNormal ? part.W : part.L;
-                    double newH = canFitRotated && !canFitNormal ? part.L : part.W;
+                            if (rect.Fits(pW, pH))
+                            {
+                                bestRect = rect;
+                                rotated = o.IsRotated;
+                                bestO = o;
+                                break;
+                            }
+                        }
+                        if (bestRect != null) break;
+                    }
 
-                    if (HasOverlap(newX, newY, newW, newH, placedOnRemnant))
-                        continue;
+                    if (bestRect == null) continue;
 
-                    bool rotated = canFitRotated && !canFitNormal;
+                    double placeW = bestO.Width;
+                    double placeH = bestO.Height;
+
+                    double newX = bestRect.X + _kerf;
+                    double newY = bestRect.Y + _kerf;
 
                     part.IsPlaced = true;
-                    part.PlacedX = remnant.X + _kerf;
-                    part.PlacedY = remnant.Y + _kerf;
-                    part.PlacedW = rotated ? part.W : part.L;
-                    part.PlacedH = rotated ? part.L : part.W;
+                    part.PlacedX = newX;
+                    part.PlacedY = newY;
+                    part.PlacedW = placeW;
+                    part.PlacedH = placeH;
 
                     double partArea = (part.L * part.W) / 1000000.0;
                     partsAreaOnRemnants += partArea;
                     _usedSQM += partArea;
                     _totalPartsCut++;
 
-                    placedOnRemnant.Add((newX, newY, newW, newH));
+                    placedOnRemnant.Add((newX, newY, placeW, placeH));
+
+                    remnantFreeRects.Remove(bestRect);
+                    double splitX = newX + placeW + _kerf;
+                    double splitY = newY + placeH + _kerf;
+
+                    double rightW = (bestRect.X + bestRect.Width) - splitX;
+                    double bottomH = (bestRect.Y + bestRect.Height) - splitY;
+
+                    if (rightW > _breakout && bestRect.Height > _breakout)
+                        remnantFreeRects.Add(new MaxRect(splitX, bestRect.Y, rightW, bestRect.Height));
+                    if (bottomH > _breakout && bestRect.Width > _breakout)
+                        remnantFreeRects.Add(new MaxRect(bestRect.X, splitY, bestRect.Width, bottomH));
                 }
 
                 if (placedOnRemnant.Count > 0)
@@ -1398,39 +1389,55 @@ namespace ProGlassAutomation.Views.Optimization
         }
 
         // =====================================================
-        // GENETIC HELPERS
+        // GENETIC HELPERS (Permutation Safe)
         // =====================================================
 
         private Genome Crossover(Genome p1, Genome p2)
         {
             var child = new Genome();
-            int split = _rng.Next(p1.PartOrder.Count);
             child.PartOrder = new List<CutPart>();
-            child.PartOrder.AddRange(p1.PartOrder.Take(split));
-            child.PartOrder.AddRange(p2.PartOrder.Skip(split));
+
+            int count = p1.PartOrder.Count;
+            if (count == 0) return child;
+
+            int start = _rng.Next(count);
+            int end = _rng.Next(count);
+            if (start > end) { int t = start; start = end; end = t; }
+
+            var childParts = new CutPart[count];
+            var usedIds = new HashSet<int>();
+
+            for (int i = start; i <= end; i++)
+            {
+                childParts[i] = p1.PartOrder[i];
+                usedIds.Add(p1.PartOrder[i].Id);
+            }
+
+            int currentChildIdx = (end + 1) % count;
+            for (int i = 0; i < count; i++)
+            {
+                int p2Idx = (end + 1 + i) % count;
+                var candidate = p2.PartOrder[p2Idx];
+                if (!usedIds.Contains(candidate.Id))
+                {
+                    childParts[currentChildIdx] = candidate;
+                    usedIds.Add(candidate.Id);
+                    currentChildIdx = (currentChildIdx + 1) % count;
+                }
+            }
+
+            child.PartOrder.AddRange(childParts);
             return child;
         }
 
         private void Mutate(Genome g)
         {
+            if (g.PartOrder.Count < 2) return;
             int i = _rng.Next(g.PartOrder.Count);
             int j = _rng.Next(g.PartOrder.Count);
             var temp = g.PartOrder[i];
             g.PartOrder[i] = g.PartOrder[j];
             g.PartOrder[j] = temp;
-        }
-
-        private double EvaluateGenome(Genome g, List<StockSheet> stockSheets)
-        {
-            var testParts = new List<CutPart>(g.PartOrder);
-            double totalUtil = 0;
-            foreach (var stock in stockSheets.Take(5))
-            {
-                var placed = new List<PlacedPart>();
-                PlacePartsGuillotine(testParts, stock.L - _lr - _rm, stock.W - _tr - _br, stock.Ref, 1, placed);
-                totalUtil += ComputeUtilization(placed, stock);
-            }
-            return totalUtil;
         }
 
         // =====================================================
@@ -1450,7 +1457,7 @@ namespace ProGlassAutomation.Views.Optimization
                 wasteArea += sheetArea - result.Area;
             }
 
-            stockCost += wasteArea * _costModel.WastePenaltyPerSQM / 1000;
+            stockCost += wasteArea * _costModel.WastePenaltyPerSQM;
 
             double remnantCredit = 0;
             foreach (var rem in _remnants.Where(r => !r.IsReused))
@@ -1459,7 +1466,7 @@ namespace ProGlassAutomation.Views.Optimization
 
             double totalKerf = 0;
             foreach (var seq in _cutSequences)
-                totalKerf += seq.TotalKerfLength;
+                totalKerf += seq.CalculateTotalCutLength();
             stockCost += totalKerf * _costModel.KerfCostPerMm;
 
             return stockCost;
@@ -1588,10 +1595,10 @@ namespace ProGlassAutomation.Views.Optimization
     public class Genome
     {
         public List<CutPart> PartOrder = new List<CutPart>();
-        public List<PlacedPart> Placed = new List<PlacedPart>(); // ADD THIS
+        public List<PlacedPart> Placed = new List<PlacedPart>();
         public double Fitness { get; set; }
-        public double Cost { get; set; } // ADD THIS
-        public double Utilization { get; set; } // ADD THIS
+        public double Cost { get; set; }
+        public double Utilization { get; set; }
     }
 
     public class RemnantPiece
@@ -1640,10 +1647,10 @@ namespace ProGlassAutomation.Views.Optimization
     public class CostModel
     {
         public double StockPricePerSQM { get; set; } = 250;
-        public double WastePenaltyPerSQM { get; set; } = 50;
-        public double RemnantCreditPerSQM { get; set; } = 25;
+        public double WastePenaltyPerSQM { get; set; } = 0;
+        public double RemnantCreditPerSQM { get; set; } = 0;
         public double KerfCostPerMm { get; set; } = 0.01;
-        public double OperatingCostPerHour { get; set; } = 150;
+        public double OperatingCostPerHour { get; set; } = 0;
         public double SetupCostPerJob { get; set; } = 50;
 
         public double CalculateSheetCost(double usedArea, double sheetArea, double kerfLength)
@@ -1685,7 +1692,7 @@ namespace ProGlassAutomation.Views.Optimization
         public List<Point> GetToolpathPoints()
         {
             var points = new List<Point>();
-            foreach (var op in Operations.OrderBy(o => o.Sequence))
+            foreach (var op in Operations.OrderBy(o => o.Sequence)) // FIX: Changed 'op.Sequence' to 'o.Sequence'
             {
                 points.Add(new Point(op.StartX, op.StartY));
                 points.Add(new Point(op.EndX, op.EndY));

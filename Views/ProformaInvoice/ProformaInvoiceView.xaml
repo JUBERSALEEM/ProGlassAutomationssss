@@ -3,9 +3,10 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:converters="clr-namespace:ProGlassAutomation.Converters"
              xmlns:opt="clr-namespace:ProGlassAutomation.Views.ProformaInvoice.Optimization"
-             Background="#F0F2F5">
+             Background="#F8FAFC">
 
     <UserControl.Resources>
+        <!-- Invoiced System Converters -->
         <converters:BoolToVisibilityConverter x:Key="BoolToVis"/>
         <converters:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVis"/>
         <converters:ChargesTotalConverter x:Key="ChargesTotalConverter"/>
@@ -15,40 +16,42 @@
         <converters:ChargeUnitDisplayConverter x:Key="ChargeUnitDisplayConverter"/>
         <converters:NullToVisibilityConverter x:Key="NullToVis"/>
 
-        <SolidColorBrush x:Key="PrimaryBrush" Color="#1E3A5F"/>
-        <SolidColorBrush x:Key="SecondaryBrush" Color="#4A6FA5"/>
-        <SolidColorBrush x:Key="AccentBrush" Color="#166088"/>
-        <SolidColorBrush x:Key="LightBrush" Color="#E8ECF0"/>
-        <SolidColorBrush x:Key="BorderBrush" Color="#D1D5DB"/>
-        <SolidColorBrush x:Key="TextPrimary" Color="#1F2937"/>
-        <SolidColorBrush x:Key="TextSecondary" Color="#6B7280"/>
-        <SolidColorBrush x:Key="SuccessBrush" Color="#059669"/>
-        <SolidColorBrush x:Key="DangerBrush" Color="#DC2626"/>
-        <SolidColorBrush x:Key="HeaderGreen" Color="#2E7D32"/>
-        <SolidColorBrush x:Key="HeaderBlue" Color="#1E3A8A"/>
+        <!-- Light Theme Palette -->
+        <SolidColorBrush x:Key="PanelBg" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="PanelBorder" Color="#E2E8F0"/>
+        <SolidColorBrush x:Key="AccentBlue" Color="#2563EB"/>
+        <SolidColorBrush x:Key="AccentBlueHover" Color="#1D4ED8"/>
+        <SolidColorBrush x:Key="AccentBlueLight" Color="#EFF6FF"/>
+        <SolidColorBrush x:Key="AccentGreen" Color="#10B981"/>
+        <SolidColorBrush x:Key="AccentGreenHover" Color="#059669"/>
+        <SolidColorBrush x:Key="AccentOrange" Color="#F59E0B"/>
+        <SolidColorBrush x:Key="AccentRed" Color="#EF4444"/>
+        <SolidColorBrush x:Key="TextMain" Color="#0F172A"/>
+        <SolidColorBrush x:Key="TextSub" Color="#64748B"/>
+        <SolidColorBrush x:Key="TextWhite" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="BgControl" Color="#F1F5F9"/>
 
-        <FontFamily x:Key="PrimaryFont">Segoe UI</FontFamily>
+        <FontFamily x:Key="PrimaryFont">Segoe UI, Inter, Arial</FontFamily>
 
+        <!-- Dynamic Control Templates -->
         <Style x:Key="PrimaryButton" TargetType="Button">
-            <Setter Property="Background" Value="#1E3A5F"/>
-            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="Background" Value="{StaticResource AccentBlue}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextWhite}"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Padding" Value="14,8"/>
             <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="12">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="6">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#2D4A6F"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#0F2744"/>
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource AccentBlueHover}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -57,23 +60,24 @@
         </Style>
 
         <Style x:Key="SecondaryButton" TargetType="Button">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="Foreground" Value="#1E3A5F"/>
-            <Setter Property="BorderBrush" Value="#D1D5DB"/>
+            <Setter Property="Background" Value="{StaticResource BgControl}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMain}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource PanelBorder}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="12,8"/>
-            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Padding" Value="12,7"/>
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="FontWeight" Value="Medium"/>
             <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}" CornerRadius="12">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}" CornerRadius="6">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#F3F4F6"/>
+                                <Setter TargetName="border" Property="Background" Value="#E2E8F0"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -82,22 +86,23 @@
         </Style>
 
         <Style x:Key="DangerButton" TargetType="Button">
-            <Setter Property="Background" Value="#DC2626"/>
-            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="Background" Value="{StaticResource AccentRed}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextWhite}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="12,8"/>
             <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="12">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="6">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#B91C1C"/>
+                                <Setter TargetName="border" Property="Background" Value="#DC2626"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -105,30 +110,30 @@
             </Setter>
         </Style>
 
+        <!-- Modern Module Outline Trays -->
         <Style x:Key="ModuleButtonSGU" TargetType="Button">
-            <Setter Property="Background" Value="#059669"/>
-            <Setter Property="Foreground" Value="#FFFFFF"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="16,12"/>
-            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Background" Value="#F8FAFC"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMain}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource PanelBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="14,10"/>
+            <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="8">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}" CornerRadius="6">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                 <ContentPresenter VerticalAlignment="Center"/>
-                                <TextBlock x:Name="arrow" Text="▼" FontSize="10" Margin="8,0,0,0" VerticalAlignment="Center" Foreground="#FFFFFF" Opacity="0.7"/>
+                                <TextBlock Text="▼" FontSize="9" Margin="8,0,0,0" VerticalAlignment="Center" Foreground="{StaticResource TextSub}" Opacity="0.8"/>
                             </StackPanel>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Opacity" Value="0.9"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Opacity" Value="0.8"/>
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource AccentBlueLight}"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource AccentBlue}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -136,160 +141,11 @@
             </Setter>
         </Style>
 
-        <Style x:Key="ModuleButtonDGU" TargetType="Button">
-            <Setter Property="Background" Value="#1E3A5F"/>
-            <Setter Property="Foreground" Value="#FFFFFF"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="16,12"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="8">
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                <ContentPresenter VerticalAlignment="Center"/>
-                                <TextBlock x:Name="arrow" Text="▼" FontSize="10" Margin="8,0,0,0" VerticalAlignment="Center" Foreground="#FFFFFF" Opacity="0.7"/>
-                            </StackPanel>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Opacity" Value="0.9"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Opacity" Value="0.8"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="ModuleButtonLAM" TargetType="Button">
-            <Setter Property="Background" Value="#7C3AED"/>
-            <Setter Property="Foreground" Value="#FFFFFF"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="16,12"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="8">
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                <ContentPresenter VerticalAlignment="Center"/>
-                                <TextBlock x:Name="arrow" Text="▼" FontSize="10" Margin="8,0,0,0" VerticalAlignment="Center" Foreground="#FFFFFF" Opacity="0.7"/>
-                            </StackPanel>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Opacity" Value="0.9"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Opacity" Value="0.8"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="ModuleButtonOPT" TargetType="Button">
-            <Setter Property="Background" Value="#F59E0B"/>
-            <Setter Property="Foreground" Value="#FFFFFF"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="16,12"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="8">
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                <ContentPresenter VerticalAlignment="Center"/>
-                                <TextBlock x:Name="arrow" Text="▼" FontSize="10" Margin="8,0,0,0" VerticalAlignment="Center" Foreground="#FFFFFF" Opacity="0.7"/>
-                            </StackPanel>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Opacity" Value="0.9"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Opacity" Value="0.8"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="ModuleButtonFILE" TargetType="Button">
-            <Setter Property="Background" Value="#6B7280"/>
-            <Setter Property="Foreground" Value="#FFFFFF"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="16,12"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="8">
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                <ContentPresenter VerticalAlignment="Center"/>
-                                <TextBlock x:Name="arrow" Text="▼" FontSize="10" Margin="8,0,0,0" VerticalAlignment="Center" Foreground="#FFFFFF" Opacity="0.7"/>
-                            </StackPanel>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Opacity" Value="0.9"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Opacity" Value="0.8"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="ModuleButtonSUMMARY" TargetType="Button">
-            <Setter Property="Background" Value="#14B8A6"/>
-            <Setter Property="Foreground" Value="#FFFFFF"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="16,12"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="8">
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                <ContentPresenter VerticalAlignment="Center"/>
-                                <TextBlock x:Name="arrow" Text="▼" FontSize="10" Margin="8,0,0,0" VerticalAlignment="Center" Foreground="#FFFFFF" Opacity="0.7"/>
-                            </StackPanel>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Opacity" Value="0.9"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Opacity" Value="0.8"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+        <Style x:Key="ModuleButtonDGU" TargetType="Button" BasedOn="{StaticResource ModuleButtonSGU}"/>
+        <Style x:Key="ModuleButtonLAM" TargetType="Button" BasedOn="{StaticResource ModuleButtonSGU}"/>
+        <Style x:Key="ModuleButtonOPT" TargetType="Button" BasedOn="{StaticResource ModuleButtonSGU}"/>
+        <Style x:Key="ModuleButtonFILE" TargetType="Button" BasedOn="{StaticResource ModuleButtonSGU}"/>
+        <Style x:Key="ModuleButtonSUMMARY" TargetType="Button" BasedOn="{StaticResource ModuleButtonSGU}"/>
 
         <Style x:Key="FormTextBox" TargetType="TextBox">
             <Setter Property="Background" Value="#FFFFFF"/>
@@ -326,24 +182,24 @@
         </Style>
 
         <Style x:Key="FieldLabel" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontSize" Value="10.5"/>
             <Setter Property="FontWeight" Value="Medium"/>
             <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
-            <Setter Property="Foreground" Value="#4B5563"/>
-            <Setter Property="Margin" Value="0,0,0,6"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSub}"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
         </Style>
 
         <Style x:Key="SectionHeader" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontSize" Value="13.5"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
-            <Setter Property="Foreground" Value="#234E52"/>
-            <Setter Property="Margin" Value="0,0,0,12"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMain}"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
         </Style>
 
         <Style x:Key="CleanDataGridHeader" TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="#1E3A5F"/>
-            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="Background" Value="{StaticResource BgControl}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMain}"/>
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
@@ -353,16 +209,16 @@
 
         <Style x:Key="CleanDataGridCell" TargetType="DataGridCell">
             <Setter Property="Padding" Value="8,6"/>
-            <Setter Property="BorderThickness" Value="0,0,1,1"/>
-            <Setter Property="BorderBrush" Value="#E5E7EB"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="BorderBrush" Value="{StaticResource PanelBorder}"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Background" Value="#FFFFFF"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="#DBEAFE"/>
-                    <Setter Property="Foreground" Value="#1E3A5F"/>
+                    <Setter Property="Background" Value="{StaticResource AccentBlueLight}"/>
+                    <Setter Property="Foreground" Value="{StaticResource AccentBlue}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -371,13 +227,17 @@
             <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
             <Style.Triggers>
                 <Trigger Property="AlternationIndex" Value="1">
-                    <Setter Property="Background" Value="#F9FAFB"/>
+                    <Setter Property="Background" Value="#F8FAFC"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
+
+        <Style x:Key="ListBoxItemStyle" TargetType="ListBoxItem">
+            <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
+        </Style>
     </UserControl.Resources>
 
-    <!-- 3-Column Grid Layout -->
+    <!-- 3-Column Balanced Light Grid Layout -->
     <Grid Margin="8">
         <Grid.ColumnDefinitions>
             <!-- Left: 55%, Center:25%, Right:20% -->
@@ -386,26 +246,27 @@
             <ColumnDefinition Width="20*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- ================= LEFT SECTION: PROFORMA INVOICE (Green Header) ================= -->
-        <Border Grid.Column="0" BorderBrush="#234E52" BorderThickness="2" CornerRadius="6" Background="#FFFFFF" Margin="0,0,8,0" Padding="0">
+        <!-- ================= LEFT SECTION: PROFORMA INVOICE DETAILS ================= -->
+        <Border Grid.Column="0" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1" CornerRadius="8" Background="{StaticResource PanelBg}" Margin="0,0,8,0" Padding="0">
             <ScrollViewer VerticalScrollBarVisibility="Auto" CanContentScroll="False" PanningMode="VerticalOnly">
-                <StackPanel Margin="24">
+                <StackPanel Margin="20">
 
-                    <Grid Margin="0,0,0,12">
+                    <!-- Header -->
+                    <Grid Margin="0,0,0,15">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0">
-                            <TextBlock Text="Proforma Invoice" FontSize="22" FontWeight="SemiBold" Foreground="#0F3A3A" FontFamily="{StaticResource PrimaryFont}"/>
-                            <TextBlock Text="Create and manage professional invoices" FontSize="12" Foreground="#3F5760" Margin="0,2,0,0" FontFamily="{StaticResource PrimaryFont}"/>
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="Proforma Invoice" FontSize="20" FontWeight="Bold" Foreground="{StaticResource TextMain}" FontFamily="{StaticResource PrimaryFont}"/>
+                            <TextBlock Text="Generate, optimize, and record commercial invoice specs" FontSize="11" Foreground="{StaticResource TextSub}" Margin="0,2,0,0" FontFamily="{StaticResource PrimaryFont}"/>
                         </StackPanel>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal">
-                            <Button Content="+ Create Job Order" Style="{StaticResource PrimaryButton}" Command="{Binding CreateJobOrderCommand}" Padding="16,10"/>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Content="+ Create Job Order" Style="{StaticResource PrimaryButton}" Command="{Binding CreateJobOrderCommand}"/>
                         </StackPanel>
                     </Grid>
 
-                        <Border Background="#FAFEFF" BorderBrush="#E6F3F3" BorderThickness="1" CornerRadius="6" Padding="14" Margin="0,0,0,10">
+                    <Border Background="#FAFEFF" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1" CornerRadius="6" Padding="14" Margin="0,0,0,10">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -415,21 +276,21 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0">
-                                <TextBlock Text="Company Name" FontSize="11" Foreground="#234E52" Margin="0,0,0,4"/>
-                                <TextBox Text="{Binding CompanyName, UpdateSourceTrigger=LostFocus}" FontSize="13" Padding="8,6" BorderBrush="#DDEEEE" BorderThickness="1" Background="#FFFFFF"/>
+                                <TextBlock Text="Company Name" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Text="{Binding CompanyName, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}"/>
                             </StackPanel>
                             <StackPanel Grid.Column="2">
-                                <TextBlock Text="TRN Number" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                <TextBox Text="{Binding CompanyTRN, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                <TextBlock Text="TRN Number" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Text="{Binding CompanyTRN, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}"/>
                             </StackPanel>
                             <StackPanel Grid.Column="4">
-                                <TextBlock Text="Location" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                <TextBox Text="{Binding CompanyLocation, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                <TextBlock Text="Location" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Text="{Binding CompanyLocation, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}"/>
                             </StackPanel>
                         </Grid>
                     </Border>
 
-                    <Border Background="#FAFEFF" BorderBrush="#E6F3F3" BorderThickness="1" CornerRadius="6" Padding="14" Margin="0,0,0,10">
+                    <Border Background="#FAFEFF" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1" CornerRadius="6" Padding="14" Margin="0,0,0,10">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -439,21 +300,22 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0">
-                                <TextBlock Text="Invoice No" FontSize="11" Foreground="#234E52" Margin="0,0,0,4"/>
-                                <TextBox Text="{Binding Invoice.InvoiceNo, UpdateSourceTrigger=LostFocus}" FontSize="13" Padding="8,6" BorderBrush="#DDEEEE" BorderThickness="1" Background="#FFFFFF"/>
+                                <TextBlock Text="Invoice No" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Text="{Binding Invoice.InvoiceNo, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}"/>
                             </StackPanel>
                             <StackPanel Grid.Column="2">
-                                <TextBlock Text="Date" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                <DatePicker SelectedDate="{Binding Invoice.InvoiceDate}" Padding="6,4" FontSize="11"/>
+                                <TextBlock Text="Date" Style="{StaticResource FieldLabel}"/>
+                                <DatePicker SelectedDate="{Binding Invoice.InvoiceDate}" Padding="6,4" FontSize="11.5"/>
                             </StackPanel>
                             <StackPanel Grid.Column="4">
-                                <TextBlock Text="Valid Until" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                <DatePicker SelectedDate="{Binding Invoice.ValidUntil}" Padding="6,4" FontSize="11"/>
+                                <TextBlock Text="Valid Until" Style="{StaticResource FieldLabel}"/>
+                                <DatePicker SelectedDate="{Binding Invoice.ValidUntil}" Padding="6,4" FontSize="11.5"/>
                             </StackPanel>
                         </Grid>
                     </Border>
 
-                    <Border Background="#FFFFFF" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,12"
+                    <!-- Status Ingestion Indicator -->
+                    <Border Background="{StaticResource PanelBg}" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,12"
                             Visibility="{Binding IsPriceSectionVisible, Converter={StaticResource BoolToVis}}">
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -462,8 +324,8 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0">
-                                <TextBlock Text="Status" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                <ComboBox SelectedValue="{Binding Invoice.Status}" SelectedValuePath="Content" Padding="6,4" FontSize="11">
+                                <TextBlock Text="Status" Style="{StaticResource FieldLabel}"/>
+                                <ComboBox SelectedValue="{Binding Invoice.Status}" SelectedValuePath="Content" Style="{StaticResource FormComboBox}">
                                     <ComboBoxItem Content="Draft"/>
                                     <ComboBoxItem Content="Sent"/>
                                     <ComboBoxItem Content="Confirmed"/>
@@ -471,28 +333,30 @@
                                     <ComboBoxItem Content="Cancelled"/>
                                 </ComboBox>
                             </StackPanel>
-                            <Border Grid.Column="2" Background="#059669" CornerRadius="6" Padding="12,8" VerticalAlignment="Center"
+                            <Border Grid.Column="2" Background="{StaticResource AccentGreen}" CornerRadius="6" Padding="12,8" VerticalAlignment="Center"
                                     Visibility="{Binding Invoice.IsConvertedToJobOrder, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="✓" FontSize="14" Foreground="White" FontWeight="Bold" Margin="0,0,6,0"/>
-                                    <TextBlock Text="CONVERTED TO JOB ORDER" FontSize="11" FontWeight="Bold" Foreground="White"/>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <TextBlock Text="✓" FontSize="12" Foreground="White" FontWeight="Bold" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="CONVERTED TO JOB ORDER" FontSize="10" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
                         </Grid>
                     </Border>
 
+                    <!-- Details Card Deck -->
                     <Grid Margin="0,0,0,12">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="10"/>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="10"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <Border Grid.Column="0" Background="#FFFFFF" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Padding="12">
+                        <!-- Customer Details -->
+                        <Border Grid.Column="0" Background="{StaticResource PanelBg}" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1" CornerRadius="6" Padding="12">
                             <StackPanel>
-                                <TextBlock Text="Customer Details" FontSize="12" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,8"/>
+                                <TextBlock Text="Customer Details" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextMain}" Margin="0,0,0,8"/>
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
@@ -501,78 +365,81 @@
                                     </Grid.RowDefinitions>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="6"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,6">
-                                        <TextBlock Text="Company Name *" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                        <TextBox Text="{Binding Invoice.CustomerName, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                        <TextBlock Text="Company Name *" Style="{StaticResource FieldLabel}"/>
+                                        <TextBox Text="{Binding Invoice.CustomerName, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,6">
-                                        <TextBlock Text="TRN Number" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                        <TextBox Text="{Binding Invoice.CustomerTRN, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                        <TextBlock Text="TRN Number" Style="{StaticResource FieldLabel}"/>
+                                        <TextBox Text="{Binding Invoice.CustomerTRN, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,0,6">
-                                        <TextBlock Text="Customer Reference" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                        <TextBox Text="{Binding Invoice.CustomerReference, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                        <TextBlock Text="Customer Reference" Style="{StaticResource FieldLabel}"/>
+                                        <TextBox Text="{Binding Invoice.CustomerReference, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,6">
-                                        <TextBlock Text="Salesman" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                        <TextBox Text="{Binding Invoice.Salesman, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                        <TextBlock Text="Salesman" Style="{StaticResource FieldLabel}"/>
+                                        <TextBox Text="{Binding Invoice.Salesman, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3">
-                                        <TextBlock Text="Address" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                        <TextBox Text="{Binding Invoice.CustomerAddress, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF" TextWrapping="Wrap" Height="28"/>
+                                        <TextBlock Text="Address" Style="{StaticResource FieldLabel}"/>
+                                        <TextBox Text="{Binding Invoice.CustomerAddress, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" TextWrapping="Wrap" Height="28"/>
                                     </StackPanel>
                                 </Grid>
                             </StackPanel>
                         </Border>
 
-                        <Border Grid.Column="2" Background="#FFFFFF" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Padding="12">
+                        <!-- Project Details -->
+                        <Border Grid.Column="2" Background="{StaticResource PanelBg}" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1" CornerRadius="6" Padding="12">
                             <StackPanel>
-                                <TextBlock Text="Project Details" FontSize="12" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,8"/>
+                                <TextBlock Text="Project Details" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextMain}" Margin="0,0,0,8"/>
                                 <StackPanel Margin="0,0,0,6">
-                                    <TextBlock Text="Project Name *" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                    <TextBox Text="{Binding Invoice.ProjectName, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                    <TextBlock Text="Project Name *" Style="{StaticResource FieldLabel}"/>
+                                    <TextBox Text="{Binding Invoice.ProjectName, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}"/>
                                 </StackPanel>
                                 <StackPanel Margin="0,0,0,6">
-                                    <TextBlock Text="Project No." FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                    <TextBox Text="{Binding Invoice.ProjectNo, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                    <TextBlock Text="Project No." Style="{StaticResource FieldLabel}"/>
+                                    <TextBox Text="{Binding Invoice.ProjectNo, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}"/>
                                 </StackPanel>
                                 <StackPanel>
-                                    <TextBlock Text="Location *" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                    <TextBox Text="{Binding Invoice.ProjectLocation, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                    <TextBlock Text="Location *" Style="{StaticResource FieldLabel}"/>
+                                    <TextBox Text="{Binding Invoice.ProjectLocation, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}"/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
 
-                        <Border Grid.Column="4" Background="#FFFFFF" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Padding="12">
+                        <!-- Additional details -->
+                        <Border Grid.Column="4" Background="{StaticResource PanelBg}" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1" CornerRadius="6" Padding="12">
                             <StackPanel>
-                                <TextBlock Text="Additional Details" FontSize="12" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,8"/>
+                                <TextBlock Text="Additional Details" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextMain}" Margin="0,0,0,8"/>
                                 <StackPanel Margin="0,0,0,6">
-                                    <TextBlock Text="LPO No." FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                    <TextBox Text="{Binding Invoice.LPONo, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                    <TextBlock Text="LPO No." Style="{StaticResource FieldLabel}"/>
+                                    <TextBox Text="{Binding Invoice.LPONo, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}"/>
                                 </StackPanel>
                                 <StackPanel Margin="0,0,0,6">
-                                    <TextBlock Text="Attention" FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                    <TextBox Text="{Binding Invoice.AttentionName, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                    <TextBlock Text="Attention" Style="{StaticResource FieldLabel}"/>
+                                    <TextBox Text="{Binding Invoice.AttentionName, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}"/>
                                 </StackPanel>
                                 <StackPanel>
-                                    <TextBlock Text="Contact No." FontSize="10" Foreground="#6B7280" Margin="0,0,0,3"/>
-                                    <TextBox Text="{Binding Invoice.ContactNo, UpdateSourceTrigger=LostFocus}" FontSize="11" Padding="6,4" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF"/>
+                                    <TextBlock Text="Contact No." Style="{StaticResource FieldLabel}"/>
+                                    <TextBox Text="{Binding Invoice.ContactNo, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}"/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
                     </Grid>
 
-                    <Border Background="#FFFFFF" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,12">
+                    <!-- Dynamic Specifications Table Deck -->
+                    <Border Background="{StaticResource PanelBg}" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,12">
                         <StackPanel>
                             <Grid Margin="0,0,0,10">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="Specifications" FontSize="12" FontWeight="SemiBold" Foreground="#1F2937" Margin="0"/>
+                                <TextBlock Grid.Column="0" Text="Specifications" FontSize="13" FontWeight="Bold" Foreground="{StaticResource TextMain}" Margin="0" VerticalAlignment="Center"/>
                                 <StackPanel Grid.Column="1" Orientation="Horizontal">
                                     <Button Content="+ Add" Style="{StaticResource PrimaryButton}" Click="AddSpecification_Click" Padding="10,4" Margin="0,0,6,0" FontSize="10"/>
                                     <Button Content="- Remove" Style="{StaticResource DangerButton}" Click="RemoveSpecification_Click" Padding="10,4" FontSize="10"/>
@@ -582,9 +449,9 @@
                             <ItemsControl ItemsSource="{Binding Invoice.Specifications}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border BorderBrush="#D1D5DB" BorderThickness="1" Margin="0,0,0,10" CornerRadius="4" Background="#FAFAFA">
+                                        <Border BorderBrush="{StaticResource PanelBorder}" BorderThickness="1" Margin="0,0,0,10" CornerRadius="4" Background="#FAFAFA">
                                             <StackPanel>
-                                                <Border Background="#F3F4F6" Padding="8,6" CornerRadius="4,4,0,0">
+                                                <Border Background="{StaticResource BgControl}" Padding="8,6" CornerRadius="4,4,0,0">
                                                     <Grid>
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="Auto"/>
@@ -593,21 +460,21 @@
                                                             <ColumnDefinition Width="Auto"/>
                                                             <ColumnDefinition Width="Auto"/>
                                                         </Grid.ColumnDefinitions>
-                                                        <TextBlock Grid.Column="0" Text="SPEC:" FontSize="10" FontWeight="SemiBold" Foreground="#1E3A5F" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                                        <TextBox Grid.Column="1" Text="{Binding SpecificationName, UpdateSourceTrigger=LostFocus}" FontSize="10" Padding="6,3" BorderBrush="#D1D5DB" BorderThickness="1" Background="#FFFFFF" MinWidth="100"/>
+                                                        <TextBlock Grid.Column="0" Text="SPEC:" FontSize="10" FontWeight="Bold" Foreground="{StaticResource AccentBlue}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                        <TextBox Grid.Column="1" Text="{Binding SpecificationName, UpdateSourceTrigger=LostFocus}" FontSize="10" Padding="6,3" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1" Background="#FFFFFF" MinWidth="100"/>
                                                         <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="10,0">
-                                                            <TextBlock Text="Base:" FontSize="9" Foreground="#6B7280" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                                            <TextBox Text="{Binding BasePrice, UpdateSourceTrigger=LostFocus, StringFormat=N2}" Width="80" Padding="4,2" FontSize="10" Background="#FFFFFF" BorderBrush="#D1D5DB" BorderThickness="1"/>
+                                                            <TextBlock Text="Base:" FontSize="9" Foreground="{StaticResource TextSub}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                            <TextBox Text="{Binding BasePrice, UpdateSourceTrigger=LostFocus, StringFormat=N2}" Width="80" Padding="4,2" FontSize="10" Background="#FFFFFF" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1"/>
                                                         </StackPanel>
                                                         <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="0,0,10,0">
-                                                            <TextBlock Text="Sur. %:" FontSize="9" Foreground="#6B7280" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                                            <TextBox Text="{Binding SurchargePercent, UpdateSourceTrigger=PropertyChanged, StringFormat=N1}" Width="55" Padding="4,2" FontSize="10" Background="#FFFFFF" BorderBrush="#D1D5DB" BorderThickness="1"/>
+                                                            <TextBlock Text="Sur. %:" FontSize="9" Foreground="{StaticResource TextSub}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                            <TextBox Text="{Binding SurchargePercent, UpdateSourceTrigger=PropertyChanged, StringFormat=N1}" Width="55" Padding="4,2" FontSize="10" Background="#FFFFFF" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1"/>
                                                         </StackPanel>
                                                         <Button Grid.Column="4" Content="+ Row" Style="{StaticResource SecondaryButton}" Click="AddRow_Click" Tag="{Binding}" Padding="8,4" FontSize="10"/>
                                                     </Grid>
                                                 </Border>
 
-                                                <DataGrid ItemsSource="{Binding Items}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" BorderThickness="0" Background="#FFFFFF" Margin="0" Padding="0" ColumnHeaderStyle="{StaticResource CleanDataGridHeader}" CellStyle="{StaticResource CleanDataGridCell}" RowStyle="{StaticResource CleanDataGridRow}" GridLinesVisibility="All" HorizontalGridLinesBrush="#E5E7EB" VerticalGridLinesBrush="#E5E7EB" HeadersVisibility="Column" RowHeight="28" SelectionUnit="Cell" AlternationCount="2" FocusVisualStyle="{x:Null}" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                                <DataGrid ItemsSource="{Binding Items}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" BorderThickness="0" Background="#FFFFFF" Margin="0" Padding="0" ColumnHeaderStyle="{StaticResource CleanDataGridHeader}" CellStyle="{StaticResource CleanDataGridCell}" RowStyle="{StaticResource CleanDataGridRow}" GridLinesVisibility="All" HorizontalGridLinesBrush="{StaticResource PanelBorder}" VerticalGridLinesBrush="{StaticResource PanelBorder}" HeadersVisibility="Column" RowHeight="28" SelectionUnit="Cell" AlternationCount="2" FocusVisualStyle="{x:Null}">
                                                     <DataGrid.Columns>
                                                         <DataGridTextColumn Header="SR" Binding="{Binding SrNo}" Width="40" IsReadOnly="True">
                                                             <DataGridTextColumn.ElementStyle>
@@ -736,10 +603,10 @@
                                                             </DataGridTemplateColumn.Visibility>
                                                         </DataGridTemplateColumn>
 
-                                                        <DataGridTemplateColumn Header="" Width="30">
+                                                        <DataGridTemplateColumn Header="✕" Width="30">
                                                             <DataGridTemplateColumn.CellTemplate>
                                                                 <DataTemplate>
-                                                                    <Button Content="X" FontSize="10" FontWeight="Bold" Foreground="#DC2626" Background="Transparent" BorderThickness="0" Cursor="Hand" Padding="0" Click="DeleteRow_Click" Tag="{Binding}" HorizontalAlignment="Center" VerticalAlignment="Center" Focusable="False"/>
+                                                                    <Button Content="✕" FontSize="10" FontWeight="Bold" Foreground="#DC2626" Background="Transparent" BorderThickness="0" Cursor="Hand" Padding="0" Click="DeleteRow_Click" Tag="{Binding}" HorizontalAlignment="Center" VerticalAlignment="Center" Focusable="False"/>
                                                                 </DataTemplate>
                                                             </DataGridTemplateColumn.CellTemplate>
                                                         </DataGridTemplateColumn>
@@ -795,15 +662,15 @@
 
                                                         <TextBlock Grid.Column="5" Text="{Binding SpecTotalSQM2, Mode=OneWay, StringFormat=N4}" FontSize="9" FontWeight="Bold" Foreground="#FCD34D" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
-                                                        <TextBlock Grid.Column="6" Text="{Binding SpecTotalQty, Mode=OneWay, StringFormat=N0}" FontSize="9" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        <TextBlock Grid.Column="6" Text="{Binding SpecTotalQty, Mode=OneWay, StringFormat=N0}" FontSize="9.5" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
                                                         <TextBlock Grid.Column="7" Text="" FontSize="8" Foreground="#FFFFFF"/>
 
-                                                        <TextBlock Grid.Column="8" Text="{Binding SpecTotalSQM1, Mode=OneWay, StringFormat=N4}" FontSize="9" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        <TextBlock Grid.Column="8" Text="{Binding SpecTotalSQM1, Mode=OneWay, StringFormat=N4}" FontSize="9.5" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
                                                         <TextBlock Grid.Column="9" Text="" FontSize="8" Foreground="#FFFFFF"/>
 
-                                                        <TextBlock Grid.Column="10" Text="{Binding SpecTotalPrice, Mode=OneWay, StringFormat=N2}" FontSize="9" FontWeight="Bold" Foreground="#60A5FA" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                        <TextBlock Grid.Column="10" Text="{Binding SpecTotalPrice, Mode=OneWay, StringFormat=N2}" FontSize="9.5" FontWeight="Bold" Foreground="#60A5FA" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,4,0"/>
                                                     </Grid>
                                                 </Border>
                                             </StackPanel>
@@ -836,15 +703,15 @@
                                     <ColumnDefinition Width="80"/>
                                     <ColumnDefinition Width="24"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="Charge" FontSize="10" FontWeight="SemiBold" Foreground="#6B7280" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="1" Text="Type" FontSize="10" FontWeight="SemiBold" Foreground="#6B7280" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="2" Text="Specs" FontSize="10" FontWeight="SemiBold" Foreground="#6B7280" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="3" Text="Value" FontSize="10" FontWeight="SemiBold" Foreground="#6B7280" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="4" Text="Rate" FontSize="10" FontWeight="SemiBold" Foreground="#6B7280" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="5" Text="Amount" FontSize="10" FontWeight="SemiBold" Foreground="#6B7280" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="0" Text="Charge" FontSize="10.5" FontWeight="SemiBold" Foreground="#6B7280" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="Type" FontSize="10.5" FontWeight="SemiBold" Foreground="#6B7280" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="2" Text="Specs" FontSize="10.5" FontWeight="SemiBold" Foreground="#6B7280" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="3" Text="Value" FontSize="10.5" FontWeight="SemiBold" Foreground="#6B7280" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="4" Text="Rate" FontSize="10.5" FontWeight="SemiBold" Foreground="#6B7280" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="5" Text="Amount" FontSize="10.5" FontWeight="SemiBold" Foreground="#6B7280" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Grid>
 
-                            <ItemsControl ItemsSource="{Binding SelectedSpecificationOtherCharges}"
+                            <ItemsControl x:Name="icOtherCharges" ItemsSource="{Binding SelectedSpecificationOtherCharges}"
                                         VirtualizingStackPanel.IsVirtualizing="True"
                                         VirtualizingStackPanel.VirtualizationMode="Recycling">
                                 <ItemsControl.ItemsPanel>
@@ -856,6 +723,7 @@
                                     <DataTemplate>
                                         <Border BorderBrush="#E5E7EB" BorderThickness="1" Padding="8,6" Margin="0,0,0,4" Background="#FAFAFA" CornerRadius="4">
                                             <Grid>
+                                                <!-- Clean flat column definitions layout to prevent XLS0414 error -->
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="100"/>
                                                     <ColumnDefinition Width="60"/>
@@ -866,7 +734,7 @@
                                                     <ColumnDefinition Width="24"/>
                                                 </Grid.ColumnDefinitions>
 
-                                                <ComboBox Grid.Column="0" Text="{Binding Name, UpdateSourceTrigger=LostFocus}" IsEditable="True" Margin="0,0,4,0" FontSize="9" Padding="4,2" Background="White">
+                                                <ComboBox Grid.Column="0" Text="{Binding Name, UpdateSourceTrigger=LostFocus}" IsEditable="True" Margin="0,0,4,0" FontSize="9.5" Padding="4,2" Background="White">
                                                     <ComboBoxItem Content="Wastage"/>
                                                     <ComboBoxItem Content="Polish"/>
                                                     <ComboBoxItem Content="Mitring"/>
@@ -883,7 +751,7 @@
                                                     <ComboBoxItem Content="Custom"/>
                                                 </ComboBox>
 
-                                                <ComboBox Grid.Column="1" SelectedValue="{Binding Type, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" SelectedValuePath="Tag" Margin="0,0,4,0" FontSize="9" Padding="4,2" Background="White">
+                                                <ComboBox Grid.Column="1" SelectedValue="{Binding Type, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" SelectedValuePath="Tag" Margin="0,0,4,0" FontSize="9.5" Padding="4,2" Background="White">
                                                     <ComboBoxItem Content="LM" Tag="lm"/>
                                                     <ComboBoxItem Content="LM1" Tag="lm1"/>
                                                     <ComboBoxItem Content="LM2" Tag="lm2"/>
@@ -895,25 +763,25 @@
                                                     <ComboBoxItem Content="2X" Tag="2x"/>
                                                 </ComboBox>
 
-                                                <Border Grid.Column="2" Margin="0,0,4,0" Background="#F3F4F6" CornerRadius="4" Padding="4,2" Cursor="Hand" MouseLeftButtonUp="SpecSelectorBorder_Click">
+                                                <Border Grid.Column="2" Margin="0,0,4,0" Background="{StaticResource BgControl}" CornerRadius="4" Padding="4,2" Cursor="Hand" MouseLeftButtonUp="SpecSelectorBorder_Click">
                                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                        <ToggleButton IsChecked="{Binding TargetsAllSpecs, Mode=TwoWay}" Width="20" Height="20" Cursor="Hand" ToolTip="Toggle All Specs">
+                                                        <ToggleButton IsChecked="{Binding TargetsAllSpecs, Mode=TwoWay}" Width="20" Height="20" Cursor="Hand" ToolTip="Toggle All Specs" Click="ChargeSpecToggle_Click">
                                                             <ToggleButton.Style>
                                                                 <Style TargetType="ToggleButton">
                                                                     <Setter Property="Template">
                                                                         <Setter.Value>
                                                                             <ControlTemplate TargetType="ToggleButton">
-                                                                                <Border x:Name="border" Background="#E5E7EB" CornerRadius="3" Width="20" Height="20">
-                                                                                    <TextBlock x:Name="txt" Text="A" FontSize="9" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#1E3A5F"/>
+                                                                                <Border x:Name="border" Background="{DynamicResource PanelBorder}" CornerRadius="3" Width="20" Height="20">
+                                                                                    <TextBlock x:Name="txt" Text="A" FontSize="9.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource AccentBlue}"/>
                                                                                 </Border>
                                                                                 <ControlTemplate.Triggers>
                                                                                     <Trigger Property="IsChecked" Value="True">
-                                                                                        <Setter TargetName="border" Property="Background" Value="#1E3A5F"/>
+                                                                                        <Setter TargetName="border" Property="Background" Value="{DynamicResource AccentBlue}"/>
                                                                                         <Setter TargetName="txt" Property="Foreground" Value="White"/>
                                                                                     </Trigger>
                                                                                     <Trigger Property="IsChecked" Value="False">
-                                                                                        <Setter TargetName="border" Property="Background" Value="#E5E7EB"/>
-                                                                                        <Setter TargetName="txt" Property="Foreground" Value="#1E3A5F"/>
+                                                                                        <Setter TargetName="border" Property="Background" Value="{DynamicResource PanelBorder}"/>
+                                                                                        <Setter TargetName="txt" Property="Foreground" Value="{DynamicResource AccentBlue}"/>
                                                                                     </Trigger>
                                                                                 </ControlTemplate.Triggers>
                                                                             </ControlTemplate>
@@ -922,21 +790,21 @@
                                                                 </Style>
                                                             </ToggleButton.Style>
                                                         </ToggleButton>
-                                                        <TextBlock Text="{Binding LinkedSpecsDisplay}" FontSize="9" Foreground="#4B5563" VerticalAlignment="Center" Margin="5,0,0,0" MinWidth="45"/>
+                                                        <TextBlock Text="{Binding LinkedSpecsDisplay}" FontSize="9.5" Foreground="{StaticResource TextSub}" VerticalAlignment="Center" Margin="5,0,0,0" MinWidth="45"/>
                                                     </StackPanel>
                                                 </Border>
 
-                                                <Border Grid.Column="3" Background="#DBEAFE" CornerRadius="3" Padding="4,2" Margin="0,0,4,0">
-                                                    <TextBlock Text="{Binding ValueDisplay}" FontSize="10" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                <Border Grid.Column="3" Background="{StaticResource AccentBlueLight}" CornerRadius="3" Padding="4,2" Margin="0,0,4,0">
+                                                    <TextBlock Text="{Binding ValueDisplay}" FontSize="10.5" FontWeight="SemiBold" Foreground="{StaticResource AccentBlue}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                 </Border>
 
                                                 <TextBox Grid.Column="4" Text="{Binding Rate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}" BorderThickness="1"/>
 
-                                                <Border Grid.Column="5" Background="#1E3A5F" CornerRadius="3" Padding="4,2" Margin="0,0,4,0">
-                                                    <TextBlock Text="{Binding AmountDisplay}" FontSize="10" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                <Border Grid.Column="5" Background="{StaticResource AccentBlue}" CornerRadius="3" Padding="4,2" Margin="0,0,4,0">
+                                                    <TextBlock Text="{Binding AmountDisplay}" FontSize="10.5" FontWeight="SemiBold" Foreground="{StaticResource TextWhite}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                 </Border>
 
-                                                <Button Grid.Column="6" Content="X" FontSize="12" FontWeight="Bold" Foreground="#DC2626" Background="Transparent" BorderThickness="0" Cursor="Hand" Padding="2" VerticalAlignment="Center" Command="{Binding DataContext.RemoveOtherChargeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                                <Button Grid.Column="6" Content="X" FontSize="12" FontWeight="Bold" Foreground="{StaticResource AccentRed}" Background="Transparent" BorderThickness="0" Cursor="Hand" Padding="2" VerticalAlignment="Center" Command="{Binding DataContext.RemoveOtherChargeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
                                             </Grid>
                                         </Border>
                                     </DataTemplate>
@@ -944,15 +812,15 @@
                             </ItemsControl>
 
                             <TextBlock Text="No charges added" 
-                                       FontSize="10" 
-                                       Foreground="#9CA3AF" 
+                                       FontSize="11" 
+                                       Foreground="{StaticResource TextSub}" 
                                        HorizontalAlignment="Center" 
                                        Margin="0,8,0,0"
                                        Visibility="{Binding HasNoCharges, Converter={StaticResource BoolToVis}}"/>
                         </StackPanel>
                     </Border>
 
-                    <Border Background="#FFFFFF" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="8" Padding="20" Margin="0,0,0,16">
+                    <Border Background="{StaticResource PanelBg}" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1" CornerRadius="8" Padding="20" Margin="0,0,0,16">
                         <StackPanel>
                             <TextBlock Text="Invoice Summary" Style="{StaticResource SectionHeader}"/>
                             <Grid>
@@ -962,46 +830,46 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <Border Grid.Column="0" Background="#F9FAFB" BorderBrush="#E5E7EB" BorderThickness="1" Padding="16" CornerRadius="6">
+                                <Border Grid.Column="0" Background="{StaticResource BgControl}" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1" Padding="16" CornerRadius="6">
                                     <StackPanel>
-                                        <TextBlock Text="Quantities (Glass 1 Only)" FontSize="12" FontWeight="SemiBold" Foreground="#1E3A5F" Margin="0,0,0,12"/>
+                                        <TextBlock Text="Quantities (Glass 1 Only)" FontSize="12.5" FontWeight="SemiBold" Foreground="{StaticResource TextMain}" Margin="0,0,0,12"/>
                                         <Grid Margin="0,0,0,8">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
-                                            <TextBlock Text="Total SQM" FontSize="12" Foreground="#6B7280"/>
-                                            <TextBlock Grid.Column="1" Text="{Binding InvoiceTotalSQM1, Mode=OneWay, StringFormat=N4}" FontSize="12" FontWeight="SemiBold" Foreground="#1F2937"/>
+                                            <TextBlock Text="Total SQM" FontSize="12" Foreground="{StaticResource TextSub}"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding InvoiceTotalSQM1, Mode=OneWay, StringFormat=N4}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextMain}"/>
                                         </Grid>
                                         <Grid Margin="0,0,0,8">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
-                                            <TextBlock Text="Total LM" FontSize="12" Foreground="#6B7280"/>
-                                            <TextBlock Grid.Column="1" Text="{Binding InvoiceTotalLM1, Mode=OneWay, StringFormat=N4}" FontSize="12" FontWeight="SemiBold" Foreground="#4A6FA5"/>
+                                            <TextBlock Text="Total LM" FontSize="12" Foreground="{StaticResource TextSub}"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding InvoiceTotalLM1, Mode=OneWay, StringFormat=N4}" FontSize="12" FontWeight="SemiBold" Foreground="#2563EB"/>
                                         </Grid>
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
-                                            <TextBlock Text="Total Qty" FontSize="12" Foreground="#6B7280"/>
-                                            <TextBlock Grid.Column="1" Text="{Binding InvoiceTotalQty, Mode=OneWay, StringFormat=N0}" FontSize="12" FontWeight="SemiBold" Foreground="#1F2937"/>
+                                            <TextBlock Text="Total Qty" FontSize="12" Foreground="{StaticResource TextSub}"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding InvoiceTotalQty, Mode=OneWay, StringFormat=N0}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextMain}"/>
                                         </Grid>
                                     </StackPanel>
                                 </Border>
 
-                                <Border Grid.Column="2" Background="#F9FAFB" BorderBrush="#E5E7EB" BorderThickness="1" Padding="16" CornerRadius="6">
+                                <Border Grid.Column="2" Background="{StaticResource BgControl}" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1" Padding="16" CornerRadius="6">
                                     <StackPanel>
-                                        <TextBlock Text="Amounts" FontSize="12" FontWeight="SemiBold" Foreground="#1E3A5F" Margin="0,0,0,12"/>
+                                        <TextBlock Text="Amounts" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextMain}" Margin="0,0,0,12"/>
                                         <Grid Margin="0,0,0,8">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
-                                            <TextBlock Text="Grand Total" FontSize="12" Foreground="#6B7280"/>
-                                            <TextBlock Grid.Column="1" Text="{Binding InvoiceGrandTotal, Mode=OneWay, StringFormat='AED {0:N2}'}" FontSize="12" FontWeight="SemiBold" Foreground="#1F2937"/>
+                                            <TextBlock Text="Grand Total" FontSize="12" Foreground="{StaticResource TextSub}"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding InvoiceGrandTotal, Mode=OneWay, StringFormat='AED {0:N2}'}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextMain}"/>
                                         </Grid>
                                         <Grid Margin="0,0,0,8">
                                             <Grid.Style>
@@ -1018,10 +886,10 @@
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
-                                            <TextBlock Text="VAT (5%)" FontSize="12" Foreground="#6B7280"/>
-                                            <TextBlock Grid.Column="1" Text="{Binding InvoiceVatAmount, Mode=OneWay, StringFormat='AED {0:N2}'}" FontSize="12" Foreground="#6B7280"/>
+                                            <TextBlock Text="VAT (5%)" FontSize="12" Foreground="{StaticResource TextSub}"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding InvoiceVatAmount, Mode=OneWay, StringFormat='AED {0:N2}'}" FontSize="12" Foreground="{StaticResource TextSub}"/>
                                         </Grid>
-                                        <Separator Margin="0,8">
+                                        <Separator Margin="0,8" Background="{StaticResource PanelBorder}">
                                             <Separator.Style>
                                                 <Style TargetType="Separator">
                                                     <Setter Property="Visibility" Value="Visible"/>
@@ -1048,8 +916,8 @@
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
-                                            <TextBlock Text="NET TOTAL" FontSize="14" FontWeight="Bold" Foreground="#1E3A5F"/>
-                                            <TextBlock Grid.Column="1" Text="{Binding InvoiceNetTotal, Mode=OneWay, StringFormat='AED {0:N2}'}" FontSize="16" FontWeight="Bold" Foreground="#4A6FA5"/>
+                                            <TextBlock Text="NET TOTAL" FontSize="14" FontWeight="Bold" Foreground="{StaticResource AccentBlue}"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding InvoiceNetTotal, Mode=OneWay, StringFormat='AED {0:N2}'}" FontSize="16" FontWeight="Bold" Foreground="{StaticResource AccentBlue}"/>
                                         </Grid>
                                     </StackPanel>
                                 </Border>
@@ -1057,20 +925,20 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Background="#FFFFFF" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="8" Padding="20" Margin="0,0,0,16">
+                    <Border Background="{StaticResource PanelBg}" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1" CornerRadius="8" Padding="20" Margin="0,0,0,16">
                         <StackPanel>
                             <TextBlock Text="Terms and Conditions" Style="{StaticResource SectionHeader}"/>
                             <StackPanel>
-                                <TextBlock Text="- Prices in AED (UAE Dirhams)" FontSize="12" Foreground="#6B7280" Margin="0,0,0,6"/>
-                                <TextBlock Text="- Quote valid for 30 days from invoice date" FontSize="12" Foreground="#6B7280" Margin="0,0,0,6"/>
-                                <TextBlock Text="- 5% VAT included in all prices" FontSize="12" Foreground="#6B7280" Margin="0,0,0,6"/>
-                                <TextBlock Text="- Payment terms: As per agreement" FontSize="12" Foreground="#6B7280"/>
+                                <TextBlock Text="- Prices in AED (UAE Dirhams)" FontSize="12" Foreground="{StaticResource TextSub}" Margin="0,0,0,6"/>
+                                <TextBlock Text="- Quote valid for 30 days from invoice date" FontSize="12" Foreground="{StaticResource TextSub}" Margin="0,0,0,6"/>
+                                <TextBlock Text="- 5% VAT included in all prices" FontSize="12" Foreground="{StaticResource TextSub}" Margin="0,0,0,6"/>
+                                <TextBlock Text="- Payment terms: As per agreement" FontSize="12" Foreground="{StaticResource TextSub}"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>
 
-                    <Border Background="#1E3A5F" Padding="16,12" CornerRadius="6" Margin="0,0,0,24">
-                        <TextBlock Text="PROGLASS AUTOMATION | Dubai, UAE" FontSize="11" Foreground="#9CA3AF" HorizontalAlignment="Center"/>
+                    <Border Background="{StaticResource AccentBlue}" Padding="16,12" CornerRadius="6" Margin="0,0,0,24">
+                        <TextBlock Text="PROGLASS AUTOMATION | Dubai, UAE" FontSize="11" Foreground="{StaticResource PanelBorder}" HorizontalAlignment="Center"/>
                     </Border>
                 </StackPanel>
             </ScrollViewer>
@@ -1131,7 +999,7 @@
                                         <TextBlock Text="Define available glass sheets for cutting" FontSize="11" Foreground="#64748B" Margin="0,2,0,0"/>
                                     </StackPanel>
                                     <Button x:Name="btnAddStockSheet" Grid.Column="1" Content="+ Add Sheet" 
-                                    Background="#10B981" Foreground="#FFFFFF" 
+                                    Background="{DynamicResource AccentGreen}" Foreground="#FFFFFF" 
                                     BorderThickness="0" Padding="14,8" FontSize="12" FontWeight="SemiBold"
                                     Cursor="Hand" Click="BtnAddStockSheet_Click">
                                         <Button.Template>
@@ -1142,7 +1010,7 @@
                                                 </Border>
                                                 <ControlTemplate.Triggers>
                                                     <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter TargetName="border" Property="Background" Value="#059669"/>
+                                                        <Setter TargetName="border" Property="Background" Value="{DynamicResource AccentGreenHover}"/>
                                                     </Trigger>
                                                 </ControlTemplate.Triggers>
                                             </ControlTemplate>
@@ -1151,7 +1019,7 @@
                                 </Grid>
 
                                 <!-- Sheet 1 (Default Always Visible) -->
-                                <Border Background="#F1F5F9" CornerRadius="8" Padding="12" Margin="0,0,0,8">
+                                <Border Background="{DynamicResource BgControl}" CornerRadius="8" Padding="12" Margin="0,0,0,8">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
@@ -1162,24 +1030,24 @@
                                         </Grid.ColumnDefinitions>
 
                                         <StackPanel Grid.Column="0">
-                                            <TextBlock Text="Sheet 1" FontSize="10" FontWeight="SemiBold" Foreground="#10B981" Margin="0,0,0,4"/>
+                                            <TextBlock Text="Sheet 1" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AccentGreen}" Margin="0,0,0,4"/>
                                             <TextBox x:Name="txtSheetWidth" Text="3210" Style="{StaticResource FormTextBox}" 
                                             FontSize="13" FontWeight="SemiBold" TextAlignment="Center" Padding="8,6"/>
-                                            <TextBlock Text="Width (mm)" FontSize="9" Foreground="#64748B" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                            <TextBlock Text="Width (mm)" FontSize="9" Foreground="{DynamicResource TextSub}" HorizontalAlignment="Center" Margin="0,2,0,0"/>
                                         </StackPanel>
 
                                         <StackPanel Grid.Column="2">
-                                            <TextBlock Text="" FontSize="10" Foreground="#10B981" Margin="0,0,0,4"/>
+                                            <TextBlock Text="" FontSize="10" Foreground="{DynamicResource AccentGreen}" Margin="0,0,0,4"/>
                                             <TextBox x:Name="txtSheetHeight" Text="2250" Style="{StaticResource FormTextBox}" 
                                             FontSize="13" FontWeight="SemiBold" TextAlignment="Center" Padding="8,6"/>
-                                            <TextBlock Text="Height (mm)" FontSize="9" Foreground="#64748B" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                            <TextBlock Text="Height (mm)" FontSize="9" Foreground="{DynamicResource TextSub}" HorizontalAlignment="Center" Margin="0,2,0,0"/>
                                         </StackPanel>
 
                                         <StackPanel Grid.Column="4">
-                                            <TextBlock Text="" FontSize="10" Foreground="#10B981" Margin="0,0,0,4"/>
+                                            <TextBlock Text="" FontSize="10" Foreground="{DynamicResource AccentGreen}" Margin="0,0,0,4"/>
                                             <TextBox x:Name="txtSheetQty" Text="99999" Style="{StaticResource FormTextBox}" 
                                             FontSize="13" FontWeight="SemiBold" TextAlignment="Center" Padding="8,6" Width="70"/>
-                                            <TextBlock Text="Qty" FontSize="9" Foreground="#64748B" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                            <TextBlock Text="Qty" FontSize="9" Foreground="{DynamicResource TextSub}" HorizontalAlignment="Center" Margin="0,2,0,0"/>
                                         </StackPanel>
                                     </Grid>
                                 </Border>
@@ -1188,7 +1056,7 @@
                                 <ItemsControl x:Name="AdditionalSheetsContainer">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Border Background="#F1F5F9" CornerRadius="8" Padding="12" Margin="0,0,0,8">
+                                            <Border Background="{DynamicResource BgControl}" CornerRadius="8" Padding="12" Margin="0,0,0,8">
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="*"/>
@@ -1199,19 +1067,19 @@
                                                     </Grid.ColumnDefinitions>
 
                                                     <StackPanel Grid.Column="0">
-                                                        <TextBlock Text="{Binding SheetLabel}" FontSize="10" FontWeight="SemiBold" Foreground="#10B981" Margin="0,0,0,4"/>
+                                                        <TextBlock Text="{Binding SheetLabel}" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AccentGreen}" Margin="0,0,0,4"/>
                                                         <TextBox Text="{Binding Width, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" 
                                                         FontSize="13" FontWeight="SemiBold" TextAlignment="Center" Padding="8,6"/>
                                                     </StackPanel>
 
                                                     <StackPanel Grid.Column="2">
-                                                        <TextBlock Text="" FontSize="10" Foreground="#10B981" Margin="0,0,0,4"/>
+                                                        <TextBlock Text="" FontSize="10" Foreground="{DynamicResource AccentGreen}" Margin="0,0,0,4"/>
                                                         <TextBox Text="{Binding Height, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" 
                                                         FontSize="13" FontWeight="SemiBold" TextAlignment="Center" Padding="8,6"/>
                                                     </StackPanel>
 
                                                     <StackPanel Grid.Column="4">
-                                                        <TextBlock Text="" FontSize="10" Foreground="#10B981" Margin="0,0,0,4"/>
+                                                        <TextBlock Text="" FontSize="10" Foreground="{DynamicResource AccentGreen}" Margin="0,0,0,4"/>
                                                         <TextBox Text="{Binding Qty, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" 
                                                         FontSize="13" FontWeight="SemiBold" TextAlignment="Center" Padding="8,6" Width="70"/>
                                                     </StackPanel>
@@ -1261,7 +1129,7 @@
                                 <!-- ROW 1: Glass Thickness -->
                                 <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,16">
                                     <TextBlock Text="Glass Thickness" FontSize="12" FontWeight="SemiBold" Foreground="#1E293B" Margin="0,0,0,8"/>
-                                    <ComboBox x:Name="cmbThickness" SelectedIndex="0" Style="{StaticResource FormComboBox}" FontSize="13">
+                                    <ComboBox x:Name="cmbThickness" SelectedIndex="0" Style="{StaticResource FormComboBox}" FontSize="13" SelectionChanged="cmbThickness_SelectionChanged">
                                         <ComboBoxItem Content="6mm"/>
                                         <ComboBoxItem Content="8mm"/>
                                         <ComboBoxItem Content="10mm"/>
@@ -1287,11 +1155,11 @@
                                     <TextBlock Text="Fallback Mode" FontSize="12" FontWeight="SemiBold" Foreground="#1E293B" Margin="0,0,0,8"/>
                                     <StackPanel Orientation="Horizontal">
                                         <RadioButton x:Name="rbUseW1H1" GroupName="GlobalDims" IsChecked="True" Content="W1/H1" 
-                   Foreground="#059669" FontSize="12" Margin="0,0,20,0" VerticalContentAlignment="Center"/>
+                   Foreground="{DynamicResource AccentGreen}" FontSize="12" Margin="0,0,20,0" VerticalContentAlignment="Center" Click="FallbackDim_Click"/>
                                         <RadioButton x:Name="rbUseW2H2" GroupName="GlobalDims" Content="W2/H2" 
-                   Foreground="#DC2626" FontSize="12" Margin="0,0,20,0" VerticalContentAlignment="Center"/>
+                   Foreground="{DynamicResource AccentRed}" FontSize="12" Margin="0,0,20,0" VerticalContentAlignment="Center" Click="FallbackDim_Click"/>
                                         <RadioButton x:Name="rbUseCustom" GroupName="GlobalDims" Content="Per Spec" 
-                   Foreground="#7C3AED" FontSize="12" VerticalContentAlignment="Center"/>
+                   Foreground="#7C3AED" FontSize="12" VerticalContentAlignment="Center" Click="FallbackDim_Click"/>
                                     </StackPanel>
                                 </StackPanel>
                             </Grid>
@@ -1336,18 +1204,11 @@
                                         </Grid>
 
                                         <!-- Spec List with Simple Names -->
-                                        <ListBox x:Name="lstSpecSelect" 
-ItemsSource="{Binding SpecSelectionItems, RelativeSource={RelativeSource AncestorType=UserControl}}"
-Loaded="lstSpecSelect_Loaded"
-SelectionChanged="lstSpecSelect_SelectionChanged"
-SelectionMode="Multiple" 
-MaxHeight="120"
-BorderThickness="1"
-BorderBrush="#E2E8F0"
-Background="#FFFFFF">
+                                        <ListBox x:Name="lstSpecSelect" ItemContainerStyle="{StaticResource ListBoxItemStyle}"
+Height="90" SelectionMode="Multiple" SelectionChanged="lstSpecSelect_SelectionChanged" Background="#FFFFFF" BorderBrush="{DynamicResource PanelBorder}">
                                             <ListBox.ItemTemplate>
                                                 <DataTemplate>
-                                                    <Border BorderBrush="#E2E8F0" BorderThickness="0,0,0,1" Padding="8,6" Margin="0,1">
+                                                    <Border BorderBrush="{DynamicResource PanelBorder}" BorderThickness="0,0,0,1" Padding="8,6" Margin="0,1">
                                                         <Grid>
                                                             <Grid.ColumnDefinitions>
                                                                 <ColumnDefinition Width="30"/>
@@ -1362,22 +1223,22 @@ Background="#FFFFFF">
 
                                                             <!-- Spec Name - Shows simple name like "Spec 1" -->
                                                             <TextBlock Grid.Column="1" Text="{Binding DisplayName}" 
-                                                            FontSize="11" FontWeight="SemiBold" Foreground="#1E293B" 
+                                                            FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}" 
                                                             VerticalAlignment="Center" Margin="8,0,0,0"/>
 
-                                                            <!-- Per-Spec Dimension - Uses FullName as Tag -->
+                                                            <!-- Per-Spec Dimension -->
                                                             <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="8,0,0,0">
                                                                 <RadioButton x:Name="rbSpecW1H1" 
                                                                    Content="W1/H1" 
                                                                    Tag="{Binding FullName}"
                                                                    Click="RbSpecW1H1_Click"
-                                                                   Foreground="#059669" FontSize="10" FontWeight="SemiBold" 
+                                                                   Foreground="{DynamicResource AccentGreen}" FontSize="10" FontWeight="SemiBold" 
                                                                    VerticalAlignment="Center" Margin="0,0,8,0"/>
                                                                 <RadioButton x:Name="rbSpecW2H2" 
                                                                    Content="W2/H2" 
                                                                    Tag="{Binding FullName}"
                                                                    Click="RbSpecW2H2_Click"
-                                                                   Foreground="#DC2626" FontSize="10" FontWeight="SemiBold" 
+                                                                   Foreground="{DynamicResource AccentRed}" FontSize="10" FontWeight="SemiBold" 
                                                                    VerticalAlignment="Center"/>
                                                             </StackPanel>
                                                         </Grid>
@@ -1397,7 +1258,7 @@ Background="#FFFFFF">
                                     </Grid.ColumnDefinitions>
                                     <Button x:Name="btnRunOptimization" Grid.Column="0" Content="▶ Run Optimization" 
                                     Click="RunOptimization_Click"
-                                    Padding="14,12" FontSize="13" Background="#10B981" Foreground="#FFFFFF" 
+                                    Padding="14,12" FontSize="13" Background="{DynamicResource AccentGreen}" Foreground="{DynamicResource TextWhite}" 
                                     BorderThickness="0" Cursor="Hand" FontWeight="SemiBold">
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
@@ -1407,7 +1268,7 @@ Background="#FFFFFF">
                                                 </Border>
                                                 <ControlTemplate.Triggers>
                                                     <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter TargetName="border" Property="Background" Value="#059669"/>
+                                                        <Setter TargetName="border" Property="Background" Value="{DynamicResource AccentGreenHover}"/>
                                                     </Trigger>
                                                     <Trigger Property="IsPressed" Value="True">
                                                         <Setter TargetName="border" Property="Background" Value="#047857"/>
@@ -1418,7 +1279,7 @@ Background="#FFFFFF">
                                     </Button>
                                     <Button x:Name="btnViewLayouts" Grid.Column="2" Content="📐 View Layouts" 
                                     Click="ViewOptimizationLayouts_Click"
-                                    Padding="14,12" FontSize="13" Background="#1E40AF" Foreground="#FFFFFF" 
+                                    Padding="14,12" FontSize="13" Background="#1E40AF" Foreground="{DynamicResource TextWhite}" 
                                     BorderThickness="0" Cursor="Hand" FontWeight="SemiBold">
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
@@ -1441,7 +1302,7 @@ Background="#FFFFFF">
 
                                 <!-- Status Text -->
                                 <TextBlock x:Name="txtOptStatus" Text="Ready to optimize - Enter sheet size and click Run" 
-                                   FontSize="11" Foreground="#64748B" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                                   FontSize="11" Foreground="{DynamicResource TextSub}" HorizontalAlignment="Center" Margin="0,10,0,0"/>
                             </StackPanel>
                         </Border>
 
@@ -1453,7 +1314,7 @@ Background="#FFFFFF">
                                 <DropShadowEffect Color="#000000" BlurRadius="12" ShadowDepth="3" Opacity="0.15"/>
                             </Border.Effect>
                             <StackPanel>
-                                <TextBlock Text="📊 Overall Results" FontSize="14" FontWeight="Bold" Foreground="#FFFFFF" Margin="0,0,0,12"/>
+                                <TextBlock Text="📊 Overall Results" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextWhite}" Margin="0,0,0,12"/>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -1516,10 +1377,10 @@ Background="#FFFFFF">
                                     </Grid.ColumnDefinitions>
                                     <StackPanel>
                                         <TextBlock Text="📋 Per-Sheet Results" FontSize="14" FontWeight="SemiBold" Foreground="#1E293B"/>
-                                        <TextBlock Text="Detailed breakdown for each sheet used" FontSize="11" Foreground="#64748B" Margin="0,2,0,0"/>
+                                        <TextBlock Text="Detailed breakdown for each sheet used" FontSize="11" Foreground="{DynamicResource TextSub}" Margin="0,2,0,0"/>
                                     </StackPanel>
                                     <TextBlock x:Name="txtSheetsUsedCount" Grid.Column="1" Text="0 sheets" 
-                                  FontSize="11" FontWeight="SemiBold" Foreground="#10B981" VerticalAlignment="Center"
+                                  FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AccentGreen}" VerticalAlignment="Center"
                                   TextWrapping="Wrap" MaxWidth="120"/>
                                 </Grid>
 
@@ -1528,7 +1389,7 @@ Background="#FFFFFF">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <Border Margin="0,0,0,8" CornerRadius="10" Padding="14"
-                                            Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1">
+                                            Background="#F8FAFC" BorderBrush="{DynamicResource PanelBorder}" BorderThickness="1">
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="*"/>
@@ -1543,7 +1404,7 @@ Background="#FFFFFF">
                                                                 </Border.Background>
                                                                 <TextBlock Text="{Binding SheetName}" FontSize="11" FontWeight="Bold" Foreground="#FFFFFF"/>
                                                             </Border>
-                                                            <TextBlock Text="{Binding SheetDimensions}" FontSize="11" Foreground="#64748B" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="{Binding SheetDimensions}" FontSize="11" Foreground="{DynamicResource TextSub}" VerticalAlignment="Center"/>
                                                         </StackPanel>
 
                                                         <Grid>
@@ -1570,8 +1431,8 @@ Background="#FFFFFF">
                                                             <StackPanel Grid.Column="2" HorizontalAlignment="Center">
                                                                 <TextBlock Text="Utilization" FontSize="9" Foreground="#94A3B8" HorizontalAlignment="Center"/>
                                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                                    <TextBlock Text="{Binding Utilization}" FontSize="14" FontWeight="Bold" Foreground="#10B981"/>
-                                                                    <TextBlock Text="%" FontSize="10" FontWeight="SemiBold" Foreground="#10B981" Margin="1,0,0,1"/>
+                                                                    <TextBlock Text="{Binding Utilization}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource AccentGreen}"/>
+                                                                    <TextBlock Text="%" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AccentGreen}" Margin="1,0,0,1"/>
                                                                 </StackPanel>
                                                             </StackPanel>
 
@@ -1579,8 +1440,8 @@ Background="#FFFFFF">
                                                             <StackPanel Grid.Column="3" HorizontalAlignment="Center">
                                                                 <TextBlock Text="Wastage" FontSize="9" Foreground="#94A3B8" HorizontalAlignment="Center"/>
                                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                                    <TextBlock Text="{Binding Wastage}" FontSize="14" FontWeight="Bold" Foreground="#DC2626"/>
-                                                                    <TextBlock Text="%" FontSize="10" FontWeight="SemiBold" Foreground="#DC2626" Margin="1,0,0,1"/>
+                                                                    <TextBlock Text="{Binding Wastage}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource AccentRed}"/>
+                                                                    <TextBlock Text="%" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AccentRed}" Margin="1,0,0,1"/>
                                                                 </StackPanel>
                                                             </StackPanel>
                                                         </Grid>
@@ -1614,7 +1475,7 @@ Background="#FFFFFF">
                                 <Border x:Name="EmptyPerSheetResults" Background="#F1F5F9" CornerRadius="10" Padding="24" Margin="0,4,0,0">
                                     <StackPanel HorizontalAlignment="Center">
                                         <TextBlock Text="📐" FontSize="32" HorizontalAlignment="Center" Margin="0,0,0,8"/>
-                                        <TextBlock Text="No optimization results yet" FontSize="13" FontWeight="SemiBold" Foreground="#64748B" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="No optimization results yet" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextSub}" HorizontalAlignment="Center"/>
                                         <TextBlock Text="Run optimization to see per-sheet results" FontSize="11" Foreground="#94A3B8" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                                     </StackPanel>
                                 </Border>
@@ -1632,7 +1493,7 @@ Background="#FFFFFF">
                 <StackPanel>
 
                     <!-- File Operations with expandable panel -->
-                    <Border BorderBrush="#E5E7EB" BorderThickness="0,0,0,1" Padding="16">
+                    <Border BorderBrush="{DynamicResource PanelBorder}" BorderThickness="0,0,0,1" Padding="16">
                         <StackPanel>
                             <Button Content="📁 FILE OPERATIONS" Style="{StaticResource ModuleButtonFILE}" Click="ToggleFilePanel_Click" Margin="0,0,0,8"/>
                             <Border x:Name="FileContent" Visibility="Collapsed" Background="#FFFFFF" Padding="0,8,0,0">
@@ -1681,7 +1542,7 @@ Background="#FFFFFF">
 
                     <!-- Module Selection Buttons -->
                     <StackPanel Margin="16">
-                        <TextBlock Text="Module Selection" FontSize="12" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,12"/>
+                        <TextBlock Text="Module Selection" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextMain}" Margin="0,0,0,12"/>
                         <Grid Margin="0,0,0,16">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -1700,295 +1561,295 @@ Background="#FFFFFF">
                     <Expander Header="Calculation" IsExpanded="False" Margin="8,0,8,8">
                         <StackPanel>
                             <!-- SGU Configuration Panel -->
-                            <Border x:Name="SGUContent" Background="#F9FAFB" BorderBrush="#E5E7EB" BorderThickness="0,0,0,1" Padding="16" Margin="0,0,0,8" Visibility="{Binding IsSGUSelected, Converter={StaticResource BoolToVis}}">
-                        <StackPanel>
-                            <TextBlock Text="SGU Configuration" FontSize="12" FontWeight="SemiBold" Foreground="#059669" Margin="0,0,0,10"/>
-                            <TextBlock Text="Thickness" Style="{StaticResource FieldLabel}"/>
-                            <ComboBox ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding SelectedThickness}" Style="{StaticResource FormComboBox}" Margin="0,0,0,10"/>
-                            <TextBlock Text="Color" Style="{StaticResource FieldLabel}"/>
-                            <ComboBox IsEditable="True" ItemsSource="{Binding ColorHistory}" Text="{Binding SelectedColor, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormComboBox}" StaysOpenOnEdit="True" Margin="0,0,0,10"/>
-                            <TextBlock Text="Work Type" Style="{StaticResource FieldLabel}"/>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                <RadioButton IsChecked="{Binding IsAnnealedSelected}" Content="Annealed" Margin="0,0,16,0"/>
-                                <RadioButton IsChecked="{Binding IsFTSelected}" Content="FT Glass"/>
-                            </StackPanel>
-                            <TextBlock Text="Sheet Price (AED)" Style="{StaticResource FieldLabel}"/>
-                            <TextBox Text="{Binding SGUSheetPrice, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" FontSize="14" FontWeight="SemiBold" TextAlignment="Center" Margin="0,0,0,10"/>
-                            <Grid Margin="0,0,0,10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="8"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Cutting" FontSize="10" Foreground="#6B7280"/>
-                                    <TextBox Text="{Binding SGUCutting, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="Tempering" FontSize="10" Foreground="#6B7280"/>
-                                    <TextBox Text="{Binding SGUTempering, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
-                                </StackPanel>
-                            </Grid>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="8"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Waste Factor" FontSize="10" Foreground="#6B7280"/>
-                                    <TextBox Text="{Binding SGUWasteFactor, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="Profit %" FontSize="10" Foreground="#6B7280"/>
-                                    <TextBox Text="{Binding SGUProfitPercent, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
-                                </StackPanel>
-                            </Grid>
-                        </StackPanel>
-                    </Border>
-
-                            <!-- DGU Configuration Panel -->
-                            <Border x:Name="DGUContent" Background="#F9FAFB" BorderBrush="#E5E7EB" BorderThickness="0,0,0,1" Padding="16" Margin="0,0,0,8" Visibility="{Binding IsDGUSelected, Converter={StaticResource BoolToVis}}">
-                        <StackPanel>
-                            <TextBlock Text="DGU Configuration" FontSize="12" FontWeight="SemiBold" Foreground="#1E3A5F" Margin="0,0,0,10"/>
-                            <TextBlock Text="Outer Glass" Style="{StaticResource FieldLabel}"/>
-                            <Grid Margin="0,0,0,10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="8"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="8"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Thickness" FontSize="10" Foreground="#6B7280"/>
-                                    <ComboBox ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding DGUOuterThickness}" Style="{StaticResource FormComboBox}"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="Color" FontSize="10" Foreground="#6B7280"/>
-                                    <ComboBox IsEditable="True" ItemsSource="{Binding ColorHistory}" Text="{Binding DGUOuterColor, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormComboBox}" StaysOpenOnEdit="True"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="4">
-                                    <TextBlock Text="Price" FontSize="10" Foreground="#6B7280"/>
-                                    <TextBox Text="{Binding DGUOuterPrice, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
-                                </StackPanel>
-                            </Grid>
-                            <TextBlock Text="Work Type" Style="{StaticResource FieldLabel}"/>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                <RadioButton IsChecked="{Binding IsDGUAnnealedSelected}" Content="Annealed" Margin="0,0,16,0"/>
-                                <RadioButton IsChecked="{Binding IsDGUFTSelected}" Content="FT Glass"/>
-                            </StackPanel>
-                            <TextBlock Text="Air Spacer" Style="{StaticResource FieldLabel}"/>
-                            <Grid Margin="0,0,0,10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="8"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="8"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Thickness" FontSize="10" Foreground="#6B7280"/>
-                                    <ComboBox ItemsSource="{Binding AirSpacerThicknessOptions}" SelectedItem="{Binding DGUAirSpacerThickness}" Style="{StaticResource FormComboBox}"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="Type" FontSize="10" Foreground="#6B7280"/>
-                                    <ComboBox ItemsSource="{Binding AirSpacerTypeOptions}" SelectedItem="{Binding DGUAirSpacerType}" Style="{StaticResource FormComboBox}"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="4">
-                                    <TextBlock Text="Auto Price" FontSize="10" Foreground="#6B7280"/>
-                                    <TextBox Text="{Binding DGUASPPrice, Mode=OneWay}" IsReadOnly="True" Background="#DBEAFE" BorderBrush="#D1D5DB" BorderThickness="1" Padding="6,4" FontSize="11" FontWeight="SemiBold"/>
-                                </StackPanel>
-                            </Grid>
-                            <Border Background="#E8F4FD" BorderBrush="#B3D7F5" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,10">
+                            <Border x:Name="SGUContent" Background="{StaticResource BgControl}" BorderBrush="{StaticResource PanelBorder}" BorderThickness="0,0,0,1" Padding="16" Margin="0,0,0,8" Visibility="{Binding IsSGUSelected, Converter={StaticResource BoolToVis}}">
                                 <StackPanel>
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                        <CheckBox IsChecked="{Binding IsDGUIncludeInSpec}" Content="Include U-Insert" FontSize="11" FontWeight="SemiBold" Foreground="#1E3A5F" VerticalContentAlignment="Center"/>
-                                        <TextBlock Text="(Warm Edge Technology)" FontSize="10" Foreground="#6B7280" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                    <TextBlock Text="SGU Configuration" FontSize="12" FontWeight="SemiBold" Foreground="#059669" Margin="0,0,0,10"/>
+                                    <TextBlock Text="Thickness" Style="{StaticResource FieldLabel}"/>
+                                    <ComboBox x:Name="cmbSGUThickness" ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding SelectedThickness}" Style="{StaticResource FormComboBox}" Margin="0,0,0,10"/>
+                                    <TextBlock Text="Color" Style="{StaticResource FieldLabel}"/>
+                                    <ComboBox IsEditable="True" ItemsSource="{Binding ColorHistory}" Text="{Binding SelectedColor, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormComboBox}" StaysOpenOnEdit="True" Margin="0,0,0,10"/>
+                                    <TextBlock Text="Work Type" Style="{StaticResource FieldLabel}"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                        <RadioButton IsChecked="{Binding IsAnnealedSelected}" Content="Annealed" Margin="0,0,16,0"/>
+                                        <RadioButton IsChecked="{Binding IsFTSelected}" Content="FT Glass"/>
                                     </StackPanel>
-                                    <TextBlock Text="U-Insert improves thermal insulation by reducing heat transfer through the spacer." FontSize="9" Foreground="#6B7280" TextWrapping="Wrap"/>
+                                    <TextBlock Text="Sheet Price (AED)" Style="{StaticResource FieldLabel}"/>
+                                    <TextBox Text="{Binding SGUSheetPrice, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" FontSize="14" FontWeight="SemiBold" TextAlignment="Center" Margin="0,0,0,10"/>
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="Cutting" FontSize="10" Foreground="{StaticResource TextSub}"/>
+                                            <TextBox Text="{Binding SGUCutting, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="Tempering" FontSize="10" Foreground="{StaticResource TextSub}"/>
+                                            <TextBox Text="{Binding SGUTempering, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
+                                        </StackPanel>
+                                    </Grid>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="Waste Factor" FontSize="10" Foreground="{StaticResource TextSub}"/>
+                                            <TextBox Text="{Binding SGUWasteFactor, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="Profit %" FontSize="10" Foreground="{StaticResource TextSub}"/>
+                                            <TextBox Text="{Binding SGUProfitPercent, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
+                                        </StackPanel>
+                                    </Grid>
                                 </StackPanel>
                             </Border>
-                            <TextBlock Text="Inner Glass" Style="{StaticResource FieldLabel}"/>
-                            <Grid Margin="0,0,0,10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="8"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="8"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Thickness" FontSize="10" Foreground="#6B7280"/>
-                                    <ComboBox ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding DGUInnerThickness}" Style="{StaticResource FormComboBox}"/>
+
+                            <!-- DGU Configuration Panel -->
+                            <Border x:Name="DGUContent" Background="{StaticResource BgControl}" BorderBrush="{StaticResource PanelBorder}" BorderThickness="0,0,0,1" Padding="16" Margin="0,0,0,8" Visibility="{Binding IsDGUSelected, Converter={StaticResource BoolToVis}}">
+                                <StackPanel>
+                                    <TextBlock Text="DGU Configuration" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextMain}" Margin="0,0,0,10"/>
+                                    <TextBlock Text="Outer Glass" Style="{StaticResource FieldLabel}"/>
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="Thickness" FontSize="10" Foreground="{StaticResource TextSub}"/>
+                                            <ComboBox ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding DGUOuterThickness}" Style="{StaticResource FormComboBox}"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="Color" FontSize="10" Foreground="{StaticResource TextSub}"/>
+                                            <ComboBox IsEditable="True" ItemsSource="{Binding ColorHistory}" Text="{Binding DGUOuterColor, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormComboBox}" StaysOpenOnEdit="True"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="4">
+                                            <TextBlock Text="Price" FontSize="10" Foreground="{StaticResource TextSub}"/>
+                                            <TextBox Text="{Binding DGUOuterPrice, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
+                                        </StackPanel>
+                                    </Grid>
+                                    <TextBlock Text="Work Type" Style="{StaticResource FieldLabel}"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                        <RadioButton IsChecked="{Binding IsDGUAnnealedSelected}" Content="Annealed" Margin="0,0,16,0"/>
+                                        <RadioButton IsChecked="{Binding IsDGUFTSelected}" Content="FT Glass"/>
+                                    </StackPanel>
+                                    <TextBlock Text="Air Spacer" Style="{StaticResource FieldLabel}"/>
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="Thickness" FontSize="10" Foreground="{StaticResource TextSub}"/>
+                                            <ComboBox x:Name="cmbDGUAirSpacerThickness" ItemsSource="{Binding AirSpacerThicknessOptions}" SelectedItem="{Binding DGUAirSpacerThickness}" Style="{StaticResource FormComboBox}"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="Type" FontSize="10" Foreground="{StaticResource TextSub}"/>
+                                            <ComboBox ItemsSource="{Binding AirSpacerTypeOptions}" SelectedItem="{Binding DGUAirSpacerType}" Style="{StaticResource FormComboBox}"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="4">
+                                            <TextBlock Text="Auto Price" FontSize="10" Foreground="{StaticResource TextSub}"/>
+                                            <TextBox Text="{Binding DGUASPPrice, Mode=OneWay}" IsReadOnly="True" Background="#DBEAFE" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1" Padding="6,4" FontSize="11" FontWeight="SemiBold"/>
+                                        </StackPanel>
+                                    </Grid>
+                                    <Border Background="#E8F4FD" BorderBrush="#B3D7F5" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,10">
+                                        <StackPanel>
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                                <CheckBox IsChecked="{Binding IsDGUIncludeInSpec}" Content="Include U-Insert" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextMain}" VerticalContentAlignment="Center"/>
+                                                <TextBlock Text="(Warm Edge Technology)" FontSize="10" Foreground="{StaticResource TextSub}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                            </StackPanel>
+                                            <TextBlock Text="U-Insert improves thermal insulation by reducing heat transfer through the spacer." FontSize="9" Foreground="{StaticResource TextSub}" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </Border>
+                                    <TextBlock Text="Inner Glass" Style="{StaticResource FieldLabel}"/>
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="Thickness" FontSize="10" Foreground="{StaticResource TextSub}"/>
+                                            <ComboBox ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding DGUInnerThickness}" Style="{StaticResource FormComboBox}"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="Color" FontSize="10" Foreground="{StaticResource TextSub}"/>
+                                            <ComboBox IsEditable="True" ItemsSource="{Binding ColorHistory}" Text="{Binding DGUInnerColor, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormComboBox}" StaysOpenOnEdit="True"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="4">
+                                            <TextBlock Text="Price" FontSize="10" Foreground="{StaticResource TextSub}"/>
+                                            <TextBox Text="{Binding DGUInnerPrice, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
+                                        </StackPanel>
+                                    </Grid>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="Waste Factor" FontSize="10" Foreground="{StaticResource TextSub}"/>
+                                            <TextBox Text="{Binding DGUWasteFactor, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="Profit %" FontSize="10" Foreground="{StaticResource TextSub}"/>
+                                            <TextBox Text="{Binding DGUProfitPercent, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
+                                        </StackPanel>
+                                    </Grid>
                                 </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="Color" FontSize="10" Foreground="#6B7280"/>
-                                    <ComboBox IsEditable="True" ItemsSource="{Binding ColorHistory}" Text="{Binding DGUInnerColor, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormComboBox}" StaysOpenOnEdit="True"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="4">
-                                    <TextBlock Text="Price" FontSize="10" Foreground="#6B7280"/>
-                                    <TextBox Text="{Binding DGUInnerPrice, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
-                                </StackPanel>
-                            </Grid>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="8"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Waste Factor" FontSize="10" Foreground="#6B7280"/>
-                                    <TextBox Text="{Binding DGUWasteFactor, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="Profit %" FontSize="10" Foreground="#6B7280"/>
-                                    <TextBox Text="{Binding DGUProfitPercent, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
-                                </StackPanel>
-                            </Grid>
-                        </StackPanel>
-                    </Border>
+                            </Border>
 
                             <!-- LAM Configuration Panel -->
-                            <Border x:Name="LAMContent" Background="#F9FAFB" BorderBrush="#E5E7EB" BorderThickness="0,0,0,1" Padding="16" Margin="0,0,0,8" Visibility="{Binding IsLAMSelected, Converter={StaticResource BoolToVis}}">
-                        <StackPanel>
-                            <TextBlock Text="LAM Configuration" FontSize="12" FontWeight="SemiBold" Foreground="#7C3AED" Margin="0,0,0,10"/>
-                            <TextBlock Text="Outer Glass" Style="{StaticResource FieldLabel}"/>
-                            <Grid Margin="0,0,0,10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="8"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="8"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Thickness" FontSize="10" Foreground="#6B7280"/>
-                                    <ComboBox ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding LAMOuterThickness}" Style="{StaticResource FormComboBox}"/>
+                            <Border x:Name="LAMContent" Background="{StaticResource BgControl}" BorderBrush="{StaticResource PanelBorder}" BorderThickness="0,0,0,1" Padding="16" Margin="0,0,0,8" Visibility="{Binding IsLAMSelected, Converter={StaticResource BoolToVis}}">
+                                <StackPanel>
+                                    <TextBlock Text="LAM Configuration" FontSize="12" FontWeight="SemiBold" Foreground="#7C3AED" Margin="0,0,0,10"/>
+                                    <TextBlock Text="Outer Glass" Style="{StaticResource FieldLabel}"/>
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="Thickness" FontSize="10" Foreground="{StaticResource TextSub}"/>
+                                            <ComboBox ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding LAMOuterThickness}" Style="{StaticResource FormComboBox}"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="Color" FontSize="10" Foreground="{StaticResource TextSub}"/>
+                                            <ComboBox IsEditable="True" ItemsSource="{Binding ColorHistory}" Text="{Binding LAMOuterColor, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormComboBox}" StaysOpenOnEdit="True"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="4">
+                                            <TextBlock Text="Price" FontSize="10" Foreground="{StaticResource TextSub}"/>
+                                            <TextBox Text="{Binding LAMOuterPrice, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
+                                        </StackPanel>
+                                    </Grid>
+                                    <TextBlock Text="Work Type" Style="{StaticResource FieldLabel}"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                        <RadioButton IsChecked="{Binding IsLAMAnnealedSelected}" Content="Annealed" Margin="0,0,16,0"/>
+                                        <RadioButton IsChecked="{Binding IsLAMFTSelected}" Content="FT Glass"/>
+                                    </StackPanel>
+                                    <TextBlock Text="PVB Layer" Style="{StaticResource FieldLabel}"/>
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="PVB Thickness" FontSize="10" Foreground="{StaticResource TextSub}"/>
+                                            <ComboBox SelectedValue="{Binding LAMPVBThickness}" SelectedValuePath="Content" Style="{StaticResource FormComboBox}">
+                                                <ComboBoxItem Content="0.38"/>
+                                                <ComboBoxItem Content="0.76"/>
+                                                <ComboBoxItem Content="1.14"/>
+                                                <ComboBoxItem Content="1.52"/>
+                                                <ComboBoxItem Content="2.28"/>
+                                                <ComboBoxItem Content="3.04"/>
+                                                <ComboBoxItem Content="Acoustic 0.76"/>
+                                                <ComboBoxItem Content="Acoustic 1.52"/>
+                                            </ComboBox>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="PVB Color" FontSize="10" Foreground="{StaticResource TextSub}"/>
+                                            <ComboBox SelectedValue="{Binding LAMPVBColor}" SelectedValuePath="Content" Style="{StaticResource FormComboBox}">
+                                                <ComboBoxItem Content="Clear"/>
+                                                <ComboBoxItem Content="White"/>
+                                                <ComboBoxItem Content="Black"/>
+                                                <ComboBoxItem Content="Grey"/>
+                                                <ComboBoxItem Content="Brown"/>
+                                                <ComboBoxItem Content="Blue"/>
+                                                <ComboBoxItem Content="Green"/>
+                                                <ComboBoxItem Content="Red"/>
+                                                <ComboBoxItem Content="EVA Clear"/>
+                                                <ComboBoxItem Content="EVA White"/>
+                                                <ComboBoxItem Content="EVA Black"/>
+                                                <ComboBoxItem Content="Acoustic Clear"/>
+                                                <ComboBoxItem Content="Acoustic White"/>
+                                            </ComboBox>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="4">
+                                            <TextBlock Text="PVB Price" FontSize="10" Foreground="{StaticResource TextSub}"/>
+                                            <TextBox Text="{Binding LAMPVBPrice, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
+                                        </StackPanel>
+                                    </Grid>
+                                    <TextBlock Text="Inner Glass" Style="{StaticResource FieldLabel}"/>
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="Thickness" FontSize="10" Foreground="{StaticResource TextSub}"/>
+                                            <ComboBox ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding LAMInnerThickness}" Style="{StaticResource FormComboBox}"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="Color" FontSize="10" Foreground="{StaticResource TextSub}"/>
+                                            <ComboBox IsEditable="True" ItemsSource="{Binding ColorHistory}" Text="{Binding LAMInnerColor, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormComboBox}" StaysOpenOnEdit="True"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="4">
+                                            <TextBlock Text="Price" FontSize="10" Foreground="{StaticResource TextSub}"/>
+                                            <TextBox Text="{Binding LAMInnerPrice, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
+                                        </StackPanel>
+                                    </Grid>
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="Cutting" FontSize="10" Foreground="{StaticResource TextSub}"/>
+                                            <TextBox Text="{Binding LAMCutting, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="Tempering" FontSize="10" Foreground="{StaticResource TextSub}"/>
+                                            <TextBox Text="{Binding LAMTempering, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
+                                        </StackPanel>
+                                    </Grid>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="Waste Factor" FontSize="10" Foreground="{StaticResource TextSub}"/>
+                                            <TextBox Text="{Binding LAMWasteFactor, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="Profit %" FontSize="10" Foreground="{StaticResource TextSub}"/>
+                                            <TextBox Text="{Binding LAMProfitPercent, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
+                                        </StackPanel>
+                                    </Grid>
                                 </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="Color" FontSize="10" Foreground="#6B7280"/>
-                                    <ComboBox IsEditable="True" ItemsSource="{Binding ColorHistory}" Text="{Binding LAMOuterColor, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormComboBox}" StaysOpenOnEdit="True"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="4">
-                                    <TextBlock Text="Price" FontSize="10" Foreground="#6B7280"/>
-                                    <TextBox Text="{Binding LAMOuterPrice, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
-                                </StackPanel>
-                            </Grid>
-                            <TextBlock Text="Work Type" Style="{StaticResource FieldLabel}"/>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                <RadioButton IsChecked="{Binding IsLAMAnnealedSelected}" Content="Annealed" Margin="0,0,16,0"/>
-                                <RadioButton IsChecked="{Binding IsLAMFTSelected}" Content="FT Glass"/>
-                            </StackPanel>
-                            <TextBlock Text="PVB Layer" Style="{StaticResource FieldLabel}"/>
-                            <Grid Margin="0,0,0,10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="8"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="8"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="PVB Thickness" FontSize="10" Foreground="#6B7280"/>
-                                    <ComboBox SelectedValue="{Binding LAMPVBThickness}" SelectedValuePath="Content" Style="{StaticResource FormComboBox}">
-                                        <ComboBoxItem Content="0.38"/>
-                                        <ComboBoxItem Content="0.76"/>
-                                        <ComboBoxItem Content="1.14"/>
-                                        <ComboBoxItem Content="1.52"/>
-                                        <ComboBoxItem Content="2.28"/>
-                                        <ComboBoxItem Content="3.04"/>
-                                        <ComboBoxItem Content="Acoustic 0.76"/>
-                                        <ComboBoxItem Content="Acoustic 1.52"/>
-                                    </ComboBox>
-                                </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="PVB Color" FontSize="10" Foreground="#6B7280"/>
-                                    <ComboBox SelectedValue="{Binding LAMPVBColor}" SelectedValuePath="Content" Style="{StaticResource FormComboBox}">
-                                        <ComboBoxItem Content="Clear"/>
-                                        <ComboBoxItem Content="White"/>
-                                        <ComboBoxItem Content="Black"/>
-                                        <ComboBoxItem Content="Grey"/>
-                                        <ComboBoxItem Content="Brown"/>
-                                        <ComboBoxItem Content="Blue"/>
-                                        <ComboBoxItem Content="Green"/>
-                                        <ComboBoxItem Content="Red"/>
-                                        <ComboBoxItem Content="EVA Clear"/>
-                                        <ComboBoxItem Content="EVA White"/>
-                                        <ComboBoxItem Content="EVA Black"/>
-                                        <ComboBoxItem Content="Acoustic Clear"/>
-                                        <ComboBoxItem Content="Acoustic White"/>
-                                    </ComboBox>
-                                </StackPanel>
-                                <StackPanel Grid.Column="4">
-                                    <TextBlock Text="PVB Price" FontSize="10" Foreground="#6B7280"/>
-                                    <TextBox Text="{Binding LAMPVBPrice, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
-                                </StackPanel>
-                            </Grid>
-                            <TextBlock Text="Inner Glass" Style="{StaticResource FieldLabel}"/>
-                            <Grid Margin="0,0,0,10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="8"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="8"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Thickness" FontSize="10" Foreground="#6B7280"/>
-                                    <ComboBox ItemsSource="{Binding ThicknessOptions}" SelectedItem="{Binding LAMInnerThickness}" Style="{StaticResource FormComboBox}"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="Color" FontSize="10" Foreground="#6B7280"/>
-                                    <ComboBox IsEditable="True" ItemsSource="{Binding ColorHistory}" Text="{Binding LAMInnerColor, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormComboBox}" StaysOpenOnEdit="True"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="4">
-                                    <TextBlock Text="Price" FontSize="10" Foreground="#6B7280"/>
-                                    <TextBox Text="{Binding LAMInnerPrice, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
-                                </StackPanel>
-                            </Grid>
-                            <Grid Margin="0,0,0,10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="8"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Cutting" FontSize="10" Foreground="#6B7280"/>
-                                    <TextBox Text="{Binding LAMCutting, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="Tempering" FontSize="10" Foreground="#6B7280"/>
-                                    <TextBox Text="{Binding LAMTempering, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
-                                </StackPanel>
-                            </Grid>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="8"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Waste Factor" FontSize="10" Foreground="#6B7280"/>
-                                    <TextBox Text="{Binding LAMWasteFactor, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="Profit %" FontSize="10" Foreground="#6B7280"/>
-                                    <TextBox Text="{Binding LAMProfitPercent, UpdateSourceTrigger=LostFocus}" Style="{StaticResource FormTextBox}" Padding="6,4" FontSize="11"/>
-                                </StackPanel>
-                            </Grid>
-                        </StackPanel>
-                    </Border>
+                            </Border>
                         </StackPanel>
                     </Expander>
 
                     <!-- Calculated Result -->
-                    <Border Background="#1E3A8A" CornerRadius="6" Padding="16" Margin="16,8,16,16">
+                    <Border Background="{StaticResource AccentBlue}" CornerRadius="6" Padding="16" Margin="16,8,16,16">
                         <StackPanel HorizontalAlignment="Center">
-                            <TextBlock Text="TOTAL PRICE" FontSize="10" Foreground="#9CA3AF" HorizontalAlignment="Center"/>
+                            <TextBlock Text="TOTAL PRICE" FontSize="10" Foreground="{StaticResource PanelBorder}" HorizontalAlignment="Center"/>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8,0,0">
-                                <TextBlock Text="AED" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <TextBlock Text="{Binding CalculatedPrice, Mode=OneWay, StringFormat=N2}" FontSize="24" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                <TextBlock Text="AED" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextWhite}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="{Binding CalculatedPrice, Mode=OneWay, StringFormat=N2}" FontSize="24" FontWeight="Bold" Foreground="{StaticResource TextWhite}"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>
@@ -1997,17 +1858,17 @@ Background="#FFFFFF">
                     <Button Content="Calculate Price" Style="{StaticResource PrimaryButton}" Command="{Binding CalculatePriceCommand}" Padding="12,10" Margin="16,0,16,16"/>
 
                     <!-- Target Specification -->
-                    <Border Background="#F9FAFB" BorderBrush="#E5E7EB" BorderThickness="0,0,0,1" Padding="16" Margin="0,0,0,8">
+                    <Border Background="#F9FAFB" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,8">
                         <StackPanel>
-                            <TextBlock Text="Target Specification" FontSize="12" FontWeight="SemiBold" Foreground="#1F2937" Margin="0,0,0,10"/>
+                            <TextBlock Text="Target Specification" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextMain}" Margin="0,0,0,10"/>
                             <TextBlock Text="Select spec to apply price" Style="{StaticResource FieldLabel}"/>
-                            <ComboBox ItemsSource="{Binding Invoice.Specifications}" SelectedItem="{Binding SelectedTargetSpecification}" DisplayMemberPath="SpecificationName" Style="{StaticResource FormComboBox}" Margin="0,0,0,10"/>
+                            <ComboBox x:Name="cmbTargetSpec" ItemsSource="{Binding Invoice.Specifications}" SelectedItem="{Binding SelectedTargetSpecification}" DisplayMemberPath="SpecificationName" Style="{StaticResource FormComboBox}" Margin="0,0,0,10"/>
                             <Button Content="Include in Spec" Style="{StaticResource PrimaryButton}" Command="{Binding IncludeInSpecificationCommand}" Padding="12,10"/>
                         </StackPanel>
                     </Border>
 
                     <!-- Optimization Panel -->
-                    <Border BorderBrush="#E5E7EB" BorderThickness="0,0,0,1" Padding="16">
+                    <Border BorderBrush="{StaticResource PanelBorder}" BorderThickness="1" Padding="16">
                         <StackPanel>
                             <Button Content="⚙ OPTIMIZATION" Style="{StaticResource ModuleButtonOPT}" Click="ToggleOptPanel_Click" Margin="0,0,0,8"/>
                             <Border x:Name="OptContent" Visibility="Collapsed" Background="#FFFFFF" Padding="0,8,0,0">
@@ -2017,15 +1878,15 @@ Background="#FFFFFF">
                     </Border>
 
                     <!-- Recent Invoices -->
-                    <Border BorderBrush="#E5E7EB" BorderThickness="0,0,0,1" Padding="16">
+                    <Border BorderBrush="{StaticResource PanelBorder}" BorderThickness="1" Padding="16">
                         <StackPanel>
                             <Button Content="📋 RECENT INVOICES" Style="{StaticResource ModuleButtonSUMMARY}" Click="ToggleRecentInvoices_Click" Margin="0,0,0,8"/>
                             <Border x:Name="RecentInvoicesContent" Visibility="Collapsed" Background="#FFFFFF" Padding="0,8,0,0">
                                 <StackPanel>
-                                    <ListBox ItemsSource="{Binding SavedFiles}" 
+                                    <ListBox x:Name="lstRecentInvoices" ItemsSource="{Binding SavedFiles}" 
                                             Background="#FFFFFF" 
                                             BorderThickness="1" 
-                                            BorderBrush="#E5E7EB" 
+                                            BorderBrush="{StaticResource PanelBorder}" 
                                             MaxHeight="200"
                                             VirtualizingStackPanel.IsVirtualizing="True"
                                             VirtualizingStackPanel.VirtualizationMode="Recycling"
@@ -2037,27 +1898,27 @@ Background="#FFFFFF">
                                         </ListBox.ItemsPanel>
                                         <ListBox.ItemTemplate>
                                             <DataTemplate>
-                                                <Border BorderBrush="#E5E7EB" BorderThickness="0,0,0,1" Padding="12,10" Cursor="Hand">
+                                                <Border BorderBrush="{StaticResource PanelBorder}" BorderThickness="0,0,0,1" Padding="12,10" Cursor="Hand">
                                                     <Border.Style>
                                                         <Style TargetType="Border">
                                                             <Style.Triggers>
                                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                                    <Setter Property="Background" Value="#F3F4F6"/>
+                                                                    <Setter Property="Background" Value="{StaticResource BgControl}"/>
                                                                 </Trigger>
                                                             </Style.Triggers>
                                                         </Style>
                                                     </Border.Style>
                                                     <StackPanel>
-                                                        <TextBlock Text="{Binding InvoiceNo}" FontSize="12" FontWeight="SemiBold" Foreground="#1E3A5F"/>
-                                                        <TextBlock Text="{Binding CustomerName}" FontSize="11" Foreground="#6B7280" Margin="0,4,0,0"/>
-                                                        <TextBlock Text="{Binding DateDisplay}" FontSize="10" Foreground="#9CA3AF" Margin="0,4,0,0"/>
+                                                        <TextBlock Text="{Binding InvoiceNo}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextMain}"/>
+                                                        <TextBlock Text="{Binding CustomerName}" FontSize="11" Foreground="{StaticResource TextSub}" Margin="0,4,0,0"/>
+                                                        <TextBlock Text="{Binding DateDisplay}" FontSize="10" Foreground="{StaticResource TextSub}" Margin="0,4,0,0"/>
                                                     </StackPanel>
                                                 </Border>
                                             </DataTemplate>
                                         </ListBox.ItemTemplate>
                                     </ListBox>
                                     <StackPanel HorizontalAlignment="Center" Margin="0,16,0,0" Visibility="{Binding HasSavedFiles, Converter={StaticResource InverseBoolToVis}}">
-                                        <TextBlock Text="No saved invoices" FontSize="12" Foreground="#9CA3AF" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="No saved invoices" FontSize="12" Foreground="{StaticResource TextSub}" HorizontalAlignment="Center"/>
                                     </StackPanel>
                                 </StackPanel>
                             </Border>

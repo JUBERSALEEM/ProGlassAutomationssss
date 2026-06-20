@@ -6,6 +6,17 @@ using System.Text;
 
 namespace ProGlassAutomation.Views.Optimization
 {
+    /*
+     * ===================================================================================
+     * OPTIMIZATION SERVICES HELPER
+     * ===================================================================================
+     * FIX LOG:
+     * - Fixed commercial valuation math bug in CalculateCost. Removed '/ 1000' which was 
+     *   understating wastage costing penalties by 1000x since the area is already in SQM.
+     * - Maintained robust custom string serialization parsers for backward-compatible 
+     *   job serialization without external dependencies.
+     * ===================================================================================
+     */
     public class OptimizationServices
     {
         public void ExportResultsCsv(string filePath, List<OptimizationResult> results, List<PlacedPart> allPlacedParts, double overallUtilization, double overallWastage)
@@ -118,7 +129,8 @@ namespace ProGlassAutomation.Views.Optimization
                     wasteArea += sheetArea - r.Area;
                 }
             }
-            stockCost += wasteArea * 50 / 1000;
+            // FIXED: Removed the "/ 1000" mathematical conversion error
+            stockCost += wasteArea * 50;
             double remnantCredit = 0;
             if (remnants != null)
             {
@@ -157,7 +169,6 @@ namespace ProGlassAutomation.Views.Optimization
             sb.Append("]"); return sb.ToString();
         }
 
-        // FIXED: Use local variables instead of properties
         private List<StockSheet> DeserializeStockSheets(string json)
         {
             var sheets = new List<StockSheet>();

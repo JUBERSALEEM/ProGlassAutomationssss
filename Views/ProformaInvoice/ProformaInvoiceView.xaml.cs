@@ -39,6 +39,9 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         private ProformaInvoiceViewModel _viewModel;
         private const double SCROLL_SPEED = 0.3;
 
+        // Persistent View state to preserve edited stock sizes and parameters in memory
+        private OptimizationView? _activeOptView;
+
         // ═══════════════════════════════════════════════════════════════
         // MISSING COLLECTIONS - ADD THESE
         // ═══════════════════════════════════════════════════════════════
@@ -444,6 +447,44 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             UpdateSpecSelectUIRadioButtons();
         }
 
+        // Compiles the primary stock size inputs and AdditionalSheets collection into StockSheet list
+        private List<StockSheet> GetStockSheetsToOptimize(double primaryWidth, double primaryHeight)
+        {
+            var list = new List<StockSheet>();
+
+            int primaryQty = 99999;
+            if (txtSheetQty != null && !string.IsNullOrWhiteSpace(txtSheetQty.Text))
+            {
+                int.TryParse(txtSheetQty.Text, out primaryQty);
+            }
+
+            list.Add(new StockSheet
+            {
+                Ref = "S1",
+                L = primaryWidth,
+                W = primaryHeight,
+                Qty = primaryQty > 0 ? primaryQty : 99999
+            });
+
+            int index = 2;
+            foreach (var item in AdditionalSheets)
+            {
+                if (double.TryParse(item.Width, out double w) &&
+                    double.TryParse(item.Height, out double h))
+                {
+                    int.TryParse(item.Qty, out int qty);
+                    list.Add(new StockSheet
+                    {
+                        Ref = $"S{index++}",
+                        L = w,
+                        W = h,
+                        Qty = qty > 0 ? qty : 100
+                    });
+                }
+            }
+            return list;
+        }
+
         // ═══════════════════════════════════════════════════════════════
         // EXISTING EXPANDABLE PANEL CLICK HANDLERS - PRESERVE THESE
         // ═══════════════════════════════════════════════════════════════
@@ -499,10 +540,16 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
         private void OpenOptimization_Click(object sender, RoutedEventArgs e)
         {
+            // Preserve state using class-level active view
+            if (_activeOptView == null)
+            {
+                _activeOptView = new OptimizationView();
+            }
+
             var optWindow = new Window
             {
                 Title = "Glass Cut Optimizer - ProGlass Automation",
-                Content = new OptimizationView(),
+                Content = _activeOptView,
                 WindowState = WindowState.Normal,
                 WindowStyle = WindowStyle.SingleBorderWindow,
                 ResizeMode = ResizeMode.CanResize,
@@ -515,10 +562,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             };
 
             _optimizerWindow = optWindow;
-            optWindow.ContentRendered += (s, args) =>
-            {
-                _optimizerView = optWindow.Content as OptimizationView;
-            };
+            _optimizerView = _activeOptView;
 
             optWindow.Closed += (s, args) =>
             {
@@ -629,7 +673,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     }
                     else
                     {
-                        // USE GLOBAL SELECTION
                         useAlt = globalUseAlt;
                         System.Diagnostics.Debug.WriteLine($"[RunOptimization] Global: {spec.SpecificationName} → {(useAlt ? "W2/H2" : "W1/H1")}");
                     }
@@ -681,8 +724,11 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     globalUseAlt = false;
                 }
 
-                // Create optimizer view (don't show - just run for results)
-                var optView = new OptimizationView();
+                // FIX: Retrieve or instantiate class-level persistent view state
+                if (_activeOptView == null)
+                {
+                    _activeOptView = new OptimizationView();
+                }
 
                 // Convert original items using appropriate dimensions per item
                 var invoiceItems = new List<Models.InvoiceItemModel>();
@@ -706,18 +752,18 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     });
                 }
 
-                // Set data
-                optView.ImportInvoiceItems(invoiceItems);
-                optView.SetStockSheet(sheetWidth, sheetHeight);
-                // FIXED: Correct parameter order to match OptimizationView.SetTrimSettings(lr, br, tr, rm, kerf, breakout)
-                optView.SetTrimSettings(trim.LM, trim.BM, trim.TM, trim.RM, trim.Kerf, trim.BreakoutMin);
+                _activeOptView.ImportInvoiceItems(invoiceItems);
 
-                // Run optimization
-                optView.RunOptimizationFromInvoice();
+                // Compile and set full list of primary and secondary stock sheets
+                var compiledSheets = GetStockSheetsToOptimize(sheetWidth, sheetHeight);
+                _activeOptView.SetStockSheets(compiledSheets);
+
+                _activeOptView.SetTrimSettings(trim.LM, trim.BM, trim.TM, trim.RM, trim.Kerf, trim.BreakoutMin);
+                _activeOptView.RunOptimizationFromInvoice();
 
                 // Get results - update center section only
-                double utilization = optView.AverageUtilization;
-                int sheetsUsed = optView.SheetsUsed;
+                double utilization = _activeOptView.AverageUtilization;
+                int sheetsUsed = _activeOptView.SheetsUsed;
 
                 txtUtilization.Text = $"{utilization:N1}%";
                 txtSheetsUsed.Text = sheetsUsed.ToString();
@@ -732,7 +778,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 txtOptRunCount.Text = (currentCount + 1).ToString();
 
                 // Update per-sheet results
-                UpdatePerSheetResults(optView, sheetWidth, sheetHeight);
+                UpdatePerSheetResults(_activeOptView, sheetWidth, sheetHeight);
             }
             catch (Exception ex)
             {
@@ -866,47 +912,55 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 else
                     dimStatus = "W1/H1";
 
-                // Create and show FULL optimization window
+                // FIX: Retrieve or instantiate class-level persistent view state
+                if (_activeOptView == null)
+                {
+                    _activeOptView = new OptimizationView();
+                }
+
+                _activeOptView.ImportInvoiceItems(invoiceItems);
+
+                // Compile and set full list of primary and secondary stock sheets
+                var compiledSheets = GetStockSheetsToOptimize(sheetWidth, sheetHeight);
+                _activeOptView.SetStockSheets(compiledSheets);
+
+                _activeOptView.SetTrimSettings(trim.LM, trim.BM, trim.TM, trim.RM, trim.Kerf, trim.BreakoutMin);
+                _activeOptView.RunOptimizationFromInvoice();
+
                 var optWindow = new Window
                 {
                     Title = "Glass Cut Optimizer - ProGlass Automation",
-                    Content = new OptimizationView(),
+                    Content = _activeOptView,
                     Width = 1400,
                     Height = 900,
                     Background = new SolidColorBrush(Color.FromRgb(30, 39, 46)),
                     WindowStartupLocation = WindowStartupLocation.CenterScreen
                 };
 
-                var optView = optWindow.Content as OptimizationView;
+                _optimizerWindow = optWindow;
+                _optimizerView = _activeOptView;
 
-                if (optView != null)
+                optWindow.Closed += (s, args) =>
                 {
-                    optView.ImportInvoiceItems(invoiceItems);
-                    optView.SetStockSheet(sheetWidth, sheetHeight);
-                    // FIXED: Correct parameter order to match OptimizationView.SetTrimSettings(lr, br, tr, rm, kerf, breakout)
-                    optView.SetTrimSettings(trim.LM, trim.BM, trim.TM, trim.RM, trim.Kerf, trim.BreakoutMin);
-                    optView.RunOptimizationFromInvoice();
+                    _optimizerWindow = null;
+                    _optimizerView = null;
+                };
 
-                    optWindow.Show();
+                optWindow.Show();
 
-                    // Also update center section
-                    double utilization = optView.AverageUtilization;
-                    int sheetsUsed = optView.SheetsUsed;
+                // Also update center section
+                double utilization = _activeOptView.AverageUtilization;
+                int sheetsUsed = _activeOptView.SheetsUsed;
 
-                    txtUtilization.Text = $"{utilization:N1}%";
-                    txtSheetsUsed.Text = sheetsUsed.ToString();
-                    txtWastage.Text = $"{(100 - utilization):N1}%";
+                txtUtilization.Text = $"{utilization:N1}%";
+                txtSheetsUsed.Text = sheetsUsed.ToString();
+                txtWastage.Text = $"{(100 - utilization):N1}%";
 
-                    // Use existing thickness and trim from earlier in this method
-                    txtOptStatus.Text = $"✓ Optimized | {thickness} | Trim: {trim.LM}/{trim.RM}/{trim.TM}/{trim.BM}mm Kerf={trim.Kerf} | {dimStatus}";
+                // Use existing thickness and trim from earlier in this method
+                txtOptStatus.Text = $"✓ Optimized | {thickness} | Trim: {trim.LM}/{trim.RM}/{trim.TM}/{trim.BM}mm Kerf={trim.Kerf} | {dimStatus}";
 
-                    // Update per-sheet results
-                    UpdatePerSheetResults(optView, sheetWidth, sheetHeight);
-                }
-                else
-                {
-                    MessageBox.Show("Failed to create optimizer view!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+                // Update per-sheet results
+                UpdatePerSheetResults(_activeOptView, sheetWidth, sheetHeight);
             }
             catch (Exception ex)
             {
@@ -1756,7 +1810,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 // Force UI refresh
                 UpdateSpecSelectUIRadioButtons();
 
-                // FIX: Now update RadioButton visual states to show W1/H1 or W2/H2 as selected
+                // Now update RadioButton visual states to show W1/H1 or W2/H2 as selected
                 UpdateListBoxRadioButtons(lstSpecSelect);
 
                 System.Diagnostics.Debug.WriteLine($"[FallbackDim_Click] Updated {_specDimChoice.Count} specs to {(useAltW2H2 ? "W2/H2" : "W1/H1")}");
@@ -1866,7 +1920,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
                         bool useAlt = _specDimChoice[specName];
 
-                        // FIX: Use correct tags with forward slash!
+                        // Use correct tags with forward slash
                         if (tag == "W1/H1")
                         {
                             rb.IsChecked = !useAlt;
@@ -1927,7 +1981,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                         _specDimChoice[specName] = false; // W1/H1 = false
                         System.Diagnostics.Debug.WriteLine($"[RbSpecW1H1_Click] Spec='{specName}', Dim=W1/H1");
 
-                        // Auto-select spec if not selected
                         // Auto-select wrapper if not selected
                         var wrapper = SpecSelectionItems.FirstOrDefault(w => w.FullName == specName);
                         if (wrapper != null && !lstSpecSelect.SelectedItems.Contains(wrapper))
@@ -1984,7 +2037,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
             try
             {
-                // FIX: The ListBox.SelectedItems contains the actual selected wrapper objects
+                // The ListBox.SelectedItems contains the actual selected wrapper objects
                 // We need to check which wrappers are in SelectedItems, NOT wrapper.IsSelected
                 var selectedWrappers = lstSpecSelect.SelectedItems
                     .Cast<SpecSelectionItem>()
@@ -2012,7 +2065,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 foreach (var key in toRemove)
                 {
                     _specDimChoice.Remove(key);
-                    _specDimChoice.Remove(key);
                     System.Diagnostics.Debug.WriteLine($"[lstSpecSelect_SelectionChanged] Removed: {key}");
                 }
 
@@ -2026,8 +2078,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         }
     }
 
-        // ==================== SCROLL BEHAVIOR HELPER ====================
-        public static class ScrollViewerBehavior
+    public static class ScrollViewerBehavior
     {
         public static readonly DependencyProperty VerticalOffsetProperty =
             DependencyProperty.RegisterAttached("VerticalOffset", typeof(double), typeof(ScrollViewerBehavior),

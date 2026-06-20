@@ -477,73 +477,67 @@ namespace ProGlassAutomation.Services
             try
             {
                 var doc = new XDocument(new XElement("Sheets"));
-
                 foreach (var sheet in _sheets)
                 {
-                    var sheetEl = new XElement("Sheet",
-                        new XAttribute("Id", sheet.Id),
-                        new XAttribute("SrNo", sheet.SrNo),
-                        new XAttribute("Category", sheet.Category ?? ""),
-                        new XAttribute("Thickness", sheet.Thickness ?? ""),
-                        new XAttribute("Color", sheet.Color ?? ""),
-                        new XAttribute("ColorHex", sheet.ColorHex ?? "#E8F4F8"),
-                        new XAttribute("Width", sheet.Width),
-                        new XAttribute("Height", sheet.Height),
-                        new XAttribute("SquareMeter", sheet.SquareMeter),
-                        new XAttribute("PurchasePrice", sheet.PurchasePrice),
-                        new XAttribute("SellPrice", sheet.SellPrice),
-                        new XAttribute("TotalStock", sheet.TotalStock),
-                        new XAttribute("UsedSheets", sheet.UsedSheets),
-                        new XAttribute("BalanceSheets", sheet.BalanceSheets),
-                        new XAttribute("IsActive", sheet.IsActive),
-                        new XAttribute("Supplier", sheet.Supplier ?? ""),
-                        new XAttribute("SupplierName", sheet.SupplierName ?? ""),
-                        new XAttribute("Description", sheet.Description ?? ""),
-                        new XAttribute("CreatedDate", sheet.CreatedDate.ToString("yyyy-MM-dd HH:mm:ss")),
-                        new XAttribute("LatestPurchaseDate", sheet.LatestPurchaseDate?.ToString("yyyy-MM-dd HH:mm:ss") ?? "")
+                    var sheet1 = new XElement("Sheet",
+                    new XAttribute("Id", sheet.Id),
+                    new XAttribute("SrNo", sheet.SrNo),
+                    new XAttribute("Category", sheet.Category ?? ""),
+                    new XAttribute("Thickness", sheet.Thickness ?? ""),
+                    new XAttribute("Color", sheet.Color ?? ""),
+                    new XAttribute("ColorHex", sheet.ColorHex ?? "#E8F4F8"),
+                    new XAttribute("Width", sheet.Width),
+                    new XAttribute("Height", sheet.Height),
+                    new XAttribute("SquareMeter", sheet.SquareMeter.ToString(System.Globalization.CultureInfo.InvariantCulture)),
+                    new XAttribute("PurchasePrice", sheet.PurchasePrice.ToString(System.Globalization.CultureInfo.InvariantCulture)),
+                    new XAttribute("SellPrice", sheet.SellPrice.ToString(System.Globalization.CultureInfo.InvariantCulture)),
+                    new XAttribute("TotalStock", sheet.TotalStock),
+                    new XAttribute("UsedSheets", sheet.UsedSheets),
+                    new XAttribute("BalanceSheets", sheet.BalanceSheets),
+                    new XAttribute("Supplier", sheet.Supplier ?? ""),
+                    new XAttribute("SupplierName", sheet.SupplierName ?? ""),
+                    new XAttribute("Description", sheet.Description ?? ""),
+                    new XAttribute("CreatedDate", sheet.CreatedDate.ToString("yyyy-MM-dd HH:mm:ss")),
+                    new XAttribute("LatestPurchaseDate", sheet.LatestPurchaseDate?.ToString("yyyy-MM-dd HH:mm:ss") ?? "")
                     );
-
                     // Save Purchase History
                     if (sheet.PurchaseHistory != null && sheet.PurchaseHistory.Count > 0)
                     {
                         foreach (var purch in sheet.PurchaseHistory)
                         {
-                            sheetEl.Add(new XElement("Purchase",
-                                new XAttribute("Id", purch.Id),
-                                new XAttribute("Quantity", purch.Quantity),
-                                new XAttribute("UnitPrice", purch.UnitPrice),
-                                new XAttribute("Supplier", purch.Supplier ?? ""),
-                                new XAttribute("PurchasedOn", purch.PurchasedOn.ToString("yyyy-MM-dd HH:mm:ss")),
-                                new XAttribute("Notes", purch.Notes ?? ""),
-                                new XAttribute("CreatedAt", purch.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"))
+                            sheet1.Add(new XElement("Purchase",
+                            new XAttribute("Id", purch.Id),
+                            new XAttribute("Quantity", purch.Quantity),
+                            new XAttribute("UnitPrice", purch.UnitPrice.ToString(System.Globalization.CultureInfo.InvariantCulture)),
+                            new XAttribute("Supplier", purch.Supplier ?? ""),
+                            new XAttribute("PurchasedOn", purch.PurchasedOn.ToString("yyyy-MM-dd HH:mm:ss")),
+                            new XAttribute("Notes", purch.Notes ?? ""),
+                            new XAttribute("CreatedAt", purch.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"))
                             ));
                         }
                     }
-
                     // Save Use History
                     if (sheet.UseHistory != null && sheet.UseHistory.Count > 0)
                     {
                         foreach (var use in sheet.UseHistory)
                         {
-                            sheetEl.Add(new XElement("Usage",
-                                new XAttribute("Id", use.Id),
-                                new XAttribute("Quantity", use.Quantity),
-                                new XAttribute("Reason", use.Reason ?? ""),
-                                new XAttribute("UsedOn", use.UsedOn.ToString("yyyy-MM-dd HH:mm:ss")),
-                                new XAttribute("CreatedAt", use.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"))
+                            sheet1.Add(new XElement("Use",
+                            new XAttribute("id", use.Id),
+                            new XAttribute("Quantity", use.Quantity),
+                            new XAttribute("Reason", use.Reason ?? ""),
+                            new XAttribute("UsedOn", use.UsedOn.ToString("yyyy-MM-dd HH:mm:ss")),
+                            new XAttribute("CreatedAt", use.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"))
                             ));
                         }
                     }
-
-                    doc.Root.Add(sheetEl);
+                    doc.Root.Add(sheet1);
                 }
-
                 doc.Save(_filePath);
-                System.Diagnostics.Debug.WriteLine($"SaveToFile: Saved {_sheets.Count} sheets");
+                System.Diagnostics.Debug.WriteLine("SaveToFile: Saved {_sheets.Count} sheets");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error saving file: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine("Error saving file: {ex.Message}");
                 throw new Exception($"Failed to save: {ex.Message}", ex);
             }
         }
