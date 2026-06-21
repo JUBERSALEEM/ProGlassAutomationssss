@@ -15,7 +15,15 @@ namespace ProGlassAutomation.Views.Optimization
 
     public enum RotationPolicy
     {
-        None = 0, Rotate90 = 1, BestFit = 2, FirstFit = 3, StripFill = 4, ColumnFill = 5, RowFill = 6
+        None = 0,
+        Rotate90 = 1,
+        BestFit = 2,
+        FirstFit = 3,
+        StripFill = 4,
+        ColumnFill = 5,
+        RowFill = 6,
+        DynamicBest = 7,
+        ComplexRotation = 8 // Evaluates snap safety, aspect matching, and boundary flush cuts
     }
 
     public enum NestingStrategy
@@ -46,7 +54,7 @@ namespace ProGlassAutomation.Views.Optimization
         // =====================================================
         private double _lr = 15, _br = 15, _tr = 15, _rm = 15, _kerf = 4.0, _breakout = 4.0;
         private double _bridgeWidth = 15;
-        private RotationPolicy _rotationPolicy = RotationPolicy.BestFit;
+        private RotationPolicy _rotationPolicy = RotationPolicy.ComplexRotation;
         private NestingStrategy _nestingStrategy = NestingStrategy.ComplexIQ200V7;
 
         private Random _rng = new Random(42);
@@ -105,7 +113,7 @@ namespace ProGlassAutomation.Views.Optimization
         }
 
         // =====================================================
-        // ROTATION HELPER (ENABLED BY DEFAULT)
+        // ROTATION HELPER
         // =====================================================
 
         private struct Orientation
@@ -133,11 +141,14 @@ namespace ProGlassAutomation.Views.Optimization
 
             list.Add(new Orientation { Width = part.L, Height = part.W, IsRotated = false });
 
-            if (part.Rot || _rotationPolicy == RotationPolicy.BestFit ||
+            if (part.Rot ||
+                _rotationPolicy == RotationPolicy.BestFit ||
                 _rotationPolicy == RotationPolicy.FirstFit ||
                 _rotationPolicy == RotationPolicy.StripFill ||
                 _rotationPolicy == RotationPolicy.ColumnFill ||
-                _rotationPolicy == RotationPolicy.RowFill)
+                _rotationPolicy == RotationPolicy.RowFill ||
+                _rotationPolicy == RotationPolicy.DynamicBest ||
+                _rotationPolicy == RotationPolicy.ComplexRotation)
             {
                 list.Add(new Orientation { Width = part.W, Height = part.L, IsRotated = true });
             }
@@ -203,13 +214,23 @@ namespace ProGlassAutomation.Views.Optimization
             var allParts = ExpandAndConstrainParts(cutParts);
             if (allParts.Count == 0) return;
 
-            // FIX: Evaluate 4 different heuristic sequences and automatically execute the layout using the fewest sheets
             var sequences = new List<List<CutPart>>
             {
                 allParts.OrderByDescending(x => x.L * x.W).ThenByDescending(x => Math.Max(x.L, x.W)).ToList(), // Area Desc
                 allParts.OrderBy(x => x.L * x.W).ThenBy(x => Math.Min(x.L, x.W)).ToList(),                    // Area Asc (Small first)
                 allParts.OrderByDescending(x => Math.Max(x.L, x.W)).ThenByDescending(x => x.L * x.W).ToList(), // Max Dim Desc
-                allParts.OrderBy(x => Math.Min(x.L, x.W)).ThenBy(x => x.L * x.W).ToList()                     // Min Dim Asc
+                allParts.OrderBy(x => Math.Min(x.L, x.W)).ThenBy(x => x.L * x.W).ToList(),                    // Min Dim Asc
+
+                // Guillotine dimension grouping (aligns matching widths/heights to fit cleanly into strips)
+                allParts.GroupBy(x => Math.Max(x.L, x.W))
+                        .OrderByDescending(g => g.Key)
+                        .SelectMany(g => g.OrderByDescending(x => Math.Min(x.L, x.W)))
+                        .ToList(),
+
+                // Aspect ratio grouping
+                allParts.OrderByDescending(x => Math.Max(x.L, x.W) / Math.Min(x.L, x.W))
+                        .ThenByDescending(x => x.L * x.W)
+                        .ToList()
             };
 
             List<CutPart> bestSeq = sequences[0];
@@ -528,8 +549,8 @@ namespace ProGlassAutomation.Views.Optimization
 
             var seededSequences = new List<List<CutPart>>
             {
-                allParts.OrderByDescending(x => x.L * x.W).ToList(), // Large Area Descending
-                allParts.OrderBy(x => x.L * x.W).ToList(),           // Small Area Descending (forces tight 13/14-stack sheets first)
+                allParts.OrderByDescending(x => x.L * x.W).ToList(),
+                allParts.OrderBy(x => x.L * x.W).ToList(),
                 allParts.OrderByDescending(x => Math.Max(x.L, x.W)).ToList(),
                 allParts.OrderByDescending(x => Math.Min(x.L, x.W)).ToList()
             };
@@ -906,7 +927,6 @@ namespace ProGlassAutomation.Views.Optimization
             double remW = rect.Width - w;
             double remH = rect.Height - h;
 
-            // FIX: If the remaining gap matches standard rounding or kerf cuts, bypass waste penalties entirely (perfect flush)
             double wasteW = 0;
             if (remW > 0.1)
             {
@@ -965,6 +985,49 @@ namespace ProGlassAutomation.Views.Optimization
                 return score;
             }
 
+            // Apply complex rotation-specific scoring adjustments
+            if (_rotationPolicy == RotationPolicy.ComplexRotation)
+            {
+                // 1. Aspect Ratio Alignment: Lay the long side of the part along the long side of the free rect.
+                // This keeps leftover spaces wide and usable rather than skinny and restricted.
+                bool rectIsWide = rect.Width >= rect.Height;
+                bool partIsWide = w >= h;
+                if (rectIsWide == partIsWide)
+                {
+                    score -= 15000;
+                }
+                else
+                {
+                    score += 8000;
+                }
+
+                // 2. Snap/Breakout sliver protection:
+                // If the split leaves a leftover gap smaller than the breakout margin, it represents unrecoverable scrap.
+                if (remW > 0.1 && remW < _breakout)
+                {
+                    score += 200000; // Severe penalty for creating unusable sliver on width
+                }
+                if (remH > 0.1 && remH < _breakout)
+                {
+                    score += 200000; // Severe penalty for creating unusable sliver on height
+                }
+
+                // 3. Guillotine-flush edge alignment:
+                // If a dimension matches the container exactly, it prevents nested cuts.
+                if (Math.Abs(remW) < EPSILON || Math.Abs(remW - _kerf) < 1.0)
+                {
+                    score -= 50000;
+                }
+
+                if (Math.Abs(remH) < EPSILON || Math.Abs(remH - _kerf) < 1.0)
+                {
+                    score -= 50000;
+                }
+            }
+
+            double shortGap = 0.0;
+            double longGap = 0.0;
+
             switch (strategy)
             {
                 case NestingStrategy.BestArea:
@@ -972,13 +1035,13 @@ namespace ProGlassAutomation.Views.Optimization
                     break;
 
                 case NestingStrategy.ShortSideFit:
-                    double shortGap = Math.Min(remW, remH);
+                    shortGap = Math.Min(remW, remH);
                     score += shortGap > 0 ? shortGap * 10 : -shortGap * 50;
                     score += localWaste * 5.0 + rect.Y * 50 + rect.X;
                     break;
 
                 case NestingStrategy.LongSideFit:
-                    double longGap = Math.Max(remW, remH);
+                    longGap = Math.Max(remW, remH);
                     score += longGap > 0 ? longGap * 10 : -longGap * 50;
                     score += localWaste * 5.0 + rect.Y * 50 + rect.X;
                     break;
@@ -1022,7 +1085,13 @@ namespace ProGlassAutomation.Views.Optimization
 
                 case NestingStrategy.ComplexIQ200V7:
                 default:
-                    score += (localWaste * 150.0) + (aspectDiff * 80.0) + (rect.Y * 800.0) + (rect.X * 15.0) + (rect.Area - (w * h)) * 0.05;
+
+                    score += (localWaste * 500.0)
+                          + (shortGap * 100.0)
+                          + (longGap * 10.0)
+                          + (aspectDiff * 50.0)
+                          + (rect.Y * 50.0)
+                          + (rect.X * 10.0);
                     break;
             }
 
@@ -1031,7 +1100,7 @@ namespace ProGlassAutomation.Views.Optimization
 
         private double ScorePlacementSkyline(MaxRect rect, double w, double h)
         {
-            double posScore = rect.Y * 10000;
+            double posScore = rect.Y * 500;
             double fillScore = 0;
             if (rect.Height >= h && rect.Width >= w)
             {
@@ -1055,7 +1124,7 @@ namespace ProGlassAutomation.Views.Optimization
             if (shortSide >= 0) score += shortSide * 2;
             else score -= shortSide * 5;
 
-            score += rect.Y * 10 + rect.X;
+            score += rect.Y * 2 + rect.X;
             return score;
         }
 
@@ -1113,13 +1182,12 @@ namespace ProGlassAutomation.Views.Optimization
 
             _freeRects.Remove(usedRect);
 
-            double splitX = placement.X + w + _kerf;
-            double splitY = placement.Y + h + _kerf;
+            double splitX = placement.X + w;
+            double splitY = placement.Y + h;
 
             double rightW = (usedRect.X + usedRect.Width) - splitX;
             double bottomH = (usedRect.Y + usedRect.Height) - splitY;
 
-            // FIX: Disjoint non-overlapping splits that use full leftover dimensions
             if (rightW * usedRect.Height > bottomH * usedRect.Width)
             {
                 if (rightW > _breakout && usedRect.Height > _breakout)
@@ -1140,7 +1208,9 @@ namespace ProGlassAutomation.Views.Optimization
 
             MergeFreeRectsImproved(_freeRects);
 
-            _freeRects.RemoveAll(r => r.Area < _breakout * _breakout * 2);
+            _freeRects.RemoveAll(r =>
+    r.Width < _breakout ||
+    r.Height < _breakout);
             PruneContainedFreeRects(_freeRects);
         }
 
@@ -1161,7 +1231,6 @@ namespace ProGlassAutomation.Views.Optimization
             double rightW = (usedRect.X + usedRect.Width) - splitX;
             double bottomH = (usedRect.Y + usedRect.Height) - splitY;
 
-            // FIX: Disjoint non-overlapping splits that use full leftover dimensions
             if (rightW * usedRect.Height > bottomH * usedRect.Width)
             {
                 if (rightW > _breakout && usedRect.Height > _breakout)
@@ -1174,14 +1243,16 @@ namespace ProGlassAutomation.Views.Optimization
             else
             {
                 if (rightW > _breakout && (usedRect.Height - bottomH) > _breakout)
-                    freeRects.Add(new MaxRect(splitX, usedRect.Y, rightW, usedRect.Height - bottomH));
+                    freeRects.Add(new MaxRect(splitX, usedRect.Y, rightW, freeRects.Count > 0 ? usedRect.Height - bottomH : usedRect.Height - bottomH));
 
                 if (bottomH > _breakout && usedRect.Width > _breakout)
                     freeRects.Add(new MaxRect(usedRect.X, splitY, usedRect.Width, bottomH));
             }
 
             MergeFreeRectsImproved(freeRects);
-            freeRects.RemoveAll(r => r.Area < 50000);
+            freeRects.RemoveAll(r =>
+    r.Width < _breakout ||
+    r.Height < _breakout);
         }
 
         private void MergeFreeRectsImproved(List<MaxRect> rects)
@@ -1274,13 +1345,15 @@ namespace ProGlassAutomation.Views.Optimization
 
         private double RunSecondPassNesting(List<CutPart> unplacedParts)
         {
-            if (!_twoPassEnabled || unplacedParts.Count == 0) return 0;
+            if (!_twoPassEnabled || !unplacedParts.Any()) return 0;
             if (_remnants.Count == 0) return 0;
 
-            var usableRemnants = _remnants.Where(r => !r.IsReused && r.ValueScore > 0.2).OrderByDescending(r => r.Area).ToList();
-            if (usableRemnants.Count == 0) return 0;
+            var usableRemnants = _remnants.Where(r => !r.IsReused && r.ValueScore > 0.2).OrderByDescending(r => r.Area);
+            if (!usableRemnants.Any()) return 0;
 
             double partsAreaOnRemnants = 0;
+
+            int partIndex = 0;
 
             foreach (var remnant in usableRemnants)
             {
@@ -1290,6 +1363,15 @@ namespace ProGlassAutomation.Views.Optimization
                 foreach (var part in unplacedParts)
                 {
                     if (part.IsPlaced) continue;
+
+                    if (partIndex < 6)
+                    {
+                        _rotationPolicy = RotationPolicy.Rotate90;
+                    }
+                    else
+                    {
+                        _rotationPolicy = RotationPolicy.None;
+                    }
 
                     var orientations = GetAllowedOrientations(part);
 
@@ -1337,6 +1419,7 @@ namespace ProGlassAutomation.Views.Optimization
                     placedOnRemnant.Add((newX, newY, placeW, placeH));
 
                     remnantFreeRects.Remove(bestRect);
+
                     double splitX = newX + placeW + _kerf;
                     double splitY = newY + placeH + _kerf;
 
@@ -1347,10 +1430,12 @@ namespace ProGlassAutomation.Views.Optimization
                         remnantFreeRects.Add(new MaxRect(splitX, bestRect.Y, rightW, bestRect.Height));
                     if (bottomH > _breakout && bestRect.Width > _breakout)
                         remnantFreeRects.Add(new MaxRect(bestRect.X, splitY, bestRect.Width, bottomH));
-                }
 
-                if (placedOnRemnant.Count > 0)
-                    remnant.IsReused = true;
+                    if (placedOnRemnant.Count > 0)
+                        remnant.IsReused = true;
+
+                    partIndex++;
+                }
             }
 
             _totalPartsUnplaced = unplacedParts.Count(p => !p.IsPlaced);
@@ -1692,7 +1777,7 @@ namespace ProGlassAutomation.Views.Optimization
         public List<Point> GetToolpathPoints()
         {
             var points = new List<Point>();
-            foreach (var op in Operations.OrderBy(o => o.Sequence)) // FIX: Changed 'op.Sequence' to 'o.Sequence'
+            foreach (var op in Operations.OrderBy(o => o.Sequence))
             {
                 points.Add(new Point(op.StartX, op.StartY));
                 points.Add(new Point(op.EndX, op.EndY));

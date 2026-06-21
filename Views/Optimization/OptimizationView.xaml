@@ -4,37 +4,39 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
-             d:DesignHeight="950" d:DesignWidth="1650"
-             Background="#F8FAFC">
+             d:DesignHeight="1000" d:DesignWidth="1685"
+             Background="#070D1A">
 
     <UserControl.Resources>
-        <!-- Modern Light Theme Palette -->
-        <SolidColorBrush x:Key="PanelBg" Color="#FFFFFF"/>
-        <SolidColorBrush x:Key="PanelBorder" Color="#E2E8F0"/>
-        <SolidColorBrush x:Key="AccentBlue" Color="#2563EB"/>
-        <SolidColorBrush x:Key="AccentBlueHover" Color="#1D4ED8"/>
-        <SolidColorBrush x:Key="AccentBlueLight" Color="#EFF6FF"/>
-        <SolidColorBrush x:Key="AccentGreen" Color="#10B981"/>
-        <SolidColorBrush x:Key="AccentOrange" Color="#F59E0B"/>
-        <SolidColorBrush x:Key="AccentRed" Color="#EF4444"/>
-        <SolidColorBrush x:Key="TextMain" Color="#0F172A"/>
+        <!-- Cyber Manufacturing Dark Theme Palette -->
+        <SolidColorBrush x:Key="BgDark" Color="#070D1A"/>
+        <SolidColorBrush x:Key="BgPanel" Color="#0E1728"/>
+        <SolidColorBrush x:Key="BgCard" Color="#101B30"/>
+        <SolidColorBrush x:Key="BgControl" Color="#1E293B"/>
+        <SolidColorBrush x:Key="AccentCyan" Color="#29B6FF"/>
+        <SolidColorBrush x:Key="AccentGreen" Color="#00E676"/>
+        <SolidColorBrush x:Key="NeonGreen" Color="#00E676"/>
+        <SolidColorBrush x:Key="NeonOrange" Color="#FFB300"/>
+        <SolidColorBrush x:Key="NeonRed" Color="#FF5252"/>
+        <SolidColorBrush x:Key="PanelBorder" Color="#1E293B"/>
+        <SolidColorBrush x:Key="TextMain" Color="#F8FAFC"/>
         <SolidColorBrush x:Key="TextSub" Color="#64748B"/>
         <SolidColorBrush x:Key="TextWhite" Color="#FFFFFF"/>
-        <SolidColorBrush x:Key="BgControl" Color="#F1F5F9"/>
 
-        <!-- Active/Inactive Navigation Tabs -->
+        <!-- Glassmorphism Tab Styles -->
         <Style x:Key="TabActive" TargetType="Button">
-            <Setter Property="Background" Value="{DynamicResource AccentBlue}"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextWhite}"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="14,10"/>
+            <Setter Property="Background" Value="#1E293B"/>
+            <Setter Property="Foreground" Value="#29B6FF"/>
+            <Setter Property="BorderBrush" Value="#29B6FF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="12,8"/>
             <Setter Property="FontSize" Value="11"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                     </ControlTemplate>
@@ -43,23 +45,25 @@
         </Style>
 
         <Style x:Key="TabInactive" TargetType="Button">
-            <Setter Property="Background" Value="{DynamicResource BgControl}"/>
+            <Setter Property="Background" Value="#101B30"/>
             <Setter Property="Foreground" Value="{DynamicResource TextSub}"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="14,10"/>
+            <Setter Property="BorderBrush" Value="#1E293B"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="12,8"/>
             <Setter Property="FontSize" Value="11"/>
-            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#E2E8F0"/>
+                                <Setter TargetName="border" Property="Background" Value="#1E293B"/>
                                 <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="#29B6FF"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -67,22 +71,23 @@
             </Setter>
         </Style>
 
-        <!-- Clean modern DataGrid styles -->
+        <!-- Enterprise Dark Theme DataGrid Header -->
         <Style x:Key="DataGridHeaderStyle" TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="{DynamicResource BgControl}"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+            <Setter Property="Background" Value="#101B30"/>
+            <Setter Property="Foreground" Value="#29B6FF"/>
             <Setter Property="FontSize" Value="11"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Padding" Value="10,8"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource PanelBorder}"/>
-            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="BorderBrush" Value="#1E293B"/>
+            <Setter Property="BorderThickness" Value="0,0,1,1"/>
         </Style>
 
+        <!-- Enterprise Dark Theme DataGrid Cell -->
         <Style x:Key="DataGridCellStyle" TargetType="DataGridCell">
-            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Padding" Value="8,4"/>
             <Setter Property="BorderThickness" Value="0,0,0,1"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource PanelBorder}"/>
-            <Setter Property="Background" Value="#FFFFFF"/>
+            <Setter Property="BorderBrush" Value="#1E293B"/>
+            <Setter Property="Background" Value="#0E1728"/>
             <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Template">
@@ -96,20 +101,20 @@
             </Setter>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="{DynamicResource AccentBlueLight}"/>
-                    <Setter Property="Foreground" Value="{DynamicResource AccentBlue}"/>
+                    <Setter Property="Background" Value="#172554"/>
+                    <Setter Property="Foreground" Value="#29B6FF"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
 
-        <!-- Input Box Styling -->
+        <!-- Glowing Neon TextBoxes -->
         <Style TargetType="TextBox">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource PanelBorder}"/>
+            <Setter Property="Background" Value="#070D1A"/>
+            <Setter Property="BorderBrush" Value="#334155"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
-            <Setter Property="Padding" Value="8,6"/>
-            <Setter Property="SelectionBrush" Value="{DynamicResource AccentBlue}"/>
+            <Setter Property="Foreground" Value="#F8FAFC"/>
+            <Setter Property="Padding" Value="6,4"/>
+            <Setter Property="SelectionBrush" Value="#29B6FF"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
@@ -118,7 +123,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsFocused" Value="True">
-                                <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource AccentBlue}"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="#29B6FF"/>
                                 <Setter TargetName="border" Property="BorderThickness" Value="1"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -128,873 +133,900 @@
         </Style>
 
         <Style TargetType="ComboBox">
-            <Setter Property="Padding" Value="8,5"/>
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource PanelBorder}"/>
+            <Setter Property="Padding" Value="6,4"/>
+            <Setter Property="Background" Value="#070D1A"/>
+            <Setter Property="BorderBrush" Value="#334155"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextMain}"/>
+            <Setter Property="Foreground" Value="#F8FAFC"/>
         </Style>
 
-        <!-- Custom ListBoxItem container binding to synchronize clicks -->
         <Style x:Key="ListBoxItemStyle" TargetType="ListBoxItem">
             <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
         </Style>
     </UserControl.Resources>
 
-    <Grid Margin="8">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="450"/>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="340"/>
-        </Grid.ColumnDefinitions>
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <!-- 1. Premium Command Header -->
+            <RowDefinition Height="Auto"/>
+            <!-- 2. KPI Metrics Grid Row -->
+            <RowDefinition Height="*"/>
+            <!-- 3. Main Workspace -->
+        </Grid.RowDefinitions>
 
-        <!-- ================= LEFT COLUMN: PERSISTENT SIDEBAR ================= -->
-        <Border Background="{DynamicResource PanelBg}" CornerRadius="8" BorderBrush="{DynamicResource PanelBorder}" BorderThickness="1" Margin="5">
+        <!-- ================= 1. PREMIUM HEADER BAR ================= -->
+        <Border Grid.Row="0" Background="{StaticResource BgPanel}" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1" CornerRadius="12" Padding="15,10" Margin="0,0,0,15">
             <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-                <!-- Modern Title Header -->
-                <Border Background="{DynamicResource AccentBlueLight}" CornerRadius="8,8,0,0" Padding="18,15">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="🔵" FontSize="20" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                        <StackPanel Grid.Column="1">
-                            <TextBlock Text="GLASS CUT OPTIMIZER" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
-                            <TextBlock Text="Nirvana Glass Pattern Layouts" FontSize="10" Foreground="{DynamicResource TextSub}"/>
-                        </StackPanel>
-                    </Grid>
-                </Border>
+                <!-- Left: Corporate Branding & Engine Info -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Grid.Column="0">
+                    <TextBlock Text="🔷" FontSize="20" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <StackPanel>
+                        <TextBlock Text="PROGLASS AUTOMATION" FontSize="14" FontWeight="Bold" Foreground="#29B6FF"/>
+                        <TextBlock Text="Workstation Operator Interface — Version 7.5.2 [Stable]" FontSize="10" Foreground="{DynamicResource TextSub}"/>
+                    </StackPanel>
+                </StackPanel>
 
-                <!-- Clean Horizontal Tab Switcher -->
-                <Border Grid.Row="1" Background="#FFFFFF" BorderBrush="{DynamicResource PanelBorder}" BorderThickness="0,0,0,1" Padding="12,10">
-                    <UniformGrid Columns="5">
-                        <Button x:Name="btnStock" Content="STOCK" Click="OptTab_Click" Tag="Stock" Style="{StaticResource TabActive}" Margin="2,0"/>
-                        <Button x:Name="btnParts" Content="PARTS" Click="OptTab_Click" Tag="Parts" Style="{StaticResource TabInactive}" Margin="2,0"/>
-                        <Button x:Name="btnSettings" Content="CONFIG" Click="OptTab_Click" Tag="Settings" Style="{StaticResource TabInactive}" Margin="2,0"/>
-                        <Button x:Name="btnSummary" Content="LAYOUTS" Click="OptTab_Click" Tag="Layouts" Style="{StaticResource TabInactive}" Margin="2,0"/>
-                        <Button x:Name="btnReport" Content="REPORT" Click="OptTab_Click" Tag="Report" Style="{StaticResource TabInactive}" Margin="2,0"/>
-                    </UniformGrid>
-                </Border>
+                <!-- Center: Industrial Presets Switcher -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="1">
+                    <TextBlock Text="OPERATIONAL LAYOUT PRESETS:" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSub}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <Button Content="Standard Windows" Style="{StaticResource TabInactive}" Padding="10,5" Margin="2,0" FontSize="10"/>
+                    <Button Content="Architectural Glass" Style="{StaticResource TabInactive}" Padding="10,5" Margin="2,0" FontSize="10"/>
+                    <Button Content="Shower Enclosures" Style="{StaticResource TabInactive}" Padding="10,5" Margin="2,0" FontSize="10"/>
+                    <Button Content="Compact Nesting" Style="{StaticResource TabActive}" Padding="10,5" Margin="2,0" FontSize="10"/>
+                </StackPanel>
 
-                <!-- Multi-Page Content Area -->
-                <Grid Grid.Row="2" Margin="14">
-
-                    <!-- 1. STOCK PANEL -->
-                    <Grid x:Name="pnlStock" Visibility="Visible">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-
-                        <Grid Margin="0,0,0,12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="AVAILABLE STOCK SHEETS" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/>
-                                <TextBlock Text="Standard or custom inventory sheets" FontSize="10" Foreground="{DynamicResource TextSub}"/>
-                            </StackPanel>
-                            <Button Grid.Column="1" Content="+ Add Sheet" Click="AddStockSheet_Click" 
-                                    Background="{DynamicResource AccentGreen}" Foreground="White" BorderThickness="0" Padding="12,6" FontSize="11" FontWeight="SemiBold" Cursor="Hand">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
-                                            <ContentPresenter HorizontalAlignment="Center"/>
-                                        </Border>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
-                        </Grid>
-
-                        <DataGrid x:Name="dgStock" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="True"
-                                  Background="#FFFFFF" BorderBrush="{DynamicResource PanelBorder}" BorderThickness="1"
-                                  GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource PanelBorder}"
-                                  RowHeight="34" ColumnHeaderStyle="{StaticResource DataGridHeaderStyle}"
-                                  CellStyle="{StaticResource DataGridCellStyle}"
-                                  AllowDrop="True" PreviewMouseLeftButtonDown="DG_PreviewMouseLeftButtonDown" Drop="DG_Drop">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="REF" Binding="{Binding Ref, UpdateSourceTrigger=LostFocus}" Width="75"/>
-                                <DataGridTextColumn Header="WIDTH (mm)" Binding="{Binding L, StringFormat=N0}" Width="95"/>
-                                <DataGridTextColumn Header="HEIGHT (mm)" Binding="{Binding W, StringFormat=N0}" Width="95"/>
-                                <DataGridTextColumn Header="QTY" Binding="{Binding Qty, StringFormat=N0}" Width="70"/>
-                                <DataGridTemplateColumn Width="35">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <Button Content="✕" FontSize="11" Foreground="{DynamicResource AccentRed}" Background="Transparent" 
-                                                    BorderThickness="0" Cursor="Hand" Click="DeleteStockRow_Click"/>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                            </DataGrid.Columns>
-                        </DataGrid>
-
-                        <Border Grid.Row="2" Background="{DynamicResource BgControl}" CornerRadius="6" Padding="12" Margin="0,12,0,0">
-                            <StackPanel>
-                                <TextBlock Text="📋 INVENTORY SUMMARY" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentBlue}" Margin="0,0,0,6"/>
-                                <TextBlock x:Name="txtStockSummary" Text="No stock added" FontSize="11" Foreground="{DynamicResource TextSub}" TextWrapping="Wrap"/>
-                            </StackPanel>
-                        </Border>
-                    </Grid>
-
-                    <!-- 2. PARTS PANEL -->
-                    <Grid x:Name="pnlParts" Visibility="Collapsed">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-
-                        <Grid Margin="0,0,0,12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="PIECES TO CUT" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/>
-                                <TextBlock Text="Paste from Excel: Width Height Qty" FontSize="10" Foreground="{DynamicResource TextSub}"/>
-                            </StackPanel>
-                            <Button Grid.Column="1" Content="+ Add Part" Click="AddPart_Click" 
-                                    Background="{DynamicResource AccentGreen}" Foreground="White" BorderThickness="0" Padding="12,6" FontSize="11" FontWeight="SemiBold" Cursor="Hand">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
-                                            <ContentPresenter HorizontalAlignment="Center"/>
-                                        </Border>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
-                        </Grid>
-
-                        <DataGrid x:Name="dgParts" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="True"
-                                  Background="#FFFFFF" BorderBrush="{DynamicResource PanelBorder}" BorderThickness="1"
-                                  GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource PanelBorder}"
-                                  RowHeight="34" ColumnHeaderStyle="{StaticResource DataGridHeaderStyle}"
-                                  CellStyle="{StaticResource DataGridCellStyle}"
-                                  AllowDrop="True" PreviewMouseLeftButtonDown="DG_PreviewMouseLeftButtonDown" Drop="DG_Drop">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="REF" Binding="{Binding Ref, UpdateSourceTrigger=LostFocus}" Width="75"/>
-                                <DataGridTextColumn Header="WIDTH (mm)" Binding="{Binding L, StringFormat=N0}" Width="85"/>
-                                <DataGridTextColumn Header="HEIGHT (mm)" Binding="{Binding W, StringFormat=N0}" Width="85"/>
-                                <DataGridCheckBoxColumn Header="ROT" Binding="{Binding Rot, UpdateSourceTrigger=PropertyChanged}" Width="45"/>
-                                <DataGridTextColumn Header="QTY" Binding="{Binding Qty, StringFormat=N0}" Width="60"/>
-                                <DataGridTemplateColumn Width="35">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <Button Content="✕" FontSize="11" Foreground="{DynamicResource AccentRed}" Background="Transparent" 
-                                                    BorderThickness="0" Cursor="Hand" Click="DeletePartRow_Click"/>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                            </DataGrid.Columns>
-                        </DataGrid>
-
-                        <Border Grid.Row="2" Background="{DynamicResource BgControl}" CornerRadius="6" Padding="12" Margin="0,12,0,0">
-                            <StackPanel>
-                                <TextBlock Text="✂️ PRODUCTION ORDER SUMMARY" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentBlue}" Margin="0,0,0,6"/>
-                                <TextBlock x:Name="txtPartsSummary" Text="No parts added" FontSize="11" Foreground="{DynamicResource TextSub}" TextWrapping="Wrap"/>
-                            </StackPanel>
-                        </Border>
-                    </Grid>
-
-                    <!-- 3. CONFIGURATION PANEL -->
-                    <Grid x:Name="pnlSettings" Visibility="Collapsed">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto">
-                            <StackPanel>
-                                <TextBlock Text="GLOBAL CONFIGURATIONS" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}" Margin="0,0,0,12"/>
-
-                                <!-- Edge Trim Settings -->
-                                <Border Background="{DynamicResource BgControl}" CornerRadius="6" Padding="14" Margin="0,0,0,12">
-                                    <StackPanel>
-                                        <TextBlock Text="EDGE TRIM &amp; MARGINS (mm)" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSub}" Margin="0,0,0,12"/>
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                            </Grid.RowDefinitions>
-
-                                            <StackPanel Grid.Column="0" Margin="0,0,6,10">
-                                                <TextBlock Text="Left" FontSize="10" Foreground="{DynamicResource TextSub}" Margin="0,0,0,4"/>
-                                                <TextBox x:Name="txtLR" Text="15" TextAlignment="Center" FontSize="12"/>
-                                            </StackPanel>
-
-                                            <StackPanel Grid.Column="1" Margin="0,0,6,10">
-                                                <TextBlock Text="Bottom" FontSize="10" Foreground="{DynamicResource TextSub}" Margin="0,0,0,4"/>
-                                                <TextBox x:Name="txtBR" Text="15" TextAlignment="Center" FontSize="12"/>
-                                            </StackPanel>
-
-                                            <StackPanel Grid.Column="2" Margin="0,0,6,10">
-                                                <TextBlock Text="Top" FontSize="10" Foreground="{DynamicResource TextSub}" Margin="0,0,0,4"/>
-                                                <TextBox x:Name="txtTR" Text="15" TextAlignment="Center" FontSize="12"/>
-                                            </StackPanel>
-
-                                            <StackPanel Grid.Column="3" Margin="0,0,0,10">
-                                                <TextBlock Text="Right" FontSize="10" Foreground="{DynamicResource TextSub}" Margin="0,0,0,4"/>
-                                                <TextBox x:Name="txtRM" Text="15" TextAlignment="Center" FontSize="12"/>
-                                            </StackPanel>
-
-                                            <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,0,6,0">
-                                                <TextBlock Text="Blade Kerf (mm)" FontSize="10" Foreground="{DynamicResource TextSub}" Margin="0,0,0,4"/>
-                                                <TextBox x:Name="txtKerf" Text="4" TextAlignment="Center" FontSize="12"/>
-                                            </StackPanel>
-
-                                            <StackPanel Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2">
-                                                <TextBlock Text="Min Breakout (mm)" FontSize="10" Foreground="{DynamicResource TextSub}" Margin="0,0,0,4"/>
-                                                <TextBox x:Name="txtBreakout" Text="15" TextAlignment="Center" FontSize="12"/>
-                                            </StackPanel>
-                                        </Grid>
-                                    </StackPanel>
-                                </Border>
-
-                                <!-- Orientation Policies -->
-                                <Border Background="{DynamicResource BgControl}" CornerRadius="6" Padding="14" Margin="0,0,0,15">
-                                    <StackPanel>
-                                        <TextBlock Text="NESTING OPTIONS" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSub}" Margin="0,0,0,12"/>
-                                        <CheckBox x:Name="chkAutoRotate" Content="Allow rotation (90° grain adjustment)" IsChecked="False" Foreground="{DynamicResource TextMain}" FontSize="11" Margin="0,0,0,10"/>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="Nesting Strategy:" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center" Margin="0,0,12,0" FontSize="11"/>
-                                            <ComboBox x:Name="cmbRotation" Width="160" SelectedIndex="2">
-                                                <ComboBoxItem Content="No Rotation"/>
-                                                <ComboBoxItem Content="Rotate 90° Only"/>
-                                                <ComboBoxItem Content="Best Fit Alignment"/>
-                                                <ComboBoxItem Content="First Fit Alignment"/>
-                                                <ComboBoxItem Content="Strip Fill Packing"/>
-                                                <ComboBoxItem Content="Column Fill Packing"/>
-                                                <ComboBoxItem Content="Row Fill Packing"/>
-                                            </ComboBox>
-                                        </StackPanel>
-                                    </StackPanel>
-                                </Border>
-
-                                <!-- Controls -->
-                                <Button Content="▶ RUN OPTIMIZATION" Click="RunOptimization_Click" 
-                                        Background="{DynamicResource AccentBlue}" Foreground="White" BorderThickness="0" 
-                                        Padding="16,12" FontSize="12" FontWeight="Bold" Cursor="Hand" Margin="0,0,0,8">
-                                    <Button.Template>
-                                        <ControlTemplate TargetType="Button">
-                                            <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="6">
-                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                            </Border>
-                                            <ControlTemplate.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="border" Property="Background" Value="{DynamicResource AccentBlueHover}"/>
-                                                </Trigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </Button.Template>
-                                </Button>
-
-                                <Button Content="Clear Canvas &amp; Data" Click="ClearOptimization_Click" 
-                                        Background="{DynamicResource BgControl}" Foreground="{DynamicResource AccentRed}" BorderThickness="0" 
-                                        Padding="16,10" FontSize="11" FontWeight="SemiBold" Cursor="Hand">
-                                    <Button.Template>
-                                        <ControlTemplate TargetType="Button">
-                                            <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="6">
-                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                            </Border>
-                                            <ControlTemplate.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="border" Property="Background" Value="#E2E8F0"/>
-                                                </Trigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </Button.Template>
-                                </Button>
-
-                                <!-- Re-added Light-Theme Quick Summary Metric Card -->
-                                <Border Background="{DynamicResource BgControl}" CornerRadius="6" Padding="12" Margin="0,15,0,0">
-                                    <StackPanel>
-                                        <TextBlock Text="QUICK SUMMARY" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentOrange}" Margin="0,0,0,10"/>
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                            </Grid.RowDefinitions>
-
-                                            <Border Background="#FFFFFF" BorderBrush="{DynamicResource PanelBorder}" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,0,4,4">
-                                                <StackPanel>
-                                                    <TextBlock Text="Sheets Used" FontSize="10" Foreground="{DynamicResource TextSub}"/>
-                                                    <TextBlock x:Name="txtSheetsUsed" Text="0" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
-                                                </StackPanel>
-                                            </Border>
-
-                                            <Border Grid.Column="1" Background="#FFFFFF" BorderBrush="{DynamicResource PanelBorder}" BorderThickness="1" CornerRadius="4" Padding="8" Margin="4,0,0,4">
-                                                <StackPanel>
-                                                    <TextBlock Text="Sheets Left" FontSize="10" Foreground="{DynamicResource TextSub}"/>
-                                                    <TextBlock x:Name="txtSheetsRemaining" Text="0" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource AccentGreen}"/>
-                                                </StackPanel>
-                                            </Border>
-
-                                            <Border Grid.Row="1" Background="#FFFFFF" BorderBrush="{DynamicResource PanelBorder}" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,4,4,0">
-                                                <StackPanel>
-                                                    <TextBlock Text="Utilization" FontSize="10" Foreground="{DynamicResource TextSub}"/>
-                                                    <TextBlock x:Name="txtUtilization" Text="0%" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource AccentGreen}"/>
-                                                </StackPanel>
-                                            </Border>
-
-                                            <Border Grid.Row="1" Grid.Column="1" Background="#FFFFFF" BorderBrush="{DynamicResource PanelBorder}" BorderThickness="1" CornerRadius="4" Padding="8" Margin="4,4,0,0">
-                                                <StackPanel>
-                                                    <TextBlock Text="Wastage" FontSize="10" Foreground="{DynamicResource TextSub}"/>
-                                                    <TextBlock x:Name="txtWaste" Text="0%" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource AccentRed}"/>
-                                                </StackPanel>
-                                            </Border>
-                                        </Grid>
-                                    </StackPanel>
-                                </Border>
-                            </StackPanel>
-                        </ScrollViewer>
-                    </Grid>
-
-                    <!-- 4. LAYOUTS SELECT PANEL -->
-                    <Grid x:Name="pnlSummary" Visibility="Collapsed">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-
-                        <StackPanel Margin="0,0,0,10">
-                            <TextBlock Text="OPTIMIZED LAYOUTS" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/>
-                            <TextBlock Text="Select a pattern from the sequence index below" FontSize="10" Foreground="{DynamicResource TextSub}"/>
-                        </StackPanel>
-
-                        <!-- Page Nav Bar -->
-                        <Grid Grid.Row="1" Margin="0,0,0,10">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <Button Content="◀" Click="PrevLayout_Click" Background="{DynamicResource BgControl}" Foreground="{DynamicResource TextMain}" Padding="10,6" Margin="0,0,4,0" BorderThickness="0" Cursor="Hand">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border Background="{TemplateBinding Background}" CornerRadius="4">
-                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Border>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
-                            <ComboBox x:Name="cmbSheetSelector" Grid.Column="1" SelectionChanged="SheetSelector_Changed" Background="#FFFFFF" Foreground="{DynamicResource TextMain}">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding Ref}" Foreground="{DynamicResource TextMain}"/>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                            <TextBlock x:Name="txtLayoutNum" Grid.Column="2" Text="Page 1/1" Foreground="{DynamicResource TextSub}" VerticalAlignment="Center" Margin="8,0" FontSize="11"/>
-                            <Button Grid.Column="3" Content="▶" Click="NextLayout_Click" Background="{DynamicResource BgControl}" Foreground="{DynamicResource TextMain}" Padding="10,6" BorderThickness="0" Cursor="Hand">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border Background="{TemplateBinding Background}" CornerRadius="4">
-                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Border>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
-                        </Grid>
-
-                        <Border Grid.Row="2" Background="#F8FAFC" CornerRadius="6" BorderBrush="{DynamicResource PanelBorder}" BorderThickness="1">
-                            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                <Canvas x:Name="PreviewCanvas" Background="#F8FAFC"/>
-                            </ScrollViewer>
-                        </Border>
-
-                        <Border Grid.Row="3" Background="{DynamicResource BgControl}" CornerRadius="6" Padding="12" Margin="0,10,0,0">
-                            <TextBlock x:Name="txtCurrentLayoutStats" Text="No optimized sheets generated yet." FontSize="10.5" Foreground="{StaticResource TextSub}" TextWrapping="Wrap"/>
-                        </Border>
-                    </Grid>
-
-                    <!-- 5. ANALYTICAL REPORTS PANEL -->
-                    <Grid x:Name="pnlReport" Visibility="Collapsed">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto">
-                            <StackPanel x:Name="spReportDetails">
-                                <TextBlock Text="Run optimization to render analytical breakdown reports." FontSize="12" Foreground="{DynamicResource TextSub}" Margin="0,20,0,0" HorizontalAlignment="Center"/>
-                            </StackPanel>
-                        </ScrollViewer>
-                    </Grid>
-                </Grid>
+                <!-- Right: Action Commands Tray -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Grid.Column="2">
+                    <Button Content="💾 Save" Click="SaveJob_Click" Background="{StaticResource BgControl}" Foreground="{DynamicResource TextMain}" Padding="12,6" Margin="0,0,6,0" BorderThickness="0" Cursor="Hand"/>
+                    <Button Content="📊 Export CSV" Click="ExportResults_Click" Background="{StaticResource BgControl}" Foreground="{DynamicResource TextMain}" Padding="12,6" Margin="0,0,6,0" BorderThickness="0" Cursor="Hand"/>
+                    <Button Content="🖨️ Print Layout" Click="PrintLayouts_Click" Background="{StaticResource BgControl}" Foreground="{DynamicResource TextMain}" Padding="12,6" BorderThickness="0" Cursor="Hand"/>
+                </StackPanel>
             </Grid>
         </Border>
 
-        <!-- ================= CENTER COLUMN: DYNAMIC WORKSPACE ================= -->
-        <Border Background="{DynamicResource PanelBg}" CornerRadius="8" BorderBrush="{DynamicResource PanelBorder}" BorderThickness="1" Margin="6" Grid.Column="1">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
+        <!-- ================= 2. KPI DASHBOARD ROW ================= -->
+        <Grid Grid.Row="1" Margin="0,0,0,15">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
 
-                <!-- Workspace Bar -->
-                <Border Background="{DynamicResource AccentBlueLight}" CornerRadius="8,8,0,0" Padding="18,14">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <StackPanel>
-                            <TextBlock Text="2D PATTERN VISUALIZER" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
-                            <TextBlock x:Name="txtCurrentSheet" Text="Run cutting calculation to review schematic details" FontSize="10.5" Foreground="{DynamicResource TextSub}"/>
+            <!-- Card 1: Overall Yield -->
+            <Border Grid.Column="0" Background="{StaticResource BgPanel}" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1,1,1,3" CornerRadius="12" Margin="0,0,8,0" Padding="15,12">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="OVERALL PACKING YIELD" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSub}"/>
+                        <TextBlock x:Name="txtUtilization" Text="0.0%" FontSize="28" FontWeight="Bold" Foreground="{StaticResource NeonGreen}" Margin="0,4,0,0"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                            <TextBlock Text="Waste margin is " FontSize="9.5" Foreground="{DynamicResource TextSub}"/>
+                            <TextBlock x:Name="txtWaste" Text="0.0%" FontSize="9.5" FontWeight="Bold" Foreground="{StaticResource NeonRed}"/>
                         </StackPanel>
+                    </StackPanel>
+                    <Border Grid.Column="1" BorderBrush="{StaticResource NeonGreen}" BorderThickness="2" CornerRadius="18" Width="36" Height="36" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <TextBlock Text="Y" Foreground="{StaticResource NeonGreen}" FontSize="15" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </Grid>
+            </Border>
 
-                        <!-- Real-time Layout Adjustments -->
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="Part Search:" Foreground="{DynamicResource TextSub}" VerticalAlignment="Center" Margin="0,0,5,0" FontSize="11"/>
-                            <TextBox x:Name="txtFindPart" Width="90" Padding="6,4" FontSize="11" Margin="0,0,4,0" TextChanged="txtFindPart_TextChanged" KeyDown="txtFindPart_KeyDown"/>
-                            <Button Content="🔍" Click="btnFindNext_Click" Background="{DynamicResource AccentBlue}" Foreground="White" Padding="8,4" FontSize="11" BorderThickness="0" Cursor="Hand" Margin="0,0,12,0">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border Background="{TemplateBinding Background}" CornerRadius="4">
-                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Border>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
-
-                            <Button Content="−" Click="ZoomOut_Click" Background="{DynamicResource BgControl}" Foreground="{DynamicResource TextMain}" Padding="8,4" BorderThickness="0" Cursor="Hand">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border Background="{TemplateBinding Background}" CornerRadius="4">
-                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Border>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
-                            <TextBlock x:Name="txtZoom" Text="100%" Foreground="{DynamicResource TextMain}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="6,0" FontSize="11"/>
-                            <Button Content="+" Click="ZoomIn_Click" Background="{DynamicResource BgControl}" Foreground="{DynamicResource TextMain}" Padding="8,4" BorderThickness="0" Cursor="Hand" Margin="0,0,12,0">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border Background="{TemplateBinding Background}" CornerRadius="4">
-                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Border>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
-
-                            <TextBlock Text="Display Grid:" Foreground="{DynamicResource TextSub}" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="11"/>
-                            <Button Content="4" Click="SheetsPerPage4_Click" Background="{DynamicResource BgControl}" Foreground="{DynamicResource TextMain}" Padding="8,4" FontSize="10.5" BorderThickness="0" Cursor="Hand" Margin="2,0"/>
-                            <Button Content="6" Click="SheetsPerPage6_Click" Background="{DynamicResource BgControl}" Foreground="{DynamicResource TextMain}" Padding="8,4" FontSize="10.5" BorderThickness="0" Cursor="Hand" Margin="2,0"/>
-                            <Button Content="8" Click="SheetsPerPage8_Click" Background="{DynamicResource BgControl}" Foreground="{DynamicResource TextMain}" Padding="8,4" FontSize="10.5" BorderThickness="0" Cursor="Hand" Margin="2,0"/>
+            <!-- Card 2: Stock Allocation -->
+            <Border Grid.Column="1" Background="{StaticResource BgPanel}" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1,1,1,3" CornerRadius="12" Margin="4,0,8,0" Padding="15,12">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="STOCK GLASS QUANTITY" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSub}"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                            <TextBlock x:Name="txtSheetsUsed" Text="0" FontSize="28" FontWeight="Bold" Foreground="{StaticResource AccentCyan}"/>
+                            <TextBlock Text=" sheets utilized" FontSize="11" Foreground="{DynamicResource TextSub}" VerticalAlignment="Bottom" Margin="4,0,0,4"/>
                         </StackPanel>
-                    </Grid>
-                </Border>
+                        <TextBlock x:Name="txtSheetsRemaining" Text="0 inventory sheets left in bin" FontSize="9.5" Foreground="{DynamicResource TextSub}"/>
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Text="📥" FontSize="24" VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
 
-                <!-- Visualization Grid Container -->
-                <Grid Grid.Row="1" Margin="14">
+            <!-- Card 3: Cut Placements -->
+            <Border Grid.Column="2" Background="{StaticResource BgPanel}" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1,1,1,3" CornerRadius="12" Margin="4,0,8,0" Padding="15,12">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="COMPLETED PLACEMENTS" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSub}"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                            <!-- Unique x:Name designated as master controller input -->
+                            <TextBlock x:Name="txtTotalPartsCut" Text="0" FontSize="28" FontWeight="Bold" Foreground="{StaticResource AccentCyan}"/>
+                            <TextBlock Text=" parts cut" FontSize="11" Foreground="{DynamicResource TextSub}" VerticalAlignment="Bottom" Margin="4,0,0,4"/>
+                        </StackPanel>
+                        <TextBlock Text="All components processed safely" FontSize="9.5" Foreground="{DynamicResource TextSub}"/>
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Text="✂️" FontSize="24" VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+
+            <!-- Card 4: Financial Valuation -->
+            <Border Grid.Column="3" Background="{StaticResource BgPanel}" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1,1,1,3" CornerRadius="12" Margin="4,0,0,0" Padding="15,12">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="ESTIMATED RUN COST" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSub}"/>
+                        <!-- Unique x:Name designated as master financial valuation readout -->
+                        <TextBlock x:Name="txtTotalCost" Text="AED 0.00" FontSize="22" FontWeight="Bold" Foreground="{StaticResource NeonOrange}" Margin="0,5,0,0"/>
+                        <TextBlock Text="Economic raw material cost" FontSize="9.5" Foreground="{DynamicResource TextSub}"/>
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Text="💰" FontSize="24" VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ================= MAIN THREE-COLUMN WORKSPACE ================= -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="420"/>
+                <!-- Side Control Panel -->
+                <ColumnDefinition Width="*"/>
+                <!-- Real-time CAD Panel -->
+                <ColumnDefinition Width="360"/>
+                <!-- Process Analytics Panel -->
+            </Grid.ColumnDefinitions>
+
+            <!-- ================= COLUMN 1: SIDE CONTROL PANEL ================= -->
+            <Border Grid.Column="0" Background="{StaticResource BgPanel}" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1" CornerRadius="8" Margin="0,0,8,0">
+                <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Interactive Specification -->
-                    <Border Background="#F8FAFC" Padding="14" CornerRadius="6" BorderBrush="{DynamicResource PanelBorder}" BorderThickness="1" Margin="0,0,0,12">
-                        <Grid>
+                    <!-- Sidebar Header Info -->
+                    <Border Background="#151C30" CornerRadius="8,8,0,0" Padding="15,12">
+                        <StackPanel>
+                            <TextBlock Text="MANUFACTURING INPUT CONSOLE" FontSize="12" FontWeight="Bold" Foreground="#29B6FF"/>
+                            <TextBlock Text="Toggle inventories and production variables" FontSize="10" Foreground="{DynamicResource TextSub}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Sub Tab switcher -->
+                    <Border Grid.Row="1" Background="#111827" BorderThickness="0,0,0,1" BorderBrush="#1E293B" Padding="8">
+                        <UniformGrid Columns="5">
+                            <Button x:Name="btnStock" Content="STOCK" Click="OptTab_Click" Tag="Stock" Style="{StaticResource TabActive}" Margin="2,0"/>
+                            <Button x:Name="btnParts" Content="PARTS" Click="OptTab_Click" Tag="Parts" Style="{StaticResource TabInactive}" Margin="2,0"/>
+                            <Button x:Name="btnSettings" Content="CONFIG" Click="OptTab_Click" Tag="Settings" Style="{StaticResource TabInactive}" Margin="2,0"/>
+                            <Button x:Name="btnSummary" Content="LAYOUTS" Click="OptTab_Click" Tag="Layouts" Style="{StaticResource TabInactive}" Margin="2,0"/>
+                            <Button x:Name="btnReport" Content="REPORT" Click="OptTab_Click" Tag="Report" Style="{StaticResource TabInactive}" Margin="2,0"/>
+                        </UniformGrid>
+                    </Border>
+
+                    <!-- Multi-Page Content Host -->
+                    <Grid Grid.Row="2" Margin="12">
+
+                        <!-- Panel 1: Inventory Stock -->
+                        <Grid x:Name="pnlStock" Visibility="Visible">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="2*"/>
-                                <ColumnDefinition Width="3*"/>
-                            </Grid.ColumnDefinitions>
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Raw Material Inventories" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                <Button Grid.Column="1" Content="+ Add Sheet" Click="AddStockSheet_Click" Background="{StaticResource AccentGreen}" Foreground="White" BorderThickness="0" Padding="10,5" FontSize="10" FontWeight="Bold" Cursor="Hand">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </Grid>
 
-                            <StackPanel Grid.Column="0" Margin="0,0,14,0">
-                                <TextBlock Text="SELECT INVOICE SPECIFICATIONS" FontSize="11.5" FontWeight="Bold" Foreground="{DynamicResource AccentBlue}" Margin="0,0,0,4"/>
-                                <TextBlock Text="Ingest items from specific invoice structures" FontSize="9.5" Foreground="{DynamicResource TextSub}" Margin="0,0,0,8"/>
-                                <ListBox x:Name="lstSpecSelect" ItemContainerStyle="{StaticResource ListBoxItemStyle}" Height="90" SelectionMode="Multiple" SelectionChanged="lstSpecSelect_SelectionChanged" Background="#FFFFFF" BorderBrush="{DynamicResource PanelBorder}">
-                                    <ListBox.ItemTemplate>
-                                        <DataTemplate>
-                                            <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" Content="{Binding SpecificationName}" Foreground="{DynamicResource TextMain}" Margin="2,1" FontSize="11"/>
-                                        </DataTemplate>
-                                    </ListBox.ItemTemplate>
-                                </ListBox>
-                            </StackPanel>
+                            <DataGrid x:Name="dgStock" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="True"
+                                      Background="#070D1A" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1"
+                                      GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#1E293B" RowHeight="28"
+                                      ColumnHeaderStyle="{StaticResource DataGridHeaderStyle}" CellStyle="{StaticResource DataGridCellStyle}"
+                                      AllowDrop="True" PreviewMouseLeftButtonDown="DG_PreviewMouseLeftButtonDown" Drop="DG_Drop">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="REF ID" Binding="{Binding Ref, UpdateSourceTrigger=LostFocus}" Width="75"/>
+                                    <DataGridTextColumn Header="WIDTH (mm)" Binding="{Binding L, StringFormat=N0}" Width="95"/>
+                                    <DataGridTextColumn Header="HEIGHT (mm)" Binding="{Binding W, StringFormat=N0}" Width="95"/>
+                                    <DataGridTextColumn Header="QTY" Binding="{Binding Qty, StringFormat=N0}" Width="65"/>
+                                    <DataGridTemplateColumn Width="35">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Button Content="✕" FontSize="10" Foreground="{StaticResource NeonRed}" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="DeleteStockRow_Click"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
 
-                            <StackPanel Grid.Column="1">
-                                <Grid Margin="0,0,0,6">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="INGESTED ITEMS STREAM PREVIEW" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
-                                    <TextBlock x:Name="txtSelectedSpecCount" Grid.Column="1" Text="0 selected" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource AccentGreen}"/>
-                                </Grid>
-
-                                <Border Background="#FFFFFF" BorderBrush="{DynamicResource PanelBorder}" BorderThickness="1" CornerRadius="4" Height="90">
-                                    <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                        <ItemsControl x:Name="icCombinedPreview">
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
-                                                    <Border BorderBrush="{DynamicResource PanelBorder}" BorderThickness="0,0,0,1" Padding="8,4" Background="#FFFFFF">
-                                                        <Grid>
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="*"/>
-                                                                <ColumnDefinition Width="65"/>
-                                                                <ColumnDefinition Width="65"/>
-                                                                <ColumnDefinition Width="40"/>
-                                                            </Grid.ColumnDefinitions>
-                                                            <TextBlock Text="{Binding GlassRef}" FontSize="10.5" Foreground="{DynamicResource TextMain}"/>
-                                                            <TextBlock Grid.Column="1" Text="{Binding Width, StringFormat=N0}" FontSize="10.5" Foreground="{DynamicResource AccentBlue}" HorizontalAlignment="Right" Margin="0,0,6,0"/>
-                                                            <TextBlock Grid.Column="2" Text="{Binding Height, StringFormat=N0}" FontSize="10.5" Foreground="{DynamicResource AccentBlue}" HorizontalAlignment="Right" Margin="0,0,6,0"/>
-                                                            <TextBlock Grid.Column="3" Text="{Binding Qty}" FontSize="10.5" Foreground="{DynamicResource AccentOrange}" HorizontalAlignment="Center" FontWeight="SemiBold"/>
-                                                        </Grid>
-                                                    </Border>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-                                    </ScrollViewer>
-                                </Border>
-                            </StackPanel>
-
-                            <!-- Dimension Binding Switch -->
-                            <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,10,0,0">
-                                <TextBlock Text="Reference Bound Dimensions:" Foreground="{DynamicResource TextSub}" FontSize="10.5" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                <RadioButton x:Name="rbUseW1H1" GroupName="SpecDims" IsChecked="True" Content="Outer bounds (W1 / H1)" Foreground="{DynamicResource TextMain}" Checked="rbUseW1H1_Checked" FontSize="10.5" Margin="0,0,14,0"/>
-                                <RadioButton x:Name="rbUseW2H2" GroupName="SpecDims" Content="De-glazed bounds (W2 / H2)" Foreground="{DynamicResource TextMain}" Checked="rbUseW2H2_Checked" FontSize="10.5"/>
-                            </StackPanel>
+                            <Border Grid.Row="2" Background="#101B30" CornerRadius="6" Padding="10" Margin="0,10,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="INVENTORY ANALYSIS" FontSize="10" FontWeight="Bold" Foreground="#29B6FF" Margin="0,0,0,4"/>
+                                    <TextBlock x:Name="txtStockSummary" Text="No stock added yet." FontSize="11" Foreground="{DynamicResource TextSub}"/>
+                                </StackPanel>
+                            </Border>
                         </Grid>
-                    </Border>
 
-                    <!-- Main Cutting Schematic Drawing Area -->
-                    <Border Grid.Row="2" Background="#F1F5F9" CornerRadius="6" BorderBrush="{DynamicResource PanelBorder}" BorderThickness="1" Padding="4">
-                        <ScrollViewer x:Name="LayoutScrollViewer" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" PanningMode="Both">
-                            <!-- Visualizing wastage: Styled canvas base -->
-                            <Canvas x:Name="LayoutCanvas" Background="#F1F5F9"/>
-                        </ScrollViewer>
-                    </Border>
+                        <!-- Panel 2: Target Cut Pieces -->
+                        <Grid x:Name="pnlParts" Visibility="Collapsed">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Target Glass Cut List" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center"/>
+                                <Button Grid.Column="1" Content="+ Add Part" Click="AddPart_Click" Background="{StaticResource AccentGreen}" Foreground="White" BorderThickness="0" Padding="10,5" FontSize="10" FontWeight="Bold" Cursor="Hand">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </Grid>
+
+                            <DataGrid x:Name="dgParts" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="True"
+                                      Background="#070D1A" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1"
+                                      GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#1E293B" RowHeight="28"
+                                      ColumnHeaderStyle="{StaticResource DataGridHeaderStyle}" CellStyle="{StaticResource DataGridCellStyle}"
+                                      AllowDrop="True" PreviewMouseLeftButtonDown="DG_PreviewMouseLeftButtonDown" Drop="DG_Drop">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="PART REF" Binding="{Binding Ref, UpdateSourceTrigger=LostFocus}" Width="75"/>
+                                    <DataGridTextColumn Header="WIDTH (mm)" Binding="{Binding L, StringFormat=N0}" Width="85"/>
+                                    <DataGridTextColumn Header="HEIGHT (mm)" Binding="{Binding W, StringFormat=N0}" Width="85"/>
+                                    <DataGridCheckBoxColumn Header="ROT" Binding="{Binding Rot, UpdateSourceTrigger=PropertyChanged}" Width="45"/>
+                                    <DataGridTextColumn Header="QTY" Binding="{Binding Qty, StringFormat=N0}" Width="55"/>
+                                    <DataGridTemplateColumn Width="35">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Button Content="✕" FontSize="10" Foreground="{StaticResource NeonRed}" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="DeletePartRow_Click"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <Border Grid.Row="2" Background="#101B30" CornerRadius="6" Padding="10" Margin="0,10,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="PRODUCTION ORDER LOG" FontSize="10" FontWeight="Bold" Foreground="#29B6FF" Margin="0,0,0,4"/>
+                                    <TextBlock x:Name="txtPartsSummary" Text="No parts added yet." FontSize="11" Foreground="{DynamicResource TextSub}"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <!-- Panel 3: Machine & Trim Configuration -->
+                        <Grid x:Name="pnlSettings" Visibility="Collapsed">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <Border Background="#101B30" CornerRadius="6" Padding="12" Margin="0,0,0,10">
+                                        <StackPanel>
+                                            <TextBlock Text="BLADE PARAMETERS &amp; TRIM" FontSize="10" FontWeight="Bold" Foreground="#29B6FF" Margin="0,0,0,10"/>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
+
+                                                <StackPanel Grid.Column="0" Margin="0,0,4,8">
+                                                    <TextBlock Text="Left" FontSize="9" Foreground="{DynamicResource TextSub}" Margin="0,0,0,3"/>
+                                                    <TextBox x:Name="txtLR" Text="15" TextAlignment="Center" FontSize="11"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1" Margin="0,0,4,8">
+                                                    <TextBlock Text="Bottom" FontSize="9" Foreground="{DynamicResource TextSub}" Margin="0,0,0,3"/>
+                                                    <TextBox x:Name="txtBR" Text="15" TextAlignment="Center" FontSize="11"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="2" Margin="0,0,4,8">
+                                                    <TextBlock Text="Top" FontSize="9" Foreground="{DynamicResource TextSub}" Margin="0,0,0,3"/>
+                                                    <TextBox x:Name="txtTR" Text="15" TextAlignment="Center" FontSize="11"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="3" Margin="0,0,0,8">
+                                                    <TextBlock Text="Right" FontSize="9" Foreground="{DynamicResource TextSub}" Margin="0,0,0,3"/>
+                                                    <TextBox x:Name="txtRM" Text="15" TextAlignment="Center" FontSize="11"/>
+                                                </StackPanel>
+
+                                                <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,0,4,0">
+                                                    <TextBlock Text="Kerf Width (mm)" FontSize="9" Foreground="{DynamicResource TextSub}" Margin="0,0,0,3"/>
+                                                    <TextBox x:Name="txtKerf" Text="4" TextAlignment="Center" FontSize="11"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2">
+                                                    <TextBlock Text="Min Breakout (mm)" FontSize="9" Foreground="{DynamicResource TextSub}" Margin="0,0,0,3"/>
+                                                    <TextBox x:Name="txtBreakout" Text="15" TextAlignment="Center" FontSize="11"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Nesting Options -->
+                                    <Border Background="#101B30" CornerRadius="6" Padding="12" Margin="0,0,0,10">
+                                        <StackPanel>
+                                            <TextBlock Text="NESTING STRATEGY" FontSize="10" FontWeight="Bold" Foreground="#29B6FF" Margin="0,0,0,10"/>
+                                            <CheckBox x:Name="chkAutoRotate" Content="Grain Direction Override" IsChecked="False" Foreground="{DynamicResource TextMain}" FontSize="10.5" Margin="0,0,0,10"/>
+                                            <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                                                <TextBlock Text="Policy:" Foreground="{DynamicResource TextMain}" VerticalAlignment="Center" Margin="0,0,10,0" FontSize="10.5"/>
+                                                <ComboBox x:Name="cmbRotation" Width="175" SelectedIndex="2">
+                                                    <ComboBoxItem Content="No Rotation"/>
+                                                    <ComboBoxItem Content="Rotate 90° Only"/>
+                                                    <ComboBoxItem Content="Best Fit Alignment"/>
+                                                    <ComboBoxItem Content="First Fit Alignment"/>
+                                                    <ComboBoxItem Content="Strip Fill Packing"/>
+                                                    <ComboBoxItem Content="Column Fill Packing"/>
+                                                    <ComboBoxItem Content="Row Fill Packing"/>
+                                                    <ComboBoxItem Content="Dynamic Best Alignment"/>
+                                                    <ComboBoxItem Content="Complex Rotation Alignment"/>
+                                                </ComboBox>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Core Execution Triggers -->
+                                    <Button Content="▶ COMPUTE OPTIMIZATION" Click="RunOptimization_Click" Background="{StaticResource AccentCyan}" Foreground="White" BorderThickness="0" Padding="12,10" FontSize="11" FontWeight="Bold" Cursor="Hand" Margin="0,0,0,6">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="4">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+
+                                    <Button Content="Reset Database &amp; Model" Click="ClearOptimization_Click" Background="#070D1A" BorderBrush="{StaticResource NeonRed}" BorderThickness="1" Foreground="{StaticResource NeonRed}" Padding="10,8" FontSize="10.5" FontWeight="SemiBold" Cursor="Hand">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Grid>
+
+                        <!-- Panel 4: Layout selector -->
+                        <Grid x:Name="pnlSummary" Visibility="Collapsed">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <Grid Grid.Row="0" Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Content="◀" Click="PrevLayout_Click" Background="#1E293B" Foreground="#F8FAFC" Padding="8,4" Margin="0,0,3,0" BorderThickness="0" Cursor="Hand">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}" CornerRadius="3">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                                <ComboBox x:Name="cmbSheetSelector" Grid.Column="1" SelectionChanged="SheetSelector_Changed" Background="#070D1A" Foreground="#F8FAFC">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Ref}" Foreground="#F8FAFC"/>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                                <TextBlock x:Name="txtLayoutNum" Grid.Column="2" Text="Page 1/1" Foreground="{DynamicResource TextSub}" VerticalAlignment="Center" Margin="6,0" FontSize="10"/>
+                                <Button Grid.Column="3" Content="▶" Click="NextLayout_Click" Background="#1E293B" Foreground="#F8FAFC" Padding="8,4" BorderThickness="0" Cursor="Hand">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}" CornerRadius="3">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </Grid>
+
+                            <Border Grid.Row="1" Background="#070D1A" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1" CornerRadius="6">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                                    <Canvas x:Name="PreviewCanvas" Width="380" Height="250" Background="#070D1A"/>
+                                </ScrollViewer>
+                            </Border>
+
+                            <Border Grid.Row="2" Background="#101B30" CornerRadius="6" Padding="10" Margin="0,10,0,0">
+                                <TextBlock x:Name="txtCurrentLayoutStats" Text="No active layouts optimized." FontSize="11" Foreground="{DynamicResource TextSub}" TextWrapping="Wrap"/>
+                            </Border>
+                        </Grid>
+
+                        <!-- Panel 5: Reports output -->
+                        <Grid x:Name="pnlReport" Visibility="Collapsed">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel x:Name="spReportDetails">
+                                    <TextBlock Text="Analytical process stream reports will print here." FontSize="11" Foreground="{DynamicResource TextSub}" HorizontalAlignment="Center" Margin="0,20,0,0"/>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Grid>
+                    </Grid>
                 </Grid>
-            </Grid>
-        </Border>
+            </Border>
 
-        <!-- ================= RIGHT COLUMN: SUMMARY & QUICK ACTIONS ================= -->
-        <Border Grid.Column="2" Background="{DynamicResource PanelBg}" CornerRadius="8" BorderBrush="{DynamicResource PanelBorder}" BorderThickness="1" Margin="5">
-            <Grid>
+            <!-- ================= CENTER COLUMN: REAL-TIME CAD SIMULATOR ================= -->
+            <Grid Grid.Column="1" Margin="5,0">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
+                    <!-- Top: CAD visualizer canvas -->
+                    <RowDefinition Height="200"/>
+                    <!-- Bottom: Detailed Sequence reports table -->
                 </Grid.RowDefinitions>
 
-                <!-- Status Header -->
-                <Border Background="{DynamicResource AccentGreen}" CornerRadius="8,8,0,0" Padding="18,12">
-                    <StackPanel>
-                        <TextBlock Text="CALCULATION OUTPUTS" FontSize="13" FontWeight="Bold" Foreground="White"/>
-                        <TextBlock x:Name="txtTotalStats" Text="0 sheets compiled, 0 parts scheduled" FontSize="10.5" Foreground="#E6F4EA"/>
-                    </StackPanel>
+                <Border Grid.Row="0" Background="#030712" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1" CornerRadius="12" Margin="0,0,0,10">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- CAD Frame telemetry control bar -->
+                        <Border Background="#101B30" CornerRadius="12,12,0,0" Padding="15,10" BorderBrush="{StaticResource PanelBorder}" BorderThickness="0,0,0,1">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="OPTIMIZATION VISUAL NESTING LAYOUT" FontSize="12" FontWeight="Bold" Foreground="#29B6FF"/>
+                                    <TextBlock x:Name="txtCurrentSheet" Text="Blueprint engine online" FontSize="10" Foreground="{DynamicResource TextSub}"/>
+                                </StackPanel>
+
+                                <!-- Navigation adjustments -->
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="Query ID:" Foreground="{DynamicResource TextSub}" VerticalAlignment="Center" Margin="0,0,4,0" FontSize="10"/>
+                                    <TextBox x:Name="txtFindPart" Width="85" Padding="5,3" FontSize="11" Margin="0,0,4,0" TextChanged="txtFindPart_TextChanged" KeyDown="txtFindPart_KeyDown"/>
+                                    <Button Content="🔍" Click="btnFindNext_Click" Background="{StaticResource AccentCyan}" Foreground="White" Padding="6,3" FontSize="10" BorderThickness="0" Cursor="Hand" Margin="0,0,10,0">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}" CornerRadius="3">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+
+                                    <Button Content="−" Click="ZoomOut_Click" Background="#1E293B" Foreground="#F8FAFC" Padding="6,3" BorderThickness="0" Cursor="Hand">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}" CornerRadius="3">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                    <TextBlock x:Name="txtZoom" Text="100%" Foreground="#29B6FF" FontWeight="Bold" VerticalAlignment="Center" Margin="6,0" FontSize="10.5"/>
+                                    <Button Content="+" Click="ZoomIn_Click" Background="#1E293B" Foreground="#F8FAFC" Padding="6,3" BorderThickness="0" Cursor="Hand" Margin="0,0,10,0">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}" CornerRadius="3">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+
+                                    <TextBlock Text="Matrix:" Foreground="{DynamicResource TextSub}" VerticalAlignment="Center" Margin="0,0,4,0" FontSize="10"/>
+                                    <Button Content="4" Click="SheetsPerPage4_Click" Background="#1E293B" Foreground="#F8FAFC" Padding="6,3" FontSize="10" BorderThickness="0" Cursor="Hand" Margin="1,0"/>
+                                    <Button Content="6" Click="SheetsPerPage6_Click" Background="#1E293B" Foreground="#F8FAFC" Padding="6,3" FontSize="10" BorderThickness="0" Cursor="Hand" Margin="1,0"/>
+                                    <Button Content="8" Click="SheetsPerPage8_Click" Background="#1E293B" Foreground="#F8FAFC" Padding="6,3" FontSize="10" BorderThickness="0" Cursor="Hand" Margin="1,0"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Shared spec stream preview -->
+                        <Border Grid.Row="1" Background="#0C101E" BorderBrush="{StaticResource PanelBorder}" BorderThickness="0,0,0,1" Padding="12,6">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="200"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <StackPanel Grid.Column="0" Margin="0,0,10,0" Grid.RowSpan="2">
+                                    <TextBlock Text="INVOICE SPEC LINK" FontSize="10" FontWeight="Bold" Foreground="#29B6FF" Margin="0,0,0,3"/>
+                                    <ListBox x:Name="lstSpecSelect" ItemContainerStyle="{StaticResource ListBoxItemStyle}" Height="54" SelectionMode="Multiple" SelectionChanged="lstSpecSelect_SelectionChanged" Background="#070D1A" BorderBrush="#1E293B">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" Content="{Binding SpecificationName}" Foreground="#F8FAFC" Margin="1" FontSize="10"/>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1">
+                                    <Grid Margin="0,0,0,3">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="INGESTED COMPONENT METRICS STREAM" FontSize="9.5" FontWeight="Bold" Foreground="{DynamicResource TextSub}"/>
+                                        <TextBlock x:Name="txtSelectedSpecCount" Grid.Column="1" Text="0 parsed" FontSize="9.5" FontWeight="Bold" Foreground="{StaticResource NeonGreen}"/>
+                                    </Grid>
+
+                                    <Border Background="#070D1A" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1" CornerRadius="4" Height="36">
+                                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                            <ItemsControl x:Name="icCombinedPreview">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border BorderBrush="#1E293B" BorderThickness="0,0,0,1" Padding="6,2" Background="#070D1A">
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                    <ColumnDefinition Width="60"/>
+                                                                    <ColumnDefinition Width="60"/>
+                                                                    <ColumnDefinition Width="30"/>
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock Text="{Binding GlassRef}" FontSize="10" Foreground="#F8FAFC"/>
+                                                                <TextBlock Grid.Column="1" Text="{Binding Width, StringFormat=N0}" FontSize="10" Foreground="#29B6FF" HorizontalAlignment="Right" Margin="0,0,4,0"/>
+                                                                <TextBlock Grid.Column="2" Text="{Binding Height, StringFormat=N0}" FontSize="10" Foreground="#29B6FF" HorizontalAlignment="Right" Margin="0,0,4,0"/>
+                                                                <TextBlock Grid.Column="3" Text="{Binding Qty}" FontSize="10" Foreground="{StaticResource NeonOrange}" HorizontalAlignment="Center" FontWeight="Bold"/>
+                                                            </Grid>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </ScrollViewer>
+                                    </Border>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1" Grid.Row="1" Orientation="Horizontal" Margin="0,3,0,0">
+                                    <TextBlock Text="Dim Selection:" Foreground="{DynamicResource TextSub}" FontSize="9" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <RadioButton x:Name="rbUseW1H1" GroupName="SpecDims" IsChecked="True" Content="Outer bounds (W1/H1)" Foreground="#F8FAFC" Checked="rbUseW1H1_Checked" FontSize="9" Margin="0,0,10,0"/>
+                                    <RadioButton x:Name="rbUseW2H2" GroupName="SpecDims" Content="De-glazed bounds (W2/H2)" Foreground="#F8FAFC" Checked="rbUseW2H2_Checked" FontSize="9"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Dynamic blueprint visualization container -->
+                        <Border Grid.Row="2" Background="#030712" CornerRadius="0,0,12,12" Padding="1">
+                            <ScrollViewer x:Name="LayoutScrollViewer" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" PanningMode="Both">
+                                <Grid Width="2500" Height="2000">
+                                    <Grid.Background>
+                                        <DrawingBrush TileMode="Tile" Viewport="0,0,30,30" ViewportUnits="Absolute">
+                                            <DrawingBrush.Drawing>
+                                                <GeometryDrawing>
+                                                    <GeometryDrawing.Geometry>
+                                                        <GeometryGroup>
+                                                            <LineGeometry StartPoint="0,0" EndPoint="30,0"/>
+                                                            <LineGeometry StartPoint="0,0" EndPoint="0,30"/>
+                                                        </GeometryGroup>
+                                                    </GeometryDrawing.Geometry>
+                                                    <GeometryDrawing.Pen>
+                                                        <Pen Brush="#0C1222" Thickness="0.75"/>
+                                                    </GeometryDrawing.Pen>
+                                                </GeometryDrawing>
+                                            </DrawingBrush.Drawing>
+                                        </DrawingBrush>
+                                    </Grid.Background>
+                                    <Canvas x:Name="LayoutCanvas" Background="Transparent"/>
+                                </Grid>
+                            </ScrollViewer>
+                        </Border>
+                    </Grid>
                 </Border>
 
-                <!-- Consolidated KPI Metrics & Save Area -->
-                <ScrollViewer Grid.Row="1" Padding="14">
-                    <StackPanel>
-
-                        <!-- Analytical Cards -->
-                        <Border Background="{DynamicResource BgControl}" CornerRadius="6" Padding="14" Margin="0,0,0,12">
-                            <StackPanel>
-                                <TextBlock Text="KPI PERFORMANCE INDICATORS" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource TextSub}" Margin="0,0,0,12"/>
-
-                                <Grid Margin="0,0,0,8">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Total Sheets Used:" Foreground="{DynamicResource TextMain}" FontSize="12" VerticalAlignment="Center"/>
-                                    <TextBlock x:Name="txtTotalSheetsUsed" Grid.Column="1" Text="0" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource AccentOrange}"/>
-                                </Grid>
-
-                                <Grid Margin="0,0,0,8">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Scheduled Placements:" Foreground="{DynamicResource TextMain}" FontSize="12" VerticalAlignment="Center"/>
-                                    <TextBlock x:Name="txtTotalPartsCut" Grid.Column="1" Text="0" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource AccentBlue}"/>
-                                </Grid>
-
-                                <Separator Background="{DynamicResource PanelBorder}" Margin="0,6"/>
-
-                                <Grid Margin="0,6,0,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Utilization Efficiency:" Foreground="{DynamicResource TextMain}" FontSize="12" VerticalAlignment="Center"/>
-                                    <TextBlock x:Name="txtAvgUtilization" Grid.Column="1" Text="0.0%" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource AccentGreen}"/>
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- COMPILATION METRICS -->
-                        <TextBlock Text="COMPOSITE SEQUENCE SHEETS" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextMain}" Margin="0,0,0,8"/>
-
-                        <!-- Grid Sequence Item List -->
-                        <ItemsControl x:Name="icResults">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border CornerRadius="6" Padding="12" Margin="0,0,0,6">
-                                        <Border.Style>
-                                            <Style TargetType="Border">
-                                                <Setter Property="Background" Value="{DynamicResource BgControl}"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Ref}" Value="TOTAL">
-                                                        <Setter Property="Background" Value="{DynamicResource AccentOrange}"/>
-                                                        <Setter Property="Margin" Value="0,10,0,6"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Border.Style>
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-
-                                            <StackPanel>
-                                                <TextBlock Text="{Binding Ref}" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource TextMain}"/>
-                                                <TextBlock FontSize="10" Foreground="{DynamicResource TextSub}">
-                                                    <Run Text="{Binding L, StringFormat=N0}"/>
-                                                    <Run Text=" × "/>
-                                                    <Run Text="{Binding W, StringFormat=N0}"/>
-                                                    <Run Text=" mm"/>
-                                                </TextBlock>
-                                                <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                                                    <Border Background="{DynamicResource AccentGreen}" CornerRadius="3" Padding="4,2" Margin="0,0,4,0">
-                                                        <TextBlock FontSize="9" Foreground="White" FontWeight="Bold">
-                                                            <Run Text="Util: "/>
-                                                            <Run Text="{Binding Util, StringFormat=N1}"/>
-                                                            <Run Text="%"/>
-                                                        </TextBlock>
-                                                    </Border>
-                                                    <Border Background="{DynamicResource AccentRed}" CornerRadius="3" Padding="4,2">
-                                                        <TextBlock FontSize="9" Foreground="White" FontWeight="Bold">
-                                                            <Run Text="Waste: "/>
-                                                            <Run Text="{Binding Waste, StringFormat=N1}"/>
-                                                            <Run Text="%"/>
-                                                        </TextBlock>
-                                                    </Border>
-                                                </StackPanel>
-                                            </StackPanel>
-
-                                            <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding Used}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource AccentBlue}" HorizontalAlignment="Right"/>
-                                                <TextBlock Text="sheets" FontSize="9" Foreground="{DynamicResource TextSub}" HorizontalAlignment="Right"/>
-                                            </StackPanel>
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-
-                        <!-- Warnings on Out-of-bounds bounds exclusion -->
-                        <Border x:Name="pnlUnplaced" Background="#FEF2F2" BorderBrush="#FEE2E2" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,10,0,0" Visibility="Collapsed">
-                            <StackPanel>
-                                <TextBlock Text="⚠ EXCLUDED PARTS (OUT-OF-BOUNDS)" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentRed}"/>
-                                <TextBlock x:Name="txtUnplaced" Text="0 parts excluded from the layouts" FontSize="10.5" Foreground="{DynamicResource TextSub}"/>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Commercial Valuation Pricing -->
-                        <Border Background="{DynamicResource BgControl}" CornerRadius="6" Padding="14" Margin="0,10,0,0">
-                            <StackPanel>
-                                <TextBlock Text="COMMERCIAL VALUATION" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource TextSub}" Margin="0,0,0,12"/>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0" Margin="0,0,6,0">
-                                        <TextBlock Text="Base Currency" FontSize="10" Foreground="{DynamicResource TextSub}" Margin="0,0,0,4"/>
-                                        <ComboBox x:Name="cmbCurrency" SelectedIndex="0">
-                                            <ComboBoxItem Content="AED"/>
-                                            <ComboBoxItem Content="USD"/>
-                                            <ComboBoxItem Content="EUR"/>
-                                            <ComboBoxItem Content="INR"/>
-                                            <ComboBoxItem Content="GBP"/>
-                                        </ComboBox>
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="1">
-                                        <TextBlock Text="Base Price / m²" FontSize="10" Foreground="{StaticResource TextSub}" Margin="0,0,0,4"/>
-                                        <TextBox x:Name="txtStockPrice" Text="25" TextAlignment="Center" FontSize="11"/>
-                                    </StackPanel>
-                                </Grid>
-                                <Separator Background="{DynamicResource PanelBorder}" Margin="0,10"/>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                    <TextBlock Text="Estimated Costing Valuation:" FontSize="11" Foreground="{DynamicResource TextSub}" VerticalAlignment="Center"/>
-                                    <TextBlock x:Name="txtTotalCost" Text="AED 0.00" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource AccentGreen}" Margin="8,0,0,0"/>
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Remnants Accounting -->
-                        <Border Background="{DynamicResource BgControl}" CornerRadius="6" Padding="14" Margin="0,10,0,0">
-                            <StackPanel>
-                                <TextBlock Text="REUSEABLE SAVED REMNANTS" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource TextSub}" Margin="0,0,0,8"/>
-                                <TextBlock x:Name="txtRemnants" Text="0 remnants tracked (exceeding 100x100mm threshold)" FontSize="10.5" Foreground="{DynamicResource TextMain}"/>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Jobs Serialization -->
-                        <Border Background="{DynamicResource BgControl}" CornerRadius="6" Padding="14" Margin="0,10,0,0">
-                            <StackPanel>
-                                <TextBlock Text="SERIALIZE OPTIMIZATION RECORD" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource TextSub}" Margin="0,0,0,10"/>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBox x:Name="txtJobName" FontSize="11" Padding="6,5" BorderThickness="1" BorderBrush="{DynamicResource PanelBorder}"/>
-                                    <Button Grid.Column="1" Content="Save Job" Click="SaveJob_Click" Background="{DynamicResource AccentBlue}" Foreground="White" Padding="12,5" FontWeight="SemiBold" BorderThickness="0" Margin="6,0,0,0" Cursor="Hand">
-                                        <Button.Template>
-                                            <ControlTemplate TargetType="Button">
-                                                <Border Background="{TemplateBinding Background}" CornerRadius="4">
-                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                </Border>
-                                            </ControlTemplate>
-                                        </Button.Template>
-                                    </Button>
-                                </Grid>
-                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                    <ComboBox x:Name="cmbSavedJobs" Width="170">
-                                        <ComboBox.ItemTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Text="{Binding Name}" Foreground="{DynamicResource TextMain}"/>
-                                            </DataTemplate>
-                                        </ComboBox.ItemTemplate>
-                                    </ComboBox>
-                                    <Button Content="Load" Click="LoadJob_Click" Background="#E2E8F0" Foreground="{DynamicResource TextMain}" Padding="12,5" FontWeight="SemiBold" BorderThickness="0" Margin="6,0,0,0" Cursor="Hand">
-                                        <Button.Template>
-                                            <ControlTemplate TargetType="Button">
-                                                <Border Background="{TemplateBinding Background}" CornerRadius="4">
-                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                </Border>
-                                            </ControlTemplate>
-                                        </Button.Template>
-                                    </Button>
-                                    <Button Content="Del" Click="DeleteJob_Click" Background="{DynamicResource AccentRed}" Foreground="White" Padding="10,5" FontWeight="SemiBold" BorderThickness="0" Margin="4,0,0,0" Cursor="Hand">
-                                        <Button.Template>
-                                            <ControlTemplate TargetType="Button">
-                                                <Border Background="{TemplateBinding Background}" CornerRadius="4">
-                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                </Border>
-                                            </ControlTemplate>
-                                        </Button.Template>
-                                    </Button>
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
-                </ScrollViewer>
-
-                <!-- QUICK ACTIONS TRAY -->
-                <StackPanel Grid.Row="2" Margin="14,0,14,14">
-                    <Button Content="Export Compiled Cut Spreadsheet (CSV)" Click="ExportResults_Click" 
-                            Background="{DynamicResource AccentBlue}" Foreground="White" BorderThickness="0" 
-                            Padding="12,10" FontSize="11" FontWeight="SemiBold" Cursor="Hand" Margin="0,0,0,6">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="6">
-                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="border" Property="Background" Value="{DynamicResource AccentBlueHover}"/>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
-                    <Button x:Name="btnSimulate" Content="Simulate Interactive Cutting Run" Click="StartSimulation_Click" 
-                            Background="{DynamicResource AccentOrange}" Foreground="White" BorderThickness="0" 
-                            Padding="12,10" FontSize="11" FontWeight="SemiBold" Cursor="Hand" Margin="0,0,0,6">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="6">
-                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="border" Property="Background" Value="#D97706"/>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
-                    <Button Content="Export Analytical Summary PDF Document" Click="ExportPDF_Click" 
-                            Background="{DynamicResource BgControl}" Foreground="{DynamicResource TextMain}" BorderThickness="0" 
-                            Padding="12,10" FontSize="11" FontWeight="SemiBold" Cursor="Hand" Margin="0,0,0,6">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="6">
-                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="border" Property="Background" Value="#E2E8F0"/>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
+                <!-- ================= BOTTOM SECTION: ENTERPRISE SEQUENCE REPORT ================= -->
+                <Border Grid.Row="1" Background="{StaticResource BgPanel}" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1" CornerRadius="12" Padding="14,10">
                     <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Button Content="Print Layouts" Click="PrintLayouts_Click" 
-                                Background="{DynamicResource BgControl}" Foreground="{DynamicResource TextMain}" BorderThickness="0" 
-                                Padding="12,10" FontSize="11" FontWeight="SemiBold" Cursor="Hand" Margin="0,0,3,0">
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="6">
-                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="border" Property="Background" Value="#E2E8F0"/>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
-                        <Button Grid.Column="1" Content="Print Labels" Click="PrintLabels_Click" 
-                                Background="{StaticResource BgControl}" Foreground="{DynamicResource TextMain}" BorderThickness="0" 
-                                Padding="12,10" FontSize="11" FontWeight="SemiBold" Cursor="Hand" Margin="3,0,0,0">
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="6">
-                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="border" Property="Background" Value="#E2E8F0"/>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="COMPOSITE SEQUENCE SHEETS" FontSize="11" FontWeight="Bold" Foreground="#29B6FF" Margin="0,0,0,8"/>
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl x:Name="icResults">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel Orientation="Horizontal"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border CornerRadius="6" Padding="10,6" Margin="0,0,6,6" Width="200" BorderThickness="1">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="#101B30"/>
+                                                    <Setter Property="BorderBrush" Value="#1E293B"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Ref}" Value="TOTAL">
+                                                            <Setter Property="Background" Value="#1E3A8A"/>
+                                                            <Setter Property="BorderBrush" Value="#29B6FF"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Ref}" FontSize="11.5" FontWeight="Bold" Foreground="{DynamicResource TextMain}"/>
+                                                    <TextBlock FontSize="9.5" Foreground="{DynamicResource TextSub}">
+                                                        <Run Text="{Binding L, StringFormat=N0}"/>
+                                                        <Run Text=" × "/>
+                                                        <Run Text="{Binding W, StringFormat=N0}"/>
+                                                        <Run Text=" mm"/>
+                                                    </TextBlock>
+                                                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                                        <Border Background="{StaticResource NeonGreen}" CornerRadius="2" Padding="3,1" Margin="0,0,4,0">
+                                                            <TextBlock FontSize="8.5" Foreground="White" FontWeight="Bold">
+                                                                <Run Text="Y: "/>
+                                                                <Run Text="{Binding Util, StringFormat=N1}"/>
+                                                                <Run Text="%"/>
+                                                            </TextBlock>
+                                                        </Border>
+                                                        <Border Background="{StaticResource NeonRed}" CornerRadius="2" Padding="3,1">
+                                                            <TextBlock FontSize="8.5" Foreground="White" FontWeight="Bold">
+                                                                <Run Text="W: "/>
+                                                                <Run Text="{Binding Waste, StringFormat=N1}"/>
+                                                                <Run Text="%"/>
+                                                            </TextBlock>
+                                                        </Border>
+                                                    </StackPanel>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Used}" FontSize="15" FontWeight="Bold" Foreground="#29B6FF" HorizontalAlignment="Right"/>
+                                                    <TextBlock Text="sheets" FontSize="9" Foreground="{DynamicResource TextSub}" HorizontalAlignment="Right"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
                     </Grid>
-                </StackPanel>
+                </Border>
             </Grid>
-        </Border>
+
+            <!-- ================= COLUMN 3: PROCESS ANALYTICS & JOB STORAGE ================= -->
+            <Border Grid.Column="2" Background="{StaticResource BgPanel}" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1" CornerRadius="12" Margin="5,0,0,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Console Title -->
+                    <Border Background="#121D2F" CornerRadius="12,12,0,0" Padding="15,12">
+                        <StackPanel>
+                            <TextBlock Text="OPTIMIZATION ANALYTICS" FontSize="11.5" FontWeight="Bold" Foreground="#29B6FF"/>
+                            <TextBlock x:Name="txtTotalStats" Text="0 sheets compiled, 0 parts scheduled" FontSize="9.5" Foreground="{DynamicResource TextSub}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Metrics and Loader Stream -->
+                    <ScrollViewer Grid.Row="1" Padding="12">
+                        <StackPanel>
+
+                            <!-- Key performance telemetry -->
+                            <Border Background="#101B30" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <TextBlock Text="KEY MANUFACTURING TELEMETRY" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSub}" Margin="0,0,0,10"/>
+                                    <Grid Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Sheets Active:" Foreground="{DynamicResource TextMain}" FontSize="11.5" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="txtTotalSheetsUsed" Grid.Column="1" Text="0" FontSize="13.5" FontWeight="Bold" Foreground="{StaticResource NeonOrange}"/>
+                                    </Grid>
+                                    <Grid Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Completed Placements:" Foreground="{DynamicResource TextMain}" FontSize="11.5" VerticalAlignment="Center"/>
+                                        <!-- Synchronized duplicate display mapped cleanly via ElementName bindings -->
+                                        <TextBlock Text="{Binding ElementName=txtTotalPartsCut, Path=Text}" Grid.Column="1" FontSize="13.5" FontWeight="Bold" Foreground="#29B6FF"/>
+                                    </Grid>
+                                    <Separator Background="#1E293B" Margin="0,4"/>
+                                    <Grid Margin="0,4,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Mean Process Yield:" Foreground="{DynamicResource TextMain}" FontSize="11.5" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="txtAvgUtilization" Grid.Column="1" Text="0.0%" FontSize="13.5" FontWeight="Bold" Foreground="{StaticResource NeonGreen}"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Dimension bounds warning block -->
+                            <Border x:Name="pnlUnplaced" Background="#3B0712" BorderBrush="{StaticResource NeonRed}" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,0,10" Visibility="Collapsed">
+                                <StackPanel>
+                                    <TextBlock Text="⚠ OUT-OF-BOUNDS SHEET EXCLUSION" FontSize="11" FontWeight="Bold" Foreground="{StaticResource NeonRed}"/>
+                                    <TextBlock x:Name="txtUnplaced" Text="0 parts excluded from layout" FontSize="10.5" Foreground="{DynamicResource TextSub}"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Financial costing pricing -->
+                            <Border Background="#101B30" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <TextBlock Text="COMMERCIAL CO EVALUATION" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSub}" Margin="0,0,0,8"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Margin="0,0,4,0">
+                                            <TextBlock Text="Currency" FontSize="9" Foreground="{DynamicResource TextSub}" Margin="0,0,0,3"/>
+                                            <ComboBox x:Name="cmbCurrency" SelectedIndex="0" FontSize="10">
+                                                <ComboBoxItem Content="AED"/>
+                                                <ComboBoxItem Content="USD"/>
+                                                <ComboBoxItem Content="EUR"/>
+                                                <ComboBoxItem Content="INR"/>
+                                                <ComboBoxItem Content="GBP"/>
+                                            </ComboBox>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1">
+                                            <TextBlock Text="Price/m²" FontSize="9" Foreground="{DynamicResource TextSub}" Margin="0,0,0,3"/>
+                                            <TextBox x:Name="txtStockPrice" Text="25" TextAlignment="Center" FontSize="10.5"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Remnants accounting stream -->
+                            <Border Background="#101B30" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <TextBlock Text="RECOVERED INVENTORY REMNANTS" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSub}" Margin="0,0,0,6"/>
+                                    <TextBlock x:Name="txtRemnants" Text="0 remnants tracked (exceeding 100x100mm threshold)" FontSize="10.5" Foreground="{DynamicResource TextMain}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Jobs serialization records -->
+                            <Border Background="#101B30" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <TextBlock Text="SERIALIZE SYSTEM RECORDS" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextSub}" Margin="0,0,0,8"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox x:Name="txtJobName" FontSize="11" Padding="5" BorderThickness="1" BorderBrush="#334155"/>
+                                        <Button Grid.Column="1" Content="Save" Click="SaveJob_Click" Background="#2563EB" Foreground="White" Padding="10,5" FontWeight="Bold" FontSize="10" BorderThickness="0" Margin="5,0,0,0" Cursor="Hand">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border Background="{TemplateBinding Background}" CornerRadius="3" Padding="{TemplateBinding Padding}">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </Grid>
+                                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                        <ComboBox x:Name="cmbSavedJobs" Width="145" FontSize="11">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Name}" Foreground="#F8FAFC"/>
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
+                                        <Button Content="Load" Click="LoadJob_Click" Background="#1E293B" Foreground="#F8FAFC" Padding="10,5" FontWeight="Bold" FontSize="10" BorderThickness="0" Margin="5,0,0,0" Cursor="Hand">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border Background="{TemplateBinding Background}" CornerRadius="3" Padding="{TemplateBinding Padding}">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                        <Button Content="Del" Click="DeleteJob_Click" Background="{StaticResource NeonRed}" Foreground="White" Padding="8,5" FontWeight="Bold" FontSize="10" BorderThickness="0" Margin="3,0,0,0" Cursor="Hand">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border Background="{TemplateBinding Background}" CornerRadius="3" Padding="{TemplateBinding Padding}">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- ================= CONSOLIDATED ACTIONS PANELS ================= -->
+                    <StackPanel Grid.Row="2" Margin="12,5,12,12">
+                        <Button x:Name="btnSimulate" Content="Simulate Interactive Blade path" Click="StartSimulation_Click" 
+                                Background="{StaticResource NeonOrange}" Foreground="White" BorderThickness="0" 
+                                Padding="12,8" FontSize="11" FontWeight="Bold" Cursor="Hand" Margin="0,0,0,6">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="4">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                        <Button Content="Export Analytical Summary PDF Document" Click="ExportPDF_Click" 
+                                Background="#1E293B" Foreground="#F8FAFC" BorderThickness="0" 
+                                Padding="12,8" FontSize="10.5" FontWeight="SemiBold" Cursor="Hand" Margin="0,0,0,6">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="4">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Button Content="Print Layouts" Click="PrintLayouts_Click" 
+                                    Background="#111827" BorderBrush="#334155" BorderThickness="1" Foreground="#F8FAFC" Padding="12,8" FontSize="10.5" FontWeight="SemiBold" Cursor="Hand" Margin="0,0,3,0">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                            <Button Grid.Column="1" Content="Print Labels" Click="PrintLabels_Click" 
+                                    Background="#111827" BorderBrush="#334155" BorderThickness="1" Foreground="#F8FAFC" Padding="12,8" FontSize="10.5" FontWeight="SemiBold" Cursor="Hand" Margin="3,0,0,0">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </Grid>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
     </Grid>
 </UserControl>
