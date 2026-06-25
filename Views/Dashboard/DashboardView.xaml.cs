@@ -22,15 +22,14 @@ namespace ProGlassAutomation.Views.Dashboard
             Loaded += DashboardView_Loaded;
         }
 
-        private void DashboardView_Loaded(object sender, RoutedEventArgs e)
+        private async void DashboardView_Loaded(object sender, RoutedEventArgs e)
         {
             try
             {
                 if (_isLoaded) return;
                 _isLoaded = true;
 
-                _viewModel.LoadData();
-                LoadDatabaseStats();
+                await _viewModel.LoadDataAsync();
             }
             catch (Exception ex)
             {
@@ -38,44 +37,11 @@ namespace ProGlassAutomation.Views.Dashboard
             }
         }
 
-        private void LoadDatabaseStats()
+        private async void Refresh_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                var stats = DbHelper.GetDatabaseStats();
-                DbStatsText.Text = stats;
-            }
-            catch (Exception ex)
-            {
-                DbStatsText.Text = $"Error: {ex.Message}";
-            }
-        }
-
-        private void FilterComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (!_isLoaded) return;
-            _viewModel.LoadData();
-        }
-
-        private void SyncBalance_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                _viewModel.Sync();
-                LoadDatabaseStats();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        private void Refresh_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                _viewModel.LoadData();
-                LoadDatabaseStats();
+                await _viewModel.LoadDataAsync();
             }
             catch (Exception ex)
             {
@@ -102,8 +68,8 @@ namespace ProGlassAutomation.Views.Dashboard
 
                 var allSalesmen = dwSalesmen.Union(delSalesmen).Union(piSalesmen).Distinct().OrderBy(s => s).ToList();
 
-                var result = "👥 SALESMEN LIST\n";
-                result += "═══════════════════════════════\n\n";
+                var result = "SALESMEN LIST\n";
+                result += "===============================\n\n";
 
                 int index = 1;
                 foreach (var s in allSalesmen)
@@ -121,23 +87,15 @@ namespace ProGlassAutomation.Views.Dashboard
                     index++;
                 }
 
-                result += "═══════════════════════════════\n";
+                result += "===============================\n";
                 result += $"Total Salesmen: {allSalesmen.Count}";
 
                 MessageBox.Show(result, "Salesmen List", MessageBoxButton.OK, MessageBoxImage.Information);
-
-                // Refresh dashboard
-                _viewModel.LoadData();
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-        }
-
-        private void ActivateNow_Click(object sender, RoutedEventArgs e)
-        {
-            _viewModel.Activate();
         }
     }
 }
