@@ -3,15 +3,13 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
-using CommunityToolkit.Mvvm.Input;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
 using SkiaSharp;
 using ProGlassAutomation.Data.Database;
-using DbDelivery = ProGlassAutomation.Data.Database.Delivery;
 
 namespace ProGlassAutomation.ViewModels
 {
@@ -66,7 +64,6 @@ namespace ProGlassAutomation.ViewModels
         public double OrderSQM { get; set; }
         public string Salesman { get; set; } = "";
         public string Status { get; set; } = "";
-        public string Notes { get; set; } = "";
     }
 
     public class DashboardViewModel : INotifyPropertyChanged
@@ -143,7 +140,7 @@ namespace ProGlassAutomation.ViewModels
             set { _dailyWorksCount = value; OnPropertyChanged(); }
         }
 
-        // Delivery Data - WITH PROPER NOTIFICATION
+        // Delivery Data
         public ObservableCollection<DeliveryRecord> DeliveryRecords { get; set; } = new ObservableCollection<DeliveryRecord>();
 
         private int _deliveryCount;
@@ -153,98 +150,136 @@ namespace ProGlassAutomation.ViewModels
             set { _deliveryCount = value; OnPropertyChanged(); }
         }
 
-        private int _totalDeliveryQty;
-        public int TotalDeliveryQty
+        private int _deliveryTotalQty;
+        public int DeliveryTotalQty
         {
-            get => _totalDeliveryQty;
-            set { _totalDeliveryQty = value; OnPropertyChanged(); }
+            get => _deliveryTotalQty;
+            set { _deliveryTotalQty = value; OnPropertyChanged(); }
         }
 
-        private int _totalDeliveredQty;
-        public int TotalDeliveredQty
+        private int _deliveryTotalDelivered;
+        public int DeliveryTotalDelivered
         {
-            get => _totalDeliveredQty;
-            set { _totalDeliveredQty = value; OnPropertyChanged(); }
+            get => _deliveryTotalDelivered;
+            set { _deliveryTotalDelivered = value; OnPropertyChanged(); }
         }
 
-        private int _totalBalanceQty;
-        public int TotalBalanceQty
+        private int _deliveryTotalReturned;
+        public int DeliveryTotalReturned
         {
-            get => _totalBalanceQty;
-            set { _totalBalanceQty = value; OnPropertyChanged(); }
+            get => _deliveryTotalReturned;
+            set { _deliveryTotalReturned = value; OnPropertyChanged(); }
         }
 
-        private double _totalDeliverySQM;
-        public double TotalDeliverySQM
+        private int _deliveryTotalBalance;
+        public int DeliveryTotalBalance
         {
-            get => _totalDeliverySQM;
-            set { _totalDeliverySQM = value; OnPropertyChanged(); }
+            get => _deliveryTotalBalance;
+            set { _deliveryTotalBalance = value; OnPropertyChanged(); }
         }
+
+        public double DeliveryProgressPercent => DeliveryTotalQty > 0 ? (double)DeliveryTotalDelivered / DeliveryTotalQty * 100 : 0;
+
+        // Legacy String Properties for Binding
+        public string DelPending { get; set; } = "0";
+        public string DelCompleted { get; set; } = "0";
+        public string DelTotal { get; set; } = "0";
 
         // Charts
         public ISeries[] DailyTrendSeries { get; set; }
         public Axis[] DailyTrendXAxes { get; set; }
         public Axis[] DailyTrendYAxes { get; set; }
 
-        public ISeries[] WeeklyJobSeries { get; set; }
-        public Axis[] WeeklyJobXAxes { get; set; }
-        public Axis[] WeeklyJobYAxes { get; set; }
+        public ISeries[] SalesmanChartSeries { get; set; }
+        public Axis[] SalesmanChartXAxes { get; set; }
+        public Axis[] SalesmanChartYAxes { get; set; }
 
         public ISeries[] ProductMixSeries { get; set; }
-
         public ISeries[] MachineUtilSeries { get; set; }
         public Axis[] MachineUtilXAxes { get; set; }
         public Axis[] MachineUtilYAxes { get; set; }
-
         public ISeries[] DeliveryStatusSeries { get; set; }
-
         public ISeries[] OptimizationSeries { get; set; }
         public Axis[] OptimizationXAxes { get; set; }
         public Axis[] OptimizationYAxes { get; set; }
 
-        // Delivery Charts
-        public ISeries[] DeliveryTrendSeries { get; set; }
-        public Axis[] DeliveryTrendXAxes { get; set; }
-        public Axis[] DeliveryTrendYAxes { get; set; }
+        // Other Properties
+        public string LastUpdate { get; set; } = "Last update: Just now";
+        public string SelectedFilter { get; set; } = "This Week";
+        public string DayFilterBg { get; set; } = "#F3F4F6";
+        public string WeekFilterBg { get; set; } = "#2563EB";
+        public string MonthFilterBg { get; set; } = "#F3F4F6";
+        public string YearFilterBg { get; set; } = "#F3F4F6";
+        public string DayFilterFg { get; set; } = "#1F2937";
+        public string WeekFilterFg { get; set; } = "#FFFFFF";
+        public string MonthFilterFg { get; set; } = "#1F2937";
+        public string YearFilterFg { get; set; } = "#1F2937";
 
-        private string _lastUpdate = "Last update: Just now";
-        public string LastUpdate
-        {
-            get => _lastUpdate;
-            set { _lastUpdate = value; OnPropertyChanged(); }
-        }
+        // Legacy Stats
+        public string TotalRevenue { get; set; } = "AED 2,450,000";
+        public string RevenueGrowth { get; set; } = "+12.5%";
+        public string Orders { get; set; } = "156";
+        public string OrdersGrowth { get; set; } = "+8.2%";
+        public string Salesmen { get; set; } = "9";
+        public string PendingQuotes { get; set; } = "23";
+        public string PITotal { get; set; } = "248";
+        public string PIConfirmed { get; set; } = "198";
+        public string PIPending { get; set; } = "50";
+        public string PIValue { get; set; } = "AED 1,240,000";
+        public string JOTotal { get; set; } = "187";
+        public string JOInProgress { get; set; } = "45";
+        public string JOCompleted { get; set; } = "142";
+        public string DailyBalance { get; set; } = "AED 45,200";
+        public string MonthlyBalance { get; set; } = "AED 1,240,000";
+        public string AnnualBalance { get; set; } = "AED 14,850,000";
+
+        public ObservableCollection<SalesmanData> SalesmanList { get; set; } = new ObservableCollection<SalesmanData>();
 
         public ICommand RefreshCommand { get; }
+        public ICommand DayFilterCommand { get; }
+        public ICommand WeekFilterCommand { get; }
+        public ICommand MonthFilterCommand { get; }
+        public ICommand YearFilterCommand { get; }
 
         public DashboardViewModel()
         {
-            RefreshCommand = new RelayCommand(async () => await LoadDataAsync());
+            RefreshCommand = new RelayCommand(_ => LoadData());
+            DayFilterCommand = new RelayCommand(_ => ApplyFilter("Today"));
+            WeekFilterCommand = new RelayCommand(_ => ApplyFilter("This Week"));
+            MonthFilterCommand = new RelayCommand(_ => ApplyFilter("This Month"));
+            YearFilterCommand = new RelayCommand(_ => ApplyFilter("This Year"));
+
+            InitializeSalesmen();
             InitializeCharts();
-            _ = LoadDataAsync();
+            LoadData();
+        }
+
+        private void InitializeSalesmen()
+        {
+            var names = new[] { "Mr Pradeep", "Mr Sooraj", "Ms Maya", "Mr Aftab", "Mr Talha", "Mr Bilal", "Mr Sunny", "Mr Harvinder", "Mr Nazim" };
+            foreach (var name in names)
+                SalesmanList.Add(new SalesmanData { Name = name, Amount = "AED 0" });
         }
 
         private void InitializeCharts()
         {
-            // Chart 1: Daily Production Trend
+            // Daily Trend
             DailyTrendSeries = new ISeries[]
             {
                 new LineSeries<double>
                 {
                     Name = "SQM",
                     Values = new double[] { 1100, 1150, 1200, 1180, 1250, 1220, 1280 },
-                    Fill = new SolidColorPaint(new SKColor(59, 130, 246, 80)),
-                    Stroke = new SolidColorPaint(new SKColor(59, 130, 246), 2),
-                    GeometrySize = 0,
-                    LineSmoothness = 0.5f
+                    Fill = new SolidColorPaint(new SKColor(59, 130, 246, 30)),
+                    Stroke = new SolidColorPaint(new SKColor(59, 130, 246), 3),
+                    GeometrySize = 6
                 },
                 new LineSeries<double>
                 {
                     Name = "Sheets",
                     Values = new double[] { 200, 210, 205, 220, 215, 230, 225 },
-                    Fill = new SolidColorPaint(new SKColor(16, 185, 129, 80)),
                     Stroke = new SolidColorPaint(new SKColor(16, 185, 129), 2),
-                    GeometrySize = 0,
-                    LineSmoothness = 0.5f,
+                    GeometrySize = 4,
                     ScalesYAt = 1
                 }
             };
@@ -255,78 +290,59 @@ namespace ProGlassAutomation.ViewModels
                 new Axis { LabelsPaint = new SolidColorPaint(SKColors.Gray), Position = LiveChartsCore.Measure.AxisPosition.End }
             };
 
-            // Chart 2: Weekly Jobs
-            WeeklyJobSeries = new ISeries[]
+            // Salesman Chart
+            SalesmanChartSeries = new ISeries[]
             {
-                new StackedColumnSeries<int>
+                new ColumnSeries<double>
                 {
-                    Name = "Completed",
-                    Values = new int[] { 35, 42, 28, 45, 38, 50, 33, 41 },
-                    Fill = new SolidColorPaint(new SKColor(16, 185, 129))
-                },
-                new StackedColumnSeries<int>
-                {
-                    Name = "In Progress",
-                    Values = new int[] { 15, 18, 22, 12, 20, 15, 25, 18 },
-                    Fill = new SolidColorPaint(new SKColor(59, 130, 246))
-                },
-                new StackedColumnSeries<int>
-                {
-                    Name = "Pending",
-                    Values = new int[] { 8, 12, 5, 15, 10, 8, 12, 9 },
-                    Fill = new SolidColorPaint(new SKColor(245, 158, 11))
+                    Name = "Revenue",
+                    Values = new double[] { 120, 145, 98, 167, 134, 156, 189, 143, 112 },
+                    Fill = new SolidColorPaint(new SKColor(139, 92, 246)),
+                    MaxBarWidth = 30
                 }
             };
-            WeeklyJobXAxes = new Axis[]
+            SalesmanChartXAxes = new Axis[]
             {
-                new Axis
-                {
-                    Labels = new[] { "Week 1", "Week 2", "Week 3", "Week 4", "Week 5", "Week 6", "Week 7", "Week 8" },
-                    LabelsPaint = new SolidColorPaint(SKColors.Gray)
-                }
+                new Axis { Labels = new[] { "Pradeep", "Sooraj", "Maya", "Aftab", "Talha", "Bilal", "Sunny", "Harvi", "Nazim" }, LabelsPaint = new SolidColorPaint(SKColors.Gray) }
             };
-            WeeklyJobYAxes = new Axis[] { new Axis { LabelsPaint = new SolidColorPaint(SKColors.Gray) } };
+            SalesmanChartYAxes = new Axis[] { new Axis { LabelsPaint = new SolidColorPaint(SKColors.Gray) } };
 
-            // Chart 3: Product Mix
+            // Product Mix
             ProductMixSeries = new ISeries[]
             {
-                new PieSeries<double> { Name = "Tempered", Values = new double[] { 35 }, Fill = new SolidColorPaint(new SKColor(59, 130, 246)), InnerRadius = 60 },
-                new PieSeries<double> { Name = "Laminated", Values = new double[] { 25 }, Fill = new SolidColorPaint(new SKColor(16, 185, 129)), InnerRadius = 60 },
-                new PieSeries<double> { Name = "Insulated", Values = new double[] { 20 }, Fill = new SolidColorPaint(new SKColor(139, 92, 246)), InnerRadius = 60 },
-                new PieSeries<double> { Name = "Curved", Values = new double[] { 12 }, Fill = new SolidColorPaint(new SKColor(245, 158, 11)), InnerRadius = 60 },
-                new PieSeries<double> { Name = "Decorative", Values = new double[] { 8 }, Fill = new SolidColorPaint(new SKColor(239, 68, 68)), InnerRadius = 60 }
+                new PieSeries<double> { Name = "Tempered", Values = new[] { 35.0 }, Fill = new SolidColorPaint(new SKColor(59, 130, 246)), InnerRadius = 60 },
+                new PieSeries<double> { Name = "Laminated", Values = new[] { 25.0 }, Fill = new SolidColorPaint(new SKColor(16, 185, 129)), InnerRadius = 60 },
+                new PieSeries<double> { Name = "Insulated", Values = new[] { 20.0 }, Fill = new SolidColorPaint(new SKColor(139, 92, 246)), InnerRadius = 60 },
+                new PieSeries<double> { Name = "Curved", Values = new[] { 12.0 }, Fill = new SolidColorPaint(new SKColor(245, 158, 11)), InnerRadius = 60 },
+                new PieSeries<double> { Name = "Decorative", Values = new[] { 8.0 }, Fill = new SolidColorPaint(new SKColor(239, 68, 68)), InnerRadius = 60 }
             };
 
-            // Chart 4: Machine Utilization
+            // Machine Util
             MachineUtilSeries = new ISeries[]
             {
                 new RowSeries<int>
                 {
-                    Values = new int[] { 87, 74, 92, 68, 81, 55 },
+                    Values = new[] { 87, 74, 92, 68, 81, 55 },
                     Fill = new SolidColorPaint(new SKColor(139, 92, 246)),
                     MaxBarWidth = 20
                 }
             };
-            MachineUtilXAxes = new Axis[] { new Axis { LabelsPaint = new SolidColorPaint(SKColors.Gray), MaxLimit = 100 } };
+            MachineUtilXAxes = new Axis[] { new Axis { MaxLimit = 100, LabelsPaint = new SolidColorPaint(SKColors.Gray) } };
             MachineUtilYAxes = new Axis[]
             {
-                new Axis
-                {
-                    Labels = new[] { "CNC-01", "CNC-02", "Temper-01", "Lam-01", "IG-01", "Polish-01" },
-                    LabelsPaint = new SolidColorPaint(SKColors.Gray)
-                }
+                new Axis { Labels = new[] { "CNC-01", "CNC-02", "Temper-01", "Lam-01", "IG-01", "Polish-01" }, LabelsPaint = new SolidColorPaint(SKColors.Gray) }
             };
 
-            // Chart 5: Delivery Status
+            // Delivery Status
             DeliveryStatusSeries = new ISeries[]
             {
-                new PieSeries<double> { Name = "Delivered", Values = new double[] { 52 }, Fill = new SolidColorPaint(new SKColor(16, 185, 129)), InnerRadius = 55 },
-                new PieSeries<double> { Name = "In Transit", Values = new double[] { 15 }, Fill = new SolidColorPaint(new SKColor(59, 130, 246)), InnerRadius = 55 },
-                new PieSeries<double> { Name = "Scheduled", Values = new double[] { 25 }, Fill = new SolidColorPaint(new SKColor(245, 158, 11)), InnerRadius = 55 },
-                new PieSeries<double> { Name = "Delayed", Values = new double[] { 8 }, Fill = new SolidColorPaint(new SKColor(239, 68, 68)), InnerRadius = 55 }
+                new PieSeries<double> { Name = "Delivered", Values = new[] { 52.0 }, Fill = new SolidColorPaint(new SKColor(16, 185, 129)), InnerRadius = 60 },
+                new PieSeries<double> { Name = "In Transit", Values = new[] { 15.0 }, Fill = new SolidColorPaint(new SKColor(59, 130, 246)), InnerRadius = 60 },
+                new PieSeries<double> { Name = "Scheduled", Values = new[] { 25.0 }, Fill = new SolidColorPaint(new SKColor(245, 158, 11)), InnerRadius = 60 },
+                new PieSeries<double> { Name = "Delayed", Values = new[] { 8.0 }, Fill = new SolidColorPaint(new SKColor(239, 68, 68)), InnerRadius = 60 }
             };
 
-            // Chart 6: Optimization
+            // Optimization
             OptimizationSeries = new ISeries[]
             {
                 new LineSeries<double>
@@ -334,125 +350,92 @@ namespace ProGlassAutomation.ViewModels
                     Name = "Efficiency %",
                     Values = new double[] { 82, 85, 84, 88, 87, 89, 86, 90 },
                     Stroke = new SolidColorPaint(new SKColor(139, 92, 246), 3),
-                    GeometrySize = 4,
                     Fill = null
-                },
-                new LineSeries<double>
-                {
-                    Name = "Waste",
-                    Values = new double[] { 12, 10, 11, 8, 9, 7, 10, 6 },
-                    Stroke = new SolidColorPaint(new SKColor(245, 158, 11), 2),
-                    Fill = new SolidColorPaint(new SKColor(245, 158, 11, 30)),
-                    GeometrySize = 0,
-                    ScalesYAt = 1
                 }
             };
             OptimizationXAxes = new Axis[] { new Axis { LabelsPaint = new SolidColorPaint(SKColors.Gray) } };
-            OptimizationYAxes = new Axis[]
-            {
-                new Axis { LabelsPaint = new SolidColorPaint(SKColors.Gray), MinLimit = 65, MaxLimit = 100 },
-                new Axis { LabelsPaint = new SolidColorPaint(SKColors.Gray), Position = LiveChartsCore.Measure.AxisPosition.End }
-            };
-
-            // Delivery Trend Chart
-            DeliveryTrendSeries = new ISeries[]
-            {
-                new LineSeries<int>
-                {
-                    Name = "Order Qty",
-                    Values = new int[] { 120, 135, 128, 142, 156, 148, 162, 175 },
-                    Stroke = new SolidColorPaint(new SKColor(59, 130, 246), 2),
-                    Fill = new SolidColorPaint(new SKColor(59, 130, 246, 30)),
-                    GeometrySize = 4
-                },
-                new LineSeries<int>
-                {
-                    Name = "Delivered",
-                    Values = new int[] { 100, 125, 120, 135, 145, 140, 155, 168 },
-                    Stroke = new SolidColorPaint(new SKColor(16, 185, 129), 2),
-                    Fill = null,
-                    GeometrySize = 4
-                }
-            };
-            DeliveryTrendXAxes = new Axis[]
-            {
-                new Axis
-                {
-                    Labels = new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Mon" },
-                    LabelsPaint = new SolidColorPaint(SKColors.Gray)
-                }
-            };
-            DeliveryTrendYAxes = new Axis[] { new Axis { LabelsPaint = new SolidColorPaint(SKColors.Gray) } };
+            OptimizationYAxes = new Axis[] { new Axis { MinLimit = 65, MaxLimit = 100, LabelsPaint = new SolidColorPaint(SKColors.Gray) } };
         }
 
-        public async Task LoadDataAsync()
+        public void LoadData()
         {
             try
             {
                 // Load DailyWorks
-                var dbRecords = await Task.Run(() => DbHelper.GetAllDailyWork());
+                var dbWorks = DbHelper.GetAllDailyWork();
                 DailyWorkRecords.Clear();
-                foreach (var record in dbRecords)
+                foreach (var w in dbWorks)
                 {
                     DailyWorkRecords.Add(new DailyWorkRecord
                     {
-                        Id = record.Id,
-                        Date = record.Date,
-                        Company = record.Company ?? "",
-                        PiNumber = record.PINumber ?? "",
-                        CustomerReference = record.CustomerReference ?? "",
-                        TypeOfWork = record.TypeOfWork ?? "",
-                        ProductionStatus = record.ProductionStatus ?? "",
-                        Qty = record.Qty,
-                        Sqm = record.SQM,
-                        Status = record.Status ?? "",
-                        Salesman = record.Salesman ?? "",
-                        Color = record.Color ?? ""
+                        Id = w.Id,
+                        Date = w.Date,
+                        Company = w.Company,
+                        PiNumber = w.PINumber,
+                        Qty = w.Qty,
+                        Sqm = w.SQM,
+                        Status = w.Status
                     });
                 }
                 DailyWorksCount = DailyWorkRecords.Count;
 
-                // Load Deliveries
-                var dbDeliveries = await Task.Run(() => DbHelper.GetAllDeliveries());
+                // Load Deliveries with Items
+                var dbDeliveries = DbHelper.GetAllDeliveries();
                 DeliveryRecords.Clear();
-                foreach (var delivery in dbDeliveries)
+
+                int totalQty = 0, totalDelivered = 0, totalReturned = 0, totalBalance = 0;
+
+                foreach (var d in dbDeliveries)
                 {
+                    // Load items if not already loaded
+                    if (d.DeliveryItems == null || d.DeliveryItems.Count == 0)
+                    {
+                        var items = DbHelper.GetDeliveryItems(d.Id);
+                        d.DeliveryItems = new ObservableCollection<DeliveryItem>(items);
+                    }
+
+                    var delivered = d.DeliveryItems.Sum(x => x.DeliveredQty);
+                    var returned = d.DeliveryItems.Sum(x => x.ReturnedQty);
+                    var balance = d.OrderQty - delivered + returned;
+
+                    totalQty += d.OrderQty;
+                    totalDelivered += delivered;
+                    totalReturned += returned;
+                    totalBalance += balance;
+
                     DeliveryRecords.Add(new DeliveryRecord
                     {
-                        Id = delivery.Id,
-                        Date = delivery.Date,
-                        Company = delivery.Company ?? "",
-                        PINumber = delivery.PINumber ?? "",
-                        TypeOfWork = delivery.TypeOfWork ?? "",
-                        Color = delivery.Color ?? "",
-                        OrderQty = delivery.OrderQty,
-                        TotalDelivered = delivery.TotalDelivered,
-                        TotalReturned = delivery.TotalReturned,
-                        Balance = delivery.Balance,
-                        OrderSQM = delivery.OrderSQM,
-                        Salesman = delivery.Salesman ?? "",
-                        Status = delivery.Status ?? "",
-                        Notes = delivery.Notes ?? ""
+                        Id = d.Id,
+                        Date = d.Date,
+                        Company = d.Company,
+                        PINumber = d.PINumber,
+                        OrderQty = d.OrderQty,
+                        TotalDelivered = delivered,
+                        TotalReturned = returned,
+                        Balance = balance,
+                        Status = d.Status
                     });
                 }
 
-                // Update Delivery Statistics
-                DeliveryCount = DeliveryRecords.Count;
-                TotalDeliveryQty = DeliveryRecords.Sum(d => d.OrderQty);
-                TotalDeliveredQty = DeliveryRecords.Sum(d => d.TotalDelivered);
-                TotalBalanceQty = DeliveryRecords.Sum(d => d.Balance);
-                TotalDeliverySQM = DeliveryRecords.Sum(d => d.OrderSQM);
+                // Update Properties
+                DeliveryCount = dbDeliveries.Count;
+                DeliveryTotalQty = totalQty;
+                DeliveryTotalDelivered = totalDelivered;
+                DeliveryTotalReturned = totalReturned;
+                DeliveryTotalBalance = totalBalance;
 
-                // Notify all property changes
-                OnPropertyChanged(nameof(DeliveryRecords));
-                OnPropertyChanged(nameof(DeliveryCount));
-                OnPropertyChanged(nameof(TotalDeliveryQty));
-                OnPropertyChanged(nameof(TotalDeliveredQty));
-                OnPropertyChanged(nameof(TotalBalanceQty));
-                OnPropertyChanged(nameof(TotalDeliverySQM));
+                DelTotal = DeliveryCount.ToString();
+                DelPending = dbDeliveries.Count(x => x.Status == "Pending").ToString();
+                DelCompleted = dbDeliveries.Count(x => x.Status == "Completed").ToString();
 
-                UpdateKPICards();
                 LastUpdate = $"Last update: {DateTime.Now:HH:mm}";
+
+                // Notify all
+                OnPropertyChanged(nameof(DeliveryTotalQty));
+                OnPropertyChanged(nameof(DeliveryTotalDelivered));
+                OnPropertyChanged(nameof(DeliveryTotalReturned));
+                OnPropertyChanged(nameof(DeliveryTotalBalance));
+                OnPropertyChanged(nameof(DeliveryProgressPercent));
             }
             catch (Exception ex)
             {
@@ -460,30 +443,42 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        private void UpdateKPICards()
+        private void ApplyFilter(string filter)
         {
-            var today = DateTime.Today;
-            var todayRecords = DailyWorkRecords.Where(r => r.Date.Date == today).ToList();
+            SelectedFilter = filter;
+            DayFilterBg = "#F3F4F6"; WeekFilterBg = "#F3F4F6"; MonthFilterBg = "#F3F4F6"; YearFilterBg = "#F3F4F6";
+            DayFilterFg = "#1F2937"; WeekFilterFg = "#1F2937"; MonthFilterFg = "#1F2937"; YearFilterFg = "#1F2937";
 
-            DailyOutputCard.Value = todayRecords.Sum(r => r.Sqm);
-            DeliveriesCard.Value = DeliveryRecords.Count(d => d.Date.Date == today);
-
-            if (DailyWorkRecords.Any())
+            switch (filter)
             {
-                var completed = DailyWorkRecords.Count(r => r.ProductionStatus == "COMPLETED");
-                OptimizationCard.Value = Math.Round((double)completed / DailyWorkRecords.Count * 100, 1);
+                case "Today": DayFilterBg = "#2563EB"; DayFilterFg = "#FFFFFF"; break;
+                case "This Week": WeekFilterBg = "#2563EB"; WeekFilterFg = "#FFFFFF"; break;
+                case "This Month": MonthFilterBg = "#2563EB"; MonthFilterFg = "#FFFFFF"; break;
+                case "This Year": YearFilterBg = "#2563EB"; YearFilterFg = "#FFFFFF"; break;
             }
 
-            OnPropertyChanged(nameof(ProformaCard));
-            OnPropertyChanged(nameof(JobOrdersCard));
-            OnPropertyChanged(nameof(OptimizationCard));
-            OnPropertyChanged(nameof(DailyOutputCard));
-            OnPropertyChanged(nameof(DeliveriesCard));
-            OnPropertyChanged(nameof(InventoryCard));
+            OnPropertyChanged(nameof(SelectedFilter));
+            OnPropertyChanged(nameof(DayFilterBg)); OnPropertyChanged(nameof(WeekFilterBg));
+            OnPropertyChanged(nameof(MonthFilterBg)); OnPropertyChanged(nameof(YearFilterBg));
+            OnPropertyChanged(nameof(DayFilterFg)); OnPropertyChanged(nameof(WeekFilterFg));
+            OnPropertyChanged(nameof(MonthFilterFg)); OnPropertyChanged(nameof(YearFilterFg));
+
+            LoadData();
+        }
+
+        public void Sync()
+        {
+            LoadData();
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    public class SalesmanData
+    {
+        public string Name { get; set; } = "";
+        public string Amount { get; set; } = "";
     }
 }

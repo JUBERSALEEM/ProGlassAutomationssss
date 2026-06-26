@@ -931,7 +931,7 @@ VALUES ($sid, $d, $c, $pi, $cr, $t, $q, $s, $sm, $st, $n, $cd, $ud)";
                 using var r = cmd.ExecuteReader();
                 while (r.Read())
                 {
-                    list.Add(new Delivery
+                    var delivery = new Delivery
                     {
                         Id = r.GetInt32(0),
                         SourceId = r.IsDBNull(1) ? 0 : r.GetInt32(1),
@@ -947,7 +947,14 @@ VALUES ($sid, $d, $c, $pi, $cr, $t, $q, $s, $sm, $st, $n, $cd, $ud)";
                         Notes = r.IsDBNull(11) ? "" : r.GetString(11),
                         CreatedDate = DateTime.TryParse(r.GetString(12), out var cd) ? cd : DateTime.Today,
                         UpdatedDate = DateTime.TryParse(r.GetString(13), out var ud) ? ud : DateTime.Today
-                    });
+                    };
+
+                    // ✅ FIX: Load DeliveryItems for each delivery
+                    delivery.DeliveryItems = new ObservableCollection<DeliveryItem>(
+                        GetDeliveryItems(delivery.Id)
+                    );
+
+                    list.Add(delivery);
                 }
                 return list;
             });

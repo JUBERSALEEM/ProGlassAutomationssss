@@ -15,21 +15,18 @@ namespace ProGlassAutomation.Views.Dashboard
         public DashboardView()
         {
             InitializeComponent();
-
             _viewModel = new DashboardViewModel();
             DataContext = _viewModel;
-
             Loaded += DashboardView_Loaded;
         }
 
-        private async void DashboardView_Loaded(object sender, RoutedEventArgs e)
+        private void DashboardView_Loaded(object sender, RoutedEventArgs e)
         {
             try
             {
                 if (_isLoaded) return;
                 _isLoaded = true;
-
-                await _viewModel.LoadDataAsync();
+                _viewModel.LoadData();
             }
             catch (Exception ex)
             {
@@ -37,11 +34,23 @@ namespace ProGlassAutomation.Views.Dashboard
             }
         }
 
-        private async void Refresh_Click(object sender, RoutedEventArgs e)
+        private void SyncBalance_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                await _viewModel.LoadDataAsync();
+                _viewModel.Sync();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void Refresh_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                _viewModel.LoadData();
             }
             catch (Exception ex)
             {
@@ -59,10 +68,8 @@ namespace ProGlassAutomation.Views.Dashboard
 
                 var dwSalesmen = dailyWorks.Where(d => !string.IsNullOrEmpty(d.Salesman))
                                        .Select(d => d.Salesman).Distinct().ToList();
-
                 var delSalesmen = deliveries.Where(d => !string.IsNullOrEmpty(d.Salesman))
                                     .Select(d => d.Salesman).Distinct().ToList();
-
                 var piSalesmen = pis.Where(p => !string.IsNullOrEmpty(p.Salesman))
                                  .Select(p => p.Salesman).Distinct().ToList();
 
@@ -77,9 +84,7 @@ namespace ProGlassAutomation.Views.Dashboard
                     var dwCount = dailyWorks.Count(d => d.Salesman == s);
                     var delCount = deliveries.Count(d => d.Salesman == s);
                     var piCount = pis.Count(p => p.Salesman == s && p.Status == "Confirmed");
-
-                    var piTotal = pis.Where(p => p.Salesman == s && p.Status == "Confirmed")
-                                  .Sum(p => p.NetAmount);
+                    var piTotal = pis.Where(p => p.Salesman == s && p.Status == "Confirmed").Sum(p => p.NetAmount);
 
                     result += $"{index}. {s}\n";
                     result += $"   DailyWork: {dwCount} | Deliveries: {delCount}\n";
