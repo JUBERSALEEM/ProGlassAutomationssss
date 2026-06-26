@@ -16,73 +16,104 @@
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
 
-        <!-- Colors -->
-        <SolidColorBrush x:Key="DarkBg" Color="#0B1120"/>
-        <SolidColorBrush x:Key="DarkBg2" Color="#111827"/>
-        <SolidColorBrush x:Key="DarkBg3" Color="#1E293B"/>
-        <SolidColorBrush x:Key="BorderColor" Color="#1F2937"/>
-        <SolidColorBrush x:Key="BorderLight" Color="#334155"/>
-        <SolidColorBrush x:Key="BlueAccent" Color="#2563EB"/>
-        <SolidColorBrush x:Key="BlueLight" Color="#3B82F6"/>
-        <SolidColorBrush x:Key="TextWhite" Color="#F8FAFC"/>
-        <SolidColorBrush x:Key="TextGray" Color="#94A3B8"/>
-        <SolidColorBrush x:Key="TextMuted" Color="#64748B"/>
+        <!-- GPU-Optimized Shadow Effects -->
+        <DropShadowEffect x:Key="CardShadow" BlurRadius="12" ShadowDepth="2" Opacity="0.12" Color="#000000" Direction="270"/>
 
-        <!-- GPU-Optimized Shadow Effect -->
-        <DropShadowEffect x:Key="CardShadow" BlurRadius="15" ShadowDepth="3" Opacity="0.3" Color="#000000" Direction="270"/>
-        <DropShadowEffect x:Key="LogoShadow" BlurRadius="10" ShadowDepth="2" Opacity="0.25" Color="#000000" Direction="270"/>
-        <DropShadowEffect x:Key="MenuShadow" BlurRadius="15" ShadowDepth="4" Opacity="0.4" Color="#000000" Direction="270"/>
-        <DropShadowEffect x:Key="ButtonGlow" BlurRadius="8" ShadowDepth="2" Opacity="0.3" Color="#2563EB" Direction="270"/>
+        <!-- Dynamic Sidebar Width Trigger Style -->
+        <Style x:Key="SidebarBorderStyle" TargetType="Border">
+            <Setter Property="Width" Value="300"/>
+            <Setter Property="Visibility" Value="Visible"/>
+            <Style.Triggers>
+                <!-- When SidebarToggle is Checked (Collapsed state), collapse the left sidebar to 0 width -->
+                <DataTrigger Binding="{Binding IsChecked, ElementName=SidebarToggle}" Value="True">
+                    <Setter Property="Width" Value="0"/>
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
 
-        <!-- Menu Item Style with GPU Caching -->
-        <Style x:Key="DarkMenuItem" TargetType="MenuItem">
-            <Setter Property="Foreground" Value="#E2E8F0"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Padding" Value="16,12"/>
-            <Setter Property="Background" Value="#1E293B"/>
-            <Setter Property="BorderBrush" Value="#334155"/>
+        <!-- Dynamic Visibility Trigger Style for Expanded Menu Elements -->
+        <Style x:Key="MenuContentVisibilityStyle" TargetType="FrameworkElement">
+            <Setter Property="Visibility" Value="Collapsed"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsChecked, ElementName=SidebarToggle}" Value="False">
+                    <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Modern Expander Stylish Card Style with Safe Inlined Colors -->
+        <Style x:Key="StylishExpanderCard" TargetType="Expander">
+            <Setter Property="Background" Value="#FFFFFF"/>
+            <Setter Property="BorderBrush" Value="#E2E8F0"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="Margin" Value="0,4,0,4"/>
+            <Setter Property="Padding" Value="4"/>
+            <Setter Property="Effect" Value="{StaticResource CardShadow}"/>
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="MenuItem">
-                        <Border x:Name="border" 
+                    <ControlTemplate TargetType="Expander">
+                        <Border CornerRadius="12" 
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="10" Margin="0,2"
                                 CacheMode="BitmapCache">
                             <Grid>
-                                <ContentPresenter Margin="14,10" ContentSource="Header" RecognizesAccessKey="True"/>
-                                <Popup x:Name="PART_Popup"
-                                       Placement="Right"
-                                       AllowsTransparency="True"
-                                       Focusable="False"
-                                       IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}"
-                                       PopupAnimation="Fade"
-                                       StaysOpen="False">
-                                    <Border Background="#111827" BorderBrush="#334155" BorderThickness="1"
-                                            CornerRadius="12" Padding="6" MinWidth="200"
-                                            CacheMode="BitmapCache">
-                                        <Border.Effect>
-                                            <DropShadowEffect BlurRadius="15" ShadowDepth="4" Opacity="0.4"/>
-                                        </Border.Effect>
-                                        <StackPanel IsItemsHost="True"/>
-                                    </Border>
-                                </Popup>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition x:Name="ContentRow" Height="0"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Expander Header Banner -->
+                                <ToggleButton Grid.Row="0" 
+                                              IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                              Background="Transparent"
+                                              BorderThickness="0"
+                                              Cursor="Hand"
+                                              Padding="12,10">
+                                    <ToggleButton.Template>
+                                        <ControlTemplate TargetType="ToggleButton">
+                                            <Border Background="Transparent" Padding="{TemplateBinding Padding}">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <ContentPresenter Grid.Column="0" VerticalAlignment="Center"/>
+                                                    <Path x:Name="Arrow" 
+                                                          Grid.Column="1"
+                                                          Data="M 0 0 L 4 4 L 8 0" 
+                                                          Stroke="#475569" 
+                                                          StrokeThickness="2"
+                                                          HorizontalAlignment="Right" 
+                                                          VerticalAlignment="Center"
+                                                          Width="8" Height="5"
+                                                          RenderTransformOrigin="0.5,0.5">
+                                                        <Path.RenderTransform>
+                                                            <RotateTransform Angle="0"/>
+                                                        </Path.RenderTransform>
+                                                    </Path>
+                                                </Grid>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </ToggleButton.Template>
+                                    <ContentPresenter ContentSource="Header"/>
+                                </ToggleButton>
+
+                                <!-- Content Body Area -->
+                                <Border x:Name="ContentBorder" 
+                                        Grid.Row="1" 
+                                        Background="Transparent" 
+                                        BorderBrush="#E2E8F0"
+                                        BorderThickness="0,1,0,0"
+                                        Padding="6">
+                                    <ContentPresenter/>
+                                </Border>
                             </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsHighlighted" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#334155"/>
-                            </Trigger>
-                            <Trigger Property="IsSubmenuOpen" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#334155"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.5"/>
+                            <Trigger Property="IsExpanded" Value="True">
+                                <Setter TargetName="ContentRow" Property="Height" Value="Auto"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -90,12 +121,12 @@
             </Setter>
         </Style>
 
-        <!-- Dropdown Menu Item Style with GPU Caching -->
-        <Style x:Key="DropdownMenuItemStyle" TargetType="Button">
+        <!-- Modern Sub-Menu Flat Action Button with Safe Inlined Colors -->
+        <Style x:Key="SidebarSubActionButton" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="#E2E8F0"/>
+            <Setter Property="Foreground" Value="#475569"/>
             <Setter Property="FontSize" Value="12"/>
-            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Padding" Value="14,10"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -104,16 +135,13 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="border" Background="{TemplateBinding Background}" 
-                                Padding="{TemplateBinding Padding}" CornerRadius="8" Margin="2"
-                                CacheMode="BitmapCache">
-                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
+                                Padding="{TemplateBinding Padding}" CornerRadius="8" Margin="1">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#334155"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#1E293B"/>
+                                <Setter TargetName="border" Property="Background" Value="#EFF6FF"/>
+                                <Setter Property="Foreground" Value="#2563EB"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -121,50 +149,24 @@
             </Setter>
         </Style>
 
-        <!-- License Warning Style with GPU Caching -->
-        <Style x:Key="LicenseWarningStyle" TargetType="Border">
-            <Setter Property="Background" Value="#7F1D1D"/>
-            <Setter Property="BorderBrush" Value="#991B1B"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="10"/>
-            <Setter Property="Padding" Value="12,8"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="CacheMode" Value="BitmapCache"/>
-        </Style>
-
-        <!-- License Active Style with GPU Caching -->
-        <Style x:Key="LicenseActiveStyle" TargetType="Border">
-            <Setter Property="Background" Value="#064E3B"/>
-            <Setter Property="BorderBrush" Value="#065F46"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="10"/>
-            <Setter Property="Padding" Value="12,8"/>
-            <Setter Property="CacheMode" Value="BitmapCache"/>
-        </Style>
-
-        <!-- Module Button Style with GPU Caching -->
-        <Style x:Key="ModuleButtonStyle" TargetType="Button">
+        <!-- Minimalist Double-Arrow Collapse Toggle Button Style -->
+        <Style x:Key="CollapseArrowButtonStyle" TargetType="ToggleButton">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="#E2E8F0"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="Width" Value="36"/>
+            <Setter Property="Height" Value="36"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="FontFamily" Value="Segoe UI"/>
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" 
-                                CornerRadius="10" Padding="{TemplateBinding Padding}"
-                                CacheMode="BitmapCache">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border CornerRadius="8" Background="{TemplateBinding Background}">
+                            <Grid>
+                                <TextBlock Text="◀◀" FontSize="11" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#334155"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#1E293B"/>
+                                <Setter Property="Background" Value="#F1F5F9"/>
+                                <Setter Property="Foreground" Value="#2563EB"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -172,264 +174,299 @@
             </Setter>
         </Style>
 
-        <!-- Screenshot Button Style with GPU Caching -->
-        <Style x:Key="ScreenshotButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#1E293B"/>
-            <Setter Property="Foreground" Value="#E2E8F0"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Padding" Value="14,10"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="FontFamily" Value="Segoe UI"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" 
-                                CornerRadius="10" Padding="{TemplateBinding Padding}"
-                                CacheMode="BitmapCache">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="📸" FontSize="13" Margin="0,0,6,0"/>
-                                <TextBlock Text="Screenshot" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#334155"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#1E293B"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- Nav Button Style with Glow Effect -->
-        <Style x:Key="NavButtonStyle" TargetType="Border">
+        <!-- Minimalist Floating Double-Arrow Expand Toggle Button Style -->
+        <Style x:Key="ExpandArrowButtonStyle" TargetType="ToggleButton">
             <Setter Property="Background" Value="#2563EB"/>
-            <Setter Property="CornerRadius" Value="10"/>
-            <Setter Property="Padding" Value="18,10"/>
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="40"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="CacheMode" Value="BitmapCache"/>
-            <Setter Property="Effect">
+            <Setter Property="Template">
                 <Setter.Value>
-                    <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.3" Color="#2563EB"/>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border CornerRadius="20" Background="{TemplateBinding Background}" BorderBrush="#FFFFFF" BorderThickness="1.5">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.25" Color="#000000"/>
+                            </Border.Effect>
+                            <Grid>
+                                <TextBlock Text="▶▶" FontSize="10" FontWeight="Black" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="1,0,0,0"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#1D4ED8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
                 </Setter.Value>
             </Setter>
-        </Style>
-
-        <!-- Content Border Style with GPU Caching -->
-        <Style x:Key="ContentBorderStyle" TargetType="Border">
-            <Setter Property="Background" Value="#111827"/>
-            <Setter Property="Margin" Value="16"/>
-            <Setter Property="CornerRadius" Value="16"/>
-            <Setter Property="CacheMode" Value="BitmapCache"/>
-            <Setter Property="Effect">
-                <Setter.Value>
-                    <DropShadowEffect BlurRadius="15" ShadowDepth="3" Opacity="0.3"/>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- DateTime Border Style with GPU Caching -->
-        <Style x:Key="DateTimeBorderStyle" TargetType="Border">
-            <Setter Property="Background" Value="#1E293B"/>
-            <Setter Property="CornerRadius" Value="10"/>
-            <Setter Property="Padding" Value="14,8"/>
-            <Setter Property="CacheMode" Value="BitmapCache"/>
         </Style>
     </Window.Resources>
 
     <Grid Background="#0B1120">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="80"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <!-- Column 0: Fixed Left-Side Sidebar (Width controlled dynamically) -->
+            <ColumnDefinition Width="Auto"/>
+            <!-- Column 1: Maximized Viewport For Active Glass Modules -->
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
 
-        <!-- ==================== HEADER ==================== -->
-        <Border Grid.Row="0" Background="White" BorderBrush="#1F2937" BorderThickness="0,0,0,1">
-            <Grid Margin="24,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+        <!-- ==================== RESPONSIVE NARROW LEFT SIDEBAR PORTION ==================== -->
+        <!-- Clicking the left double arrow collapses this completely. Clicking floating double-arrow expands it back. -->
+        <Border Grid.Column="0" 
+                x:Name="SidebarBorder" 
+                Style="{StaticResource SidebarBorderStyle}"
+                Background="#F8FAFC" 
+                BorderBrush="#E2E8F0" 
+                BorderThickness="0,0,1,0">
 
-                <!-- LEFT: LOGO -->
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <!-- Logo Box with GPU Caching -->
-                    <Border Width="68" Height="58" CornerRadius="10" Background="White" Cursor="Hand"
-                            Padding="5" MouseLeftButtonDown="Logo_Click"
-                            CacheMode="BitmapCache">
-                        <Border.Effect>
-                            <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.25"/>
-                        </Border.Effect>
+            <Grid Margin="16">
+                <Grid.RowDefinitions>
+                    <!-- Brand & Collapse Trigger Header Row -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- Scrollable Menu Card Folders Row -->
+                    <RowDefinition Height="*"/>
+                    <!-- Bottom Status utilities Row -->
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- 1. SIDEBAR TOP BRAND HEADER -->
+                <Grid Grid.Row="0" Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- App Icon / Brand Details (Click triggers Logo_Click event to open About Page) -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Cursor="Hand" MouseLeftButtonDown="Logo_Click">
+                        <Border Width="45" Height="38" CornerRadius="8" Background="White" Padding="3">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="6" ShadowDepth="1" Opacity="0.1" Color="#000000"/>
+                            </Border.Effect>
+                            <Grid>
+                                <TextBlock Text="ERP" FontSize="12" FontWeight="Bold" Foreground="#2563EB" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                        <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="ProGlass" FontSize="14" FontWeight="Bold" Foreground="#0F172A"/>
+                            <TextBlock Text="Automation ERP" FontSize="8" Foreground="#94A3B8"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Collapse Left Double-Arrow Button Trigger -->
+                    <ToggleButton x:Name="SidebarToggle" 
+                                  Grid.Column="1" 
+                                  Style="{StaticResource CollapseArrowButtonStyle}" 
+                                  VerticalAlignment="Center"/>
+                </Grid>
+
+                <!-- 2. SCROLLABLE COLLAPSIBLE MENU CARDS (Dropdown expand pattern) -->
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+                    <StackPanel Orientation="Vertical">
+
+                        <!-- CARD: DASHBOARD HOME LINK -->
+                        <Border Background="#FFFFFF" CornerRadius="12" BorderBrush="#E2E8F0" BorderThickness="1" Margin="0,0,0,8" Padding="2" Effect="{StaticResource CardShadow}">
+                            <Button Style="{StaticResource SidebarSubActionButton}" Click="BtnHome_Click" Padding="12,10" HorizontalContentAlignment="Stretch">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="📊" Margin="0,0,10,0" FontSize="13"/>
+                                    <TextBlock Grid.Column="1" Text="Dashboard Home" FontSize="11" FontWeight="Bold" Foreground="#0F172A" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Button>
+                        </Border>
+
+                        <!-- CARD: INVOICES & ORDERS -->
+                        <Expander Style="{StaticResource StylishExpanderCard}" IsExpanded="False">
+                            <Expander.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="💰" FontSize="14" Margin="0,0,10,0"/>
+                                    <TextBlock Text="Invoices &amp; Orders" FontSize="11" FontWeight="Bold" Foreground="#0F172A" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Expander.Header>
+                            <StackPanel Orientation="Vertical">
+                                <Button Style="{StaticResource SidebarSubActionButton}" Content="🧾 Proforma Invoice" Click="MenuItem_ProformaInvoice_Click"/>
+                                <Button Style="{StaticResource SidebarSubActionButton}" Content="📋 Job Orders" Click="MenuItem_JobOrders_Click"/>
+                                <Button Style="{StaticResource SidebarSubActionButton}" Content="📜 Invoice History"/>
+                            </StackPanel>
+                        </Expander>
+
+                        <!-- CARD: GLASS ESTIMATION CALCULATORS -->
+                        <Expander Style="{StaticResource StylishExpanderCard}" IsExpanded="True">
+                            <Expander.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="🧮" FontSize="14" Margin="0,0,10,0"/>
+                                    <TextBlock Text="Glass Estimators" FontSize="11" FontWeight="Bold" Foreground="#0F172A" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Expander.Header>
+                            <StackPanel Orientation="Vertical">
+                                <Button Style="{StaticResource SidebarSubActionButton}" Content="▣ SGU Calculator" Click="MenuItem_SGU_Click"/>
+                                <Button Style="{StaticResource SidebarSubActionButton}" Content="◫ DGU Calculator" Click="MenuItem_DGU_Click"/>
+                                <Button Style="{StaticResource SidebarSubActionButton}" Content="▤ Lamination Unit" Click="MenuItem_Lamination_Click"/>
+                                <Button Style="{StaticResource SidebarSubActionButton}" Content="◈ DGU + Lamination" Click="MenuItem_DguLam_Click"/>
+                                <Button Style="{StaticResource SidebarSubActionButton}" Content="✂ Plate Optimizer" Click="MenuItem_Optimizer_Click" Foreground="#2563EB"/>
+                            </StackPanel>
+                        </Expander>
+
+                        <!-- CARD: SHOP FLOOR OPERATIONS -->
+                        <Expander Style="{StaticResource StylishExpanderCard}" IsExpanded="False">
+                            <Expander.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="⚙️" FontSize="14" Margin="0,0,10,0"/>
+                                    <TextBlock Text="Operations Floor" FontSize="11" FontWeight="Bold" Foreground="#0F172A" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Expander.Header>
+                            <StackPanel Orientation="Vertical">
+                                <Button Style="{StaticResource SidebarSubActionButton}" Content="▦ Sheet Store Stock" Click="MenuItem_SheetStore_Click"/>
+                                <Button Style="{StaticResource SidebarSubActionButton}" Content="☰ Daily Works Pipeline" Click="MenuItem_DailyWorks_Click"/>
+                                <Button Style="{StaticResource SidebarSubActionButton}" Content="☘ Deliveries Logistic" Click="MenuItem_Deliveries_Click"/>
+                            </StackPanel>
+                        </Expander>
+
+                        <!-- CARD: SALES PERFORMANCE REPORTS -->
+                        <Expander Style="{StaticResource StylishExpanderCard}" IsExpanded="False">
+                            <Expander.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="📈" FontSize="14" Margin="0,0,10,0"/>
+                                    <TextBlock Text="Sales &amp; Analytics" FontSize="11" FontWeight="Bold" Foreground="#0F172A" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Expander.Header>
+                            <StackPanel Orientation="Vertical">
+                                <Button Style="{StaticResource SidebarSubActionButton}" Content="📊 Sales Report"/>
+                                <Button Style="{StaticResource SidebarSubActionButton}" Content="📉 Profit Analysis"/>
+                            </StackPanel>
+                        </Expander>
+
+                        <!-- CARD: SYSTEM PREFERENCES -->
+                        <Expander Style="{StaticResource StylishExpanderCard}" IsExpanded="False">
+                            <Expander.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="👤" FontSize="14" Margin="0,0,10,0"/>
+                                    <TextBlock Text="System Profile" FontSize="11" FontWeight="Bold" Foreground="#0F172A" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Expander.Header>
+                            <StackPanel Orientation="Vertical">
+                                <Button Style="{StaticResource SidebarSubActionButton}" Content="👤 Profile Settings" Click="MenuItem_Profile_Click"/>
+                                <Button Style="{StaticResource SidebarSubActionButton}" Content="👥 User Access Role" Click="MenuItem_Users_Click"/>
+                                <Button Style="{StaticResource SidebarSubActionButton}" Content="ℹ About Legacy Port" Click="MenuItem_About_Click"/>
+                            </StackPanel>
+                        </Expander>
+
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- 3. BOTTOM UTILITY BAR -->
+                <StackPanel Grid.Row="2" Orientation="Vertical" Margin="0,12,0,0">
+
+                    <!-- Date & Time (Light styled DateTimeBorderStyle) -->
+                    <Border Background="#E2E8F0" CornerRadius="10" Padding="12,8" Margin="0,0,0,8">
                         <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="1"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
 
-                            <!-- PROGLASS Badge with GPU Caching -->
-                            <Border Grid.Row="0" Background="#2563EB" CornerRadius="4" Padding="5,2" 
-                                    HorizontalAlignment="Center" Margin="0,2,0,3"
-                                    CacheMode="BitmapCache">
-                                <TextBlock Text="PROGLASS" FontSize="8" FontWeight="Bold" Foreground="White"/>
-                            </Border>
+                            <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                                <TextBlock Text="📅 Date" FontSize="9" FontWeight="Bold" Foreground="#475569"/>
+                                <TextBlock x:Name="CurrentDateText" FontSize="11" FontWeight="Bold" Foreground="#0F172A" Margin="0,2,0,0"/>
+                            </StackPanel>
 
-                            <!-- ERP -->
-                            <TextBlock Grid.Row="1" Text="ERP" FontSize="22" FontWeight="Bold" 
-                                       Foreground="#2563EB" HorizontalAlignment="Center" 
-                                       VerticalAlignment="Center"/>
+                            <Border Grid.Column="1" Width="1" Background="#CBD5E1" Margin="0,2"/>
 
-                            <!-- SYSTEM -->
-                            <TextBlock Grid.Row="2" Text="SYSTEM" FontSize="8" FontWeight="Bold" 
-                                       Foreground="#1E293B" HorizontalAlignment="Center" 
-                                       Margin="0,3,0,2"/>
+                            <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                                <TextBlock Text="🕐 Time" FontSize="9" FontWeight="Bold" Foreground="#475569"/>
+                                <TextBlock x:Name="ClockText" FontSize="11" FontWeight="Bold" Foreground="#2563EB" Margin="0,2,0,0"/>
+                            </StackPanel>
                         </Grid>
                     </Border>
 
-                    <!-- App Name -->
-                    <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
-                        <TextBlock Text="ProGlass" FontSize="18" FontWeight="Bold" Foreground="Black"/>
-                        <TextBlock Text="Automation System" FontSize="9" Foreground="Black" Margin="0,2,0,0"/>
-                    </StackPanel>
-                </StackPanel>
-
-                <!-- CENTER: NAVIGATION -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-
-                    <!-- Dashboard Button -->
-                    <Border Background="#2563EB" CornerRadius="10" Padding="18,10" Cursor="Hand"
-                            MouseLeftButtonDown="BtnHome_Click"
-                            CacheMode="BitmapCache">
-                        <Border.Effect>
-                            <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.3" Color="#2563EB"/>
-                        </Border.Effect>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="📊" FontSize="14" Margin="0,0,8,0"/>
-                            <TextBlock Text="Dashboard" Foreground="White" FontWeight="SemiBold"/>
+                    <!-- License Warning State -->
+                    <Border x:Name="LicenseWarningBorder" 
+                            Background="#FEE2E2"
+                            BorderBrush="#FCA5A5"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Padding="12,8"
+                            Margin="0,0,0,8"
+                            Cursor="Hand"
+                            MouseLeftButtonDown="LicenseWarningBorder_Click">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Border Width="6" Height="6" CornerRadius="3" Background="#EF4444" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Activate License" FontSize="11" FontWeight="Bold" Foreground="#991B1B"/>
                         </StackPanel>
                     </Border>
 
-                    <!-- Navigation Menu -->
-                    <Menu Background="Transparent" BorderThickness="0">
-                        <Menu.Resources>
-                            <Style TargetType="MenuItem" BasedOn="{StaticResource DarkMenuItem}"/>
-                        </Menu.Resources>
-
-                        <!-- INVOICES -->
-                        <MenuItem Header="💰 Invoices ▼" Margin="10,0,0,0">
-                            <MenuItem Header="🧾 Proforma Invoice" Click="MenuItem_ProformaInvoice_Click"/>
-                            <MenuItem Header="📋 Job Orders" Click="MenuItem_JobOrders_Click"/>
-                            <Separator Background="#334155"/>
-                            <MenuItem Header="📜 Invoice History"/>
-                            <MenuItem Header="💵 Pending Payments"/>
-                        </MenuItem>
-
-                        <!-- CALCULATORS -->
-                        <MenuItem Header="🧮 Calculators ▼" Margin="10,0,0,0">
-                            <MenuItem Header="▣ SGU Calculator" Click="MenuItem_SGU_Click"/>
-                            <MenuItem Header="◫ DGU Calculator" Click="MenuItem_DGU_Click"/>
-                            <MenuItem Header="▤ Lamination" Click="MenuItem_Lamination_Click"/>
-                            <MenuItem Header="◈ DGU + Lamination" Click="MenuItem_DguLam_Click"/>
-                            <Separator Background="#334155"/>
-                            <MenuItem Header="✂ Optimizer" Click="MenuItem_Optimizer_Click"/>
-                        </MenuItem>
-
-                        <!-- OPERATIONS -->
-                        <MenuItem Header="⚙️ Operations ▼" Margin="10,0,0,0">
-                            <MenuItem Header="▦ Sheet Store" Click="MenuItem_SheetStore_Click"/>
-                            <MenuItem Header="☰ Daily Works" Click="MenuItem_DailyWorks_Click"/>
-                            <MenuItem Header="☘ Deliveries" Click="MenuItem_Deliveries_Click"/>
-                        </MenuItem>
-
-                        <!-- REPORTS -->
-                        <MenuItem Header="📈 Reports ▼" Margin="10,0,0,0">
-                            <MenuItem Header="📊 Sales Report"/>
-                            <MenuItem Header="📉 Profit Analysis"/>
-                            <MenuItem Header="📤 Export Reports"/>
-                        </MenuItem>
-
-                        <!-- SETTINGS -->
-                        <MenuItem Header="⚙️ Settings ▼" Margin="10,0,0,0">
-                            <MenuItem Header="👤 Profile" Click="MenuItem_Profile_Click"/>
-                            <MenuItem Header="👥 Users" Click="MenuItem_Users_Click"/>
-                            <Separator Background="#334155"/>
-                            <MenuItem Header="ℹ About App" Click="MenuItem_About_Click"/>
-                        </MenuItem>
-
-                    </Menu>
-                </StackPanel>
-
-                <!-- RIGHT SECTION -->
-                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-
-                    <!-- License Warning Border with GPU Caching -->
-                    <Border x:Name="LicenseWarningBorder" Style="{StaticResource LicenseWarningStyle}" 
-                            Margin="0,0,14,0" MouseLeftButtonDown="LicenseWarningBorder_Click"
-                            CacheMode="BitmapCache">
-                        <StackPanel Orientation="Horizontal">
-                            <Border Width="8" Height="8" CornerRadius="4" Background="#EF4444" 
-                                    Margin="0,0,8,0" CacheMode="BitmapCache"/>
-                            <TextBlock Text="⚠" FontSize="11" Margin="0,0,4,0" Foreground="#FCA5A5"/>
-                            <TextBlock Text="Activate License" FontSize="11" FontWeight="SemiBold" Foreground="#FCA5A5"/>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- License Active Border with GPU Caching -->
-                    <Border x:Name="LicenseActiveBorder" Style="{StaticResource LicenseActiveStyle}" 
-                            Margin="0,0,14,0" Visibility="Collapsed"
-                            CacheMode="BitmapCache">
-                        <StackPanel Orientation="Horizontal">
-                            <Border Width="8" Height="8" CornerRadius="4" Background="#10B981" 
-                                    Margin="0,0,8,0" CacheMode="BitmapCache"/>
-                            <TextBlock Text="✓" FontSize="11" Foreground="#6EE7B7" Margin="0,0,4,0"/>
-                            <TextBlock Text="Active" FontSize="11" FontWeight="SemiBold" Foreground="#6EE7B7"/>
+                    <!-- License Active State -->
+                    <Border x:Name="LicenseActiveBorder" 
+                            Background="#D1FAE5"
+                            BorderBrush="#6EE7B7"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Padding="12,8"
+                            Margin="0,0,0,8"
+                            Visibility="Collapsed">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Border Width="6" Height="6" CornerRadius="3" Background="#10B981" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Active" FontSize="11" FontWeight="Bold" Foreground="#065F46"/>
                         </StackPanel>
                     </Border>
 
                     <!-- Screenshot Button -->
-                    <Button x:Name="ScreenshotBtn" Style="{StaticResource ScreenshotButtonStyle}" 
-                            Click="ScreenshotBtn_Click" Margin="0,0,14,0"/>
-
-                    <!-- Date & Time Border with GPU Caching -->
-                    <Border Style="{StaticResource DateTimeBorderStyle}">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="1"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-
-                            <!-- Date -->
-                            <StackPanel Grid.Column="0" Margin="0,0,12,0">
-                                <TextBlock Text="📅" FontSize="10" Foreground="#94A3B8"/>
-                                <TextBlock x:Name="CurrentDateText" FontSize="11" FontWeight="Bold" 
-                                           Foreground="White" Margin="0,3,0,0"/>
-                            </StackPanel>
-
-                            <!-- Divider -->
-                            <Border Grid.Column="1" Width="1" Background="#334155" Margin="0,2"/>
-
-                            <!-- Time -->
-                            <StackPanel Grid.Column="2" Margin="12,0,0,0">
-                                <TextBlock Text="🕐" FontSize="10" Foreground="#94A3B8"/>
-                                <TextBlock x:Name="ClockText" FontSize="11" FontWeight="Bold" 
-                                           Foreground="White" Margin="0,3,0,0"/>
-                            </StackPanel>
-                        </Grid>
-                    </Border>
+                    <Button x:Name="ScreenshotBtn" 
+                            Background="#E2E8F0"
+                            Foreground="#0F172A"
+                            FontSize="11"
+                            FontWeight="Bold"
+                            Padding="12,8"
+                            Cursor="Hand"
+                            BorderThickness="0"
+                            Click="ScreenshotBtn_Click">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" CornerRadius="10" Padding="{TemplateBinding Padding}">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <TextBlock Text="📸" FontSize="12" Margin="0,0,6,0"/>
+                                        <TextBlock Text="Screenshot (WPF Cache)" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
 
                 </StackPanel>
+
             </Grid>
         </Border>
 
-        <!-- ==================== CONTENT AREA ==================== -->
-        <Border x:Name="MainContentBorder" Grid.Row="1" Style="{StaticResource ContentBorderStyle}">
-            <ContentControl x:Name="MainContent" Content="{Binding CurrentView}"/>
-        </Border>
+        <!-- ==================== CONTENT VIEWPORT AREA (Grid Column 1) ==================== -->
+        <!-- Takes up the absolute maximum screen area. Automatically stretches when sidebar is collapsed. -->
+        <Grid Grid.Column="1">
+
+            <!-- Module Viewport Content Box -->
+            <Border x:Name="MainContentBorder" Background="#0B1120" Margin="0">
+                <ContentControl x:Name="MainContent" Content="{Binding CurrentView}"/>
+            </Border>
+
+            <!-- FLOATING EXPAND RIGHT ARROW BUTTON -->
+            <!-- Visible ONLY when the sidebar is collapsed (SidebarToggle.IsChecked = True). Clicking it expands the sidebar back -->
+            <ToggleButton IsChecked="{Binding IsChecked, ElementName=SidebarToggle, Mode=TwoWay}"
+                          HorizontalAlignment="Left" 
+                          VerticalAlignment="Top" 
+                          Margin="16">
+                <ToggleButton.Style>
+                    <Style TargetType="ToggleButton" BasedOn="{StaticResource ExpandArrowButtonStyle}">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsChecked, ElementName=SidebarToggle}" Value="True">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ToggleButton.Style>
+            </ToggleButton>
+
+        </Grid>
     </Grid>
 </Window>
