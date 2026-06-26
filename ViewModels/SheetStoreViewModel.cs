@@ -39,6 +39,7 @@ namespace ProGlassAutomation.ViewModels
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(FilteredCount));
                 UpdateSelectedStats();
+                UpdateFilteredStats();
             }
         }
 
@@ -58,7 +59,6 @@ namespace ProGlassAutomation.ViewModels
         // ═══════════════════════════════════════════════════════
         // INVENTORY STATS FROM SHEET.CS
         // ═══════════════════════════════════════════════════════
-
         public int CategoryTotal => Sheet.Categories.Count;
         public int ThicknessTotal => Sheet.Thicknesses.Length;
         public int ColorTotal => Sheet.ColorItems.Count;
@@ -195,7 +195,7 @@ namespace ProGlassAutomation.ViewModels
         public decimal MainTotalValue { get; private set; }
 
         // ═══════════════════════════════════════════════════════
-        // OVERALL STATS
+        // OVERALL STATS (ALL SHEETS)
         // ═══════════════════════════════════════════════════════
         public int TotalSheets => AllSheets?.Count ?? 0;
         public int TotalStock => AllSheets?.Sum(s => s.TotalStock) ?? 0;
@@ -204,6 +204,100 @@ namespace ProGlassAutomation.ViewModels
         public decimal TotalAll => AllSheets?.Sum(s => s.BalanceSheets * s.SellPrice) ?? 0;
         public int FilteredCount => FilteredSheets?.Count ?? 0;
         public bool HasSelection => SelectedSheet != null;
+
+        // ═══════════════════════════════════════════════════════
+        // FILTERED STATS (NEW)
+        // ═══════════════════════════════════════════════════════
+        private int _filteredStock;
+        public int FilteredStock
+        {
+            get => _filteredStock;
+            set { _filteredStock = value; OnPropertyChanged(); }
+        }
+
+        private int _filteredUsed;
+        public int FilteredUsed
+        {
+            get => _filteredUsed;
+            set { _filteredUsed = value; OnPropertyChanged(); }
+        }
+
+        private int _filteredBalance;
+        public int FilteredBalance
+        {
+            get => _filteredBalance;
+            set { _filteredBalance = value; OnPropertyChanged(); }
+        }
+
+        private decimal _filteredValue;
+        public decimal FilteredValue
+        {
+            get => _filteredValue;
+            set { _filteredValue = value; OnPropertyChanged(); }
+        }
+
+        private decimal _filteredSQM;
+        public decimal FilteredSQM
+        {
+            get => _filteredSQM;
+            set { _filteredSQM = value; OnPropertyChanged(); }
+        }
+
+        private int _filteredCategories;
+        public int FilteredCategories
+        {
+            get => _filteredCategories;
+            set { _filteredCategories = value; OnPropertyChanged(); }
+        }
+
+        private int _filteredColors;
+        public int FilteredColors
+        {
+            get => _filteredColors;
+            set { _filteredColors = value; OnPropertyChanged(); }
+        }
+
+        private int _filteredSuppliers;
+        public int FilteredSuppliers
+        {
+            get => _filteredSuppliers;
+            set { _filteredSuppliers = value; OnPropertyChanged(); }
+        }
+
+        private int _filteredThicknesses;
+        public int FilteredThicknesses
+        {
+            get => _filteredThicknesses;
+            set { _filteredThicknesses = value; OnPropertyChanged(); }
+        }
+
+        private decimal _filteredPurchaseTotal;
+        public decimal FilteredPurchaseTotal
+        {
+            get => _filteredPurchaseTotal;
+            set { _filteredPurchaseTotal = value; OnPropertyChanged(); }
+        }
+
+        private decimal _filteredSellTotal;
+        public decimal FilteredSellTotal
+        {
+            get => _filteredSellTotal;
+            set { _filteredSellTotal = value; OnPropertyChanged(); }
+        }
+
+        private decimal _filteredProfit;
+        public decimal FilteredProfit
+        {
+            get => _filteredProfit;
+            set { _filteredProfit = value; OnPropertyChanged(); }
+        }
+
+        private int _selectedCount;
+        public int SelectedCount
+        {
+            get => _selectedCount;
+            set { _selectedCount = value; OnPropertyChanged(); }
+        }
 
         // ═══════════════════════════════════════════════════════
         // COMMANDS
@@ -262,25 +356,21 @@ namespace ProGlassAutomation.ViewModels
                 var sheets = SheetStoreService.Instance.GetAllActive();
                 AllSheets = new ObservableCollection<Sheet>(sheets);
 
-                // Load Categories from Sheet.cs + ALL option
                 Categories.Clear();
                 Categories.Add("ALL");
                 foreach (var c in Sheet.Categories)
                     Categories.Add(c);
 
-                // Load Thicknesses from Sheet.cs + ALL option
                 Thicknesses.Clear();
                 Thicknesses.Add("ALL");
                 foreach (var t in Sheet.Thicknesses)
                     Thicknesses.Add(t);
 
-                // Load Colors from Sheet.cs + ALL option
                 Colors.Clear();
                 Colors.Add("ALL");
                 foreach (var c in Sheet.ColorItems)
                     Colors.Add(c.Name);
 
-                // Load Suppliers from Sheet.cs + ALL option
                 Suppliers.Clear();
                 Suppliers.Add("ALL");
                 foreach (var s in Sheet.Suppliers)
@@ -305,23 +395,18 @@ namespace ProGlassAutomation.ViewModels
 
             var filtered = AllSheets.AsEnumerable();
 
-            // Filter by Category
             if (!string.IsNullOrEmpty(SelectedCategory) && SelectedCategory != "ALL")
                 filtered = filtered.Where(s => s.Category == SelectedCategory);
 
-            // Filter by Thickness
             if (!string.IsNullOrEmpty(SelectedThickness) && SelectedThickness != "ALL")
                 filtered = filtered.Where(s => s.Thickness == SelectedThickness);
 
-            // Filter by Color
             if (!string.IsNullOrEmpty(SelectedColor) && SelectedColor != "ALL")
                 filtered = filtered.Where(s => s.Color == SelectedColor);
 
-            // Filter by Supplier
             if (!string.IsNullOrEmpty(SelectedSupplier) && SelectedSupplier != "ALL")
                 filtered = filtered.Where(s => s.Supplier == SelectedSupplier);
 
-            // Filter by Search
             if (!string.IsNullOrEmpty(SearchText))
             {
                 var search = SearchText.ToLower();
@@ -332,10 +417,8 @@ namespace ProGlassAutomation.ViewModels
                     (s.Supplier?.ToLower().Contains(search) ?? false));
             }
 
-            // Apply Sorting
             filtered = ApplySorting(filtered);
 
-            // Convert to list and assign SrNo
             var sortedList = filtered.ToList();
             for (int i = 0; i < sortedList.Count; i++)
             {
@@ -393,7 +476,50 @@ namespace ProGlassAutomation.ViewModels
             OnPropertyChanged(nameof(TotalUsed));
             OnPropertyChanged(nameof(BalanceSheets));
             OnPropertyChanged(nameof(TotalAll));
+            OnPropertyChanged(nameof(CategoryTotal));
+            OnPropertyChanged(nameof(ThicknessTotal));
+            OnPropertyChanged(nameof(ColorTotal));
+            OnPropertyChanged(nameof(SupplierTotal));
             UpdateSelectedStats();
+            UpdateFilteredStats();
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // UPDATE FILTERED STATS (NEW)
+        // ═══════════════════════════════════════════════════════
+        private void UpdateFilteredStats()
+        {
+            var sheets = FilteredSheets?.ToList();
+
+            if (sheets == null || sheets.Count == 0)
+            {
+                FilteredStock = 0;
+                FilteredUsed = 0;
+                FilteredBalance = 0;
+                FilteredValue = 0;
+                FilteredSQM = 0;
+                FilteredCategories = 0;
+                FilteredColors = 0;
+                FilteredSuppliers = 0;
+                FilteredThicknesses = 0;
+                FilteredPurchaseTotal = 0;
+                FilteredSellTotal = 0;
+                FilteredProfit = 0;
+                return;
+            }
+
+            FilteredStock = sheets.Sum(s => s.TotalStock);
+            FilteredUsed = sheets.Sum(s => s.UsedSheets);
+            FilteredBalance = FilteredStock - FilteredUsed;
+            FilteredValue = sheets.Sum(s => s.BalanceSheets * s.SellPrice);
+            FilteredSQM = (decimal)sheets.Sum(s => s.SquareMeter);
+            FilteredCategories = sheets.Select(s => s.Category).Distinct().Count();
+            FilteredColors = sheets.Select(s => s.Color).Distinct().Count();
+            FilteredSuppliers = sheets.Where(s => !string.IsNullOrEmpty(s.Supplier)).Select(s => s.Supplier).Distinct().Count();
+            FilteredThicknesses = sheets.Select(s => s.Thickness).Distinct().Count();
+            FilteredPurchaseTotal = sheets.Sum(s => s.BalanceSheets * s.PurchasePrice);
+            FilteredSellTotal = sheets.Sum(s => s.BalanceSheets * s.SellPrice);
+            FilteredProfit = FilteredSellTotal - FilteredPurchaseTotal;
         }
 
         // ═══════════════════════════════════════════════════════
@@ -408,13 +534,11 @@ namespace ProGlassAutomation.ViewModels
             MainBalance = MainStock - MainUsed;
             MainTotalValue = sheets?.Sum(s => s.BalanceSheets * s.SellPrice) ?? 0;
 
-            // Last Purchase
             var lastPurchaseSheet = sheets?.Where(s => s.LatestPurchaseDate.HasValue)
                                             .OrderByDescending(s => s.LatestPurchaseDate)
                                             .FirstOrDefault();
             MainLastPurchase = lastPurchaseSheet != null ? $"{lastPurchaseSheet.Thickness} {lastPurchaseSheet.Color}" : "-";
 
-            // Last Update
             var lastUpdateSheet = sheets?.OrderByDescending(s => s.CreatedDate).FirstOrDefault();
             MainLastUpdate = lastUpdateSheet?.DisplayDateTime ?? "-";
 
@@ -632,29 +756,24 @@ namespace ProGlassAutomation.ViewModels
         {
             try
             {
-                // Show input dialog
                 var inputDialog = new Views.SheetStore.AddSupplierDialog();
                 if (inputDialog.ShowDialog() == true && !string.IsNullOrWhiteSpace(inputDialog.SupplierName))
                 {
                     string newSupplier = inputDialog.SupplierName.Trim();
 
-                    // Check if already exists (case-insensitive)
                     if (Sheet.Suppliers.Any(s => s.Equals(newSupplier, StringComparison.OrdinalIgnoreCase)))
                     {
                         MessageBox.Show($"Supplier '{newSupplier}' already exists!", "Duplicate", MessageBoxButton.OK, MessageBoxImage.Warning);
                         return;
                     }
 
-                    // Add to Sheet.cs and reload
                     Sheet.AddSupplier(newSupplier);
 
-                    // Refresh Suppliers list
                     Suppliers.Clear();
                     Suppliers.Add("ALL");
                     foreach (var s in Sheet.Suppliers)
                         Suppliers.Add(s);
 
-                    // Select the new supplier
                     SelectedSupplier = newSupplier;
 
                     MessageBox.Show($"Supplier '{newSupplier}' added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
