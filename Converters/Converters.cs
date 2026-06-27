@@ -117,7 +117,7 @@ namespace ProGlassAutomation.Converters
             {
                 return boolValue
                     ? new SolidColorBrush(Color.FromRgb(16, 185, 129))
-                    : new SolidColorBrush(Color.FromRgb(239, 68, 68)); // ✅ FIXED: removed extra )
+                    : new SolidColorBrush(Color.FromRgb(239, 68, 68));
             }
             return new SolidColorBrush(Color.FromRgb(100, 116, 139));
         }
@@ -366,6 +366,39 @@ namespace ProGlassAutomation.Converters
                     return Visibility.Collapsed;
             }
             return Visibility.Visible;
+        }
+
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    /// <summary>
+    /// Multiplies two numeric values together (e.g., Price * Quantity)
+    /// </summary>
+    public class MultiplyConverter : IMultiValueConverter
+    {
+        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (values == null || values.Length < 2) return 0m;
+
+            double val1 = 0;
+            double val2 = 0;
+
+            // Safely convert first value (Price)
+            if (values[0] is decimal d1) val1 = (double)d1;
+            else if (values[0] is double db1) val1 = db1;
+            else if (values[0] is int i1) val1 = i1;
+            else if (values[0] is float f1) val1 = f1;
+
+            // Safely convert second value (Quantity)
+            if (values[1] is decimal d2) val2 = (double)d2;
+            else if (values[1] is double db2) val2 = db2;
+            else if (values[1] is int i2) val2 = i2;
+            else if (values[1] is float f2) val2 = f2;
+
+            return val1 * val2;
         }
 
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
