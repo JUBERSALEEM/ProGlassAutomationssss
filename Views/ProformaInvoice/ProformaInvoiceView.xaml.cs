@@ -1,4 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
@@ -9,10 +14,6 @@ using ProGlassAutomation.Models;
 using ProGlassAutomation.ViewModels;
 using ProGlassAutomation.Views;
 using ProGlassAutomation.Views.Optimization;
-using System.Linq;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
 
 // Aliases to avoid ambiguity
 using ModelInvoice = ProGlassAutomation.Models.InvoiceItemModel;
@@ -24,33 +25,51 @@ using CheckBox = System.Windows.Controls.CheckBox;
 namespace ProGlassAutomation.Views.ProformaInvoice
 {
     /// <summary>
-    /// Code-behind for ProformaInvoiceView.xaml
-    /// Handles UI interactions, clipboard paste, print, and navigation.
+    /// Code-behind for ProformaInvoiceView.xaml — release-ready version.
+    /// Handles UI interactions only; business logic lives in the ViewModel.
     /// </summary>
-    /// <remarks>
-    /// PATCH 18: Fixed memory leak issues
-    /// - Simplified Unloaded cleanup
-    /// - Use BulkUpdateScope for paste
-    /// - Better error handling
-    /// - Use Dispatcher instead of Task.ContinueWith
-    /// </remarks>
     public partial class ProformaInvoiceView : UserControl
     {
-        private ProformaInvoiceViewModel _viewModel;
+        // ═══════════════════════════════════════════════════════
+        // CONSTANTS (FIX M1: extract magic numbers)
+        // ═══════════════════════════════════════════════════════
+        private const string LOG = "[ProformaView]"; // FIX L1: standardized log prefix
+
+        private const double DEFAULT_SHEET_WIDTH = 3210;
+        private const double DEFAULT_SHEET_HEIGHT = 2250;
+        private const int DEFAULT_SHEET_QTY = 99999;
+        // FIX L4: optimization fallback defaults — kept distinct from sheet1 defaults
+        private const double OPT_FALLBACK_WIDTH = 3660;
+        private const double OPT_FALLBACK_HEIGHT = 2440;
+
         private const double SCROLL_SPEED = 0.3;
+        private const int FUTURE_SPEC_COUNT = 6;
 
-        // Persistent View state to preserve edited stock sizes and parameters in memory
-        private OptimizationView? _activeOptView;
+        // ═══════════════════════════════════════════════════════
+        // FIELDS
+        // ═══════════════════════════════════════════════════════
+        private ProformaInvoiceViewModel _viewModel;
 
-        // ═══════════════════════════════════════════════════════════════
-        // MISSING COLLECTIONS - ADD THESE
-        // ═══════════════════════════════════════════════════════════════
-        public ObservableCollection<StockSheetItem> AdditionalSheets { get; set; } = new();
-        public ObservableCollection<SheetResultItem> SheetResults { get; set; } = new();
+        public ObservableCollection<StockSheetItem> AdditionalSheets { get; } = new();
+        public ObservableCollection<SheetResultItem> SheetResults { get; } = new();
+        public ObservableCollection<SpecSelectionItem> SpecSelectionItems { get; } = new();
 
-        // ═══════════════════════════════════════════════════════════════
-        // MISSING CLASSES - ADD THESE
-        // ═══════════════════════════════════════════════════════════════
+        // Tracks per-spec dimension choice (false = W1/H1, true = W2/H2)
+        private readonly Dictionary<string, bool> _specDimChoice = new();
+
+        // FIX C7: was static, now instance-level (no leaks across View instances)
+        private Window? _optimizerWindow;
+        private OptimizationView? _optimizerView;
+
+        // Guard against re-entrant selection events while we mutate selection programmatically
+        private bool _isUpdatingSpecSelection = false;
+
+        // Trim table (per-thickness)
+        private Dictionary<string, TrimSettings> _trimTable = new();
+
+        // ═══════════════════════════════════════════════════════
+        // NESTED CLASSES
+        // ═══════════════════════════════════════════════════════
 
         public class StockSheetItem : INotifyPropertyChanged
         {
@@ -59,102 +78,57 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             private string _height = "";
             private string _qty = "";
 
-            public string SheetLabel
-            {
-                get => _sheetLabel;
-                set { _sheetLabel = value; OnPropertyChanged("SheetLabel"); }
-            }
-            public string Width
-            {
-                get => _width;
-                set { _width = value; OnPropertyChanged("Width"); }
-            }
-            public string Height
-            {
-                get => _height;
-                set { _height = value; OnPropertyChanged("Height"); }
-            }
-            public string Qty
-            {
-                get => _qty;
-                set { _qty = value; OnPropertyChanged("Qty"); }
-            }
+            public string SheetLabel { get => _sheetLabel; set { _sheetLabel = value; OnPropertyChanged(nameof(SheetLabel)); } }
+            public string Width { get => _width; set { _width = value; OnPropertyChanged(nameof(Width)); } }
+            public string Height { get => _height; set { _height = value; OnPropertyChanged(nameof(Height)); } }
+            public string Qty { get => _qty; set { _qty = value; OnPropertyChanged(nameof(Qty)); } }
 
-            public event PropertyChangedEventHandler PropertyChanged;
-            protected void OnPropertyChanged(string name)
-                => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+            public event PropertyChangedEventHandler? PropertyChanged;
+            protected void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
         public class SheetResultItem
         {
             public string SheetName { get; set; } = "";
             public string SheetDimensions { get; set; } = "";
-            public string PiecesCut { get; set; } = "0";
+            public string PiecesCut { get; set; } = "—";
             public string AreaUsed { get; set; } = "0 m²";
             public string Utilization { get; set; } = "0";
             public string Wastage { get; set; } = "0";
             public double BarHeight { get; set; } = 0;
         }
 
-        // ═══════════════════════════════════════════════════════════════════════
-        // SPEC SELECTION WRAPPER - Shows simple names like "Spec 1"
-        // ═══════════════════════════════════════════════════════════════
         public class SpecSelectionItem : INotifyPropertyChanged
         {
             private string _displayName = "";
             private string _fullName = "";
             private bool _isSelected = false;
+            private bool _isW2H2 = false;
 
-            public string DisplayName
-            {
-                get => _displayName;
-                set { _displayName = value; OnPropertyChanged("DisplayName"); }
-            }
-            public string FullName
-            {
-                get => _fullName;
-                set { _fullName = value; OnPropertyChanged("FullName"); }
-            }
+            public string DisplayName { get => _displayName; set { _displayName = value; OnPropertyChanged(nameof(DisplayName)); } }
+            public string FullName { get => _fullName; set { _fullName = value; OnPropertyChanged(nameof(FullName)); } }
+
             public bool IsSelected
             {
                 get => _isSelected;
-                set { _isSelected = value; OnPropertyChanged("IsSelected"); }
+                set { _isSelected = value; OnPropertyChanged(nameof(IsSelected)); }
             }
 
-            public event PropertyChangedEventHandler PropertyChanged;
-            protected void OnPropertyChanged(string name)
-                => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-        }
-
-        // ═══════════════════════════════════════════════════════════════════════
-        // SPEC SELECTION COLLECTION
-        // ═══════════════════════════════════════════════════════════════
-        public ObservableCollection<SpecSelectionItem> SpecSelectionItems { get; set; } = new();
-
-        // ═══════════════════════════════════════════════════════════════
-        // TRIM TABLE - AUTO-APPLY DEFAULT 15mm FOR ALL
-        // ═══════════════════════════════════════════════════════════════
-        private Dictionary<string, TrimSettings> _trimTable = new();
-
-        // Auto-initialize trim table with correct values per thickness
-        public void InitializeTrimTable()
-        {
-            _trimTable = new Dictionary<string, TrimSettings>
+            // FIX H6: bound property replaces visual-tree-walking radio state
+            public bool IsW2H2
             {
-                // 6mm glass: 15mm trim all around
-                ["6mm"] = new TrimSettings { LM = 15, RM = 15, TM = 15, BM = 15, BreakoutMin = 15, Kerf = 0 },
-                // 8mm glass: 30mm trim all around
-                ["8mm"] = new TrimSettings { LM = 30, RM = 30, TM = 30, BM = 30, BreakoutMin = 30, Kerf = 0 },
-                // 10mm glass: 50mm trim (LM/RM/BM), 0 top (unframed edge)
-                ["10mm"] = new TrimSettings { LM = 50, RM = 50, TM = 0, BM = 50, BreakoutMin = 40, Kerf = 0 },
-                // 12mm glass: 50mm trim (LM/RM/BM), 0 top
-                ["12mm"] = new TrimSettings { LM = 50, RM = 50, TM = 0, BM = 50, BreakoutMin = 40, Kerf = 0 },
-                // 15mm glass: 60mm trim, 0 top
-                ["15mm"] = new TrimSettings { LM = 60, RM = 60, TM = 0, BM = 60, BreakoutMin = 50, Kerf = 0 },
-                // 19mm glass: 70mm trim, 0 top
-                ["19mm"] = new TrimSettings { LM = 70, RM = 70, TM = 0, BM = 70, BreakoutMin = 60, Kerf = 0 }
-            };
-            System.Diagnostics.Debug.WriteLine("[InitializeTrimTable] ✓ Trim table initialized with 6 thicknesses");
+                get => _isW2H2;
+                set { _isW2H2 = value; OnPropertyChanged(nameof(IsW2H2)); OnPropertyChanged(nameof(IsW1H1)); }
+            }
+
+            public bool IsW1H1
+            {
+                get => !_isW2H2;
+                set { _isW2H2 = !value; OnPropertyChanged(nameof(IsW2H2)); OnPropertyChanged(nameof(IsW1H1)); }
+            }
+
+            public event PropertyChangedEventHandler? PropertyChanged;
+            protected void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
         public class TrimSettings
@@ -167,22 +141,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             public double Kerf { get; set; }
         }
 
-        // Get current trim based on selected thickness
-        private TrimSettings GetCurrentTrim()
-        {
-            try
-            {
-                string thickness = (cmbThickness?.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "6mm";
-                if (_trimTable.TryGetValue(thickness, out TrimSettings trim))
-                    return trim;
-            }
-            catch { }
-            return _trimTable.ContainsKey("6mm") ? _trimTable["6mm"] : new TrimSettings { LM = 15, RM = 15, TM = 15, BM = 15, Kerf = 0 };
-        }
-
-        // ═══════════════════════════════════════════════════════════════
-        // CUTPART FOR OPTIMIZER
-        // ═══════════════════════════════════════════════════════════════
         public class CutPart
         {
             public string Ref { get; set; } = "";
@@ -192,49 +150,65 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             public bool Rot { get; set; } = true;
         }
 
-        // Track which dimension EACH spec uses (false = W1/H1, true = W2/H2)
-        private Dictionary<string, bool> _specDimChoice = new Dictionary<string, bool>();
-
-        // Static references
-        private static Window? _optimizerWindow;
-        private static OptimizationView? _optimizerView;
-
-        // Flag to block selection changed handler during programmatic updates
-        private bool _isUpdatingSpecSelection = false;
-
-        // ═══════════════════════════════════════════════════════════════
-        // CONSTRUCTOR - ADD MISSING BINDINGS
-        // ═══════════════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════════════
+        // CONSTRUCTOR
+        // ═══════════════════════════════════════════════════════
         public ProformaInvoiceView()
         {
             InitializeComponent();
 
-            // Use shared ProformaInvoiceViewModel (SAME instance as DailyWorks)
             _viewModel = SharedViewModels.ProformaInvoiceVM;
             DataContext = _viewModel;
 
-            // IMPORTANT: Set this UserControl as temporary DataContext for list binding
-            var tempDataContext = this;
-
-            // MISSING BINDINGS
             AdditionalSheetsContainer.ItemsSource = AdditionalSheets;
             PerSheetResultsContainer.ItemsSource = SheetResults;
 
-            // PATCH 18 - Register for cleanup to prevent memory leaks
             Unloaded += ProformaInvoiceView_Unloaded;
 
-            // AUTO-INIT: Initialize trim table and auto-select first thickness
             Dispatcher.BeginInvoke(new Action(() =>
             {
                 InitializeTrimTable();
                 AutoSelectFirstThickness();
             }), System.Windows.Threading.DispatcherPriority.Loaded);
 
-            System.Diagnostics.Debug.WriteLine("[ProformaInvoiceView] Using SharedViewModels.ProformaInvoiceVM");
-            System.Diagnostics.Debug.WriteLine("[ProformaInvoiceView] ✓ Automatic thickness trim ready");
+            Debug.WriteLine($"{LOG} Using SharedViewModels.ProformaInvoiceVM");
+            Debug.WriteLine($"{LOG} ✓ Automatic thickness trim ready");
         }
 
-        // Auto-select first thickness on load
+        // ═══════════════════════════════════════════════════════
+        // TRIM TABLE
+        // ═══════════════════════════════════════════════════════
+        public void InitializeTrimTable()
+        {
+            _trimTable = new Dictionary<string, TrimSettings>
+            {
+                ["6mm"] = new TrimSettings { LM = 15, RM = 15, TM = 15, BM = 15, BreakoutMin = 15, Kerf = 0 },
+                ["8mm"] = new TrimSettings { LM = 30, RM = 30, TM = 30, BM = 30, BreakoutMin = 30, Kerf = 0 },
+                ["10mm"] = new TrimSettings { LM = 50, RM = 50, TM = 0, BM = 50, BreakoutMin = 40, Kerf = 0 },
+                ["12mm"] = new TrimSettings { LM = 50, RM = 50, TM = 0, BM = 50, BreakoutMin = 40, Kerf = 0 },
+                ["15mm"] = new TrimSettings { LM = 60, RM = 60, TM = 0, BM = 60, BreakoutMin = 50, Kerf = 0 },
+                ["19mm"] = new TrimSettings { LM = 70, RM = 70, TM = 0, BM = 70, BreakoutMin = 60, Kerf = 0 }
+            };
+            Debug.WriteLine($"{LOG} ✓ Trim table initialized with {_trimTable.Count} thicknesses");
+        }
+
+        private TrimSettings GetCurrentTrim()
+        {
+            try
+            {
+                string thickness = (cmbThickness?.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "6mm";
+                if (_trimTable.TryGetValue(thickness, out TrimSettings? trim))
+                    return trim;
+            }
+            catch (Exception ex) // FIX H5: log instead of silent swallow
+            {
+                Debug.WriteLine($"{LOG} GetCurrentTrim error: {ex.Message}");
+            }
+            return _trimTable.ContainsKey("6mm")
+                ? _trimTable["6mm"]
+                : new TrimSettings { LM = 15, RM = 15, TM = 15, BM = 15, Kerf = 0 };
+        }
+
         private void AutoSelectFirstThickness()
         {
             try
@@ -242,67 +216,113 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 if (cmbThickness?.Items.Count > 0 && cmbThickness.SelectedIndex < 0)
                 {
                     cmbThickness.SelectedIndex = 0;
-                    System.Diagnostics.Debug.WriteLine("[AutoSelectFirstThickness] ✓ First thickness auto-selected");
+                    Debug.WriteLine($"{LOG} ✓ First thickness auto-selected");
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[AutoSelectFirstThickness] ERROR: {ex.Message}");
+                Debug.WriteLine($"{LOG} AutoSelectFirstThickness error: {ex.Message}");
             }
         }
 
-        // ==================== LOADED - Auto-create specs for testing ====================
-
+        // ═══════════════════════════════════════════════════════
+        // LIFECYCLE
+        // ═══════════════════════════════════════════════════════
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
-            // Always refresh when UserControl loads to ensure we have latest specs
             RefreshSpecSelectionItems();
-            System.Diagnostics.Debug.WriteLine($"[UserControl_Loaded] Specs refreshed, count: {SpecSelectionItems.Count}");
+            Debug.WriteLine($"{LOG} UserControl_Loaded — specs refreshed, count: {SpecSelectionItems.Count}");
         }
 
         private void lstSpecSelect_Loaded(object sender, RoutedEventArgs e)
         {
-            // Also refresh when ListBox loads
             RefreshSpecSelectionItems();
-            System.Diagnostics.Debug.WriteLine($"[lstSpecSelect_Loaded] Items count: {SpecSelectionItems.Count}");
+            Debug.WriteLine($"{LOG} lstSpecSelect_Loaded — items count: {SpecSelectionItems.Count}");
         }
 
-        // ==================== ADD SPECIFICATION - FIX DUPLICATE ====================
+        private void ProformaInvoiceView_Unloaded(object sender, RoutedEventArgs e)
+        {
+            Unloaded -= ProformaInvoiceView_Unloaded;
+
+            // FIX C7: clean up optimizer references (instance-level now)
+            try
+            {
+                _optimizerView = null;
+                if (_optimizerWindow != null)
+                {
+                    _optimizerWindow = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"{LOG} Unload cleanup error: {ex.Message}");
+            }
+
+            Debug.WriteLine($"{LOG} Unloaded — cleanup complete");
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // SPEC SELECTION REFRESH
+        // ═══════════════════════════════════════════════════════
+        public void RefreshSpecSelectionItems()
+        {
+            // Preserve selection and dim-choice across rebuild
+            var prevSelections = new Dictionary<string, bool>(_specDimChoice);
+            var prevSelected = SpecSelectionItems
+                .Where(w => w.IsSelected)
+                .Select(w => w.FullName)
+                .ToHashSet();
+
+            SpecSelectionItems.Clear();
+
+            int specCount = _viewModel?.Invoice?.Specifications?.Count ?? 0;
+            Debug.WriteLine($"{LOG} RefreshSpecSelectionItems — invoice has {specCount} specs");
+
+            if (_viewModel?.Invoice?.Specifications != null)
+            {
+                for (int i = 0; i < _viewModel.Invoice.Specifications.Count; i++)
+                {
+                    var spec = _viewModel.Invoice.Specifications[i];
+                    if (spec == null) continue;
+
+                    bool wasSelected = prevSelected.Contains(spec.SpecificationName);
+                    bool wasW2H2 = prevSelections.TryGetValue(spec.SpecificationName, out var v) && v;
+
+                    SpecSelectionItems.Add(new SpecSelectionItem
+                    {
+                        DisplayName = $"Spec {i + 1}",
+                        FullName = spec.SpecificationName,
+                        IsSelected = wasSelected,
+                        IsW2H2 = wasW2H2
+                    });
+                }
+            }
+
+            Debug.WriteLine($"{LOG} RefreshSpecSelectionItems — created {SpecSelectionItems.Count} items");
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // SPECIFICATIONS
+        // ═══════════════════════════════════════════════════════
+        // FIX H2: root cause was that the command was wired in both code-behind AND XAML.
+        // The defensive "remove duplicate" hack is gone. Now we just execute the command.
         private void AddSpecification_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                int countBefore = _viewModel?.Invoice?.Specifications?.Count ?? 0;
-
                 if (_viewModel?.AddSpecificationCommand?.CanExecute(null) == true)
                 {
                     _viewModel.AddSpecificationCommand.Execute(null);
                 }
 
-                int countAfter = _viewModel?.Invoice?.Specifications?.Count ?? 0;
-
-                System.Diagnostics.Debug.WriteLine($"[AddSpecification_Click] Before: {countBefore}, After: {countAfter}");
-
-                // FIX: If 2 specs were added instead of 1, remove the duplicate
-                if (countAfter == countBefore + 2 && countAfter > 0)
-                {
-                    var specToRemove = _viewModel.Invoice.Specifications[countAfter - 1];
-                    _viewModel.Invoice.Specifications.RemoveAt(countAfter - 1);
-                    System.Diagnostics.Debug.WriteLine($"[AddSpecification_Click] Removed duplicate spec");
-                    countAfter--;
-                }
-
-                // Refresh spec selection list
                 RefreshSpecSelectionItems();
-
-                // Auto-select the newly added spec
                 SelectLastSpec();
 
-                System.Diagnostics.Debug.WriteLine($"[AddSpecification_Click] ✓ Spec added, Total: {SpecSelectionItems.Count}");
+                Debug.WriteLine($"{LOG} ✓ Spec added — total: {SpecSelectionItems.Count}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[AddSpecification_Click] ERROR: {ex.Message}");
+                Debug.WriteLine($"{LOG} AddSpecification_Click error: {ex.Message}");
                 MessageBox.Show($"Error adding specification: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -311,26 +331,20 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         {
             try
             {
-                // Execute the command from ViewModel
                 if (_viewModel?.RemoveSpecificationCommand?.CanExecute(null) == true)
-                {
                     _viewModel.RemoveSpecificationCommand.Execute(null);
-                }
 
-                // AUTO-REFRESH: Update spec selection list immediately after removing
                 RefreshSpecSelectionItems();
-
-                System.Diagnostics.Debug.WriteLine($"[RemoveSpecification_Click] ✓ Spec removed, Total specs: {SpecSelectionItems.Count}");
+                Debug.WriteLine($"{LOG} ✓ Spec removed — total: {SpecSelectionItems.Count}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[RemoveSpecification_Click] ERROR: {ex.Message}");
+                Debug.WriteLine($"{LOG} RemoveSpecification_Click error: {ex.Message}");
             }
         }
 
         private void SelectLastSpec()
         {
-            // Auto-select the last added spec in the ListBox
             if (SpecSelectionItems.Count > 0)
             {
                 var lastWrapper = SpecSelectionItems[SpecSelectionItems.Count - 1];
@@ -338,54 +352,9 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             }
         }
 
-        // ==================== PATCH 18 - CLEANUP ON UNLOAD ====================
-
-        private void ProformaInvoiceView_Unloaded(object sender, RoutedEventArgs e)
-        {
-            // PATCH 18 FIX - Proper cleanup to prevent memory leaks
-            Unloaded -= ProformaInvoiceView_Unloaded;
-
-            // PATCH 18 FIX: Don't clear DataContext - shared VM handles its own cleanup
-            System.Diagnostics.Debug.WriteLine("[ProformaInvoiceView] Unloaded - Cleanup complete");
-        }
-
-        // ═══════════════════════════════════════════════════════════════
-        // REFRESH SPEC SELECTION ITEMS - Create simple names from specs
-        // ═══════════════════════════════════════════════════════════════
-
-        public void RefreshSpecSelectionItems()
-        {
-            SpecSelectionItems.Clear();
-
-            int specCount = _viewModel?.Invoice?.Specifications?.Count ?? 0;
-            System.Diagnostics.Debug.WriteLine($"[RefreshSpecSelectionItems] START - Invoice has {specCount} specs");
-
-            if (_viewModel?.Invoice?.Specifications != null)
-            {
-                for (int i = 0; i < _viewModel.Invoice.Specifications.Count; i++)
-                {
-                    var spec = _viewModel.Invoice.Specifications[i];
-                    if (spec != null)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"[RefreshSpecSelectionItems] Adding Spec {i + 1}: {spec.SpecificationName}");
-
-                        SpecSelectionItems.Add(new SpecSelectionItem
-                        {
-                            DisplayName = $"Spec {i + 1}",
-                            FullName = spec.SpecificationName,
-                            IsSelected = false
-                        });
-                    }
-                }
-            }
-
-            System.Diagnostics.Debug.WriteLine($"[RefreshSpecSelectionItems] DONE - Created {SpecSelectionItems.Count} items");
-        }
-
-        // ═══════════════════════════════════════════════════════════════
-        // MISSING BUTTON HANDLERS - ADD THESE
-        // ═══════════════════════════════════════════════════════════════
-
+        // ═══════════════════════════════════════════════════════
+        // STOCK SHEET BUTTONS
+        // ═══════════════════════════════════════════════════════
         private void BtnAddStockSheet_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -394,8 +363,8 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 AdditionalSheets.Add(new StockSheetItem
                 {
                     SheetLabel = $"Sheet {sheetNum}",
-                    Width = "3210",
-                    Height = "2250",
+                    Width = DEFAULT_SHEET_WIDTH.ToString(),
+                    Height = DEFAULT_SHEET_HEIGHT.ToString(),
                     Qty = "100"
                 });
                 txtOptStatus.Text = $"Added Sheet {sheetNum}";
@@ -410,13 +379,16 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         {
             try
             {
-                txtSheetWidth.Text = "3210";
-                txtSheetHeight.Text = "2250";
-                txtSheetQty.Text = "99999";
+                txtSheetWidth.Text = DEFAULT_SHEET_WIDTH.ToString();
+                txtSheetHeight.Text = DEFAULT_SHEET_HEIGHT.ToString();
+                txtSheetQty.Text = DEFAULT_SHEET_QTY.ToString();
                 AdditionalSheets.Clear();
                 txtOptStatus.Text = "Default sheets loaded";
             }
-            catch (Exception) { }
+            catch (Exception ex) // FIX H5: log instead of silent swallow
+            {
+                Debug.WriteLine($"{LOG} BtnLoadDefaultSheets_Click error: {ex.Message}");
+            }
         }
 
         private void BtnClearSheets_Click(object sender, RoutedEventArgs e)
@@ -429,66 +401,54 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 txtSheetQty.Text = "";
                 txtOptStatus.Text = "Sheets cleared";
             }
-            catch (Exception) { }
-        }
-
-        private void btnSelectAllSpecs_Click(object sender, RoutedEventArgs e)
-        {
-            lstSpecSelect.SelectAll();
-        }
-
-        private void btnClearSpecSelection_Click(object sender, RoutedEventArgs e)
-        {
-            lstSpecSelect.SelectedItems.Clear();
-            _specDimChoice.Clear();
-            txtOptStatus.Text = "Select specs and choose dimensions";
-
-            // Also clear UI selections
-            UpdateSpecSelectUIRadioButtons();
-        }
-
-        // Compiles the primary stock size inputs and AdditionalSheets collection into StockSheet list
-        private List<StockSheet> GetStockSheetsToOptimize(double primaryWidth, double primaryHeight)
-        {
-            var list = new List<StockSheet>();
-
-            int primaryQty = 99999;
-            if (txtSheetQty != null && !string.IsNullOrWhiteSpace(txtSheetQty.Text))
+            catch (Exception ex) // FIX H5: log
             {
-                int.TryParse(txtSheetQty.Text, out primaryQty);
+                Debug.WriteLine($"{LOG} BtnClearSheets_Click error: {ex.Message}");
             }
+        }
 
-            list.Add(new StockSheet
+        // ═══════════════════════════════════════════════════════
+        // SPEC SELECTION BUTTONS
+        // FIX M8 + M9: duplicate handlers removed — single definition below
+        // ═══════════════════════════════════════════════════════
+        private void BtnSelectAllSpecs_Click(object sender, RoutedEventArgs e)
+        {
+            try
             {
-                Ref = "S1",
-                L = primaryWidth,
-                W = primaryHeight,
-                Qty = primaryQty > 0 ? primaryQty : 99999
-            });
+                foreach (var wrapper in SpecSelectionItems)
+                    wrapper.IsSelected = true;
 
-            int index = 2;
-            foreach (var item in AdditionalSheets)
+                lstSpecSelect.SelectAll();
+                UpdateOptStatus();
+            }
+            catch (Exception ex)
             {
-                if (double.TryParse(item.Width, out double w) &&
-                    double.TryParse(item.Height, out double h))
+                Debug.WriteLine($"{LOG} BtnSelectAllSpecs_Click error: {ex.Message}");
+            }
+        }
+
+        private void BtnClearSpecSelection_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                foreach (var wrapper in SpecSelectionItems)
                 {
-                    int.TryParse(item.Qty, out int qty);
-                    list.Add(new StockSheet
-                    {
-                        Ref = $"S{index++}",
-                        L = w,
-                        W = h,
-                        Qty = qty > 0 ? qty : 100
-                    });
+                    wrapper.IsSelected = false;
+                    wrapper.IsW2H2 = false;
                 }
+                lstSpecSelect.SelectedItems.Clear();
+                _specDimChoice.Clear();
+                txtOptStatus.Text = "Select specs and choose dimensions";
             }
-            return list;
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"{LOG} BtnClearSpecSelection_Click error: {ex.Message}");
+            }
         }
 
-        // ═══════════════════════════════════════════════════════════════
-        // EXISTING EXPANDABLE PANEL CLICK HANDLERS - PRESERVE THESE
-        // ═══════════════════════════════════════════════════════════════
-
+        // ═══════════════════════════════════════════════════════
+        // EXPANDABLE PANEL HANDLERS
+        // ═══════════════════════════════════════════════════════
         private void ToggleFilePanel_Click(object sender, RoutedEventArgs e)
         {
             if (_viewModel != null)
@@ -498,29 +458,9 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             }
         }
 
-        private void ToggleSGUPanel_Click(object sender, RoutedEventArgs e)
-        {
-            if (_viewModel != null)
-            {
-                _viewModel.IsSGUSelected = !_viewModel.IsSGUSelected;
-            }
-        }
-
-        private void ToggleDGUPanel_Click(object sender, RoutedEventArgs e)
-        {
-            if (_viewModel != null)
-            {
-                _viewModel.IsDGUSelected = !_viewModel.IsDGUSelected;
-            }
-        }
-
-        private void ToggleLAMPanel_Click(object sender, RoutedEventArgs e)
-        {
-            if (_viewModel != null)
-            {
-                _viewModel.IsLAMSelected = !_viewModel.IsLAMSelected;
-            }
-        }
+        private void ToggleSGUPanel_Click(object sender, RoutedEventArgs e) { if (_viewModel != null) _viewModel.IsSGUSelected = !_viewModel.IsSGUSelected; }
+        private void ToggleDGUPanel_Click(object sender, RoutedEventArgs e) { if (_viewModel != null) _viewModel.IsDGUSelected = !_viewModel.IsDGUSelected; }
+        private void ToggleLAMPanel_Click(object sender, RoutedEventArgs e) { if (_viewModel != null) _viewModel.IsLAMSelected = !_viewModel.IsLAMSelected; }
 
         private void ToggleOptPanel_Click(object sender, RoutedEventArgs e)
         {
@@ -533,23 +473,20 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
         private void ToggleRecentInvoices_Click(object sender, RoutedEventArgs e)
         {
-            RecentInvoicesContent.Visibility = RecentInvoicesContent.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+            RecentInvoicesContent.Visibility = RecentInvoicesContent.Visibility == Visibility.Visible
+                ? Visibility.Collapsed
+                : Visibility.Visible;
         }
 
-        // ==================== OPEN OPTIMIZER WINDOW ====================
-
+        // ═══════════════════════════════════════════════════════
+        // OPEN OPTIMIZER WINDOW (instance-level)
+        // ═══════════════════════════════════════════════════════
         private void OpenOptimization_Click(object sender, RoutedEventArgs e)
         {
-            // Preserve state using class-level active view
-            if (_activeOptView == null)
-            {
-                _activeOptView = new OptimizationView();
-            }
-
             var optWindow = new Window
             {
                 Title = "Glass Cut Optimizer - ProGlass Automation",
-                Content = _activeOptView,
+                Content = new OptimizationView(),
                 WindowState = WindowState.Normal,
                 WindowStyle = WindowStyle.SingleBorderWindow,
                 ResizeMode = ResizeMode.CanResize,
@@ -562,223 +499,169 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             };
 
             _optimizerWindow = optWindow;
-            _optimizerView = _activeOptView;
-
-            optWindow.Closed += (s, args) =>
-            {
-                _optimizerWindow = null;
-                _optimizerView = null;
-            };
+            optWindow.ContentRendered += (s, args) => { _optimizerView = optWindow.Content as OptimizationView; };
+            optWindow.Closed += (s, args) => { _optimizerWindow = null; _optimizerView = null; };
 
             optWindow.Show();
             optWindow.WindowState = WindowState.Maximized;
         }
 
-        // ==================== RUN OPTIMIZATION (QUICK RESULT) ====================
+        // ═══════════════════════════════════════════════════════
+        // FIX H7: shared optimization core — kills duplicate code between
+        // RunOptimization_Click and ViewOptimizationLayouts_Click
+        // ═══════════════════════════════════════════════════════
+        private class OptimizationContext
+        {
+            public double SheetWidth { get; set; }
+            public double SheetHeight { get; set; }
+            public TrimSettings Trim { get; set; } = new();
+            public string Thickness { get; set; } = "6mm";
+            public List<Models.InvoiceItemModel> ItemsForOptimizer { get; set; } = new();
+            public string DimStatusText { get; set; } = "W1/H1";
+            public bool GlobalUseAlt { get; set; }
+            public bool UseCustom { get; set; }
+        }
 
+        private OptimizationContext? BuildOptimizationContext()
+        {
+            // Apply defaults if empty
+            if (string.IsNullOrWhiteSpace(txtSheetWidth.Text)) txtSheetWidth.Text = OPT_FALLBACK_WIDTH.ToString();
+            if (string.IsNullOrWhiteSpace(txtSheetHeight.Text)) txtSheetHeight.Text = OPT_FALLBACK_HEIGHT.ToString();
+
+            if (!double.TryParse(txtSheetWidth.Text, out double sheetWidth) || sheetWidth <= 0)
+            {
+                MessageBox.Show("Please enter valid sheet width!", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return null;
+            }
+            if (!double.TryParse(txtSheetHeight.Text, out double sheetHeight) || sheetHeight <= 0)
+            {
+                MessageBox.Show("Please enter valid sheet height!", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return null;
+            }
+
+            TrimSettings trim = GetCurrentTrim();
+            string thickness = (cmbThickness?.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "6mm";
+
+            // FIX H6: read dim choices from bound SpecSelectionItem.IsW2H2 (no visual tree walking)
+            SyncDimChoiceFromWrappers();
+
+            // Gather items
+            var allItemsWithSpec = new List<(Models.SpecificationModel spec, Models.InvoiceItemModel item)>();
+            if (_viewModel?.Invoice?.Specifications != null)
+            {
+                foreach (var spec in _viewModel.Invoice.Specifications)
+                {
+                    if (spec?.Items == null) continue;
+                    foreach (var item in spec.Items)
+                    {
+                        if (item != null)
+                            allItemsWithSpec.Add((spec, item));
+                    }
+                }
+            }
+
+            if (allItemsWithSpec.Count == 0)
+            {
+                MessageBox.Show("No items to optimize!", "Info", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return null;
+            }
+
+            bool globalUseAlt = (rbUseW2H2 != null && rbUseW2H2.IsChecked == true);
+            bool useCustom = (rbUseCustom != null && rbUseCustom.IsChecked == true);
+
+            if (!globalUseAlt && rbDimsW2H2 != null && rbDimsW2H2.IsChecked == true)
+                globalUseAlt = true;
+
+            // Build optimizer items
+            var invoiceItems = new List<Models.InvoiceItemModel>();
+            foreach (var (spec, item) in allItemsWithSpec)
+            {
+                bool useAltForItem = useCustom
+                    ? (_specDimChoice.TryGetValue(spec.SpecificationName, out var v) && v)
+                    : globalUseAlt;
+
+                double width = useAltForItem
+                    ? (item.Width2 > 0 ? item.Width2 : item.Width1)
+                    : (item.Width1 > 0 ? item.Width1 : item.Width2);
+                double height = useAltForItem
+                    ? (item.Height2 > 0 ? item.Height2 : item.Height1)
+                    : (item.Height1 > 0 ? item.Height1 : item.Height2);
+
+                invoiceItems.Add(new Models.InvoiceItemModel
+                {
+                    GlassRef = item.GlassRef,
+                    Width1 = width,
+                    Height1 = height,
+                    Qty = item.Qty > 0 ? item.Qty : 1
+                });
+            }
+
+            // Warn if W2/H2 requested but no items have alternates
+            int altAvailable = allItemsWithSpec.Count(t => t.item.Width2 > 0 || t.item.Height2 > 0);
+            if (globalUseAlt && altAvailable == 0)
+            {
+                MessageBox.Show("W2/H2 selected but no alternate dimensions found. Falling back to W1/H1.",
+                    "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                globalUseAlt = false;
+            }
+
+            // Build status text
+            string dimStatus;
+            if (useCustom)
+            {
+                int altCount = _specDimChoice.Count(kvp => kvp.Value);
+                if (altCount == 0) dimStatus = "W1/H1 (all)";
+                else if (altCount == _specDimChoice.Count) dimStatus = "W2/H2 (all)";
+                else dimStatus = $"Mixed ({altCount} specs W2/H2)";
+            }
+            else
+            {
+                dimStatus = globalUseAlt ? "W2/H2" : "W1/H1";
+            }
+
+            return new OptimizationContext
+            {
+                SheetWidth = sheetWidth,
+                SheetHeight = sheetHeight,
+                Trim = trim,
+                Thickness = thickness,
+                ItemsForOptimizer = invoiceItems,
+                DimStatusText = dimStatus,
+                GlobalUseAlt = globalUseAlt,
+                UseCustom = useCustom
+            };
+        }
+
+        private void SyncDimChoiceFromWrappers()
+        {
+            // FIX H6: pull dim choice from the bound wrappers — no visual tree walking
+            _specDimChoice.Clear();
+            foreach (var wrapper in SpecSelectionItems.Where(w => w.IsSelected))
+            {
+                if (!string.IsNullOrEmpty(wrapper.FullName))
+                    _specDimChoice[wrapper.FullName] = wrapper.IsW2H2;
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // RUN OPTIMIZATION (quick — center section only)
+        // ═══════════════════════════════════════════════════════
         private void RunOptimization_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                // Default sheet size if empty
-                if (string.IsNullOrWhiteSpace(txtSheetWidth.Text)) txtSheetWidth.Text = "3660";
-                if (string.IsNullOrWhiteSpace(txtSheetHeight.Text)) txtSheetHeight.Text = "2440";
+                var ctx = BuildOptimizationContext();
+                if (ctx == null) return;
 
-                // Get sheet size
-                if (!double.TryParse(txtSheetWidth.Text, out double sheetWidth) || sheetWidth <= 0)
-                {
-                    MessageBox.Show("Please enter valid sheet width!", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-                if (!double.TryParse(txtSheetHeight.Text, out double sheetHeight) || sheetHeight <= 0)
-                {
-                    MessageBox.Show("Please enter valid sheet height!", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
+                Debug.WriteLine($"{LOG} RunOptimization — items={ctx.ItemsForOptimizer.Count}, mode={ctx.DimStatusText}");
 
-                // AUTO-GET: Use GetCurrentTrim() for automatic thickness-based trim
-                TrimSettings trim = GetCurrentTrim();
-                string thickness = (cmbThickness?.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "6mm";
+                var optView = new OptimizationView();
+                optView.ImportInvoiceItems(ctx.ItemsForOptimizer);
+                optView.SetStockSheet(ctx.SheetWidth, ctx.SheetHeight);
+                optView.SetTrimSettings(ctx.Trim.LM, ctx.Trim.BM, ctx.Trim.TM, ctx.Trim.RM, ctx.Trim.Kerf, ctx.Trim.BreakoutMin);
+                optView.RunOptimizationFromInvoice();
 
-                // DEBUG: Log trim values being applied
-                System.Diagnostics.Debug.WriteLine($"[RunOptimization] ✓ Using trim for {thickness}: LM={trim.LM}, RM={trim.RM}, TM={trim.TM}, BM={trim.BM}, Kerf={trim.Kerf}");
-
-                // Get all items from all specifications
-                var items = new List<ModelInvoice>();
-                if (_viewModel?.Invoice?.Specifications != null)
-                {
-                    foreach (var spec in _viewModel.Invoice.Specifications)
-                    {
-                        if (spec?.Items != null)
-                        {
-                            foreach (var item in spec.Items)
-                            {
-                                if (item != null)
-                                    items.Add(item);
-                            }
-                        }
-                    }
-                }
-
-                if (items.Count == 0)
-                {
-                    MessageBox.Show("No items to optimize!", "Info", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
-                // Determine which mode we're in
-                bool globalUseAlt = (rbUseW2H2 != null && rbUseW2H2.IsChecked == true);
-                bool useCustom = (rbUseCustom != null && rbUseCustom.IsChecked == true);
-
-                // Also check checkbox in results area
-                if (!globalUseAlt && rbDimsW2H2 != null && rbDimsW2H2.IsChecked == true)
-                    globalUseAlt = true;
-
-                System.Diagnostics.Debug.WriteLine($"[RunOptimization] START - globalUseAlt={globalUseAlt}, useCustom={useCustom}, trackedSpecs={_specDimChoice.Count}");
-
-                // Get all items with their spec info
-                var allItems = new List<(Models.SpecificationModel spec, Models.InvoiceItemModel item)>();
-
-                if (_viewModel?.Invoice?.Specifications != null)
-                {
-                    foreach (var spec in _viewModel.Invoice.Specifications)
-                    {
-                        if (spec?.Items == null) continue;
-                        foreach (var item in spec.Items)
-                        {
-                            if (item != null)
-                                allItems.Add((spec, item));
-                        }
-                    }
-                }
-
-                if (allItems.Count == 0)
-                {
-                    MessageBox.Show("No items to optimize!", "Info", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
-                // Build parts list using appropriate dimensions
-                var parts = new List<CutPart>();
-
-                foreach (var (spec, item) in allItems)
-                {
-                    bool useAlt = false;
-
-                    if (useCustom && _specDimChoice.ContainsKey(spec.SpecificationName))
-                    {
-                        // USE PER-SPEC SELECTION from dictionary
-                        useAlt = _specDimChoice[spec.SpecificationName];
-                        System.Diagnostics.Debug.WriteLine($"[RunOptimization] Per-spec: {spec.SpecificationName} → {(useAlt ? "W2/H2" : "W1/H1")}");
-                    }
-                    else
-                    {
-                        useAlt = globalUseAlt;
-                        System.Diagnostics.Debug.WriteLine($"[RunOptimization] Global: {spec.SpecificationName} → {(useAlt ? "W2/H2" : "W1/H1")}");
-                    }
-
-                    double width = useAlt
-                        ? (item.Width2 > 0 ? item.Width2 : item.Width1)
-                        : (item.Width1 > 0 ? item.Width1 : item.Width2);
-                    double height = useAlt
-                        ? (item.Height2 > 0 ? item.Height2 : item.Height1)
-                        : (item.Height1 > 0 ? item.Height1 : item.Height2);
-
-                    parts.Add(new CutPart
-                    {
-                        Ref = item.GlassRef ?? "P",
-                        L = width,
-                        W = height,
-                        Qty = item.Qty > 0 ? item.Qty : 1,
-                        Rot = true
-                    });
-                }
-
-                // Build status message
-                string dimStatus;
-                if (useCustom)
-                {
-                    var altCount = _specDimChoice.Count(kvp => kvp.Value);
-                    if (altCount == 0)
-                        dimStatus = "W1/H1 (all)";
-                    else if (altCount == _specDimChoice.Count)
-                        dimStatus = "W2/H2 (all)";
-                    else
-                        dimStatus = $"Mixed ({altCount} specs W2/H2)";
-                }
-                else if (globalUseAlt)
-                    dimStatus = "W2/H2";
-                else
-                    dimStatus = "W1/H1";
-
-                System.Diagnostics.Debug.WriteLine($"[RunOptimization] Total items: {parts.Count}, Mode: {dimStatus}");
-
-                // Logging: how many items actually have alternate dims and radio states
-                int altAvailable = items.Count(i => (i.Width2 > 0 || i.Height2 > 0));
-                System.Diagnostics.Debug.WriteLine($"[RunOptimization] AltAvailable={altAvailable}/{items.Count}, rbUseW2H2={(rbUseW2H2?.IsChecked == true)}, rbDimsW2H2={(rbDimsW2H2?.IsChecked == true)}");
-
-                // If user selected W2/H2 but no items contain W2/H2, warn and fall back to W1/H1
-                if (globalUseAlt && altAvailable == 0)
-                {
-                    MessageBox.Show("W2/H2 selected but no alternate dimensions found in items. Falling back to W1/H1.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
-                    globalUseAlt = false;
-                }
-
-                // FIX: Retrieve or instantiate class-level persistent view state
-                if (_activeOptView == null)
-                {
-                    _activeOptView = new OptimizationView();
-                }
-
-                // Convert original items using appropriate dimensions per item
-                var invoiceItems = new List<Models.InvoiceItemModel>();
-
-                foreach (var i in items)
-                {
-                    bool useAltForItem = globalUseAlt;
-
-                    // Check per-spec selection if custom mode
-                    if (useCustom && FindSpecForItem(i, out string sn) && _specDimChoice.ContainsKey(sn))
-                    {
-                        useAltForItem = _specDimChoice[sn];
-                    }
-
-                    invoiceItems.Add(new Models.InvoiceItemModel
-                    {
-                        GlassRef = i.GlassRef,
-                        Width1 = useAltForItem ? (i.Width2 > 0 ? i.Width2 : i.Width1) : (i.Width1 > 0 ? i.Width1 : i.Width2),
-                        Height1 = useAltForItem ? (i.Height2 > 0 ? i.Height2 : i.Height1) : (i.Height1 > 0 ? i.Height1 : i.Height2),
-                        Qty = i.Qty > 0 ? i.Qty : 1
-                    });
-                }
-
-                _activeOptView.ImportInvoiceItems(invoiceItems);
-
-                // Compile and set full list of primary and secondary stock sheets
-                var compiledSheets = GetStockSheetsToOptimize(sheetWidth, sheetHeight);
-                _activeOptView.SetStockSheets(compiledSheets);
-
-                _activeOptView.SetTrimSettings(trim.LM, trim.BM, trim.TM, trim.RM, trim.Kerf, trim.BreakoutMin);
-                _activeOptView.RunOptimizationFromInvoice();
-
-                // Get results - update center section only
-                double utilization = _activeOptView.AverageUtilization;
-                int sheetsUsed = _activeOptView.SheetsUsed;
-
-                txtUtilization.Text = $"{utilization:N1}%";
-                txtSheetsUsed.Text = sheetsUsed.ToString();
-                txtWastage.Text = $"{(100 - utilization):N1}%";
-
-                // AUTO-UPDATE: Status with trim info
-                txtOptStatus.Text = $"✓ Optimized | {thickness} | Trim: {trim.LM}/{trim.RM}/{trim.TM}/{trim.BM}mm | {dimStatus}";
-
-                // Increment run count
-                int currentCount = 0;
-                if (int.TryParse(txtOptRunCount.Text, out int c)) currentCount = c;
-                txtOptRunCount.Text = (currentCount + 1).ToString();
-
-                // Update per-sheet results
-                UpdatePerSheetResults(_activeOptView, sheetWidth, sheetHeight);
+                UpdateResultsUI(optView, ctx);
             }
             catch (Exception ex)
             {
@@ -786,181 +669,75 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             }
         }
 
-        // ═══════════════════════════════════════════════════════════════
-        // THICKNESS SELECTION CHANGED - AUTO-UPDATE TRIM AND STATUS
-        // ═══════════════════════════════════════════════════════════════
-
-        private void cmbThickness_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            try
-            {
-                // AUTO-UPDATE: Get trim based on selected thickness
-                TrimSettings trim = GetCurrentTrim();
-                string thickness = (cmbThickness?.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "6mm";
-
-                // Display current trim in status
-                txtOptStatus.Text = $"Thickness: {thickness} | Trim: LM={trim.LM}mm RM={trim.RM}mm TM={trim.TM}mm BM={trim.BM}mm";
-
-                System.Diagnostics.Debug.WriteLine($"[cmbThickness_SelectionChanged] ✓ Thickness={thickness}, Trim auto-applied: LM={trim.LM}");
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[cmbThickness_SelectionChanged] ERROR: {ex.Message}");
-            }
-        }
-
-        // ==================== VIEW FULL LAYOUTS ====================
-
+        // ═══════════════════════════════════════════════════════
+        // VIEW FULL LAYOUTS (popup window)
+        // ═══════════════════════════════════════════════════════
         private void ViewOptimizationLayouts_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                // Default sheet size if empty
-                if (string.IsNullOrWhiteSpace(txtSheetWidth.Text)) txtSheetWidth.Text = "3660";
-                if (string.IsNullOrWhiteSpace(txtSheetHeight.Text)) txtSheetHeight.Text = "2440";
+                var ctx = BuildOptimizationContext();
+                if (ctx == null) return;
 
-                // Get sheet size
-                if (!double.TryParse(txtSheetWidth.Text, out double sheetWidth) || sheetWidth <= 0)
+                // If spec-wise checkbox is on, narrow items to selected specs only
+                if (chkSpecWise.IsChecked == true)
                 {
-                    MessageBox.Show("Please enter valid sheet width!", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-                if (!double.TryParse(txtSheetHeight.Text, out double sheetHeight) || sheetHeight <= 0)
-                {
-                    MessageBox.Show("Please enter valid sheet height!", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
+                    var selectedNames = SpecSelectionItems
+                        .Where(w => w.IsSelected)
+                        .Select(w => w.FullName)
+                        .ToHashSet();
 
-                // AUTO-GET: Use GetCurrentTrim() for automatic thickness-based trim
-                TrimSettings trim = GetCurrentTrim();
-                string thickness = (cmbThickness?.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "6mm";
-
-                // Get selected specifications from ListBox (wrappers) or all specs
-                var selectedSpecNames = new List<string>();
-
-                if (chkSpecWise.IsChecked == true && lstSpecSelect.SelectedItems.Count > 0)
-                {
-                    foreach (SpecSelectionItem s in lstSpecSelect.SelectedItems)
-                        if (s != null && !string.IsNullOrEmpty(s.FullName))
-                            selectedSpecNames.Add(s.FullName);
-                }
-
-                // If nothing selected or checkbox unchecked, use all specs
-                if (selectedSpecNames.Count == 0 && _viewModel?.Invoice?.Specifications != null)
-                {
-                    selectedSpecNames.AddRange(_viewModel.Invoice.Specifications
-                        .Where(s => s != null)
-                        .Select(s => s.SpecificationName));
-                }
-
-                // Now get the items from those specs
-                var items = new List<Models.InvoiceItemModel>();
-                foreach (var specName in selectedSpecNames)
-                {
-                    var spec = _viewModel.Invoice.Specifications
-                        .FirstOrDefault(s => s?.SpecificationName == specName);
-                    if (spec?.Items == null) continue;
-                    foreach (var item in spec.Items)
-                        if (item != null) items.Add(item);
-                }
-
-                if (items.Count == 0)
-                {
-                    MessageBox.Show("No items to optimize!", "Info", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
-                // Determine mode
-                bool globalUseAlt = (rbUseW2H2 != null && rbUseW2H2.IsChecked == true);
-                bool useCustom = (rbUseCustom != null && rbUseCustom.IsChecked == true);
-
-                if (!globalUseAlt && rbDimsW2H2 != null && rbDimsW2H2.IsChecked == true)
-                    globalUseAlt = true;
-
-                System.Diagnostics.Debug.WriteLine($"[ViewOptimizationLayouts] START - globalUseAlt={globalUseAlt}, useCustom={useCustom}");
-
-                // Convert using appropriate dims
-                var invoiceItems = items.Select(i =>
-                {
-                    bool useAltForItem = globalUseAlt;
-                    if (FindSpecForItem(i, out string sn) && useCustom && _specDimChoice.ContainsKey(sn))
-                        useAltForItem = _specDimChoice[sn];
-
-                    return new Models.InvoiceItemModel
+                    if (selectedNames.Count > 0 && _viewModel?.Invoice?.Specifications != null)
                     {
-                        GlassRef = i.GlassRef,
-                        Width1 = useAltForItem ? (i.Width2 > 0 ? i.Width2 : i.Width1) : (i.Width1 > 0 ? i.Width1 : i.Width2),
-                        Height1 = useAltForItem ? (i.Height2 > 0 ? i.Height2 : i.Height1) : (i.Height1 > 0 ? i.Height1 : i.Height2),
-                        Qty = i.Qty > 0 ? i.Qty : 1
-                    };
-                }).ToList();
+                        var narrowed = new List<Models.InvoiceItemModel>();
+                        foreach (var spec in _viewModel.Invoice.Specifications)
+                        {
+                            if (spec == null || !selectedNames.Contains(spec.SpecificationName)) continue;
+                            foreach (var item in spec.Items)
+                            {
+                                bool useAlt = ctx.UseCustom
+                                    ? (_specDimChoice.TryGetValue(spec.SpecificationName, out var v) && v)
+                                    : ctx.GlobalUseAlt;
 
-                // Build status message
-                string dimStatus;
-                if (useCustom)
-                {
-                    var altCount = _specDimChoice.Count(kvp => kvp.Value);
-                    if (altCount == 0)
-                        dimStatus = "W1/H1 (all)";
-                    else if (altCount == _specDimChoice.Count)
-                        dimStatus = "W2/H2 (all)";
-                    else
-                        dimStatus = $"Mixed ({altCount} specs W2/H2)";
+                                narrowed.Add(new Models.InvoiceItemModel
+                                {
+                                    GlassRef = item.GlassRef,
+                                    Width1 = useAlt ? (item.Width2 > 0 ? item.Width2 : item.Width1) : (item.Width1 > 0 ? item.Width1 : item.Width2),
+                                    Height1 = useAlt ? (item.Height2 > 0 ? item.Height2 : item.Height1) : (item.Height1 > 0 ? item.Height1 : item.Height2),
+                                    Qty = item.Qty > 0 ? item.Qty : 1
+                                });
+                            }
+                        }
+
+                        if (narrowed.Count > 0)
+                            ctx.ItemsForOptimizer = narrowed;
+                    }
                 }
-                else if (globalUseAlt)
-                    dimStatus = "W2/H2";
-                else
-                    dimStatus = "W1/H1";
-
-                // FIX: Retrieve or instantiate class-level persistent view state
-                if (_activeOptView == null)
-                {
-                    _activeOptView = new OptimizationView();
-                }
-
-                _activeOptView.ImportInvoiceItems(invoiceItems);
-
-                // Compile and set full list of primary and secondary stock sheets
-                var compiledSheets = GetStockSheetsToOptimize(sheetWidth, sheetHeight);
-                _activeOptView.SetStockSheets(compiledSheets);
-
-                _activeOptView.SetTrimSettings(trim.LM, trim.BM, trim.TM, trim.RM, trim.Kerf, trim.BreakoutMin);
-                _activeOptView.RunOptimizationFromInvoice();
 
                 var optWindow = new Window
                 {
                     Title = "Glass Cut Optimizer - ProGlass Automation",
-                    Content = _activeOptView,
+                    Content = new OptimizationView(),
                     Width = 1400,
                     Height = 900,
                     Background = new SolidColorBrush(Color.FromRgb(30, 39, 46)),
                     WindowStartupLocation = WindowStartupLocation.CenterScreen
                 };
 
-                _optimizerWindow = optWindow;
-                _optimizerView = _activeOptView;
-
-                optWindow.Closed += (s, args) =>
+                if (optWindow.Content is OptimizationView optView)
                 {
-                    _optimizerWindow = null;
-                    _optimizerView = null;
-                };
+                    optView.ImportInvoiceItems(ctx.ItemsForOptimizer);
+                    optView.SetStockSheet(ctx.SheetWidth, ctx.SheetHeight);
+                    optView.SetTrimSettings(ctx.Trim.LM, ctx.Trim.BM, ctx.Trim.TM, ctx.Trim.RM, ctx.Trim.Kerf, ctx.Trim.BreakoutMin);
+                    optView.RunOptimizationFromInvoice();
 
-                optWindow.Show();
-
-                // Also update center section
-                double utilization = _activeOptView.AverageUtilization;
-                int sheetsUsed = _activeOptView.SheetsUsed;
-
-                txtUtilization.Text = $"{utilization:N1}%";
-                txtSheetsUsed.Text = sheetsUsed.ToString();
-                txtWastage.Text = $"{(100 - utilization):N1}%";
-
-                // Use existing thickness and trim from earlier in this method
-                txtOptStatus.Text = $"✓ Optimized | {thickness} | Trim: {trim.LM}/{trim.RM}/{trim.TM}/{trim.BM}mm Kerf={trim.Kerf} | {dimStatus}";
-
-                // Update per-sheet results
-                UpdatePerSheetResults(_activeOptView, sheetWidth, sheetHeight);
+                    optWindow.Show();
+                    UpdateResultsUI(optView, ctx);
+                }
+                else
+                {
+                    MessageBox.Show("Failed to create optimizer view!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
             catch (Exception ex)
             {
@@ -968,35 +745,63 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             }
         }
 
-        // ==================== HELPER METHODS ====================
-
-        private bool FindSpecForItem(Models.InvoiceItemModel item, out string specName)
+        // Centralized results UI updater (used by both Run and View Layouts)
+        private void UpdateResultsUI(OptimizationView optView, OptimizationContext ctx)
         {
-            specName = "";
-            var spec = FindSpecification(item);
-            if (spec != null)
-            {
-                specName = spec.SpecificationName;
-                return true;
-            }
-            return false;
+            double utilization = optView.AverageUtilization;
+            int sheetsUsed = optView.SheetsUsed;
+
+            txtUtilization.Text = $"{utilization:N1}%";
+            txtSheetsUsed.Text = sheetsUsed.ToString();
+            txtWastage.Text = $"{(100 - utilization):N1}%";
+
+            txtOptStatus.Text =
+                $"✓ Optimized | {ctx.Thickness} | Trim: {ctx.Trim.LM}/{ctx.Trim.RM}/{ctx.Trim.TM}/{ctx.Trim.BM}mm | {ctx.DimStatusText}";
+
+            // Increment run count
+            int currentCount = int.TryParse(txtOptRunCount.Text, out int c) ? c : 0;
+            txtOptRunCount.Text = (currentCount + 1).ToString();
+
+            UpdatePerSheetResults(optView, ctx.SheetWidth, ctx.SheetHeight);
         }
 
+        // ═══════════════════════════════════════════════════════
+        // THICKNESS CHANGED — refresh status text
+        // (Wire this in XAML if you want auto-update; otherwise harmless)
+        // ═══════════════════════════════════════════════════════
+        private void cmbThickness_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            try
+            {
+                TrimSettings trim = GetCurrentTrim();
+                string thickness = (cmbThickness?.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "6mm";
+                txtOptStatus.Text = $"Thickness: {thickness} | Trim: LM={trim.LM}mm RM={trim.RM}mm TM={trim.TM}mm BM={trim.BM}mm";
+                Debug.WriteLine($"{LOG} ✓ Thickness={thickness}, Trim applied: LM={trim.LM}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"{LOG} cmbThickness_SelectionChanged error: {ex.Message}");
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // PER-SHEET RESULTS
+        // FIX C8 + M4: Removed the bogus (int)(util * 10) "pieces" math.
+        //  Now PiecesCut = "—" with a sheet-count label that's accurate.
+        // ═══════════════════════════════════════════════════════
         private void UpdatePerSheetResults(OptimizationView optView, double sheetWidth, double sheetHeight)
         {
             try
             {
                 SheetResults.Clear();
 
-                // Get ACTUAL per-sheet results from optimizer
                 var results = optView.GetResultsList();
 
                 if (results == null || results.Count == 0)
                 {
-                    // Fallback: Single sheet size = show ONE consolidated result
+                    // Fallback: single consolidated row
                     int totalSheets = optView.SheetsUsed;
                     double areaTotal = sheetWidth * sheetHeight / 1_000_000;
-                    int totalPieces = (int)(optView.AverageUtilization * 10);
                     double util = optView.AverageUtilization;
                     double wastage = 100 - util;
                     double areaUsed = areaTotal * (util / 100);
@@ -1005,7 +810,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     {
                         SheetName = $"{sheetWidth:N0} × {sheetHeight:N0} mm",
                         SheetDimensions = $"{sheetWidth:N0} × {sheetHeight:N0} mm",
-                        PiecesCut = totalPieces.ToString(),
+                        PiecesCut = "—", // FIX C8: was (int)(util * 10) — meaningless
                         AreaUsed = $"{areaUsed * totalSheets:N2} m²",
                         Utilization = $"{util:N1}",
                         Wastage = $"{wastage:N1}",
@@ -1014,14 +819,12 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 }
                 else
                 {
-                    // CONSOLIDATE by sheet dimensions (same size = single entry)
-                    // Use reflection or safe property access to get available values
+                    // Group by sheet dimensions, count sheets per group
                     var groupedResults = results
                         .GroupBy(r => new { r.L, r.W })
                         .Select(g => new
                         {
                             SheetDimensions = $"{g.Key.L:N0} × {g.Key.W:N0} mm",
-                            // Count sheets in this group instead of Qty
                             SheetCount = g.Count(),
                             TotalArea = g.Sum(x => x.Area),
                             AvgUtil = g.Average(x => x.Util)
@@ -1029,47 +832,37 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                         .OrderByDescending(g => g.AvgUtil)
                         .ToList();
 
-                    int sheetIndex = 1;
                     foreach (var group in groupedResults)
                     {
                         double wastage = 100 - group.AvgUtil;
-
-                        // Calculate pieces from area (approx) or use sheet count
-                        // Since we don't have direct piece count, use sheet count as proxy
-                        int piecesEst = group.SheetCount; // This is actually sheet count
 
                         SheetResults.Add(new SheetResultItem
                         {
                             SheetName = group.SheetDimensions,
                             SheetDimensions = group.SheetDimensions,
-                            PiecesCut = group.SheetCount.ToString(), // Show sheet count
+                            // FIX M4: clearer label — this is sheet count, not piece count
+                            PiecesCut = $"{group.SheetCount} sheets",
                             AreaUsed = $"{group.TotalArea:N2} m²",
                             Utilization = $"{group.AvgUtil:N1}",
                             Wastage = $"{wastage:N1}",
                             BarHeight = group.AvgUtil * 0.8
                         });
-
-                        sheetIndex++;
                     }
                 }
 
-                // Update sheets used count (show unique sheet sizes, not count)
                 int uniqueSizes = SheetResults.Select(r => r.SheetDimensions).Distinct().Count();
                 int totalSheetsUsed = optView.SheetsUsed;
 
-                if (uniqueSizes == 1)
-                    txtSheetsUsedCount.Text = $"{totalSheetsUsed} sheets ({SheetResults.First().SheetDimensions})";
-                else
-                    txtSheetsUsedCount.Text = $"{totalSheetsUsed} sheets ({uniqueSizes} sizes)";
+                txtSheetsUsedCount.Text = uniqueSizes == 1
+                    ? $"{totalSheetsUsed} sheets ({SheetResults.First().SheetDimensions})"
+                    : $"{totalSheetsUsed} sheets ({uniqueSizes} sizes)";
 
-                // Show/hide empty state
                 EmptyPerSheetResults.Visibility = SheetResults.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[UpdatePerSheetResults] Error: {ex.Message}");
+                Debug.WriteLine($"{LOG} UpdatePerSheetResults error: {ex.Message}");
 
-                // FALLBACK: Show simple single result on error
                 double util = optView?.AverageUtilization ?? 0;
                 int sheets = optView?.SheetsUsed ?? 0;
                 double area = sheetWidth * sheetHeight / 1_000_000 * sheets;
@@ -1090,8 +883,9 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             }
         }
 
-        // ==================== TEXT SELECTION ON FOCUS ====================
-
+        // ═══════════════════════════════════════════════════════
+        // TEXT SELECTION / FOCUS / VALIDATION
+        // ═══════════════════════════════════════════════════════
         private void TextBox_GotFocus(object sender, RoutedEventArgs e)
         {
             if (sender is TextBox tb) tb.SelectAll();
@@ -1110,8 +904,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         {
             if (sender is ComboBox cb) cb.IsDropDownOpen = true;
         }
-
-        // ==================== PHONE NUMBER VALIDATION ====================
 
         private void PhoneNumber_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
@@ -1133,8 +925,9 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             if (sender is TextBox tb && tb.Text == "+971-") tb.Text = "";
         }
 
-        // ==================== SMOOTH SCROLLING ====================
-
+        // ═══════════════════════════════════════════════════════
+        // SMOOTH SCROLL
+        // ═══════════════════════════════════════════════════════
         private void DataGrid_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
             if (sender is DataGrid dataGrid)
@@ -1164,7 +957,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
         private ScrollViewer? GetScrollViewer(DependencyObject obj)
         {
-            if (obj is ScrollViewer scrollViewer) return scrollViewer;
+            if (obj is ScrollViewer sv) return sv;
             for (int i = 0; i < VisualTreeHelper.GetChildrenCount(obj); i++)
             {
                 var child = VisualTreeHelper.GetChild(obj, i);
@@ -1174,8 +967,9 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             return null;
         }
 
-        // ==================== EXISTING HANDLERS ====================
-
+        // ═══════════════════════════════════════════════════════
+        // ROW BUTTONS
+        // ═══════════════════════════════════════════════════════
         private void AddRow_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button button && button.Tag is Models.SpecificationModel spec)
@@ -1194,8 +988,9 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 _viewModel.RemoveItem(item);
         }
 
-        // ==================== PASTE FROM EXCEL ====================
-
+        // ═══════════════════════════════════════════════════════
+        // PASTE FROM EXCEL
+        // ═══════════════════════════════════════════════════════
         private void DataGrid_Paste(object sender, ExecutedRoutedEventArgs e)
         {
             try
@@ -1213,10 +1008,10 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     return;
                 }
 
-                // PATCH 18: Null check for ViewModel
                 if (_viewModel == null || _viewModel.Invoice == null)
                 {
-                    MessageBox.Show("Invoice not loaded. Please create or open an invoice first.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show("Invoice not loaded. Please create or open an invoice first.",
+                        "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
@@ -1228,7 +1023,8 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
                     if (_viewModel.Invoice.Specifications.Count == 0)
                     {
-                        MessageBox.Show("Could not create specification. Please add a specification manually.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show("Could not create specification. Please add a specification manually.",
+                            "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         return;
                     }
 
@@ -1262,7 +1058,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     defaultSurcharge = firstItem.SurchargePercent;
                 }
 
-                // PATCH 18 FIX: Use BulkUpdateScope() - returns IDisposable
                 using (spec.BulkUpdateScope())
                 {
                     for (int i = startIndex; i < rows.Length; i++)
@@ -1292,7 +1087,8 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 _viewModel.Invoice.CalculateTotals();
                 _viewModel.Invoice.IsDirty = true;
 
-                MessageBox.Show($"✅ Pasted {itemsAdded} items from Excel!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show($"✅ Pasted {itemsAdded} items from Excel!", "Success",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
@@ -1306,8 +1102,9 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             e.Handled = true;
         }
 
-        // ==================== PRINT HANDLERS ====================
-
+        // ═══════════════════════════════════════════════════════
+        // PRINT
+        // ═══════════════════════════════════════════════════════
         private void PrintInvoice_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -1326,7 +1123,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     if (contentWidth > 0 && contentHeight > 0)
                     {
                         var scale = Math.Min(pageWidth / contentWidth, pageHeight / contentHeight);
-                        previewWindow.LayoutTransform = new System.Windows.Media.ScaleTransform(scale, scale);
+                        previewWindow.LayoutTransform = new ScaleTransform(scale, scale);
                     }
 
                     printDialog.PrintVisual(previewWindow, "ProForma Invoice");
@@ -1335,7 +1132,8 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error printing invoice: {ex.Message}", "Print Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Error printing invoice: {ex.Message}", "Print Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -1359,12 +1157,14 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error opening print preview: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Error opening print preview: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        // ==================== KEY HANDLERS ====================
-
+        // ═══════════════════════════════════════════════════════
+        // DATAGRID KEY HANDLERS
+        // ═══════════════════════════════════════════════════════
         private void DataGrid_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (sender is not DataGrid dataGrid) return;
@@ -1393,7 +1193,10 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     }
                 }
             }
-            catch { }
+            catch (Exception ex) // FIX H5: log
+            {
+                Debug.WriteLine($"{LOG} DataGrid_PreviewKeyDown error: {ex.Message}");
+            }
         }
 
         private void HandleEnterKey(DataGrid dataGrid)
@@ -1402,8 +1205,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             {
                 if (dataGrid == null || !dataGrid.CurrentCell.IsValid) return;
 
-                var currentItem = dataGrid.CurrentCell.Item as Models.InvoiceItemModel;
-                if (currentItem == null) return;
+                if (dataGrid.CurrentCell.Item is not Models.InvoiceItemModel currentItem) return;
 
                 var spec = FindSpecification(currentItem);
                 if (spec == null) return;
@@ -1446,14 +1248,14 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                         }
                         catch (Exception ex)
                         {
-                            System.Diagnostics.Debug.WriteLine($"[HandleEnterKey] Error: {ex.Message}");
+                            Debug.WriteLine($"{LOG} HandleEnterKey inner error: {ex.Message}");
                         }
                     }));
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[HandleEnterKey] Error: {ex.Message}");
+                Debug.WriteLine($"{LOG} HandleEnterKey error: {ex.Message}");
             }
         }
 
@@ -1461,8 +1263,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         {
             try
             {
-                var currentItem = dataGrid.CurrentCell.Item as Models.InvoiceItemModel;
-                if (currentItem == null) return;
+                if (dataGrid.CurrentCell.Item is not Models.InvoiceItemModel currentItem) return;
 
                 var spec = FindSpecification(currentItem);
                 if (spec == null) return;
@@ -1503,14 +1304,14 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                         }
                         catch (Exception ex)
                         {
-                            System.Diagnostics.Debug.WriteLine($"[HandleTabKey] Error: {ex.Message}");
+                            Debug.WriteLine($"{LOG} HandleTabKey inner error: {ex.Message}");
                         }
                     }));
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[HandleTabKey] Error: {ex.Message}");
+                Debug.WriteLine($"{LOG} HandleTabKey error: {ex.Message}");
             }
         }
 
@@ -1526,8 +1327,9 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             return null;
         }
 
-        // ==================== OTHER CHARGES HANDLERS ====================
-
+        // ═══════════════════════════════════════════════════════
+        // OTHER CHARGES HANDLERS
+        // ═══════════════════════════════════════════════════════
         private void SpecCheckBox_Click(object sender, RoutedEventArgs e)
         {
             if (DataContext is ProformaInvoiceViewModel vm)
@@ -1567,7 +1369,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             }
         }
 
-        private void SpecSelectorBorder_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        private void SpecSelectorBorder_Click(object sender, MouseButtonEventArgs e)
         {
             if (sender is Border border && border.DataContext is OtherChargeModel charge)
             {
@@ -1587,7 +1389,8 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             var specs = vm.Invoice.Specifications;
             if (specs.Count == 0)
             {
-                MessageBox.Show("No specifications available.\nAdd at least one specification first.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("No specifications available.\nAdd at least one specification first.",
+                    "Info", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
@@ -1625,9 +1428,9 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     Content = $"Spec {i + 1}: {spec.SpecificationName}",
                     Margin = new Thickness(0, 4, 0, 4),
                     FontSize = 11,
-                    IsChecked = charge.SpecIndexList.Contains(i)
+                    IsChecked = charge.SpecIndexList.Contains(i),
+                    Tag = specIndex
                 };
-                checkBox.Tag = specIndex;
                 checkBox.Checked += (s, ev) => charge.AddSpec(specIndex);
                 checkBox.Unchecked += (s, ev) => charge.RemoveSpec(specIndex);
                 checkBoxPanel.Children.Add(checkBox);
@@ -1707,8 +1510,10 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             return null;
         }
 
-        // ==================== PER-SPEC DIMENSION SELECTION ====================
-
+        // ═══════════════════════════════════════════════════════
+        // PER-SPEC DIMENSION SELECTION
+        // FIX H6: drives the bound SpecSelectionItem.IsW2H2 — no visual tree walking
+        // ═══════════════════════════════════════════════════════
         private void OptSpecDim_Click(object sender, RoutedEventArgs e)
         {
             if (sender is RadioButton rb && rb.Tag is string dimTag)
@@ -1716,67 +1521,60 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 try
                 {
                     string specName = rb.GroupName;
-
                     if (string.IsNullOrEmpty(specName))
                     {
-                        System.Diagnostics.Debug.WriteLine("[OptSpecDim_Click] WARN: Empty GroupName, skipping");
+                        Debug.WriteLine($"{LOG} OptSpecDim_Click — empty GroupName, skipping");
                         return;
                     }
 
                     bool useAlt = (dimTag == "W2/H2");
-
                     _specDimChoice[specName] = useAlt;
 
-                    if (_viewModel?.Invoice?.Specifications != null)
+                    var wrapper = SpecSelectionItems.FirstOrDefault(w => w.FullName == specName);
+                    if (wrapper != null)
                     {
-                        var spec = _viewModel.Invoice.Specifications.FirstOrDefault(s => s?.SpecificationName == specName);
-                        if (spec != null && !lstSpecSelect.SelectedItems.Contains(spec))
-                        {
-                            lstSpecSelect.SelectedItems.Add(spec);
-                        }
+                        wrapper.IsSelected = true;
+                        wrapper.IsW2H2 = useAlt;
                     }
 
-                    System.Diagnostics.Debug.WriteLine($"[OptSpecDim_Click] ✓ Spec='{specName}', Dim={dimTag}, UseAlt={useAlt}");
-
-                    UpdateListBoxRadioButtons(lstSpecSelect);
                     UpdateOptStatus();
+                    Debug.WriteLine($"{LOG} ✓ OptSpecDim — Spec='{specName}', Dim={dimTag}, UseAlt={useAlt}");
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"[OptSpecDim_Click] ERROR: {ex.Message}");
+                    Debug.WriteLine($"{LOG} OptSpecDim_Click error: {ex.Message}");
                 }
             }
         }
 
         private void UpdateOptStatus()
         {
+            SyncDimChoiceFromWrappers();
+
             if (_specDimChoice.Count == 0)
             {
                 txtOptStatus.Text = "Select specs and choose dimensions";
                 return;
             }
 
-            var w2h2Count = _specDimChoice.Count(kvp => kvp.Value);
-            var w1h1Count = _specDimChoice.Count - w2h2Count;
+            int w2h2Count = _specDimChoice.Count(kvp => kvp.Value);
+            int w1h1Count = _specDimChoice.Count - w2h2Count;
 
-            if (w2h2Count == 0)
-                txtOptStatus.Text = "All specs: W1/H1";
-            else if (w1h1Count == 0)
-                txtOptStatus.Text = "All specs: W2/H2";
-            else
-                txtOptStatus.Text = $"W1/H1: {w1h1Count} specs, W2/H2: {w2h2Count} specs";
+            if (w2h2Count == 0) txtOptStatus.Text = "All specs: W1/H1";
+            else if (w1h1Count == 0) txtOptStatus.Text = "All specs: W2/H2";
+            else txtOptStatus.Text = $"W1/H1: {w1h1Count} specs, W2/H2: {w2h2Count} specs";
         }
 
-        // ==================== FALLBACK DIMENSION CLICK ====================
-
+        // ═══════════════════════════════════════════════════════
+        // FALLBACK DIMENSION RADIO
+        // FIX H6 + M6: no more visual tree walking, no more _isUpdatingSpecSelection gymnastics
+        // ═══════════════════════════════════════════════════════
         private void FallbackDim_Click(object sender, RoutedEventArgs e)
         {
             if (sender is RadioButton rb)
             {
                 string fallbackType = rb.Name;
-                bool useAltW2H2 = (fallbackType == "rbUseW2H2");
-
-                System.Diagnostics.Debug.WriteLine($"[FallbackDim_Click] Fallback changed: {fallbackType}, useAltW2H2={useAltW2H2}");
+                Debug.WriteLine($"{LOG} FallbackDim_Click: {fallbackType}");
 
                 if (fallbackType == "rbUseCustom")
                 {
@@ -1784,217 +1582,59 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     return;
                 }
 
+                bool useAltW2H2 = (fallbackType == "rbUseW2H2");
+
+                // Update VM-side dictionary
+                _specDimChoice.Clear();
                 if (_viewModel?.Invoice?.Specifications != null)
                 {
                     foreach (var spec in _viewModel.Invoice.Specifications)
                     {
                         if (spec != null && !string.IsNullOrEmpty(spec.SpecificationName))
-                        {
                             _specDimChoice[spec.SpecificationName] = useAltW2H2;
-                        }
                     }
                 }
 
-                // Clear and re-select all specs using wrappers
-                lstSpecSelect.SelectedItems.Clear();
-                RefreshSpecSelectionItems(); // Refresh to get latest wrappers
-
-                // Select all wrappers
+                // Update wrappers (drives radio buttons via bindings)
                 foreach (var wrapper in SpecSelectionItems)
                 {
-                    lstSpecSelect.SelectedItems.Add(wrapper);
+                    wrapper.IsSelected = true;
+                    wrapper.IsW2H2 = useAltW2H2;
                 }
 
+                lstSpecSelect.SelectAll();
                 txtOptStatus.Text = useAltW2H2 ? "All specs: W2/H2" : "All specs: W1/H1";
 
-                // Force UI refresh
-                UpdateSpecSelectUIRadioButtons();
-
-                // Now update RadioButton visual states to show W1/H1 or W2/H2 as selected
-                UpdateListBoxRadioButtons(lstSpecSelect);
-
-                System.Diagnostics.Debug.WriteLine($"[FallbackDim_Click] Updated {_specDimChoice.Count} specs to {(useAltW2H2 ? "W2/H2" : "W1/H1")}");
+                Debug.WriteLine($"{LOG} Updated {_specDimChoice.Count} specs to {(useAltW2H2 ? "W2/H2" : "W1/H1")}");
             }
         }
 
-        private void UpdateSpecSelectUIRadioButtons()
-        {
-            try
-            {
-                // Set flag to prevent selection changed from resetting dictionary
-                _isUpdatingSpecSelection = true;
-
-                // Force visual update - dispatch to ensure ListBox items are rendered
-                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, new Action(() =>
-                {
-                    try
-                    {
-                        // Save current selection (now using SpecSelectionItem wrappers)
-                        var selectedWrappers = lstSpecSelect.SelectedItems.Cast<SpecSelectionItem>().ToList();
-                        var selectedSpecNames = selectedWrappers
-                            .Where(w => w != null)
-                            .Select(w => w.FullName)
-                            .ToList();
-
-                        // Clear and refresh ListBox items to force re-render
-                        var items = lstSpecSelect.ItemsSource;
-                        lstSpecSelect.ItemsSource = null;
-                        lstSpecSelect.ItemsSource = items;
-
-                        // Clear dictionary and rebuild from scratch using ALL specs from VM
-                        _specDimChoice.Clear();
-                        if (_viewModel?.Invoice?.Specifications != null)
-                        {
-                            foreach (var spec in _viewModel.Invoice.Specifications)
-                            {
-                                if (spec != null && !string.IsNullOrEmpty(spec.SpecificationName))
-                                {
-                                    // Default to W1/H1 (false), unless user explicitly chose W2/H2 before
-                                    _specDimChoice[spec.SpecificationName] = false;
-                                }
-                            }
-                        }
-
-                        // Restore selection - find wrapper by name
-                        lstSpecSelect.SelectedItems.Clear();
-                        foreach (var specName in selectedSpecNames)
-                        {
-                            var wrapper = SpecSelectionItems.FirstOrDefault(w => w.FullName == specName);
-                            if (wrapper != null)
-                                lstSpecSelect.SelectedItems.Add(wrapper);
-                        }
-
-                        // Force update RadioButtons with delay to ensure visual tree is ready
-                        System.Threading.Thread.Sleep(50);
-                        UpdateListBoxRadioButtons(lstSpecSelect);
-
-                        // Update status
-                        UpdateOptStatus();
-
-                        System.Diagnostics.Debug.WriteLine($"[UpdateSpecSelectUIRadioButtons] UI refreshed");
-                    }
-                    catch (Exception ex2)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"[UpdateSpecSelectUIRadioButtons] Inner ERROR: {ex2.Message}");
-                    }
-                    finally
-                    {
-                        _isUpdatingSpecSelection = false;
-                    }
-                }));
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[UpdateSpecSelectUIRadioButtons] ERROR: {ex.Message}");
-                _isUpdatingSpecSelection = false;
-            }
-        }
-
-        private void UpdateListBoxRadioButtons(ListBox listBox)
-        {
-            try
-            {
-                System.Diagnostics.Debug.WriteLine($"[UpdateListBoxRadioButtons] Processing {listBox.Items.Count} items...");
-
-                // Iterate through ListBox items and find RadioButtons
-                for (int i = 0; i < listBox.Items.Count; i++)
-                {
-                    var container = listBox.ItemContainerGenerator.ContainerFromIndex(i);
-                    if (container == null)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"[UpdateListBoxRadioButtons] Container {i} is NULL");
-                        continue;
-                    }
-
-                    // Find RadioButtons in this container
-                    var radios = FindVisualChildren<RadioButton>(container);
-                    foreach (var rb in radios)
-                    {
-                        string specName = rb.GroupName;
-                        string tag = rb.Tag?.ToString() ?? "";
-
-                        System.Diagnostics.Debug.WriteLine($"[UpdateListBoxRadioButtons] Found RB: Group={specName}, Tag={tag}");
-
-                        if (string.IsNullOrEmpty(specName) || !_specDimChoice.ContainsKey(specName))
-                            continue;
-
-                        bool useAlt = _specDimChoice[specName];
-
-                        // Use correct tags with forward slash
-                        if (tag == "W1/H1")
-                        {
-                            rb.IsChecked = !useAlt;
-                            System.Diagnostics.Debug.WriteLine($"[UpdateListBoxRadioButtons] W1/H1 IsChecked={!useAlt}");
-                        }
-                        else if (tag == "W2/H2")
-                        {
-                            rb.IsChecked = useAlt;
-                            System.Diagnostics.Debug.WriteLine($"[UpdateListBoxRadioButtons] W2/H2 IsChecked={useAlt}");
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[UpdateListBoxRadioButtons] ERROR: {ex.Message}");
-            }
-        }
-
-        private static IEnumerable<T> FindVisualChildren<T>(DependencyObject depObj) where T : DependencyObject
-        {
-            if (depObj == null) yield break;
-
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(depObj); i++)
-            {
-                var child = VisualTreeHelper.GetChild(depObj, i);
-                if (child is T t)
-                    yield return t;
-
-                foreach (var childOfChild in FindVisualChildren<T>(child))
-                    yield return childOfChild;
-            }
-        }
-
-        // Add these methods to the code-behind file (after the other button handlers)
-
-        private void BtnSelectAllSpecs_Click(object sender, RoutedEventArgs e)
-        {
-            lstSpecSelect.SelectAll();
-        }
-
-        private void BtnClearSpecSelection_Click(object sender, RoutedEventArgs e)
-        {
-            lstSpecSelect.SelectedItems.Clear();
-            _specDimChoice.Clear();
-            txtOptStatus.Text = "Select specs and choose dimensions";
-            UpdateSpecSelectUIRadioButtons();
-        }
-
+        // ═══════════════════════════════════════════════════════
+        // SPEC ROW RADIO HANDLERS (bound via SpecSelectionItem.IsW2H2)
+        // ═══════════════════════════════════════════════════════
         private void RbSpecW1H1_Click(object sender, RoutedEventArgs e)
         {
             if (sender is RadioButton rb && rb.Tag is string specName)
             {
                 try
                 {
-                    if (!string.IsNullOrEmpty(specName))
+                    if (string.IsNullOrEmpty(specName)) return;
+
+                    _specDimChoice[specName] = false;
+
+                    var wrapper = SpecSelectionItems.FirstOrDefault(w => w.FullName == specName);
+                    if (wrapper != null)
                     {
-                        _specDimChoice[specName] = false; // W1/H1 = false
-                        System.Diagnostics.Debug.WriteLine($"[RbSpecW1H1_Click] Spec='{specName}', Dim=W1/H1");
-
-                        // Auto-select wrapper if not selected
-                        var wrapper = SpecSelectionItems.FirstOrDefault(w => w.FullName == specName);
-                        if (wrapper != null && !lstSpecSelect.SelectedItems.Contains(wrapper))
-                        {
-                            lstSpecSelect.SelectedItems.Add(wrapper);
-                        }
-
-                        UpdateListBoxRadioButtons(lstSpecSelect);
-                        UpdateOptStatus();
+                        wrapper.IsSelected = true;
+                        wrapper.IsW2H2 = false;
                     }
+
+                    UpdateOptStatus();
+                    Debug.WriteLine($"{LOG} RbSpecW1H1 — Spec='{specName}'");
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"[RbSpecW1H1_Click] ERROR: {ex.Message}");
+                    Debug.WriteLine($"{LOG} RbSpecW1H1_Click error: {ex.Message}");
                 }
             }
         }
@@ -2005,79 +1645,82 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             {
                 try
                 {
-                    if (!string.IsNullOrEmpty(specName))
+                    if (string.IsNullOrEmpty(specName)) return;
+
+                    _specDimChoice[specName] = true;
+
+                    var wrapper = SpecSelectionItems.FirstOrDefault(w => w.FullName == specName);
+                    if (wrapper != null)
                     {
-                        _specDimChoice[specName] = true; // W2/H2 = true
-                        System.Diagnostics.Debug.WriteLine($"[RbSpecW2H2_Click] Spec='{specName}', Dim=W2/H2");
-
-                        // Auto-select wrapper if not selected
-                        var wrapper = SpecSelectionItems.FirstOrDefault(w => w.FullName == specName);
-                        if (wrapper != null && !lstSpecSelect.SelectedItems.Contains(wrapper))
-                        {
-                            lstSpecSelect.SelectedItems.Add(wrapper);
-                        }
-
-                        UpdateListBoxRadioButtons(lstSpecSelect);
-                        UpdateOptStatus();
+                        wrapper.IsSelected = true;
+                        wrapper.IsW2H2 = true;
                     }
+
+                    UpdateOptStatus();
+                    Debug.WriteLine($"{LOG} RbSpecW2H2 — Spec='{specName}'");
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"[RbSpecW2H2_Click] ERROR: {ex.Message}");
+                    Debug.WriteLine($"{LOG} RbSpecW2H2_Click error: {ex.Message}");
                 }
             }
         }
 
-        // ==================== SPEC LIST SELECTION CHANGED ====================
-
+        // ═══════════════════════════════════════════════════════
+        // SPEC LIST SELECTION CHANGED
+        // FIX H1: duplicate _specDimChoice.Remove(key) removed
+        // ═══════════════════════════════════════════════════════
         private void lstSpecSelect_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // Skip if we're doing programmatic update
             if (_isUpdatingSpecSelection) return;
 
             try
             {
-                // The ListBox.SelectedItems contains the actual selected wrapper objects
-                // We need to check which wrappers are in SelectedItems, NOT wrapper.IsSelected
-                var selectedWrappers = lstSpecSelect.SelectedItems
-                    .Cast<SpecSelectionItem>()
-                    .ToHashSet();
+                _isUpdatingSpecSelection = true;
 
-                // Add newly selected specs to tracking (default to W1/H1 = false)
-                foreach (var wrapper in selectedWrappers)
-                {
-                    if (!string.IsNullOrEmpty(wrapper.FullName))
-                    {
-                        if (!_specDimChoice.ContainsKey(wrapper.FullName))
-                        {
-                            _specDimChoice[wrapper.FullName] = false; // Default W1/H1
-                            System.Diagnostics.Debug.WriteLine($"[lstSpecSelect_SelectionChanged] Added: {wrapper.FullName}");
-                        }
-                    }
-                }
+                // Sync wrapper IsSelected with ListBox SelectedItems
+                var selectedSet = new HashSet<SpecSelectionItem>(lstSpecSelect.SelectedItems.OfType<SpecSelectionItem>());
+                foreach (var wrapper in SpecSelectionItems)
+                    wrapper.IsSelected = selectedSet.Contains(wrapper);
 
-                // Remove unselected specs from tracking
-                var selectedSpecNames = selectedWrappers
+                // Rebuild dim choice dictionary from selection
+                var selectedNames = selectedSet
                     .Where(w => !string.IsNullOrEmpty(w.FullName))
                     .Select(w => w.FullName)
                     .ToHashSet();
-                var toRemove = _specDimChoice.Keys.Where(k => !selectedSpecNames.Contains(k)).ToList();
-                foreach (var key in toRemove)
+
+                // Add newcomers (default W1/H1)
+                foreach (var w in selectedSet)
                 {
-                    _specDimChoice.Remove(key);
-                    System.Diagnostics.Debug.WriteLine($"[lstSpecSelect_SelectionChanged] Removed: {key}");
+                    if (!string.IsNullOrEmpty(w.FullName) && !_specDimChoice.ContainsKey(w.FullName))
+                        _specDimChoice[w.FullName] = w.IsW2H2;
                 }
 
-                System.Diagnostics.Debug.WriteLine($"[lstSpecSelect_SelectionChanged] Selected wrappers: {selectedWrappers.Count}, Tracked specs: {_specDimChoice.Count}");
+                // Remove deselected
+                var toRemove = _specDimChoice.Keys.Where(k => !selectedNames.Contains(k)).ToList();
+                foreach (var key in toRemove)
+                {
+                    _specDimChoice.Remove(key); // FIX H1: was called twice
+                    Debug.WriteLine($"{LOG} Removed from tracking: {key}");
+                }
+
+                Debug.WriteLine($"{LOG} Selection sync — selected={selectedSet.Count}, tracked={_specDimChoice.Count}");
                 UpdateOptStatus();
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[lstSpecSelect_SelectionChanged] ERROR: {ex.Message}");
+                Debug.WriteLine($"{LOG} lstSpecSelect_SelectionChanged error: {ex.Message}");
+            }
+            finally
+            {
+                _isUpdatingSpecSelection = false;
             }
         }
     }
 
+    // ═══════════════════════════════════════════════════════
+    // SCROLL BEHAVIOR HELPER
+    // ═══════════════════════════════════════════════════════
     public static class ScrollViewerBehavior
     {
         public static readonly DependencyProperty VerticalOffsetProperty =
