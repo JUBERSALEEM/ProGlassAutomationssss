@@ -16,6 +16,13 @@ namespace ProGlassAutomation.ViewModels
         public event PropertyChangedEventHandler PropertyChanged;
 
         // ═══════════════════════════════════════════════════════
+        // REENTRANCY GUARD
+        // Prevents service DataChanged events from re-triggering
+        // LoadData() while we're already mutating data.
+        // ═══════════════════════════════════════════════════════
+        private bool _suppressReload = false;
+
+        // ═══════════════════════════════════════════════════════
         // SHEET DATA
         // ═══════════════════════════════════════════════════════
         private ObservableCollection<Sheet> _allSheets = new();
@@ -481,6 +488,9 @@ namespace ProGlassAutomation.ViewModels
 
         private void OnServiceDataChanged(object sender, EventArgs e)
         {
+            // Skip if we're already mutating data ourselves
+            if (_suppressReload) return;
+
             if (Application.Current?.Dispatcher?.CheckAccess() == true)
                 LoadData();
             else
@@ -863,6 +873,9 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
+        // ═══════════════════════════════════════════════════════
+        // DELETE SHEET — FIXED
+        // ═══════════════════════════════════════════════════════
         public void DeleteSheet(object parameter = null)
         {
             try
@@ -881,15 +894,42 @@ namespace ProGlassAutomation.ViewModels
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Warning);
 
-                if (result == MessageBoxResult.Yes)
+                if (result != MessageBoxResult.Yes)
+                    return;
+
+                int targetId = sheet.Id;
+                System.Diagnostics.Debug.WriteLine($"DeleteSheet (VM): Begin delete for ID={targetId}");
+
+                // 1) Detach selection FIRST so binding doesn't hold the row
+                if (SelectedSheet?.Id == targetId)
+                    SelectedSheet = null;
+
+                // 2) Optimistic in-memory removal (instant UI feedback)
+                //    Suppress reload so DataChanged event doesn't bounce back mid-delete.
+                _suppressReload = true;
+                try
                 {
-                    SheetStoreService.Instance.DeleteSheet(sheet.Id);
+                    var inAll = AllSheets.FirstOrDefault(s => s.Id == targetId);
+                    if (inAll != null) AllSheets.Remove(inAll);
 
-                    if (SelectedSheet?.Id == sheet.Id)
-                        SelectedSheet = null;
+                    var inFiltered = FilteredSheets.FirstOrDefault(s => s.Id == targetId);
+                    if (inFiltered != null) FilteredSheets.Remove(inFiltered);
 
-                    LoadData();
+                    // 3) Persist deletion in service / XML
+                    SheetStoreService.Instance.DeleteSheet(targetId);
                 }
+                finally
+                {
+                    _suppressReload = false;
+                }
+
+                // 4) Reload from source of truth so any inconsistency self-heals
+                LoadData();
+
+                // 5) Refresh stats
+                UpdateAllStats();
+
+                System.Diagnostics.Debug.WriteLine($"DeleteSheet (VM): Completed delete for ID={targetId}");
             }
             catch (Exception ex)
             {

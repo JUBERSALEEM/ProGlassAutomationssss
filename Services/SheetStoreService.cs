@@ -44,10 +44,17 @@ namespace ProGlassAutomation.Services
         // ═══════════════════════════════════════════════════════
         private void RefreshCache()
         {
-            _cachedSheets = _sheets.Where(s => s.IsActive).OrderBy(s => s.SrNo).ToList();
-            _cachedCategories = new HashSet<string>(_cachedSheets.Select(s => s.Category));
+            _cachedSheets = _sheets
+                .Where(s => s.IsActive)
+                .OrderBy(s => s.SrNo)
+                .ToList();
 
-            System.Diagnostics.Debug.WriteLine($"Cache refreshed: {_cachedSheets.Count} sheets, {_cachedCategories.Count} categories");
+            _cachedCategories = new HashSet<string>(
+                _cachedSheets.Select(s => s.Category ?? "")
+            );
+
+            System.Diagnostics.Debug.WriteLine(
+                $"Cache refreshed: {_cachedSheets.Count} active sheets, {_cachedCategories.Count} categories");
         }
 
         private void NotifyDataChanged()
@@ -60,13 +67,36 @@ namespace ProGlassAutomation.Services
         // ═══════════════════════════════════════════════════════
         // DATA RETRIEVAL
         // ═══════════════════════════════════════════════════════
+
+        // ✅ FIX C — Don't reload from disk on every call.
+        // Use the in-memory cache as source of truth.
         public ObservableCollection<Sheet> GetAllActive()
         {
-            _sheets = LoadFromFile();
-            RefreshCache();
+            lock (_lock)
+            {
+                if (_cachedSheets == null)
+                    RefreshCache();
 
-            System.Diagnostics.Debug.WriteLine($"GetAllActive: Returning {_cachedSheets.Count} sheets");
-            return new ObservableCollection<Sheet>(_cachedSheets);
+                System.Diagnostics.Debug.WriteLine(
+                    $"GetAllActive: Returning {_cachedSheets.Count} sheets (from cache)");
+
+                return new ObservableCollection<Sheet>(_cachedSheets);
+            }
+        }
+
+        // Optional: keep an explicit force-reload-from-disk method if you ever need it
+        public ObservableCollection<Sheet> ReloadFromDisk()
+        {
+            lock (_lock)
+            {
+                _sheets = LoadFromFile();
+                RefreshCache();
+
+                System.Diagnostics.Debug.WriteLine(
+                    $"ReloadFromDisk: Reloaded {_sheets.Count} sheets, {_cachedSheets.Count} active");
+
+                return new ObservableCollection<Sheet>(_cachedSheets);
+            }
         }
 
         public Sheet? GetById(int id)
@@ -103,9 +133,8 @@ namespace ProGlassAutomation.Services
         public ObservableCollection<string> GetCategories()
         {
             if (_cachedCategories == null)
-            {
                 RefreshCache();
-            }
+
             return new ObservableCollection<string>(_cachedCategories.OrderBy(c => c));
         }
 
@@ -148,7 +177,8 @@ namespace ProGlassAutomation.Services
                     };
 
                     _sheets.Add(newSheet);
-                    System.Diagnostics.Debug.WriteLine($"AddSheet: Added sheet ID={newId}, Category={newSheet.Category}");
+                    System.Diagnostics.Debug.WriteLine(
+                        $"AddSheet: Added sheet ID={newId}, Category={newSheet.Category}");
 
                     SaveToFile();
                     RefreshCache();
@@ -200,7 +230,8 @@ namespace ProGlassAutomation.Services
                         _sheets[index].Description = sheet.Description ?? _sheets[index].Description;
                         _sheets[index].LatestPurchaseDate = sheet.LatestPurchaseDate ?? _sheets[index].LatestPurchaseDate;
 
-                        System.Diagnostics.Debug.WriteLine($"UpdateSheet: Updated ID={sheet.Id}, Stock={sheet.TotalStock}");
+                        System.Diagnostics.Debug.WriteLine(
+                            $"UpdateSheet: Updated ID={sheet.Id}, Stock={sheet.TotalStock}");
 
                         SaveToFile();
                         RefreshCache();
@@ -220,7 +251,7 @@ namespace ProGlassAutomation.Services
         }
 
         // ═══════════════════════════════════════════════════════
-        // DELETE SHEET
+        // DELETE SHEET — SOFT DELETE (IsActive = false)
         // ═══════════════════════════════════════════════════════
         public void DeleteSheet(int id)
         {
@@ -228,19 +259,21 @@ namespace ProGlassAutomation.Services
             {
                 try
                 {
-                    for (int i = 0; i < _sheets.Count; i++)
+                    var target = _sheets.FirstOrDefault(s => s.Id == id);
+                    if (target == null)
                     {
-                        if (_sheets[i].Id == id)
-                        {
-                            _sheets[i].IsActive = false;
-                            System.Diagnostics.Debug.WriteLine($"DeleteSheet: Soft deleted ID={id}");
-
-                            SaveToFile();
-                            RefreshCache();
-                            NotifyDataChanged();
-                            return;
-                        }
+                        System.Diagnostics.Debug.WriteLine(
+                            $"DeleteSheet: ID={id} not found in _sheets");
+                        return;
                     }
+
+                    target.IsActive = false;
+                    System.Diagnostics.Debug.WriteLine(
+                        $"DeleteSheet: Soft deleted ID={id} (IsActive=false)");
+
+                    SaveToFile();       // persist
+                    RefreshCache();     // exclude from cache
+                    NotifyDataChanged();// notify VMs
                 }
                 catch (Exception ex)
                 {
@@ -262,36 +295,33 @@ namespace ProGlassAutomation.Services
                     var sheet = _sheets.FirstOrDefault(s => s.Id == record.SheetId);
                     if (sheet == null)
                     {
-                        System.Diagnostics.Debug.WriteLine($"AddPurchaseRecord: Sheet not found ID={record.SheetId}");
+                        System.Diagnostics.Debug.WriteLine(
+                            $"AddPurchaseRecord: Sheet not found ID={record.SheetId}");
                         throw new Exception("Sheet not found!");
                     }
 
-                    // Ensure lists are initialized
                     if (sheet.PurchaseHistory == null)
                         sheet.PurchaseHistory = new List<SheetPurchase>();
 
-                    // Assign ID
                     record.Id = sheet.PurchaseHistory.Count > 0
                         ? sheet.PurchaseHistory.Max(p => p.Id) + 1
                         : 1;
                     record.CreatedAt = DateTime.Now;
 
-                    // Add to history
                     sheet.PurchaseHistory.Add(record);
 
-                    // Update sheet stock
                     sheet.TotalStock += record.Quantity;
                     sheet.LatestPurchaseDate = record.PurchasedOn;
                     sheet.PurchasePrice = record.UnitPrice;
 
-                    // Update supplier if provided
                     if (!string.IsNullOrEmpty(record.Supplier))
                     {
                         sheet.Supplier = record.Supplier;
                         sheet.SupplierName = record.Supplier;
                     }
 
-                    System.Diagnostics.Debug.WriteLine($"AddPurchaseRecord: Added {record.Quantity} sheets to ID={sheet.Id}, New Stock={sheet.TotalStock}");
+                    System.Diagnostics.Debug.WriteLine(
+                        $"AddPurchaseRecord: Added {record.Quantity} sheets to ID={sheet.Id}, New Stock={sheet.TotalStock}");
 
                     SaveToFile();
                     RefreshCache();
@@ -323,36 +353,34 @@ namespace ProGlassAutomation.Services
                     var sheet = _sheets.FirstOrDefault(s => s.Id == record.SheetId);
                     if (sheet == null)
                     {
-                        System.Diagnostics.Debug.WriteLine($"AddUsageRecord: Sheet not found ID={record.SheetId}");
+                        System.Diagnostics.Debug.WriteLine(
+                            $"AddUsageRecord: Sheet not found ID={record.SheetId}");
                         throw new Exception("Sheet not found!");
                     }
 
-                    // Check available balance
                     int availableBalance = sheet.TotalStock - sheet.UsedSheets;
                     if (record.Quantity > availableBalance)
                     {
-                        System.Diagnostics.Debug.WriteLine($"AddUsageRecord: Insufficient stock. Requested={record.Quantity}, Available={availableBalance}");
+                        System.Diagnostics.Debug.WriteLine(
+                            $"AddUsageRecord: Insufficient stock. Requested={record.Quantity}, Available={availableBalance}");
                         throw new Exception($"Only {availableBalance} sheets available!");
                     }
 
-                    // Ensure lists are initialized
                     if (sheet.UseHistory == null)
                         sheet.UseHistory = new List<SheetUsage>();
 
-                    // Assign ID
                     record.Id = sheet.UseHistory.Count > 0
                         ? sheet.UseHistory.Max(u => u.Id) + 1
                         : 1;
                     record.CreatedAt = DateTime.Now;
 
-                    // Add to history
                     sheet.UseHistory.Add(record);
 
-                    // Update used count
                     sheet.UsedSheets += record.Quantity;
                     sheet.BalanceSheets = sheet.TotalStock - sheet.UsedSheets;
 
-                    System.Diagnostics.Debug.WriteLine($"AddUsageRecord: Used {record.Quantity} sheets from ID={sheet.Id}, New Balance={sheet.BalanceSheets}");
+                    System.Diagnostics.Debug.WriteLine(
+                        $"AddUsageRecord: Used {record.Quantity} sheets from ID={sheet.Id}, New Balance={sheet.BalanceSheets}");
 
                     SaveToFile();
                     RefreshCache();
@@ -381,7 +409,8 @@ namespace ProGlassAutomation.Services
             {
                 if (!File.Exists(_filePath))
                 {
-                    System.Diagnostics.Debug.WriteLine($"File not found: {_filePath}, creating new");
+                    System.Diagnostics.Debug.WriteLine(
+                        $"File not found: {_filePath}, creating new");
                     return new List<Sheet>();
                 }
 
@@ -436,13 +465,18 @@ namespace ProGlassAutomation.Services
                             });
                         }
 
-                        // Load Use History
+                        // Load Usage History — supports both "Usage" (new) and legacy "Use" tags
                         sheet.UseHistory = new List<SheetUsage>();
-                        foreach (var useEl in el.Elements("Usage"))
+
+                        var usageElements = el.Elements("Usage").Concat(el.Elements("Use"));
+                        foreach (var useEl in usageElements)
                         {
+                            // Support both "Id" and lowercase legacy "id"
+                            var idAttr = useEl.Attribute("Id") ?? useEl.Attribute("id");
+
                             sheet.UseHistory.Add(new SheetUsage
                             {
-                                Id = int.TryParse(useEl.Attribute("Id")?.Value, out int uid) ? uid : 0,
+                                Id = int.TryParse(idAttr?.Value, out int uid) ? uid : 0,
                                 SheetId = sheet.Id,
                                 Quantity = int.TryParse(useEl.Attribute("Quantity")?.Value, out int uq) ? uq : 0,
                                 Reason = useEl.Attribute("Reason")?.Value ?? "",
@@ -451,7 +485,7 @@ namespace ProGlassAutomation.Services
                             });
                         }
 
-                        // ✅ FIX: Recalculate BalanceSheets from TotalStock - UsedSheets
+                        // Recalculate BalanceSheets from TotalStock - UsedSheets
                         sheet.BalanceSheets = sheet.TotalStock - sheet.UsedSheets;
 
                         sheets.Add(sheet);
@@ -462,7 +496,9 @@ namespace ProGlassAutomation.Services
                     }
                 }
 
-                System.Diagnostics.Debug.WriteLine($"LoadFromFile: Loaded {sheets.Count} sheets");
+                System.Diagnostics.Debug.WriteLine(
+                    $"LoadFromFile: Loaded {sheets.Count} sheets total " +
+                    $"({sheets.Count(s => s.IsActive)} active, {sheets.Count(s => !s.IsActive)} deleted)");
                 return sheets;
             }
             catch (Exception ex)
@@ -472,72 +508,99 @@ namespace ProGlassAutomation.Services
             }
         }
 
+        // ═══════════════════════════════════════════════════════
+        // SAVE TO FILE — FIXED
+        //   ✅ Fix A: Writes IsActive attribute
+        //   ✅ Fix B: Writes <Usage> with "Id" (not <Use> with "id")
+        //   ✅ Atomic file write with explicit flush
+        // ═══════════════════════════════════════════════════════
         private void SaveToFile()
         {
             try
             {
                 var doc = new XDocument(new XElement("Sheets"));
+
                 foreach (var sheet in _sheets)
                 {
                     var sheet1 = new XElement("Sheet",
-                    new XAttribute("Id", sheet.Id),
-                    new XAttribute("SrNo", sheet.SrNo),
-                    new XAttribute("Category", sheet.Category ?? ""),
-                    new XAttribute("Thickness", sheet.Thickness ?? ""),
-                    new XAttribute("Color", sheet.Color ?? ""),
-                    new XAttribute("ColorHex", sheet.ColorHex ?? "#E8F4F8"),
-                    new XAttribute("Width", sheet.Width),
-                    new XAttribute("Height", sheet.Height),
-                    new XAttribute("SquareMeter", sheet.SquareMeter.ToString(System.Globalization.CultureInfo.InvariantCulture)),
-                    new XAttribute("PurchasePrice", sheet.PurchasePrice.ToString(System.Globalization.CultureInfo.InvariantCulture)),
-                    new XAttribute("SellPrice", sheet.SellPrice.ToString(System.Globalization.CultureInfo.InvariantCulture)),
-                    new XAttribute("TotalStock", sheet.TotalStock),
-                    new XAttribute("UsedSheets", sheet.UsedSheets),
-                    new XAttribute("BalanceSheets", sheet.BalanceSheets),
-                    new XAttribute("Supplier", sheet.Supplier ?? ""),
-                    new XAttribute("SupplierName", sheet.SupplierName ?? ""),
-                    new XAttribute("Description", sheet.Description ?? ""),
-                    new XAttribute("CreatedDate", sheet.CreatedDate.ToString("yyyy-MM-dd HH:mm:ss")),
-                    new XAttribute("LatestPurchaseDate", sheet.LatestPurchaseDate?.ToString("yyyy-MM-dd HH:mm:ss") ?? "")
+                        new XAttribute("Id", sheet.Id),
+                        new XAttribute("SrNo", sheet.SrNo),
+                        new XAttribute("Category", sheet.Category ?? ""),
+                        new XAttribute("Thickness", sheet.Thickness ?? ""),
+                        new XAttribute("Color", sheet.Color ?? ""),
+                        new XAttribute("ColorHex", sheet.ColorHex ?? "#E8F4F8"),
+                        new XAttribute("Width", sheet.Width),
+                        new XAttribute("Height", sheet.Height),
+                        new XAttribute("SquareMeter", sheet.SquareMeter.ToString(System.Globalization.CultureInfo.InvariantCulture)),
+                        new XAttribute("PurchasePrice", sheet.PurchasePrice.ToString(System.Globalization.CultureInfo.InvariantCulture)),
+                        new XAttribute("SellPrice", sheet.SellPrice.ToString(System.Globalization.CultureInfo.InvariantCulture)),
+                        new XAttribute("TotalStock", sheet.TotalStock),
+                        new XAttribute("UsedSheets", sheet.UsedSheets),
+                        new XAttribute("BalanceSheets", sheet.BalanceSheets),
+                        new XAttribute("IsActive", sheet.IsActive),                  // ✅ FIX A
+                        new XAttribute("Supplier", sheet.Supplier ?? ""),
+                        new XAttribute("SupplierName", sheet.SupplierName ?? ""),
+                        new XAttribute("Description", sheet.Description ?? ""),
+                        new XAttribute("CreatedDate", sheet.CreatedDate.ToString("yyyy-MM-dd HH:mm:ss")),
+                        new XAttribute("LatestPurchaseDate",
+                            sheet.LatestPurchaseDate?.ToString("yyyy-MM-dd HH:mm:ss") ?? "")
                     );
+
                     // Save Purchase History
                     if (sheet.PurchaseHistory != null && sheet.PurchaseHistory.Count > 0)
                     {
                         foreach (var purch in sheet.PurchaseHistory)
                         {
                             sheet1.Add(new XElement("Purchase",
-                            new XAttribute("Id", purch.Id),
-                            new XAttribute("Quantity", purch.Quantity),
-                            new XAttribute("UnitPrice", purch.UnitPrice.ToString(System.Globalization.CultureInfo.InvariantCulture)),
-                            new XAttribute("Supplier", purch.Supplier ?? ""),
-                            new XAttribute("PurchasedOn", purch.PurchasedOn.ToString("yyyy-MM-dd HH:mm:ss")),
-                            new XAttribute("Notes", purch.Notes ?? ""),
-                            new XAttribute("CreatedAt", purch.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"))
+                                new XAttribute("Id", purch.Id),
+                                new XAttribute("Quantity", purch.Quantity),
+                                new XAttribute("UnitPrice", purch.UnitPrice.ToString(System.Globalization.CultureInfo.InvariantCulture)),
+                                new XAttribute("Supplier", purch.Supplier ?? ""),
+                                new XAttribute("PurchasedOn", purch.PurchasedOn.ToString("yyyy-MM-dd HH:mm:ss")),
+                                new XAttribute("Notes", purch.Notes ?? ""),
+                                new XAttribute("CreatedAt", purch.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"))
                             ));
                         }
                     }
-                    // Save Use History
+
+                    // Save Usage History  — ✅ FIX B: write as <Usage> with "Id" (matches LoadFromFile)
                     if (sheet.UseHistory != null && sheet.UseHistory.Count > 0)
                     {
                         foreach (var use in sheet.UseHistory)
                         {
-                            sheet1.Add(new XElement("Use",
-                            new XAttribute("id", use.Id),
-                            new XAttribute("Quantity", use.Quantity),
-                            new XAttribute("Reason", use.Reason ?? ""),
-                            new XAttribute("UsedOn", use.UsedOn.ToString("yyyy-MM-dd HH:mm:ss")),
-                            new XAttribute("CreatedAt", use.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"))
+                            sheet1.Add(new XElement("Usage",
+                                new XAttribute("Id", use.Id),
+                                new XAttribute("Quantity", use.Quantity),
+                                new XAttribute("Reason", use.Reason ?? ""),
+                                new XAttribute("UsedOn", use.UsedOn.ToString("yyyy-MM-dd HH:mm:ss")),
+                                new XAttribute("CreatedAt", use.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"))
                             ));
                         }
                     }
+
                     doc.Root.Add(sheet1);
                 }
-                doc.Save(_filePath);
-                System.Diagnostics.Debug.WriteLine("SaveToFile: Saved {_sheets.Count} sheets");
+
+                // ✅ Atomic write: write to temp file then move into place
+                var tempPath = _filePath + ".tmp";
+
+                using (var fs = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    doc.Save(fs);
+                    fs.Flush(true); // force OS to flush to disk before close
+                }
+
+                if (File.Exists(_filePath))
+                    File.Delete(_filePath);
+
+                File.Move(tempPath, _filePath);
+
+                System.Diagnostics.Debug.WriteLine(
+                    $"SaveToFile: Saved {_sheets.Count} sheets to {_filePath}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine("Error saving file: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error saving file: {ex.Message}");
                 throw new Exception($"Failed to save: {ex.Message}", ex);
             }
         }
