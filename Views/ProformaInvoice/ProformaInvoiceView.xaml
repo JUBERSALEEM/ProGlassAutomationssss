@@ -375,18 +375,29 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+
+        <!-- ✏️ SMARTPASTE: Shared ContextMenu defined as a resource (WPF-safe) -->
+        <ContextMenu x:Key="CellPasteContextMenu" x:Shared="False">
+            <MenuItem Header="Paste from Excel"
+                      Click="SmartPaste_Click"
+                      InputGestureText="Ctrl+V"/>
+        </ContextMenu>
+
+        <!-- ✏️ SMARTPASTE: Cell style with the context menu attached -->
+        <Style x:Key="PasteableDataGridCell" TargetType="DataGridCell" BasedOn="{StaticResource CleanDataGridCell}">
+            <Setter Property="ContextMenu" Value="{StaticResource CellPasteContextMenu}"/>
+        </Style>
     </UserControl.Resources>
 
     <!-- 3-Column Grid Layout -->
     <Grid Margin="8">
         <Grid.ColumnDefinitions>
-            <!-- Left: 55%, Center:25%, Right:20% -->
             <ColumnDefinition Width="55*"/>
             <ColumnDefinition Width="25*"/>
             <ColumnDefinition Width="20*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- ================= LEFT SECTION: PROFORMA INVOICE (Green Header) ================= -->
+        <!-- ================= LEFT SECTION ================= -->
         <Border Grid.Column="0" BorderBrush="#234E52" BorderThickness="2" CornerRadius="6" Background="#FFFFFF" Margin="0,0,8,0" Padding="0">
             <ScrollViewer VerticalScrollBarVisibility="Auto" CanContentScroll="False" PanningMode="VerticalOnly">
                 <StackPanel Margin="24">
@@ -607,7 +618,8 @@
                                                     </Grid>
                                                 </Border>
 
-                                                <DataGrid ItemsSource="{Binding Items}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" BorderThickness="0" Background="#FFFFFF" Margin="0" Padding="0" ColumnHeaderStyle="{StaticResource CleanDataGridHeader}" CellStyle="{StaticResource CleanDataGridCell}" RowStyle="{StaticResource CleanDataGridRow}" GridLinesVisibility="All" HorizontalGridLinesBrush="#E5E7EB" VerticalGridLinesBrush="#E5E7EB" HeadersVisibility="Column" RowHeight="28" SelectionUnit="Cell" AlternationCount="2" FocusVisualStyle="{x:Null}" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                                <!-- ✏️ SMARTPASTE: DataGrid uses PasteableDataGridCell style (WPF-safe) -->
+                                                <DataGrid ItemsSource="{Binding Items}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" BorderThickness="0" Background="#FFFFFF" Margin="0" Padding="0" ColumnHeaderStyle="{StaticResource CleanDataGridHeader}" CellStyle="{StaticResource PasteableDataGridCell}" RowStyle="{StaticResource CleanDataGridRow}" GridLinesVisibility="All" HorizontalGridLinesBrush="#E5E7EB" VerticalGridLinesBrush="#E5E7EB" HeadersVisibility="Column" RowHeight="28" SelectionUnit="Cell" AlternationCount="2" FocusVisualStyle="{x:Null}" ScrollViewer.VerticalScrollBarVisibility="Auto">
                                                     <DataGrid.Columns>
                                                         <DataGridTextColumn Header="SR" Binding="{Binding SrNo}" Width="40" IsReadOnly="True">
                                                             <DataGridTextColumn.ElementStyle>
@@ -788,21 +800,13 @@
                                                         </Grid>
 
                                                         <TextBlock Grid.Column="2" Text="" FontSize="8" Foreground="#FFFFFF"/>
-
                                                         <TextBlock Grid.Column="3" Text="{Binding SpecTotalSQM1, Mode=OneWay, StringFormat=N4}" FontSize="9" FontWeight="Bold" Foreground="#60A5FA" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-
                                                         <TextBlock Grid.Column="4" Text="" FontSize="8" Foreground="#FFFFFF"/>
-
                                                         <TextBlock Grid.Column="5" Text="{Binding SpecTotalSQM2, Mode=OneWay, StringFormat=N4}" FontSize="9" FontWeight="Bold" Foreground="#FCD34D" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-
                                                         <TextBlock Grid.Column="6" Text="{Binding SpecTotalQty, Mode=OneWay, StringFormat=N0}" FontSize="9" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-
                                                         <TextBlock Grid.Column="7" Text="" FontSize="8" Foreground="#FFFFFF"/>
-
                                                         <TextBlock Grid.Column="8" Text="{Binding SpecTotalSQM1, Mode=OneWay, StringFormat=N4}" FontSize="9" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-
                                                         <TextBlock Grid.Column="9" Text="" FontSize="8" Foreground="#FFFFFF"/>
-
                                                         <TextBlock Grid.Column="10" Text="{Binding SpecTotalPrice, Mode=OneWay, StringFormat=N2}" FontSize="9" FontWeight="Bold" Foreground="#60A5FA" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,4,0"/>
                                                     </Grid>
                                                 </Border>
@@ -1250,7 +1254,6 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <!-- ✏️ EDIT 1 (FIX H9): added SelectionChanged="cmbThickness_SelectionChanged" -->
                                 <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,16">
                                     <TextBlock Text="Glass Thickness" FontSize="12" FontWeight="SemiBold" Foreground="#1E293B" Margin="0,0,0,8"/>
                                     <ComboBox x:Name="cmbThickness"
@@ -1277,7 +1280,6 @@
                                     </StackPanel>
                                 </StackPanel>
 
-                                <!-- ✏️ EDIT 3 (FIX H6): wired Click="FallbackDim_Click" on all 3 fallback radios -->
                                 <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3">
                                     <TextBlock Text="Fallback Mode" FontSize="12" FontWeight="SemiBold" Foreground="#1E293B" Margin="0,0,0,8"/>
                                     <StackPanel Orientation="Horizontal">
@@ -1337,7 +1339,6 @@
                                             </StackPanel>
                                         </Grid>
 
-                                        <!-- ✏️ EDIT 4 (FIX H6): added ItemContainerStyle to bind IsSelected -->
                                         <ListBox x:Name="lstSpecSelect"
                                                  ItemsSource="{Binding SpecSelectionItems, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                  Loaded="lstSpecSelect_Loaded"
@@ -1370,7 +1371,6 @@
                                                             FontSize="11" FontWeight="SemiBold" Foreground="#1E293B"
                                                             VerticalAlignment="Center" Margin="8,0,0,0"/>
 
-                                                            <!-- ✏️ EDIT 2 (FIX H6): bound IsChecked to IsW1H1/IsW2H2 + per-spec GroupName -->
                                                             <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="8,0,0,0">
                                                                 <RadioButton x:Name="rbSpecW1H1"
                                                                    Content="W1/H1"

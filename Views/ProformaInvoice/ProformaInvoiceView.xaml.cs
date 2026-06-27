@@ -989,6 +989,256 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         }
 
         // ═══════════════════════════════════════════════════════
+        // SMART PASTE FROM CONTEXT MENU
+        // Anchor-cell aware: clicked cell decides starting column + row
+        // Auto-creates rows as needed, scoped to clicked spec only
+        // ═══════════════════════════════════════════════════════
+        private void SmartPaste_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (sender is not MenuItem menuItem) return;
+
+                // Walk up from MenuItem → ContextMenu → PlacementTarget (the clicked cell)
+                if (menuItem.Parent is not ContextMenu contextMenu) return;
+                if (contextMenu.PlacementTarget is not DataGridCell clickedCell)
+                {
+                    Debug.WriteLine($"{LOG} SmartPaste: PlacementTarget is not a DataGridCell");
+                    return;
+                }
+
+                // Identify the column clicked
+                var clickedColumn = clickedCell.Column;
+                if (clickedColumn == null)
+                {
+                    Debug.WriteLine($"{LOG} SmartPaste: no column");
+                    return;
+                }
+
+                string clickedHeader = clickedColumn.Header?.ToString() ?? "";
+                int anchorColIndex = GetDimensionColumnIndex(clickedHeader);
+                if (anchorColIndex < 0)
+                {
+                    MessageBox.Show("Right-click paste only works on W1, H1, W2, H2, or Qty columns.",
+                        "Paste", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                // Identify clicked row + spec
+                if (clickedCell.DataContext is not Models.InvoiceItemModel anchorItem)
+                {
+                    Debug.WriteLine($"{LOG} SmartPaste: cell DataContext is not InvoiceItemModel");
+                    return;
+                }
+
+                var spec = FindSpecification(anchorItem);
+                if (spec == null)
+                {
+                    Debug.WriteLine($"{LOG} SmartPaste: cannot find owning spec");
+                    return;
+                }
+
+                int anchorRowIndex = spec.Items.IndexOf(anchorItem);
+                if (anchorRowIndex < 0)
+                {
+                    Debug.WriteLine($"{LOG} SmartPaste: anchor item not in spec.Items");
+                    return;
+                }
+
+                // Read clipboard
+                if (!Clipboard.ContainsText())
+                {
+                    MessageBox.Show("Clipboard is empty.", "Paste",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                string clipboardText = Clipboard.GetText();
+                if (string.IsNullOrWhiteSpace(clipboardText))
+                {
+                    MessageBox.Show("No text in clipboard.", "Paste",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // Parse clipboard as tab-separated rows
+                var rawRows = clipboardText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                if (rawRows.Length == 0)
+                {
+                    MessageBox.Show("No data to paste.", "Paste",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // Capture defaults from first existing row (Option X behavior)
+                var defaults = CaptureRowDefaults(spec);
+
+                int rowsAdded = 0;
+                int rowsUpdated = 0;
+
+                using (spec.BulkUpdateScope())
+                {
+                    for (int i = 0; i < rawRows.Length; i++)
+                    {
+                        var cells = rawRows[i].Split('\t');
+                        if (cells.Length == 0) continue;
+                        if (string.IsNullOrWhiteSpace(string.Join("", cells))) continue;
+
+                        int targetRowIndex = anchorRowIndex + i;
+
+                        // Auto-create row if needed
+                        Models.InvoiceItemModel targetItem;
+                        if (targetRowIndex < spec.Items.Count)
+                        {
+                            targetItem = spec.Items[targetRowIndex];
+                            rowsUpdated++;
+                        }
+                        else
+                        {
+                            targetItem = CreateRowFromDefaults(spec, defaults, targetRowIndex + 1);
+                            spec.Items.Add(targetItem);
+                            rowsAdded++;
+                        }
+
+                        // Map clipboard cells → columns starting at anchor, going rightward
+                        for (int c = 0; c < cells.Length; c++)
+                        {
+                            int targetColIndex = anchorColIndex + c;
+                            if (targetColIndex > 4) break; // out of W1/H1/W2/H2/Qty range
+
+                            ApplyCellValue(targetItem, targetColIndex, cells[c]);
+                        }
+                    }
+                }
+
+                // Renumber + recalc once after bulk update
+                _viewModel.RenumberAllSrNumbers();
+                spec.Recalculate();
+                _viewModel.Invoice.CalculateTotals();
+                _viewModel.Invoice.IsDirty = true;
+
+                Debug.WriteLine($"{LOG} SmartPaste: {rowsUpdated} updated + {rowsAdded} added in spec '{spec.SpecificationName}'");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"{LOG} SmartPaste error: {ex.Message}");
+                MessageBox.Show($"Paste failed: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // Map column header to internal index: W1=0, H1=1, W2=2, H2=3, Qty=4
+        private int GetDimensionColumnIndex(string header)
+        {
+            return header switch
+            {
+                "W1" => 0,
+                "H1" => 1,
+                "W2" => 2,
+                "H2" => 3,
+                "Qty" => 4,
+                _ => -1
+            };
+        }
+
+        // Apply a single cell value to a specific target column
+        private void ApplyCellValue(Models.InvoiceItemModel item, int colIndex, string rawValue)
+        {
+            string trimmed = rawValue?.Trim() ?? "";
+            if (string.IsNullOrEmpty(trimmed)) return;
+
+            string cleaned = trimmed.Replace(",", "");
+
+            switch (colIndex)
+            {
+                case 0: // W1
+                    if (double.TryParse(cleaned, System.Globalization.NumberStyles.Any,
+                        System.Globalization.CultureInfo.InvariantCulture, out double w1))
+                        item.Width1 = Math.Max(0, w1);
+                    break;
+
+                case 1: // H1
+                    if (double.TryParse(cleaned, System.Globalization.NumberStyles.Any,
+                        System.Globalization.CultureInfo.InvariantCulture, out double h1))
+                        item.Height1 = Math.Max(0, h1);
+                    break;
+
+                case 2: // W2
+                    if (double.TryParse(cleaned, System.Globalization.NumberStyles.Any,
+                        System.Globalization.CultureInfo.InvariantCulture, out double w2))
+                        item.Width2 = Math.Max(0, w2);
+                    break;
+
+                case 3: // H2
+                    if (double.TryParse(cleaned, System.Globalization.NumberStyles.Any,
+                        System.Globalization.CultureInfo.InvariantCulture, out double h2))
+                        item.Height2 = Math.Max(0, h2);
+                    break;
+
+                case 4: // Qty
+                    if (int.TryParse(cleaned, System.Globalization.NumberStyles.Any,
+                        System.Globalization.CultureInfo.InvariantCulture, out int qty))
+                        item.Qty = Math.Max(1, qty);
+                    break;
+            }
+        }
+
+        // Capture defaults from first existing row of the spec (Option X behavior)
+        private RowDefaults CaptureRowDefaults(Models.SpecificationModel spec)
+        {
+            var d = new RowDefaults();
+            if (spec.Items.Count > 0)
+            {
+                var first = spec.Items[0];
+                d.GlassRef = first.GlassRef ?? "";
+                d.Width1 = first.Width1;
+                d.Height1 = first.Height1;
+                d.Width2 = first.Width2;
+                d.Height2 = first.Height2;
+                d.Qty = first.Qty > 0 ? first.Qty : 1;
+                d.Price = first.Price;
+                d.SurchargePercent = first.SurchargePercent;
+            }
+            else
+            {
+                d.Qty = 1;
+                d.SurchargePercent = spec.SurchargePercent;
+                d.Price = spec.BasePrice;
+            }
+            return d;
+        }
+
+        // Create a new row preserving defaults (only targeted cols will be overwritten by paste)
+        private Models.InvoiceItemModel CreateRowFromDefaults(Models.SpecificationModel spec, RowDefaults d, int srNo)
+        {
+            return new Models.InvoiceItemModel
+            {
+                SrNo = srNo,
+                GlassRef = d.GlassRef,
+                Width1 = d.Width1,
+                Height1 = d.Height1,
+                Width2 = d.Width2,
+                Height2 = d.Height2,
+                Qty = d.Qty,
+                Price = d.Price,
+                SurchargePercent = d.SurchargePercent,
+                Specification = spec
+            };
+        }
+
+        private class RowDefaults
+        {
+            public string GlassRef { get; set; } = "";
+            public double Width1 { get; set; }
+            public double Height1 { get; set; }
+            public double Width2 { get; set; }
+            public double Height2 { get; set; }
+            public int Qty { get; set; } = 1;
+            public double Price { get; set; }
+            public double SurchargePercent { get; set; } = 20;
+        }
+
+        // ═══════════════════════════════════════════════════════
         // PASTE FROM EXCEL
         // ═══════════════════════════════════════════════════════
         private void DataGrid_Paste(object sender, ExecutedRoutedEventArgs e)
