@@ -387,6 +387,16 @@
         <Style x:Key="PasteableDataGridCell" TargetType="DataGridCell" BasedOn="{StaticResource CleanDataGridCell}">
             <Setter Property="ContextMenu" Value="{StaticResource CellPasteContextMenu}"/>
         </Style>
+
+        <!-- ✏️ UNDO — Editing TextBox style for DataGrid cells -->
+        <!-- (so Ctrl+Z removes one character at a time while typing) -->
+        <Style x:Key="DataGridCellEditingTextBox" TargetType="{x:Type TextBox}">
+            <Setter Property="IsUndoEnabled" Value="True"/>
+            <Setter Property="UndoLimit" Value="100"/>
+            <Setter Property="Padding" Value="6,2"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+
     </UserControl.Resources>
 
     <!-- 3-Column Grid Layout -->
@@ -619,7 +629,7 @@
                                                 </Border>
 
                                                 <!-- ✏️ SMARTPASTE: DataGrid uses PasteableDataGridCell style (WPF-safe) -->
-                                                <DataGrid ItemsSource="{Binding Items}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" BorderThickness="0" Background="#FFFFFF" Margin="0" Padding="0" ColumnHeaderStyle="{StaticResource CleanDataGridHeader}" CellStyle="{StaticResource PasteableDataGridCell}" RowStyle="{StaticResource CleanDataGridRow}" GridLinesVisibility="All" HorizontalGridLinesBrush="#E5E7EB" VerticalGridLinesBrush="#E5E7EB" HeadersVisibility="Column" RowHeight="28" SelectionUnit="Cell" AlternationCount="2" FocusVisualStyle="{x:Null}" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                                <DataGrid ItemsSource="{Binding Items}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" BorderThickness="0" Background="#FFFFFF" Margin="0" Padding="0" ColumnHeaderStyle="{StaticResource CleanDataGridHeader}" CellStyle="{StaticResource PasteableDataGridCell}" RowStyle="{StaticResource CleanDataGridRow}" GridLinesVisibility="All" HorizontalGridLinesBrush="#E5E7EB" VerticalGridLinesBrush="#E5E7EB" HeadersVisibility="Column" RowHeight="28" SelectionUnit="Cell" AlternationCount="2" FocusVisualStyle="{x:Null}" ScrollViewer.VerticalScrollBarVisibility="Auto" BeginningEdit="DataGrid_BeginningEdit" CellEditEnding="DataGrid_CellEditEnding">
                                                     <DataGrid.Columns>
                                                         <DataGridTextColumn Header="SR" Binding="{Binding SrNo}" Width="40" IsReadOnly="True">
                                                             <DataGridTextColumn.ElementStyle>
@@ -651,6 +661,9 @@
                                                                     <Setter Property="FontSize" Value="10"/>
                                                                 </Style>
                                                             </DataGridTextColumn.ElementStyle>
+                                                            <DataGridTextColumn.EditingElementStyle>
+                                                                <Style TargetType="TextBox" BasedOn="{StaticResource DataGridCellEditingTextBox}"/>
+                                                            </DataGridTextColumn.EditingElementStyle>
                                                         </DataGridTextColumn>
 
                                                         <DataGridTextColumn Header="H1" Binding="{Binding Height1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="55">

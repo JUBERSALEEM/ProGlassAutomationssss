@@ -25,20 +25,19 @@ using CheckBox = System.Windows.Controls.CheckBox;
 namespace ProGlassAutomation.Views.ProformaInvoice
 {
     /// <summary>
-    /// Code-behind for ProformaInvoiceView.xaml — release-ready version.
+    /// Code-behind for ProformaInvoiceView.xaml — release-ready version with Undo/Redo.
     /// Handles UI interactions only; business logic lives in the ViewModel.
     /// </summary>
     public partial class ProformaInvoiceView : UserControl
     {
         // ═══════════════════════════════════════════════════════
-        // CONSTANTS (FIX M1: extract magic numbers)
+        // CONSTANTS
         // ═══════════════════════════════════════════════════════
-        private const string LOG = "[ProformaView]"; // FIX L1: standardized log prefix
+        private const string LOG = "[ProformaView]";
 
         private const double DEFAULT_SHEET_WIDTH = 3210;
         private const double DEFAULT_SHEET_HEIGHT = 2250;
         private const int DEFAULT_SHEET_QTY = 99999;
-        // FIX L4: optimization fallback defaults — kept distinct from sheet1 defaults
         private const double OPT_FALLBACK_WIDTH = 3660;
         private const double OPT_FALLBACK_HEIGHT = 2440;
 
@@ -54,17 +53,13 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         public ObservableCollection<SheetResultItem> SheetResults { get; } = new();
         public ObservableCollection<SpecSelectionItem> SpecSelectionItems { get; } = new();
 
-        // Tracks per-spec dimension choice (false = W1/H1, true = W2/H2)
         private readonly Dictionary<string, bool> _specDimChoice = new();
 
-        // FIX C7: was static, now instance-level (no leaks across View instances)
         private Window? _optimizerWindow;
         private OptimizationView? _optimizerView;
 
-        // Guard against re-entrant selection events while we mutate selection programmatically
         private bool _isUpdatingSpecSelection = false;
 
-        // Trim table (per-thickness)
         private Dictionary<string, TrimSettings> _trimTable = new();
 
         // ═══════════════════════════════════════════════════════
@@ -114,7 +109,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 set { _isSelected = value; OnPropertyChanged(nameof(IsSelected)); }
             }
 
-            // FIX H6: bound property replaces visual-tree-walking radio state
             public bool IsW2H2
             {
                 get => _isW2H2;
@@ -151,7 +145,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         }
 
         // ═══════════════════════════════════════════════════════
-        // CONSTRUCTOR
+        // CONSTRUCTOR (with ✏️ UNDO/REDO Ctrl+Z / Ctrl+Y wiring)
         // ═══════════════════════════════════════════════════════
         public ProformaInvoiceView()
         {
@@ -165,6 +159,15 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
             Unloaded += ProformaInvoiceView_Unloaded;
 
+            // ✏️ UNDO/REDO — Use PreviewKeyDown at the UserControl level
+            //
+            // Why not InputBindings? Because WPF's InputBindings only fire
+            // when the UserControl (or a non-focusable child) has focus.
+            // When a TextBox has focus, the TextBox swallows the key event
+            // BEFORE InputBindings can see it. Preview events fire FIRST
+            // (tunneling down) so we get a chance before TextBox handles it.
+            PreviewKeyDown += ProformaInvoiceView_PreviewKeyDown;
+
             Dispatcher.BeginInvoke(new Action(() =>
             {
                 InitializeTrimTable();
@@ -173,6 +176,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
             Debug.WriteLine($"{LOG} Using SharedViewModels.ProformaInvoiceVM");
             Debug.WriteLine($"{LOG} ✓ Automatic thickness trim ready");
+            Debug.WriteLine($"{LOG} ✓ Undo/Redo (Ctrl+Z / Ctrl+Y) wired");
         }
 
         // ═══════════════════════════════════════════════════════
@@ -200,7 +204,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 if (_trimTable.TryGetValue(thickness, out TrimSettings? trim))
                     return trim;
             }
-            catch (Exception ex) // FIX H5: log instead of silent swallow
+            catch (Exception ex)
             {
                 Debug.WriteLine($"{LOG} GetCurrentTrim error: {ex.Message}");
             }
@@ -244,7 +248,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         {
             Unloaded -= ProformaInvoiceView_Unloaded;
 
-            // FIX C7: clean up optimizer references (instance-level now)
             try
             {
                 _optimizerView = null;
@@ -266,7 +269,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         // ═══════════════════════════════════════════════════════
         public void RefreshSpecSelectionItems()
         {
-            // Preserve selection and dim-choice across rebuild
             var prevSelections = new Dictionary<string, bool>(_specDimChoice);
             var prevSelected = SpecSelectionItems
                 .Where(w => w.IsSelected)
@@ -304,8 +306,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         // ═══════════════════════════════════════════════════════
         // SPECIFICATIONS
         // ═══════════════════════════════════════════════════════
-        // FIX H2: root cause was that the command was wired in both code-behind AND XAML.
-        // The defensive "remove duplicate" hack is gone. Now we just execute the command.
         private void AddSpecification_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -385,7 +385,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 AdditionalSheets.Clear();
                 txtOptStatus.Text = "Default sheets loaded";
             }
-            catch (Exception ex) // FIX H5: log instead of silent swallow
+            catch (Exception ex)
             {
                 Debug.WriteLine($"{LOG} BtnLoadDefaultSheets_Click error: {ex.Message}");
             }
@@ -401,7 +401,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 txtSheetQty.Text = "";
                 txtOptStatus.Text = "Sheets cleared";
             }
-            catch (Exception ex) // FIX H5: log
+            catch (Exception ex)
             {
                 Debug.WriteLine($"{LOG} BtnClearSheets_Click error: {ex.Message}");
             }
@@ -409,7 +409,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
         // ═══════════════════════════════════════════════════════
         // SPEC SELECTION BUTTONS
-        // FIX M8 + M9: duplicate handlers removed — single definition below
         // ═══════════════════════════════════════════════════════
         private void BtnSelectAllSpecs_Click(object sender, RoutedEventArgs e)
         {
@@ -479,7 +478,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         }
 
         // ═══════════════════════════════════════════════════════
-        // OPEN OPTIMIZER WINDOW (instance-level)
+        // OPEN OPTIMIZER WINDOW
         // ═══════════════════════════════════════════════════════
         private void OpenOptimization_Click(object sender, RoutedEventArgs e)
         {
@@ -507,8 +506,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         }
 
         // ═══════════════════════════════════════════════════════
-        // FIX H7: shared optimization core — kills duplicate code between
-        // RunOptimization_Click and ViewOptimizationLayouts_Click
+        // SHARED OPTIMIZATION CORE
         // ═══════════════════════════════════════════════════════
         private class OptimizationContext
         {
@@ -524,7 +522,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
         private OptimizationContext? BuildOptimizationContext()
         {
-            // Apply defaults if empty
             if (string.IsNullOrWhiteSpace(txtSheetWidth.Text)) txtSheetWidth.Text = OPT_FALLBACK_WIDTH.ToString();
             if (string.IsNullOrWhiteSpace(txtSheetHeight.Text)) txtSheetHeight.Text = OPT_FALLBACK_HEIGHT.ToString();
 
@@ -542,10 +539,8 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             TrimSettings trim = GetCurrentTrim();
             string thickness = (cmbThickness?.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "6mm";
 
-            // FIX H6: read dim choices from bound SpecSelectionItem.IsW2H2 (no visual tree walking)
             SyncDimChoiceFromWrappers();
 
-            // Gather items
             var allItemsWithSpec = new List<(Models.SpecificationModel spec, Models.InvoiceItemModel item)>();
             if (_viewModel?.Invoice?.Specifications != null)
             {
@@ -572,7 +567,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             if (!globalUseAlt && rbDimsW2H2 != null && rbDimsW2H2.IsChecked == true)
                 globalUseAlt = true;
 
-            // Build optimizer items
             var invoiceItems = new List<Models.InvoiceItemModel>();
             foreach (var (spec, item) in allItemsWithSpec)
             {
@@ -596,7 +590,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 });
             }
 
-            // Warn if W2/H2 requested but no items have alternates
             int altAvailable = allItemsWithSpec.Count(t => t.item.Width2 > 0 || t.item.Height2 > 0);
             if (globalUseAlt && altAvailable == 0)
             {
@@ -605,7 +598,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 globalUseAlt = false;
             }
 
-            // Build status text
             string dimStatus;
             if (useCustom)
             {
@@ -634,7 +626,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
         private void SyncDimChoiceFromWrappers()
         {
-            // FIX H6: pull dim choice from the bound wrappers — no visual tree walking
             _specDimChoice.Clear();
             foreach (var wrapper in SpecSelectionItems.Where(w => w.IsSelected))
             {
@@ -644,7 +635,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         }
 
         // ═══════════════════════════════════════════════════════
-        // RUN OPTIMIZATION (quick — center section only)
+        // RUN OPTIMIZATION
         // ═══════════════════════════════════════════════════════
         private void RunOptimization_Click(object sender, RoutedEventArgs e)
         {
@@ -670,7 +661,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         }
 
         // ═══════════════════════════════════════════════════════
-        // VIEW FULL LAYOUTS (popup window)
+        // VIEW FULL LAYOUTS
         // ═══════════════════════════════════════════════════════
         private void ViewOptimizationLayouts_Click(object sender, RoutedEventArgs e)
         {
@@ -679,7 +670,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 var ctx = BuildOptimizationContext();
                 if (ctx == null) return;
 
-                // If spec-wise checkbox is on, narrow items to selected specs only
                 if (chkSpecWise.IsChecked == true)
                 {
                     var selectedNames = SpecSelectionItems
@@ -745,7 +735,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             }
         }
 
-        // Centralized results UI updater (used by both Run and View Layouts)
         private void UpdateResultsUI(OptimizationView optView, OptimizationContext ctx)
         {
             double utilization = optView.AverageUtilization;
@@ -758,7 +747,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             txtOptStatus.Text =
                 $"✓ Optimized | {ctx.Thickness} | Trim: {ctx.Trim.LM}/{ctx.Trim.RM}/{ctx.Trim.TM}/{ctx.Trim.BM}mm | {ctx.DimStatusText}";
 
-            // Increment run count
             int currentCount = int.TryParse(txtOptRunCount.Text, out int c) ? c : 0;
             txtOptRunCount.Text = (currentCount + 1).ToString();
 
@@ -766,8 +754,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         }
 
         // ═══════════════════════════════════════════════════════
-        // THICKNESS CHANGED — refresh status text
-        // (Wire this in XAML if you want auto-update; otherwise harmless)
+        // THICKNESS CHANGED
         // ═══════════════════════════════════════════════════════
         private void cmbThickness_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -786,8 +773,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
         // ═══════════════════════════════════════════════════════
         // PER-SHEET RESULTS
-        // FIX C8 + M4: Removed the bogus (int)(util * 10) "pieces" math.
-        //  Now PiecesCut = "—" with a sheet-count label that's accurate.
         // ═══════════════════════════════════════════════════════
         private void UpdatePerSheetResults(OptimizationView optView, double sheetWidth, double sheetHeight)
         {
@@ -799,7 +784,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
                 if (results == null || results.Count == 0)
                 {
-                    // Fallback: single consolidated row
                     int totalSheets = optView.SheetsUsed;
                     double areaTotal = sheetWidth * sheetHeight / 1_000_000;
                     double util = optView.AverageUtilization;
@@ -810,7 +794,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     {
                         SheetName = $"{sheetWidth:N0} × {sheetHeight:N0} mm",
                         SheetDimensions = $"{sheetWidth:N0} × {sheetHeight:N0} mm",
-                        PiecesCut = "—", // FIX C8: was (int)(util * 10) — meaningless
+                        PiecesCut = "—",
                         AreaUsed = $"{areaUsed * totalSheets:N2} m²",
                         Utilization = $"{util:N1}",
                         Wastage = $"{wastage:N1}",
@@ -819,7 +803,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 }
                 else
                 {
-                    // Group by sheet dimensions, count sheets per group
                     var groupedResults = results
                         .GroupBy(r => new { r.L, r.W })
                         .Select(g => new
@@ -840,7 +823,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                         {
                             SheetName = group.SheetDimensions,
                             SheetDimensions = group.SheetDimensions,
-                            // FIX M4: clearer label — this is sheet count, not piece count
                             PiecesCut = $"{group.SheetCount} sheets",
                             AreaUsed = $"{group.TotalArea:N2} m²",
                             Utilization = $"{group.AvgUtil:N1}",
@@ -990,8 +972,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
         // ═══════════════════════════════════════════════════════
         // SMART PASTE FROM CONTEXT MENU
-        // Anchor-cell aware: clicked cell decides starting column + row
-        // Auto-creates rows as needed, scoped to clicked spec only
         // ═══════════════════════════════════════════════════════
         private void SmartPaste_Click(object sender, RoutedEventArgs e)
         {
@@ -999,7 +979,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             {
                 if (sender is not MenuItem menuItem) return;
 
-                // Walk up from MenuItem → ContextMenu → PlacementTarget (the clicked cell)
                 if (menuItem.Parent is not ContextMenu contextMenu) return;
                 if (contextMenu.PlacementTarget is not DataGridCell clickedCell)
                 {
@@ -1007,7 +986,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     return;
                 }
 
-                // Identify the column clicked
                 var clickedColumn = clickedCell.Column;
                 if (clickedColumn == null)
                 {
@@ -1024,7 +1002,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     return;
                 }
 
-                // Identify clicked row + spec
                 if (clickedCell.DataContext is not Models.InvoiceItemModel anchorItem)
                 {
                     Debug.WriteLine($"{LOG} SmartPaste: cell DataContext is not InvoiceItemModel");
@@ -1045,7 +1022,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     return;
                 }
 
-                // Read clipboard
                 if (!Clipboard.ContainsText())
                 {
                     MessageBox.Show("Clipboard is empty.", "Paste",
@@ -1061,7 +1037,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     return;
                 }
 
-                // Parse clipboard as tab-separated rows
                 var rawRows = clipboardText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
                 if (rawRows.Length == 0)
                 {
@@ -1070,7 +1045,9 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     return;
                 }
 
-                // Capture defaults from first existing row (Option X behavior)
+                // ✏️ UNDO — take snapshot BEFORE paste so Ctrl+Z restores pre-paste state
+                _viewModel?.TakeSnapshot($"Paste {rawRows.Length} rows into '{spec.SpecificationName}'");
+
                 var defaults = CaptureRowDefaults(spec);
 
                 int rowsAdded = 0;
@@ -1086,7 +1063,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
                         int targetRowIndex = anchorRowIndex + i;
 
-                        // Auto-create row if needed
                         Models.InvoiceItemModel targetItem;
                         if (targetRowIndex < spec.Items.Count)
                         {
@@ -1100,18 +1076,16 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                             rowsAdded++;
                         }
 
-                        // Map clipboard cells → columns starting at anchor, going rightward
                         for (int c = 0; c < cells.Length; c++)
                         {
                             int targetColIndex = anchorColIndex + c;
-                            if (targetColIndex > 4) break; // out of W1/H1/W2/H2/Qty range
+                            if (targetColIndex > 4) break;
 
                             ApplyCellValue(targetItem, targetColIndex, cells[c]);
                         }
                     }
                 }
 
-                // Renumber + recalc once after bulk update
                 _viewModel.RenumberAllSrNumbers();
                 spec.Recalculate();
                 _viewModel.Invoice.CalculateTotals();
@@ -1127,7 +1101,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             }
         }
 
-        // Map column header to internal index: W1=0, H1=1, W2=2, H2=3, Qty=4
         private int GetDimensionColumnIndex(string header)
         {
             return header switch
@@ -1141,7 +1114,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             };
         }
 
-        // Apply a single cell value to a specific target column
         private void ApplyCellValue(Models.InvoiceItemModel item, int colIndex, string rawValue)
         {
             string trimmed = rawValue?.Trim() ?? "";
@@ -1151,31 +1123,31 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
             switch (colIndex)
             {
-                case 0: // W1
+                case 0:
                     if (double.TryParse(cleaned, System.Globalization.NumberStyles.Any,
                         System.Globalization.CultureInfo.InvariantCulture, out double w1))
                         item.Width1 = Math.Max(0, w1);
                     break;
 
-                case 1: // H1
+                case 1:
                     if (double.TryParse(cleaned, System.Globalization.NumberStyles.Any,
                         System.Globalization.CultureInfo.InvariantCulture, out double h1))
                         item.Height1 = Math.Max(0, h1);
                     break;
 
-                case 2: // W2
+                case 2:
                     if (double.TryParse(cleaned, System.Globalization.NumberStyles.Any,
                         System.Globalization.CultureInfo.InvariantCulture, out double w2))
                         item.Width2 = Math.Max(0, w2);
                     break;
 
-                case 3: // H2
+                case 3:
                     if (double.TryParse(cleaned, System.Globalization.NumberStyles.Any,
                         System.Globalization.CultureInfo.InvariantCulture, out double h2))
                         item.Height2 = Math.Max(0, h2);
                     break;
 
-                case 4: // Qty
+                case 4:
                     if (int.TryParse(cleaned, System.Globalization.NumberStyles.Any,
                         System.Globalization.CultureInfo.InvariantCulture, out int qty))
                         item.Qty = Math.Max(1, qty);
@@ -1183,7 +1155,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             }
         }
 
-        // Capture defaults from first existing row of the spec (Option X behavior)
         private RowDefaults CaptureRowDefaults(Models.SpecificationModel spec)
         {
             var d = new RowDefaults();
@@ -1208,7 +1179,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             return d;
         }
 
-        // Create a new row preserving defaults (only targeted cols will be overwritten by paste)
         private Models.InvoiceItemModel CreateRowFromDefaults(Models.SpecificationModel spec, RowDefaults d, int srNo)
         {
             return new Models.InvoiceItemModel
@@ -1239,7 +1209,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         }
 
         // ═══════════════════════════════════════════════════════
-        // PASTE FROM EXCEL
+        // PASTE FROM EXCEL (Ctrl+V — legacy)
         // ═══════════════════════════════════════════════════════
         private void DataGrid_Paste(object sender, ExecutedRoutedEventArgs e)
         {
@@ -1287,6 +1257,9 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     MessageBox.Show("No data to paste!", "Paste", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
+
+                // ✏️ UNDO — take snapshot before paste
+                _viewModel?.TakeSnapshot($"Paste {rows.Length} rows into '{spec.SpecificationName}'");
 
                 bool skipHeader = rows[0].ToLower().Contains("glass") || rows[0].ToLower().Contains("width") ||
                                 rows[0].ToLower().Contains("height") || rows[0].ToLower().Contains("qty") ||
@@ -1350,6 +1323,242 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         {
             e.CanExecute = Clipboard.ContainsText();
             e.Handled = true;
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // ✏️ UNDO/REDO — UserControl-level keyboard handler
+        //
+        // Tunnels DOWN from UserControl to focused element, so we see
+        // Ctrl+Z and Ctrl+Y BEFORE the focused TextBox swallows them.
+        //
+        // We handle the key (and stop further propagation) ONLY when:
+        //   - It's Ctrl+Z or Ctrl+Y
+        //   - The focus is NOT inside a DataGrid cell editor
+        //     (DataGrid cells get WPF's native TextBox per-char undo)
+        // ═══════════════════════════════════════════════════════
+        private void ProformaInvoiceView_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            try
+            {
+                // Only intercept Ctrl+Z and Ctrl+Y
+                bool isCtrlZ = (e.Key == Key.Z && Keyboard.Modifiers == ModifierKeys.Control);
+                bool isCtrlY = (e.Key == Key.Y && Keyboard.Modifiers == ModifierKeys.Control);
+
+                if (!isCtrlZ && !isCtrlY) return;
+
+                // Don't intercept when typing inside a DataGrid cell —
+                // let WPF's TextBox handle per-character undo natively
+                if (IsCellInEditMode())
+                {
+                    Debug.WriteLine($"{LOG} Ctrl+{(isCtrlZ ? "Z" : "Y")} — cell in edit mode, letting WPF handle it");
+                    return;
+                }
+
+                // Fire our app-level undo/redo
+                if (isCtrlZ)
+                {
+                    if (_viewModel?.CanUndo == true)
+                    {
+                        _viewModel.Undo();
+                        e.Handled = true;
+                        Debug.WriteLine($"{LOG} Ctrl+Z fired → Undo");
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"{LOG} Ctrl+Z fired but CanUndo=false");
+                    }
+                }
+                else if (isCtrlY)
+                {
+                    if (_viewModel?.CanRedo == true)
+                    {
+                        _viewModel.Redo();
+                        e.Handled = true;
+                        Debug.WriteLine($"{LOG} Ctrl+Y fired → Redo");
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"{LOG} Ctrl+Y fired but CanRedo=false");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"{LOG} PreviewKeyDown error: {ex.Message}");
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // ✏️ UNDO — Detect if a DataGrid cell is currently in edit mode
+        // (cursor blinking inside a TextBox). If so, our app-level Ctrl+Z
+        // is suppressed so WPF's native per-character undo can run.
+        // ═══════════════════════════════════════════════════════
+        private bool IsCellInEditMode()
+        {
+            try
+            {
+                var focused = Keyboard.FocusedElement as DependencyObject;
+                if (focused == null) return false;
+
+                // Walk visual tree up looking for a DataGridCell in editing mode.
+                // Only blocks app-level Ctrl+Z when cursor is INSIDE a DataGrid cell editor —
+                // NOT when focused on regular TextBoxes (Customer Name, Project Name, etc.)
+                while (focused != null)
+                {
+                    if (focused is DataGridCell cell && cell.IsEditing)
+                        return true;
+
+                    // CRITICAL: stop walking once we hit a non-DataGrid container,
+                    // so a regular TextBox inside a Customer/Project panel doesn't accidentally
+                    // match a far-up DataGridCell ancestor in some weird layout.
+                    if (focused is System.Windows.Controls.Primitives.DataGridCellsPresenter ||
+                        focused is DataGrid)
+                    {
+                        // we're inside the DataGrid surface but not in an editing cell
+                        return false;
+                    }
+
+                    focused = VisualTreeHelper.GetParent(focused);
+                }
+
+                return false;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // ✏️ UNDO — Cell-edit tracking with pre-edit value memory
+        //
+        // BeginningEdit fires when you CLICK a cell, even if you don't
+        // change anything. So we remember the original value here and
+        // only snapshot in CellEditEnding if it actually changed.
+        // ═══════════════════════════════════════════════════════
+        private object? _preEditValue;
+        private Models.InvoiceItemModel? _preEditItem;
+        private string _preEditColumn = "";
+
+        private void DataGrid_BeginningEdit(object sender, DataGridBeginningEditEventArgs e)
+        {
+            try
+            {
+                if (e.Row?.Item is not Models.InvoiceItemModel item) return;
+
+                string columnHeader = e.Column?.Header?.ToString() ?? "cell";
+
+                // Remember pre-edit value so we can compare on commit
+                _preEditItem = item;
+                _preEditColumn = columnHeader;
+                _preEditValue = GetCellValueForUndo(item, columnHeader);
+
+                Debug.WriteLine($"{LOG} BeginningEdit: captured pre-edit value for {columnHeader} = '{_preEditValue}'");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"{LOG} DataGrid_BeginningEdit error: {ex.Message}");
+                _preEditValue = null;
+                _preEditItem = null;
+            }
+        }
+
+        private void DataGrid_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
+        {
+            try
+            {
+                // Only snapshot on real commit, not Escape
+                if (e.EditAction != DataGridEditAction.Commit)
+                {
+                    _preEditValue = null;
+                    _preEditItem = null;
+                    return;
+                }
+
+                if (_preEditItem == null) return;
+                var item = _preEditItem;
+                var column = _preEditColumn;
+                var originalValue = _preEditValue;
+                _preEditItem = null;
+                _preEditValue = null;
+
+                // Defer to background so the binding has time to write the new value
+                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, new Action(() =>
+                {
+                    try
+                    {
+                        object? newValue = GetCellValueForUndo(item, column);
+
+                        // CRITICAL: only snapshot if value actually changed
+                        if (Equals(originalValue, newValue))
+                        {
+                            Debug.WriteLine($"{LOG} CellEditEnding: no change in {column} (was '{originalValue}', still '{newValue}') — no snapshot");
+                            return;
+                        }
+
+                        var spec = FindSpecification(item);
+                        if (spec == null) return;
+
+                        // Take snapshot of CURRENT (post-edit) state.
+                        // When user does Ctrl+Z, it pops this snapshot and restores it.
+                        // But we want pre-edit state restored. So:
+                        // 1. Temporarily revert to pre-edit
+                        // 2. Take snapshot (captures pre-edit state)
+                        // 3. Re-apply new value
+                        SetCellValueForUndo(item, column, originalValue);
+                        _viewModel?.TakeSnapshot($"Edit {column} in '{spec.SpecificationName}'");
+                        SetCellValueForUndo(item, column, newValue);
+
+                        Debug.WriteLine($"{LOG} CellEditEnding snapshot: {column} '{originalValue}' → '{newValue}'");
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"{LOG} CellEditEnding deferred error: {ex.Message}");
+                    }
+                }));
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"{LOG} DataGrid_CellEditEnding error: {ex.Message}");
+                _preEditValue = null;
+                _preEditItem = null;
+            }
+        }
+
+        private object? GetCellValueForUndo(Models.InvoiceItemModel item, string columnHeader)
+        {
+            return columnHeader switch
+            {
+                "Glass Ref" => item.GlassRef,
+                "W1" => item.Width1,
+                "H1" => item.Height1,
+                "W2" => item.Width2,
+                "H2" => item.Height2,
+                "Qty" => item.Qty,
+                "Price" => item.Price,
+                _ => null
+            };
+        }
+
+        private void SetCellValueForUndo(Models.InvoiceItemModel item, string columnHeader, object? value)
+        {
+            try
+            {
+                switch (columnHeader)
+                {
+                    case "Glass Ref": item.GlassRef = value?.ToString() ?? ""; break;
+                    case "W1": if (value is double w1) item.Width1 = w1; break;
+                    case "H1": if (value is double h1) item.Height1 = h1; break;
+                    case "W2": if (value is double w2) item.Width2 = w2; break;
+                    case "H2": if (value is double h2) item.Height2 = h2; break;
+                    case "Qty": if (value is int qty) item.Qty = qty; break;
+                    case "Price": if (value is double p) item.Price = p; break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"{LOG} SetCellValueForUndo error: {ex.Message}");
+            }
         }
 
         // ═══════════════════════════════════════════════════════
@@ -1443,7 +1652,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     }
                 }
             }
-            catch (Exception ex) // FIX H5: log
+            catch (Exception ex)
             {
                 Debug.WriteLine($"{LOG} DataGrid_PreviewKeyDown error: {ex.Message}");
             }
@@ -1762,7 +1971,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
         // ═══════════════════════════════════════════════════════
         // PER-SPEC DIMENSION SELECTION
-        // FIX H6: drives the bound SpecSelectionItem.IsW2H2 — no visual tree walking
         // ═══════════════════════════════════════════════════════
         private void OptSpecDim_Click(object sender, RoutedEventArgs e)
         {
@@ -1817,7 +2025,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
         // ═══════════════════════════════════════════════════════
         // FALLBACK DIMENSION RADIO
-        // FIX H6 + M6: no more visual tree walking, no more _isUpdatingSpecSelection gymnastics
         // ═══════════════════════════════════════════════════════
         private void FallbackDim_Click(object sender, RoutedEventArgs e)
         {
@@ -1834,7 +2041,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
                 bool useAltW2H2 = (fallbackType == "rbUseW2H2");
 
-                // Update VM-side dictionary
                 _specDimChoice.Clear();
                 if (_viewModel?.Invoice?.Specifications != null)
                 {
@@ -1845,7 +2051,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     }
                 }
 
-                // Update wrappers (drives radio buttons via bindings)
                 foreach (var wrapper in SpecSelectionItems)
                 {
                     wrapper.IsSelected = true;
@@ -1860,7 +2065,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         }
 
         // ═══════════════════════════════════════════════════════
-        // SPEC ROW RADIO HANDLERS (bound via SpecSelectionItem.IsW2H2)
+        // SPEC ROW RADIO HANDLERS
         // ═══════════════════════════════════════════════════════
         private void RbSpecW1H1_Click(object sender, RoutedEventArgs e)
         {
@@ -1918,7 +2123,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
         // ═══════════════════════════════════════════════════════
         // SPEC LIST SELECTION CHANGED
-        // FIX H1: duplicate _specDimChoice.Remove(key) removed
         // ═══════════════════════════════════════════════════════
         private void lstSpecSelect_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -1928,29 +2132,25 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             {
                 _isUpdatingSpecSelection = true;
 
-                // Sync wrapper IsSelected with ListBox SelectedItems
                 var selectedSet = new HashSet<SpecSelectionItem>(lstSpecSelect.SelectedItems.OfType<SpecSelectionItem>());
                 foreach (var wrapper in SpecSelectionItems)
                     wrapper.IsSelected = selectedSet.Contains(wrapper);
 
-                // Rebuild dim choice dictionary from selection
                 var selectedNames = selectedSet
                     .Where(w => !string.IsNullOrEmpty(w.FullName))
                     .Select(w => w.FullName)
                     .ToHashSet();
 
-                // Add newcomers (default W1/H1)
                 foreach (var w in selectedSet)
                 {
                     if (!string.IsNullOrEmpty(w.FullName) && !_specDimChoice.ContainsKey(w.FullName))
                         _specDimChoice[w.FullName] = w.IsW2H2;
                 }
 
-                // Remove deselected
                 var toRemove = _specDimChoice.Keys.Where(k => !selectedNames.Contains(k)).ToList();
                 foreach (var key in toRemove)
                 {
-                    _specDimChoice.Remove(key); // FIX H1: was called twice
+                    _specDimChoice.Remove(key);
                     Debug.WriteLine($"{LOG} Removed from tracking: {key}");
                 }
 
