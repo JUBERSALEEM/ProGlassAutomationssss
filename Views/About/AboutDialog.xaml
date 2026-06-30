@@ -2,117 +2,776 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="About - ProGlass ERP"
-        Height="520" Width="450"
-        WindowStartupLocation="CenterOwner"
+        WindowState="Maximized"
+        WindowStyle="None"
         ResizeMode="NoResize"
-        Background="#F4F6F9">
+        WindowStartupLocation="CenterScreen"
+        Background="#07111F">
 
-    <Border Margin="20" CornerRadius="16" Background="White">
-        <Border.Effect>
-            <DropShadowEffect BlurRadius="20" ShadowDepth="2" Opacity="0.18"/>
-        </Border.Effect>
+    <Window.Resources>
+        <!-- Colors -->
+        <SolidColorBrush x:Key="TextPrimaryBrush" Color="#F8FAFC"/>
+        <SolidColorBrush x:Key="TextSecondaryBrush" Color="#A9B6C8"/>
+        <SolidColorBrush x:Key="GlassBrush" Color="#16FFFFFF"/>
+        <SolidColorBrush x:Key="GlassStrongBrush" Color="#22FFFFFF"/>
+        <SolidColorBrush x:Key="BorderBrushSoft" Color="#24FFFFFF"/>
 
-        <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <StackPanel Margin="24">
+        <!-- Main glass card -->
+        <Style x:Key="GlassCardStyle" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource GlassBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrushSoft}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="22"/>
+            <Setter Property="Padding" Value="22"/>
+            <Setter Property="Margin" Value="0,0,0,16"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="28" ShadowDepth="0" Opacity="0.16" Color="#000000"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
-                <!-- Logo Card -->
-                <Border Background="#0A6ED1" CornerRadius="16" Padding="24" Margin="0,0,0,16">
-                    <StackPanel HorizontalAlignment="Center">
-                        <Border Background="White" CornerRadius="12" Padding="16" HorizontalAlignment="Center">
-                            <StackPanel>
-                                <TextBlock Text="PROGLASS" FontSize="12" FontWeight="Bold" Foreground="#0A6ED1" HorizontalAlignment="Center"/>
-                                <TextBlock Text="ERP" FontSize="28" FontWeight="Bold" Foreground="#0A6ED1" HorizontalAlignment="Center"/>
-                                <Border Height="1" Background="#0A6ED1" Margin="12,4"/>
-                                <TextBlock Text="SYSTEM" FontSize="10" FontWeight="Bold" Foreground="#0A6ED1" HorizontalAlignment="Center"/>
-                            </StackPanel>
+        <!-- Workflow mini card -->
+        <Style x:Key="WorkflowCardStyle" TargetType="Border">
+            <Setter Property="Background" Value="#12FFFFFF"/>
+            <Setter Property="BorderBrush" Value="#20FFFFFF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="18"/>
+            <Setter Property="Padding" Value="18"/>
+            <Setter Property="Margin" Value="0,0,0,14"/>
+        </Style>
+
+        <!-- Section chip -->
+        <Style x:Key="SectionChipStyle" TargetType="Border">
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="Margin" Value="0,0,0,14"/>
+        </Style>
+
+        <!-- Top icon button -->
+        <Style x:Key="TopIconButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="42"/>
+            <Setter Property="Height" Value="42"/>
+            <Setter Property="Background" Value="#18FFFFFF"/>
+            <Setter Property="BorderBrush" Value="#28FFFFFF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Root"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="12">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
-                        <TextBlock Text="Version 1.0.0" FontSize="12" Foreground="#D1E9F9" HorizontalAlignment="Center" Margin="0,12,0,0"/>
-                        <TextBlock Text="Glass Processing Automation Platform" FontSize="11" Foreground="#D1E9F9" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                    </StackPanel>
-                </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#28FFFFFF"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Root" Property="Opacity" Value="0.82"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
-                <!-- About App Section -->
-                <Border CornerRadius="12" BorderBrush="#E5E7EB" BorderThickness="1" Padding="16" Margin="0,0,0,12">
-                    <StackPanel>
-                        <Border Background="#7C3AED" CornerRadius="8" Padding="10,6" HorizontalAlignment="Left" Margin="0,0,0,10">
-                            <TextBlock Text="ABOUT APP" FontSize="10" FontWeight="Bold" Foreground="White"/>
+        <!-- Action button -->
+        <Style x:Key="ActionButtonStyle" TargetType="Button">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="#20FFFFFF"/>
+            <Setter Property="BorderBrush" Value="#30FFFFFF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="18,12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Root"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="14">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"/>
                         </Border>
-                        <TextBlock Text="ProGlass ERP System is a comprehensive glass processing automation platform designed for modern glass fabrication businesses. It provides advanced calculators for SGU, DGU, Lamination, and optimization tools to streamline your workflow." 
-                                   FontSize="11" Foreground="#1F1F1F" TextWrapping="Wrap" LineHeight="18"/>
-                    </StackPanel>
-                </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#30FFFFFF"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Root" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
-                <!-- Developer Section -->
-                <Border CornerRadius="12" BorderBrush="#E5E7EB" BorderThickness="1" Padding="16" Margin="0,0,0,12">
-                    <StackPanel>
-                        <Border Background="#0A6ED1" CornerRadius="8" Padding="10,6" HorizontalAlignment="Left" Margin="0,0,0,10">
-                            <TextBlock Text="DEVELOPER" FontSize="10" FontWeight="Bold" Foreground="White"/>
-                        </Border>
-                        <Border Background="#F0F9FF" CornerRadius="10" Padding="14">
-                            <StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                    <TextBlock Text="Developer:" FontSize="11" Foreground="#6A6D70" Width="80"/>
-                                    <TextBlock Text="Juber Saleem" FontSize="11" FontWeight="SemiBold" Foreground="#1F1F1F"/>
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                    <TextBlock Text="Location:" FontSize="11" Foreground="#6A6D70" Width="80"/>
-                                    <TextBlock Text="Dubai, UAE" FontSize="11" FontWeight="SemiBold" Foreground="#1F1F1F"/>
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="Mobile:" FontSize="11" Foreground="#6A6D70" Width="80"/>
-                                    <TextBlock Text="+971-559117727" FontSize="11" Foreground="#0A6ED1" FontWeight="SemiBold"/>
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
-                </Border>
+        <!-- Number badge -->
+        <Style x:Key="StepBadgeStyle" TargetType="Border">
+            <Setter Property="Width" Value="42"/>
+            <Setter Property="Height" Value="42"/>
+            <Setter Property="CornerRadius" Value="21"/>
+            <Setter Property="Background" Value="#255B8CFF"/>
+            <Setter Property="BorderBrush" Value="#405B8CFF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+    </Window.Resources>
 
-                <!-- Contact Section -->
-                <Border CornerRadius="12" BorderBrush="#E5E7EB" BorderThickness="1" Padding="16" Margin="0,0,0,12">
-                    <StackPanel>
-                        <Border Background="#10B981" CornerRadius="8" Padding="10,6" HorizontalAlignment="Left" Margin="0,0,0,10">
-                            <TextBlock Text="CONTACT" FontSize="10" FontWeight="Bold" Foreground="White"/>
-                        </Border>
-                        <StackPanel>
-                            <Button Click="Email_Click" Cursor="Hand">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border Background="#F3F4F6" CornerRadius="8" Padding="12,10">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="✉" FontSize="14"/>
-                                                <TextBlock Text="Jubersaleem01@gmail.com" FontSize="11" Foreground="#0A6ED1" Margin="8,0,0,0" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </Border>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
-                            <Button Click="WhatsApp_Click" Cursor="Hand" Margin="0,6,0,0">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border Background="#F3F4F6" CornerRadius="8" Padding="12,10">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="💬" FontSize="14"/>
-                                                <TextBlock Text="WhatsApp Support" FontSize="11" Foreground="#0A6ED1" Margin="8,0,0,0" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </Border>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
+    <Grid MouseLeftButtonDown="Window_MouseLeftButtonDown">
+        <!-- Background -->
+        <Grid>
+            <Grid.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#06101D" Offset="0"/>
+                    <GradientStop Color="#0B1630" Offset="0.5"/>
+                    <GradientStop Color="#121F42" Offset="1"/>
+                </LinearGradientBrush>
+            </Grid.Background>
 
-                <!-- Close Button -->
-                <Button Click="Close_Click" Cursor="Hand" HorizontalAlignment="Center" Margin="0,8,0,0">
-                    <Button.Template>
-                        <ControlTemplate TargetType="Button">
-                            <Border Background="#E5E7EB" CornerRadius="10" Padding="24,12">
-                                <TextBlock Text="Close" FontSize="12" FontWeight="SemiBold" Foreground="#1F1F1F"/>
-                            </Border>
-                        </ControlTemplate>
-                    </Button.Template>
+            <!-- Glow shapes -->
+            <Ellipse Width="520" Height="520" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-150,-160,0,0" IsHitTestVisible="False">
+                <Ellipse.Fill>
+                    <RadialGradientBrush>
+                        <GradientStop Color="#305B8CFF" Offset="0"/>
+                        <GradientStop Color="#005B8CFF" Offset="1"/>
+                    </RadialGradientBrush>
+                </Ellipse.Fill>
+                <Ellipse.Effect>
+                    <BlurEffect Radius="55"/>
+                </Ellipse.Effect>
+            </Ellipse>
+
+            <Ellipse Width="620" Height="620" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-180,-180" IsHitTestVisible="False">
+                <Ellipse.Fill>
+                    <RadialGradientBrush>
+                        <GradientStop Color="#3000D2A8" Offset="0"/>
+                        <GradientStop Color="#0000D2A8" Offset="1"/>
+                    </RadialGradientBrush>
+                </Ellipse.Fill>
+                <Ellipse.Effect>
+                    <BlurEffect Radius="60"/>
+                </Ellipse.Effect>
+            </Ellipse>
+        </Grid>
+
+        <!-- Main -->
+        <Grid Margin="34">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Top Bar -->
+            <Grid Grid.Row="0" Margin="0,0,0,22">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel>
+                    <TextBlock Text="About ProGlass ERP"
+                               FontSize="34"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Application modules, optimization engine workflow, and production services"
+                               Margin="0,6,0,0"
+                               FontSize="14"
+                               Foreground="{StaticResource TextSecondaryBrush}"/>
+                </StackPanel>
+
+                <Button Grid.Column="1"
+                        Style="{StaticResource TopIconButtonStyle}"
+                        Click="Close_Click">
+                    <TextBlock Text="✕" FontSize="16" FontWeight="Bold"/>
                 </Button>
-            </StackPanel>
-        </ScrollViewer>
-    </Border>
+            </Grid>
+
+            <!-- Content -->
+            <ScrollViewer Grid.Row="1"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.25*"/>
+                        <ColumnDefinition Width="0.75*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- LEFT -->
+                    <StackPanel Grid.Column="0" Margin="0,0,18,0">
+
+                        <!-- Hero -->
+                        <Border Style="{StaticResource GlassCardStyle}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="170"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Border Width="150"
+                                        Height="150"
+                                        CornerRadius="30"
+                                        Background="{StaticResource GlassStrongBrush}"
+                                        BorderBrush="#30FFFFFF"
+                                        BorderThickness="1"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center">
+                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <TextBlock Text="PROGLASS"
+                                                   FontSize="15"
+                                                   FontWeight="Bold"
+                                                   Foreground="White"
+                                                   HorizontalAlignment="Center"/>
+                                        <TextBlock Text="ERP"
+                                                   FontSize="40"
+                                                   FontWeight="Bold"
+                                                   Foreground="White"
+                                                   HorizontalAlignment="Center"/>
+                                        <Border Width="68" Height="2" Background="#90FFFFFF" Margin="0,8"/>
+                                        <TextBlock Text="AUTOMATION"
+                                                   FontSize="10"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="#D9E7F5"
+                                                   HorizontalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <StackPanel Grid.Column="1" Margin="22,0,0,0" VerticalAlignment="Center">
+                                    <Border Style="{StaticResource SectionChipStyle}" Background="#255B8CFF" HorizontalAlignment="Left">
+                                        <TextBlock Text="FULL SYSTEM OVERVIEW"
+                                                   FontSize="10"
+                                                   FontWeight="Bold"
+                                                   Foreground="White"/>
+                                    </Border>
+
+                                    <TextBlock Text="Version 1.0.0"
+                                               FontSize="28"
+                                               FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextPrimaryBrush}"/>
+
+                                    <TextBlock Text="Proforma invoice processing, smart data entry, glass nesting optimization, live layout preview, and production reporting."
+                                               Margin="0,10,0,0"
+                                               FontSize="13"
+                                               Foreground="#D7E0EA"
+                                               TextWrapping="Wrap"
+                                               LineHeight="22"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Main workflow section -->
+                        <Border Style="{StaticResource GlassCardStyle}">
+                            <StackPanel>
+                                <Border Style="{StaticResource SectionChipStyle}" Background="#2400D2A8" HorizontalAlignment="Left">
+                                    <TextBlock Text="END-TO-END WORKFLOW"
+                                               FontSize="10"
+                                               FontWeight="Bold"
+                                               Foreground="White"/>
+                                </Border>
+
+                                <!-- 1 -->
+                                <Border Style="{StaticResource WorkflowCardStyle}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <Border Style="{StaticResource StepBadgeStyle}">
+                                            <TextBlock Text="1"
+                                                       Foreground="White"
+                                                       FontWeight="Bold"
+                                                       FontSize="15"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"/>
+                                        </Border>
+
+                                        <StackPanel Grid.Column="1" Margin="16,0,0,0">
+                                            <TextBlock Text="Proforma Invoice Management"
+                                                       FontSize="15"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="White"/>
+                                            <TextBlock Text="Create invoice records, manage customer/project details, add specifications, insert line items, and maintain structured glass references with editable W1/H1 and W2/H2 dimensions."
+                                                       Margin="0,6,0,0"
+                                                       FontSize="12"
+                                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                                       TextWrapping="Wrap"
+                                                       LineHeight="20"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+
+                                <!-- 2 -->
+                                <Border Style="{StaticResource WorkflowCardStyle}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <Border Style="{StaticResource StepBadgeStyle}" Background="#257C5CFF" BorderBrush="#407C5CFF">
+                                            <TextBlock Text="2"
+                                                       Foreground="White"
+                                                       FontWeight="Bold"
+                                                       FontSize="15"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"/>
+                                        </Border>
+
+                                        <StackPanel Grid.Column="1" Margin="16,0,0,0">
+                                            <TextBlock Text="Smart Paste + Undo/Redo Workflow"
+                                                       FontSize="15"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="White"/>
+                                            <TextBlock Text="Paste Excel/tabular data directly into specification grids, auto-map values into width, height, quantity, and price fields, then safely track edits with Ctrl+Z / Ctrl+Y snapshot-based undo and redo handling."
+                                                       Margin="0,6,0,0"
+                                                       FontSize="12"
+                                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                                       TextWrapping="Wrap"
+                                                       LineHeight="20"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+
+                                <!-- 3 -->
+                                <Border Style="{StaticResource WorkflowCardStyle}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <Border Style="{StaticResource StepBadgeStyle}" Background="#25F59E0B" BorderBrush="#40F59E0B">
+                                            <TextBlock Text="3"
+                                                       Foreground="White"
+                                                       FontWeight="Bold"
+                                                       FontSize="15"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"/>
+                                        </Border>
+
+                                        <StackPanel Grid.Column="1" Margin="16,0,0,0">
+                                            <TextBlock Text="Specification Dimension Mapping"
+                                                       FontSize="15"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="White"/>
+                                            <TextBlock Text="Use global or per-specification dimension selection. Each spec can run with W1/H1 or W2/H2 sizing logic, enabling mixed optimization workflows for alternate fabrication dimensions."
+                                                       Margin="0,6,0,0"
+                                                       FontSize="12"
+                                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                                       TextWrapping="Wrap"
+                                                       LineHeight="20"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+
+                                <!-- 4 -->
+                                <Border Style="{StaticResource WorkflowCardStyle}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <Border Style="{StaticResource StepBadgeStyle}" Background="#25EC4899" BorderBrush="#40EC4899">
+                                            <TextBlock Text="4"
+                                                       Foreground="White"
+                                                       FontWeight="Bold"
+                                                       FontSize="15"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"/>
+                                        </Border>
+
+                                        <StackPanel Grid.Column="1" Margin="16,0,0,0">
+                                            <TextBlock Text="Optimization Input Preparation"
+                                                       FontSize="15"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="White"/>
+                                            <TextBlock Text="Prepare stock sheet sizes, thickness presets, trim margins, kerf blade width, breakout minimum, auto-rotation rules, and additional stock entries before sending jobs to the optimization engine."
+                                                       Margin="0,6,0,0"
+                                                       FontSize="12"
+                                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                                       TextWrapping="Wrap"
+                                                       LineHeight="20"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+
+                                <!-- 5 -->
+                                <Border Style="{StaticResource WorkflowCardStyle}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <Border Style="{StaticResource StepBadgeStyle}" Background="#2529B6FF" BorderBrush="#4029B6FF">
+                                            <TextBlock Text="5"
+                                                       Foreground="White"
+                                                       FontWeight="Bold"
+                                                       FontSize="15"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"/>
+                                        </Border>
+
+                                        <StackPanel Grid.Column="1" Margin="16,0,0,0">
+                                            <TextBlock Text="Nesting Engine + Live KPI Monitoring"
+                                                       FontSize="15"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="White"/>
+                                            <TextBlock Text="Run the optimizer to measure overall yield, waste factor, sheet usage, placement success, total nested area, and production cost. The system supports multiple strategies, rotation policies, and advanced search modes."
+                                                       Margin="0,6,0,0"
+                                                       FontSize="12"
+                                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                                       TextWrapping="Wrap"
+                                                       LineHeight="20"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+
+                                <!-- 6 -->
+                                <Border Style="{StaticResource WorkflowCardStyle}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <Border Style="{StaticResource StepBadgeStyle}" Background="#2510B981" BorderBrush="#4010B981">
+                                            <TextBlock Text="6"
+                                                       Foreground="White"
+                                                       FontWeight="Bold"
+                                                       FontSize="15"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"/>
+                                        </Border>
+
+                                        <StackPanel Grid.Column="1" Margin="16,0,0,0">
+                                            <TextBlock Text="Visual Layouts, Toolpath Preview, and Reporting"
+                                                       FontSize="15"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="White"/>
+                                            <TextBlock Text="Review canvas-based sheet layouts, zoom and navigate between sheets, search for parts, inspect per-sheet utilization, monitor yield breakdown logs, and open print preview or production-ready summaries."
+                                                       Margin="0,6,0,0"
+                                                       FontSize="12"
+                                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                                       TextWrapping="Wrap"
+                                                       LineHeight="20"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Optimization screen breakdown -->
+                        <Border Style="{StaticResource GlassCardStyle}">
+                            <StackPanel>
+                                <Border Style="{StaticResource SectionChipStyle}" Background="#255B8CFF" HorizontalAlignment="Left">
+                                    <TextBlock Text="OPTIMIZATION SCREEN MODULES"
+                                               FontSize="10"
+                                               FontWeight="Bold"
+                                               Foreground="White"/>
+                                </Border>
+
+                                <WrapPanel>
+                                    <Border Background="#18FFFFFF" CornerRadius="14" Padding="12,7" Margin="0,0,8,8">
+                                        <TextBlock Text="Header Presets" Foreground="White" FontSize="11"/>
+                                    </Border>
+                                    <Border Background="#18FFFFFF" CornerRadius="14" Padding="12,7" Margin="0,0,8,8">
+                                        <TextBlock Text="Yield KPI Cards" Foreground="White" FontSize="11"/>
+                                    </Border>
+                                    <Border Background="#18FFFFFF" CornerRadius="14" Padding="12,7" Margin="0,0,8,8">
+                                        <TextBlock Text="Stock DataGrid" Foreground="White" FontSize="11"/>
+                                    </Border>
+                                    <Border Background="#18FFFFFF" CornerRadius="14" Padding="12,7" Margin="0,0,8,8">
+                                        <TextBlock Text="Parts DataGrid" Foreground="White" FontSize="11"/>
+                                    </Border>
+                                    <Border Background="#18FFFFFF" CornerRadius="14" Padding="12,7" Margin="0,0,8,8">
+                                        <TextBlock Text="Strategy Config" Foreground="White" FontSize="11"/>
+                                    </Border>
+                                    <Border Background="#18FFFFFF" CornerRadius="14" Padding="12,7" Margin="0,0,8,8">
+                                        <TextBlock Text="Rotation Rules" Foreground="White" FontSize="11"/>
+                                    </Border>
+                                    <Border Background="#18FFFFFF" CornerRadius="14" Padding="12,7" Margin="0,0,8,8">
+                                        <TextBlock Text="Layout Canvas" Foreground="White" FontSize="11"/>
+                                    </Border>
+                                    <Border Background="#18FFFFFF" CornerRadius="14" Padding="12,7" Margin="0,0,8,8">
+                                        <TextBlock Text="Search + Zoom" Foreground="White" FontSize="11"/>
+                                    </Border>
+                                    <Border Background="#18FFFFFF" CornerRadius="14" Padding="12,7" Margin="0,0,8,8">
+                                        <TextBlock Text="Sheet Navigation" Foreground="White" FontSize="11"/>
+                                    </Border>
+                                    <Border Background="#18FFFFFF" CornerRadius="14" Padding="12,7" Margin="0,0,8,8">
+                                        <TextBlock Text="Breakdown Report" Foreground="White" FontSize="11"/>
+                                    </Border>
+                                    <Border Background="#18FFFFFF" CornerRadius="14" Padding="12,7" Margin="0,0,8,8">
+                                        <TextBlock Text="Saved Jobs / Simulation" Foreground="White" FontSize="11"/>
+                                    </Border>
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- RIGHT -->
+                    <StackPanel Grid.Column="1">
+
+                        <!-- Feature cards as shapes -->
+                        <Border Style="{StaticResource GlassCardStyle}">
+                            <StackPanel>
+                                <Border Style="{StaticResource SectionChipStyle}" Background="#267C5CFF" HorizontalAlignment="Left">
+                                    <TextBlock Text="WORK MODULE SHAPES"
+                                               FontSize="10"
+                                               FontWeight="Bold"
+                                               Foreground="White"/>
+                                </Border>
+
+                                <UniformGrid Columns="1" Rows="6">
+                                    <Border Style="{StaticResource WorkflowCardStyle}">
+                                        <StackPanel>
+                                            <TextBlock Text="■ INVOICE ENGINE"
+                                                       FontSize="13"
+                                                       FontWeight="Bold"
+                                                       Foreground="White"/>
+                                            <TextBlock Text="Controls customer data, specifications, items, charges, totals, and print preparation."
+                                                       Margin="0,6,0,0"
+                                                       FontSize="11"
+                                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                                       TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource WorkflowCardStyle}">
+                                        <StackPanel>
+                                            <TextBlock Text="● SMART GRID ENTRY"
+                                                       FontSize="13"
+                                                       FontWeight="Bold"
+                                                       Foreground="White"/>
+                                            <TextBlock Text="Supports Excel paste, row navigation, add/remove rows, focused editing, and validation."
+                                                       Margin="0,6,0,0"
+                                                       FontSize="11"
+                                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                                       TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource WorkflowCardStyle}">
+                                        <StackPanel>
+                                            <TextBlock Text="▲ STOCK &amp; PARTS INPUT"
+                                                       FontSize="13"
+                                                       FontWeight="Bold"
+                                                       Foreground="White"/>
+                                            <TextBlock Text="Feeds stock sheet dimensions and requested cut parts into the nesting engine."
+                                                       Margin="0,6,0,0"
+                                                       FontSize="11"
+                                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                                       TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource WorkflowCardStyle}">
+                                        <StackPanel>
+                                            <TextBlock Text="◆ NESTING CORE"
+                                                       FontSize="13"
+                                                       FontWeight="Bold"
+                                                       Foreground="White"/>
+                                            <TextBlock Text="Applies trim, breakout, rotation, strategy, and sheet logic for optimal layout generation."
+                                                       Margin="0,6,0,0"
+                                                       FontSize="11"
+                                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                                       TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource WorkflowCardStyle}">
+                                        <StackPanel>
+                                            <TextBlock Text="⬢ LIVE LAYOUT VIEW"
+                                                       FontSize="13"
+                                                       FontWeight="Bold"
+                                                       Foreground="White"/>
+                                            <TextBlock Text="Shows active sheet, part coordinates, matrix view, zoom, search, and layout navigation."
+                                                       Margin="0,6,0,0"
+                                                       FontSize="11"
+                                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                                       TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource WorkflowCardStyle}">
+                                        <StackPanel>
+                                            <TextBlock Text="▣ RESULT ANALYTICS"
+                                                       FontSize="13"
+                                                       FontWeight="Bold"
+                                                       Foreground="White"/>
+                                            <TextBlock Text="Displays utilization, waste, nested area, sheet-by-sheet breakdown, and cost indicators."
+                                                       Margin="0,6,0,0"
+                                                       FontSize="11"
+                                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                                       TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </Border>
+                                </UniformGrid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Developer -->
+                        <Border Style="{StaticResource GlassCardStyle}">
+                            <StackPanel>
+                                <Border Style="{StaticResource SectionChipStyle}" Background="#22FFFFFF" HorizontalAlignment="Left">
+                                    <TextBlock Text="DEVELOPER"
+                                               FontSize="10"
+                                               FontWeight="Bold"
+                                               Foreground="White"/>
+                                </Border>
+
+                                <TextBlock Text="Juber Saleem"
+                                           FontSize="22"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Dubai, UAE"
+                                           Margin="0,4,0,16"
+                                           FontSize="13"
+                                           Foreground="{StaticResource TextSecondaryBrush}"/>
+
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Mobile"
+                                               FontSize="12"
+                                               Foreground="#94A3B8"/>
+                                    <TextBlock Grid.Column="1"
+                                               Text="+971-559117727"
+                                               FontSize="12"
+                                               Foreground="#8CC8FF"
+                                               FontWeight="SemiBold"/>
+                                </Grid>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Email"
+                                               FontSize="12"
+                                               Foreground="#94A3B8"/>
+                                    <TextBlock Grid.Column="1"
+                                               Text="Jubersaleem01@gmail.com"
+                                               FontSize="12"
+                                               Foreground="#8CC8FF"
+                                               FontWeight="SemiBold"
+                                               TextWrapping="Wrap"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Contact -->
+                        <Border Style="{StaticResource GlassCardStyle}">
+                            <StackPanel>
+                                <Border Style="{StaticResource SectionChipStyle}" Background="#2400D2A8" HorizontalAlignment="Left">
+                                    <TextBlock Text="CONTACT"
+                                               FontSize="10"
+                                               FontWeight="Bold"
+                                               Foreground="White"/>
+                                </Border>
+
+                                <Button Style="{StaticResource ActionButtonStyle}"
+                                        Click="Email_Click"
+                                        Margin="0,0,0,10">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <TextBlock Text="✉" FontSize="14"/>
+                                        <TextBlock Text=" Email Developer"
+                                                   Margin="8,0,0,0"
+                                                   FontSize="13"
+                                                   FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <Button Style="{StaticResource ActionButtonStyle}"
+                                        Click="WhatsApp_Click">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <TextBlock Text="💬" FontSize="14"/>
+                                        <TextBlock Text=" WhatsApp Support"
+                                                   Margin="8,0,0,0"
+                                                   FontSize="13"
+                                                   FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Technical highlights -->
+                        <Border Style="{StaticResource GlassCardStyle}">
+                            <StackPanel>
+                                <Border Style="{StaticResource SectionChipStyle}" Background="#255B8CFF" HorizontalAlignment="Left">
+                                    <TextBlock Text="TECHNICAL HIGHLIGHTS"
+                                               FontSize="10"
+                                               FontWeight="Bold"
+                                               Foreground="White"/>
+                                </Border>
+
+                                <WrapPanel>
+                                    <Border Background="#18FFFFFF" CornerRadius="12" Padding="10,6" Margin="0,0,6,6">
+                                        <TextBlock Text="WPF Desktop UI" Foreground="White" FontSize="11"/>
+                                    </Border>
+                                    <Border Background="#18FFFFFF" CornerRadius="12" Padding="10,6" Margin="0,0,6,6">
+                                        <TextBlock Text="MVVM + Code-Behind Support" Foreground="White" FontSize="11"/>
+                                    </Border>
+                                    <Border Background="#18FFFFFF" CornerRadius="12" Padding="10,6" Margin="0,0,6,6">
+                                        <TextBlock Text="Excel Smart Paste" Foreground="White" FontSize="11"/>
+                                    </Border>
+                                    <Border Background="#18FFFFFF" CornerRadius="12" Padding="10,6" Margin="0,0,6,6">
+                                        <TextBlock Text="Undo / Redo" Foreground="White" FontSize="11"/>
+                                    </Border>
+                                    <Border Background="#18FFFFFF" CornerRadius="12" Padding="10,6" Margin="0,0,6,6">
+                                        <TextBlock Text="Dimension Mapping" Foreground="White" FontSize="11"/>
+                                    </Border>
+                                    <Border Background="#18FFFFFF" CornerRadius="12" Padding="10,6" Margin="0,0,6,6">
+                                        <TextBlock Text="Trim + Kerf Rules" Foreground="White" FontSize="11"/>
+                                    </Border>
+                                    <Border Background="#18FFFFFF" CornerRadius="12" Padding="10,6" Margin="0,0,6,6">
+                                        <TextBlock Text="Stock / Parts Grid" Foreground="White" FontSize="11"/>
+                                    </Border>
+                                    <Border Background="#18FFFFFF" CornerRadius="12" Padding="10,6" Margin="0,0,6,6">
+                                        <TextBlock Text="Visual Nesting Canvas" Foreground="White" FontSize="11"/>
+                                    </Border>
+                                    <Border Background="#18FFFFFF" CornerRadius="12" Padding="10,6" Margin="0,0,6,6">
+                                        <TextBlock Text="Yield KPI Dashboard" Foreground="White" FontSize="11"/>
+                                    </Border>
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </ScrollViewer>
+
+            <!-- Bottom -->
+            <Grid Grid.Row="2" Margin="0,20,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Text="ProGlass ERP • Invoice + Optimization + Reporting Workflow"
+                           VerticalAlignment="Center"
+                           FontSize="11"
+                           Foreground="#8FA2BC"/>
+
+                <Button Grid.Column="1"
+                        Style="{StaticResource ActionButtonStyle}"
+                        Click="Close_Click"
+                        Padding="26,12">
+                    <TextBlock Text="Close" FontWeight="SemiBold"/>
+                </Button>
+            </Grid>
+        </Grid>
+    </Grid>
 </Window>
