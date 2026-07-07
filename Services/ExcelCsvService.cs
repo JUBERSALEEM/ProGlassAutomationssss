@@ -10,9 +10,9 @@ namespace ProGlassAutomation.Services
 {
     public class ExcelCsvService
     {
-        public event Action<string> StatusChanged;
+        public event Action<string>? StatusChanged;
 
-        public void ExportToCsv(ProformaInvoiceModel invoice, string filePath = null)
+        public void ExportToCsv(ProformaInvoiceModel invoice, string? filePath = null)
         {
             try
             {
@@ -148,7 +148,7 @@ namespace ProGlassAutomation.Services
             return value;
         }
 
-        public ProformaInvoiceModel ImportFromCsv()
+        public ProformaInvoiceModel? ImportFromCsv()
         {
             var dialog = new OpenFileDialog
             {
@@ -161,7 +161,7 @@ namespace ProGlassAutomation.Services
             return ImportFromCsvFile(dialog.FileName);
         }
 
-        public ProformaInvoiceModel ImportFromCsvFile(string filePath)
+        public ProformaInvoiceModel? ImportFromCsvFile(string filePath)
         {
             try
             {
@@ -178,7 +178,7 @@ namespace ProGlassAutomation.Services
                     return null;
                 }
 
-                SpecificationModel currentSpec = null;
+                SpecificationModel? currentSpec = null;
                 bool inItemsSection = false;
                 bool inOtherChargesSection = false;
 
@@ -456,7 +456,7 @@ namespace ProGlassAutomation.Services
                     Title = "Select Items CSV"
                 };
 
-                if (dialog.ShowDialog() != true) return null;
+                if (dialog.ShowDialog() != true) return new ObservableCollection<InvoiceItemModel>();
 
                 var items = new ObservableCollection<InvoiceItemModel>();
                 var lines = File.ReadAllLines(dialog.FileName, Encoding.UTF8);
@@ -491,7 +491,7 @@ namespace ProGlassAutomation.Services
             catch (Exception ex)
             {
                 StatusChanged?.Invoke($"❌ Item import failed: {ex.Message}");
-                return null;
+                return new ObservableCollection<InvoiceItemModel>();
             }
         }
     }

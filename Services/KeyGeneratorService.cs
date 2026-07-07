@@ -6,7 +6,7 @@ namespace ProGlassAutomation.Services
     public class KeyGeneratorService
     {
         private static KeyGeneratorService? _instance;
-        private List<LicensePlan> _plans;
+        private List<LicensePlan> _plans = new();
 
         public static KeyGeneratorService Instance
         {

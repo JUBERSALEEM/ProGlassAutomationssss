@@ -72,7 +72,7 @@ namespace ProGlassAutomation.ViewModels
     {
         private const string LOG = "[ProformaVM]";
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
         private readonly ExcelCsvService _excelCsvService = new ExcelCsvService();
         private readonly GlassPriceCalculator _priceCalculator = new GlassPriceCalculator();
 
@@ -152,8 +152,8 @@ namespace ProGlassAutomation.ViewModels
             CreateNewInvoice();
         }
 
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = null) { if (Equals(field, value)) return false; field = value; OnPropertyChanged(propertyName); return true; }
+        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null) { if (Equals(field, value)) return false; field = value; OnPropertyChanged(propertyName); return true; }
 
         private void EnqueueStatus(string message)
         {
@@ -219,7 +219,9 @@ namespace ProGlassAutomation.ViewModels
             if (e.PropertyName == nameof(ProformaInvoiceModel.IsDirty))
                 OnPropertyChanged(nameof(HasUnsavedChanges));
 
-            string propName = e.PropertyName;
+            string? propName = e.PropertyName;
+            if (propName is null)
+                return;
 
             // ✏️ UNDO — auto-snapshot when tracked invoice fields change
             if (_trackedInvoiceFields.Contains(propName))
@@ -283,16 +285,17 @@ namespace ProGlassAutomation.ViewModels
 
         private string GetNextSequentialInvoiceNo() { _currentPINumber++; return $"PI-{DateTime.Now.Year}-{_currentPINumber:D2}"; }
 
-        private ProformaInvoiceModel _invoice = new();
+        private ProformaInvoiceModel? _invoice = new();
         public ProformaInvoiceModel Invoice
         {
-            get => _invoice;
+            get => _invoice ??= new ProformaInvoiceModel();
             set
             {
                 if (_invoice != null)
                     _invoice.PropertyChanged -= OnInvoicePropertyChanged;
 
-                SetProperty(ref _invoice, value);
+                var invoice = value ?? new ProformaInvoiceModel();
+                SetProperty(ref _invoice, invoice);
 
                 if (_invoice != null)
                 {
@@ -351,7 +354,7 @@ namespace ProGlassAutomation.ViewModels
         public bool IsPriceSectionVisible => !IsJobOrder;
         public bool IsNetTotalSectionVisible => !IsJobOrder;
 
-        private JobOrderViewModel _jobOrderVM;
+        private JobOrderViewModel _jobOrderVM = null!;
         public JobOrderViewModel JobOrderVM { get => _jobOrderVM; set => SetProperty(ref _jobOrderVM, value); }
 
         public string CompanyTRN { get; set; } = "100458979400003";
@@ -569,8 +572,8 @@ namespace ProGlassAutomation.ViewModels
         private string _priceCalculationSummary = "";
         public string PriceCalculationSummary { get => _priceCalculationSummary; set => SetProperty(ref _priceCalculationSummary, value); }
 
-        private SpecificationModel _selectedTargetSpecification;
-        public SpecificationModel SelectedTargetSpecification
+        private SpecificationModel? _selectedTargetSpecification;
+        public SpecificationModel? SelectedTargetSpecification
         {
             get => _selectedTargetSpecification;
             set
@@ -595,14 +598,14 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        private OtherChargeModel _selectedCharge;
+        private OtherChargeModel _selectedCharge = null!;
         public OtherChargeModel SelectedCharge { get => _selectedCharge; set => SetProperty(ref _selectedCharge, value); }
 
         // ==================== COMMANDS ====================
-        public ICommand NewInvoiceCommand { get; set; }
-        public ICommand SaveInvoiceCommand { get; set; }
-        public ICommand OpenInvoiceCommand { get; set; }
-        public ICommand CreateJobOrderCommand { get; set; }
+        public ICommand NewInvoiceCommand { get; set; } = null!;
+        public ICommand SaveInvoiceCommand { get; set; } = null!;
+        public ICommand OpenInvoiceCommand { get; set; } = null!;
+        public ICommand CreateJobOrderCommand { get; set; } = null!;
         public ICommand DeleteInvoiceCommand { get; private set; } = null!;
         public ICommand AddSpecificationCommand { get; private set; } = null!;
         public ICommand RemoveSpecificationCommand { get; private set; } = null!;
@@ -1033,7 +1036,12 @@ namespace ProGlassAutomation.ViewModels
         {
             try
             {
-                Debug.WriteLine($"[PIViewModel] About to raise InvoiceToBeAdded event for: {Invoice?.InvoiceNo}");
+                if (Invoice == null)
+                {
+                    Debug.WriteLine("[PIViewModel] AddToMainViewModelList skipped: Invoice is null");
+                    return;
+                }
+                Debug.WriteLine($"[PIViewModel] About to raise InvoiceToBeAdded event for: {Invoice.InvoiceNo}");
                 InvoiceToBeAdded?.Invoke(Invoice);
             }
             catch (Exception ex)
@@ -1434,14 +1442,15 @@ namespace ProGlassAutomation.ViewModels
             }
 
             Invoice?.CalculateTotals();
-            Invoice.IsDirty = true;
+            if (Invoice != null)
+                Invoice.IsDirty = true;
         }
 
         private void Spec_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (sender is SpecificationModel spec)
             {
-                string propName = e.PropertyName;
+                string propName = e.PropertyName ?? string.Empty;
 
                 // ✏️ UNDO — snapshot when user-editable spec fields change
                 if (propName == nameof(SpecificationModel.SpecificationName) ||
@@ -1461,8 +1470,11 @@ namespace ProGlassAutomation.ViewModels
                     propName == "SpecTotalPrice" ||
                     propName == "OtherChargesTotal")
                 {
-                    Invoice?.CalculateTotals();
-                    Invoice.IsDirty = true;
+                    if (Invoice != null)
+                    {
+                        Invoice.CalculateTotals();
+                        Invoice.IsDirty = true;
+                    }
                 }
             }
         }
@@ -1481,8 +1493,11 @@ namespace ProGlassAutomation.ViewModels
                     item.PropertyChanged -= Item_PropertyChanged;
             }
 
-            Invoice?.CalculateTotals();
-            Invoice.IsDirty = true;
+            if (Invoice != null)
+            {
+                Invoice.CalculateTotals();
+                Invoice.IsDirty = true;
+            }
         }
 
         private void Item_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -1509,7 +1524,8 @@ namespace ProGlassAutomation.ViewModels
             }
 
             Invoice?.CalculateTotals();
-            Invoice.IsDirty = true;
+            if (Invoice != null)
+                Invoice.IsDirty = true;
         }
 
         private void Charge_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -1539,7 +1555,8 @@ namespace ProGlassAutomation.ViewModels
                     {
                         SelectedTargetSpecification.CalculateOtherChargesTotal();
                         Invoice?.CalculateTotals();
-                        Invoice.IsDirty = true;
+                        if (Invoice != null)
+                            Invoice.IsDirty = true;
                         RaiseAllInvoiceTotalsChanged();
                     }
                 }
@@ -1776,7 +1793,7 @@ namespace ProGlassAutomation.ViewModels
             SelectedTargetSpecification.OtherCharges.Remove(charge);
             SelectedTargetSpecification.CalculateOtherChargesTotal();
             Invoice?.CalculateTotals();
-            Invoice.IsDirty = true;
+            if (Invoice != null) Invoice.IsDirty = true;
             OnPropertyChanged(nameof(SelectedSpecificationOtherCharges));
         }
 
@@ -1791,7 +1808,7 @@ namespace ProGlassAutomation.ViewModels
 
             SelectedTargetSpecification.CalculateOtherChargesTotal();
             Invoice?.CalculateTotals();
-            Invoice.IsDirty = true;
+            if (Invoice != null) Invoice.IsDirty = true;
             RaiseAllInvoiceTotalsChanged();
         }
 
@@ -2123,6 +2140,12 @@ namespace ProGlassAutomation.ViewModels
                 {
                     AddSpecification();
                     spec = SelectedTargetSpecification;
+                }
+
+                if (spec == null)
+                {
+                    StatusMessage = "❌ No specification available";
+                    return;
                 }
 
                 var rows = clipboardText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);

@@ -5,10 +5,10 @@ namespace ProGlassAutomation.ViewModels
 {
     public class ViewModelBase : INotifyPropertyChanged
     {
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         // Single property notification (for backward compatibility)
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
@@ -23,7 +23,7 @@ namespace ProGlassAutomation.ViewModels
         }
 
         // Single property setter (backward compatible)
-        protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
+        protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = "")
         {
             if (Equals(field, value)) return false;
             field = value;

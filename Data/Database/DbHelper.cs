@@ -35,7 +35,7 @@ namespace ProGlassAutomation.Data.Database
             var directory = Path.GetDirectoryName(dbPath);
             if (!string.IsNullOrEmpty(directory))
             {
-                Directory.CreateDirectory(directory);
+                _ = Directory.CreateDirectory(directory);
             }
 
             // Create connection
@@ -45,25 +45,25 @@ namespace ProGlassAutomation.Data.Database
             // ✅ WAL mode via PRAGMA (better for concurrent access)
             if (Config.Database.EnableWAL)
             {
-                using var walCmd = conn.CreateCommand();
+                using SqliteCommand walCmd = conn.CreateCommand();
                 walCmd.CommandText = "PRAGMA journal_mode=Wal";
-                walCmd.ExecuteNonQuery();
+                _ = walCmd.ExecuteNonQuery();
             }
 
             // ✅ Foreign keys via PRAGMA
             if (Config.Database.ForeignKeys)
             {
-                using var fkCmd = conn.CreateCommand();
+                using SqliteCommand fkCmd = conn.CreateCommand();
                 fkCmd.CommandText = "PRAGMA foreign_keys=ON";
-                fkCmd.ExecuteNonQuery();
+                _ = fkCmd.ExecuteNonQuery();
             }
 
             // ✅ Cache size via PRAGMA
             if (Config.Database.CacheSize != 0)
             {
-                using var cacheCmd = conn.CreateCommand();
+                using SqliteCommand cacheCmd = conn.CreateCommand();
                 cacheCmd.CommandText = $"PRAGMA cache_size={Config.Database.CacheSize}";
-                cacheCmd.ExecuteNonQuery();
+                _ = cacheCmd.ExecuteNonQuery();
             }
 
             return conn;
@@ -72,9 +72,9 @@ namespace ProGlassAutomation.Data.Database
         // ✅ UPDATED: Execute with configurable timeout
         private static void Execute(Action<SqliteConnection> action)
         {
-            using var conn = CreateConnection();
+            using SqliteConnection conn = CreateConnection();
             conn.Open();
-            using var cmd = conn.CreateCommand();
+            using SqliteCommand cmd = conn.CreateCommand();
             cmd.CommandTimeout = CommandTimeout;
             try { action(conn); }
             catch (Exception ex) { Log(ex); throw; }
@@ -83,9 +83,9 @@ namespace ProGlassAutomation.Data.Database
         // ✅ UPDATED: Execute with configurable timeout
         private static T Execute<T>(Func<SqliteConnection, T> func)
         {
-            using var conn = CreateConnection();
+            using SqliteConnection conn = CreateConnection();
             conn.Open();
-            using var cmd = conn.CreateCommand();
+            using SqliteCommand cmd = conn.CreateCommand();
             cmd.CommandTimeout = CommandTimeout;
             try { return func(conn); }
             catch (Exception ex) { Log(ex); throw; }
@@ -112,9 +112,9 @@ namespace ProGlassAutomation.Data.Database
             {
                 return Execute(conn =>
                 {
-                    using var cmd = conn.CreateCommand();
+                    using SqliteCommand cmd = conn.CreateCommand();
                     cmd.CommandText = "SELECT name FROM sqlite_master WHERE type='table'";
-                    using var reader = cmd.ExecuteReader();
+                    using SqliteDataReader reader = cmd.ExecuteReader();
                     return true;
                 });
             }
@@ -123,7 +123,7 @@ namespace ProGlassAutomation.Data.Database
 
         public static void Init()
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(DbPath)!);
+            _ = Directory.CreateDirectory(Path.GetDirectoryName(DbPath)!);
             Execute(conn =>
             {
                 CreateVersionTable(conn);
@@ -139,14 +139,14 @@ namespace ProGlassAutomation.Data.Database
 
         private static void CreateVersionTable(SqliteConnection conn)
         {
-            using var cmd = conn.CreateCommand();
+            using SqliteCommand cmd = conn.CreateCommand();
             cmd.CommandText = "CREATE TABLE IF NOT EXISTS DbVersion (Id INTEGER PRIMARY KEY, Version INTEGER)";
-            cmd.ExecuteNonQuery();
+            _ = cmd.ExecuteNonQuery();
         }
 
         private static int GetVersion(SqliteConnection conn)
         {
-            using var cmd = conn.CreateCommand();
+            using SqliteCommand cmd = conn.CreateCommand();
             cmd.CommandText = "SELECT Version FROM DbVersion WHERE Id = 1";
             var result = cmd.ExecuteScalar();
             return result == null ? 0 : Convert.ToInt32(result);
@@ -154,10 +154,10 @@ namespace ProGlassAutomation.Data.Database
 
         private static void SetVersion(SqliteConnection conn, int version)
         {
-            using var cmd = conn.CreateCommand();
+            using SqliteCommand cmd = conn.CreateCommand();
             cmd.CommandText = "INSERT OR REPLACE INTO DbVersion (Id, Version) VALUES (1, $v)";
-            cmd.Parameters.AddWithValue("$v", version);
-            cmd.ExecuteNonQuery();
+            _ = cmd.Parameters.AddWithValue("$v", version);
+            _ = cmd.ExecuteNonQuery();
         }
 
         private static void ApplyMigration(SqliteConnection conn, int version)
@@ -165,13 +165,13 @@ namespace ProGlassAutomation.Data.Database
             switch (version)
             {
                 case 1:
-                    using (var cmd = conn.CreateCommand())
+                    using (SqliteCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = @"
 CREATE TABLE IF NOT EXISTS SGURecords (Id INTEGER PRIMARY KEY AUTOINCREMENT, Thickness TEXT, Color TEXT, Result REAL, CreatedAt TEXT);
 CREATE TABLE IF NOT EXISTS DGURecords (Id INTEGER PRIMARY KEY AUTOINCREMENT, Thickness1 TEXT, Color1 TEXT, Thickness2 TEXT, Color2 TEXT, Spacer TEXT, Result REAL, CreatedAt TEXT);
 CREATE TABLE IF NOT EXISTS LaminationRecords (Id INTEGER PRIMARY KEY AUTOINCREMENT, Thickness1 TEXT, Color1 TEXT, Thickness2 TEXT, Color2 TEXT, PVBType TEXT, Result REAL, CreatedAt TEXT, Cutting REAL DEFAULT 0, Tempering REAL DEFAULT 0, IncludeCutting INTEGER DEFAULT 0, IncludeTempering INTEGER DEFAULT 0);";
-                        cmd.ExecuteNonQuery();
+                        _ = cmd.ExecuteNonQuery();
                     }
                     break;
 
@@ -183,29 +183,29 @@ CREATE TABLE IF NOT EXISTS LaminationRecords (Id INTEGER PRIMARY KEY AUTOINCREME
                     break;
 
                 case 4:
-                    using (var cmd = conn.CreateCommand())
+                    using (SqliteCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = @"
 CREATE TABLE IF NOT EXISTS DailyWork (Id INTEGER PRIMARY KEY AUTOINCREMENT, Date TEXT, UpdateDate TEXT, Company TEXT, PINumber TEXT, CustomerReference TEXT, TypeOfWork TEXT, ProductionStatus TEXT, DailyReportStatus TEXT, Qty INTEGER, SQM REAL, Status TEXT, Salesman TEXT, Color TEXT, Notes TEXT, CreatedDate TEXT);
 CREATE TABLE IF NOT EXISTS Deliveries (Id INTEGER PRIMARY KEY AUTOINCREMENT, SourceId INTEGER, Date TEXT, Company TEXT, PINumber TEXT, CustomerReference TEXT, TypeOfWork TEXT, Color TEXT, OrderQty INTEGER, OrderSQM REAL, Salesman TEXT, Status TEXT, Notes TEXT, CreatedDate TEXT, UpdatedDate TEXT);
 CREATE TABLE IF NOT EXISTS DeliveryItems (Id INTEGER PRIMARY KEY AUTOINCREMENT, OrderId INTEGER, DeliveryDate TEXT, DeliveredQty INTEGER, DeliveredSQM REAL, ReturnedQty INTEGER, ReturnedSQM REAL, Driver TEXT, Vehicle TEXT, Notes TEXT, CreatedDate TEXT);";
-                        cmd.ExecuteNonQuery();
+                        _ = cmd.ExecuteNonQuery();
                     }
                     break;
 
                 case 5:
-                    using (var cmd = conn.CreateCommand())
+                    using (SqliteCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = @"
 CREATE TABLE IF NOT EXISTS SheetStore (Id INTEGER PRIMARY KEY AUTOINCREMENT, Category TEXT, Thickness TEXT, Color TEXT, ColorHex TEXT, Width INTEGER, Height INTEGER, SquareMeter REAL, PurchasePrice REAL, SellPrice REAL, TotalStock INTEGER, UsedSheets INTEGER, BalanceSheets INTEGER, IsActive INTEGER DEFAULT 1, Supplier TEXT, SupplierName TEXT, Description TEXT, CreatedDate TEXT, LatestPurchaseDate TEXT);
 CREATE TABLE IF NOT EXISTS SheetPurchases (Id INTEGER PRIMARY KEY AUTOINCREMENT, SheetId INTEGER, Quantity INTEGER, UnitPrice REAL, Supplier TEXT, PurchasedOn TEXT, Notes TEXT, CreatedAt TEXT);
 CREATE TABLE IF NOT EXISTS SheetUsages (Id INTEGER PRIMARY KEY AUTOINCREMENT, SheetId INTEGER, Quantity INTEGER, Reason TEXT, UsedOn TEXT, CreatedAt TEXT);";
-                        cmd.ExecuteNonQuery();
+                        _ = cmd.ExecuteNonQuery();
                     }
                     break;
 
                 case 6:
-                    using (var cmd = conn.CreateCommand())
+                    using (SqliteCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = @"
 CREATE TABLE IF NOT EXISTS CalculationLogs (Id INTEGER PRIMARY KEY AUTOINCREMENT, ModuleType TEXT NOT NULL, SQM REAL NOT NULL, Notes TEXT, CreatedDate TEXT NOT NULL);
@@ -214,28 +214,28 @@ CREATE TABLE IF NOT EXISTS SystemMetrics (Id INTEGER PRIMARY KEY AUTOINCREMENT, 
 CREATE INDEX IF NOT EXISTS idx_metrics_date ON SystemMetrics(CreatedDate);
 CREATE TABLE IF NOT EXISTS ImportSessions (Id INTEGER PRIMARY KEY AUTOINCREMENT, SessionDateTime TEXT NOT NULL, Notes TEXT, ImportedCount INTEGER DEFAULT 0, UpdatedCount INTEGER DEFAULT 0, SkippedCount INTEGER DEFAULT 0);
 CREATE TABLE IF NOT EXISTS ImportLogs (Id INTEGER PRIMARY KEY AUTOINCREMENT, SessionId INTEGER, ImportDateTime TEXT NOT NULL, PINumber TEXT, Company TEXT, ChangesJson TEXT);";
-                        cmd.ExecuteNonQuery();
+                        _ = cmd.ExecuteNonQuery();
                     }
                     break;
 
                 case 7:
-                    using (var cmd = conn.CreateCommand())
+                    using (SqliteCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = @"CREATE TABLE IF NOT EXISTS SGUHistory (Id INTEGER PRIMARY KEY AUTOINCREMENT, Category TEXT, Thickness TEXT, Color TEXT, SheetPrice REAL, Cutting REAL, TemperingCharge REAL, OtherCharges REAL, Wastage TEXT, ProfitMargin TEXT, EdgeWork TEXT, Drilling TEXT, Tempering TEXT, Coating TEXT, SurfaceTreatment TEXT, Cutout TEXT, Unit TEXT, Width INTEGER, Height INTEGER, Quantity INTEGER, TotalArea REAL, TotalPrice REAL, Result REAL, CustomNotes TEXT, CreatedAt TEXT);";
-                        cmd.ExecuteNonQuery();
+                        _ = cmd.ExecuteNonQuery();
                     }
                     break;
 
                 case 8:
-                    using (var cmd = conn.CreateCommand())
+                    using (SqliteCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = @"CREATE TABLE IF NOT EXISTS CustomerReferences (Id INTEGER PRIMARY KEY AUTOINCREMENT, CustomerReference TEXT NOT NULL UNIQUE, Company TEXT, CreatedAt TEXT); CREATE TABLE IF NOT EXISTS NotesSuggestions (Id INTEGER PRIMARY KEY AUTOINCREMENT, Note TEXT NOT NULL UNIQUE, UseCount INTEGER DEFAULT 1, LastUsedAt TEXT);";
-                        cmd.ExecuteNonQuery();
+                        _ = cmd.ExecuteNonQuery();
                     }
                     break;
 
                 case 9:
-                    using (var cmd = conn.CreateCommand())
+                    using (SqliteCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = @"
 CREATE TABLE IF NOT EXISTS ProformaInvoices (Id INTEGER PRIMARY KEY AUTOINCREMENT, PINumber TEXT NOT NULL UNIQUE, ClientName TEXT, ClientTRN TEXT, ClientAddress TEXT, ProjectName TEXT, ProjectLocation TEXT, LPONumber TEXT, Attention TEXT, ContactNo TEXT, PIDate TEXT, ValidUntil TEXT, Status TEXT DEFAULT 'Draft', TotalAmount REAL DEFAULT 0, VATPercent REAL DEFAULT 5, VATAmount REAL DEFAULT 0, NetAmount REAL DEFAULT 0, CompanyName TEXT, CompanyTRN TEXT, CompanyLocation TEXT, CompanyPhone TEXT, Notes TEXT, CreatedDate TEXT, UpdatedDate TEXT);
@@ -250,17 +250,17 @@ CREATE INDEX IF NOT EXISTS idx_pi_date ON ProformaInvoices(PIDate);
 CREATE INDEX IF NOT EXISTS idx_jo_date ON JobOrders(JODate);
 CREATE INDEX IF NOT EXISTS idx_do_date ON DeliveryOrders(DODate);
 CREATE INDEX IF NOT EXISTS idx_ti_date ON TaxInvoices(InvoiceDate);";
-                        cmd.ExecuteNonQuery();
+                        _ = cmd.ExecuteNonQuery();
                     }
                     break;
                 case 10:
                     // Ensure all tables exist (for databases that might be missing them)
-                    using (var cmd = conn.CreateCommand())
+                    using (SqliteCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = @"
 CREATE TABLE IF NOT EXISTS JobOrders (Id INTEGER PRIMARY KEY AUTOINCREMENT, JONumber TEXT NOT NULL UNIQUE, ProformaInvoiceId INTEGER, ClientName TEXT, ProjectName TEXT, ProjectLocation TEXT, JODate TEXT, RequiredDate TEXT, Status TEXT DEFAULT 'Pending', TotalQty INTEGER DEFAULT 0, ReleasedQty INTEGER DEFAULT 0, BalanceQty INTEGER DEFAULT 0, TotalAmount REAL DEFAULT 0, Notes TEXT, CreatedDate TEXT, UpdatedDate TEXT);
 CREATE TABLE IF NOT EXISTS JobOrderItems (Id INTEGER PRIMARY KEY AUTOINCREMENT, JobOrderId INTEGER NOT NULL, SrNo INTEGER, GlassRef TEXT, Width REAL, Height REAL, OrderedQty INTEGER DEFAULT 0, ReleasedQty INTEGER DEFAULT 0, BalanceQty INTEGER DEFAULT 0, Price REAL DEFAULT 0, TotalAmount REAL DEFAULT 0);";
-                        cmd.ExecuteNonQuery();
+                        _ = cmd.ExecuteNonQuery();
                     }
                     break;
 
@@ -278,13 +278,13 @@ CREATE TABLE IF NOT EXISTS JobOrderItems (Id INTEGER PRIMARY KEY AUTOINCREMENT, 
                     break;
                 case 12:
                     // Ensure ProformaInvoices table exists (for databases that skipped migration 9)
-                    using (var cmd = conn.CreateCommand())
+                    using (SqliteCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = @"
 CREATE TABLE IF NOT EXISTS ProformaInvoices (Id INTEGER PRIMARY KEY AUTOINCREMENT, PINumber TEXT NOT NULL UNIQUE, ClientName TEXT, ClientTRN TEXT, ClientAddress TEXT, ProjectName TEXT, ProjectLocation TEXT, LPONumber TEXT, Attention TEXT, ContactNo TEXT, PIDate TEXT, ValidUntil TEXT, Status TEXT DEFAULT 'Draft', TotalAmount REAL DEFAULT 0, VATPercent REAL DEFAULT 5, VATAmount REAL DEFAULT 0, NetAmount REAL DEFAULT 0, CompanyName TEXT, CompanyTRN TEXT, CompanyLocation TEXT, CompanyPhone TEXT, Notes TEXT, CreatedDate TEXT, UpdatedDate TEXT);
 CREATE TABLE IF NOT EXISTS ProformaInvoiceItems (Id INTEGER PRIMARY KEY AUTOINCREMENT, ProformaInvoiceId INTEGER NOT NULL, SrNo INTEGER, GlassRef TEXT, Width1 REAL, Height1 REAL, Width2 REAL, Height2 REAL, Qty INTEGER DEFAULT 1, SQM REAL DEFAULT 0, TotalSQM REAL DEFAULT 0, Price REAL DEFAULT 0, TotalPrice REAL DEFAULT 0, SurchargePercent REAL DEFAULT 0, SurchargeThreshold REAL DEFAULT 0, FOREIGN KEY (ProformaInvoiceId) REFERENCES ProformaInvoices(Id));
 CREATE INDEX IF NOT EXISTS idx_pi_date ON ProformaInvoices(PIDate);";
-                        cmd.ExecuteNonQuery();
+                        _ = cmd.ExecuteNonQuery();
                     }
                     break;
                 case 13:
@@ -307,7 +307,7 @@ CREATE INDEX IF NOT EXISTS idx_pi_date ON ProformaInvoices(PIDate);";
 
         private static void ExecuteSafeAlter(SqliteConnection conn, string sql)
         {
-            try { using var cmd = conn.CreateCommand(); cmd.CommandText = sql; cmd.ExecuteNonQuery(); } catch { }
+            try { using SqliteCommand cmd = conn.CreateCommand(); cmd.CommandText = sql; _ = cmd.ExecuteNonQuery(); } catch { }
         }
 
         private static void EnsureLaminationColumns(SqliteConnection conn)
@@ -323,7 +323,7 @@ CREATE INDEX IF NOT EXISTS idx_pi_date ON ProformaInvoices(PIDate);";
             try
             {
                 string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "GlassBackup");
-                Directory.CreateDirectory(folder);
+                _ = Directory.CreateDirectory(folder);
                 string backupFile = Path.Combine(folder, $"glass_backup_{DateTime.Now:yyyyMMdd_HHmmss}.db");
                 File.Copy(DbPath, backupFile, true);
             }
@@ -338,13 +338,13 @@ CREATE INDEX IF NOT EXISTS idx_pi_date ON ProformaInvoices(PIDate);";
         {
             Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "INSERT INTO SGURecords (Thickness, Color, Result, CreatedAt) VALUES ($t, $c, $r, $d)";
-                cmd.Parameters.AddWithValue("$t", thickness ?? "");
-                cmd.Parameters.AddWithValue("$c", color ?? "");
-                cmd.Parameters.AddWithValue("$r", result);
-                cmd.Parameters.AddWithValue("$d", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
-                cmd.ExecuteNonQuery();
+                _ = cmd.Parameters.AddWithValue("$t", thickness ?? "");
+                _ = cmd.Parameters.AddWithValue("$c", color ?? "");
+                _ = cmd.Parameters.AddWithValue("$r", result);
+                _ = cmd.Parameters.AddWithValue("$d", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
+                _ = cmd.ExecuteNonQuery();
             });
         }
 
@@ -353,9 +353,9 @@ CREATE INDEX IF NOT EXISTS idx_pi_date ON ProformaInvoices(PIDate);";
             return Execute(conn =>
             {
                 var list = new List<SguRecord>();
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "SELECT Id, Thickness, Color, Result, CreatedAt FROM SGURecords ORDER BY Id DESC";
-                using var r = cmd.ExecuteReader();
+                using SqliteDataReader r = cmd.ExecuteReader();
                 while (r.Read())
                 {
                     list.Add(new SguRecord { Id = r.GetInt32(0), Thickness = r.GetString(1), Color = r.GetString(2), Result = r.GetDouble(3), CreatedAt = r.GetString(4) });
@@ -368,34 +368,34 @@ CREATE INDEX IF NOT EXISTS idx_pi_date ON ProformaInvoices(PIDate);";
         {
             Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = @"INSERT INTO SGUHistory (Category, Thickness, Color, SheetPrice, Cutting, TemperingCharge, OtherCharges, Wastage, ProfitMargin, EdgeWork, Drilling, Tempering, Coating, SurfaceTreatment, Cutout, Unit, Width, Height, Quantity, TotalArea, TotalPrice, Result, CustomNotes, CreatedAt)
 VALUES ($cat, $th, $col, $sp, $cut, $temp, $other, $wast, $profit, $edge, $drill, $temp2, $coat, $surf, $cutout, $unit, $w, $h, $q, $area, $price, $result, $notes, $created)";
-                cmd.Parameters.AddWithValue("$cat", r.Category ?? "");
-                cmd.Parameters.AddWithValue("$th", r.Thickness ?? "");
-                cmd.Parameters.AddWithValue("$col", r.Color ?? "");
-                cmd.Parameters.AddWithValue("$sp", r.SheetPrice);
-                cmd.Parameters.AddWithValue("$cut", r.Cutting);
-                cmd.Parameters.AddWithValue("$temp", r.TemperingCharge);
-                cmd.Parameters.AddWithValue("$other", r.OtherCharges);
-                cmd.Parameters.AddWithValue("$wast", r.Wastage ?? "");
-                cmd.Parameters.AddWithValue("$profit", r.ProfitMargin ?? "");
-                cmd.Parameters.AddWithValue("$edge", r.EdgeWork ?? "");
-                cmd.Parameters.AddWithValue("$drill", r.Drilling ?? "");
-                cmd.Parameters.AddWithValue("$temp2", r.Tempering ?? "");
-                cmd.Parameters.AddWithValue("$coat", r.Coating ?? "");
-                cmd.Parameters.AddWithValue("$surf", r.SurfaceTreatment ?? "");
-                cmd.Parameters.AddWithValue("$cutout", r.Cutout ?? "");
-                cmd.Parameters.AddWithValue("$unit", r.Unit ?? "AED");
-                cmd.Parameters.AddWithValue("$w", r.Width);
-                cmd.Parameters.AddWithValue("$h", r.Height);
-                cmd.Parameters.AddWithValue("$q", r.Quantity);
-                cmd.Parameters.AddWithValue("$area", r.TotalArea);
-                cmd.Parameters.AddWithValue("$price", r.TotalPrice);
-                cmd.Parameters.AddWithValue("$result", r.Result);
-                cmd.Parameters.AddWithValue("$notes", r.CustomNotes ?? "");
-                cmd.Parameters.AddWithValue("$created", r.CreatedAt ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
-                cmd.ExecuteNonQuery();
+                _ = cmd.Parameters.AddWithValue("$cat", r.Category ?? "");
+                _ = cmd.Parameters.AddWithValue("$th", r.Thickness ?? "");
+                _ = cmd.Parameters.AddWithValue("$col", r.Color ?? "");
+                _ = cmd.Parameters.AddWithValue("$sp", r.SheetPrice);
+                _ = cmd.Parameters.AddWithValue("$cut", r.Cutting);
+                _ = cmd.Parameters.AddWithValue("$temp", r.TemperingCharge);
+                _ = cmd.Parameters.AddWithValue("$other", r.OtherCharges);
+                _ = cmd.Parameters.AddWithValue("$wast", r.Wastage ?? "");
+                _ = cmd.Parameters.AddWithValue("$profit", r.ProfitMargin ?? "");
+                _ = cmd.Parameters.AddWithValue("$edge", r.EdgeWork ?? "");
+                _ = cmd.Parameters.AddWithValue("$drill", r.Drilling ?? "");
+                _ = cmd.Parameters.AddWithValue("$temp2", r.Tempering ?? "");
+                _ = cmd.Parameters.AddWithValue("$coat", r.Coating ?? "");
+                _ = cmd.Parameters.AddWithValue("$surf", r.SurfaceTreatment ?? "");
+                _ = cmd.Parameters.AddWithValue("$cutout", r.Cutout ?? "");
+                _ = cmd.Parameters.AddWithValue("$unit", r.Unit ?? "AED");
+                _ = cmd.Parameters.AddWithValue("$w", r.Width);
+                _ = cmd.Parameters.AddWithValue("$h", r.Height);
+                _ = cmd.Parameters.AddWithValue("$q", r.Quantity);
+                _ = cmd.Parameters.AddWithValue("$area", r.TotalArea);
+                _ = cmd.Parameters.AddWithValue("$price", r.TotalPrice);
+                _ = cmd.Parameters.AddWithValue("$result", r.Result);
+                _ = cmd.Parameters.AddWithValue("$notes", r.CustomNotes ?? "");
+                _ = cmd.Parameters.AddWithValue("$created", r.CreatedAt ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
+                _ = cmd.ExecuteNonQuery();
             });
         }
 
@@ -404,9 +404,9 @@ VALUES ($cat, $th, $col, $sp, $cut, $temp, $other, $wast, $profit, $edge, $drill
             return Execute(conn =>
             {
                 var list = new List<SguRecord>();
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "SELECT * FROM SGUHistory ORDER BY Id DESC";
-                using var r = cmd.ExecuteReader();
+                using SqliteDataReader r = cmd.ExecuteReader();
                 while (r.Read())
                 {
                     list.Add(new SguRecord
@@ -446,10 +446,10 @@ VALUES ($cat, $th, $col, $sp, $cut, $temp, $other, $wast, $profit, $edge, $drill
         {
             Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "DELETE FROM SGUHistory WHERE Id = $id";
-                cmd.Parameters.AddWithValue("$id", id);
-                cmd.ExecuteNonQuery();
+                _ = cmd.Parameters.AddWithValue("$id", id);
+                _ = cmd.ExecuteNonQuery();
             });
         }
 
@@ -458,10 +458,10 @@ VALUES ($cat, $th, $col, $sp, $cut, $temp, $other, $wast, $profit, $edge, $drill
             return Execute(conn =>
             {
                 var list = new List<SguRecord>();
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "SELECT * FROM SGURecords WHERE Thickness LIKE $k OR Color LIKE $k ORDER BY Id DESC";
-                cmd.Parameters.AddWithValue("$k", "%" + k + "%");
-                using var r = cmd.ExecuteReader();
+                _ = cmd.Parameters.AddWithValue("$k", "%" + k + "%");
+                using SqliteDataReader r = cmd.ExecuteReader();
                 while (r.Read())
                 {
                     list.Add(new SguRecord { Id = r.GetInt32(0), Thickness = r.GetString(1), Color = r.GetString(2), Result = r.GetDouble(3), CreatedAt = r.GetString(4) });
@@ -474,10 +474,10 @@ VALUES ($cat, $th, $col, $sp, $cut, $temp, $other, $wast, $profit, $edge, $drill
         {
             Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "DELETE FROM SGURecords WHERE Id = $id";
-                cmd.Parameters.AddWithValue("$id", id);
-                cmd.ExecuteNonQuery();
+                _ = cmd.Parameters.AddWithValue("$id", id);
+                _ = cmd.ExecuteNonQuery();
             });
         }
 
@@ -489,16 +489,16 @@ VALUES ($cat, $th, $col, $sp, $cut, $temp, $other, $wast, $profit, $edge, $drill
         {
             Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "INSERT INTO DGURecords (Thickness1, Color1, Thickness2, Color2, Spacer, Result, CreatedAt) VALUES ($t1,$c1,$t2,$c2,$s,$r,$d)";
-                cmd.Parameters.AddWithValue("$t1", t1 ?? "");
-                cmd.Parameters.AddWithValue("$c1", c1 ?? "");
-                cmd.Parameters.AddWithValue("$t2", t2 ?? "");
-                cmd.Parameters.AddWithValue("$c2", c2 ?? "");
-                cmd.Parameters.AddWithValue("$s", spacer ?? "");
-                cmd.Parameters.AddWithValue("$r", result);
-                cmd.Parameters.AddWithValue("$d", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
-                cmd.ExecuteNonQuery();
+                _ = cmd.Parameters.AddWithValue("$t1", t1 ?? "");
+                _ = cmd.Parameters.AddWithValue("$c1", c1 ?? "");
+                _ = cmd.Parameters.AddWithValue("$t2", t2 ?? "");
+                _ = cmd.Parameters.AddWithValue("$c2", c2 ?? "");
+                _ = cmd.Parameters.AddWithValue("$s", spacer ?? "");
+                _ = cmd.Parameters.AddWithValue("$r", result);
+                _ = cmd.Parameters.AddWithValue("$d", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
+                _ = cmd.ExecuteNonQuery();
             });
         }
 
@@ -507,9 +507,9 @@ VALUES ($cat, $th, $col, $sp, $cut, $temp, $other, $wast, $profit, $edge, $drill
             return Execute(conn =>
             {
                 var list = new List<DguRecord>();
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "SELECT Id, Thickness1, Color1, Thickness2, Color2, Spacer, Result, CreatedAt FROM DGURecords ORDER BY Id DESC";
-                using var r = cmd.ExecuteReader();
+                using SqliteDataReader r = cmd.ExecuteReader();
                 while (r.Read())
                 {
                     list.Add(new DguRecord { Id = r.GetInt32(0), Thickness1 = r.GetString(1), Color1 = r.GetString(2), Thickness2 = r.GetString(3), Color2 = r.GetString(4), Spacer = r.GetString(5), Result = r.GetDouble(6), CreatedAt = r.GetString(7) });
@@ -523,10 +523,10 @@ VALUES ($cat, $th, $col, $sp, $cut, $temp, $other, $wast, $profit, $edge, $drill
             return Execute(conn =>
             {
                 var list = new List<DguRecord>();
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "SELECT * FROM DGURecords WHERE Thickness1 LIKE $k OR Thickness2 LIKE $k OR Color1 LIKE $k OR Color2 LIKE $k ORDER BY Id DESC";
-                cmd.Parameters.AddWithValue("$k", "%" + k + "%");
-                using var r = cmd.ExecuteReader();
+                _ = cmd.Parameters.AddWithValue("$k", "%" + k + "%");
+                using SqliteDataReader r = cmd.ExecuteReader();
                 while (r.Read())
                 {
                     list.Add(new DguRecord { Id = r.GetInt32(0), Thickness1 = r.GetString(1), Color1 = r.GetString(2), Thickness2 = r.GetString(3), Color2 = r.GetString(4), Spacer = r.GetString(5), Result = r.GetDouble(6), CreatedAt = r.GetString(7) });
@@ -539,10 +539,10 @@ VALUES ($cat, $th, $col, $sp, $cut, $temp, $other, $wast, $profit, $edge, $drill
         {
             Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "DELETE FROM DGURecords WHERE Id = $id";
-                cmd.Parameters.AddWithValue("$id", id);
-                cmd.ExecuteNonQuery();
+                _ = cmd.Parameters.AddWithValue("$id", id);
+                _ = cmd.ExecuteNonQuery();
             });
         }
 
@@ -554,21 +554,21 @@ VALUES ($cat, $th, $col, $sp, $cut, $temp, $other, $wast, $profit, $edge, $drill
         {
             Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = @"INSERT INTO LaminationRecords (Thickness1, Color1, Thickness2, Color2, PVBType, Result, CreatedAt, Cutting, Tempering, IncludeCutting, IncludeTempering)
 VALUES ($t1,$c1,$t2,$c2,$p,$r,$d,$cut,$temp,$ic,$it)";
-                cmd.Parameters.AddWithValue("$t1", r.Thickness1 ?? "");
-                cmd.Parameters.AddWithValue("$c1", r.Color1 ?? "");
-                cmd.Parameters.AddWithValue("$t2", r.Thickness2 ?? "");
-                cmd.Parameters.AddWithValue("$c2", r.Color2 ?? "");
-                cmd.Parameters.AddWithValue("$p", r.PVBType ?? "");
-                cmd.Parameters.AddWithValue("$r", r.Result);
-                cmd.Parameters.AddWithValue("$d", r.CreatedAt ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
-                cmd.Parameters.AddWithValue("$cut", r.Cutting);
-                cmd.Parameters.AddWithValue("$temp", r.Tempering);
-                cmd.Parameters.AddWithValue("$ic", r.IncludeCutting ? 1 : 0);
-                cmd.Parameters.AddWithValue("$it", r.IncludeTempering ? 1 : 0);
-                cmd.ExecuteNonQuery();
+                _ = cmd.Parameters.AddWithValue("$t1", r.Thickness1 ?? "");
+                _ = cmd.Parameters.AddWithValue("$c1", r.Color1 ?? "");
+                _ = cmd.Parameters.AddWithValue("$t2", r.Thickness2 ?? "");
+                _ = cmd.Parameters.AddWithValue("$c2", r.Color2 ?? "");
+                _ = cmd.Parameters.AddWithValue("$p", r.PVBType ?? "");
+                _ = cmd.Parameters.AddWithValue("$r", r.Result);
+                _ = cmd.Parameters.AddWithValue("$d", r.CreatedAt ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
+                _ = cmd.Parameters.AddWithValue("$cut", r.Cutting);
+                _ = cmd.Parameters.AddWithValue("$temp", r.Tempering);
+                _ = cmd.Parameters.AddWithValue("$ic", r.IncludeCutting ? 1 : 0);
+                _ = cmd.Parameters.AddWithValue("$it", r.IncludeTempering ? 1 : 0);
+                _ = cmd.ExecuteNonQuery();
             });
         }
 
@@ -577,9 +577,9 @@ VALUES ($t1,$c1,$t2,$c2,$p,$r,$d,$cut,$temp,$ic,$it)";
             return Execute(conn =>
             {
                 var list = new List<LaminationRecord>();
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "SELECT * FROM LaminationRecords ORDER BY Id DESC";
-                using var r = cmd.ExecuteReader();
+                using SqliteDataReader r = cmd.ExecuteReader();
                 while (r.Read())
                 {
                     list.Add(new LaminationRecord
@@ -610,26 +610,26 @@ VALUES ($t1,$c1,$t2,$c2,$p,$r,$d,$cut,$temp,$ic,$it)";
         {
             Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = @"INSERT INTO DailyWork (Date, UpdateDate, Company, PINumber, CustomerReference, TypeOfWork, ProductionStatus, DailyReportStatus, Qty, SQM, Status, Salesman, Color, Notes, CreatedDate)
 VALUES ($d, $ud, $c, $pi, $cr, $t, $ps, $drs, $q, $s, $st, $sm, $cl, $n, $cd)";
-                cmd.Parameters.AddWithValue("$d", w.Date.ToString("yyyy-MM-dd HH:mm:ss"));
-                cmd.Parameters.AddWithValue("$ud", w.UpdateDate.ToString("yyyy-MM-dd HH:mm:ss"));
-                cmd.Parameters.AddWithValue("$c", w.Company ?? "");
-                cmd.Parameters.AddWithValue("$pi", w.PINumber ?? "");
-                cmd.Parameters.AddWithValue("$cr", w.CustomerReference ?? "");
-                cmd.Parameters.AddWithValue("$t", w.TypeOfWork ?? "");
-                cmd.Parameters.AddWithValue("$ps", w.ProductionStatus ?? "");
-                cmd.Parameters.AddWithValue("$drs", w.DailyReportStatus ?? "");
-                cmd.Parameters.AddWithValue("$q", w.Qty);
-                cmd.Parameters.AddWithValue("$s", w.SQM);
-                cmd.Parameters.AddWithValue("$st", w.Status ?? "");
-                cmd.Parameters.AddWithValue("$sm", w.Salesman ?? "");
-                cmd.Parameters.AddWithValue("$cl", w.Color ?? "");
-                cmd.Parameters.AddWithValue("$n", w.Notes ?? "");
-                cmd.Parameters.AddWithValue("$cd", w.CreatedDate.ToString("yyyy-MM-dd HH:mm"));
-                cmd.ExecuteNonQuery();
-                if (!string.IsNullOrWhiteSpace(w.CustomerReference)) SaveCustomerReference(w.CustomerReference, w.Company);
+                _ = cmd.Parameters.AddWithValue("$d", w.Date.ToString("yyyy-MM-dd HH:mm:ss"));
+                _ = cmd.Parameters.AddWithValue("$ud", w.UpdateDate.ToString("yyyy-MM-dd HH:mm:ss"));
+                _ = cmd.Parameters.AddWithValue("$c", w.Company ?? "");
+                _ = cmd.Parameters.AddWithValue("$pi", w.PINumber ?? "");
+                _ = cmd.Parameters.AddWithValue("$cr", w.CustomerReference ?? "");
+                _ = cmd.Parameters.AddWithValue("$t", w.TypeOfWork ?? "");
+                _ = cmd.Parameters.AddWithValue("$ps", w.ProductionStatus ?? "");
+                _ = cmd.Parameters.AddWithValue("$drs", w.DailyReportStatus ?? "");
+                _ = cmd.Parameters.AddWithValue("$q", w.Qty);
+                _ = cmd.Parameters.AddWithValue("$s", w.SQM);
+                _ = cmd.Parameters.AddWithValue("$st", w.Status ?? "");
+                _ = cmd.Parameters.AddWithValue("$sm", w.Salesman ?? "");
+                _ = cmd.Parameters.AddWithValue("$cl", w.Color ?? "");
+                _ = cmd.Parameters.AddWithValue("$n", w.Notes ?? "");
+                _ = cmd.Parameters.AddWithValue("$cd", w.CreatedDate.ToString("yyyy-MM-dd HH:mm"));
+                _ = cmd.ExecuteNonQuery();
+                if (!string.IsNullOrWhiteSpace(w.CustomerReference)) SaveCustomerReference(w.CustomerReference, w.Company ?? "");
             });
         }
 
@@ -637,24 +637,24 @@ VALUES ($d, $ud, $c, $pi, $cr, $t, $ps, $drs, $q, $s, $st, $sm, $cl, $n, $cd)";
         {
             Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = @"UPDATE DailyWork SET Date = $d, UpdateDate = $ud, Company = $c, PINumber = $pi, CustomerReference = $cr, TypeOfWork = $t, ProductionStatus = $ps, DailyReportStatus = $drs, Qty = $q, SQM = $s, Status = $st, Salesman = $sm, Color = $cl, Notes = $n WHERE Id = $id";
-                cmd.Parameters.AddWithValue("$id", w.Id);
-                cmd.Parameters.AddWithValue("$d", w.Date.ToString("yyyy-MM-dd HH:mm:ss"));
-                cmd.Parameters.AddWithValue("$ud", w.UpdateDate.ToString("yyyy-MM-dd HH:mm:ss"));
-                cmd.Parameters.AddWithValue("$c", w.Company ?? "");
-                cmd.Parameters.AddWithValue("$pi", w.PINumber ?? "");
-                cmd.Parameters.AddWithValue("$cr", w.CustomerReference ?? "");
-                cmd.Parameters.AddWithValue("$t", w.TypeOfWork ?? "");
-                cmd.Parameters.AddWithValue("$ps", w.ProductionStatus ?? "");
-                cmd.Parameters.AddWithValue("$drs", w.DailyReportStatus ?? "");
-                cmd.Parameters.AddWithValue("$q", w.Qty);
-                cmd.Parameters.AddWithValue("$s", w.SQM);
-                cmd.Parameters.AddWithValue("$st", w.Status ?? "");
-                cmd.Parameters.AddWithValue("$sm", w.Salesman ?? "");
-                cmd.Parameters.AddWithValue("$cl", w.Color ?? "");
-                cmd.Parameters.AddWithValue("$n", w.Notes ?? "");
-                cmd.ExecuteNonQuery();
+                _ = cmd.Parameters.AddWithValue("$id", w.Id);
+                _ = cmd.Parameters.AddWithValue("$d", w.Date.ToString("yyyy-MM-dd HH:mm:ss"));
+                _ = cmd.Parameters.AddWithValue("$ud", w.UpdateDate.ToString("yyyy-MM-dd HH:mm:ss"));
+                _ = cmd.Parameters.AddWithValue("$c", w.Company ?? "");
+                _ = cmd.Parameters.AddWithValue("$pi", w.PINumber ?? "");
+                _ = cmd.Parameters.AddWithValue("$cr", w.CustomerReference ?? "");
+                _ = cmd.Parameters.AddWithValue("$t", w.TypeOfWork ?? "");
+                _ = cmd.Parameters.AddWithValue("$ps", w.ProductionStatus ?? "");
+                _ = cmd.Parameters.AddWithValue("$drs", w.DailyReportStatus ?? "");
+                _ = cmd.Parameters.AddWithValue("$q", w.Qty);
+                _ = cmd.Parameters.AddWithValue("$s", w.SQM);
+                _ = cmd.Parameters.AddWithValue("$st", w.Status ?? "");
+                _ = cmd.Parameters.AddWithValue("$sm", w.Salesman ?? "");
+                _ = cmd.Parameters.AddWithValue("$cl", w.Color ?? "");
+                _ = cmd.Parameters.AddWithValue("$n", w.Notes ?? "");
+                _ = cmd.ExecuteNonQuery();
             });
         }
 
@@ -663,16 +663,16 @@ VALUES ($d, $ud, $c, $pi, $cr, $t, $ps, $drs, $q, $s, $st, $sm, $cl, $n, $cd)";
             return Execute(conn =>
             {
                 var list = new List<DailyWork>();
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "SELECT * FROM DailyWork ORDER BY Id DESC";
-                using var r = cmd.ExecuteReader();
+                using SqliteDataReader r = cmd.ExecuteReader();
                 while (r.Read())
                 {
                     list.Add(new DailyWork
                     {
                         Id = r.GetInt32(0),
-                        Date = DateTime.TryParse(r.GetString(1), out var d) ? d : DateTime.Today,
-                        UpdateDate = DateTime.TryParse(r.GetString(2), out var ud) ? ud : DateTime.Today,
+                        Date = DateTime.TryParse(r.GetString(1), out DateTime d) ? d : DateTime.Today,
+                        UpdateDate = DateTime.TryParse(r.GetString(2), out DateTime ud) ? ud : DateTime.Today,
                         Company = r.IsDBNull(3) ? "" : r.GetString(3),
                         PINumber = r.IsDBNull(4) ? "" : r.GetString(4),
                         CustomerReference = r.IsDBNull(5) ? "" : r.GetString(5),
@@ -685,7 +685,7 @@ VALUES ($d, $ud, $c, $pi, $cr, $t, $ps, $drs, $q, $s, $st, $sm, $cl, $n, $cd)";
                         Salesman = r.IsDBNull(12) ? "" : r.GetString(12),
                         Color = r.IsDBNull(13) ? "" : r.GetString(13),
                         Notes = r.IsDBNull(14) ? "" : r.GetString(14),
-                        CreatedDate = DateTime.TryParse(r.GetString(15), out var cd) ? cd : DateTime.Today
+                        CreatedDate = DateTime.TryParse(r.GetString(15), out DateTime cd) ? cd : DateTime.Today
                     });
                 }
                 return list;
@@ -696,10 +696,10 @@ VALUES ($d, $ud, $c, $pi, $cr, $t, $ps, $drs, $q, $s, $st, $sm, $cl, $n, $cd)";
         {
             Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "DELETE FROM DailyWork WHERE Id = $id";
-                cmd.Parameters.AddWithValue("$id", id);
-                cmd.ExecuteNonQuery();
+                _ = cmd.Parameters.AddWithValue("$id", id);
+                _ = cmd.ExecuteNonQuery();
             });
         }
 
@@ -801,23 +801,23 @@ VALUES ($d, $ud, $c, $pi, $cr, $t, $ps, $drs, $q, $s, $st, $sm, $cl, $n, $cd)";
                 }
                 sql += " ORDER BY Id DESC";
 
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = sql;
 
                 // Add parameters
-                foreach (var param in parameters)
+                foreach (SqliteParameter param in parameters)
                 {
-                    cmd.Parameters.Add(param);
+                    _ = cmd.Parameters.Add(param);
                 }
 
-                using var r = cmd.ExecuteReader();
+                using SqliteDataReader r = cmd.ExecuteReader();
                 while (r.Read())
                 {
                     list.Add(new DailyWork
                     {
                         Id = r.GetInt32(0),
-                        Date = DateTime.TryParse(r.GetString(1), out var d) ? d : DateTime.Today,
-                        UpdateDate = DateTime.TryParse(r.GetString(2), out var ud) ? ud : DateTime.Today,
+                        Date = DateTime.TryParse(r.GetString(1), out DateTime d) ? d : DateTime.Today,
+                        UpdateDate = DateTime.TryParse(r.GetString(2), out DateTime ud) ? ud : DateTime.Today,
                         Company = r.IsDBNull(3) ? "" : r.GetString(3),
                         PINumber = r.IsDBNull(4) ? "" : r.GetString(4),
                         CustomerReference = r.IsDBNull(5) ? "" : r.GetString(5),
@@ -830,7 +830,7 @@ VALUES ($d, $ud, $c, $pi, $cr, $t, $ps, $drs, $q, $s, $st, $sm, $cl, $n, $cd)";
                         Salesman = r.IsDBNull(12) ? "" : r.GetString(12),
                         Color = r.IsDBNull(13) ? "" : r.GetString(13),
                         Notes = r.IsDBNull(14) ? "" : r.GetString(14),
-                        CreatedDate = DateTime.TryParse(r.GetString(15), out var cd) ? cd : DateTime.Today
+                        CreatedDate = DateTime.TryParse(r.GetString(15), out DateTime cd) ? cd : DateTime.Today
                     });
                 }
                 return list;
@@ -841,17 +841,17 @@ VALUES ($d, $ud, $c, $pi, $cr, $t, $ps, $drs, $q, $s, $st, $sm, $cl, $n, $cd)";
         {
             return Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "SELECT * FROM DailyWork WHERE PINumber = $piNumber LIMIT 1";
-                cmd.Parameters.AddWithValue("$piNumber", piNumber);
-                using var r = cmd.ExecuteReader();
+                _ = cmd.Parameters.AddWithValue("$piNumber", piNumber);
+                using SqliteDataReader r = cmd.ExecuteReader();
                 if (r.Read())
                 {
                     return new DailyWork
                     {
                         Id = r.GetInt32(0),
-                        Date = DateTime.TryParse(r.GetString(1), out var d) ? d : DateTime.Today,
-                        UpdateDate = DateTime.TryParse(r.GetString(2), out var ud) ? ud : DateTime.Today,
+                        Date = DateTime.TryParse(r.GetString(1), out DateTime d) ? d : DateTime.Today,
+                        UpdateDate = DateTime.TryParse(r.GetString(2), out DateTime ud) ? ud : DateTime.Today,
                         Company = r.IsDBNull(3) ? "" : r.GetString(3),
                         PINumber = r.IsDBNull(4) ? "" : r.GetString(4),
                         CustomerReference = r.IsDBNull(5) ? "" : r.GetString(5),
@@ -864,7 +864,7 @@ VALUES ($d, $ud, $c, $pi, $cr, $t, $ps, $drs, $q, $s, $st, $sm, $cl, $n, $cd)";
                         Salesman = r.IsDBNull(12) ? "" : r.GetString(12),
                         Color = r.IsDBNull(13) ? "" : r.GetString(13),
                         Notes = r.IsDBNull(14) ? "" : r.GetString(14),
-                        CreatedDate = DateTime.TryParse(r.GetString(15), out var cd) ? cd : DateTime.Today
+                        CreatedDate = DateTime.TryParse(r.GetString(15), out DateTime cd) ? cd : DateTime.Today
                     };
                 }
                 return null;
@@ -879,23 +879,23 @@ VALUES ($d, $ud, $c, $pi, $cr, $t, $ps, $drs, $q, $s, $st, $sm, $cl, $n, $cd)";
         {
             Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = @"INSERT INTO Deliveries (SourceId, Date, Company, PINumber, CustomerReference, TypeOfWork, OrderQty, OrderSQM, Salesman, Status, Notes, CreatedDate, UpdatedDate)
 VALUES ($sid, $d, $c, $pi, $cr, $t, $q, $s, $sm, $st, $n, $cd, $ud)";
-                cmd.Parameters.AddWithValue("$sid", d.SourceId);
-                cmd.Parameters.AddWithValue("$d", d.Date.ToString("yyyy-MM-dd HH:mm:ss"));
-                cmd.Parameters.AddWithValue("$c", d.Company ?? "");
-                cmd.Parameters.AddWithValue("$pi", d.PINumber ?? "");
-                cmd.Parameters.AddWithValue("$cr", d.CustomerReference ?? "");
-                cmd.Parameters.AddWithValue("$t", d.TypeOfWork ?? "");
-                cmd.Parameters.AddWithValue("$q", d.OrderQty);
-                cmd.Parameters.AddWithValue("$s", d.OrderSQM);
-                cmd.Parameters.AddWithValue("$sm", d.Salesman ?? "");
-                cmd.Parameters.AddWithValue("$st", d.Status ?? "");
-                cmd.Parameters.AddWithValue("$n", d.Notes ?? "");
-                cmd.Parameters.AddWithValue("$cd", d.CreatedDate.ToString("yyyy-MM-dd HH:mm"));
-                cmd.Parameters.AddWithValue("$ud", d.UpdatedDate.ToString("yyyy-MM-dd HH:mm"));
-                cmd.ExecuteNonQuery();
+                _ = cmd.Parameters.AddWithValue("$sid", d.SourceId);
+                _ = cmd.Parameters.AddWithValue("$d", d.Date.ToString("yyyy-MM-dd HH:mm:ss"));
+                _ = cmd.Parameters.AddWithValue("$c", d.Company ?? "");
+                _ = cmd.Parameters.AddWithValue("$pi", d.PINumber ?? "");
+                _ = cmd.Parameters.AddWithValue("$cr", d.CustomerReference ?? "");
+                _ = cmd.Parameters.AddWithValue("$t", d.TypeOfWork ?? "");
+                _ = cmd.Parameters.AddWithValue("$q", d.OrderQty);
+                _ = cmd.Parameters.AddWithValue("$s", d.OrderSQM);
+                _ = cmd.Parameters.AddWithValue("$sm", d.Salesman ?? "");
+                _ = cmd.Parameters.AddWithValue("$st", d.Status ?? "");
+                _ = cmd.Parameters.AddWithValue("$n", d.Notes ?? "");
+                _ = cmd.Parameters.AddWithValue("$cd", d.CreatedDate.ToString("yyyy-MM-dd HH:mm"));
+                _ = cmd.Parameters.AddWithValue("$ud", d.UpdatedDate.ToString("yyyy-MM-dd HH:mm"));
+                _ = cmd.ExecuteNonQuery();
             });
         }
 
@@ -903,21 +903,21 @@ VALUES ($sid, $d, $c, $pi, $cr, $t, $q, $s, $sm, $st, $n, $cd, $ud)";
         {
             Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = @"UPDATE Deliveries SET Date = $d, Company = $c, PINumber = $pi, CustomerReference = $cr, TypeOfWork = $t, OrderQty = $q, OrderSQM = $s, Salesman = $sm, Status = $st, Notes = $n, UpdatedDate = $ud WHERE Id = $id";
-                cmd.Parameters.AddWithValue("$id", d.Id);
-                cmd.Parameters.AddWithValue("$d", d.Date.ToString("yyyy-MM-dd HH:mm:ss"));
-                cmd.Parameters.AddWithValue("$c", d.Company ?? "");
-                cmd.Parameters.AddWithValue("$pi", d.PINumber ?? "");
-                cmd.Parameters.AddWithValue("$cr", d.CustomerReference ?? "");
-                cmd.Parameters.AddWithValue("$t", d.TypeOfWork ?? "");
-                cmd.Parameters.AddWithValue("$q", d.OrderQty);
-                cmd.Parameters.AddWithValue("$s", d.OrderSQM);
-                cmd.Parameters.AddWithValue("$sm", d.Salesman ?? "");
-                cmd.Parameters.AddWithValue("$st", d.Status ?? "");
-                cmd.Parameters.AddWithValue("$n", d.Notes ?? "");
-                cmd.Parameters.AddWithValue("$ud", d.UpdatedDate.ToString("yyyy-MM-dd HH:mm"));
-                cmd.ExecuteNonQuery();
+                _ = cmd.Parameters.AddWithValue("$id", d.Id);
+                _ = cmd.Parameters.AddWithValue("$d", d.Date.ToString("yyyy-MM-dd HH:mm:ss"));
+                _ = cmd.Parameters.AddWithValue("$c", d.Company ?? "");
+                _ = cmd.Parameters.AddWithValue("$pi", d.PINumber ?? "");
+                _ = cmd.Parameters.AddWithValue("$cr", d.CustomerReference ?? "");
+                _ = cmd.Parameters.AddWithValue("$t", d.TypeOfWork ?? "");
+                _ = cmd.Parameters.AddWithValue("$q", d.OrderQty);
+                _ = cmd.Parameters.AddWithValue("$s", d.OrderSQM);
+                _ = cmd.Parameters.AddWithValue("$sm", d.Salesman ?? "");
+                _ = cmd.Parameters.AddWithValue("$st", d.Status ?? "");
+                _ = cmd.Parameters.AddWithValue("$n", d.Notes ?? "");
+                _ = cmd.Parameters.AddWithValue("$ud", d.UpdatedDate.ToString("yyyy-MM-dd HH:mm"));
+                _ = cmd.ExecuteNonQuery();
             });
         }
 
@@ -926,16 +926,16 @@ VALUES ($sid, $d, $c, $pi, $cr, $t, $q, $s, $sm, $st, $n, $cd, $ud)";
             return Execute(conn =>
             {
                 var list = new List<Delivery>();
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "SELECT * FROM Deliveries ORDER BY Id DESC";
-                using var r = cmd.ExecuteReader();
+                using SqliteDataReader r = cmd.ExecuteReader();
                 while (r.Read())
                 {
                     var delivery = new Delivery
                     {
                         Id = r.GetInt32(0),
                         SourceId = r.IsDBNull(1) ? 0 : r.GetInt32(1),
-                        Date = DateTime.TryParse(r.GetString(2), out var d) ? d : DateTime.Today,
+                        Date = DateTime.TryParse(r.GetString(2), out DateTime d) ? d : DateTime.Today,
                         Company = r.IsDBNull(3) ? "" : r.GetString(3),
                         PINumber = r.IsDBNull(4) ? "" : r.GetString(4),
                         CustomerReference = r.IsDBNull(5) ? "" : r.GetString(5),
@@ -945,8 +945,8 @@ VALUES ($sid, $d, $c, $pi, $cr, $t, $q, $s, $sm, $st, $n, $cd, $ud)";
                         Salesman = r.IsDBNull(9) ? "" : r.GetString(9),
                         Status = r.IsDBNull(10) ? "" : r.GetString(10),
                         Notes = r.IsDBNull(11) ? "" : r.GetString(11),
-                        CreatedDate = DateTime.TryParse(r.GetString(12), out var cd) ? cd : DateTime.Today,
-                        UpdatedDate = DateTime.TryParse(r.GetString(13), out var ud) ? ud : DateTime.Today
+                        CreatedDate = DateTime.TryParse(r.GetString(12), out DateTime cd) ? cd : DateTime.Today,
+                        UpdatedDate = DateTime.TryParse(r.GetString(13), out DateTime ud) ? ud : DateTime.Today
                     };
 
                     // ✅ FIX: Load DeliveryItems for each delivery
@@ -964,12 +964,12 @@ VALUES ($sid, $d, $c, $pi, $cr, $t, $q, $s, $sm, $st, $n, $cd, $ud)";
         {
             Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "DELETE FROM DeliveryItems WHERE OrderId = $id";
-                cmd.Parameters.AddWithValue("$id", id);
-                cmd.ExecuteNonQuery();
+                _ = cmd.Parameters.AddWithValue("$id", id);
+                _ = cmd.ExecuteNonQuery();
                 cmd.CommandText = "DELETE FROM Deliveries WHERE Id = $id";
-                cmd.ExecuteNonQuery();
+                _ = cmd.ExecuteNonQuery();
             });
         }
 
@@ -981,20 +981,20 @@ VALUES ($sid, $d, $c, $pi, $cr, $t, $q, $s, $sm, $st, $n, $cd, $ud)";
         {
             Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = @"INSERT INTO DeliveryItems (OrderId, DeliveryDate, DeliveredQty, DeliveredSQM, ReturnedQty, ReturnedSQM, Driver, Vehicle, Notes, CreatedDate)
 VALUES ($oid, $d, $dq, $ds, $rq, $rs, $dr, $v, $n, $cd)";
-                cmd.Parameters.AddWithValue("$oid", item.OrderId);
-                cmd.Parameters.AddWithValue("$d", item.DeliveryDate.ToString("yyyy-MM-dd HH:mm:ss"));
-                cmd.Parameters.AddWithValue("$dq", item.DeliveredQty);
-                cmd.Parameters.AddWithValue("$ds", item.DeliveredSQM);
-                cmd.Parameters.AddWithValue("$rq", item.ReturnedQty);
-                cmd.Parameters.AddWithValue("$rs", item.ReturnedSQM);
-                cmd.Parameters.AddWithValue("$dr", item.Driver ?? "");
-                cmd.Parameters.AddWithValue("$v", item.Vehicle ?? "");
-                cmd.Parameters.AddWithValue("$n", item.Notes ?? "");
-                cmd.Parameters.AddWithValue("$cd", item.CreatedDate.ToString("yyyy-MM-dd HH:mm"));
-                cmd.ExecuteNonQuery();
+                _ = cmd.Parameters.AddWithValue("$oid", item.OrderId);
+                _ = cmd.Parameters.AddWithValue("$d", item.DeliveryDate.ToString("yyyy-MM-dd HH:mm:ss"));
+                _ = cmd.Parameters.AddWithValue("$dq", item.DeliveredQty);
+                _ = cmd.Parameters.AddWithValue("$ds", item.DeliveredSQM);
+                _ = cmd.Parameters.AddWithValue("$rq", item.ReturnedQty);
+                _ = cmd.Parameters.AddWithValue("$rs", item.ReturnedSQM);
+                _ = cmd.Parameters.AddWithValue("$dr", item.Driver ?? "");
+                _ = cmd.Parameters.AddWithValue("$v", item.Vehicle ?? "");
+                _ = cmd.Parameters.AddWithValue("$n", item.Notes ?? "");
+                _ = cmd.Parameters.AddWithValue("$cd", item.CreatedDate.ToString("yyyy-MM-dd HH:mm"));
+                _ = cmd.ExecuteNonQuery();
             });
         }
 
@@ -1002,18 +1002,18 @@ VALUES ($oid, $d, $dq, $ds, $rq, $rs, $dr, $v, $n, $cd)";
         {
             Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = @"UPDATE DeliveryItems SET DeliveryDate = $d, DeliveredQty = $dq, DeliveredSQM = $ds, ReturnedQty = $rq, ReturnedSQM = $rs, Driver = $dr, Vehicle = $v, Notes = $n WHERE Id = $id";
-                cmd.Parameters.AddWithValue("$id", item.Id);
-                cmd.Parameters.AddWithValue("$d", item.DeliveryDate.ToString("yyyy-MM-dd HH:mm:ss"));
-                cmd.Parameters.AddWithValue("$dq", item.DeliveredQty);
-                cmd.Parameters.AddWithValue("$ds", item.DeliveredSQM);
-                cmd.Parameters.AddWithValue("$rq", item.ReturnedQty);
-                cmd.Parameters.AddWithValue("$rs", item.ReturnedSQM);
-                cmd.Parameters.AddWithValue("$dr", item.Driver ?? "");
-                cmd.Parameters.AddWithValue("$v", item.Vehicle ?? "");
-                cmd.Parameters.AddWithValue("$n", item.Notes ?? "");
-                cmd.ExecuteNonQuery();
+                _ = cmd.Parameters.AddWithValue("$id", item.Id);
+                _ = cmd.Parameters.AddWithValue("$d", item.DeliveryDate.ToString("yyyy-MM-dd HH:mm:ss"));
+                _ = cmd.Parameters.AddWithValue("$dq", item.DeliveredQty);
+                _ = cmd.Parameters.AddWithValue("$ds", item.DeliveredSQM);
+                _ = cmd.Parameters.AddWithValue("$rq", item.ReturnedQty);
+                _ = cmd.Parameters.AddWithValue("$rs", item.ReturnedSQM);
+                _ = cmd.Parameters.AddWithValue("$dr", item.Driver ?? "");
+                _ = cmd.Parameters.AddWithValue("$v", item.Vehicle ?? "");
+                _ = cmd.Parameters.AddWithValue("$n", item.Notes ?? "");
+                _ = cmd.ExecuteNonQuery();
             });
         }
 
@@ -1022,17 +1022,17 @@ VALUES ($oid, $d, $dq, $ds, $rq, $rs, $dr, $v, $n, $cd)";
             return Execute(conn =>
             {
                 var list = new List<DeliveryItem>();
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "SELECT * FROM DeliveryItems WHERE OrderId = $oid ORDER BY Id DESC";
-                cmd.Parameters.AddWithValue("$oid", orderId);
-                using var r = cmd.ExecuteReader();
+                _ = cmd.Parameters.AddWithValue("$oid", orderId);
+                using SqliteDataReader r = cmd.ExecuteReader();
                 while (r.Read())
                 {
                     list.Add(new DeliveryItem
                     {
                         Id = r.GetInt32(0),
                         OrderId = r.GetInt32(1),
-                        DeliveryDate = DateTime.TryParse(r.GetString(2), out var d) ? d : DateTime.Today,
+                        DeliveryDate = DateTime.TryParse(r.GetString(2), out DateTime d) ? d : DateTime.Today,
                         DeliveredQty = r.GetInt32(3),
                         DeliveredSQM = r.GetDouble(4),
                         ReturnedQty = r.GetInt32(5),
@@ -1040,7 +1040,7 @@ VALUES ($oid, $d, $dq, $ds, $rq, $rs, $dr, $v, $n, $cd)";
                         Driver = r.IsDBNull(7) ? "" : r.GetString(7),
                         Vehicle = r.IsDBNull(8) ? "" : r.GetString(8),
                         Notes = r.IsDBNull(9) ? "" : r.GetString(9),
-                        CreatedDate = DateTime.TryParse(r.GetString(10), out var cd) ? cd : DateTime.Today
+                        CreatedDate = DateTime.TryParse(r.GetString(10), out DateTime cd) ? cd : DateTime.Today
                     });
                 }
                 return list;
@@ -1051,28 +1051,28 @@ VALUES ($oid, $d, $dq, $ds, $rq, $rs, $dr, $v, $n, $cd)";
         {
             Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "DELETE FROM DeliveryItems WHERE Id = $id";
-                cmd.Parameters.AddWithValue("$id", id);
-                cmd.ExecuteNonQuery();
+                _ = cmd.Parameters.AddWithValue("$id", id);
+                _ = cmd.ExecuteNonQuery();
             });
         }
 
-        public static Delivery GetDeliveryById(int id)
+        public static Delivery? GetDeliveryById(int id)
         {
             return Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "SELECT * FROM Deliveries WHERE Id = $id";
-                cmd.Parameters.AddWithValue("$id", id);
-                using var r = cmd.ExecuteReader();
+                _ = cmd.Parameters.AddWithValue("$id", id);
+                using SqliteDataReader r = cmd.ExecuteReader();
                 if (r.Read())
                 {
                     var delivery = new Delivery
                     {
                         Id = r.GetInt32(0),
                         SourceId = r.IsDBNull(1) ? 0 : r.GetInt32(1),
-                        Date = DateTime.TryParse(r.GetString(2), out var d) ? d : DateTime.Today,
+                        Date = DateTime.TryParse(r.GetString(2), out DateTime d) ? d : DateTime.Today,
                         Company = r.IsDBNull(3) ? "" : r.GetString(3),
                         PINumber = r.IsDBNull(4) ? "" : r.GetString(4),
                         CustomerReference = r.IsDBNull(5) ? "" : r.GetString(5),
@@ -1082,8 +1082,8 @@ VALUES ($oid, $d, $dq, $ds, $rq, $rs, $dr, $v, $n, $cd)";
                         Salesman = r.IsDBNull(9) ? "" : r.GetString(9),
                         Status = r.IsDBNull(10) ? "" : r.GetString(10),
                         Notes = r.IsDBNull(11) ? "" : r.GetString(11),
-                        CreatedDate = DateTime.TryParse(r.GetString(12), out var cd) ? cd : DateTime.Today,
-                        UpdatedDate = DateTime.TryParse(r.GetString(13), out var ud) ? ud : DateTime.Today
+                        CreatedDate = DateTime.TryParse(r.GetString(12), out DateTime cd) ? cd : DateTime.Today,
+                        UpdatedDate = DateTime.TryParse(r.GetString(13), out DateTime ud) ? ud : DateTime.Today
                     };
                     delivery.DeliveryItems = new ObservableCollection<DeliveryItem>(GetDeliveryItems(delivery.Id));
                     return delivery;
@@ -1100,28 +1100,28 @@ VALUES ($oid, $d, $dq, $ds, $rq, $rs, $dr, $v, $n, $cd)";
         {
             Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = @"INSERT INTO SheetStore (Category, Thickness, Color, ColorHex, Width, Height, SquareMeter, PurchasePrice, SellPrice, TotalStock, UsedSheets, BalanceSheets, IsActive, Supplier, SupplierName, Description, CreatedDate, LatestPurchaseDate)
 VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup, $supn, $desc, $cd, $lpd)";
-                cmd.Parameters.AddWithValue("$cat", s.Category ?? "");
-                cmd.Parameters.AddWithValue("$th", s.Thickness ?? "");
-                cmd.Parameters.AddWithValue("$col", s.Color ?? "");
-                cmd.Parameters.AddWithValue("$hex", s.ColorHex ?? "");
-                cmd.Parameters.AddWithValue("$w", s.Width);
-                cmd.Parameters.AddWithValue("$h", s.Height);
-                cmd.Parameters.AddWithValue("$sqm", s.SquareMeter);
-                cmd.Parameters.AddWithValue("$pp", s.PurchasePrice);
-                cmd.Parameters.AddWithValue("$sp", s.SellPrice);
-                cmd.Parameters.AddWithValue("$ts", s.TotalStock);
-                cmd.Parameters.AddWithValue("$us", s.UsedSheets);
-                cmd.Parameters.AddWithValue("$bs", s.BalanceSheets);
-                cmd.Parameters.AddWithValue("$act", s.IsActive ? 1 : 0);
-                cmd.Parameters.AddWithValue("$sup", s.Supplier ?? "");
-                cmd.Parameters.AddWithValue("$supn", s.SupplierName ?? "");
-                cmd.Parameters.AddWithValue("$desc", s.Description ?? "");
-                cmd.Parameters.AddWithValue("$cd", s.CreatedDate.ToString("yyyy-MM-dd HH:mm"));
-                cmd.Parameters.AddWithValue("$lpd", s.LatestPurchaseDate?.ToString("yyyy-MM-dd HH:mm") ?? "");
-                cmd.ExecuteNonQuery();
+                _ = cmd.Parameters.AddWithValue("$cat", s.Category ?? "");
+                _ = cmd.Parameters.AddWithValue("$th", s.Thickness ?? "");
+                _ = cmd.Parameters.AddWithValue("$col", s.Color ?? "");
+                _ = cmd.Parameters.AddWithValue("$hex", s.ColorHex ?? "");
+                _ = cmd.Parameters.AddWithValue("$w", s.Width);
+                _ = cmd.Parameters.AddWithValue("$h", s.Height);
+                _ = cmd.Parameters.AddWithValue("$sqm", s.SquareMeter);
+                _ = cmd.Parameters.AddWithValue("$pp", s.PurchasePrice);
+                _ = cmd.Parameters.AddWithValue("$sp", s.SellPrice);
+                _ = cmd.Parameters.AddWithValue("$ts", s.TotalStock);
+                _ = cmd.Parameters.AddWithValue("$us", s.UsedSheets);
+                _ = cmd.Parameters.AddWithValue("$bs", s.BalanceSheets);
+                _ = cmd.Parameters.AddWithValue("$act", s.IsActive ? 1 : 0);
+                _ = cmd.Parameters.AddWithValue("$sup", s.Supplier ?? "");
+                _ = cmd.Parameters.AddWithValue("$supn", s.SupplierName ?? "");
+                _ = cmd.Parameters.AddWithValue("$desc", s.Description ?? "");
+                _ = cmd.Parameters.AddWithValue("$cd", s.CreatedDate.ToString("yyyy-MM-dd HH:mm"));
+                _ = cmd.Parameters.AddWithValue("$lpd", s.LatestPurchaseDate?.ToString("yyyy-MM-dd HH:mm") ?? "");
+                _ = cmd.ExecuteNonQuery();
             });
         }
 
@@ -1129,27 +1129,27 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
         {
             Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = @"UPDATE SheetStore SET Category = $cat, Thickness = $th, Color = $col, ColorHex = $hex, Width = $w, Height = $h, SquareMeter = $sqm, PurchasePrice = $pp, SellPrice = $sp, TotalStock = $ts, UsedSheets = $us, BalanceSheets = $bs, IsActive = $act, Supplier = $sup, SupplierName = $supn, Description = $desc, LatestPurchaseDate = $lpd WHERE Id = $id";
-                cmd.Parameters.AddWithValue("$id", s.Id);
-                cmd.Parameters.AddWithValue("$cat", s.Category ?? "");
-                cmd.Parameters.AddWithValue("$th", s.Thickness ?? "");
-                cmd.Parameters.AddWithValue("$col", s.Color ?? "");
-                cmd.Parameters.AddWithValue("$hex", s.ColorHex ?? "");
-                cmd.Parameters.AddWithValue("$w", s.Width);
-                cmd.Parameters.AddWithValue("$h", s.Height);
-                cmd.Parameters.AddWithValue("$sqm", s.SquareMeter);
-                cmd.Parameters.AddWithValue("$pp", s.PurchasePrice);
-                cmd.Parameters.AddWithValue("$sp", s.SellPrice);
-                cmd.Parameters.AddWithValue("$ts", s.TotalStock);
-                cmd.Parameters.AddWithValue("$us", s.UsedSheets);
-                cmd.Parameters.AddWithValue("$bs", s.BalanceSheets);
-                cmd.Parameters.AddWithValue("$act", s.IsActive ? 1 : 0);
-                cmd.Parameters.AddWithValue("$sup", s.Supplier ?? "");
-                cmd.Parameters.AddWithValue("$supn", s.SupplierName ?? "");
-                cmd.Parameters.AddWithValue("$desc", s.Description ?? "");
-                cmd.Parameters.AddWithValue("$lpd", s.LatestPurchaseDate?.ToString("yyyy-MM-dd HH:mm") ?? "");
-                cmd.ExecuteNonQuery();
+                _ = cmd.Parameters.AddWithValue("$id", s.Id);
+                _ = cmd.Parameters.AddWithValue("$cat", s.Category ?? "");
+                _ = cmd.Parameters.AddWithValue("$th", s.Thickness ?? "");
+                _ = cmd.Parameters.AddWithValue("$col", s.Color ?? "");
+                _ = cmd.Parameters.AddWithValue("$hex", s.ColorHex ?? "");
+                _ = cmd.Parameters.AddWithValue("$w", s.Width);
+                _ = cmd.Parameters.AddWithValue("$h", s.Height);
+                _ = cmd.Parameters.AddWithValue("$sqm", s.SquareMeter);
+                _ = cmd.Parameters.AddWithValue("$pp", s.PurchasePrice);
+                _ = cmd.Parameters.AddWithValue("$sp", s.SellPrice);
+                _ = cmd.Parameters.AddWithValue("$ts", s.TotalStock);
+                _ = cmd.Parameters.AddWithValue("$us", s.UsedSheets);
+                _ = cmd.Parameters.AddWithValue("$bs", s.BalanceSheets);
+                _ = cmd.Parameters.AddWithValue("$act", s.IsActive ? 1 : 0);
+                _ = cmd.Parameters.AddWithValue("$sup", s.Supplier ?? "");
+                _ = cmd.Parameters.AddWithValue("$supn", s.SupplierName ?? "");
+                _ = cmd.Parameters.AddWithValue("$desc", s.Description ?? "");
+                _ = cmd.Parameters.AddWithValue("$lpd", s.LatestPurchaseDate?.ToString("yyyy-MM-dd HH:mm") ?? "");
+                _ = cmd.ExecuteNonQuery();
             });
         }
 
@@ -1158,9 +1158,9 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
             return Execute(conn =>
             {
                 var list = new List<Sheet>();
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "SELECT * FROM SheetStore ORDER BY Id DESC";
-                using var r = cmd.ExecuteReader();
+                using SqliteDataReader r = cmd.ExecuteReader();
                 while (r.Read())
                 {
                     list.Add(new Sheet
@@ -1182,8 +1182,8 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
                         Supplier = r.IsDBNull(14) ? "" : r.GetString(14),
                         SupplierName = r.IsDBNull(15) ? "" : r.GetString(15),
                         Description = r.IsDBNull(16) ? "" : r.GetString(16),
-                        CreatedDate = DateTime.TryParse(r.GetString(17), out var cd) ? cd : DateTime.Now,
-                        LatestPurchaseDate = DateTime.TryParse(r.IsDBNull(18) ? "" : r.GetString(18), out var lpd) ? lpd : null
+                        CreatedDate = DateTime.TryParse(r.GetString(17), out DateTime cd) ? cd : DateTime.Now,
+                        LatestPurchaseDate = DateTime.TryParse(r.IsDBNull(18) ? "" : r.GetString(18), out DateTime lpd) ? lpd : null
                     });
                 }
                 return list;
@@ -1194,14 +1194,14 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
         {
             Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "DELETE FROM SheetUsages WHERE SheetId = $id";
-                cmd.Parameters.AddWithValue("$id", id);
-                cmd.ExecuteNonQuery();
+                _ = cmd.Parameters.AddWithValue("$id", id);
+                _ = cmd.ExecuteNonQuery();
                 cmd.CommandText = "DELETE FROM SheetPurchases WHERE SheetId = $id";
-                cmd.ExecuteNonQuery();
+                _ = cmd.ExecuteNonQuery();
                 cmd.CommandText = "DELETE FROM SheetStore WHERE Id = $id";
-                cmd.ExecuteNonQuery();
+                _ = cmd.ExecuteNonQuery();
             });
         }
 
@@ -1209,16 +1209,16 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
         {
             Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = @"INSERT INTO SheetPurchases (SheetId, Quantity, UnitPrice, Supplier, PurchasedOn, Notes, CreatedAt) VALUES ($sid, $q, $up, $sup, $pd, $nt, $cd)";
-                cmd.Parameters.AddWithValue("$sid", p.SheetId);
-                cmd.Parameters.AddWithValue("$q", p.Quantity);
-                cmd.Parameters.AddWithValue("$up", p.UnitPrice);
-                cmd.Parameters.AddWithValue("$sup", p.Supplier ?? "");
-                cmd.Parameters.AddWithValue("$pd", p.PurchasedOn.ToString("yyyy-MM-dd HH:mm:ss"));
-                cmd.Parameters.AddWithValue("$nt", p.Notes ?? "");
-                cmd.Parameters.AddWithValue("$cd", p.CreatedAt.ToString("yyyy-MM-dd HH:mm"));
-                cmd.ExecuteNonQuery();
+                _ = cmd.Parameters.AddWithValue("$sid", p.SheetId);
+                _ = cmd.Parameters.AddWithValue("$q", p.Quantity);
+                _ = cmd.Parameters.AddWithValue("$up", p.UnitPrice);
+                _ = cmd.Parameters.AddWithValue("$sup", p.Supplier ?? "");
+                _ = cmd.Parameters.AddWithValue("$pd", p.PurchasedOn.ToString("yyyy-MM-dd HH:mm:ss"));
+                _ = cmd.Parameters.AddWithValue("$nt", p.Notes ?? "");
+                _ = cmd.Parameters.AddWithValue("$cd", p.CreatedAt.ToString("yyyy-MM-dd HH:mm"));
+                _ = cmd.ExecuteNonQuery();
                 UpdateSheetStock(p.SheetId, p.Quantity);
             });
         }
@@ -1227,12 +1227,12 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
         {
             Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = @"UPDATE SheetStore SET TotalStock = TotalStock + $qty, BalanceSheets = BalanceSheets + $qty, LatestPurchaseDate = $date WHERE Id = $id";
-                cmd.Parameters.AddWithValue("$id", sheetId);
-                cmd.Parameters.AddWithValue("$qty", additionalQty);
-                cmd.Parameters.AddWithValue("$date", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
-                cmd.ExecuteNonQuery();
+                _ = cmd.Parameters.AddWithValue("$id", sheetId);
+                _ = cmd.Parameters.AddWithValue("$qty", additionalQty);
+                _ = cmd.Parameters.AddWithValue("$date", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
+                _ = cmd.ExecuteNonQuery();
             });
         }
 
@@ -1241,10 +1241,10 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
             return Execute(conn =>
             {
                 var list = new List<SheetPurchase>();
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "SELECT * FROM SheetPurchases WHERE SheetId = $sid ORDER BY Id DESC";
-                cmd.Parameters.AddWithValue("$sid", sheetId);
-                using var r = cmd.ExecuteReader();
+                _ = cmd.Parameters.AddWithValue("$sid", sheetId);
+                using SqliteDataReader r = cmd.ExecuteReader();
                 while (r.Read())
                 {
                     list.Add(new SheetPurchase
@@ -1254,9 +1254,9 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
                         Quantity = r.GetInt32(2),
                         UnitPrice = Convert.ToDecimal(r.GetDouble(3)),
                         Supplier = r.IsDBNull(4) ? "" : r.GetString(4),
-                        PurchasedOn = DateTime.TryParse(r.GetString(5), out var pd) ? pd : DateTime.Today,
+                        PurchasedOn = DateTime.TryParse(r.GetString(5), out DateTime pd) ? pd : DateTime.Today,
                         Notes = r.IsDBNull(6) ? "" : r.GetString(6),
-                        CreatedAt = DateTime.TryParse(r.GetString(7), out var cd) ? cd : DateTime.Now
+                        CreatedAt = DateTime.TryParse(r.GetString(7), out DateTime cd) ? cd : DateTime.Now
                     });
                 }
                 return list;
@@ -1267,14 +1267,14 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
         {
             Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = @"INSERT INTO SheetUsages (SheetId, Quantity, Reason, UsedOn, CreatedAt) VALUES ($sid, $q, $rs, $ud, $cd)";
-                cmd.Parameters.AddWithValue("$sid", u.SheetId);
-                cmd.Parameters.AddWithValue("$q", u.Quantity);
-                cmd.Parameters.AddWithValue("$rs", u.Reason ?? "");
-                cmd.Parameters.AddWithValue("$ud", u.UsedOn.ToString("yyyy-MM-dd HH:mm:ss"));
-                cmd.Parameters.AddWithValue("$cd", u.CreatedAt.ToString("yyyy-MM-dd HH:mm"));
-                cmd.ExecuteNonQuery();
+                _ = cmd.Parameters.AddWithValue("$sid", u.SheetId);
+                _ = cmd.Parameters.AddWithValue("$q", u.Quantity);
+                _ = cmd.Parameters.AddWithValue("$rs", u.Reason ?? "");
+                _ = cmd.Parameters.AddWithValue("$ud", u.UsedOn.ToString("yyyy-MM-dd HH:mm:ss"));
+                _ = cmd.Parameters.AddWithValue("$cd", u.CreatedAt.ToString("yyyy-MM-dd HH:mm"));
+                _ = cmd.ExecuteNonQuery();
                 DeductSheetStock(u.SheetId, u.Quantity);
             });
         }
@@ -1283,11 +1283,11 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
         {
             Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = @"UPDATE SheetStore SET UsedSheets = UsedSheets + $qty, BalanceSheets = BalanceSheets - $qty WHERE Id = $id AND BalanceSheets >= $qty";
-                cmd.Parameters.AddWithValue("$id", sheetId);
-                cmd.Parameters.AddWithValue("$qty", usedQty);
-                cmd.ExecuteNonQuery();
+                _ = cmd.Parameters.AddWithValue("$id", sheetId);
+                _ = cmd.Parameters.AddWithValue("$qty", usedQty);
+                _ = cmd.ExecuteNonQuery();
             });
         }
 
@@ -1296,10 +1296,10 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
             return Execute(conn =>
             {
                 var list = new List<SheetUsage>();
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "SELECT * FROM SheetUsages WHERE SheetId = $sid ORDER BY Id DESC";
-                cmd.Parameters.AddWithValue("$sid", sheetId);
-                using var r = cmd.ExecuteReader();
+                _ = cmd.Parameters.AddWithValue("$sid", sheetId);
+                using SqliteDataReader r = cmd.ExecuteReader();
                 while (r.Read())
                 {
                     list.Add(new SheetUsage
@@ -1308,8 +1308,8 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
                         SheetId = r.GetInt32(1),
                         Quantity = r.GetInt32(2),
                         Reason = r.IsDBNull(3) ? "" : r.GetString(3),
-                        UsedOn = DateTime.TryParse(r.GetString(4), out var ud) ? ud : DateTime.Today,
-                        CreatedAt = DateTime.TryParse(r.GetString(5), out var cd) ? cd : DateTime.Now
+                        UsedOn = DateTime.TryParse(r.GetString(4), out DateTime ud) ? ud : DateTime.Today,
+                        CreatedAt = DateTime.TryParse(r.GetString(5), out DateTime cd) ? cd : DateTime.Now
                     });
                 }
                 return list;
@@ -1321,9 +1321,9 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
             return Execute(conn =>
             {
                 var list = new List<SheetUsage>();
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "SELECT * FROM SheetUsages ORDER BY Id DESC";
-                using var r = cmd.ExecuteReader();
+                using SqliteDataReader r = cmd.ExecuteReader();
                 while (r.Read())
                 {
                     list.Add(new SheetUsage
@@ -1332,8 +1332,8 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
                         SheetId = r.GetInt32(1),
                         Quantity = r.GetInt32(2),
                         Reason = r.IsDBNull(3) ? "" : r.GetString(3),
-                        UsedOn = DateTime.TryParse(r.GetString(4), out var ud) ? ud : DateTime.Today,
-                        CreatedAt = DateTime.TryParse(r.GetString(5), out var cd) ? cd : DateTime.Now
+                        UsedOn = DateTime.TryParse(r.GetString(4), out DateTime ud) ? ud : DateTime.Today,
+                        CreatedAt = DateTime.TryParse(r.GetString(5), out DateTime cd) ? cd : DateTime.Now
                     });
                 }
                 return list;
@@ -1349,12 +1349,12 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
             if (string.IsNullOrWhiteSpace(customerRef)) return;
             Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = @"INSERT INTO CustomerReferences (CustomerReference, Company, CreatedAt) VALUES ($ref, $company, $created) ON CONFLICT(CustomerReference) DO UPDATE SET Company = $company";
-                cmd.Parameters.AddWithValue("$ref", customerRef);
-                cmd.Parameters.AddWithValue("$company", company ?? "");
-                cmd.Parameters.AddWithValue("$created", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
-                cmd.ExecuteNonQuery();
+                _ = cmd.Parameters.AddWithValue("$ref", customerRef);
+                _ = cmd.Parameters.AddWithValue("$company", company ?? "");
+                _ = cmd.Parameters.AddWithValue("$created", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
+                _ = cmd.ExecuteNonQuery();
             });
         }
 
@@ -1363,9 +1363,9 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
             return Execute(conn =>
             {
                 var list = new List<CustomerRefItem>();
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "SELECT Id, CustomerReference, Company FROM CustomerReferences ORDER BY CustomerReference";
-                using var r = cmd.ExecuteReader();
+                using SqliteDataReader r = cmd.ExecuteReader();
                 while (r.Read())
                 {
                     list.Add(new CustomerRefItem
@@ -1384,9 +1384,9 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
             if (string.IsNullOrWhiteSpace(customerRef)) return "";
             return Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "SELECT Company FROM CustomerReferences WHERE CustomerReference = $ref";
-                cmd.Parameters.AddWithValue("$ref", customerRef);
+                _ = cmd.Parameters.AddWithValue("$ref", customerRef);
                 var result = cmd.ExecuteScalar();
                 return result?.ToString() ?? "";
             });
@@ -1397,11 +1397,11 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
             if (string.IsNullOrWhiteSpace(note)) return;
             Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = @"INSERT INTO NotesSuggestions (Note, UseCount, LastUsedAt) VALUES ($note, 1, $lastUsed) ON CONFLICT(Note) DO UPDATE SET UseCount = UseCount + 1, LastUsedAt = $lastUsed";
-                cmd.Parameters.AddWithValue("$note", note);
-                cmd.Parameters.AddWithValue("$lastUsed", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
-                cmd.ExecuteNonQuery();
+                _ = cmd.Parameters.AddWithValue("$note", note);
+                _ = cmd.Parameters.AddWithValue("$lastUsed", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
+                _ = cmd.ExecuteNonQuery();
             });
         }
 
@@ -1410,9 +1410,9 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
             return Execute(conn =>
             {
                 var list = new List<string>();
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "SELECT Note FROM NotesSuggestions ORDER BY UseCount DESC, LastUsedAt DESC";
-                using var r = cmd.ExecuteReader();
+                using SqliteDataReader r = cmd.ExecuteReader();
                 while (r.Read()) list.Add(r.GetString(0));
                 return list;
             });
@@ -1423,18 +1423,18 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
             if (string.IsNullOrWhiteSpace(customerRef) || string.IsNullOrWhiteSpace(piNumber)) return false;
             return Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 if (excludeId > 0)
                 {
                     cmd.CommandText = "SELECT COUNT(*) FROM DailyWork WHERE CustomerReference = $ref AND PINumber = $pi AND Id != $excludeId";
-                    cmd.Parameters.AddWithValue("$excludeId", excludeId);
+                    _ = cmd.Parameters.AddWithValue("$excludeId", excludeId);
                 }
                 else
                 {
                     cmd.CommandText = "SELECT COUNT(*) FROM DailyWork WHERE CustomerReference = $ref AND PINumber = $pi";
                 }
-                cmd.Parameters.AddWithValue("$ref", customerRef);
-                cmd.Parameters.AddWithValue("$pi", piNumber);
+                _ = cmd.Parameters.AddWithValue("$ref", customerRef);
+                _ = cmd.Parameters.AddWithValue("$pi", piNumber);
                 return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
             });
         }
@@ -1449,13 +1449,13 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
             {
                 Execute(conn =>
                 {
-                    using var cmd = conn.CreateCommand();
+                    using SqliteCommand cmd = conn.CreateCommand();
                     cmd.CommandText = @"INSERT INTO CalculationLogs (ModuleType, SQM, Notes, CreatedDate) VALUES ($moduleType, $sqm, $notes, $createdDate)";
-                    cmd.Parameters.AddWithValue("$moduleType", moduleType);
-                    cmd.Parameters.AddWithValue("$sqm", sqm);
-                    cmd.Parameters.AddWithValue("$notes", notes ?? "");
-                    cmd.Parameters.AddWithValue("$createdDate", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
-                    cmd.ExecuteNonQuery();
+                    _ = cmd.Parameters.AddWithValue("$moduleType", moduleType);
+                    _ = cmd.Parameters.AddWithValue("$sqm", sqm);
+                    _ = cmd.Parameters.AddWithValue("$notes", notes ?? "");
+                    _ = cmd.Parameters.AddWithValue("$createdDate", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+                    _ = cmd.ExecuteNonQuery();
                 });
             }
             catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[LogCalc] {ex.Message}"); }
@@ -1467,12 +1467,12 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
             {
                 Execute(conn =>
                 {
-                    using var cmd = conn.CreateCommand();
+                    using SqliteCommand cmd = conn.CreateCommand();
                     cmd.CommandText = @"INSERT INTO SystemMetrics (MetricType, MetricValue, CreatedDate) VALUES ($metricType, $value, $createdDate)";
-                    cmd.Parameters.AddWithValue("$metricType", metricType);
-                    cmd.Parameters.AddWithValue("$value", value);
-                    cmd.Parameters.AddWithValue("$createdDate", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
-                    cmd.ExecuteNonQuery();
+                    _ = cmd.Parameters.AddWithValue("$metricType", metricType);
+                    _ = cmd.Parameters.AddWithValue("$value", value);
+                    _ = cmd.Parameters.AddWithValue("$createdDate", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+                    _ = cmd.ExecuteNonQuery();
                 });
             }
             catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[LogMetric] {ex.Message}"); }
@@ -1496,9 +1496,9 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
                         _ => "1=1"
                     };
 
-                    using var cmd = conn.CreateCommand();
+                    using SqliteCommand cmd = conn.CreateCommand();
                     cmd.CommandText = $"SELECT COALESCE(SUM(SQM), 0) FROM CalculationLogs WHERE ModuleType = $moduleType AND {dateFilter}";
-                    cmd.Parameters.AddWithValue("$moduleType", moduleType);
+                    _ = cmd.Parameters.AddWithValue("$moduleType", moduleType);
                     return Convert.ToDouble(cmd.ExecuteScalar());
                 });
             }
@@ -1511,9 +1511,9 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
             {
                 return Execute(conn =>
                 {
-                    using var cmd = conn.CreateCommand();
+                    using SqliteCommand cmd = conn.CreateCommand();
                     cmd.CommandText = "SELECT COUNT(*) FROM CalculationLogs WHERE ModuleType = $moduleType AND DATE(CreatedDate) = DATE('now', 'localtime')";
-                    cmd.Parameters.AddWithValue("$moduleType", moduleType);
+                    _ = cmd.Parameters.AddWithValue("$moduleType", moduleType);
                     return Convert.ToInt32(cmd.ExecuteScalar());
                 });
             }
@@ -1526,11 +1526,11 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
             {
                 return Execute(conn =>
                 {
-                    using var cmd = conn.CreateCommand();
+                    using SqliteCommand cmd = conn.CreateCommand();
                     cmd.CommandText = "SELECT COUNT(*) FROM CalculationLogs WHERE ModuleType = $moduleType AND datetime(CreatedDate) BETWEEN datetime($since) AND datetime($until)";
-                    cmd.Parameters.AddWithValue("$moduleType", moduleType);
-                    cmd.Parameters.AddWithValue("$since", since.ToString("yyyy-MM-dd HH:mm:ss"));
-                    cmd.Parameters.AddWithValue("$until", until.ToString("yyyy-MM-dd HH:mm:ss"));
+                    _ = cmd.Parameters.AddWithValue("$moduleType", moduleType);
+                    _ = cmd.Parameters.AddWithValue("$since", since.ToString("yyyy-MM-dd HH:mm:ss"));
+                    _ = cmd.Parameters.AddWithValue("$until", until.ToString("yyyy-MM-dd HH:mm:ss"));
                     return Convert.ToInt32(cmd.ExecuteScalar());
                 });
             }
@@ -1543,13 +1543,13 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
             {
                 return Execute(conn =>
                 {
-                    using var cmd = conn.CreateCommand();
+                    using SqliteCommand cmd = conn.CreateCommand();
                     cmd.CommandText = "SELECT MAX(datetime(CreatedDate)) FROM CalculationLogs WHERE ModuleType = $moduleType";
-                    cmd.Parameters.AddWithValue("$moduleType", moduleType);
+                    _ = cmd.Parameters.AddWithValue("$moduleType", moduleType);
                     var result = cmd.ExecuteScalar();
                     if (result != null && result != DBNull.Value)
                     {
-                        DateTime.TryParse(result.ToString(), out var date);
+                        _ = DateTime.TryParse(result.ToString(), out DateTime date);
                         return date;
                     }
                     return DateTime.MinValue;
@@ -1565,9 +1565,9 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
                 return Execute(conn =>
                 {
                     var results = new List<double>();
-                    using var cmd = conn.CreateCommand();
+                    using SqliteCommand cmd = conn.CreateCommand();
                     cmd.CommandText = "SELECT MetricValue FROM SystemMetrics WHERE MetricType = 'Uptime' AND datetime(CreatedDate) >= datetime('now', '-24 hours') ORDER BY CreatedDate DESC LIMIT 100";
-                    using var r = cmd.ExecuteReader();
+                    using SqliteDataReader r = cmd.ExecuteReader();
                     while (r.Read()) results.Add(Convert.ToDouble(r["MetricValue"]));
                     return results;
                 });
@@ -1585,9 +1585,9 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
             {
                 return Execute(conn =>
                 {
-                    using var cmd = conn.CreateCommand();
+                    using SqliteCommand cmd = conn.CreateCommand();
                     cmd.CommandText = "INSERT INTO ImportSessions (SessionDateTime, ImportedCount, UpdatedCount, SkippedCount) VALUES ($sessionDateTime, 0, 0, 0); SELECT last_insert_rowid();";
-                    cmd.Parameters.AddWithValue("$sessionDateTime", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+                    _ = cmd.Parameters.AddWithValue("$sessionDateTime", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
                     return Convert.ToInt32(cmd.ExecuteScalar());
                 });
             }
@@ -1600,13 +1600,13 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
             {
                 Execute(conn =>
                 {
-                    using var cmd = conn.CreateCommand();
+                    using SqliteCommand cmd = conn.CreateCommand();
                     cmd.CommandText = "UPDATE ImportSessions SET ImportedCount = $imported, UpdatedCount = $updated, SkippedCount = $skipped WHERE Id = $sessionId";
-                    cmd.Parameters.AddWithValue("$sessionId", sessionId);
-                    cmd.Parameters.AddWithValue("$imported", imported);
-                    cmd.Parameters.AddWithValue("$updated", updated);
-                    cmd.Parameters.AddWithValue("$skipped", skipped);
-                    cmd.ExecuteNonQuery();
+                    _ = cmd.Parameters.AddWithValue("$sessionId", sessionId);
+                    _ = cmd.Parameters.AddWithValue("$imported", imported);
+                    _ = cmd.Parameters.AddWithValue("$updated", updated);
+                    _ = cmd.Parameters.AddWithValue("$skipped", skipped);
+                    _ = cmd.ExecuteNonQuery();
                 });
             }
             catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[UpdateSession] {ex.Message}"); }
@@ -1618,14 +1618,14 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
             {
                 Execute(conn =>
                 {
-                    using var cmd = conn.CreateCommand();
+                    using SqliteCommand cmd = conn.CreateCommand();
                     cmd.CommandText = @"INSERT INTO ImportLogs (SessionId, ImportDateTime, PINumber, Company, ChangesJson) VALUES ($sessionId, $importDateTime, $piNumber, $company, $changesJson)";
-                    cmd.Parameters.AddWithValue("$sessionId", sessionId);
-                    cmd.Parameters.AddWithValue("$importDateTime", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
-                    cmd.Parameters.AddWithValue("$piNumber", piNumber ?? "");
-                    cmd.Parameters.AddWithValue("$company", company ?? "");
-                    cmd.Parameters.AddWithValue("$changesJson", changesJson ?? "");
-                    cmd.ExecuteNonQuery();
+                    _ = cmd.Parameters.AddWithValue("$sessionId", sessionId);
+                    _ = cmd.Parameters.AddWithValue("$importDateTime", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+                    _ = cmd.Parameters.AddWithValue("$piNumber", piNumber ?? "");
+                    _ = cmd.Parameters.AddWithValue("$company", company ?? "");
+                    _ = cmd.Parameters.AddWithValue("$changesJson", changesJson ?? "");
+                    _ = cmd.ExecuteNonQuery();
                 });
             }
             catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[SaveLog] {ex.Message}"); }
@@ -1638,15 +1638,15 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
                 return Execute(conn =>
                 {
                     var list = new List<ImportSessionInfo>();
-                    using var cmd = conn.CreateCommand();
+                    using SqliteCommand cmd = conn.CreateCommand();
                     cmd.CommandText = "SELECT Id, SessionDateTime, ImportedCount, UpdatedCount, SkippedCount, Notes FROM ImportSessions ORDER BY Id DESC LIMIT 50";
-                    using var r = cmd.ExecuteReader();
+                    using SqliteDataReader r = cmd.ExecuteReader();
                     while (r.Read())
                     {
                         list.Add(new ImportSessionInfo
                         {
                             Id = r.GetInt32(0),
-                            SessionDateTime = DateTime.TryParse(r.GetString(1), out var dt) ? dt : DateTime.Now,
+                            SessionDateTime = DateTime.TryParse(r.GetString(1), out DateTime dt) ? dt : DateTime.Now,
                             ImportedCount = r.GetInt32(2),
                             UpdatedCount = r.GetInt32(3),
                             SkippedCount = r.GetInt32(4),
@@ -1666,16 +1666,16 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
                 return Execute(conn =>
                 {
                     var list = new List<ImportLogInfo>();
-                    using var cmd = conn.CreateCommand();
+                    using SqliteCommand cmd = conn.CreateCommand();
                     cmd.CommandText = "SELECT Id, ImportDateTime, PINumber, Company, ChangesJson FROM ImportLogs WHERE SessionId = $sessionId ORDER BY Id DESC";
-                    cmd.Parameters.AddWithValue("$sessionId", sessionId);
-                    using var r = cmd.ExecuteReader();
+                    _ = cmd.Parameters.AddWithValue("$sessionId", sessionId);
+                    using SqliteDataReader r = cmd.ExecuteReader();
                     while (r.Read())
                     {
                         list.Add(new ImportLogInfo
                         {
                             Id = r.GetInt32(0),
-                            ImportDateTime = DateTime.TryParse(r.GetString(1), out var dt) ? dt : DateTime.Now,
+                            ImportDateTime = DateTime.TryParse(r.GetString(1), out DateTime dt) ? dt : DateTime.Now,
                             PINumber = r.IsDBNull(2) ? "" : r.GetString(2),
                             Company = r.IsDBNull(3) ? "" : r.GetString(3),
                             ChangesJson = r.IsDBNull(4) ? "" : r.GetString(4)
@@ -1697,20 +1697,20 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
             {
                 Execute(conn =>
                 {
-                    using var cmd1 = conn.CreateCommand();
+                    using SqliteCommand cmd1 = conn.CreateCommand();
                     cmd1.CommandText = "DELETE FROM CalculationLogs WHERE datetime(CreatedDate) < datetime('now', '-$days days')";
-                    cmd1.Parameters.AddWithValue("$days", keepDays);
-                    cmd1.ExecuteNonQuery();
+                    _ = cmd1.Parameters.AddWithValue("$days", keepDays);
+                    _ = cmd1.ExecuteNonQuery();
 
-                    using var cmd2 = conn.CreateCommand();
+                    using SqliteCommand cmd2 = conn.CreateCommand();
                     cmd2.CommandText = "DELETE FROM SystemMetrics WHERE datetime(CreatedDate) < datetime('now', '-$days days')";
-                    cmd2.Parameters.AddWithValue("$days", keepDays);
-                    cmd2.ExecuteNonQuery();
+                    _ = cmd2.Parameters.AddWithValue("$days", keepDays);
+                    _ = cmd2.ExecuteNonQuery();
 
-                    using var cmd3 = conn.CreateCommand();
+                    using SqliteCommand cmd3 = conn.CreateCommand();
                     cmd3.CommandText = "DELETE FROM ImportLogs WHERE datetime(ImportDateTime) < datetime('now', '-$days days')";
-                    cmd3.Parameters.AddWithValue("$days", keepDays);
-                    cmd3.ExecuteNonQuery();
+                    _ = cmd3.Parameters.AddWithValue("$days", keepDays);
+                    _ = cmd3.ExecuteNonQuery();
                 });
             }
             catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[Cleanup] {ex.Message}"); }
@@ -1727,14 +1727,14 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
 
                     foreach (var table in tables)
                     {
-                        using var cmd = conn.CreateCommand();
+                        using SqliteCommand cmd = conn.CreateCommand();
                         cmd.CommandText = $"SELECT COUNT(*) FROM {table}";
                         var count = Convert.ToInt32(cmd.ExecuteScalar());
-                        stats.AppendLine($"{table}: {count} records");
+                        _ = stats.AppendLine($"{table}: {count} records");
                     }
 
                     var dbSize = new FileInfo(DbPath).Length;
-                    stats.AppendLine($"Database size: {dbSize / (1024.0 * 1024.0):F2} MB");
+                    _ = stats.AppendLine($"Database size: {dbSize / (1024.0 * 1024.0):F2} MB");
                     return stats.ToString();
                 });
             }
@@ -1752,16 +1752,16 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
                 return Execute(conn =>
                 {
                     var list = new List<string>();
-                    using (var cmd = conn.CreateCommand())
+                    using (SqliteCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = "SELECT DISTINCT TypeOfWork FROM Deliveries WHERE TypeOfWork IS NOT NULL AND TypeOfWork != '' ORDER BY TypeOfWork";
-                        using var r = cmd.ExecuteReader();
+                        using SqliteDataReader r = cmd.ExecuteReader();
                         while (r.Read()) { var v = r.GetString(0); if (!list.Contains(v)) list.Add(v); }
                     }
-                    using (var cmd = conn.CreateCommand())
+                    using (SqliteCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = "SELECT DISTINCT TypeOfWork FROM DailyWork WHERE TypeOfWork IS NOT NULL AND TypeOfWork != '' ORDER BY TypeOfWork";
-                        using var r = cmd.ExecuteReader();
+                        using SqliteDataReader r = cmd.ExecuteReader();
                         while (r.Read()) { var v = r.GetString(0); if (!list.Contains(v)) list.Add(v); }
                     }
                     return list;
@@ -1777,10 +1777,10 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
                 return Execute(conn =>
                 {
                     var list = new List<string>();
-                    using (var cmd = conn.CreateCommand())
+                    using (SqliteCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = "SELECT DISTINCT Status FROM Deliveries WHERE Status IS NOT NULL AND Status != '' ORDER BY Status";
-                        using var r = cmd.ExecuteReader();
+                        using SqliteDataReader r = cmd.ExecuteReader();
                         while (r.Read()) { var v = r.GetString(0); if (!list.Contains(v)) list.Add(v); }
                     }
                     var defaults = new[] { "Pending", "Partially Delivered", "Completed", "Cancelled" };
@@ -1798,16 +1798,16 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
                 return Execute(conn =>
                 {
                     var list = new List<string>();
-                    using (var cmd = conn.CreateCommand())
+                    using (SqliteCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = "SELECT DISTINCT Salesman FROM Deliveries WHERE Salesman IS NOT NULL AND Salesman != '' ORDER BY Salesman";
-                        using var r = cmd.ExecuteReader();
+                        using SqliteDataReader r = cmd.ExecuteReader();
                         while (r.Read()) { var v = r.GetString(0); if (!list.Contains(v)) list.Add(v); }
                     }
-                    using (var cmd = conn.CreateCommand())
+                    using (SqliteCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = "SELECT DISTINCT Salesman FROM DailyWork WHERE Salesman IS NOT NULL AND Salesman != '' ORDER BY Salesman";
-                        using var r = cmd.ExecuteReader();
+                        using SqliteDataReader r = cmd.ExecuteReader();
                         while (r.Read()) { var v = r.GetString(0); if (!list.Contains(v)) list.Add(v); }
                     }
                     return list;
@@ -1823,16 +1823,16 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
                 return Execute(conn =>
                 {
                     var list = new List<string>();
-                    using (var cmd = conn.CreateCommand())
+                    using (SqliteCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = "SELECT DISTINCT Company FROM Deliveries WHERE Company IS NOT NULL AND Company != '' ORDER BY Company";
-                        using var r = cmd.ExecuteReader();
+                        using SqliteDataReader r = cmd.ExecuteReader();
                         while (r.Read()) { var v = r.GetString(0); if (!list.Contains(v)) list.Add(v); }
                     }
-                    using (var cmd = conn.CreateCommand())
+                    using (SqliteCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = "SELECT DISTINCT Company FROM DailyWork WHERE Company IS NOT NULL AND Company != '' ORDER BY Company";
-                        using var r = cmd.ExecuteReader();
+                        using SqliteDataReader r = cmd.ExecuteReader();
                         while (r.Read()) { var v = r.GetString(0); if (!list.Contains(v)) list.Add(v); }
                     }
                     return list;
@@ -1848,9 +1848,9 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
                 return Execute(conn =>
                 {
                     var list = new List<string>();
-                    using var cmd = conn.CreateCommand();
+                    using SqliteCommand cmd = conn.CreateCommand();
                     cmd.CommandText = "SELECT DISTINCT Driver FROM DeliveryItems WHERE Driver IS NOT NULL AND Driver != '' ORDER BY Driver";
-                    using var r = cmd.ExecuteReader();
+                    using SqliteDataReader r = cmd.ExecuteReader();
                     while (r.Read()) { var v = r.GetString(0); if (!list.Contains(v)) list.Add(v); }
                     return list;
                 });
@@ -1865,9 +1865,9 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
                 return Execute(conn =>
                 {
                     var list = new List<string>();
-                    using var cmd = conn.CreateCommand();
+                    using SqliteCommand cmd = conn.CreateCommand();
                     cmd.CommandText = "SELECT DISTINCT Vehicle FROM DeliveryItems WHERE Vehicle IS NOT NULL AND Vehicle != '' ORDER BY Vehicle";
-                    using var r = cmd.ExecuteReader();
+                    using SqliteDataReader r = cmd.ExecuteReader();
                     while (r.Read()) { var v = r.GetString(0); if (!list.Contains(v)) list.Add(v); }
                     return list;
                 });
@@ -1882,16 +1882,16 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
                 return Execute(conn =>
                 {
                     var list = new List<string>();
-                    using (var cmd = conn.CreateCommand())
+                    using (SqliteCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = "SELECT DISTINCT Color FROM Deliveries WHERE Color IS NOT NULL AND Color != '' ORDER BY Color";
-                        using var r = cmd.ExecuteReader();
+                        using SqliteDataReader r = cmd.ExecuteReader();
                         while (r.Read()) { var v = r.GetString(0); if (!list.Contains(v)) list.Add(v); }
                     }
-                    using (var cmd = conn.CreateCommand())
+                    using (SqliteCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = "SELECT DISTINCT Color FROM DailyWork WHERE Color IS NOT NULL AND Color != '' ORDER BY Color";
-                        using var r = cmd.ExecuteReader();
+                        using SqliteDataReader r = cmd.ExecuteReader();
                         while (r.Read()) { var v = r.GetString(0); if (!list.Contains(v)) list.Add(v); }
                     }
                     return list;
@@ -1908,110 +1908,110 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
         {
             Execute(conn =>
             {
-                using var checkCmd = conn.CreateCommand();
+                using SqliteCommand checkCmd = conn.CreateCommand();
                 checkCmd.CommandText = "SELECT Id FROM ProformaInvoices WHERE PINumber = $pi";
-                checkCmd.Parameters.AddWithValue("$pi", pi.InvoiceNo);
+                _ = checkCmd.Parameters.AddWithValue("$pi", pi.InvoiceNo);
                 var existingId = checkCmd.ExecuteScalar();
 
                 if (existingId != null)
                 {
                     pi.Id = Convert.ToInt32(existingId);
-                    using var cmd = conn.CreateCommand();
+                    using SqliteCommand cmd = conn.CreateCommand();
                     cmd.CommandText = @"UPDATE ProformaInvoices SET ClientName = $cn, ClientTRN = $ctr, ClientAddress = $ca, ProjectName = $pn, ProjectLocation = $pl, LPONumber = $lp, Attention = $att, ContactNo = $con, PIDate = $pd, ValidUntil = $vu, Status = $st, TotalAmount = $ta, VATPercent = $vp, VATAmount = $va, NetAmount = $na, CompanyName = $compName, CompanyTRN = $compTRN, CompanyLocation = $compLoc, CompanyPhone = $compPhone, Notes = $nt, Salesman = $sm, JobOrderRef = $joRef, CustomerReference = $custRef, ProjectNo = $projNo, Color = $clr, UpdatedDate = $ud WHERE Id = $id";
-                    cmd.Parameters.AddWithValue("$id", pi.Id);
-                    cmd.Parameters.AddWithValue("$cn", pi.CustomerName ?? "");
-                    cmd.Parameters.AddWithValue("$ctr", pi.CustomerTRN ?? "");
-                    cmd.Parameters.AddWithValue("$ca", pi.CustomerAddress ?? "");
-                    cmd.Parameters.AddWithValue("$pn", pi.ProjectName ?? "");
-                    cmd.Parameters.AddWithValue("$pl", pi.ProjectLocation ?? "");
-                    cmd.Parameters.AddWithValue("$lp", pi.LPONo ?? "");
-                    cmd.Parameters.AddWithValue("$att", pi.AttentionName ?? "");
-                    cmd.Parameters.AddWithValue("$con", pi.ContactNo ?? "");
-                    cmd.Parameters.AddWithValue("$pd", pi.InvoiceDate.ToString("yyyy-MM-dd HH:mm"));
-                    cmd.Parameters.AddWithValue("$vu", pi.ValidUntil.ToString("yyyy-MM-dd HH:mm"));
-                    cmd.Parameters.AddWithValue("$st", pi.Status ?? "Draft");
-                    cmd.Parameters.AddWithValue("$ta", pi.TotalAmount);
-                    cmd.Parameters.AddWithValue("$vp", 5);
-                    cmd.Parameters.AddWithValue("$va", pi.VATAmount);
-                    cmd.Parameters.AddWithValue("$na", pi.NetAmount);
-                    cmd.Parameters.AddWithValue("$compName", pi.CompanyName ?? "");
-                    cmd.Parameters.AddWithValue("$compTRN", pi.CompanyTRN ?? "");
-                    cmd.Parameters.AddWithValue("$compLoc", pi.CompanyLocation ?? "");
-                    cmd.Parameters.AddWithValue("$compPhone", pi.CompanyPhone ?? "");
-                    cmd.Parameters.AddWithValue("$nt", pi.Notes ?? "");
-                    cmd.Parameters.AddWithValue("$sm", pi.Salesman ?? "");
-                    cmd.Parameters.AddWithValue("$joRef", pi.JobOrderRef ?? "");
-                    cmd.Parameters.AddWithValue("$custRef", pi.CustomerReference ?? "");
-                    cmd.Parameters.AddWithValue("$projNo", pi.ProjectNo ?? "");
-                    cmd.Parameters.AddWithValue("$clr", pi.Color ?? "");
-                    cmd.Parameters.AddWithValue("$ud", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
-                    cmd.ExecuteNonQuery();
+                    _ = cmd.Parameters.AddWithValue("$id", pi.Id);
+                    _ = cmd.Parameters.AddWithValue("$cn", pi.CustomerName ?? "");
+                    _ = cmd.Parameters.AddWithValue("$ctr", pi.CustomerTRN ?? "");
+                    _ = cmd.Parameters.AddWithValue("$ca", pi.CustomerAddress ?? "");
+                    _ = cmd.Parameters.AddWithValue("$pn", pi.ProjectName ?? "");
+                    _ = cmd.Parameters.AddWithValue("$pl", pi.ProjectLocation ?? "");
+                    _ = cmd.Parameters.AddWithValue("$lp", pi.LPONo ?? "");
+                    _ = cmd.Parameters.AddWithValue("$att", pi.AttentionName ?? "");
+                    _ = cmd.Parameters.AddWithValue("$con", pi.ContactNo ?? "");
+                    _ = cmd.Parameters.AddWithValue("$pd", pi.InvoiceDate.ToString("yyyy-MM-dd HH:mm"));
+                    _ = cmd.Parameters.AddWithValue("$vu", pi.ValidUntil.ToString("yyyy-MM-dd HH:mm"));
+                    _ = cmd.Parameters.AddWithValue("$st", pi.Status ?? "Draft");
+                    _ = cmd.Parameters.AddWithValue("$ta", pi.TotalAmount);
+                    _ = cmd.Parameters.AddWithValue("$vp", 5);
+                    _ = cmd.Parameters.AddWithValue("$va", pi.VATAmount);
+                    _ = cmd.Parameters.AddWithValue("$na", pi.NetAmount);
+                    _ = cmd.Parameters.AddWithValue("$compName", pi.CompanyName ?? "");
+                    _ = cmd.Parameters.AddWithValue("$compTRN", pi.CompanyTRN ?? "");
+                    _ = cmd.Parameters.AddWithValue("$compLoc", pi.CompanyLocation ?? "");
+                    _ = cmd.Parameters.AddWithValue("$compPhone", pi.CompanyPhone ?? "");
+                    _ = cmd.Parameters.AddWithValue("$nt", pi.Notes ?? "");
+                    _ = cmd.Parameters.AddWithValue("$sm", pi.Salesman ?? "");
+                    _ = cmd.Parameters.AddWithValue("$joRef", pi.JobOrderRef ?? "");
+                    _ = cmd.Parameters.AddWithValue("$custRef", pi.CustomerReference ?? "");
+                    _ = cmd.Parameters.AddWithValue("$projNo", pi.ProjectNo ?? "");
+                    _ = cmd.Parameters.AddWithValue("$clr", pi.Color ?? "");
+                    _ = cmd.Parameters.AddWithValue("$ud", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
+                    _ = cmd.ExecuteNonQuery();
 
-                    using var delCmd = conn.CreateCommand();
+                    using SqliteCommand delCmd = conn.CreateCommand();
                     delCmd.CommandText = "DELETE FROM ProformaInvoiceItems WHERE ProformaInvoiceId = $id";
-                    delCmd.Parameters.AddWithValue("$id", pi.Id);
-                    delCmd.ExecuteNonQuery();
+                    _ = delCmd.Parameters.AddWithValue("$id", pi.Id);
+                    _ = delCmd.ExecuteNonQuery();
                 }
                 else
                 {
-                    using var cmd = conn.CreateCommand();
+                    using SqliteCommand cmd = conn.CreateCommand();
                     cmd.CommandText = @"INSERT INTO ProformaInvoices (PINumber, ClientName, ClientTRN, ClientAddress, ProjectName, ProjectLocation, LPONumber, Attention, ContactNo, PIDate, ValidUntil, Status, TotalAmount, VATPercent, VATAmount, NetAmount, CompanyName, CompanyTRN, CompanyLocation, CompanyPhone, Notes, Salesman, JobOrderRef, CustomerReference, ProjectNo, Color, CreatedDate, UpdatedDate)
                     VALUES ($pi, $cn, $ctr, $ca, $pn, $pl, $lp, $att, $con, $pd, $vu, $st, $ta, $vp, $va, $na, $compName, $compTRN, $compLoc, $compPhone, $nt, $sm, $joRef, $custRef, $projNo, $clr, $cd, $ud)";
-                    cmd.Parameters.AddWithValue("$pi", pi.InvoiceNo);
-                    cmd.Parameters.AddWithValue("$cn", pi.CustomerName ?? "");
-                    cmd.Parameters.AddWithValue("$ctr", pi.CustomerTRN ?? "");
-                    cmd.Parameters.AddWithValue("$ca", pi.CustomerAddress ?? "");
-                    cmd.Parameters.AddWithValue("$pn", pi.ProjectName ?? "");
-                    cmd.Parameters.AddWithValue("$pl", pi.ProjectLocation ?? "");
-                    cmd.Parameters.AddWithValue("$lp", pi.LPONo ?? "");
-                    cmd.Parameters.AddWithValue("$att", pi.AttentionName ?? "");
-                    cmd.Parameters.AddWithValue("$con", pi.ContactNo ?? "");
-                    cmd.Parameters.AddWithValue("$pd", pi.InvoiceDate.ToString("yyyy-MM-dd HH:mm"));
-                    cmd.Parameters.AddWithValue("$vu", pi.ValidUntil.ToString("yyyy-MM-dd HH:mm"));
-                    cmd.Parameters.AddWithValue("$st", pi.Status ?? "Draft");
-                    cmd.Parameters.AddWithValue("$ta", pi.TotalAmount);
-                    cmd.Parameters.AddWithValue("$vp", 5);
-                    cmd.Parameters.AddWithValue("$va", pi.VATAmount);
-                    cmd.Parameters.AddWithValue("$na", pi.NetAmount);
-                    cmd.Parameters.AddWithValue("$compName", pi.CompanyName ?? "");
-                    cmd.Parameters.AddWithValue("$compTRN", pi.CompanyTRN ?? "");
-                    cmd.Parameters.AddWithValue("$compLoc", pi.CompanyLocation ?? "");
-                    cmd.Parameters.AddWithValue("$compPhone", pi.CompanyPhone ?? "");
-                    cmd.Parameters.AddWithValue("$nt", pi.Notes ?? "");
-                    cmd.Parameters.AddWithValue("$sm", pi.Salesman ?? "");
-                    cmd.Parameters.AddWithValue("$joRef", pi.JobOrderRef ?? "");
-                    cmd.Parameters.AddWithValue("$custRef", pi.CustomerReference ?? "");
-                    cmd.Parameters.AddWithValue("$projNo", pi.ProjectNo ?? "");
-                    cmd.Parameters.AddWithValue("$clr", pi.Color ?? "");
-                    cmd.Parameters.AddWithValue("$cd", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
-                    cmd.Parameters.AddWithValue("$ud", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
-                    cmd.ExecuteNonQuery();
+                    _ = cmd.Parameters.AddWithValue("$pi", pi.InvoiceNo);
+                    _ = cmd.Parameters.AddWithValue("$cn", pi.CustomerName ?? "");
+                    _ = cmd.Parameters.AddWithValue("$ctr", pi.CustomerTRN ?? "");
+                    _ = cmd.Parameters.AddWithValue("$ca", pi.CustomerAddress ?? "");
+                    _ = cmd.Parameters.AddWithValue("$pn", pi.ProjectName ?? "");
+                    _ = cmd.Parameters.AddWithValue("$pl", pi.ProjectLocation ?? "");
+                    _ = cmd.Parameters.AddWithValue("$lp", pi.LPONo ?? "");
+                    _ = cmd.Parameters.AddWithValue("$att", pi.AttentionName ?? "");
+                    _ = cmd.Parameters.AddWithValue("$con", pi.ContactNo ?? "");
+                    _ = cmd.Parameters.AddWithValue("$pd", pi.InvoiceDate.ToString("yyyy-MM-dd HH:mm"));
+                    _ = cmd.Parameters.AddWithValue("$vu", pi.ValidUntil.ToString("yyyy-MM-dd HH:mm"));
+                    _ = cmd.Parameters.AddWithValue("$st", pi.Status ?? "Draft");
+                    _ = cmd.Parameters.AddWithValue("$ta", pi.TotalAmount);
+                    _ = cmd.Parameters.AddWithValue("$vp", 5);
+                    _ = cmd.Parameters.AddWithValue("$va", pi.VATAmount);
+                    _ = cmd.Parameters.AddWithValue("$na", pi.NetAmount);
+                    _ = cmd.Parameters.AddWithValue("$compName", pi.CompanyName ?? "");
+                    _ = cmd.Parameters.AddWithValue("$compTRN", pi.CompanyTRN ?? "");
+                    _ = cmd.Parameters.AddWithValue("$compLoc", pi.CompanyLocation ?? "");
+                    _ = cmd.Parameters.AddWithValue("$compPhone", pi.CompanyPhone ?? "");
+                    _ = cmd.Parameters.AddWithValue("$nt", pi.Notes ?? "");
+                    _ = cmd.Parameters.AddWithValue("$sm", pi.Salesman ?? "");
+                    _ = cmd.Parameters.AddWithValue("$joRef", pi.JobOrderRef ?? "");
+                    _ = cmd.Parameters.AddWithValue("$custRef", pi.CustomerReference ?? "");
+                    _ = cmd.Parameters.AddWithValue("$projNo", pi.ProjectNo ?? "");
+                    _ = cmd.Parameters.AddWithValue("$clr", pi.Color ?? "");
+                    _ = cmd.Parameters.AddWithValue("$cd", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
+                    _ = cmd.Parameters.AddWithValue("$ud", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
+                    _ = cmd.ExecuteNonQuery();
 
-                    using var idCmd = conn.CreateCommand();
+                    using SqliteCommand idCmd = conn.CreateCommand();
                     idCmd.CommandText = "SELECT last_insert_rowid()";
                     pi.Id = Convert.ToInt32(idCmd.ExecuteScalar());
                 }
 
-                foreach (var item in pi.Items)
+                foreach (ProformaInvoiceItemModel item in pi.Items)
                 {
-                    using var itemCmd = conn.CreateCommand();
+                    using SqliteCommand itemCmd = conn.CreateCommand();
                     itemCmd.CommandText = @"INSERT INTO ProformaInvoiceItems (ProformaInvoiceId, SrNo, GlassRef, Width1, Height1, Width2, Height2, Qty, SQM, TotalSQM, Price, TotalPrice, SurchargePercent, SurchargeThreshold)
                     VALUES ($piId, $sr, $gr, $w1, $h1, $w2, $h2, $q, $sqm, $tsqm, $pr, $tp, $sp, $st)";
-                    itemCmd.Parameters.AddWithValue("$piId", pi.Id);
-                    itemCmd.Parameters.AddWithValue("$sr", item.SrNo);
-                    itemCmd.Parameters.AddWithValue("$gr", item.GlassRef ?? "");
-                    itemCmd.Parameters.AddWithValue("$w1", item.Width1);
-                    itemCmd.Parameters.AddWithValue("$h1", item.Height1);
-                    itemCmd.Parameters.AddWithValue("$w2", item.Width2);
-                    itemCmd.Parameters.AddWithValue("$h2", item.Height2);
-                    itemCmd.Parameters.AddWithValue("$q", item.Qty);
-                    itemCmd.Parameters.AddWithValue("$sqm", item.SQM);
-                    itemCmd.Parameters.AddWithValue("$tsqm", item.TotalSQM);
-                    itemCmd.Parameters.AddWithValue("$pr", item.Price);
-                    itemCmd.Parameters.AddWithValue("$tp", item.TotalPrice);
-                    itemCmd.Parameters.AddWithValue("$sp", item.SurchargePercent);
-                    itemCmd.Parameters.AddWithValue("$st", item.SurchargeThreshold);
-                    itemCmd.ExecuteNonQuery();
+                    _ = itemCmd.Parameters.AddWithValue("$piId", pi.Id);
+                    _ = itemCmd.Parameters.AddWithValue("$sr", item.SrNo);
+                    _ = itemCmd.Parameters.AddWithValue("$gr", item.GlassRef ?? "");
+                    _ = itemCmd.Parameters.AddWithValue("$w1", item.Width1);
+                    _ = itemCmd.Parameters.AddWithValue("$h1", item.Height1);
+                    _ = itemCmd.Parameters.AddWithValue("$w2", item.Width2);
+                    _ = itemCmd.Parameters.AddWithValue("$h2", item.Height2);
+                    _ = itemCmd.Parameters.AddWithValue("$q", item.Qty);
+                    _ = itemCmd.Parameters.AddWithValue("$sqm", item.SQM);
+                    _ = itemCmd.Parameters.AddWithValue("$tsqm", item.TotalSQM);
+                    _ = itemCmd.Parameters.AddWithValue("$pr", item.Price);
+                    _ = itemCmd.Parameters.AddWithValue("$tp", item.TotalPrice);
+                    _ = itemCmd.Parameters.AddWithValue("$sp", item.SurchargePercent);
+                    _ = itemCmd.Parameters.AddWithValue("$st", item.SurchargeThreshold);
+                    _ = itemCmd.ExecuteNonQuery();
                 }
             });
         }
@@ -2021,9 +2021,9 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
             return Execute(conn =>
             {
                 var list = new List<ProformaInvoiceModel>();
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "SELECT * FROM ProformaInvoices ORDER BY Id DESC";
-                using var r = cmd.ExecuteReader();
+                using SqliteDataReader r = cmd.ExecuteReader();
                 while (r.Read())
                 {
                     var pi = new ProformaInvoiceModel
@@ -2038,8 +2038,8 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
                         LPONo = r.IsDBNull(7) ? "" : r.GetString(7),
                         AttentionName = r.IsDBNull(8) ? "" : r.GetString(8),
                         ContactNo = r.IsDBNull(9) ? "" : r.GetString(9),
-                        InvoiceDate = DateTime.TryParse(r.IsDBNull(10) ? "" : r.GetString(10), out var pd) ? pd : DateTime.Now,
-                        ValidUntil = DateTime.TryParse(r.IsDBNull(11) ? "" : r.GetString(11), out var vu) ? vu : DateTime.Now.AddDays(30),
+                        InvoiceDate = DateTime.TryParse(r.IsDBNull(10) ? "" : r.GetString(10), out DateTime pd) ? pd : DateTime.Now,
+                        ValidUntil = DateTime.TryParse(r.IsDBNull(11) ? "" : r.GetString(11), out DateTime vu) ? vu : DateTime.Now.AddDays(30),
                         Status = r.IsDBNull(12) ? "Draft" : r.GetString(12),
                         TotalAmount = r.GetDouble(13),
                         VATAmount = r.GetDouble(15),
@@ -2065,10 +2065,10 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
         private static List<ProformaInvoiceItemModel> GetProformaInvoiceItems(int piId, SqliteConnection conn)
         {
             var items = new List<ProformaInvoiceItemModel>();
-            using var cmd = conn.CreateCommand();
+            using SqliteCommand cmd = conn.CreateCommand();
             cmd.CommandText = "SELECT * FROM ProformaInvoiceItems WHERE ProformaInvoiceId = $id ORDER BY SrNo";
-            cmd.Parameters.AddWithValue("$id", piId);
-            using var r = cmd.ExecuteReader();
+            _ = cmd.Parameters.AddWithValue("$id", piId);
+            using SqliteDataReader r = cmd.ExecuteReader();
             while (r.Read())
             {
                 items.Add(new ProformaInvoiceItemModel
@@ -2096,12 +2096,12 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
         {
             Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "DELETE FROM ProformaInvoiceItems WHERE ProformaInvoiceId = $id";
-                cmd.Parameters.AddWithValue("$id", id);
-                cmd.ExecuteNonQuery();
+                _ = cmd.Parameters.AddWithValue("$id", id);
+                _ = cmd.ExecuteNonQuery();
                 cmd.CommandText = "DELETE FROM ProformaInvoices WHERE Id = $id";
-                cmd.ExecuteNonQuery();
+                _ = cmd.ExecuteNonQuery();
             });
         }
 
@@ -2113,11 +2113,11 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
                 Init();
                 Execute(conn =>
                 {
-                    using var cmd = conn.CreateCommand();
+                    using SqliteCommand cmd = conn.CreateCommand();
                     cmd.CommandText = "DELETE FROM ProformaInvoiceItems";
-                    cmd.ExecuteNonQuery();
+                    _ = cmd.ExecuteNonQuery();
                     cmd.CommandText = "DELETE FROM ProformaInvoices";
-                    cmd.ExecuteNonQuery();
+                    _ = cmd.ExecuteNonQuery();
                 });
                 System.Diagnostics.Debug.WriteLine("[DB] Cleared all ProformaInvoices");
             }
@@ -2180,15 +2180,15 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
                 };
 
                 // Now save using the existing logic
-                using var checkCmd = conn.CreateCommand();
+                using SqliteCommand checkCmd = conn.CreateCommand();
                 checkCmd.CommandText = "SELECT Id FROM JobOrders WHERE JONumber = $jo";
-                checkCmd.Parameters.AddWithValue("$jo", joModel.JONumber);
+                _ = checkCmd.Parameters.AddWithValue("$jo", joModel.JONumber);
                 var existingId = checkCmd.ExecuteScalar();
 
                 if (existingId != null)
                 {
                     joModel.Id = Convert.ToInt32(existingId);
-                    using var cmd = conn.CreateCommand();
+                    using SqliteCommand cmd = conn.CreateCommand();
                     cmd.CommandText = @"UPDATE JobOrders SET ProformaInvoiceId = $piId, ClientName = $cn, ClientTRN = $ctr, ClientAddress = $ca, 
     ClientReference = $cref, Salesman = $sm, ProjectNo = $pno,
     ContactPerson = $cp, ContactNumber = $cno, ProjectName = $pn, ProjectLocation = $pl, LPONumber = $lp, 
@@ -2196,42 +2196,42 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
     TotalAmount = $ta, VATAmount = $va, DiscountAmount = $da, NetAmount = $na, Notes = $nt, 
     SpecificationsJson = $specsJson, UpdatedDate = $ud WHERE Id = $id";
 
-                    cmd.Parameters.AddWithValue("$id", joModel.Id);
-                    cmd.Parameters.AddWithValue("$piId", joModel.ProformaInvoiceId > 0 ? joModel.ProformaInvoiceId : DBNull.Value);
-                    cmd.Parameters.AddWithValue("$cn", joModel.ClientName ?? "");
-                    cmd.Parameters.AddWithValue("$ctr", joModel.ClientTRN ?? "");
-                    cmd.Parameters.AddWithValue("$ca", joModel.ClientAddress ?? "");
-                    cmd.Parameters.AddWithValue("$cref", joModel.ClientReference ?? "");
-                    cmd.Parameters.AddWithValue("$sm", joModel.Salesman ?? "");
-                    cmd.Parameters.AddWithValue("$pno", joModel.ProjectNo ?? "");
-                    cmd.Parameters.AddWithValue("$cp", joModel.ContactPerson ?? "");
-                    cmd.Parameters.AddWithValue("$cno", joModel.ContactNumber ?? "");
-                    cmd.Parameters.AddWithValue("$pn", joModel.ProjectName ?? "");
-                    cmd.Parameters.AddWithValue("$pl", joModel.ProjectLocation ?? "");
-                    cmd.Parameters.AddWithValue("$lp", joModel.LPONumber ?? "");
-                    cmd.Parameters.AddWithValue("$jd", joModel.JODate.ToString("yyyy-MM-dd HH:mm:ss"));
-                    cmd.Parameters.AddWithValue("$rd", joModel.RequiredDate.ToString("yyyy-MM-dd HH:mm:ss"));
-                    cmd.Parameters.AddWithValue("$st", joModel.Status ?? "Pending");
-                    cmd.Parameters.AddWithValue("$tq", joModel.TotalQty);
-                    cmd.Parameters.AddWithValue("$rq", joModel.ReleasedQty);
-                    cmd.Parameters.AddWithValue("$bq", joModel.BalanceQty);
-                    cmd.Parameters.AddWithValue("$ta", joModel.TotalAmount);
-                    cmd.Parameters.AddWithValue("$va", joModel.VATAmount);
-                    cmd.Parameters.AddWithValue("$da", joModel.DiscountAmount);
-                    cmd.Parameters.AddWithValue("$na", joModel.NetAmount);
-                    cmd.Parameters.AddWithValue("$nt", joModel.Notes ?? "");
-                    cmd.Parameters.AddWithValue("$specsJson", joModel.SpecificationsJson ?? "");
-                    cmd.Parameters.AddWithValue("$ud", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
-                    cmd.ExecuteNonQuery();
+                    _ = cmd.Parameters.AddWithValue("$id", joModel.Id);
+                    _ = cmd.Parameters.AddWithValue("$piId", joModel.ProformaInvoiceId > 0 ? joModel.ProformaInvoiceId : DBNull.Value);
+                    _ = cmd.Parameters.AddWithValue("$cn", joModel.ClientName ?? "");
+                    _ = cmd.Parameters.AddWithValue("$ctr", joModel.ClientTRN ?? "");
+                    _ = cmd.Parameters.AddWithValue("$ca", joModel.ClientAddress ?? "");
+                    _ = cmd.Parameters.AddWithValue("$cref", joModel.ClientReference ?? "");
+                    _ = cmd.Parameters.AddWithValue("$sm", joModel.Salesman ?? "");
+                    _ = cmd.Parameters.AddWithValue("$pno", joModel.ProjectNo ?? "");
+                    _ = cmd.Parameters.AddWithValue("$cp", joModel.ContactPerson ?? "");
+                    _ = cmd.Parameters.AddWithValue("$cno", joModel.ContactNumber ?? "");
+                    _ = cmd.Parameters.AddWithValue("$pn", joModel.ProjectName ?? "");
+                    _ = cmd.Parameters.AddWithValue("$pl", joModel.ProjectLocation ?? "");
+                    _ = cmd.Parameters.AddWithValue("$lp", joModel.LPONumber ?? "");
+                    _ = cmd.Parameters.AddWithValue("$jd", joModel.JODate.ToString("yyyy-MM-dd HH:mm:ss"));
+                    _ = cmd.Parameters.AddWithValue("$rd", joModel.RequiredDate.ToString("yyyy-MM-dd HH:mm:ss"));
+                    _ = cmd.Parameters.AddWithValue("$st", joModel.Status ?? "Pending");
+                    _ = cmd.Parameters.AddWithValue("$tq", joModel.TotalQty);
+                    _ = cmd.Parameters.AddWithValue("$rq", joModel.ReleasedQty);
+                    _ = cmd.Parameters.AddWithValue("$bq", joModel.BalanceQty);
+                    _ = cmd.Parameters.AddWithValue("$ta", joModel.TotalAmount);
+                    _ = cmd.Parameters.AddWithValue("$va", joModel.VATAmount);
+                    _ = cmd.Parameters.AddWithValue("$da", joModel.DiscountAmount);
+                    _ = cmd.Parameters.AddWithValue("$na", joModel.NetAmount);
+                    _ = cmd.Parameters.AddWithValue("$nt", joModel.Notes ?? "");
+                    _ = cmd.Parameters.AddWithValue("$specsJson", joModel.SpecificationsJson ?? "");
+                    _ = cmd.Parameters.AddWithValue("$ud", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
+                    _ = cmd.ExecuteNonQuery();
 
-                    using var delCmd = conn.CreateCommand();
+                    using SqliteCommand delCmd = conn.CreateCommand();
                     delCmd.CommandText = "DELETE FROM JobOrderItems WHERE JobOrderId = $id";
-                    delCmd.Parameters.AddWithValue("$id", joModel.Id);
-                    delCmd.ExecuteNonQuery();
+                    _ = delCmd.Parameters.AddWithValue("$id", joModel.Id);
+                    _ = delCmd.ExecuteNonQuery();
                 }
                 else
                 {
-                    using var cmd = conn.CreateCommand();
+                    using SqliteCommand cmd = conn.CreateCommand();
                     cmd.CommandText = @"INSERT INTO JobOrders (JONumber, ProformaInvoiceId, ClientName, ClientTRN, ClientAddress, 
     ClientReference, Salesman, ProjectNo,
     ContactPerson, ContactNumber, ProjectName, ProjectLocation, LPONumber, JODate, RequiredDate, Status, 
@@ -2241,56 +2241,56 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
     $cref, $sm, $pno,
     $cp, $cno, $pn, $pl, $lp, $jd, $rd, $st, $tq, $rq, $bq, $ta, $va, $da, $na, $nt, $specsJson, $cd, $ud)";
 
-                    cmd.Parameters.AddWithValue("$jo", joModel.JONumber);
-                    cmd.Parameters.AddWithValue("$piId", joModel.ProformaInvoiceId > 0 ? joModel.ProformaInvoiceId : DBNull.Value);
-                    cmd.Parameters.AddWithValue("$cn", joModel.ClientName ?? "");
-                    cmd.Parameters.AddWithValue("$ctr", joModel.ClientTRN ?? "");
-                    cmd.Parameters.AddWithValue("$ca", joModel.ClientAddress ?? "");
-                    cmd.Parameters.AddWithValue("$cref", joModel.ClientReference ?? "");
-                    cmd.Parameters.AddWithValue("$sm", joModel.Salesman ?? "");
-                    cmd.Parameters.AddWithValue("$pno", joModel.ProjectNo ?? "");
-                    cmd.Parameters.AddWithValue("$cp", joModel.ContactPerson ?? "");
-                    cmd.Parameters.AddWithValue("$cno", joModel.ContactNumber ?? "");
-                    cmd.Parameters.AddWithValue("$pn", joModel.ProjectName ?? "");
-                    cmd.Parameters.AddWithValue("$pl", joModel.ProjectLocation ?? "");
-                    cmd.Parameters.AddWithValue("$lp", joModel.LPONumber ?? "");
-                    cmd.Parameters.AddWithValue("$jd", joModel.JODate.ToString("yyyy-MM-dd HH:mm:ss"));
-                    cmd.Parameters.AddWithValue("$rd", joModel.RequiredDate.ToString("yyyy-MM-dd HH:mm:ss"));
-                    cmd.Parameters.AddWithValue("$st", joModel.Status ?? "Pending");
-                    cmd.Parameters.AddWithValue("$tq", joModel.TotalQty);
-                    cmd.Parameters.AddWithValue("$rq", joModel.ReleasedQty);
-                    cmd.Parameters.AddWithValue("$bq", joModel.BalanceQty);
-                    cmd.Parameters.AddWithValue("$ta", joModel.TotalAmount);
-                    cmd.Parameters.AddWithValue("$va", joModel.VATAmount);
-                    cmd.Parameters.AddWithValue("$da", joModel.DiscountAmount);
-                    cmd.Parameters.AddWithValue("$na", joModel.NetAmount);
-                    cmd.Parameters.AddWithValue("$nt", joModel.Notes ?? "");
-                    cmd.Parameters.AddWithValue("$specsJson", joModel.SpecificationsJson ?? "");
-                    cmd.Parameters.AddWithValue("$cd", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
-                    cmd.Parameters.AddWithValue("$ud", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
-                    cmd.ExecuteNonQuery();
+                    _ = cmd.Parameters.AddWithValue("$jo", joModel.JONumber);
+                    _ = cmd.Parameters.AddWithValue("$piId", joModel.ProformaInvoiceId > 0 ? joModel.ProformaInvoiceId : DBNull.Value);
+                    _ = cmd.Parameters.AddWithValue("$cn", joModel.ClientName ?? "");
+                    _ = cmd.Parameters.AddWithValue("$ctr", joModel.ClientTRN ?? "");
+                    _ = cmd.Parameters.AddWithValue("$ca", joModel.ClientAddress ?? "");
+                    _ = cmd.Parameters.AddWithValue("$cref", joModel.ClientReference ?? "");
+                    _ = cmd.Parameters.AddWithValue("$sm", joModel.Salesman ?? "");
+                    _ = cmd.Parameters.AddWithValue("$pno", joModel.ProjectNo ?? "");
+                    _ = cmd.Parameters.AddWithValue("$cp", joModel.ContactPerson ?? "");
+                    _ = cmd.Parameters.AddWithValue("$cno", joModel.ContactNumber ?? "");
+                    _ = cmd.Parameters.AddWithValue("$pn", joModel.ProjectName ?? "");
+                    _ = cmd.Parameters.AddWithValue("$pl", joModel.ProjectLocation ?? "");
+                    _ = cmd.Parameters.AddWithValue("$lp", joModel.LPONumber ?? "");
+                    _ = cmd.Parameters.AddWithValue("$jd", joModel.JODate.ToString("yyyy-MM-dd HH:mm:ss"));
+                    _ = cmd.Parameters.AddWithValue("$rd", joModel.RequiredDate.ToString("yyyy-MM-dd HH:mm:ss"));
+                    _ = cmd.Parameters.AddWithValue("$st", joModel.Status ?? "Pending");
+                    _ = cmd.Parameters.AddWithValue("$tq", joModel.TotalQty);
+                    _ = cmd.Parameters.AddWithValue("$rq", joModel.ReleasedQty);
+                    _ = cmd.Parameters.AddWithValue("$bq", joModel.BalanceQty);
+                    _ = cmd.Parameters.AddWithValue("$ta", joModel.TotalAmount);
+                    _ = cmd.Parameters.AddWithValue("$va", joModel.VATAmount);
+                    _ = cmd.Parameters.AddWithValue("$da", joModel.DiscountAmount);
+                    _ = cmd.Parameters.AddWithValue("$na", joModel.NetAmount);
+                    _ = cmd.Parameters.AddWithValue("$nt", joModel.Notes ?? "");
+                    _ = cmd.Parameters.AddWithValue("$specsJson", joModel.SpecificationsJson ?? "");
+                    _ = cmd.Parameters.AddWithValue("$cd", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
+                    _ = cmd.Parameters.AddWithValue("$ud", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
+                    _ = cmd.ExecuteNonQuery();
 
-                    using var idCmd = conn.CreateCommand();
+                    using SqliteCommand idCmd = conn.CreateCommand();
                     idCmd.CommandText = "SELECT last_insert_rowid()";
                     joModel.Id = Convert.ToInt32(idCmd.ExecuteScalar());
                 }
 
-                foreach (var item in joModel.Items)
+                foreach (JobOrderItemModel item in joModel.Items)
                 {
-                    using var itemCmd = conn.CreateCommand();
+                    using SqliteCommand itemCmd = conn.CreateCommand();
                     itemCmd.CommandText = @"INSERT INTO JobOrderItems (JobOrderId, SrNo, GlassRef, Width, Height, OrderedQty, ReleasedQty, BalanceQty, Price, TotalAmount)
             VALUES ($joId, $sr, $gr, $w, $h, $oq, $rq, $bq, $pr, $ta)";
-                    itemCmd.Parameters.AddWithValue("$joId", joModel.Id);
-                    itemCmd.Parameters.AddWithValue("$sr", item.SrNo);
-                    itemCmd.Parameters.AddWithValue("$gr", item.GlassRef ?? "");
-                    itemCmd.Parameters.AddWithValue("$w", item.Width);
-                    itemCmd.Parameters.AddWithValue("$h", item.Height);
-                    itemCmd.Parameters.AddWithValue("$oq", item.OrderedQty);
-                    itemCmd.Parameters.AddWithValue("$rq", item.ReleasedQty);
-                    itemCmd.Parameters.AddWithValue("$bq", item.BalanceQty);
-                    itemCmd.Parameters.AddWithValue("$pr", item.Price);
-                    itemCmd.Parameters.AddWithValue("$ta", item.TotalAmount);
-                    itemCmd.ExecuteNonQuery();
+                    _ = itemCmd.Parameters.AddWithValue("$joId", joModel.Id);
+                    _ = itemCmd.Parameters.AddWithValue("$sr", item.SrNo);
+                    _ = itemCmd.Parameters.AddWithValue("$gr", item.GlassRef ?? "");
+                    _ = itemCmd.Parameters.AddWithValue("$w", item.Width);
+                    _ = itemCmd.Parameters.AddWithValue("$h", item.Height);
+                    _ = itemCmd.Parameters.AddWithValue("$oq", item.OrderedQty);
+                    _ = itemCmd.Parameters.AddWithValue("$rq", item.ReleasedQty);
+                    _ = itemCmd.Parameters.AddWithValue("$bq", item.BalanceQty);
+                    _ = itemCmd.Parameters.AddWithValue("$pr", item.Price);
+                    _ = itemCmd.Parameters.AddWithValue("$ta", item.TotalAmount);
+                    _ = itemCmd.ExecuteNonQuery();
                 }
             });
         }
@@ -2300,7 +2300,7 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
             return Execute(conn =>
             {
                 var list = new List<JobOrderModel>();
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = @"SELECT 
             j.Id, j.JONumber, j.ProformaInvoiceId, j.ClientName, j.ProjectName, 
             j.ProjectLocation, j.JODate, j.RequiredDate, j.Status, j.TotalQty, 
@@ -2312,7 +2312,7 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
             FROM JobOrders j
             LEFT JOIN ProformaInvoices p ON j.ProformaInvoiceId = p.Id
             ORDER BY j.Id DESC";
-                using var r = cmd.ExecuteReader();
+                using SqliteDataReader r = cmd.ExecuteReader();
                 while (r.Read())
                 {
                     var jo = new JobOrderModel
@@ -2323,8 +2323,8 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
                         ClientName = r.IsDBNull(3) ? "" : r.GetString(3),
                         ProjectName = r.IsDBNull(4) ? "" : r.GetString(4),
                         ProjectLocation = r.IsDBNull(5) ? "" : r.GetString(5),
-                        JODate = DateTime.TryParse(r.IsDBNull(6) ? "" : r.GetString(6), out var jd) ? jd : DateTime.Now,
-                        RequiredDate = DateTime.TryParse(r.IsDBNull(7) ? "" : r.GetString(7), out var rd) ? rd : DateTime.Now.AddDays(7),
+                        JODate = DateTime.TryParse(r.IsDBNull(6) ? "" : r.GetString(6), out DateTime jd) ? jd : DateTime.Now,
+                        RequiredDate = DateTime.TryParse(r.IsDBNull(7) ? "" : r.GetString(7), out DateTime rd) ? rd : DateTime.Now.AddDays(7),
                         Status = r.IsDBNull(8) ? "Pending" : r.GetString(8),
                         TotalQty = r.GetInt32(9),
                         ReleasedQty = r.GetInt32(10),
@@ -2359,10 +2359,10 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
             {
                 // Use existing connection (internal use)
                 var items = new List<JobOrderItemModel>();
-                using var cmd = existingConnection.CreateCommand();
+                using SqliteCommand cmd = existingConnection.CreateCommand();
                 cmd.CommandText = "SELECT * FROM JobOrderItems WHERE JobOrderId = $id ORDER BY SrNo";
-                cmd.Parameters.AddWithValue("$id", joId);
-                using var r = cmd.ExecuteReader();
+                _ = cmd.Parameters.AddWithValue("$id", joId);
+                using SqliteDataReader r = cmd.ExecuteReader();
                 while (r.Read())
                 {
                     items.Add(new JobOrderItemModel
@@ -2390,7 +2390,7 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
         {
             Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
 
                 cmd.CommandText = @"
 UPDATE JobOrders
@@ -2399,12 +2399,12 @@ SET
     UpdatedDate = $updated
 WHERE Id = $id";
 
-                cmd.Parameters.AddWithValue("$id", jobOrderId);
-                cmd.Parameters.AddWithValue("$status", status ?? "Pending");
-                cmd.Parameters.AddWithValue("$updated",
+                _ = cmd.Parameters.AddWithValue("$id", jobOrderId);
+                _ = cmd.Parameters.AddWithValue("$status", status ?? "Pending");
+                _ = cmd.Parameters.AddWithValue("$updated",
                     DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
 
-                cmd.ExecuteNonQuery();
+                _ = cmd.ExecuteNonQuery();
             });
         }
 
@@ -2413,16 +2413,16 @@ WHERE Id = $id";
             Execute(conn =>
             {
                 // Delete JobOrderItems first (child records)
-                using var delItemsCmd = conn.CreateCommand();
+                using SqliteCommand delItemsCmd = conn.CreateCommand();
                 delItemsCmd.CommandText = "DELETE FROM JobOrderItems WHERE JobOrderId = $id";
-                delItemsCmd.Parameters.AddWithValue("$id", id);
-                delItemsCmd.ExecuteNonQuery();
+                _ = delItemsCmd.Parameters.AddWithValue("$id", id);
+                _ = delItemsCmd.ExecuteNonQuery();
 
                 // Delete main JobOrder record
-                using var delCmd = conn.CreateCommand();
+                using SqliteCommand delCmd = conn.CreateCommand();
                 delCmd.CommandText = "DELETE FROM JobOrders WHERE Id = $id";
-                delCmd.Parameters.AddWithValue("$id", id);
-                delCmd.ExecuteNonQuery();
+                _ = delCmd.Parameters.AddWithValue("$id", id);
+                _ = delCmd.ExecuteNonQuery();
             });
         }
 
@@ -2434,74 +2434,74 @@ WHERE Id = $id";
         {
             Execute(conn =>
             {
-                using var checkCmd = conn.CreateCommand();
+                using SqliteCommand checkCmd = conn.CreateCommand();
                 checkCmd.CommandText = "SELECT Id FROM DeliveryOrders WHERE DONumber = $do";
-                checkCmd.Parameters.AddWithValue("$do", d.DONumber);
+                _ = checkCmd.Parameters.AddWithValue("$do", d.DONumber);
                 var existingId = checkCmd.ExecuteScalar();
 
                 if (existingId != null)
                 {
                     d.Id = Convert.ToInt32(existingId);
-                    using var cmd = conn.CreateCommand();
+                    using SqliteCommand cmd = conn.CreateCommand();
                     cmd.CommandText = @"UPDATE DeliveryOrders SET JobOrderId = $joId, ProformaInvoiceId = $piId, ClientName = $cn, ProjectName = $pn, DODate = $dd, Status = $st, VehicleNumber = $vn, DriverName = $dr, Notes = $nt, TotalQty = $tq, DeliveredQty = $dq, UpdatedDate = $ud WHERE Id = $id";
-                    cmd.Parameters.AddWithValue("$id", d.Id);
-                    cmd.Parameters.AddWithValue("$joId", d.JobOrderId > 0 ? d.JobOrderId : DBNull.Value);
-                    cmd.Parameters.AddWithValue("$piId", d.ProformaInvoiceId > 0 ? d.ProformaInvoiceId : DBNull.Value);
-                    cmd.Parameters.AddWithValue("$cn", d.ClientName ?? "");
-                    cmd.Parameters.AddWithValue("$pn", d.ProjectName ?? "");
-                    cmd.Parameters.AddWithValue("$dd", d.DODate.ToString("yyyy-MM-dd HH:mm:ss"));
-                    cmd.Parameters.AddWithValue("$st", d.Status ?? "Pending");
-                    cmd.Parameters.AddWithValue("$vn", d.VehicleNumber ?? "");
-                    cmd.Parameters.AddWithValue("$dr", d.DriverName ?? "");
-                    cmd.Parameters.AddWithValue("$nt", d.Notes ?? "");
-                    cmd.Parameters.AddWithValue("$tq", d.TotalQty);
-                    cmd.Parameters.AddWithValue("$dq", d.DeliveredQty);
-                    cmd.Parameters.AddWithValue("$ud", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
-                    cmd.ExecuteNonQuery();
+                    _ = cmd.Parameters.AddWithValue("$id", d.Id);
+                    _ = cmd.Parameters.AddWithValue("$joId", d.JobOrderId > 0 ? d.JobOrderId : DBNull.Value);
+                    _ = cmd.Parameters.AddWithValue("$piId", d.ProformaInvoiceId > 0 ? d.ProformaInvoiceId : DBNull.Value);
+                    _ = cmd.Parameters.AddWithValue("$cn", d.ClientName ?? "");
+                    _ = cmd.Parameters.AddWithValue("$pn", d.ProjectName ?? "");
+                    _ = cmd.Parameters.AddWithValue("$dd", d.DODate.ToString("yyyy-MM-dd HH:mm:ss"));
+                    _ = cmd.Parameters.AddWithValue("$st", d.Status ?? "Pending");
+                    _ = cmd.Parameters.AddWithValue("$vn", d.VehicleNumber ?? "");
+                    _ = cmd.Parameters.AddWithValue("$dr", d.DriverName ?? "");
+                    _ = cmd.Parameters.AddWithValue("$nt", d.Notes ?? "");
+                    _ = cmd.Parameters.AddWithValue("$tq", d.TotalQty);
+                    _ = cmd.Parameters.AddWithValue("$dq", d.DeliveredQty);
+                    _ = cmd.Parameters.AddWithValue("$ud", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
+                    _ = cmd.ExecuteNonQuery();
 
-                    using var delCmd = conn.CreateCommand();
+                    using SqliteCommand delCmd = conn.CreateCommand();
                     delCmd.CommandText = "DELETE FROM DeliveryOrderItems WHERE DeliveryOrderId = $id";
-                    delCmd.Parameters.AddWithValue("$id", d.Id);
-                    delCmd.ExecuteNonQuery();
+                    _ = delCmd.Parameters.AddWithValue("$id", d.Id);
+                    _ = delCmd.ExecuteNonQuery();
                 }
                 else
                 {
-                    using var cmd = conn.CreateCommand();
+                    using SqliteCommand cmd = conn.CreateCommand();
                     cmd.CommandText = @"INSERT INTO DeliveryOrders (DONumber, JobOrderId, ProformaInvoiceId, ClientName, ProjectName, DODate, Status, VehicleNumber, DriverName, Notes, TotalQty, DeliveredQty, CreatedDate, UpdatedDate)
                     VALUES ($do, $joId, $piId, $cn, $pn, $dd, $st, $vn, $dr, $nt, $tq, $dq, $cd, $ud)";
-                    cmd.Parameters.AddWithValue("$do", d.DONumber);
-                    cmd.Parameters.AddWithValue("$joId", d.JobOrderId > 0 ? d.JobOrderId : DBNull.Value);
-                    cmd.Parameters.AddWithValue("$piId", d.ProformaInvoiceId > 0 ? d.ProformaInvoiceId : DBNull.Value);
-                    cmd.Parameters.AddWithValue("$cn", d.ClientName ?? "");
-                    cmd.Parameters.AddWithValue("$pn", d.ProjectName ?? "");
-                    cmd.Parameters.AddWithValue("$dd", d.DODate.ToString("yyyy-MM-dd HH:mm:ss"));
-                    cmd.Parameters.AddWithValue("$st", d.Status ?? "Pending");
-                    cmd.Parameters.AddWithValue("$vn", d.VehicleNumber ?? "");
-                    cmd.Parameters.AddWithValue("$dr", d.DriverName ?? "");
-                    cmd.Parameters.AddWithValue("$nt", d.Notes ?? "");
-                    cmd.Parameters.AddWithValue("$tq", d.TotalQty);
-                    cmd.Parameters.AddWithValue("$dq", d.DeliveredQty);
-                    cmd.Parameters.AddWithValue("$cd", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
-                    cmd.Parameters.AddWithValue("$ud", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
-                    cmd.ExecuteNonQuery();
+                    _ = cmd.Parameters.AddWithValue("$do", d.DONumber);
+                    _ = cmd.Parameters.AddWithValue("$joId", d.JobOrderId > 0 ? d.JobOrderId : DBNull.Value);
+                    _ = cmd.Parameters.AddWithValue("$piId", d.ProformaInvoiceId > 0 ? d.ProformaInvoiceId : DBNull.Value);
+                    _ = cmd.Parameters.AddWithValue("$cn", d.ClientName ?? "");
+                    _ = cmd.Parameters.AddWithValue("$pn", d.ProjectName ?? "");
+                    _ = cmd.Parameters.AddWithValue("$dd", d.DODate.ToString("yyyy-MM-dd HH:mm:ss"));
+                    _ = cmd.Parameters.AddWithValue("$st", d.Status ?? "Pending");
+                    _ = cmd.Parameters.AddWithValue("$vn", d.VehicleNumber ?? "");
+                    _ = cmd.Parameters.AddWithValue("$dr", d.DriverName ?? "");
+                    _ = cmd.Parameters.AddWithValue("$nt", d.Notes ?? "");
+                    _ = cmd.Parameters.AddWithValue("$tq", d.TotalQty);
+                    _ = cmd.Parameters.AddWithValue("$dq", d.DeliveredQty);
+                    _ = cmd.Parameters.AddWithValue("$cd", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
+                    _ = cmd.Parameters.AddWithValue("$ud", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
+                    _ = cmd.ExecuteNonQuery();
 
-                    using var idCmd = conn.CreateCommand();
+                    using SqliteCommand idCmd = conn.CreateCommand();
                     idCmd.CommandText = "SELECT last_insert_rowid()";
                     d.Id = Convert.ToInt32(idCmd.ExecuteScalar());
                 }
 
-                foreach (var item in d.Items)
+                foreach (DeliveryOrderItemModel item in d.Items)
                 {
-                    using var itemCmd = conn.CreateCommand();
+                    using SqliteCommand itemCmd = conn.CreateCommand();
                     itemCmd.CommandText = @"INSERT INTO DeliveryOrderItems (DeliveryOrderId, SrNo, GlassRef, Width, Height, DeliveredQty)
                     VALUES ($doId, $sr, $gr, $w, $h, $dq)";
-                    itemCmd.Parameters.AddWithValue("$doId", d.Id);
-                    itemCmd.Parameters.AddWithValue("$sr", item.SrNo);
-                    itemCmd.Parameters.AddWithValue("$gr", item.GlassRef ?? "");
-                    itemCmd.Parameters.AddWithValue("$w", item.Width);
-                    itemCmd.Parameters.AddWithValue("$h", item.Height);
-                    itemCmd.Parameters.AddWithValue("$dq", item.DeliveredQty);
-                    itemCmd.ExecuteNonQuery();
+                    _ = itemCmd.Parameters.AddWithValue("$doId", d.Id);
+                    _ = itemCmd.Parameters.AddWithValue("$sr", item.SrNo);
+                    _ = itemCmd.Parameters.AddWithValue("$gr", item.GlassRef ?? "");
+                    _ = itemCmd.Parameters.AddWithValue("$w", item.Width);
+                    _ = itemCmd.Parameters.AddWithValue("$h", item.Height);
+                    _ = itemCmd.Parameters.AddWithValue("$dq", item.DeliveredQty);
+                    _ = itemCmd.ExecuteNonQuery();
                 }
             });
         }
@@ -2511,9 +2511,9 @@ WHERE Id = $id";
             return Execute(conn =>
             {
                 var list = new List<DeliveryOrderModel>();
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "SELECT * FROM DeliveryOrders ORDER BY Id DESC";
-                using var r = cmd.ExecuteReader();
+                using SqliteDataReader r = cmd.ExecuteReader();
                 while (r.Read())
                 {
                     var d = new DeliveryOrderModel
@@ -2524,7 +2524,7 @@ WHERE Id = $id";
                         ProformaInvoiceId = r.IsDBNull(3) ? 0 : r.GetInt32(3),
                         ClientName = r.IsDBNull(4) ? "" : r.GetString(4),
                         ProjectName = r.IsDBNull(5) ? "" : r.GetString(5),
-                        DODate = DateTime.TryParse(r.IsDBNull(6) ? "" : r.GetString(6), out var dd) ? dd : DateTime.Now,
+                        DODate = DateTime.TryParse(r.IsDBNull(6) ? "" : r.GetString(6), out DateTime dd) ? dd : DateTime.Now,
                         Status = r.IsDBNull(7) ? "Pending" : r.GetString(7),
                         VehicleNumber = r.IsDBNull(8) ? "" : r.GetString(8),
                         DriverName = r.IsDBNull(9) ? "" : r.GetString(9),
@@ -2542,10 +2542,10 @@ WHERE Id = $id";
         private static List<DeliveryOrderItemModel> GetDeliveryOrderItems(int doId, SqliteConnection conn)
         {
             var items = new List<DeliveryOrderItemModel>();
-            using var cmd = conn.CreateCommand();
+            using SqliteCommand cmd = conn.CreateCommand();
             cmd.CommandText = "SELECT * FROM DeliveryOrderItems WHERE DeliveryOrderId = $id ORDER BY SrNo";
-            cmd.Parameters.AddWithValue("$id", doId);
-            using var r = cmd.ExecuteReader();
+            _ = cmd.Parameters.AddWithValue("$id", doId);
+            using SqliteDataReader r = cmd.ExecuteReader();
             while (r.Read())
             {
                 items.Add(new DeliveryOrderItemModel
@@ -2565,12 +2565,12 @@ WHERE Id = $id";
         {
             Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "DELETE FROM DeliveryOrderItems WHERE DeliveryOrderId = $id";
-                cmd.Parameters.AddWithValue("$id", id);
-                cmd.ExecuteNonQuery();
+                _ = cmd.Parameters.AddWithValue("$id", id);
+                _ = cmd.ExecuteNonQuery();
                 cmd.CommandText = "DELETE FROM DeliveryOrders WHERE Id = $id";
-                cmd.ExecuteNonQuery();
+                _ = cmd.ExecuteNonQuery();
             });
         }
 
@@ -2582,86 +2582,86 @@ WHERE Id = $id";
         {
             Execute(conn =>
             {
-                using var checkCmd = conn.CreateCommand();
+                using SqliteCommand checkCmd = conn.CreateCommand();
                 checkCmd.CommandText = "SELECT Id FROM TaxInvoices WHERE InvoiceNumber = $inv";
-                checkCmd.Parameters.AddWithValue("$inv", ti.InvoiceNumber);
+                _ = checkCmd.Parameters.AddWithValue("$inv", ti.InvoiceNumber);
                 var existingId = checkCmd.ExecuteScalar();
 
                 if (existingId != null)
                 {
                     ti.Id = Convert.ToInt32(existingId);
-                    using var cmd = conn.CreateCommand();
+                    using SqliteCommand cmd = conn.CreateCommand();
                     cmd.CommandText = @"UPDATE TaxInvoices SET ProformaInvoiceId = $piId, JobOrderId = $joId, DeliveryOrderId = $doId, ClientName = $cn, ClientTRN = $ctr, ClientAddress = $ca, InvoiceDate = $idate, DueDate = $dd, Status = $st, PaymentStatus = $ps, SubTotal = $sub, VATPercent = $vp, VATAmount = $va, TotalAmount = $ta, PaidAmount = $pa, BalanceAmount = $ba, Notes = $nt, UpdatedDate = $ud WHERE Id = $id";
-                    cmd.Parameters.AddWithValue("$id", ti.Id);
-                    cmd.Parameters.AddWithValue("$piId", ti.ProformaInvoiceId > 0 ? ti.ProformaInvoiceId : DBNull.Value);
-                    cmd.Parameters.AddWithValue("$joId", ti.JobOrderId > 0 ? ti.JobOrderId : DBNull.Value);
-                    cmd.Parameters.AddWithValue("$doId", ti.DeliveryOrderId > 0 ? ti.DeliveryOrderId : DBNull.Value);
-                    cmd.Parameters.AddWithValue("$cn", ti.ClientName ?? "");
-                    cmd.Parameters.AddWithValue("$ctr", ti.ClientTRN ?? "");
-                    cmd.Parameters.AddWithValue("$ca", ti.ClientAddress ?? "");
-                    cmd.Parameters.AddWithValue("$idate", ti.InvoiceDate.ToString("yyyy-MM-dd HH:mm:ss"));
-                    cmd.Parameters.AddWithValue("$dd", ti.DueDate.ToString("yyyy-MM-dd HH:mm:ss"));
-                    cmd.Parameters.AddWithValue("$st", ti.Status ?? "Pending");
-                    cmd.Parameters.AddWithValue("$ps", ti.PaymentStatus ?? "Unpaid");
-                    cmd.Parameters.AddWithValue("$sub", ti.SubTotal);
-                    cmd.Parameters.AddWithValue("$vp", ti.VATPercent);
-                    cmd.Parameters.AddWithValue("$va", ti.VATAmount);
-                    cmd.Parameters.AddWithValue("$ta", ti.TotalAmount);
-                    cmd.Parameters.AddWithValue("$pa", ti.PaidAmount);
-                    cmd.Parameters.AddWithValue("$ba", ti.BalanceAmount);
-                    cmd.Parameters.AddWithValue("$nt", ti.Notes ?? "");
-                    cmd.Parameters.AddWithValue("$ud", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
-                    cmd.ExecuteNonQuery();
+                    _ = cmd.Parameters.AddWithValue("$id", ti.Id);
+                    _ = cmd.Parameters.AddWithValue("$piId", ti.ProformaInvoiceId > 0 ? ti.ProformaInvoiceId : DBNull.Value);
+                    _ = cmd.Parameters.AddWithValue("$joId", ti.JobOrderId > 0 ? ti.JobOrderId : DBNull.Value);
+                    _ = cmd.Parameters.AddWithValue("$doId", ti.DeliveryOrderId > 0 ? ti.DeliveryOrderId : DBNull.Value);
+                    _ = cmd.Parameters.AddWithValue("$cn", ti.ClientName ?? "");
+                    _ = cmd.Parameters.AddWithValue("$ctr", ti.ClientTRN ?? "");
+                    _ = cmd.Parameters.AddWithValue("$ca", ti.ClientAddress ?? "");
+                    _ = cmd.Parameters.AddWithValue("$idate", ti.InvoiceDate.ToString("yyyy-MM-dd HH:mm:ss"));
+                    _ = cmd.Parameters.AddWithValue("$dd", ti.DueDate.ToString("yyyy-MM-dd HH:mm:ss"));
+                    _ = cmd.Parameters.AddWithValue("$st", ti.Status ?? "Pending");
+                    _ = cmd.Parameters.AddWithValue("$ps", ti.PaymentStatus ?? "Unpaid");
+                    _ = cmd.Parameters.AddWithValue("$sub", ti.SubTotal);
+                    _ = cmd.Parameters.AddWithValue("$vp", ti.VATPercent);
+                    _ = cmd.Parameters.AddWithValue("$va", ti.VATAmount);
+                    _ = cmd.Parameters.AddWithValue("$ta", ti.TotalAmount);
+                    _ = cmd.Parameters.AddWithValue("$pa", ti.PaidAmount);
+                    _ = cmd.Parameters.AddWithValue("$ba", ti.BalanceAmount);
+                    _ = cmd.Parameters.AddWithValue("$nt", ti.Notes ?? "");
+                    _ = cmd.Parameters.AddWithValue("$ud", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
+                    _ = cmd.ExecuteNonQuery();
 
-                    using var delCmd = conn.CreateCommand();
+                    using SqliteCommand delCmd = conn.CreateCommand();
                     delCmd.CommandText = "DELETE FROM TaxInvoiceItems WHERE TaxInvoiceId = $id";
-                    delCmd.Parameters.AddWithValue("$id", ti.Id);
-                    delCmd.ExecuteNonQuery();
+                    _ = delCmd.Parameters.AddWithValue("$id", ti.Id);
+                    _ = delCmd.ExecuteNonQuery();
                 }
                 else
                 {
-                    using var cmd = conn.CreateCommand();
+                    using SqliteCommand cmd = conn.CreateCommand();
                     cmd.CommandText = @"INSERT INTO TaxInvoices (InvoiceNumber, ProformaInvoiceId, JobOrderId, DeliveryOrderId, ClientName, ClientTRN, ClientAddress, InvoiceDate, DueDate, Status, PaymentStatus, SubTotal, VATPercent, VATAmount, TotalAmount, PaidAmount, BalanceAmount, Notes, CreatedDate, UpdatedDate)
 VALUES ($inv, $piId, $joId, $doId, $cn, $ctr, $ca, $idate, $dd, $st, $ps, $sub, $vp, $va, $ta, $pa, $ba, $nt, $cd, $ud)";
-                    cmd.Parameters.AddWithValue("$inv", ti.InvoiceNumber);
-                    cmd.Parameters.AddWithValue("$piId", ti.ProformaInvoiceId > 0 ? ti.ProformaInvoiceId : DBNull.Value);
-                    cmd.Parameters.AddWithValue("$joId", ti.JobOrderId > 0 ? ti.JobOrderId : DBNull.Value);
-                    cmd.Parameters.AddWithValue("$doId", ti.DeliveryOrderId > 0 ? ti.DeliveryOrderId : DBNull.Value);
-                    cmd.Parameters.AddWithValue("$cn", ti.ClientName ?? "");
-                    cmd.Parameters.AddWithValue("$ctr", ti.ClientTRN ?? "");
-                    cmd.Parameters.AddWithValue("$ca", ti.ClientAddress ?? "");
-                    cmd.Parameters.AddWithValue("$idate", ti.InvoiceDate.ToString("yyyy-MM-dd HH:mm:ss"));
-                    cmd.Parameters.AddWithValue("$dd", ti.DueDate.ToString("yyyy-MM-dd HH:mm:ss"));
-                    cmd.Parameters.AddWithValue("$st", ti.Status ?? "Pending");
-                    cmd.Parameters.AddWithValue("$ps", ti.PaymentStatus ?? "Unpaid");
-                    cmd.Parameters.AddWithValue("$sub", ti.SubTotal);
-                    cmd.Parameters.AddWithValue("$vp", ti.VATPercent);
-                    cmd.Parameters.AddWithValue("$va", ti.VATAmount);
-                    cmd.Parameters.AddWithValue("$ta", ti.TotalAmount);
-                    cmd.Parameters.AddWithValue("$pa", ti.PaidAmount);
-                    cmd.Parameters.AddWithValue("$ba", ti.BalanceAmount);
-                    cmd.Parameters.AddWithValue("$nt", ti.Notes ?? "");
-                    cmd.Parameters.AddWithValue("$cd", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
-                    cmd.Parameters.AddWithValue("$ud", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
-                    cmd.ExecuteNonQuery();
+                    _ = cmd.Parameters.AddWithValue("$inv", ti.InvoiceNumber);
+                    _ = cmd.Parameters.AddWithValue("$piId", ti.ProformaInvoiceId > 0 ? ti.ProformaInvoiceId : DBNull.Value);
+                    _ = cmd.Parameters.AddWithValue("$joId", ti.JobOrderId > 0 ? ti.JobOrderId : DBNull.Value);
+                    _ = cmd.Parameters.AddWithValue("$doId", ti.DeliveryOrderId > 0 ? ti.DeliveryOrderId : DBNull.Value);
+                    _ = cmd.Parameters.AddWithValue("$cn", ti.ClientName ?? "");
+                    _ = cmd.Parameters.AddWithValue("$ctr", ti.ClientTRN ?? "");
+                    _ = cmd.Parameters.AddWithValue("$ca", ti.ClientAddress ?? "");
+                    _ = cmd.Parameters.AddWithValue("$idate", ti.InvoiceDate.ToString("yyyy-MM-dd HH:mm:ss"));
+                    _ = cmd.Parameters.AddWithValue("$dd", ti.DueDate.ToString("yyyy-MM-dd HH:mm:ss"));
+                    _ = cmd.Parameters.AddWithValue("$st", ti.Status ?? "Pending");
+                    _ = cmd.Parameters.AddWithValue("$ps", ti.PaymentStatus ?? "Unpaid");
+                    _ = cmd.Parameters.AddWithValue("$sub", ti.SubTotal);
+                    _ = cmd.Parameters.AddWithValue("$vp", ti.VATPercent);
+                    _ = cmd.Parameters.AddWithValue("$va", ti.VATAmount);
+                    _ = cmd.Parameters.AddWithValue("$ta", ti.TotalAmount);
+                    _ = cmd.Parameters.AddWithValue("$pa", ti.PaidAmount);
+                    _ = cmd.Parameters.AddWithValue("$ba", ti.BalanceAmount);
+                    _ = cmd.Parameters.AddWithValue("$nt", ti.Notes ?? "");
+                    _ = cmd.Parameters.AddWithValue("$cd", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
+                    _ = cmd.Parameters.AddWithValue("$ud", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
+                    _ = cmd.ExecuteNonQuery();
 
-                    using var idCmd = conn.CreateCommand();
+                    using SqliteCommand idCmd = conn.CreateCommand();
                     idCmd.CommandText = "SELECT last_insert_rowid()";
                     ti.Id = Convert.ToInt32(idCmd.ExecuteScalar());
                 }
 
-                foreach (var item in ti.Items)
+                foreach (TaxInvoiceItemModel item in ti.Items)
                 {
-                    using var itemCmd = conn.CreateCommand();
+                    using SqliteCommand itemCmd = conn.CreateCommand();
                     itemCmd.CommandText = @"INSERT INTO TaxInvoiceItems (TaxInvoiceId, SrNo, Description, Qty, UnitPrice, TotalPrice)
             VALUES ($tiId, $sr, $desc, $q, $up, $tp)";
-                    itemCmd.Parameters.AddWithValue("$tiId", ti.Id);
-                    itemCmd.Parameters.AddWithValue("$sr", item.SrNo);
-                    itemCmd.Parameters.AddWithValue("$desc", item.Description ?? "");
-                    itemCmd.Parameters.AddWithValue("$q", item.Qty);
-                    itemCmd.Parameters.AddWithValue("$up", item.UnitPrice);
-                    itemCmd.Parameters.AddWithValue("$tp", item.TotalPrice);
-                    itemCmd.ExecuteNonQuery();
+                    _ = itemCmd.Parameters.AddWithValue("$tiId", ti.Id);
+                    _ = itemCmd.Parameters.AddWithValue("$sr", item.SrNo);
+                    _ = itemCmd.Parameters.AddWithValue("$desc", item.Description ?? "");
+                    _ = itemCmd.Parameters.AddWithValue("$q", item.Qty);
+                    _ = itemCmd.Parameters.AddWithValue("$up", item.UnitPrice);
+                    _ = itemCmd.Parameters.AddWithValue("$tp", item.TotalPrice);
+                    _ = itemCmd.ExecuteNonQuery();
                 }
             });
         }
@@ -2671,9 +2671,9 @@ VALUES ($inv, $piId, $joId, $doId, $cn, $ctr, $ca, $idate, $dd, $st, $ps, $sub, 
             return Execute(conn =>
             {
                 var list = new List<TaxInvoiceModel>();
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "SELECT * FROM TaxInvoices ORDER BY Id DESC";
-                using var r = cmd.ExecuteReader();
+                using SqliteDataReader r = cmd.ExecuteReader();
                 while (r.Read())
                 {
                     var ti = new TaxInvoiceModel
@@ -2686,8 +2686,8 @@ VALUES ($inv, $piId, $joId, $doId, $cn, $ctr, $ca, $idate, $dd, $st, $ps, $sub, 
                         ClientName = r.IsDBNull(5) ? "" : r.GetString(5),
                         ClientTRN = r.IsDBNull(6) ? "" : r.GetString(6),
                         ClientAddress = r.IsDBNull(7) ? "" : r.GetString(7),
-                        InvoiceDate = DateTime.TryParse(r.IsDBNull(8) ? "" : r.GetString(8), out var idate) ? idate : DateTime.Now,
-                        DueDate = DateTime.TryParse(r.IsDBNull(9) ? "" : r.GetString(9), out var dd) ? dd : DateTime.Now.AddDays(30),
+                        InvoiceDate = DateTime.TryParse(r.IsDBNull(8) ? "" : r.GetString(8), out DateTime idate) ? idate : DateTime.Now,
+                        DueDate = DateTime.TryParse(r.IsDBNull(9) ? "" : r.GetString(9), out DateTime dd) ? dd : DateTime.Now.AddDays(30),
                         Status = r.IsDBNull(10) ? "Pending" : r.GetString(10),
                         PaymentStatus = r.IsDBNull(11) ? "Unpaid" : r.GetString(11),
                         SubTotal = r.GetDouble(12),
@@ -2708,10 +2708,10 @@ VALUES ($inv, $piId, $joId, $doId, $cn, $ctr, $ca, $idate, $dd, $st, $ps, $sub, 
         private static List<TaxInvoiceItemModel> GetTaxInvoiceItems(int tiId, SqliteConnection conn)
         {
             var items = new List<TaxInvoiceItemModel>();
-            using var cmd = conn.CreateCommand();
+            using SqliteCommand cmd = conn.CreateCommand();
             cmd.CommandText = "SELECT * FROM TaxInvoiceItems WHERE TaxInvoiceId = $id ORDER BY SrNo";
-            cmd.Parameters.AddWithValue("$id", tiId);
-            using var r = cmd.ExecuteReader();
+            _ = cmd.Parameters.AddWithValue("$id", tiId);
+            using SqliteDataReader r = cmd.ExecuteReader();
             while (r.Read())
             {
                 items.Add(new TaxInvoiceItemModel
@@ -2731,12 +2731,12 @@ VALUES ($inv, $piId, $joId, $doId, $cn, $ctr, $ca, $idate, $dd, $st, $ps, $sub, 
         {
             Execute(conn =>
             {
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "DELETE FROM TaxInvoiceItems WHERE TaxInvoiceId = $id";
-                cmd.Parameters.AddWithValue("$id", id);
-                cmd.ExecuteNonQuery();
+                _ = cmd.Parameters.AddWithValue("$id", id);
+                _ = cmd.ExecuteNonQuery();
                 cmd.CommandText = "DELETE FROM TaxInvoices WHERE Id = $id";
-                cmd.ExecuteNonQuery();
+                _ = cmd.ExecuteNonQuery();
             });
         }
 
@@ -2751,62 +2751,62 @@ VALUES ($inv, $piId, $joId, $doId, $cn, $ctr, $ca, $idate, $dd, $st, $ps, $sub, 
             {
                 return Execute(conn =>
                 {
-                    using (var cmd = conn.CreateCommand())
+                    using (SqliteCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = "SELECT COUNT(*) FROM ProformaInvoices";
                         stats.TotalPI = Convert.ToInt32(cmd.ExecuteScalar());
                     }
-                    using (var cmd = conn.CreateCommand())
+                    using (SqliteCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = "SELECT COUNT(*) FROM ProformaInvoices WHERE Status = 'Draft'";
                         stats.PendingPI = Convert.ToInt32(cmd.ExecuteScalar());
                     }
-                    using (var cmd = conn.CreateCommand())
+                    using (SqliteCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = "SELECT COALESCE(SUM(NetAmount), 0) FROM ProformaInvoices";
                         stats.TotalPIValue = Convert.ToDouble(cmd.ExecuteScalar());
                     }
-                    using (var cmd = conn.CreateCommand())
+                    using (SqliteCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = "SELECT COUNT(*) FROM JobOrders";
                         stats.TotalJO = Convert.ToInt32(cmd.ExecuteScalar());
                     }
-                    using (var cmd = conn.CreateCommand())
+                    using (SqliteCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = "SELECT COUNT(*) FROM JobOrders WHERE Status = 'Pending'";
                         stats.PendingJO = Convert.ToInt32(cmd.ExecuteScalar());
                     }
-                    using (var cmd = conn.CreateCommand())
+                    using (SqliteCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = "SELECT COALESCE(SUM(BalanceQty), 0) FROM JobOrders";
                         stats.TotalBalanceQty = Convert.ToInt32(cmd.ExecuteScalar());
                     }
-                    using (var cmd = conn.CreateCommand())
+                    using (SqliteCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = "SELECT COUNT(*) FROM DeliveryOrders";
                         stats.TotalDO = Convert.ToInt32(cmd.ExecuteScalar());
                     }
-                    using (var cmd = conn.CreateCommand())
+                    using (SqliteCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = "SELECT COUNT(*) FROM DeliveryOrders WHERE Status = 'Pending'";
                         stats.PendingDO = Convert.ToInt32(cmd.ExecuteScalar());
                     }
-                    using (var cmd = conn.CreateCommand())
+                    using (SqliteCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = "SELECT COUNT(*) FROM TaxInvoices";
                         stats.TotalTaxInvoice = Convert.ToInt32(cmd.ExecuteScalar());
                     }
-                    using (var cmd = conn.CreateCommand())
+                    using (SqliteCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = "SELECT COALESCE(SUM(TotalAmount), 0) FROM TaxInvoices";
                         stats.TotalTaxInvoiceValue = Convert.ToDouble(cmd.ExecuteScalar());
                     }
-                    using (var cmd = conn.CreateCommand())
+                    using (SqliteCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = "SELECT COALESCE(SUM(PaidAmount), 0) FROM TaxInvoices";
                         stats.TotalPaidAmount = Convert.ToDouble(cmd.ExecuteScalar());
                     }
-                    using (var cmd = conn.CreateCommand())
+                    using (SqliteCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = "SELECT COALESCE(SUM(BalanceAmount), 0) FROM TaxInvoices";
                         stats.TotalOutstanding = Convert.ToDouble(cmd.ExecuteScalar());
@@ -2827,9 +2827,9 @@ VALUES ($inv, $piId, $joId, $doId, $cn, $ctr, $ca, $idate, $dd, $st, $ps, $sub, 
             {
                 var year = DateTime.Now.Year;
                 var prefix = $"PI-{year}-";
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "SELECT MAX(PINumber) FROM ProformaInvoices WHERE PINumber LIKE $prefix";
-                cmd.Parameters.AddWithValue("$prefix", prefix + "%");
+                _ = cmd.Parameters.AddWithValue("$prefix", prefix + "%");
                 var last = cmd.ExecuteScalar()?.ToString();
                 if (!string.IsNullOrEmpty(last))
                 {
@@ -2847,9 +2847,9 @@ VALUES ($inv, $piId, $joId, $doId, $cn, $ctr, $ca, $idate, $dd, $st, $ps, $sub, 
             {
                 var year = DateTime.Now.Year;
                 var prefix = $"JO-{year}-";
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "SELECT MAX(JONumber) FROM JobOrders WHERE JONumber LIKE $prefix";
-                cmd.Parameters.AddWithValue("$prefix", prefix + "%");
+                _ = cmd.Parameters.AddWithValue("$prefix", prefix + "%");
                 var last = cmd.ExecuteScalar()?.ToString();
                 if (!string.IsNullOrEmpty(last))
                 {
@@ -2867,9 +2867,9 @@ VALUES ($inv, $piId, $joId, $doId, $cn, $ctr, $ca, $idate, $dd, $st, $ps, $sub, 
             {
                 var year = DateTime.Now.Year;
                 var prefix = $"DO-{year}-";
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "SELECT MAX(DONumber) FROM DeliveryOrders WHERE DONumber LIKE $prefix";
-                cmd.Parameters.AddWithValue("$prefix", prefix + "%");
+                _ = cmd.Parameters.AddWithValue("$prefix", prefix + "%");
                 var last = cmd.ExecuteScalar()?.ToString();
                 if (!string.IsNullOrEmpty(last))
                 {
@@ -2887,9 +2887,9 @@ VALUES ($inv, $piId, $joId, $doId, $cn, $ctr, $ca, $idate, $dd, $st, $ps, $sub, 
             {
                 var year = DateTime.Now.Year;
                 var prefix = $"TI-{year}-";
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "SELECT MAX(InvoiceNumber) FROM TaxInvoices WHERE InvoiceNumber LIKE $prefix";
-                cmd.Parameters.AddWithValue("$prefix", prefix + "%");
+                _ = cmd.Parameters.AddWithValue("$prefix", prefix + "%");
                 var last = cmd.ExecuteScalar()?.ToString();
                 if (!string.IsNullOrEmpty(last))
                 {
@@ -2931,30 +2931,30 @@ VALUES ($inv, $piId, $joId, $doId, $cn, $ctr, $ca, $idate, $dd, $st, $ps, $sub, 
             public int ImportedCount { get; set; }
             public int UpdatedCount { get; set; }
             public int SkippedCount { get; set; }
-            public string Notes { get; set; }
+            public string? Notes { get; set; }
         }
 
         public class ImportLogInfo
         {
             public int Id { get; set; }
             public DateTime ImportDateTime { get; set; }
-            public string PINumber { get; set; }
-            public string Company { get; set; }
-            public string ChangesJson { get; set; }
+            public string? PINumber { get; set; }
+            public string? Company { get; set; }
+            public string? ChangesJson { get; set; }
         }
 
         public class CustomerRefItem
         {
             public int Id { get; set; }
-            public string CustomerReference { get; set; }
-            public string Company { get; set; }
+            public string? CustomerReference { get; set; }
+            public string? Company { get; set; }
         }
 
         public class ImportSession
         {
             public int Id { get; set; }
             public DateTime SessionDateTime { get; set; }
-            public string Notes { get; set; }
+            public string? Notes { get; set; }
             public int ImportedCount { get; set; }
             public int UpdatedCount { get; set; }
             public int SkippedCount { get; set; }
@@ -2965,16 +2965,16 @@ VALUES ($inv, $piId, $joId, $doId, $cn, $ctr, $ca, $idate, $dd, $st, $ps, $sub, 
         {
             public int Id { get; set; }
             public DateTime ImportDateTime { get; set; }
-            public string PINumber { get; set; }
-            public string Company { get; set; }
+            public string? PINumber { get; set; }
+            public string? Company { get; set; }
             public ObservableCollection<ImportLogItem> Changes { get; set; } = new ObservableCollection<ImportLogItem>();
         }
 
         public class ImportLogItem
         {
-            public string FieldName { get; set; }
-            public string OldValue { get; set; }
-            public string NewValue { get; set; }
+            public string? FieldName { get; set; }
+            public string? OldValue { get; set; }
+            public string? NewValue { get; set; }
         }
 
         // ═══════════════════════════════════════════════════
@@ -2987,7 +2987,7 @@ VALUES ($inv, $piId, $joId, $doId, $cn, $ctr, $ca, $idate, $dd, $st, $ps, $sub, 
             {
                 return Execute(conn =>
                 {
-                    using var cmd = conn.CreateCommand();
+                    using SqliteCommand cmd = conn.CreateCommand();
                     cmd.CommandText = "SELECT COALESCE(SUM(Qty), 0) FROM DailyWork WHERE DATE(Date) = DATE('now', 'localtime') AND ProductionStatus = 'Completed'";
                     return Convert.ToInt32(cmd.ExecuteScalar());
                 });
@@ -3001,7 +3001,7 @@ VALUES ($inv, $piId, $joId, $doId, $cn, $ctr, $ca, $idate, $dd, $st, $ps, $sub, 
             {
                 return Execute(conn =>
                 {
-                    using var cmd = conn.CreateCommand();
+                    using SqliteCommand cmd = conn.CreateCommand();
                     cmd.CommandText = "SELECT COUNT(*) FROM DailyWork WHERE DATE(Date) = DATE('now', 'localtime') AND Status = 'Completed'";
                     return Convert.ToInt32(cmd.ExecuteScalar());
                 });
@@ -3015,7 +3015,7 @@ VALUES ($inv, $piId, $joId, $doId, $cn, $ctr, $ca, $idate, $dd, $st, $ps, $sub, 
             {
                 return Execute(conn =>
                 {
-                    using var cmd = conn.CreateCommand();
+                    using SqliteCommand cmd = conn.CreateCommand();
                     cmd.CommandText = "SELECT COUNT(*) FROM DailyWork WHERE DATE(Date) = DATE('now', 'localtime')";
                     return Convert.ToInt32(cmd.ExecuteScalar());
                 });
@@ -3032,9 +3032,9 @@ VALUES ($inv, $piId, $joId, $doId, $cn, $ctr, $ca, $idate, $dd, $st, $ps, $sub, 
             return Execute(conn =>
             {
                 var list = new List<SheetPurchase>();
-                using var cmd = conn.CreateCommand();
+                using SqliteCommand cmd = conn.CreateCommand();
                 cmd.CommandText = "SELECT * FROM SheetPurchases ORDER BY Id DESC";
-                using var r = cmd.ExecuteReader();
+                using SqliteDataReader r = cmd.ExecuteReader();
                 while (r.Read())
                 {
                     list.Add(new SheetPurchase
@@ -3044,9 +3044,9 @@ VALUES ($inv, $piId, $joId, $doId, $cn, $ctr, $ca, $idate, $dd, $st, $ps, $sub, 
                         Quantity = r.GetInt32(2),
                         UnitPrice = Convert.ToDecimal(r.GetDouble(3)),
                         Supplier = r.IsDBNull(4) ? "" : r.GetString(4),
-                        PurchasedOn = DateTime.TryParse(r.GetString(5), out var pd) ? pd : DateTime.Today,
+                        PurchasedOn = DateTime.TryParse(r.GetString(5), out DateTime pd) ? pd : DateTime.Today,
                         Notes = r.IsDBNull(6) ? "" : r.GetString(6),
-                        CreatedAt = DateTime.TryParse(r.GetString(7), out var cd) ? cd : DateTime.Now
+                        CreatedAt = DateTime.TryParse(r.GetString(7), out DateTime cd) ? cd : DateTime.Now
                     });
                 }
                 return list;

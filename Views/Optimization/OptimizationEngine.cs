@@ -275,7 +275,7 @@ namespace ProGlassAutomation.Views.Optimization
         {
             var start = DateTime.Now;
 
-            List<CutPart> best = null;
+            List<CutPart> best = new List<CutPart>();
             double bestScore = double.MinValue;
             int iteration = 0;
 
@@ -747,7 +747,7 @@ namespace ProGlassAutomation.Views.Optimization
             var allParts = ExpandAndConstrainParts(cutParts);
             if (allParts.Count == 0) return;
 
-            List<CutPart> bestSequence = null;
+            List<CutPart>? bestSequence = null;
             double bestCost = double.MaxValue;
 
             for (int iteration = 0; iteration < 250; iteration++)
@@ -810,8 +810,8 @@ namespace ProGlassAutomation.Views.Optimization
 
             double bestUtil = 0;
             NestingStrategy bestStrategy = NestingStrategy.Skyline;
-            List<PlacedPart> bestPlacement = null;
-            List<OptimizationResult> bestResults = null;
+            List<PlacedPart>? bestPlacement = null;
+            List<OptimizationResult>? bestResults = null;
 
             foreach (var strategy in strategies)
             {
@@ -854,8 +854,8 @@ namespace ProGlassAutomation.Views.Optimization
                                     ObservableCollection<OptimizationJob> savedJobs)
         {
             double bestUtil = 0;
-            List<PlacedPart> bestPlacement = null;
-            List<OptimizationResult> bestResults = null;
+            List<PlacedPart>? bestPlacement = null;
+            List<OptimizationResult>? bestResults = null;
             var allParts = ExpandAndConstrainParts(cutParts);
 
             for (int seed = 42; seed < 100; seed += 15)
@@ -1013,7 +1013,7 @@ namespace ProGlassAutomation.Views.Optimization
 
                 var orientations = GetAllowedOrientations(part);
 
-                MaxRect bestRect = null;
+                MaxRect? bestRect = null;
                 bool rotated = false;
                 double bestScore = double.MaxValue;
                 Orientation bestO = new Orientation();
@@ -1323,10 +1323,10 @@ namespace ProGlassAutomation.Views.Optimization
             return score;
         }
 
-        private PlacementNode EvaluatePlacementWithLookahead(CutPart part, double kerf)
+        private PlacementNode? EvaluatePlacementWithLookahead(CutPart part, double kerf)
         {
             double bestScore = double.MaxValue;
-            PlacementNode bestPlacement = null;
+            PlacementNode? bestPlacement = null;
 
             var orientations = GetAllowedOrientations(part);
 
@@ -1590,7 +1590,7 @@ namespace ProGlassAutomation.Views.Optimization
 
                     var orientations = GetAllowedOrientations(part);
 
-                    MaxRect bestRect = null;
+                    MaxRect? bestRect = null;
                     bool rotated = false;
                     Orientation bestO = new Orientation();
 
@@ -1850,10 +1850,10 @@ namespace ProGlassAutomation.Views.Optimization
     public class OptimizationJob
     {
         public int Id { get; set; }
-        public string Name { get; set; }
+        public required string Name { get; set; }
         public DateTime CreatedDate { get; set; }
-        public string StockJson { get; set; }
-        public string PartsJson { get; set; }
+        public required string StockJson { get; set; }
+        public required string PartsJson { get; set; }
         public int SheetsUsed { get; set; }
         public double Utilization { get; set; }
     }
@@ -1899,12 +1899,12 @@ namespace ProGlassAutomation.Views.Optimization
 
     public class RemnantPiece
     {
-        public string Id { get; set; }
+        public string Id { get; set; } = string.Empty;
         public double X { get; set; }
         public double Y { get; set; }
         public double Width { get; set; }
         public double Height { get; set; }
-        public string SourceSheet { get; set; }
+        public string SourceSheet { get; set; } = string.Empty;
         public int SheetNumber { get; set; }
         public bool IsReused { get; set; }
         public double ValueScore { get; set; }
@@ -1962,7 +1962,7 @@ namespace ProGlassAutomation.Views.Optimization
 
     public class ToolpathOperation
     {
-        public string PartId { get; set; }
+        public string PartId { get; set; } = string.Empty;
         public double StartX { get; set; }
         public double StartY { get; set; }
         public double EndX { get; set; }
@@ -1977,7 +1977,7 @@ namespace ProGlassAutomation.Views.Optimization
 
     public class CutSequence
     {
-        public string SheetId { get; set; }
+        public string SheetId { get; set; } = string.Empty;
         public List<ToolpathOperation> Operations { get; set; } = new List<ToolpathOperation>();
         public double TotalKerfLength { get; set; }
         public double EstimatedTime { get; set; }
@@ -2002,14 +2002,14 @@ namespace ProGlassAutomation.Views.Optimization
 
     public class SpecificationModel
     {
-        public string SpecificationName { get; set; }
+        public string SpecificationName { get; set; } = string.Empty;
         public bool IsSelected { get; set; }
         public List<InvoiceItemModel> Items { get; set; } = new List<InvoiceItemModel>();
     }
 
     public class InvoiceItemModel
     {
-        public string GlassRef { get; set; }
+        public string GlassRef { get; set; } = string.Empty;
         public double Width1 { get; set; }
         public double Height1 { get; set; }
         public double Width2 { get; set; }
@@ -2019,10 +2019,10 @@ namespace ProGlassAutomation.Views.Optimization
 
     public class CombinedSpecItem
     {
-        public string GlassRef { get; set; }
+        public string GlassRef { get; set; } = string.Empty;
         public double Width { get; set; }
         public double Height { get; set; }
         public int Qty { get; set; }
-        public string SourceSpec { get; set; }
+        public string SourceSpec { get; set; } = string.Empty;
     }
 }

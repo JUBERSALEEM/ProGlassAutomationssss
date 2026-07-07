@@ -73,11 +73,15 @@ namespace ProGlassAutomation.Views.Delivery
                 vm.SetSelectedCount(selectedCount);
 
                 var selectedIds = new List<int>();
-                foreach (var item in MainDataGrid.SelectedItems)
+                var selectedItems = MainDataGrid.SelectedItems;
+                if (selectedItems != null)
                 {
-                    if (item is System.Data.DataRowView rowView)
+                    foreach (var item in selectedItems)
                     {
-                        selectedIds.Add(Convert.ToInt32(rowView["Id"]));
+                        if (item is System.Data.DataRowView rowView)
+                        {
+                            selectedIds.Add(Convert.ToInt32(rowView["Id"]));
+                        }
                     }
                 }
                 vm.UpdateSelectedIds(selectedIds);
@@ -98,7 +102,7 @@ namespace ProGlassAutomation.Views.Delivery
                 }
                 else if (selectedCount == 0)
                 {
-                    vm.SelectedOrder = null;
+                    vm.SelectedOrder = null!;
                 }
             }
         }

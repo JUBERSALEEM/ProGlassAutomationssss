@@ -566,21 +566,21 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         public int PreviousPageNo { get; set; }
         public bool IsFirstPage { get; set; }
         public bool IsLastPage { get; set; }
-        public ObservableCollection<SpecificationModel> Specifications { get; set; }
-        public string CompanyName { get; set; }
-        public string CompanyTRN { get; set; }
-        public string CompanyLocation { get; set; }
-        public string InvoiceNo { get; set; }
+        public ObservableCollection<SpecificationModel>? Specifications { get; set; }
+        public string? CompanyName { get; set; }
+        public string? CompanyTRN { get; set; }
+        public string? CompanyLocation { get; set; }
+        public string? InvoiceNo { get; set; }
         public DateTime InvoiceDate { get; set; }
         public DateTime ValidUntil { get; set; }
-        public string CustomerName { get; set; }
-        public string CustomerTRN { get; set; }
-        public string CustomerAddress { get; set; }
-        public string ProjectName { get; set; }
-        public string ProjectLocation { get; set; }
-        public string LPONo { get; set; }
-        public string AttentionName { get; set; }
-        public string ContactNo { get; set; }
+        public string? CustomerName { get; set; }
+        public string? CustomerTRN { get; set; }
+        public string? CustomerAddress { get; set; }
+        public string? ProjectName { get; set; }
+        public string? ProjectLocation { get; set; }
+        public string? LPONo { get; set; }
+        public string? AttentionName { get; set; }
+        public string? ContactNo { get; set; }
 
         public double PageTotalQty { get; set; }
         public double PageTotalSQM { get; set; }
@@ -594,19 +594,19 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         public double GrandTotal { get; set; }
         public double VatAmount { get; set; }
         public double NetTotal { get; set; }
-        public ObservableCollection<OtherChargeDisplay> AllOtherCharges { get; set; }
+        public ObservableCollection<OtherChargeDisplay>? AllOtherCharges { get; set; }
         public bool HasOtherCharges { get; set; }
         public double TotalOtherCharges { get; set; }
     }
 
     public class OtherChargeDisplay
     {
-        public string Name { get; set; }
-        public string TypeDisplay { get; set; }
-        public string LinkedSpecsDisplay { get; set; }
-        public string ValueDisplay { get; set; }
+        public string? Name { get; set; }
+        public string? TypeDisplay { get; set; }
+        public string? LinkedSpecsDisplay { get; set; }
+        public string? ValueDisplay { get; set; }
         public double Rate { get; set; }
-        public string AmountDisplay { get; set; }
+        public string? AmountDisplay { get; set; }
     }
 
     public class PageContent
@@ -618,7 +618,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
     public class SpecWithItems
     {
-        public SpecificationModel Specification { get; set; }
+        public SpecificationModel? Specification { get; set; }
         public List<InvoiceItemModel> Items { get; set; } = new List<InvoiceItemModel>();
         public bool IsContinuation { get; set; }
         public int ContinuationCount { get; set; }
@@ -626,7 +626,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
     public class ItemWithSpec
     {
-        public SpecificationModel Spec { get; set; }
-        public InvoiceItemModel Item { get; set; }
+        public SpecificationModel? Spec { get; set; }
+        public InvoiceItemModel? Item { get; set; }
     }
 }

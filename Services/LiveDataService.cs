@@ -14,11 +14,11 @@ namespace ProGlassAutomation.Services
     {
         #region Events
 
-        public event EventHandler<double> OnProductionUpdated;
-        public event EventHandler<(string Module, bool IsActive)> OnModuleStatusChanged;
-        public event EventHandler<(string Module, int Count)> OnLiveCounterUpdated;
-        public event EventHandler<LiveMetrics> OnMetricsUpdated;
-        public event EventHandler<string> OnError;
+        public event EventHandler<double>? OnProductionUpdated;
+        public event EventHandler<(string Module, bool IsActive)>? OnModuleStatusChanged;
+        public event EventHandler<(string Module, int Count)>? OnLiveCounterUpdated;
+        public event EventHandler<LiveMetrics>? OnMetricsUpdated;
+        public event EventHandler<string>? OnError;
 
         #endregion
 
@@ -89,7 +89,7 @@ namespace ProGlassAutomation.Services
 
         #region Polling
 
-        private void PollingTimer_Tick(object sender, EventArgs e)
+        private void PollingTimer_Tick(object? sender, EventArgs e)
         {
             PollData();
         }

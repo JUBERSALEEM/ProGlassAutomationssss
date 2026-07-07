@@ -16,7 +16,13 @@ namespace ProGlassAutomation.Services
 
             using var workbook = new XLWorkbook(filePath);
             var worksheet = workbook.Worksheet(1);
-            var rows = worksheet.RangeUsed().RowsUsed().Skip(1);
+            var range = worksheet.RangeUsed();
+            if (range == null)
+            {
+                return invoices;
+            }
+
+            var rows = range.RowsUsed().Skip(1);
 
             foreach (var row in rows)
             {

@@ -10,7 +10,7 @@ namespace ProGlassAutomation.Services
 {
     public class SheetStoreService
     {
-        private static SheetStoreService _instance;
+        private static SheetStoreService? _instance;
         public static SheetStoreService Instance => _instance ??= new SheetStoreService();
 
         private readonly string _filePath;

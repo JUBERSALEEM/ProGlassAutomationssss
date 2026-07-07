@@ -183,12 +183,15 @@ namespace ProGlassAutomation.Services
                     {
                         var order = JsonConvert.DeserializeObject<dynamic>(result);
                         string approvalUrl = "";
-                        foreach (var link in order.links)
+                        if (order?.links != null)
                         {
-                            if (link.rel == "approve")
+                            foreach (var link in order.links)
                             {
-                                approvalUrl = link.href;
-                                break;
+                                if (link?.rel == "approve")
+                                {
+                                    approvalUrl = link?.href ?? "";
+                                    break;
+                                }
                             }
                         }
                         return approvalUrl;
@@ -224,7 +227,15 @@ namespace ProGlassAutomation.Services
                     if (response.IsSuccessStatusCode)
                     {
                         var token = JsonConvert.DeserializeObject<dynamic>(result);
-                        return token.access_token;
+                        // Guard against possible nulls in the deserialized token
+                        try
+                        {
+                            return token?.access_token?.ToString() ?? string.Empty;
+                        }
+                        catch
+                        {
+                            return string.Empty;
+                        }
                     }
                 }
             }

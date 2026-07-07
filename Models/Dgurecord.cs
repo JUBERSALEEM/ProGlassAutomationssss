@@ -6,17 +6,17 @@ namespace ProGlassAutomation.Models
     {
         public int Id { get; set; }
 
-        public string Thickness1 { get; set; }
-        public string Color1 { get; set; }
+        public string? Thickness1 { get; set; }
+        public string? Color1 { get; set; }
 
-        public string Thickness2 { get; set; }
-        public string Color2 { get; set; }
+        public string? Thickness2 { get; set; }
+        public string? Color2 { get; set; }
 
-        public string Spacer { get; set; }
+        public string? Spacer { get; set; }
 
         public double Result { get; set; }
 
-        public string CreatedAt { get; set; }
+        public string? CreatedAt { get; set; }
 
         // ================= FINAL DISPLAY FORMAT =================
 

@@ -255,20 +255,20 @@ namespace ProGlassAutomation.ViewModels
         }
 
         // ==================== COMMANDS ====================
-        public ICommand NewInvoiceCommand { get; private set; }
-        public ICommand EditInvoiceCommand { get; private set; }
-        public ICommand ViewInvoiceCommand { get; private set; }
-        public ICommand DeleteInvoiceCommand { get; private set; }
-        public ICommand CreateJobOrderCommand { get; private set; }
-        public ICommand OpenFolderCommand { get; private set; }
-        public ICommand ExportAllCommand { get; private set; }
-        public ICommand RefreshCommand { get; private set; }
-        public ICommand ClearFiltersCommand { get; private set; }
-        public ICommand QuickFilterThisWeekCommand { get; private set; }
-        public ICommand QuickFilterThisMonthCommand { get; private set; }
-        public ICommand QuickFilterTodayCommand { get; private set; }
-        public ICommand QuickFilterThisYearCommand { get; private set; }
-        public ICommand QuickFilterAllTimeCommand { get; private set; }
+        public ICommand? NewInvoiceCommand { get; private set; }
+        public ICommand? EditInvoiceCommand { get; private set; }
+        public ICommand? ViewInvoiceCommand { get; private set; }
+        public ICommand? DeleteInvoiceCommand { get; private set; }
+        public ICommand? CreateJobOrderCommand { get; private set; }
+        public ICommand? OpenFolderCommand { get; private set; }
+        public ICommand? ExportAllCommand { get; private set; }
+        public ICommand? RefreshCommand { get; private set; }
+        public ICommand? ClearFiltersCommand { get; private set; }
+        public ICommand? QuickFilterThisWeekCommand { get; private set; }
+        public ICommand? QuickFilterThisMonthCommand { get; private set; }
+        public ICommand? QuickFilterTodayCommand { get; private set; }
+        public ICommand? QuickFilterThisYearCommand { get; private set; }
+        public ICommand? QuickFilterAllTimeCommand { get; private set; }
 
         private void InitializeCommands()
         {

@@ -6,7 +6,7 @@ namespace ProGlassAutomation.Services
 {
     public class QuotationService : INotifyPropertyChanged
     {
-        private static QuotationService _instance;
+        private static QuotationService? _instance;
         public static QuotationService Instance => _instance ??= new QuotationService();
 
         public ObservableCollection<QuotationItem> Items { get; set; } = new();
@@ -72,56 +72,56 @@ namespace ProGlassAutomation.Services
     {
         public int Id { get; set; }
 
-        private string _spec;
+        private string? _spec;
         public string Spec
         {
             get => _spec;
             set { _spec = value; OnPropertyChanged(); }
         }
 
-        private string _width;
+        private string? _width;
         public string Width
         {
             get => _width;
             set { _width = value; OnPropertyChanged(); }
         }
 
-        private string _height;
+        private string? _height;
         public string Height
         {
             get => _height;
             set { _height = value; OnPropertyChanged(); }
         }
 
-        private string _widthMm;
+        private string? _widthMm;
         public string WidthMm
         {
             get => _widthMm;
             set { _widthMm = value; OnPropertyChanged(); }
         }
 
-        private string _heightMm;
+        private string? _heightMm;
         public string HeightMm
         {
             get => _heightMm;
             set { _heightMm = value; OnPropertyChanged(); }
         }
 
-        private string _qty;
+        private string? _qty;
         public string Qty
         {
             get => _qty;
             set { _qty = value; OnPropertyChanged(); CalculateLineTotal(); }
         }
 
-        private string _price;
+        private string? _price;
         public string Price
         {
             get => _price;
             set { _price = value; OnPropertyChanged(); CalculateLineTotal(); }
         }
 
-        private string _lineTotal;
+        private string? _lineTotal;
         public string LineTotal
         {
             get => _lineTotal;

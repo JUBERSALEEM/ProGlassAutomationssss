@@ -9,10 +9,10 @@ namespace ProGlassAutomation.Services
     {
         #region Events
 
-        public event EventHandler<BalanceData> OnBalanceUpdated;
-        public event EventHandler<TransactionInfo> OnTransactionRecorded;
-        public event EventHandler<string> OnError;
-        public event EventHandler<string> OnLogMessage;
+        public event EventHandler<BalanceData>? OnBalanceUpdated;
+        public event EventHandler<TransactionInfo>? OnTransactionRecorded;
+        public event EventHandler<string>? OnError;
+        public event EventHandler<string>? OnLogMessage;
 
         #endregion
 
@@ -142,7 +142,7 @@ namespace ProGlassAutomation.Services
 
         #region Private Methods
 
-        private void OnSyncTimerTick(object sender, EventArgs e)
+        private void OnSyncTimerTick(object? sender, EventArgs e)
         {
             RefreshBalance();
         }

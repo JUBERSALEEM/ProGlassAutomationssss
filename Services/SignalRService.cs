@@ -313,17 +313,17 @@ namespace ProGlassAutomation.Services
 
     public class LiveDataMessage
     {
-        public string Type { get; set; }
+        public string? Type { get; set; }
         public double Production { get; set; }
         public double Efficiency { get; set; }
         public double Uptime { get; set; }
-        public string ModuleName { get; set; }
+        public string? ModuleName { get; set; }
         public bool IsActive { get; set; }
         public bool IsLicensed { get; set; }
         public int LiveCount { get; set; }
         public int RemainingDays { get; set; }
         public DateTime Timestamp { get; set; }
-        public string SenderId { get; set; }
+        public string? SenderId { get; set; }
     }
 
     #endregion

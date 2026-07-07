@@ -159,7 +159,7 @@ namespace ProGlassAutomation.Models
         }
 
         // ✅ Handle collection changes (add/remove items)
-        private void DeliveryItems_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        private void DeliveryItems_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
             OnPropertyChanged(nameof(TotalDelivered));
             OnPropertyChanged(nameof(TotalReturned));
@@ -365,7 +365,7 @@ namespace ProGlassAutomation.Models
         private string _piNumber = "";
         private string _company = "";
         private string _notes = "";
-        private ObservableCollection<ImportLogItem> _changes;
+        private ObservableCollection<ImportLogItem>? _changes;
 
         public DateTime ImportDateTime
         {

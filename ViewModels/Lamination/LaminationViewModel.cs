@@ -552,23 +552,23 @@ namespace ProGlassAutomation.Views.Lamination
         protected void OnPropertyChanged([CallerMemberName] string n = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
 
-        public string DisplayText { get; set; }
-        public string OuterDetails { get; set; }
-        public string InnerDetails { get; set; }
-        public string PVBDetails { get; set; }
-        public string LaminationDetails { get; set; }
-        public string TreatmentDetails { get; set; }
-        public string Wastage { get; set; }
-        public string ProfitMargin { get; set; }
-        public string CreatedAt { get; set; }
+        public string? DisplayText { get; set; }
+        public string? OuterDetails { get; set; }
+        public string? InnerDetails { get; set; }
+        public string? PVBDetails { get; set; }
+        public string? LaminationDetails { get; set; }
+        public string? TreatmentDetails { get; set; }
+        public string? Wastage { get; set; }
+        public string? ProfitMargin { get; set; }
+        public string? CreatedAt { get; set; }
         public double Result { get; set; }
-        public string Unit { get; set; }
+        public string? Unit { get; set; }
         public int Width { get; set; }
         public int Height { get; set; }
         public int Quantity { get; set; }
         public double TotalArea { get; set; }
         public double TotalPrice { get; set; }
-        public string CustomNotes { get; set; }
+        public string? CustomNotes { get; set; }
 
         private bool _isSelected;
         public bool IsSelected

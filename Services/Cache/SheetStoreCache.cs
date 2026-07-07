@@ -13,7 +13,7 @@ namespace ProGlassAutomation.Services.Cache
         private static bool _isLoaded = false;
 
         // ================= EVENT (AUTO REFRESH ENGINE) =================
-        public static event Action CacheChanged;
+        public static event Action? CacheChanged;
 
         // ================= LOAD CACHE =================
         public static void Load(Func<List<Sheet>> loader)

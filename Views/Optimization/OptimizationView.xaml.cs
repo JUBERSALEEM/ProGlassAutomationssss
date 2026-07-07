@@ -53,6 +53,9 @@ namespace ProGlassAutomation.Views.Optimization
                 PreviewCanvas.Height = 650;
             }
 
+            // ensure timer is initialized to satisfy nullable reference checks
+            _simulateTimer = new DispatcherTimer();
+
             _engine.Configure(_lr, _rm, _tr, _br, _kerf, _breakout);
             _engine.SetEngineMode(EngineMode.IQ200V7);
             _engine.SetRotationPolicy(RotationPolicy.BestFit);
@@ -89,7 +92,7 @@ namespace ProGlassAutomation.Views.Optimization
             return _results.Where(r => r.Ref != "TOTAL").ToList();
         }
 
-        public OptimizationResult GetTotalResult()
+        public OptimizationResult? GetTotalResult()
         {
             return _results.FirstOrDefault(r => r.Ref == "TOTAL");
         }
@@ -103,16 +106,13 @@ namespace ProGlassAutomation.Views.Optimization
         {
             if (sender is Button btn && btn.Tag != null)
             {
-                string tab = btn.Tag.ToString();
+                string tab = btn.Tag.ToString() ?? string.Empty;
                 ResetTabs();
-                if (btn != null)
+                try
                 {
-                    try
-                    {
-                        btn.Style = (Style)FindResource("TabActive");
-                    }
-                    catch { }
+                    btn.Style = (Style)FindResource("TabActive");
                 }
+                catch { }
 
                 switch (tab)
                 {
@@ -187,7 +187,7 @@ namespace ProGlassAutomation.Views.Optimization
             {
                 if (e.Data.GetDataPresent(DataFormats.Text))
                 {
-                    string text = e.Data.GetData(DataFormats.Text) as string;
+                    string? text = e.Data.GetData(DataFormats.Text) as string;
                     if (string.IsNullOrEmpty(text)) return;
 
                     if (sender == dgStock)
@@ -497,7 +497,7 @@ namespace ProGlassAutomation.Views.Optimization
 
         private void DrawSingleSheetLayout(int startIndex)
         {
-            DrawSingleSheetLayout(startIndex, null);
+            DrawSingleSheetLayout(startIndex, string.Empty);
         }
 
         private void DrawSingleSheetLayout(int startIndex, string searchText)
@@ -1131,7 +1131,7 @@ namespace ProGlassAutomation.Views.Optimization
             _simulateTimer.Start();
         }
 
-        private void SimulateTimer_Tick(object sender, EventArgs e)
+        private void SimulateTimer_Tick(object? sender, EventArgs e)
         {
             if (!_isSimulating) return;
 

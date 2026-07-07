@@ -8,7 +8,7 @@ namespace ProGlassAutomation.Views.JobOrder
 {
     public partial class JobOrderView : UserControl
     {
-        public JobOrderViewModel ViewModel { get; private set; }
+        public JobOrderViewModel? ViewModel { get; private set; }
 
         public JobOrderView()
         {
