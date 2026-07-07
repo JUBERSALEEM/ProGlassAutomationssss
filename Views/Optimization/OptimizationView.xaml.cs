@@ -42,11 +42,16 @@ namespace ProGlassAutomation.Views.Optimization
             dgStock.ItemsSource = _stockSheets;
             dgParts.ItemsSource = _cutParts;
             icResults.ItemsSource = _results;
-            cmbSheetSelector.ItemsSource = _results;
-            cmbSavedJobs.ItemsSource = _savedJobs;
+            if (cmbSheetSelector != null)
+                cmbSheetSelector.ItemsSource = _results;
+            if (cmbSavedJobs != null)
+                cmbSavedJobs.ItemsSource = _savedJobs;
 
-            PreviewCanvas.Width = 900;
-            PreviewCanvas.Height = 650;
+            if (PreviewCanvas != null)
+            {
+                PreviewCanvas.Width = 900;
+                PreviewCanvas.Height = 650;
+            }
 
             _engine.Configure(_lr, _rm, _tr, _br, _kerf, _breakout);
             _engine.SetEngineMode(EngineMode.IQ200V7);
@@ -100,27 +105,34 @@ namespace ProGlassAutomation.Views.Optimization
             {
                 string tab = btn.Tag.ToString();
                 ResetTabs();
-                btn.Style = (Style)FindResource("TabActive");
+                if (btn != null)
+                {
+                    try
+                    {
+                        btn.Style = (Style)FindResource("TabActive");
+                    }
+                    catch { }
+                }
 
                 switch (tab)
                 {
-                    case "Stock": pnlStock.Visibility = Visibility.Visible; break;
-                    case "Parts": pnlParts.Visibility = Visibility.Visible; break;
-                    case "Settings": pnlSettings.Visibility = Visibility.Visible; break;
-                    case "Layouts": pnlSummary.Visibility = Visibility.Visible; break;
-                    case "Report": pnlReport.Visibility = Visibility.Visible; break;
+                    case "Stock": if (pnlStock != null) pnlStock.Visibility = Visibility.Visible; break;
+                    case "Parts": if (pnlParts != null) pnlParts.Visibility = Visibility.Visible; break;
+                    case "Settings": if (pnlSettings != null) pnlSettings.Visibility = Visibility.Visible; break;
+                    case "Layouts": if (pnlSummary != null) pnlSummary.Visibility = Visibility.Visible; break;
+                    case "Report": if (pnlReport != null) pnlReport.Visibility = Visibility.Visible; break;
                 }
             }
         }
 
         private void ResetTabs()
         {
-            if (btnStock != null) btnStock.Style = (Style)FindResource("TabInactive");
-            if (btnParts != null) btnParts.Style = (Style)FindResource("TabInactive");
-            if (btnSettings != null) btnSettings.Style = (Style)FindResource("TabInactive");
-            if (btnSummary != null) btnSummary.Style = (Style)FindResource("TabInactive");
-            if (btnReport != null) btnReport.Style = (Style)FindResource("TabInactive");
-            
+            if (btnStock != null) { try { btnStock.Style = (Style)FindResource("TabInactive"); } catch { } }
+            if (btnParts != null) { try { btnParts.Style = (Style)FindResource("TabInactive"); } catch { } }
+            if (btnSettings != null) { try { btnSettings.Style = (Style)FindResource("TabInactive"); } catch { } }
+            if (btnSummary != null) { try { btnSummary.Style = (Style)FindResource("TabInactive"); } catch { } }
+            if (btnReport != null) { try { btnReport.Style = (Style)FindResource("TabInactive"); } catch { } }
+
             if (pnlStock != null) pnlStock.Visibility = Visibility.Collapsed;
             if (pnlParts != null) pnlParts.Visibility = Visibility.Collapsed;
             if (pnlSettings != null) pnlSettings.Visibility = Visibility.Collapsed;
@@ -133,11 +145,11 @@ namespace ProGlassAutomation.Views.Optimization
             ResetTabs();
             switch (tab)
             {
-                case "Stock": if (btnStock != null) btnStock.Style = (Style)FindResource("TabActive"); if (pnlStock != null) pnlStock.Visibility = Visibility.Visible; break;
-                case "Parts": if (btnParts != null) btnParts.Style = (Style)FindResource("TabActive"); if (pnlParts != null) pnlParts.Visibility = Visibility.Visible; break;
-                case "Settings": if (btnSettings != null) btnSettings.Style = (Style)FindResource("TabActive"); if (pnlSettings != null) pnlSettings.Visibility = Visibility.Visible; break;
-                case "Layouts": if (btnSummary != null) btnSummary.Style = (Style)FindResource("TabActive"); if (pnlSummary != null) pnlSummary.Visibility = Visibility.Visible; break;
-                case "Report": if (btnReport != null) btnReport.Style = (Style)FindResource("TabActive"); if (pnlReport != null) pnlReport.Visibility = Visibility.Visible; break;
+                case "Stock": if (btnStock != null) { try { btnStock.Style = (Style)FindResource("TabActive"); } catch { } } if (pnlStock != null) pnlStock.Visibility = Visibility.Visible; break;
+                case "Parts": if (btnParts != null) { try { btnParts.Style = (Style)FindResource("TabActive"); } catch { } } if (pnlParts != null) pnlParts.Visibility = Visibility.Visible; break;
+                case "Settings": if (btnSettings != null) { try { btnSettings.Style = (Style)FindResource("TabActive"); } catch { } } if (pnlSettings != null) pnlSettings.Visibility = Visibility.Visible; break;
+                case "Layouts": if (btnSummary != null) { try { btnSummary.Style = (Style)FindResource("TabActive"); } catch { } } if (pnlSummary != null) pnlSummary.Visibility = Visibility.Visible; break;
+                case "Report": if (btnReport != null) { try { btnReport.Style = (Style)FindResource("TabActive"); } catch { } } if (pnlReport != null) pnlReport.Visibility = Visibility.Visible; break;
             }
         }
 
@@ -257,7 +269,6 @@ namespace ProGlassAutomation.Views.Optimization
             try
             {
                 int partsBefore = _cutParts.Sum(p => p.Qty);
-                System.Diagnostics.Debug.WriteLine($"=== PARTS BEFORE: {partsBefore} ===");
 
                 _engine.ExecuteNesting(_stockSheets.ToList(), _cutParts.ToList(), _results, _allPlacedParts, _savedJobs);
                 UpdateReportSection();
@@ -277,7 +288,8 @@ namespace ProGlassAutomation.Views.Optimization
                     txtWaste.Text = $"{_engine.OverallWastage:N1}%";
 
                 _currentIndex = 0;
-                cmbSheetSelector.SelectedIndex = 0;
+                if (cmbSheetSelector != null && _results.Count > 0)
+                    cmbSheetSelector.SelectedIndex = 0;
                 DrawCurrentLayout(_currentIndex);
                 DrawSingleSheetLayout(_currentIndex);
                 UpdateLayoutCount();
@@ -285,15 +297,12 @@ namespace ProGlassAutomation.Views.Optimization
                 int placedCount = _allPlacedParts.Count;
                 int unplacedCount = _engine.TotalPartsUnplaced;
 
-                var unplacedList = _cutParts.Where(p => !p.IsPlaced).Take(5).Select(p => $"{p.Ref}: {p.L}x{p.W}").ToList();
-                string unplacedInfo = unplacedList.Count > 0 ? "\n\nNOT PLACED:\n" + string.Join("\n", unplacedList) : "";
-
                 MessageBox.Show(
                     $"=== COMPLETE ===\n\n" +
                     $"Parts Input: {partsBefore}\n" +
                     $"Parts Placed: {placedCount}\n" +
                     $"Parts NOT Placed: {unplacedCount}\n" +
-                    $"Sheets Used: {_results.Count(r => r.Ref != "TOTAL")}\n{unplacedInfo}",
+                    $"Sheets Used: {_results.Count(r => r.Ref != "TOTAL")}",
                     "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
@@ -327,8 +336,8 @@ namespace ProGlassAutomation.Views.Optimization
                 if (txtTotalCost != null) txtTotalCost.Text = "AED 0.00";
 
                 _currentIndex = 0;
-                PreviewCanvas.Children.Clear();
-                LayoutCanvas.Children.Clear();
+                if (PreviewCanvas != null) PreviewCanvas.Children.Clear();
+                if (LayoutCanvas != null) LayoutCanvas.Children.Clear();
                 if (pnlUnplaced != null) pnlUnplaced.Visibility = Visibility.Collapsed;
             }
         }
@@ -397,14 +406,15 @@ namespace ProGlassAutomation.Views.Optimization
             job.Id = _savedJobs.Count + 1;
 
             _savedJobs.Add(job);
-            cmbSavedJobs.ItemsSource = _savedJobs;
+            if (cmbSavedJobs != null)
+                cmbSavedJobs.ItemsSource = _savedJobs;
 
             MessageBox.Show($"Job saved: {jobName}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void LoadJob_Click(object sender, RoutedEventArgs e)
         {
-            if (cmbSavedJobs.SelectedItem is OptimizationJob job)
+            if (cmbSavedJobs != null && cmbSavedJobs.SelectedItem is OptimizationJob job)
             {
                 var loaded = _services.LoadJob(job);
                 var stockSheets = loaded.stocks;
@@ -425,7 +435,7 @@ namespace ProGlassAutomation.Views.Optimization
 
         private void DeleteJob_Click(object sender, RoutedEventArgs e)
         {
-            if (cmbSavedJobs.SelectedItem is OptimizationJob job)
+            if (cmbSavedJobs != null && cmbSavedJobs.SelectedItem is OptimizationJob job)
             {
                 _savedJobs.Remove(job);
                 cmbSavedJobs.ItemsSource = _savedJobs;
@@ -434,11 +444,12 @@ namespace ProGlassAutomation.Views.Optimization
         }
 
         // =====================================================
-        // DRAWING METHODS (UNIFIED REGULAR & SEARCH MODES)
+        // DRAWING METHODS
         // =====================================================
 
         private void DrawCurrentLayout(int startIndex)
         {
+            if (PreviewCanvas == null) return;
             PreviewCanvas.Children.Clear();
             if (_results.Count == 0 || startIndex < 0) return;
 
@@ -491,6 +502,7 @@ namespace ProGlassAutomation.Views.Optimization
 
         private void DrawSingleSheetLayout(int startIndex, string searchText)
         {
+            if (LayoutCanvas == null) return;
             LayoutCanvas.Children.Clear();
 
             var validResults = _results.Where(r => r.Ref != "TOTAL").ToList();
@@ -549,7 +561,6 @@ namespace ProGlassAutomation.Views.Optimization
                 double usableW = drawW - leftOffset - rightOffset;
                 double usableH = drawH - topOffset - bottomOffset;
 
-                // Header info
                 TextBlock info = new TextBlock
                 {
                     Text = $"#{idx + 1}: {currentResult.L:N0}×{currentResult.W:N0}mm U:{currentResult.Util:N1}%",
@@ -561,13 +572,11 @@ namespace ProGlassAutomation.Views.Optimization
                 Canvas.SetTop(info, areaTop + 2);
                 LayoutCanvas.Children.Add(info);
 
-                // Sheet Outer Border
                 Rectangle trimBorder = new Rectangle { Width = drawW, Height = drawH, Fill = Brushes.Transparent, Stroke = Brushes.Red, StrokeThickness = 2 };
                 Canvas.SetLeft(trimBorder, startX);
                 Canvas.SetTop(trimBorder, startY);
                 LayoutCanvas.Children.Add(trimBorder);
 
-                // Inner Usable Sheet
                 Rectangle usableSheet = new Rectangle
                 {
                     Width = usableW,
@@ -579,34 +588,6 @@ namespace ProGlassAutomation.Views.Optimization
                 Canvas.SetLeft(usableSheet, startX + leftOffset);
                 Canvas.SetTop(usableSheet, startY + topOffset);
                 LayoutCanvas.Children.Add(usableSheet);
-
-                // Margins labels
-                TextBlock leftTrim = new TextBlock { Text = $"L:{_lr}", FontSize = 6, Foreground = Brushes.Red, FontWeight = FontWeights.Bold };
-                Canvas.SetLeft(leftTrim, startX + 2); Canvas.SetTop(leftTrim, startY + topOffset);
-                LayoutCanvas.Children.Add(leftTrim);
-
-                TextBlock rightTrim = new TextBlock { Text = $"R:{_rm}", FontSize = 6, Foreground = Brushes.Red, FontWeight = FontWeights.Bold };
-                Canvas.SetLeft(rightTrim, startX + drawW - 20); Canvas.SetTop(rightTrim, startY + topOffset);
-                LayoutCanvas.Children.Add(rightTrim);
-
-                TextBlock topTrim = new TextBlock { Text = $"T:{_tr}", FontSize = 6, Foreground = Brushes.Red, FontWeight = FontWeights.Bold };
-                Canvas.SetLeft(topTrim, startX + leftOffset); Canvas.SetTop(topTrim, startY + 2);
-                LayoutCanvas.Children.Add(topTrim);
-
-                TextBlock bottomTrim = new TextBlock { Text = $"B:{_br}", FontSize = 6, Foreground = Brushes.Red, FontWeight = FontWeights.Bold };
-                Canvas.SetLeft(bottomTrim, startX + leftOffset); Canvas.SetTop(bottomTrim, startY + drawH - 12);
-                LayoutCanvas.Children.Add(bottomTrim);
-
-                TextBlock sheetSize = new TextBlock
-                {
-                    Text = $"{currentResult.L:N0}×{currentResult.W}",
-                    FontSize = 8,
-                    Foreground = new SolidColorBrush(Color.FromRgb(37, 99, 235)),
-                    FontWeight = FontWeights.Bold
-                };
-                Canvas.SetLeft(sheetSize, startX + drawW / 2 - 35);
-                Canvas.SetTop(sheetSize, startY + drawH / 2 - 10);
-                LayoutCanvas.Children.Add(sheetSize);
 
                 var partsOnSheet = _allPlacedParts
                     .Where(p => p.Sheet == currentResult.SheetRef && p.SheetNum == currentResult.SheetNum)
@@ -641,25 +622,6 @@ namespace ProGlassAutomation.Views.Optimization
                     Canvas.SetLeft(partBorder, px);
                     Canvas.SetTop(partBorder, py);
                     LayoutCanvas.Children.Add(partBorder);
-
-                    if (pw > 25 && ph > 15)
-                    {
-                        string displayText = part.IsRotated
-                            ? $"{part.Ref}\n{part.W:N0}×{part.L}\n⟳ ROT"
-                            : $"{part.Ref}\n{part.L:N0}×{part.W}";
-
-                        TextBlock label = new TextBlock
-                        {
-                            Text = displayText,
-                            FontSize = Math.Max(4, Math.Min(pw / 14, 7)),
-                            FontWeight = FontWeights.Bold,
-                            Foreground = (part.IsRotated || isMatch) ? Brushes.Black : Brushes.White,
-                            TextAlignment = TextAlignment.Center
-                        };
-                        Canvas.SetLeft(label, px + 2);
-                        Canvas.SetTop(label, py + (ph / 2) - 10);
-                        LayoutCanvas.Children.Add(label);
-                    }
                 }
             }
 
@@ -672,20 +634,11 @@ namespace ProGlassAutomation.Views.Optimization
             DrawSingleSheetLayout(_currentIndex, searchText);
         }
 
-        // =====================================================
-        // ZOOM CONTROLS
-        // =====================================================
-
         private void ZoomIn_Click(object sender, RoutedEventArgs e)
         {
             _zoomLevel = Math.Min(_zoomLevel + 0.1, 2.5);
             if (txtZoom != null) txtZoom.Text = $"{(_zoomLevel * 100):N0}%";
             DrawSingleSheetLayout(_currentIndex);
-            if (LayoutScrollViewer != null)
-            {
-                LayoutScrollViewer.ScrollToVerticalOffset(0);
-                LayoutScrollViewer.ScrollToHorizontalOffset(0);
-            }
         }
 
         private void ZoomOut_Click(object sender, RoutedEventArgs e)
@@ -693,16 +646,7 @@ namespace ProGlassAutomation.Views.Optimization
             _zoomLevel = Math.Max(_zoomLevel - 0.1, 0.3);
             if (txtZoom != null) txtZoom.Text = $"{(_zoomLevel * 100):N0}%";
             DrawSingleSheetLayout(_currentIndex);
-            if (LayoutScrollViewer != null)
-            {
-                LayoutScrollViewer.ScrollToVerticalOffset(0);
-                LayoutScrollViewer.ScrollToHorizontalOffset(0);
-            }
         }
-
-        // =====================================================
-        // LAYOUT NAVIGATION
-        // =====================================================
 
         private void SheetSelector_Changed(object sender, SelectionChangedEventArgs e)
         {
@@ -778,10 +722,6 @@ namespace ProGlassAutomation.Views.Optimization
             UpdateLayoutCount();
         }
 
-        // =====================================================
-        // FIND FUNCTIONALITY
-        // =====================================================
-
         private void txtFindPart_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (string.IsNullOrEmpty(txtFindPart?.Text))
@@ -828,10 +768,6 @@ namespace ProGlassAutomation.Views.Optimization
                 }
             }
         }
-
-        // =====================================================
-        // SPECIFICATION SELECTION
-        // =====================================================
 
         public void LoadSpecificationsForOptimization(IEnumerable<SpecificationModel> specs)
         {
@@ -918,10 +854,6 @@ namespace ProGlassAutomation.Views.Optimization
         private void rbUseW1H1_Checked(object sender, RoutedEventArgs e) { UpdateCombinedPreview(); }
         private void rbUseW2H2_Checked(object sender, RoutedEventArgs e) { UpdateCombinedPreview(); }
 
-        // =====================================================
-        // REPORT SECTION
-        // =====================================================
-
         private void UpdateReportSection()
         {
             if (spReportDetails == null) return;
@@ -972,10 +904,6 @@ namespace ProGlassAutomation.Views.Optimization
             if (txtRemnants != null) txtRemnants.Text = $"{_engine.GetRemnants().Count} remnants available";
         }
 
-        // =====================================================
-        // RESULTS GROUPING
-        // =====================================================
-
         private void UpdateResultsGrouping()
         {
             var groupedResults = new List<OptimizationResult>();
@@ -989,12 +917,9 @@ namespace ProGlassAutomation.Views.Optimization
                 groupedResults.Add(new OptimizationResult { Ref = $"{g.Ref} ({g.Count}x)", L = 0, W = 0, Used = g.Count, Area = g.TotalArea, Util = g.AvgUtil, Waste = 100 - g.AvgUtil });
             }
 
-            icResults.ItemsSource = groupedResults;
+            if (icResults != null)
+                icResults.ItemsSource = groupedResults;
         }
-
-        // =====================================================
-        // SETTINGS
-        // =====================================================
 
         private void SaveSettings_Click(object sender, RoutedEventArgs e)
         {
@@ -1016,10 +941,6 @@ namespace ProGlassAutomation.Views.Optimization
             MessageBox.Show("Settings saved.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
-        // =====================================================
-        // KEYBOARD SHORTCUTS
-        // =====================================================
-
         private void OptimizationView_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.F5) RunOptimization_Click(sender, e);
@@ -1039,10 +960,6 @@ namespace ProGlassAutomation.Views.Optimization
             }
         }
 
-        // =====================================================
-        // VALIDATION
-        // =====================================================
-
         private bool ValidateInputs()
         {
             if (_stockSheets.Count == 0) { MessageBox.Show("Please add stock sheets.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning); return false; }
@@ -1051,16 +968,8 @@ namespace ProGlassAutomation.Views.Optimization
             return true;
         }
 
-        // =====================================================
-        // HELPERS
-        // =====================================================
-
         private string FormatSize(double mm) => mm >= 1000 ? $"{mm / 1000:N1}m" : $"{mm:N0}mm";
         private string FormatArea(double sqm) => sqm >= 1 ? $"{sqm:N2} m²" : $"{sqm * 10000:N0} cm²";
-
-        // =====================================================
-        // PRINT LAYOUTS
-        // =====================================================
 
         private void PrintLayouts_Click(object sender, RoutedEventArgs e)
         {
@@ -1122,10 +1031,6 @@ namespace ProGlassAutomation.Views.Optimization
             printWindow.ShowDialog();
         }
 
-        // =====================================================
-        // PRINT LABELS
-        // =====================================================
-
         private void PrintLabels_Click(object sender, RoutedEventArgs e)
         {
             if (_allPlacedParts.Count == 0)
@@ -1175,10 +1080,6 @@ namespace ProGlassAutomation.Views.Optimization
             printWindow.ShowDialog();
         }
 
-        // =====================================================
-        // COST CALCULATION (Corrected cost formulas)
-        // =====================================================
-
         public double CalculateCost(double usedSQM, List<OptimizationResult> results, List<RemnantPiece> remnants)
         {
             if (usedSQM <= 0) return 0;
@@ -1202,10 +1103,6 @@ namespace ProGlassAutomation.Views.Optimization
 
             return stockCost;
         }
-
-        // =====================================================
-        // SIMULATION MODE
-        // =====================================================
 
         private void StartSimulation_Click(object sender, RoutedEventArgs e)
         {
@@ -1255,10 +1152,6 @@ namespace ProGlassAutomation.Views.Optimization
                 _currentIndex = 0;
         }
 
-        // =====================================================
-        // INVOICE INTEGRATION METHODS
-        // =====================================================
-
         public int SheetsUsed => _results.Count(r => r.Ref != "TOTAL");
 
         public double AverageUtilization => _engine.OverallUtilization;
@@ -1288,8 +1181,6 @@ namespace ProGlassAutomation.Views.Optimization
                 if (txtBR != null) txtBR.Text = _br.ToString();
                 if (txtKerf != null) txtKerf.Text = _kerf.ToString();
                 if (txtBreakout != null) txtBreakout.Text = _breakout.ToString();
-
-                System.Diagnostics.Debug.WriteLine($"[OptimizationView] SetTrimSettings applied: L={_lr}, R={_rm}, T={_tr}, B={_br}, Kerf={_kerf}");
             }
             catch (Exception ex)
             {
@@ -1300,18 +1191,25 @@ namespace ProGlassAutomation.Views.Optimization
         public void ImportInvoiceItems(List<CutPart> items)
         {
             _cutParts.Clear();
+            if (items == null) return;
+
             foreach (var item in items)
             {
                 _cutParts.Add(item);
             }
             UpdatePartsSummary();
+
+            // --- SYNC FIX: Auto-run optimization if stock is available ---
+            if (_stockSheets.Count > 0 && _cutParts.Count > 0)
+            {
+                RunOptimizationFromInvoice();
+            }
         }
 
         public void RunOptimizationFromInvoice()
         {
             if (_stockSheets.Count == 0 || _cutParts.Count == 0)
             {
-                MessageBox.Show("Please add stock sheets and parts first.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -1362,28 +1260,27 @@ namespace ProGlassAutomation.Views.Optimization
                 });
             }
             UpdatePartsSummary();
-        }
 
-        // =====================================================
-        // CANVAS CONTEXT MENU
-        // =====================================================
+            // --- SYNC FIX: Auto-run optimization if stock is available ---
+            if (_stockSheets.Count > 0 && _cutParts.Count > 0)
+            {
+                RunOptimizationFromInvoice();
+            }
+        }
 
         private void LayoutCanvas_MouseRightClick(object sender, MouseButtonEventArgs e)
         {
             var contextMenu = new ContextMenu();
 
             var copyItem = new MenuItem { Header = "Copy Layout Image" };
-            copyItem.Click += (s, args) => { };
             contextMenu.Items.Add(copyItem);
 
             var exportItem = new MenuItem { Header = "Export Layout PNG" };
-            exportItem.Click += (s, args) => { };
             contextMenu.Items.Add(exportItem);
 
             contextMenu.Items.Add(new Separator());
 
             var closeItem = new MenuItem { Header = "Close" };
-            closeItem.Click += (s, args) => { };
             contextMenu.Items.Add(closeItem);
 
             contextMenu.IsOpen = true;
