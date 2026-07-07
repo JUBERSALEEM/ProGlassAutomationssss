@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using System.Windows.Threading;
@@ -41,8 +42,8 @@ namespace ProGlassAutomation.Views.Optimization
         Simulation = 4,
         AutoSelect = 5,
         BestOf3 = 6,
-        TimeBasedSearch = 7,   // NEW – Patch 01/11
-        StrategyMixer = 8      // NEW – Patch 09
+        TimeBasedSearch = 7,
+        StrategyMixer = 8
     }
 
     // =====================================================
@@ -66,9 +67,15 @@ namespace ProGlassAutomation.Views.Optimization
         private const double MIN_SHEET_SIZE = 100;
         private const double EPSILON = 0.0001;
 
-        // Time-budget for patches 01/11
+        private const int UNLIMITED_QTY_SENTINEL = 9999999;
+        private const int MAX_SHEETS_PER_STOCK_HARD_CAP = 20000;
+        private const int MAX_SHEETS_PER_STOCK_EVALUATION_CAP = 2000;
+
         private int _optimizationTimeMs = 5000;
-        public void SetOptimizationTimeMs(int ms) { _optimizationTimeMs = Math.Max(250, ms); }
+        public void SetOptimizationTimeMs(int ms)
+        {
+            _optimizationTimeMs = Math.Max(250, Math.Min(ms, 60000));
+        }
 
         // =====================================================
         // ENGINE STATE
@@ -81,10 +88,14 @@ namespace ProGlassAutomation.Views.Optimization
         private bool _remnantReuseEnabled = false;
         private List<CutSequence> _cutSequences = new List<CutSequence>();
 
-        // Live scoring context (Patch 02 & 04)
         private List<(double X, double Y, double W, double H)> _currentPlacedCtx
             = new List<(double, double, double, double)>();
         private List<CutPart> _currentRemainingCtx = new List<CutPart>();
+
+        private int _invalidPartsFilteredLastExpand = 0;
+
+        private double _lastSimulationThermalPenalty = 0;
+        private double _lastSimulationToolpathPenalty = 0;
 
         // =====================================================
         // RESULTS
@@ -252,16 +263,18 @@ namespace ProGlassAutomation.Views.Optimization
                 var tempResults = new ObservableCollection<OptimizationResult>();
                 var tempPlaced = new List<PlacedPart>();
 
-                RunPlacementWithSequence(seq, stockSheets, tempResults, tempPlaced);
+                RunPlacementWithSequence(seq, stockSheets, tempResults, tempPlaced, marshalToUiThread: false);
 
-                if (_overallUtilization > bestUtil)
+                double util = tempResults.FirstOrDefault(r => r.Ref == "TOTAL")?.Util ?? _overallUtilization;
+
+                if (util > bestUtil)
                 {
-                    bestUtil = _overallUtilization;
+                    bestUtil = util;
                     bestSeq = seq;
                 }
             }
 
-            RunPlacementWithSequence(bestSeq, stockSheets, results, allPlacedParts);
+            RunPlacementWithSequence(bestSeq, stockSheets, results, allPlacedParts, marshalToUiThread: true);
         }
 
         // =====================================================
@@ -279,10 +292,10 @@ namespace ProGlassAutomation.Views.Optimization
             double bestScore = double.MinValue;
             int iteration = 0;
 
-            // seed with a sensible heuristic order so we never return worse than baseline
             var heuristic = parts.OrderByDescending(x => x.L * x.W).ToList();
             best = heuristic;
-            bestScore = EvaluateSequenceUtilization(heuristic, sheets);
+
+            bestScore = EvaluateSequenceUtilizationCapped(heuristic, sheets);
 
             while ((DateTime.Now - start).TotalMilliseconds < timeMs)
             {
@@ -292,7 +305,7 @@ namespace ProGlassAutomation.Views.Optimization
                     .OrderBy(x => _rng.Next())
                     .ToList();
 
-                double score = EvaluateSequenceUtilization(candidate, sheets);
+                double score = EvaluateSequenceUtilizationCapped(candidate, sheets);
 
                 if (score > bestScore)
                 {
@@ -312,7 +325,7 @@ namespace ProGlassAutomation.Views.Optimization
             if (allParts.Count == 0) return;
 
             var bestSeq = ExecuteTimeBasedOptimization(allParts, stockSheets, _optimizationTimeMs);
-            RunPlacementWithSequence(bestSeq, stockSheets, results, allPlacedParts);
+            RunPlacementWithSequence(bestSeq, stockSheets, results, allPlacedParts, marshalToUiThread: true);
         }
 
         // =====================================================
@@ -369,7 +382,7 @@ namespace ProGlassAutomation.Views.Optimization
                 _nestingStrategy = strat;
                 _rotationPolicy = rot;
 
-                double score = EvaluateSequenceUtilization(candidate, stockSheets);
+                double score = EvaluateSequenceUtilizationCapped(candidate, stockSheets);
 
                 if (score > bestScore)
                 {
@@ -382,7 +395,11 @@ namespace ProGlassAutomation.Views.Optimization
 
             _nestingStrategy = bestStrategy;
             _rotationPolicy = bestRotation;
-            RunPlacementWithSequence(bestSeq, stockSheets, results, allPlacedParts);
+
+            RunPlacementWithSequence(bestSeq, stockSheets, results, allPlacedParts, marshalToUiThread: true);
+
+            _nestingStrategy = originalStrategy;
+            _rotationPolicy = originalRotation;
         }
 
         // =====================================================
@@ -393,10 +410,19 @@ namespace ProGlassAutomation.Views.Optimization
                                               ICollection<OptimizationResult> results,
                                               List<PlacedPart> allPlacedParts)
         {
-            Application.Current.Dispatcher.Invoke(() => {
+            RunPlacementWithSequence(orderedParts, stockSheets, results, allPlacedParts, marshalToUiThread: true);
+        }
+
+        private void RunPlacementWithSequence(List<CutPart> orderedParts, List<StockSheet> stockSheets,
+                                              ICollection<OptimizationResult> results,
+                                              List<PlacedPart> allPlacedParts,
+                                              bool marshalToUiThread)
+        {
+            SafeUiInvoke(() =>
+            {
                 results.Clear();
                 allPlacedParts.Clear();
-            });
+            }, marshalToUiThread);
 
             _remnants.Clear();
             _cutSequences.Clear();
@@ -419,7 +445,9 @@ namespace ProGlassAutomation.Views.Optimization
             foreach (var stock in sortedStock)
             {
                 double oneSheetArea = stock.L * stock.W / 1000000.0;
-                int availableQty = stock.Qty;
+
+                int remainingAtStockStart = orderedParts.Count(p => !p.IsPlaced);
+                int availableQty = GetEffectiveQtyForPlacement(stock, remainingAtStockStart);
                 if (availableQty <= 0) continue;
 
                 double usableW = stock.L - _lr - _rm;
@@ -444,7 +472,6 @@ namespace ProGlassAutomation.Views.Optimization
 
                     var cutSequence = new CutSequence { SheetId = $"{stock.Ref}-{sheetNum + 1}" };
 
-                    // Patch 02 & 04 context
                     _currentPlacedCtx = placedCoordinates;
 
                     for (int rIdx = 0; rIdx < remaining.Count; rIdx++)
@@ -455,7 +482,6 @@ namespace ProGlassAutomation.Views.Optimization
                         if (!_constraints.ValidatePlacement(part.L, part.W))
                             continue;
 
-                        // Patch 04 — slice remaining parts ahead (excluding already-placed)
                         _currentRemainingCtx = remaining
                             .Skip(rIdx + 1)
                             .Where(p => !p.IsPlaced)
@@ -470,8 +496,11 @@ namespace ProGlassAutomation.Views.Optimization
                         double storeX = placement.X;
                         double storeY = placement.Y;
 
+                        double reservedW = placeW + _kerf;
+                        double reservedH = placeH + _kerf;
+
                         if (storeX < 0 || storeY < 0 ||
-                            storeX + placeW > usableW + EPSILON || storeY + placeH > usableH + EPSILON)
+                            storeX + reservedW > usableW + EPSILON || storeY + reservedH > usableH + EPSILON)
                         {
                             continue;
                         }
@@ -506,7 +535,18 @@ namespace ProGlassAutomation.Views.Optimization
                         placedOnThisSheet++;
                         _totalPartsCut++;
 
-                        UpdateFreeRectsWithGuillotine(placement, placeW, placeH);
+                        bool splitOk = UpdateFreeRectsWithGuillotineSafe(placement, reservedW, reservedH);
+                        if (!splitOk)
+                        {
+                            part.IsPlaced = false;
+                            placedOnThisSheet--;
+                            _totalPartsCut--;
+                            _usedSQM -= partArea;
+                            placedOnThisSheetList.RemoveAt(placedOnThisSheetList.Count - 1);
+                            placedCoordinates.RemoveAt(placedCoordinates.Count - 1);
+                            continue;
+                        }
+
                         GenerateToolpathForPart(part, cutSequence, placement.X + _lr, placement.Y + _tr, _kerf);
                     }
 
@@ -557,7 +597,7 @@ namespace ProGlassAutomation.Views.Optimization
                     RunSecondPassNesting(remainingParts);
             }
 
-            _totalPartsUnplaced = orderedParts.Count(p => !p.IsPlaced);
+            _totalPartsUnplaced = orderedParts.Count(p => !p.IsPlaced) + Math.Max(0, _invalidPartsFilteredLastExpand);
 
             var emptyResults = localResults.Where(r => r.Ref != "TOTAL" && r.Area <= 0).ToList();
             foreach (var empty in emptyResults)
@@ -590,39 +630,95 @@ namespace ProGlassAutomation.Views.Optimization
             };
             localResults.Add(totalRecord);
 
-            // Patch 10 — fragmentation penalty influences the *reported* utilization slightly
-            // (kept as soft signal: ranking score for evaluators, not displayed utilization)
-
-            Application.Current.Dispatcher.Invoke(() => {
+            SafeUiInvoke(() =>
+            {
                 foreach (var r in localResults) results.Add(r);
                 foreach (var p in localPlacedList) allPlacedParts.Add(p);
-            });
+            }, marshalToUiThread);
+        }
+
+        private void SafeUiInvoke(Action action, bool marshalToUiThread)
+        {
+            if (!marshalToUiThread)
+            {
+                action();
+                return;
+            }
+
+            try
+            {
+                var disp = Application.Current?.Dispatcher;
+                if (disp == null)
+                {
+                    action();
+                    return;
+                }
+
+                if (disp.CheckAccess())
+                {
+                    action();
+                }
+                else
+                {
+                    disp.Invoke(action);
+                }
+            }
+            catch
+            {
+                action();
+            }
+        }
+
+        private int GetEffectiveQtyForPlacement(StockSheet stock, int remainingPartsCount)
+        {
+            if (stock == null) return 0;
+
+            int qty = stock.Qty;
+
+            if (qty >= UNLIMITED_QTY_SENTINEL)
+            {
+                int cap = Math.Max(1, remainingPartsCount);
+                return Math.Min(cap, MAX_SHEETS_PER_STOCK_HARD_CAP);
+            }
+
+            if (qty <= 0) return 0;
+
+            return Math.Min(qty, MAX_SHEETS_PER_STOCK_HARD_CAP);
         }
 
         private List<CutPart> ApplyConstraints(List<CutPart> parts)
         {
             var valid = new List<CutPart>();
+            int rejected = 0;
+
             foreach (var p in parts)
             {
                 if (p.L >= MAX_PART_SIZE || p.W >= MAX_PART_SIZE)
                 {
-                    _totalPartsUnplaced++;
+                    rejected++;
                     continue;
                 }
-                if (p.L <= 0 || p.W <= 0) continue;
-                if (p.L < _breakout || p.W < _breakout) continue;
+                if (p.L <= 0 || p.W <= 0) { rejected++; continue; }
+                if (p.L < _breakout || p.W < _breakout) { rejected++; continue; }
+
                 valid.Add(p);
             }
+
+            _invalidPartsFilteredLastExpand = rejected;
             return valid;
         }
 
         private List<CutPart> ExpandAndConstrainParts(List<CutPart> cutParts)
         {
+            _invalidPartsFilteredLastExpand = 0;
+
             var allParts = new List<CutPart>();
             int partId = 1;
             foreach (var p in cutParts)
             {
-                for (int i = 0; i < p.Qty; i++)
+                int qty = Math.Max(0, p.Qty);
+
+                for (int i = 0; i < qty; i++)
                 {
                     allParts.Add(new CutPart
                     {
@@ -672,7 +768,7 @@ namespace ProGlassAutomation.Views.Optimization
                 }
             }
 
-            RunPlacementWithSequence(bestSequence, stockSheets, results, allPlacedParts);
+            RunPlacementWithSequence(bestSequence, stockSheets, results, allPlacedParts, marshalToUiThread: true);
         }
 
         // =====================================================
@@ -732,7 +828,7 @@ namespace ProGlassAutomation.Views.Optimization
             }
 
             var best = population.OrderByDescending(p => p.Fitness).First();
-            RunPlacementWithSequence(best.PartOrder, stockSheets, results, allPlacedParts);
+            RunPlacementWithSequence(best.PartOrder, stockSheets, results, allPlacedParts, marshalToUiThread: true);
         }
 
         // =====================================================
@@ -763,7 +859,7 @@ namespace ProGlassAutomation.Views.Optimization
             }
 
             if (bestSequence != null)
-                RunPlacementWithSequence(bestSequence, stockSheets, results, allPlacedParts);
+                RunPlacementWithSequence(bestSequence, stockSheets, results, allPlacedParts, marshalToUiThread: true);
         }
 
         // =====================================================
@@ -777,11 +873,19 @@ namespace ProGlassAutomation.Views.Optimization
         {
             ExecuteIQ200V7Core(stockSheets, cutParts, results, allPlacedParts, savedJobs);
 
+            double thermalTotal = 0;
+            double toolpathTotal = 0;
+
             foreach (var placed in allPlacedParts)
             {
-                double thermalPenalty = (placed.L * placed.W) * 0.000001;
-                double toolpathPenalty = (placed.L + placed.W) * 0.01;
+                thermalTotal += (placed.L * placed.W) * 0.000001;
+                toolpathTotal += (placed.L + placed.W) * 0.01;
             }
+
+            _lastSimulationThermalPenalty = thermalTotal;
+            _lastSimulationToolpathPenalty = toolpathTotal;
+
+            Debug.WriteLine($"[OptimizationEngine] Simulation penalties: Thermal={thermalTotal:N4}, Toolpath={toolpathTotal:N4}");
         }
 
         // =====================================================
@@ -813,24 +917,34 @@ namespace ProGlassAutomation.Views.Optimization
             List<PlacedPart>? bestPlacement = null;
             List<OptimizationResult>? bestResults = null;
 
-            foreach (var strategy in strategies)
+            var originalMode = _engineMode;
+            try
             {
-                _nestingStrategy = strategy;
+                _engineMode = EngineMode.IQ200V7;
 
-                var testResults = new ObservableCollection<OptimizationResult>();
-                var testPlaced = new List<PlacedPart>();
-
-                ExecuteIQ200V7Core(stockSheets, cutParts, testResults, testPlaced, savedJobs);
-
-                double util = _overallUtilization;
-
-                if (util > bestUtil)
+                foreach (var strategy in strategies)
                 {
-                    bestUtil = util;
-                    bestStrategy = strategy;
-                    bestPlacement = new List<PlacedPart>(testPlaced);
-                    bestResults = new List<OptimizationResult>(testResults);
+                    _nestingStrategy = strategy;
+
+                    var testResults = new ObservableCollection<OptimizationResult>();
+                    var testPlaced = new List<PlacedPart>();
+
+                    ExecuteIQ200V7Core(stockSheets, cutParts, testResults, testPlaced, savedJobs);
+
+                    double util = _overallUtilization;
+
+                    if (util > bestUtil)
+                    {
+                        bestUtil = util;
+                        bestStrategy = strategy;
+                        bestPlacement = new List<PlacedPart>(testPlaced);
+                        bestResults = new List<OptimizationResult>(testResults);
+                    }
                 }
+            }
+            finally
+            {
+                _engineMode = originalMode;
             }
 
             _nestingStrategy = bestStrategy;
@@ -866,7 +980,7 @@ namespace ProGlassAutomation.Views.Optimization
                 var testPlaced = new List<PlacedPart>();
 
                 var shuffledSequence = allParts.OrderBy(x => _rng.Next()).ToList();
-                RunPlacementWithSequence(shuffledSequence, stockSheets, testResults, testPlaced);
+                RunPlacementWithSequence(shuffledSequence, stockSheets, testResults, testPlaced, marshalToUiThread: false);
 
                 if (_overallUtilization > bestUtil)
                 {
@@ -913,7 +1027,6 @@ namespace ProGlassAutomation.Views.Optimization
             return placed.Count(p => (p.L * p.W) < 100000);
         }
 
-        // Patch 10 — Fragment penalty for ranking solutions
         private double FragmentPenalty(List<PlacedPart> placed)
         {
             int smallPieces = placed.Count(p => p.L < 200 || p.W < 200);
@@ -930,8 +1043,10 @@ namespace ProGlassAutomation.Views.Optimization
 
             foreach (var stock in stockSheets)
             {
-                if (stock.Qty <= 0) continue;
-                for (int i = 1; i <= stock.Qty; i++)
+                int effectiveQty = GetEffectiveQtyForEvaluation(stock);
+                if (effectiveQty <= 0) continue;
+
+                for (int i = 1; i <= effectiveQty; i++)
                 {
                     var tempPlaced = new List<PlacedPart>();
                     PlacePartsGuillotine(sequence, stock.L - _lr - _rm, stock.W - _tr - _br, stock.Ref, i, tempPlaced);
@@ -945,7 +1060,6 @@ namespace ProGlassAutomation.Views.Optimization
             double kerfLength = sequence.Where(p => p.IsPlaced).Sum(p => 2 * (p.L + p.W));
             double cost = ComputeCost(totalArea, totalStockArea, sequence.Count - placedCount, kerfLength);
 
-            // Patch 10 — fragmentation penalty
             cost += FragmentPenalty(allTempPlaced);
 
             return cost;
@@ -960,8 +1074,10 @@ namespace ProGlassAutomation.Views.Optimization
 
             foreach (var stock in stockSheets)
             {
-                if (stock.Qty <= 0) continue;
-                for (int i = 1; i <= stock.Qty; i++)
+                int effectiveQty = GetEffectiveQtyForEvaluation(stock);
+                if (effectiveQty <= 0) continue;
+
+                for (int i = 1; i <= effectiveQty; i++)
                 {
                     var tempPlaced = new List<PlacedPart>();
                     PlacePartsGuillotine(sequence, stock.L - _lr - _rm, stock.W - _tr - _br, stock.Ref, i, tempPlaced);
@@ -972,10 +1088,50 @@ namespace ProGlassAutomation.Views.Optimization
             }
 
             double util = totalStockArea > 0 ? (totalUsed / totalStockArea) : 0;
-
-            // Patch 10 — fragmentation drags score down for ranking
             double penalty = FragmentPenalty(allTempPlaced) / 1_000_000.0;
             return util - penalty;
+        }
+
+        private double EvaluateSequenceUtilizationCapped(List<CutPart> sequence, List<StockSheet> stockSheets)
+        {
+            foreach (var p in sequence) p.IsPlaced = false;
+
+            double totalUsed = 0;
+            double totalStockArea = 0;
+            var allTempPlaced = new List<PlacedPart>();
+
+            foreach (var stock in stockSheets.OrderByDescending(s => s.L * s.W).Take(10))
+            {
+                int effectiveQty = GetEffectiveQtyForEvaluation(stock);
+                if (effectiveQty <= 0) continue;
+
+                for (int i = 1; i <= effectiveQty; i++)
+                {
+                    var tempPlaced = new List<PlacedPart>();
+                    PlacePartsGuillotine(sequence, stock.L - _lr - _rm, stock.W - _tr - _br, stock.Ref, i, tempPlaced);
+                    totalUsed += tempPlaced.Sum(p => p.L * p.W);
+                    totalStockArea += (stock.L * stock.W);
+                    allTempPlaced.AddRange(tempPlaced);
+                }
+            }
+
+            double util = totalStockArea > 0 ? (totalUsed / totalStockArea) : 0;
+            double penalty = FragmentPenalty(allTempPlaced) / 1_000_000.0;
+            return util - penalty;
+        }
+
+        private int GetEffectiveQtyForEvaluation(StockSheet stock)
+        {
+            if (stock == null) return 0;
+
+            if (stock.Qty >= UNLIMITED_QTY_SENTINEL)
+            {
+                return MAX_SHEETS_PER_STOCK_EVALUATION_CAP;
+            }
+
+            if (stock.Qty <= 0) return 0;
+
+            return Math.Min(stock.Qty, MAX_SHEETS_PER_STOCK_EVALUATION_CAP);
         }
 
         private double ComputeSolutionCost(List<PlacedPart> placed)
@@ -1018,7 +1174,6 @@ namespace ProGlassAutomation.Views.Optimization
                 double bestScore = double.MaxValue;
                 Orientation bestO = new Orientation();
 
-                // Patch 02 / 04 ctx — use local placed and remaining
                 _currentPlacedCtx = placedCoords;
                 _currentRemainingCtx = parts.Skip(idx + 1).Where(p => !p.IsPlaced).ToList();
 
@@ -1039,7 +1194,6 @@ namespace ProGlassAutomation.Views.Optimization
                             else
                                 score = ScorePlacement(rect, pw, ph, _nestingStrategy);
 
-                            // Patch 08 — symmetric rotation preference
                             double normalFit = Math.Min(rect.Width - pw, rect.Height - ph);
                             double rotatedFit = Math.Min(rect.Width - ph, rect.Height - pw);
                             if (o.IsRotated && rotatedFit < normalFit) score -= 500;
@@ -1065,8 +1219,8 @@ namespace ProGlassAutomation.Views.Optimization
                     double placeH = bestO.Height;
 
                     part.IsPlaced = true;
-                    part.PlacedX = bestRect.X + _kerf;
-                    part.PlacedY = bestRect.Y + _kerf;
+                    part.PlacedX = bestRect.X;
+                    part.PlacedY = bestRect.Y;
                     part.PlacedW = placeW;
                     part.PlacedH = placeH;
 
@@ -1097,22 +1251,22 @@ namespace ProGlassAutomation.Views.Optimization
         private double ContactScore(double x, double y, double w, double h,
                                     List<(double X, double Y, double W, double H)> placed)
         {
+            double tol = Math.Max(2.0, _kerf * 0.5);
             double score = 0;
 
             foreach (var p in placed)
             {
-                bool touchLeft = Math.Abs((x + w) - p.X) < 2;
-                bool touchRight = Math.Abs(x - (p.X + p.W)) < 2;
-                bool touchTop = Math.Abs((y + h) - p.Y) < 2;
-                bool touchBottom = Math.Abs(y - (p.Y + p.H)) < 2;
+                bool touchLeft = Math.Abs((x + w) - p.X) < tol;
+                bool touchRight = Math.Abs(x - (p.X + p.W)) < tol;
+                bool touchTop = Math.Abs((y + h) - p.Y) < tol;
+                bool touchBottom = Math.Abs(y - (p.Y + p.H)) < tol;
 
                 if (touchLeft || touchRight || touchTop || touchBottom)
                     score += 50;
             }
 
-            // also reward touching sheet edges (x=0 or y=0)
-            if (Math.Abs(x) < 2) score += 50;
-            if (Math.Abs(y) < 2) score += 50;
+            if (Math.Abs(x) < tol) score += 50;
+            if (Math.Abs(y) < tol) score += 50;
 
             return score;
         }
@@ -1180,7 +1334,6 @@ namespace ProGlassAutomation.Views.Optimization
 
             double score = edgeMatchBonus;
 
-            // Patch 02 + 04 bonuses — applied universally
             double ContactBonus = ContactScore(rect.X, rect.Y, w, h, _currentPlacedCtx ?? new List<(double, double, double, double)>());
             double FutureFitBonus = FutureFitScore(_currentRemainingCtx ?? new List<CutPart>(), rect);
 
@@ -1272,7 +1425,6 @@ namespace ProGlassAutomation.Views.Optimization
 
                 case NestingStrategy.ComplexIQ200V7:
                 default:
-                    // PATCH 05 — replacement core
                     score += (localWaste * 400.0)
                           + (shortGap * 120.0)
                           + (longGap * 20.0)
@@ -1280,12 +1432,11 @@ namespace ProGlassAutomation.Views.Optimization
                           + (rect.Y * 40.0)
                           + (rect.X * 20.0);
 
-                    score -= ContactBonus;       // Patch 02
-                    score -= FutureFitBonus * 200; // Patch 04
+                    score -= ContactBonus;
+                    score -= FutureFitBonus * 200;
                     break;
             }
 
-            // For non-IQ200V7 strategies, still apply contact/future bonuses gently
             if (strategy != NestingStrategy.ComplexIQ200V7)
             {
                 score -= ContactBonus * 0.5;
@@ -1341,7 +1492,6 @@ namespace ProGlassAutomation.Views.Optimization
                     {
                         double score = ScorePlacement(rect, neededW, neededH, _nestingStrategy);
 
-                        // Patch 08 — symmetric rotation tie-breaker
                         double normalFit = Math.Min(rect.Width - neededW, rect.Height - neededH);
                         double rotatedFit = Math.Min(rect.Width - neededH, rect.Height - neededW);
                         if (o.IsRotated && rotatedFit < normalFit) score -= 500;
@@ -1381,55 +1531,57 @@ namespace ProGlassAutomation.Views.Optimization
             double right = (r.X + r.Width) - (x + w);
             double top = (r.Y + r.Height) - (y + h);
 
-            // Horizontal-priority split
             result.Add(new MaxRect(x + w, r.Y, right, r.Height));
             result.Add(new MaxRect(r.X, y + h, r.Width, top));
 
-            // Vertical-priority split
             result.Add(new MaxRect(r.X, r.Y, r.Width, y - r.Y));
             result.Add(new MaxRect(r.X, r.Y + h, x - r.X, r.Height));
 
             return result.Where(s => s.Width > 0 && s.Height > 0).ToList();
         }
 
-        // Pick best 2-rect split (horizontal vs vertical) based on largest preserved area
         private List<MaxRect> SplitRectBest(MaxRect r, double x, double y, double w, double h)
         {
             double right = (r.X + r.Width) - (x + w);
-            double top = (r.Y + r.Height) - (y + h);
+            double bottom = (r.Y + r.Height) - (y + h);
 
-            // Horizontal split: vertical strip on right (full height) + horizontal strip on top (remaining width)
             var hSplit = new List<MaxRect>();
             if (right > 0 && r.Height > 0) hSplit.Add(new MaxRect(x + w, r.Y, right, r.Height));
-            double leftWForH = (x + w) - r.X;
-            if (top > 0 && leftWForH > 0) hSplit.Add(new MaxRect(r.X, y + h, leftWForH, top));
+            double leftW = (x + w) - r.X;
+            if (bottom > 0 && leftW > 0) hSplit.Add(new MaxRect(r.X, y + h, leftW, bottom));
 
-            // Vertical split: horizontal strip on top (full width) + vertical strip on right (remaining height)
             var vSplit = new List<MaxRect>();
-            if (top > 0 && r.Width > 0) vSplit.Add(new MaxRect(r.X, y + h, r.Width, top));
-            double topHForV = (y + h) - r.Y;
-            if (right > 0 && topHForV > 0) vSplit.Add(new MaxRect(x + w, r.Y, right, topHForV));
+            if (bottom > 0 && r.Width > 0) vSplit.Add(new MaxRect(r.X, y + h, r.Width, bottom));
+            double topH = (y + h) - r.Y;
+            if (right > 0 && topH > 0) vSplit.Add(new MaxRect(x + w, r.Y, right, topH));
 
             double hArea = hSplit.Sum(s => s.Width * s.Height);
             double vArea = vSplit.Sum(s => s.Width * s.Height);
 
-            // pick the split that preserves the largest contiguous free area
             var chosen = hArea >= vArea ? hSplit : vSplit;
             return chosen.Where(s => s.Width > _breakout && s.Height > _breakout).ToList();
         }
 
-        private void UpdateFreeRectsWithGuillotine(PlacementNode placement, double w, double h)
+        private bool UpdateFreeRectsWithGuillotineSafe(PlacementNode placement, double w, double h)
         {
-            const double eps = 0.01;
+            const double eps = 0.50;
+
             var usedRect = _freeRects.FirstOrDefault(r =>
                 placement.X + eps >= r.X && placement.Y + eps >= r.Y &&
                 placement.X + w <= r.X + r.Width + eps && placement.Y + h <= r.Y + r.Height + eps);
 
-            if (usedRect == null) return;
+            if (usedRect == null)
+            {
+                usedRect = _freeRects
+                    .Where(r => r.Fits(w, h))
+                    .OrderBy(r => Math.Abs(r.X - placement.X) + Math.Abs(r.Y - placement.Y))
+                    .FirstOrDefault();
+            }
+
+            if (usedRect == null) return false;
 
             _freeRects.Remove(usedRect);
 
-            // Patch 03 — choose best split
             var splits = SplitRectBest(usedRect, placement.X, placement.Y, w, h);
             foreach (var s in splits) _freeRects.Add(s);
 
@@ -1437,20 +1589,35 @@ namespace ProGlassAutomation.Views.Optimization
 
             _freeRects.RemoveAll(r => r.Width < _breakout || r.Height < _breakout);
             PruneContainedFreeRects(_freeRects);
+
+            return true;
+        }
+
+        private void UpdateFreeRectsWithGuillotine(PlacementNode placement, double w, double h)
+        {
+            UpdateFreeRectsWithGuillotineSafe(placement, w, h);
         }
 
         private void UpdateFreeRectsTest(MaxRect placement, double w, double h, List<MaxRect> freeRects)
         {
-            const double eps = 0.01;
+            const double eps = 0.50;
+
             var usedRect = freeRects.FirstOrDefault(r =>
                 placement.X + eps >= r.X && placement.Y + eps >= r.Y &&
                 placement.X + w <= r.X + r.Width + eps && placement.Y + h <= r.Y + r.Height + eps);
+
+            if (usedRect == null)
+            {
+                usedRect = freeRects
+                    .Where(r => r.Fits(w, h))
+                    .OrderBy(r => Math.Abs(r.X - placement.X) + Math.Abs(r.Y - placement.Y))
+                    .FirstOrDefault();
+            }
 
             if (usedRect == null) return;
 
             freeRects.Remove(usedRect);
 
-            // Patch 03 — choose best split
             var splits = SplitRectBest(usedRect, placement.X, placement.Y, w, h);
             foreach (var s in splits) freeRects.Add(s);
 
@@ -1475,27 +1642,36 @@ namespace ProGlassAutomation.Views.Optimization
                         var a = rects[i];
                         var b = rects[j];
 
+                        double aRight = a.X + a.Width;
+                        double bRight = b.X + b.Width;
+                        double aBottom = a.Y + a.Height;
+                        double bBottom = b.Y + b.Height;
+
                         bool HorizontalMerge =
                             Math.Abs(a.Y - b.Y) < 0.5 &&
                             Math.Abs(a.Height - b.Height) < 0.5 &&
-                            (Math.Abs(a.X + a.Width - b.X) < 1 || Math.Abs(b.X + b.Width - a.X) < 1);
+                            (Math.Abs(aRight - b.X) < 1 || Math.Abs(bRight - a.X) < 1);
 
                         bool VerticalMerge =
                             Math.Abs(a.X - b.X) < 0.5 &&
                             Math.Abs(a.Width - b.Width) < 0.5 &&
-                            (Math.Abs(a.Y + a.Height - b.Y) < 1 || Math.Abs(b.Y + b.Height - a.Y) < 1);
+                            (Math.Abs(aBottom - b.Y) < 1 || Math.Abs(bBottom - a.Y) < 1);
 
                         if (HorizontalMerge)
                         {
                             double newX = Math.Min(a.X, b.X);
-                            rects[i] = new MaxRect(newX, a.Y, a.Width + b.Width, a.Height);
+                            double newRight = Math.Max(aRight, bRight);
+
+                            rects[i] = new MaxRect(newX, a.Y, newRight - newX, a.Height);
                             rects.RemoveAt(j);
                             merged = true;
                         }
                         else if (VerticalMerge)
                         {
                             double newY = Math.Min(a.Y, b.Y);
-                            rects[i] = new MaxRect(a.X, newY, a.Width, a.Height + b.Height);
+                            double newBottom = Math.Max(aBottom, bBottom);
+
+                            rects[i] = new MaxRect(a.X, newY, a.Width, newBottom - newY);
                             rects.RemoveAt(j);
                             merged = true;
                         }
@@ -1517,28 +1693,34 @@ namespace ProGlassAutomation.Views.Optimization
 
         private void PruneContainedFreeRects(List<MaxRect> list)
         {
-            bool removed;
-            do
-            {
-                removed = false;
-                for (int i = 0; i < list.Count; i++)
-                {
-                    for (int j = 0; j < list.Count; j++)
-                    {
-                        if (i == j) continue;
-                        var a = list[i];
-                        var b = list[j];
+            if (list == null || list.Count < 2) return;
 
-                        if (IsContained(a, b))
-                        {
-                            list.RemoveAt(i);
-                            removed = true;
-                            break;
-                        }
+            for (int i = 0; i < list.Count; i++)
+            {
+                for (int j = list.Count - 1; j > i; j--)
+                {
+                    if (Math.Abs(list[i].X - list[j].X) < 0.0001 &&
+                        Math.Abs(list[i].Y - list[j].Y) < 0.0001 &&
+                        Math.Abs(list[i].Width - list[j].Width) < 0.0001 &&
+                        Math.Abs(list[i].Height - list[j].Height) < 0.0001)
+                    {
+                        list.RemoveAt(j);
                     }
-                    if (removed) break;
                 }
-            } while (removed);
+            }
+
+            var sorted = list.OrderByDescending(r => r.Area).ToList();
+            var keep = new List<MaxRect>();
+
+            foreach (var r in sorted)
+            {
+                bool contained = keep.Any(k => IsContained(r, k));
+                if (!contained)
+                    keep.Add(r);
+            }
+
+            list.Clear();
+            list.AddRange(keep);
         }
 
         private void CollectRemnants(string sheetRef, int sheetNum)
@@ -1573,6 +1755,8 @@ namespace ProGlassAutomation.Views.Optimization
 
             var usableRemnants = _remnants.Where(r => !r.IsReused && r.ValueScore > 0.2).OrderByDescending(r => r.Area);
             if (!usableRemnants.Any()) return 0;
+
+            var originalRotation = _rotationPolicy;
 
             double partsAreaOnRemnants = 0;
             int partIndex = 0;
@@ -1617,8 +1801,8 @@ namespace ProGlassAutomation.Views.Optimization
                     double placeW = bestO.Width;
                     double placeH = bestO.Height;
 
-                    double newX = bestRect.X + _kerf;
-                    double newY = bestRect.Y + _kerf;
+                    double newX = bestRect.X;
+                    double newY = bestRect.Y;
 
                     part.IsPlaced = true;
                     part.PlacedX = newX;
@@ -1653,7 +1837,9 @@ namespace ProGlassAutomation.Views.Optimization
                 }
             }
 
-            _totalPartsUnplaced = unplacedParts.Count(p => !p.IsPlaced);
+            _rotationPolicy = originalRotation;
+
+            _totalPartsUnplaced = unplacedParts.Count(p => !p.IsPlaced) + Math.Max(0, _invalidPartsFilteredLastExpand);
             return partsAreaOnRemnants;
         }
 
@@ -1720,10 +1906,19 @@ namespace ProGlassAutomation.Views.Optimization
                 var candidate = p2.PartOrder[p2Idx];
                 if (!usedIds.Contains(candidate.Id))
                 {
+                    while (childParts[currentChildIdx] != null)
+                        currentChildIdx = (currentChildIdx + 1) % count;
+
                     childParts[currentChildIdx] = candidate;
                     usedIds.Add(candidate.Id);
                     currentChildIdx = (currentChildIdx + 1) % count;
                 }
+            }
+
+            for (int i = 0; i < count; i++)
+            {
+                if (childParts[i] == null)
+                    childParts[i] = p1.PartOrder[i];
             }
 
             child.PartOrder.AddRange(childParts);
@@ -1735,6 +1930,8 @@ namespace ProGlassAutomation.Views.Optimization
             if (g.PartOrder.Count < 2) return;
             int i = _rng.Next(g.PartOrder.Count);
             int j = _rng.Next(g.PartOrder.Count);
+            if (i == j) j = (j + 1) % g.PartOrder.Count;
+
             var temp = g.PartOrder[i];
             g.PartOrder[i] = g.PartOrder[j];
             g.PartOrder[j] = temp;
@@ -1783,18 +1980,21 @@ namespace ProGlassAutomation.Views.Optimization
         public double UsedSQM => _usedSQM;
         public int TotalSheetsGenerated => _cutSequences.Count;
 
+        public double LastSimulationThermalPenalty => _lastSimulationThermalPenalty;
+        public double LastSimulationToolpathPenalty => _lastSimulationToolpathPenalty;
+
         public void ResetState()
         {
             _currentIndex = 0;
             _freeRects.Clear();
         }
 
-        public List<RemnantPiece> GetRemnants() => _remnants;
-        public List<CutSequence> GetCutSequences() => _cutSequences;
+        public List<RemnantPiece> GetRemnants() => new List<RemnantPiece>(_remnants);
+        public List<CutSequence> GetCutSequences() => new List<CutSequence>(_cutSequences);
     }
 
     // =====================================================
-    // DATA CLASSES (unchanged)
+    // DATA CLASSES (at namespace level - NOT nested)
     // =====================================================
 
     public class StockSheet

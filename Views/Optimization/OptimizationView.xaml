@@ -5,24 +5,42 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
              d:DesignHeight="1200" d:DesignWidth="1685"
-             Background="#070D1A">
+             Background="#070D1A"
+             Focusable="True"
+             KeyDown="OptimizationView_KeyDown"
+             KeyboardNavigation.TabNavigation="Cycle">
 
     <UserControl.Resources>
-        <SolidColorBrush x:Key="BgDark" Color="#070D1A"/>
-        <SolidColorBrush x:Key="BgPanel" Color="#0E1728"/>
-        <SolidColorBrush x:Key="BgCard" Color="#101B30"/>
-        <SolidColorBrush x:Key="BgControl" Color="#1E293B"/>
-        <SolidColorBrush x:Key="AccentCyan" Color="#29B6FF"/>
-        <SolidColorBrush x:Key="AccentGreen" Color="#00E676"/>
-        <SolidColorBrush x:Key="AccentOrange" Color="#FFB300"/>
-        <SolidColorBrush x:Key="NeonGreen" Color="#00E676"/>
-        <SolidColorBrush x:Key="NeonOrange" Color="#FFB300"/>
-        <SolidColorBrush x:Key="NeonRed" Color="#FF5252"/>
-        <SolidColorBrush x:Key="PanelBorder" Color="#1E293B"/>
-        <SolidColorBrush x:Key="TextMain" Color="#F8FAFC"/>
-        <SolidColorBrush x:Key="TextSub" Color="#64748B"/>
+
+        <!-- Consolidated colors to avoid duplicate hard-coded values while preserving existing brush keys -->
+        <Color x:Key="BgDarkColor">#070D1A</Color>
+        <Color x:Key="BgPanelColor">#0E1728</Color>
+        <Color x:Key="BgCardColor">#101B30</Color>
+        <Color x:Key="BgControlColor">#1E293B</Color>
+        <Color x:Key="AccentCyanColor">#29B6FF</Color>
+        <Color x:Key="AccentGreenColor">#00E676</Color>
+        <Color x:Key="AccentOrangeColor">#FFB300</Color>
+        <Color x:Key="AccentRedColor">#FF5252</Color>
+        <Color x:Key="PanelBorderColor">#1E293B</Color>
+        <Color x:Key="TextMainColor">#F8FAFC</Color>
+        <Color x:Key="TextSubColor">#64748B</Color>
+
+        <SolidColorBrush x:Key="BgDark" Color="{StaticResource BgDarkColor}"/>
+        <SolidColorBrush x:Key="BgPanel" Color="{StaticResource BgPanelColor}"/>
+        <SolidColorBrush x:Key="BgCard" Color="{StaticResource BgCardColor}"/>
+        <SolidColorBrush x:Key="BgControl" Color="{StaticResource BgControlColor}"/>
+        <SolidColorBrush x:Key="AccentCyan" Color="{StaticResource AccentCyanColor}"/>
+        <SolidColorBrush x:Key="AccentGreen" Color="{StaticResource AccentGreenColor}"/>
+        <SolidColorBrush x:Key="AccentOrange" Color="{StaticResource AccentOrangeColor}"/>
+        <SolidColorBrush x:Key="NeonGreen" Color="{StaticResource AccentGreenColor}"/>
+        <SolidColorBrush x:Key="NeonOrange" Color="{StaticResource AccentOrangeColor}"/>
+        <SolidColorBrush x:Key="NeonRed" Color="{StaticResource AccentRedColor}"/>
+        <SolidColorBrush x:Key="PanelBorder" Color="{StaticResource PanelBorderColor}"/>
+        <SolidColorBrush x:Key="TextMain" Color="{StaticResource TextMainColor}"/>
+        <SolidColorBrush x:Key="TextSub" Color="{StaticResource TextSubColor}"/>
         <SolidColorBrush x:Key="TextWhite" Color="#FFFFFF"/>
 
+        <!-- Common template ContentPresenter binding fixes (Foreground/Font propagation) -->
         <Style x:Key="HeaderPillActive" TargetType="Button">
             <Setter Property="Background" Value="#2563EB"/>
             <Setter Property="Foreground" Value="#FFFFFF"/>
@@ -34,7 +52,10 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border Background="{TemplateBinding Background}" CornerRadius="15" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"
+                                              TextElement.FontSize="{TemplateBinding FontSize}"
+                                              TextElement.FontWeight="{TemplateBinding FontWeight}"/>
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
@@ -52,12 +73,18 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="15" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"
+                                              TextElement.FontSize="{TemplateBinding FontSize}"
+                                              TextElement.FontWeight="{TemplateBinding FontWeight}"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="border" Property="Background" Value="#1E293B"/>
                                 <Setter Property="Foreground" Value="#F8FAFC"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground" Value="#475569"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -79,7 +106,10 @@
                     <ControlTemplate TargetType="Button">
                         <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"
+                                              TextElement.FontSize="{TemplateBinding FontSize}"
+                                              TextElement.FontWeight="{TemplateBinding FontWeight}"/>
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
@@ -100,13 +130,19 @@
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"
+                                              TextElement.FontSize="{TemplateBinding FontSize}"
+                                              TextElement.FontWeight="{TemplateBinding FontWeight}"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="border" Property="Background" Value="#1E293B"/>
                                 <Setter Property="Foreground" Value="#F8FAFC"/>
                                 <Setter TargetName="border" Property="BorderBrush" Value="#29B6FF"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground" Value="#475569"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -136,7 +172,8 @@
                     <ControlTemplate TargetType="DataGridCell">
                         <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}">
-                            <ContentPresenter Margin="{TemplateBinding Padding}"/>
+                            <ContentPresenter Margin="{TemplateBinding Padding}"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"/>
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
@@ -158,7 +195,8 @@
                                 <Border x:Name="ToggleBorder" Background="#1E293B" CornerRadius="10" BorderBrush="#334155" BorderThickness="1"/>
                                 <Ellipse x:Name="ToggleThumb" Width="14" Height="14" Fill="#F8FAFC" HorizontalAlignment="Left" Margin="3,0,0,0" VerticalAlignment="Center"/>
                             </Grid>
-                            <ContentPresenter Margin="10,0,0,0" VerticalAlignment="Center"/>
+                            <ContentPresenter Margin="10,0,0,0" VerticalAlignment="Center"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"/>
                         </StackPanel>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
@@ -166,6 +204,45 @@
                                 <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="#29B6FF"/>
                                 <Setter TargetName="ToggleThumb" Property="HorizontalAlignment" Value="Right"/>
                                 <Setter TargetName="ToggleThumb" Property="Margin" Value="0,0,3,0"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.55"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Dark theme RadioButton (fixes unstyled radios on dark background) -->
+        <Style TargetType="RadioButton">
+            <Setter Property="Foreground" Value="{StaticResource TextMain}"/>
+            <Setter Property="FontSize" Value="10.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Grid Width="16" Height="16" Margin="0,0,8,0" VerticalAlignment="Center">
+                                <Ellipse x:Name="Outer" Stroke="#334155" StrokeThickness="1.2" Fill="#070D1A"/>
+                                <Ellipse x:Name="Inner" Width="8" Height="8" Fill="#29B6FF" Visibility="Collapsed"/>
+                            </Grid>
+                            <ContentPresenter VerticalAlignment="Center"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"
+                                              TextElement.FontSize="{TemplateBinding FontSize}"
+                                              TextElement.FontWeight="{TemplateBinding FontWeight}"/>
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Outer" Property="Stroke" Value="#29B6FF"/>
+                                <Setter TargetName="Inner" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Outer" Property="Stroke" Value="#60A5FA"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.55"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -193,89 +270,112 @@
                             <Trigger Property="IsFocused" Value="True">
                                 <Setter TargetName="border" Property="BorderBrush" Value="#29B6FF"/>
                             </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.6"/>
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
 
+        <!-- Fixed ComboBox template: adds standard PART names and supports IsEditable without breaking theme -->
         <Style TargetType="ComboBox">
             <Setter Property="Padding" Value="6,4"/>
             <Setter Property="Background" Value="#070D1A"/>
             <Setter Property="BorderBrush" Value="#334155"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Foreground" Value="#F8FAFC"/>
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ComboBox">
-                        <Grid>
-                            <ToggleButton IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
-                                          Background="{TemplateBinding Background}"
-                                          BorderBrush="{TemplateBinding BorderBrush}"
-                                          BorderThickness="{TemplateBinding BorderThickness}"
-                                          Focusable="False" ClickMode="Press">
-                                <ToggleButton.Style>
-                                    <Style TargetType="ToggleButton">
-                                        <Setter Property="Template">
-                                            <Setter.Value>
-                                                <ControlTemplate TargetType="ToggleButton">
-                                                    <Border x:Name="Border"
-                                                            Background="{TemplateBinding Background}"
-                                                            BorderBrush="{TemplateBinding BorderBrush}"
-                                                            BorderThickness="{TemplateBinding BorderThickness}"
-                                                            CornerRadius="4" SnapsToDevicePixels="True">
-                                                        <Grid>
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition/>
-                                                                <ColumnDefinition MinWidth="16" Width="Auto"/>
-                                                            </Grid.ColumnDefinitions>
-                                                            <ContentPresenter Content="{TemplateBinding Content}"
-                                                                              Margin="{TemplateBinding Padding}"
-                                                                              HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                                                            <Path Grid.Column="1" Fill="#94a3b8"
-                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                                  Data="M 0 0 L 4 4 L 8 0 Z"/>
-                                                        </Grid>
-                                                    </Border>
-                                                    <ControlTemplate.Triggers>
-                                                        <Trigger Property="IsChecked" Value="True">
-                                                            <Setter Property="Opacity" Value="0.7"/>
-                                                        </Trigger>
-                                                        <Trigger Property="IsEnabled" Value="False">
-                                                            <Setter Property="Foreground" Value="#475569"/>
-                                                        </Trigger>
-                                                    </ControlTemplate.Triggers>
-                                                </ControlTemplate>
-                                            </Setter.Value>
-                                        </Setter>
-                                    </Style>
-                                </ToggleButton.Style>
-                            </ToggleButton>
+                        <Grid SnapsToDevicePixels="True">
+                            <Border x:Name="Bd"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="4"/>
 
-                            <ContentPresenter x:Name="PART_SelectedItemHost"
+                            <ToggleButton x:Name="ToggleButton"
+                                          Focusable="False"
+                                          ClickMode="Press"
+                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                          Background="Transparent"
+                                          BorderThickness="0"
+                                          HorizontalContentAlignment="Stretch"
+                                          VerticalContentAlignment="Stretch"/>
+
+                            <!-- Selected item presenter (non-editable) -->
+                            <ContentPresenter x:Name="ContentSite"
                                               Margin="{TemplateBinding Padding}"
+                                              HorizontalAlignment="Left"
+                                              VerticalAlignment="Center"
                                               Content="{TemplateBinding SelectionBoxItem}"
-                                              ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"
                                               ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
                                               ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                              RecognizesAccessKey="True"
                                               IsHitTestVisible="False"
-                                              VerticalAlignment="Center"/>
+                                              TextElement.Foreground="{TemplateBinding Foreground}"/>
 
-                            <Popup AllowsTransparency="True"
+                            <!-- Editable textbox -->
+                            <TextBox x:Name="PART_EditableTextBox"
+                                     Margin="{TemplateBinding Padding}"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Foreground="{TemplateBinding Foreground}"
+                                     HorizontalAlignment="Left"
+                                     VerticalAlignment="Center"
+                                     Visibility="Hidden"
+                                     Focusable="True"
+                                     IsReadOnly="{TemplateBinding IsReadOnly}"/>
+
+                            <!-- Drop arrow -->
+                            <Path x:Name="Arrow"
+                                  Width="10" Height="6"
+                                  HorizontalAlignment="Right"
+                                  VerticalAlignment="Center"
+                                  Margin="0,0,10,0"
+                                  Fill="#94a3b8"
+                                  Data="M 0 0 L 4 4 L 8 0 Z"
+                                  IsHitTestVisible="False"/>
+
+                            <Popup x:Name="PART_Popup"
+                                   AllowsTransparency="True"
+                                   Placement="Bottom"
+                                   Focusable="False"
                                    IsOpen="{TemplateBinding IsDropDownOpen}"
-                                   Placement="Bottom" PopupAnimation="Slide" Focusable="False">
-                                <Grid MinWidth="{TemplateBinding ActualWidth}" MaxHeight="200">
+                                   PopupAnimation="Slide">
+                                <Grid MinWidth="{TemplateBinding ActualWidth}" MaxHeight="260">
                                     <Border Background="#0E1728" CornerRadius="4" BorderBrush="#1E293B" BorderThickness="1" Padding="4">
-                                        <ScrollViewer>
+                                        <ScrollViewer CanContentScroll="True">
                                             <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"/>
                                         </ScrollViewer>
                                     </Border>
                                 </Grid>
                             </Popup>
                         </Grid>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEditable" Value="True">
+                                <Setter TargetName="ContentSite" Property="Visibility" Value="Hidden"/>
+                                <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#29B6FF"/>
+                            </Trigger>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#29B6FF"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.6"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+
             <Style.Resources>
                 <Style TargetType="ComboBoxItem">
                     <Setter Property="Background" Value="#0E1728"/>
@@ -285,17 +385,20 @@
                     <Setter Property="Template">
                         <Setter.Value>
                             <ControlTemplate TargetType="ComboBoxItem">
-                                <Border Background="{TemplateBinding Background}" CornerRadius="3" Padding="{TemplateBinding Padding}">
-                                    <ContentPresenter/>
+                                <Border x:Name="ItemBd" Background="{TemplateBinding Background}" CornerRadius="3" Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter TextElement.Foreground="{TemplateBinding Foreground}"/>
                                 </Border>
                                 <ControlTemplate.Triggers>
                                     <Trigger Property="IsHighlighted" Value="True">
-                                        <Setter Property="Background" Value="#29B6FF"/>
+                                        <Setter TargetName="ItemBd" Property="Background" Value="#29B6FF"/>
                                         <Setter Property="Foreground" Value="Black"/>
                                     </Trigger>
                                     <Trigger Property="IsSelected" Value="True">
-                                        <Setter Property="Background" Value="#1E293B"/>
+                                        <Setter TargetName="ItemBd" Property="Background" Value="#1E293B"/>
                                         <Setter Property="Foreground" Value="#29B6FF"/>
+                                    </Trigger>
+                                    <Trigger Property="IsEnabled" Value="False">
+                                        <Setter Property="Opacity" Value="0.6"/>
                                     </Trigger>
                                 </ControlTemplate.Triggers>
                             </ControlTemplate>
@@ -305,9 +408,45 @@
             </Style.Resources>
         </Style>
 
+        <!-- Selection binding kept, but now also provides a visible dark-theme selected state -->
         <Style x:Key="ListBoxItemStyle" TargetType="ListBoxItem">
             <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMain}"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+            <Setter Property="Background" Value="#0E1728"/>
+            <Setter Property="BorderBrush" Value="#1E293B"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter TextElement.Foreground="{TemplateBinding Foreground}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#101B30"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#29B6FF"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#172554"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#29B6FF"/>
+                                <Setter Property="Foreground" Value="#29B6FF"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.6"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
+
     </UserControl.Resources>
 
     <!-- ROOT: Full page scroll so nothing ever clips -->
@@ -315,9 +454,7 @@
                   Background="#070D1A">
         <StackPanel Margin="15" Background="#070D1A">
 
-            <!-- ═══════════════════════════════════════════════════════ -->
-            <!-- SECTION 1 — HEADER BAR                                  -->
-            <!-- ═══════════════════════════════════════════════════════ -->
+            <!-- SECTION 1 — HEADER BAR -->
             <Border Background="{StaticResource BgPanel}" BorderBrush="{StaticResource PanelBorder}"
                     BorderThickness="1" CornerRadius="12" Padding="15,12" Margin="0,0,0,12">
                 <Grid>
@@ -352,9 +489,7 @@
                 </Grid>
             </Border>
 
-            <!-- ═══════════════════════════════════════════════════════ -->
-            <!-- SECTION 2 — KPI CARDS ROW                               -->
-            <!-- ═══════════════════════════════════════════════════════ -->
+            <!-- SECTION 2 — KPI CARDS ROW -->
             <Grid Margin="0,0,0,12">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -363,7 +498,6 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- KPI 1: Overall Yield -->
                 <Border Grid.Column="0" Background="{StaticResource BgPanel}"
                         BorderBrush="{StaticResource PanelBorder}" BorderThickness="1,1,1,3"
                         CornerRadius="12" Margin="0,0,6,0" Padding="15,12">
@@ -385,7 +519,6 @@
                     </Grid>
                 </Border>
 
-                <!-- KPI 2: Stock Usage -->
                 <Border Grid.Column="1" Background="{StaticResource BgPanel}"
                         BorderBrush="{StaticResource PanelBorder}" BorderThickness="1,1,1,3"
                         CornerRadius="12" Margin="6,0,6,0" Padding="15,12">
@@ -410,7 +543,6 @@
                     </Grid>
                 </Border>
 
-                <!-- KPI 3: Placement Success -->
                 <Border Grid.Column="2" Background="{StaticResource BgPanel}"
                         BorderBrush="{StaticResource PanelBorder}" BorderThickness="1,1,1,3"
                         CornerRadius="12" Margin="6,0,6,0" Padding="15,12">
@@ -432,7 +564,6 @@
                     </Grid>
                 </Border>
 
-                <!-- KPI 4: Production Cost -->
                 <Border Grid.Column="3" Background="{StaticResource BgPanel}"
                         BorderBrush="{StaticResource PanelBorder}" BorderThickness="1,1,1,3"
                         CornerRadius="12" Margin="6,0,0,0" Padding="15,12">
@@ -452,9 +583,7 @@
                 </Border>
             </Grid>
 
-            <!-- ═══════════════════════════════════════════════════════ -->
-            <!-- SECTION 3 — MAIN WORKSPACE: SIDEBAR + CANVAS            -->
-            <!-- ═══════════════════════════════════════════════════════ -->
+            <!-- SECTION 3 — MAIN WORKSPACE: SIDEBAR + CANVAS -->
             <Grid Height="550" Margin="0,0,0,12">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="400"/>
@@ -587,14 +716,59 @@
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
                                                 <Border Background="{TemplateBinding Background}" CornerRadius="6">
-                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                      TextElement.Foreground="{TemplateBinding Foreground}"
+                                                                      TextElement.FontSize="{TemplateBinding FontSize}"
+                                                                      TextElement.FontWeight="{TemplateBinding FontWeight}"/>
                                                 </Border>
                                             </ControlTemplate>
                                         </Button.Template>
                                     </Button>
 
-                                    <!-- Engine Status -->
-                                    <Border Background="#1C1613" BorderBrush="{StaticResource AccentOrange}"
+                                    <!-- Added: Save Settings / Clear (handlers exist in code-behind) -->
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <Button Grid.Column="0" Content="💾 SAVE SETTINGS" Click="SaveSettings_Click"
+                                                Background="#1E293B" Foreground="#F8FAFC"
+                                                BorderBrush="#29B6FF" BorderThickness="1"
+                                                Padding="10,8" FontSize="11" FontWeight="Bold" Cursor="Hand" Margin="0,0,6,0">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                          TextElement.Foreground="{TemplateBinding Foreground}"
+                                                                          TextElement.FontSize="{TemplateBinding FontSize}"
+                                                                          TextElement.FontWeight="{TemplateBinding FontWeight}"/>
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+
+                                        <Button Grid.Column="1" Content="🧹 CLEAR ALL" Click="ClearOptimization_Click"
+                                                Background="#101B30" Foreground="#EF4444"
+                                                BorderBrush="#EF4444" BorderThickness="1"
+                                                Padding="10,8" FontSize="11" FontWeight="Bold" Cursor="Hand" Margin="6,0,0,0">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                          TextElement.Foreground="{TemplateBinding Foreground}"
+                                                                          TextElement.FontSize="{TemplateBinding FontSize}"
+                                                                          TextElement.FontWeight="{TemplateBinding FontWeight}"/>
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </Grid>
+
+                                    <!-- Engine Status (neutral default instead of warning-colored default) -->
+                                    <Border Background="#0E1728" BorderBrush="{StaticResource PanelBorder}"
                                             BorderThickness="1" CornerRadius="6" Padding="10">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
@@ -602,56 +776,381 @@
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
                                             <StackPanel>
-                                                <TextBlock Text="⚠  ENGINE STATUS" FontSize="10.5"
-                                                           FontWeight="Bold" Foreground="{StaticResource AccentOrange}"/>
+                                                <TextBlock Text="ENGINE STATUS" FontSize="10.5"
+                                                           FontWeight="Bold" Foreground="{StaticResource AccentCyan}"/>
                                                 <TextBlock x:Name="txtEngineStatus" Text="Ready — Configure and press COMPUTE."
                                                            FontSize="9.5" Foreground="{StaticResource TextSub}" TextWrapping="Wrap"/>
                                             </StackPanel>
-                                            <Border Grid.Column="1" Background="#F59E0B" CornerRadius="3"
+                                            <Border Grid.Column="1" Background="#22C55E" CornerRadius="3"
                                                     Padding="6,2" VerticalAlignment="Top" Margin="8,0,0,0">
                                                 <TextBlock Text="LIVE" FontSize="9" FontWeight="Bold" Foreground="Black"/>
                                             </Border>
                                         </Grid>
                                     </Border>
+
                                 </StackPanel>
                             </ScrollViewer>
                         </Grid>
 
-                        <!-- STOCK TAB PLACEHOLDER -->
+                        <!-- STOCK TAB -->
                         <Grid Grid.Row="2" x:Name="pnlStock" Visibility="Collapsed">
-                            <Border Padding="15">
-                                <TextBlock Text="Stock sheets are managed in the STOCK ENTRY section below."
-                                           Foreground="{StaticResource TextSub}" FontSize="11"
-                                           FontStyle="Italic" TextWrapping="Wrap" VerticalAlignment="Center"/>
-                            </Border>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="12">
+                                <StackPanel>
+
+                                    <TextBlock Text="STOCK SUMMARY" FontSize="11.5" FontWeight="Bold"
+                                               Foreground="{StaticResource AccentCyan}" Margin="0,0,0,6"/>
+                                    <Border Background="#101B30" CornerRadius="8" BorderBrush="#1E293B" BorderThickness="1" Padding="10" Margin="0,0,0,10">
+                                        <TextBlock x:Name="txtStockSummary" Text="No stock added"
+                                                   Foreground="{StaticResource TextSub}"
+                                                   FontSize="10.5" TextWrapping="Wrap"/>
+                                    </Border>
+
+                                    <TextBlock Text="COST SETTINGS" FontSize="11.5" FontWeight="Bold"
+                                               Foreground="{StaticResource AccentCyan}" Margin="0,0,0,6"/>
+                                    <Border Background="#101B30" CornerRadius="8" BorderBrush="#1E293B" BorderThickness="1" Padding="10">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                                <TextBlock Text="Currency" Foreground="{StaticResource TextSub}" FontSize="10" FontWeight="Bold" Margin="0,0,0,4"/>
+                                                <ComboBox x:Name="cmbCurrency" SelectedIndex="0">
+                                                    <ComboBoxItem Content="AED"/>
+                                                    <ComboBoxItem Content="USD"/>
+                                                    <ComboBoxItem Content="EUR"/>
+                                                </ComboBox>
+                                            </StackPanel>
+
+                                            <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                                <TextBlock Text="Stock Price (per m²)" Foreground="{StaticResource TextSub}" FontSize="10" FontWeight="Bold" Margin="0,0,0,4"/>
+                                                <TextBox x:Name="txtStockPrice" Text="250" TextAlignment="Center"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+
+                                </StackPanel>
+                            </ScrollViewer>
                         </Grid>
 
-                        <!-- PARTS TAB PLACEHOLDER -->
+                        <!-- PARTS TAB -->
                         <Grid Grid.Row="2" x:Name="pnlParts" Visibility="Collapsed">
-                            <Border Padding="15">
-                                <TextBlock Text="Cut parts are managed in the PARTS ENTRY section below."
-                                           Foreground="{StaticResource TextSub}" FontSize="11"
-                                           FontStyle="Italic" TextWrapping="Wrap" VerticalAlignment="Center"/>
-                            </Border>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="12">
+                                <StackPanel>
+
+                                    <TextBlock Text="PARTS SUMMARY" FontSize="11.5" FontWeight="Bold"
+                                               Foreground="{StaticResource AccentCyan}" Margin="0,0,0,6"/>
+                                    <Border Background="#101B30" CornerRadius="8" BorderBrush="#1E293B" BorderThickness="1" Padding="10" Margin="0,0,0,10">
+                                        <TextBlock x:Name="txtPartsSummary" Text="No parts added"
+                                                   Foreground="{StaticResource TextSub}"
+                                                   FontSize="10.5" TextWrapping="Wrap"/>
+                                    </Border>
+
+                                    <TextBlock Text="SPECIFICATIONS (OPTIONAL IMPORT)" FontSize="11.5" FontWeight="Bold"
+                                               Foreground="{StaticResource AccentCyan}" Margin="0,0,0,6"/>
+                                    <TextBlock Text="Select one or more specifications to generate a combined cut list."
+                                               Foreground="{StaticResource TextSub}" FontSize="9.5" Margin="0,0,0,8"/>
+
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock x:Name="txtSelectedSpecCount"
+                                                   Text="0 selected"
+                                                   Foreground="{StaticResource TextSub}"
+                                                   FontSize="10"
+                                                   VerticalAlignment="Center"/>
+
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                            <RadioButton x:Name="rbUseW1H1" GroupName="SpecDims" IsChecked="True" Content="W1/H1"
+                                                         Checked="rbUseW1H1_Checked" Margin="0,0,10,0"/>
+                                            <RadioButton x:Name="rbUseW2H2" GroupName="SpecDims" Content="W2/H2"
+                                                         Checked="rbUseW2H2_Checked"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <ListBox x:Name="lstSpecSelect"
+                                             SelectionMode="Extended"
+                                             ItemContainerStyle="{StaticResource ListBoxItemStyle}"
+                                             DisplayMemberPath="SpecificationName"
+                                             SelectionChanged="lstSpecSelect_SelectionChanged"
+                                             MinHeight="140"
+                                             Margin="0,0,0,10"/>
+
+                                    <TextBlock Text="COMBINED PREVIEW" FontSize="11.5" FontWeight="Bold"
+                                               Foreground="{StaticResource AccentCyan}" Margin="0,0,0,6"/>
+
+                                    <Border Background="#101B30" CornerRadius="8" BorderBrush="#1E293B" BorderThickness="1" Padding="10">
+                                        <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="180">
+                                            <ItemsControl x:Name="icCombinedPreview">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Grid Margin="0,0,0,6">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock Text="{Binding GlassRef}" Foreground="{StaticResource TextMain}" FontWeight="Bold" FontSize="10.5"/>
+                                                            <TextBlock Grid.Column="1"
+                                                                       Text="{Binding Qty, StringFormat=×{0}}"
+                                                                       Foreground="{StaticResource AccentCyan}"
+                                                                       FontWeight="Bold" FontSize="10.5"/>
+                                                            <TextBlock Grid.ColumnSpan="2" Margin="0,18,0,0"
+                                                                       Text="{Binding Width, StringFormat={}{0:N0}}"
+                                                                       Foreground="{StaticResource TextSub}" FontSize="9.5"/>
+                                                            <TextBlock Grid.ColumnSpan="2" Margin="44,18,0,0"
+                                                                       Text="×"
+                                                                       Foreground="{StaticResource TextSub}" FontSize="9.5"/>
+                                                            <TextBlock Grid.ColumnSpan="2" Margin="60,18,0,0"
+                                                                       Text="{Binding Height, StringFormat={}{0:N0}}"
+                                                                       Foreground="{StaticResource TextSub}" FontSize="9.5"/>
+                                                            <TextBlock Grid.ColumnSpan="2" Margin="0,34,0,0"
+                                                                       Text="{Binding SourceSpec}"
+                                                                       Foreground="#64748B" FontSize="9" FontStyle="Italic"/>
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </ScrollViewer>
+                                    </Border>
+
+                                </StackPanel>
+                            </ScrollViewer>
                         </Grid>
 
-                        <!-- LAYOUTS TAB PLACEHOLDER -->
+                        <!-- LAYOUTS TAB -->
                         <Grid Grid.Row="2" x:Name="pnlSummary" Visibility="Collapsed">
-                            <Border Padding="15">
-                                <TextBlock Text="Layout results are shown in the CANVAS area on the right after optimization."
-                                           Foreground="{StaticResource TextSub}" FontSize="11"
-                                           FontStyle="Italic" TextWrapping="Wrap" VerticalAlignment="Center"/>
-                            </Border>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="12">
+                                <StackPanel>
+
+                                    <TextBlock Text="LAYOUT NAVIGATION" FontSize="11.5" FontWeight="Bold"
+                                               Foreground="{StaticResource AccentCyan}" Margin="0,0,0,6"/>
+
+                                    <Border Background="#101B30" CornerRadius="8" BorderBrush="#1E293B" BorderThickness="1" Padding="10" Margin="0,0,0,10">
+                                        <StackPanel>
+                                            <TextBlock x:Name="txtLayoutNum" Text="Page 1/1"
+                                                       Foreground="{StaticResource TextSub}" FontSize="10" Margin="0,0,0,6"/>
+                                            <TextBlock x:Name="txtCurrentLayoutStats" Text="Select a layout to view"
+                                                       Foreground="{StaticResource TextSub}" FontSize="10" TextWrapping="Wrap" Margin="0,0,0,8"/>
+
+                                            <TextBlock Text="Sheet Selector" Foreground="{StaticResource TextSub}" FontSize="10" FontWeight="Bold" Margin="0,0,0,4"/>
+                                            <ComboBox x:Name="cmbSheetSelector" SelectionChanged="SheetSelector_Changed"
+                                                      MinWidth="140"/>
+
+                                            <Button x:Name="btnSimulate" Content="Start Simulation" Click="StartSimulation_Click"
+                                                    Background="#1E293B" Foreground="#F8FAFC" BorderBrush="#29B6FF" BorderThickness="1"
+                                                    Padding="10,6" FontSize="10.5" FontWeight="Bold" Cursor="Hand" Margin="0,10,0,0">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                              TextElement.Foreground="{TemplateBinding Foreground}"
+                                                                              TextElement.FontSize="{TemplateBinding FontSize}"
+                                                                              TextElement.FontWeight="{TemplateBinding FontWeight}"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <TextBlock Text="SHEET LIST PREVIEW" FontSize="11.5" FontWeight="Bold"
+                                               Foreground="{StaticResource AccentCyan}" Margin="0,0,0,6"/>
+
+                                    <Border Background="#0E1728" CornerRadius="8" BorderBrush="#1E293B" BorderThickness="1" Padding="6">
+                                        <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="300">
+                                            <!-- FIX: Canvas has no IsTabStop; use attached KeyboardNavigation.IsTabStop -->
+                                            <Canvas x:Name="PreviewCanvas"
+                                                    Background="Transparent"
+                                                    Focusable="False"
+                                                    KeyboardNavigation.IsTabStop="False"/>
+                                        </ScrollViewer>
+                                    </Border>
+
+                                </StackPanel>
+                            </ScrollViewer>
                         </Grid>
 
-                        <!-- REPORT TAB PLACEHOLDER -->
+                        <!-- REPORT TAB -->
                         <Grid Grid.Row="2" x:Name="pnlReport" Visibility="Collapsed">
-                            <Border Padding="15">
-                                <TextBlock Text="Full breakdown is shown in the REPORT LOG section below after optimization."
-                                           Foreground="{StaticResource TextSub}" FontSize="11"
-                                           FontStyle="Italic" TextWrapping="Wrap" VerticalAlignment="Center"/>
-                            </Border>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="12">
+                                <StackPanel>
+
+                                    <TextBlock Text="JOB MANAGEMENT" FontSize="11.5" FontWeight="Bold"
+                                               Foreground="{StaticResource AccentCyan}" Margin="0,0,0,6"/>
+
+                                    <Border Background="#101B30" CornerRadius="8" BorderBrush="#1E293B" BorderThickness="1" Padding="10" Margin="0,0,0,10">
+                                        <StackPanel>
+                                            <TextBlock Text="Job Name" Foreground="{StaticResource TextSub}" FontSize="10" FontWeight="Bold" Margin="0,0,0,4"/>
+                                            <TextBox x:Name="txtJobName" Text="" />
+
+                                            <TextBlock Text="Saved Jobs" Foreground="{StaticResource TextSub}" FontSize="10" FontWeight="Bold" Margin="0,10,0,4"/>
+                                            <ComboBox x:Name="cmbSavedJobs" />
+
+                                            <Grid Margin="0,10,0,0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <Button Grid.Column="0" Content="SAVE" Click="SaveJob_Click"
+                                                        Background="#1E293B" Foreground="#F8FAFC" BorderBrush="#29B6FF" BorderThickness="1"
+                                                        Padding="8,6" FontSize="10" FontWeight="Bold" Cursor="Hand" Margin="0,0,6,0">
+                                                    <Button.Template>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                                                    BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                                  TextElement.Foreground="{TemplateBinding Foreground}"
+                                                                                  TextElement.FontSize="{TemplateBinding FontSize}"
+                                                                                  TextElement.FontWeight="{TemplateBinding FontWeight}"/>
+                                                            </Border>
+                                                        </ControlTemplate>
+                                                    </Button.Template>
+                                                </Button>
+
+                                                <Button Grid.Column="1" Content="LOAD" Click="LoadJob_Click"
+                                                        Background="#0E1728" Foreground="#F8FAFC" BorderBrush="#334155" BorderThickness="1"
+                                                        Padding="8,6" FontSize="10" FontWeight="Bold" Cursor="Hand" Margin="6,0,6,0">
+                                                    <Button.Template>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                                                    BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                                  TextElement.Foreground="{TemplateBinding Foreground}"
+                                                                                  TextElement.FontSize="{TemplateBinding FontSize}"
+                                                                                  TextElement.FontWeight="{TemplateBinding FontWeight}"/>
+                                                            </Border>
+                                                        </ControlTemplate>
+                                                    </Button.Template>
+                                                </Button>
+
+                                                <Button Grid.Column="2" Content="DELETE" Click="DeleteJob_Click"
+                                                        Background="#0E1728" Foreground="#EF4444" BorderBrush="#EF4444" BorderThickness="1"
+                                                        Padding="8,6" FontSize="10" FontWeight="Bold" Cursor="Hand" Margin="6,0,0,0">
+                                                    <Button.Template>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                                                    BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                                  TextElement.Foreground="{TemplateBinding Foreground}"
+                                                                                  TextElement.FontSize="{TemplateBinding FontSize}"
+                                                                                  TextElement.FontWeight="{TemplateBinding FontWeight}"/>
+                                                            </Border>
+                                                        </ControlTemplate>
+                                                    </Button.Template>
+                                                </Button>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <TextBlock Text="EXPORT &amp; PRINT" FontSize="11.5" FontWeight="Bold"
+                                               Foreground="{StaticResource AccentCyan}" Margin="0,0,0,6"/>
+
+                                    <Border Background="#101B30" CornerRadius="8" BorderBrush="#1E293B" BorderThickness="1" Padding="10" Margin="0,0,0,10">
+                                        <UniformGrid Columns="2" Rows="2">
+                                            <Button Content="EXPORT CSV" Click="ExportResults_Click"
+                                                    Background="#1E293B" Foreground="#F8FAFC" BorderBrush="#29B6FF" BorderThickness="1"
+                                                    Padding="8,6" FontSize="10" FontWeight="Bold" Cursor="Hand" Margin="0,0,6,6">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                              TextElement.Foreground="{TemplateBinding Foreground}"
+                                                                              TextElement.FontSize="{TemplateBinding FontSize}"
+                                                                              TextElement.FontWeight="{TemplateBinding FontWeight}"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+
+                                            <Button Content="EXPORT PDF" Click="ExportPDF_Click"
+                                                    Background="#1E293B" Foreground="#F8FAFC" BorderBrush="#29B6FF" BorderThickness="1"
+                                                    Padding="8,6" FontSize="10" FontWeight="Bold" Cursor="Hand" Margin="6,0,0,6">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                              TextElement.Foreground="{TemplateBinding Foreground}"
+                                                                              TextElement.FontSize="{TemplateBinding FontSize}"
+                                                                              TextElement.FontWeight="{TemplateBinding FontWeight}"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+
+                                            <Button Content="PRINT LAYOUTS" Click="PrintLayouts_Click"
+                                                    Background="#0E1728" Foreground="#F8FAFC" BorderBrush="#334155" BorderThickness="1"
+                                                    Padding="8,6" FontSize="10" FontWeight="Bold" Cursor="Hand" Margin="0,6,6,0">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                              TextElement.Foreground="{TemplateBinding Foreground}"
+                                                                              TextElement.FontSize="{TemplateBinding FontSize}"
+                                                                              TextElement.FontWeight="{TemplateBinding FontWeight}"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+
+                                            <Button Content="PRINT LABELS" Click="PrintLabels_Click"
+                                                    Background="#0E1728" Foreground="#F8FAFC" BorderBrush="#334155" BorderThickness="1"
+                                                    Padding="8,6" FontSize="10" FontWeight="Bold" Cursor="Hand" Margin="6,6,0,0">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                              TextElement.Foreground="{TemplateBinding Foreground}"
+                                                                              TextElement.FontSize="{TemplateBinding FontSize}"
+                                                                              TextElement.FontWeight="{TemplateBinding FontWeight}"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                        </UniformGrid>
+                                    </Border>
+
+                                    <TextBlock Text="REPORT DETAILS" FontSize="11.5" FontWeight="Bold"
+                                               Foreground="{StaticResource AccentCyan}" Margin="0,0,0,6"/>
+
+                                    <Border Background="#0E1728" CornerRadius="8" BorderBrush="#1E293B" BorderThickness="1" Padding="10" Margin="0,0,0,10">
+                                        <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="260">
+                                            <StackPanel x:Name="spReportDetails"/>
+                                        </ScrollViewer>
+                                    </Border>
+
+                                    <Border x:Name="pnlUnplaced" Background="#1C1613" BorderBrush="#F59E0B" BorderThickness="1"
+                                            CornerRadius="8" Padding="10" Visibility="Collapsed">
+                                        <StackPanel>
+                                            <TextBlock Text="UNPLACED PARTS" Foreground="#F59E0B" FontWeight="Bold" FontSize="10.5"/>
+                                            <TextBlock x:Name="txtUnplaced" Text="" Foreground="{StaticResource TextSub}" FontSize="9.5" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Background="#101B30" CornerRadius="8" BorderBrush="#1E293B" BorderThickness="1" Padding="10" Margin="0,10,0,0">
+                                        <StackPanel>
+                                            <TextBlock Text="INTERNAL STATS" Foreground="{StaticResource TextSub}" FontWeight="Bold" FontSize="10" Margin="0,0,0,6"/>
+                                            <TextBlock x:Name="txtTotalSheetsUsed" Text="0" Foreground="{StaticResource TextSub}" FontSize="10"/>
+                                            <TextBlock x:Name="txtAvgUtilization" Text="0%" Foreground="{StaticResource TextSub}" FontSize="10"/>
+                                            <TextBlock x:Name="txtRemnants" Text="0 remnants available" Foreground="{StaticResource TextSub}" FontSize="10"/>
+                                            <TextBlock x:Name="txtTotalStats" Text="0 sheets, 0 parts" Foreground="{StaticResource TextSub}" FontSize="10"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                </StackPanel>
+                            </ScrollViewer>
                         </Grid>
+
                     </Grid>
                 </Border>
 
@@ -683,7 +1182,6 @@
                                 </StackPanel>
 
                                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                                    <!-- Find -->
                                     <TextBlock Text="Find:" Foreground="{StaticResource TextSub}"
                                                VerticalAlignment="Center" Margin="0,0,4,0" FontSize="10"/>
                                     <TextBox x:Name="txtFindPart" Width="80" Padding="5,3" FontSize="11"
@@ -694,19 +1192,24 @@
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
                                                 <Border Background="{TemplateBinding Background}" CornerRadius="3">
-                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                      TextElement.Foreground="{TemplateBinding Foreground}"
+                                                                      TextElement.FontSize="{TemplateBinding FontSize}"
+                                                                      TextElement.FontWeight="{TemplateBinding FontWeight}"/>
                                                 </Border>
                                             </ControlTemplate>
                                         </Button.Template>
                                     </Button>
 
-                                    <!-- Zoom -->
                                     <Button Content="−" Click="ZoomOut_Click" Background="#1E293B" Foreground="#F8FAFC"
                                             Padding="7,3" BorderThickness="0" Cursor="Hand">
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
                                                 <Border Background="{TemplateBinding Background}" CornerRadius="3">
-                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                      TextElement.Foreground="{TemplateBinding Foreground}"
+                                                                      TextElement.FontSize="{TemplateBinding FontSize}"
+                                                                      TextElement.FontWeight="{TemplateBinding FontWeight}"/>
                                                 </Border>
                                             </ControlTemplate>
                                         </Button.Template>
@@ -718,13 +1221,15 @@
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
                                                 <Border Background="{TemplateBinding Background}" CornerRadius="3">
-                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                      TextElement.Foreground="{TemplateBinding Foreground}"
+                                                                      TextElement.FontSize="{TemplateBinding FontSize}"
+                                                                      TextElement.FontWeight="{TemplateBinding FontWeight}"/>
                                                 </Border>
                                             </ControlTemplate>
                                         </Button.Template>
                                     </Button>
 
-                                    <!-- Grid Size -->
                                     <TextBlock Text="View:" Foreground="{StaticResource TextSub}"
                                                VerticalAlignment="Center" Margin="0,0,4,0" FontSize="10"/>
                                     <Button Content="4" Click="SheetsPerPage4_Click" Background="#1E293B"
@@ -758,7 +1263,9 @@
                                             <ControlTemplate TargetType="Button">
                                                 <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
                                                         BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4" Padding="{TemplateBinding Padding}">
-                                                    <ContentPresenter/>
+                                                    <ContentPresenter TextElement.Foreground="{TemplateBinding Foreground}"
+                                                                      TextElement.FontSize="{TemplateBinding FontSize}"
+                                                                      TextElement.FontWeight="{TemplateBinding FontWeight}"/>
                                                 </Border>
                                             </ControlTemplate>
                                         </Button.Template>
@@ -770,7 +1277,9 @@
                                             <ControlTemplate TargetType="Button">
                                                 <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
                                                         BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4" Padding="{TemplateBinding Padding}">
-                                                    <ContentPresenter/>
+                                                    <ContentPresenter TextElement.Foreground="{TemplateBinding Foreground}"
+                                                                      TextElement.FontSize="{TemplateBinding FontSize}"
+                                                                      TextElement.FontWeight="{TemplateBinding FontWeight}"/>
                                                 </Border>
                                             </ControlTemplate>
                                         </Button.Template>
@@ -782,7 +1291,8 @@
                         <!-- THE CANVAS (2D Visualization) -->
                         <Border Grid.Row="2" Background="#030712" Padding="1">
                             <ScrollViewer x:Name="LayoutScrollViewer" HorizontalScrollBarVisibility="Auto"
-                                          VerticalScrollBarVisibility="Auto" PanningMode="Both">
+                                          VerticalScrollBarVisibility="Auto" PanningMode="Both"
+                                          PreviewMouseWheel="LayoutCanvas_MouseWheel">
                                 <Grid Width="2500" Height="2000">
                                     <Grid.Background>
                                         <DrawingBrush TileMode="Tile" Viewport="0,0,30,30" ViewportUnits="Absolute">
@@ -801,7 +1311,13 @@
                                             </DrawingBrush.Drawing>
                                         </DrawingBrush>
                                     </Grid.Background>
-                                    <Canvas x:Name="LayoutCanvas" Background="Transparent"/>
+
+                                    <!-- FIX: Canvas has no IsTabStop; use attached KeyboardNavigation.IsTabStop -->
+                                    <Canvas x:Name="LayoutCanvas"
+                                            Background="Transparent"
+                                            Focusable="False"
+                                            KeyboardNavigation.IsTabStop="False"
+                                            MouseRightButtonDown="LayoutCanvas_MouseRightClick"/>
                                 </Grid>
                             </ScrollViewer>
                         </Border>
@@ -824,16 +1340,13 @@
                 </Border>
             </Grid>
 
-            <!-- ═══════════════════════════════════════════════════════ -->
-            <!-- SECTION 4 — STOCK + PARTS DATA ENTRY                    -->
-            <!-- ═══════════════════════════════════════════════════════ -->
+            <!-- SECTION 4 — STOCK + PARTS DATA ENTRY -->
             <Grid Margin="0,0,0,12">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Stock Entry Panel -->
                 <Border Grid.Column="0" x:Name="pnlDataStock" Background="{StaticResource BgPanel}"
                         BorderBrush="{StaticResource PanelBorder}" BorderThickness="1"
                         CornerRadius="12" Padding="14" Margin="0,0,6,0">
@@ -843,7 +1356,6 @@
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <!-- Header -->
                         <Grid Grid.Row="0" Margin="0,0,0,8">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -860,14 +1372,15 @@
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">
                                         <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
-                                            <ContentPresenter/>
+                                            <ContentPresenter TextElement.Foreground="{TemplateBinding Foreground}"
+                                                              TextElement.FontSize="{TemplateBinding FontSize}"
+                                                              TextElement.FontWeight="{TemplateBinding FontWeight}"/>
                                         </Border>
                                     </ControlTemplate>
                                 </Button.Template>
                             </Button>
                         </Grid>
 
-                        <!-- DataGrid -->
                         <DataGrid x:Name="dgStock" Grid.Row="1"
                                   AutoGenerateColumns="False" CanUserAddRows="True" Height="160"
                                   Background="#070D1A" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1"
@@ -878,10 +1391,31 @@
                                   PreviewMouseLeftButtonDown="DG_PreviewMouseLeftButtonDown"
                                   Drop="DG_Drop">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="REF" Binding="{Binding Ref, UpdateSourceTrigger=LostFocus}" Width="90"/>
-                                <DataGridTextColumn Header="LENGTH (MM)" Binding="{Binding L, StringFormat=N0}" Width="*"/>
-                                <DataGridTextColumn Header="WIDTH (MM)" Binding="{Binding W, StringFormat=N0}" Width="*"/>
-                                <DataGridTextColumn Header="QTY" Binding="{Binding Qty, StringFormat=N0}" Width="55"/>
+                                <DataGridTextColumn Header="REF" Binding="{Binding Ref, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Width="90"/>
+                                <DataGridTextColumn Header="LENGTH (MM)" Binding="{Binding L, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Width="*">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                            <Setter Property="Text" Value="{Binding L, StringFormat=N0}"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="WIDTH (MM)" Binding="{Binding W, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Width="*">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                            <Setter Property="Text" Value="{Binding W, StringFormat=N0}"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="QTY" Binding="{Binding Qty, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Width="55">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                            <Setter Property="Text" Value="{Binding Qty, StringFormat=N0}"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
                                 <DataGridTemplateColumn Header="DEL" Width="45">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
@@ -896,7 +1430,6 @@
                     </Grid>
                 </Border>
 
-                <!-- Parts Entry Panel -->
                 <Border Grid.Column="1" x:Name="pnlDataParts" Background="{StaticResource BgPanel}"
                         BorderBrush="{StaticResource PanelBorder}" BorderThickness="1"
                         CornerRadius="12" Padding="14" Margin="6,0,0,0">
@@ -906,7 +1439,6 @@
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <!-- Header -->
                         <Grid Grid.Row="0" Margin="0,0,0,8">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -923,14 +1455,15 @@
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">
                                         <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
-                                            <ContentPresenter/>
+                                            <ContentPresenter TextElement.Foreground="{TemplateBinding Foreground}"
+                                                              TextElement.FontSize="{TemplateBinding FontSize}"
+                                                              TextElement.FontWeight="{TemplateBinding FontWeight}"/>
                                         </Border>
                                     </ControlTemplate>
                                 </Button.Template>
                             </Button>
                         </Grid>
 
-                        <!-- DataGrid -->
                         <DataGrid x:Name="dgParts" Grid.Row="1"
                                   AutoGenerateColumns="False" CanUserAddRows="True" Height="160"
                                   Background="#070D1A" BorderBrush="{StaticResource PanelBorder}" BorderThickness="1"
@@ -941,16 +1474,16 @@
                                   PreviewMouseLeftButtonDown="DG_PreviewMouseLeftButtonDown"
                                   Drop="DG_Drop">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="PART REF" Binding="{Binding Ref, UpdateSourceTrigger=LostFocus}" Width="90"/>
+                                <DataGridTextColumn Header="PART REF" Binding="{Binding Ref, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Width="90"/>
                                 <DataGridTemplateColumn Header="L × W (MM)" Width="*">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                <TextBox Text="{Binding L, UpdateSourceTrigger=LostFocus}" Width="55"
+                                                <TextBox Text="{Binding L, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Width="55"
                                                          TextAlignment="Center" Background="#070D1A"
                                                          Foreground="#F8FAFC" BorderBrush="#334155"/>
                                                 <TextBlock Text=" × " Foreground="#64748B" VerticalAlignment="Center" Margin="3,0"/>
-                                                <TextBox Text="{Binding W, UpdateSourceTrigger=LostFocus}" Width="55"
+                                                <TextBox Text="{Binding W, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Width="55"
                                                          TextAlignment="Center" Background="#070D1A"
                                                          Foreground="#F8FAFC" BorderBrush="#334155"/>
                                             </StackPanel>
@@ -958,7 +1491,14 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
                                 <DataGridCheckBoxColumn Header="ROT" Binding="{Binding Rot, UpdateSourceTrigger=PropertyChanged}" Width="45"/>
-                                <DataGridTextColumn Header="QTY" Binding="{Binding Qty, StringFormat=N0}" Width="45"/>
+                                <DataGridTextColumn Header="QTY" Binding="{Binding Qty, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Width="45">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                            <Setter Property="Text" Value="{Binding Qty, StringFormat=N0}"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
                                 <DataGridTemplateColumn Header="DEL" Width="45">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
@@ -974,9 +1514,7 @@
                 </Border>
             </Grid>
 
-            <!-- ═══════════════════════════════════════════════════════ -->
-            <!-- SECTION 5 — OPTIMIZATION YIELD REPORT LOG               -->
-            <!-- ═══════════════════════════════════════════════════════ -->
+            <!-- SECTION 5 — OPTIMIZATION YIELD REPORT LOG -->
             <Border x:Name="pnlReportLog" Background="{StaticResource BgPanel}"
                     BorderBrush="{StaticResource PanelBorder}" BorderThickness="1"
                     CornerRadius="12" Padding="14,12">
@@ -987,7 +1525,6 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Report Header -->
                     <Grid Grid.Row="0" Margin="0,0,0,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -1001,7 +1538,6 @@
                         </StackPanel>
                     </Grid>
 
-                    <!-- Column Headers -->
                     <Border Grid.Row="1" Background="#0C101E" CornerRadius="6" Padding="10,6" Margin="0,0,0,4">
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -1019,7 +1555,6 @@
                         </Grid>
                     </Border>
 
-                    <!-- Report Rows -->
                     <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" MaxHeight="220">
                         <ItemsControl x:Name="icResults">
                             <ItemsControl.ItemTemplate>
@@ -1084,35 +1619,6 @@
                     </ScrollViewer>
                 </Grid>
             </Border>
-
-            <!-- ═══════════════════════════════════════════════════════ -->
-            <!-- HIDDEN RUNTIME CONTROLS (code-behind refs)              -->
-            <!-- ═══════════════════════════════════════════════════════ -->
-            <Grid Height="0" Visibility="Collapsed">
-                <TextBlock x:Name="txtLayoutNum"/>
-                <TextBlock x:Name="txtCurrentLayoutStats"/>
-                <TextBlock x:Name="txtStockSummary"/>
-                <TextBlock x:Name="txtPartsSummary"/>
-                <TextBlock x:Name="txtTotalSheetsUsed"/>
-                <TextBlock x:Name="txtAvgUtilization"/>
-                <TextBlock x:Name="txtRemnants"/>
-                <TextBox x:Name="txtJobName"/>
-                <StackPanel x:Name="spReportDetails"/>
-                <ListBox x:Name="lstSpecSelect"/>
-                <ItemsControl x:Name="icCombinedPreview"/>
-                <TextBlock x:Name="txtSelectedSpecCount"/>
-                <ComboBox x:Name="cmbSavedJobs"/>
-                <ComboBox x:Name="cmbSheetSelector"/>
-                <Canvas x:Name="PreviewCanvas"/>
-                <ComboBox x:Name="cmbCurrency"/>
-                <TextBox x:Name="txtStockPrice"/>
-                <TextBlock x:Name="txtTotalStats"/>
-                <Button x:Name="btnSimulate" Click="StartSimulation_Click"/>
-                <RadioButton x:Name="rbUseW1H1" GroupName="SpecDims" IsChecked="True" Checked="rbUseW1H1_Checked"/>
-                <RadioButton x:Name="rbUseW2H2" GroupName="SpecDims" Content="W2/H2" Checked="rbUseW2H2_Checked"/>
-                <Border x:Name="pnlUnplaced" Visibility="Collapsed"/>
-                <TextBlock x:Name="txtUnplaced"/>
-            </Grid>
 
         </StackPanel>
     </ScrollViewer>
