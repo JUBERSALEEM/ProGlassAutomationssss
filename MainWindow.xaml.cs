@@ -114,11 +114,7 @@ namespace ProGlassAutomation
                     UpdateLicenseStatus();
             };
 
-            // Update license UI
             UpdateLicenseStatus();
-
-            // Load initial dashboard
-            ShowDashboard();
         }
 
         // ==================== PERFORMANCE METHODS ====================
