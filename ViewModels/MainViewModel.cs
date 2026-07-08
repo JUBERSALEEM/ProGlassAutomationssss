@@ -1,10 +1,4 @@
-﻿using DocumentFormat.OpenXml.Wordprocessing;
-using Newtonsoft.Json;
-using ProGlassAutomation.Data.Database;
-using ProGlassAutomation.Models;
-using ProGlassAutomation.Views;
-using ProGlassAutomation.Views.ProformaInvoice;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -14,11 +8,15 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Diagnostics;
-using DbJobOrder = ProGlassAutomation.Data.Database.JobOrderModel;
-using ModelsInvoice = ProGlassAutomation.Models.ProformaInvoiceModel;
+using Newtonsoft.Json;
+using ProGlassAutomation.Data.Database;
+using ProGlassAutomation.Models;
+using ProGlassAutomation.Views;
+using ProGlassAutomation.Views.ProformaInvoice;
 
-// Disambiguation aliases
-using DbProformaInvoice = ProGlassAutomation.Data.Database.ProformaInvoiceModel;
+// Fix: Add explicit aliases to resolve ambiguous references between 
+// ProGlassAutomation.Data.Database and ProGlassAutomation.Models namespaces.
+using DbJobOrder = ProGlassAutomation.Data.Database.JobOrderModel;
 using InvoiceModel = ProGlassAutomation.Models.ProformaInvoiceModel;
 
 namespace ProGlassAutomation.ViewModels
@@ -502,7 +500,7 @@ namespace ProGlassAutomation.ViewModels
             {
                 var listView = new ProformaInvoiceListView();
 
-                // 🔴 FIX: Use SHARED instance from SharedViewModels!
+                // Use SHARED instance from SharedViewModels!
                 listView.DataContext = SharedViewModels.ProformaInvoiceListVM;
 
                 // Subscribe to refresh event for when returning from Editor
@@ -521,7 +519,6 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // 🔴 Handle refresh when returning from Editor
         private void OnInvoiceListRefreshRequested()
         {
             SharedViewModels.ProformaInvoiceListVM.ApplyFilters();
@@ -531,12 +528,12 @@ namespace ProGlassAutomation.ViewModels
         // Event for forwarding InvoiceSaved to DailyWorksViewModel
         public event Action<InvoiceModel>? InvoiceSaved;
 
-        public void OnProformaInvoiceSaved(ProGlassAutomation.Models.ProformaInvoiceModel invoice)
+        public void OnProformaInvoiceSaved(InvoiceModel invoice)
         {
             if (DailyWorksViewModel != null)
             {
                 // Create the proper InvoiceModel type
-                var invoiceModel = new ProGlassAutomation.Models.ProformaInvoiceModel
+                var invoiceModel = new InvoiceModel
                 {
                     InvoiceNo = invoice.InvoiceNo,
                     // Copy other properties as needed
@@ -546,7 +543,7 @@ namespace ProGlassAutomation.ViewModels
             InvoiceSaved?.Invoke(invoice);
         }
 
-        public void OnInvoiceToBeAdded(Models.ProformaInvoiceModel invoice)
+        public void OnInvoiceToBeAdded(InvoiceModel invoice)
         {
             if (invoice == null) return;
             IsDirty = true;
@@ -580,7 +577,7 @@ namespace ProGlassAutomation.ViewModels
                         NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore
                     };
                     var json = Newtonsoft.Json.JsonConvert.SerializeObject(pi, settings);
-                    var uiModel = Newtonsoft.Json.JsonConvert.DeserializeObject<Models.ProformaInvoiceModel>(json, settings);
+                    var uiModel = Newtonsoft.Json.JsonConvert.DeserializeObject<InvoiceModel>(json, settings);
 
                     if (uiModel != null)
                     {
@@ -609,7 +606,7 @@ namespace ProGlassAutomation.ViewModels
         // PROFORMA TO JOB ORDER
         // ═══════════════════════════════════════════════════════
 
-        public void CreateJobOrderFromProformaInvoice(Models.ProformaInvoiceModel invoice)
+        public void CreateJobOrderFromProformaInvoice(InvoiceModel invoice)
         {
             try
             {

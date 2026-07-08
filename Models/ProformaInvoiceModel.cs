@@ -22,6 +22,9 @@ namespace ProGlassAutomation.Models
     /// PATCH 18: Added thread-safe calculations
     /// PATCH 19: Added thread lock
     /// PATCH E1: Safe Invoice Recalculation Gate
+    /// FIX: Status setter now REJECTS invalid transitions (was logging but proceeding)
+    /// FIX: Status setter removed duplicate IsDirty=true (SetProperty auto-sets it)
+    /// FIX: GrandTotal changed to private set (prevent external overwrite of calculated value)
     /// </remarks>
     public class ProformaInvoiceModel : INotifyPropertyChanged, IDisposable
     {
@@ -380,6 +383,10 @@ namespace ProGlassAutomation.Models
         }
 
         // ==================== STATUS MANAGEMENT (PATCH 16) ====================
+        // FIX: Invalid transitions are now REJECTED (return after logging).
+        // Previously, the invalid transition was logged as a warning but the
+        // code proceeded to set the status anyway, allowing corrupted state.
+        // FIX: Removed duplicate IsDirty = true — SetProperty already auto-sets it.
         private string _status = "Draft";
         public string Status
         {
@@ -390,10 +397,10 @@ namespace ProGlassAutomation.Models
                 {
                     if (!IsBulkUpdating && !IsValidStatusTransition(_status, value))
                     {
-                        System.Diagnostics.Debug.WriteLine($"[PI] Invalid status transition from '{_status}' to '{value}'");
+                        System.Diagnostics.Debug.WriteLine($"[PI] Invalid status transition from '{_status}' to '{value}' — rejected");
+                        return;
                     }
                     SetProperty(ref _status, value);
-                    IsDirty = true;
                 }
             }
         }
@@ -558,8 +565,12 @@ namespace ProGlassAutomation.Models
         private int _totalQty = 0;
         public int TotalQty { get => _totalQty; private set => SetProperty(ref _totalQty, value); }
 
+        // FIX: GrandTotal changed from public set to private set.
+        // GrandTotal is calculated by CalculateTotals() — external code should
+        // not overwrite it. Newtonsoft.Json deserialization still works because
+        // it uses reflection and can set private setters by default.
         private double _grandTotal = 0;
-        public double GrandTotal { get => _grandTotal; set => SetProperty(ref _grandTotal, value); }
+        public double GrandTotal { get => _grandTotal; private set => SetProperty(ref _grandTotal, value); }
 
         private double _otherChargesTotal = 0;
         public double OtherChargesTotal { get => _otherChargesTotal; private set => SetProperty(ref _otherChargesTotal, value); }
@@ -668,16 +679,10 @@ namespace ProGlassAutomation.Models
                 double specTotal = 0;
                 double otherCharges = 0;
 
-                // FIX: Don't call spec.Recalculate() for ALL specs
-                // Each spec already recalculates when its items change
-                // Just read existing totals - don't trigger re-calculation
                 foreach (var spec in Specifications)
                 {
                     if (spec == null) continue;
 
-                    // REMOVED: spec.Recalculate(); // This was causing cascading events!
-
-                    // Just read the existing calculated values
                     sqm1 += spec.SpecTotalSQM1;
                     sqm2 += spec.SpecTotalSQM2;
                     sqm += spec.SpecTotalSQM;
@@ -711,7 +716,7 @@ namespace ProGlassAutomation.Models
             finally
             {
                 lock (_threadLock) { _isCalculating = false; }
-                _isRecalculating = false; // PATCH E1: Clear guard
+                _isRecalculating = false;
             }
         }
 

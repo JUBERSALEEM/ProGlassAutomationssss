@@ -1,5 +1,4 @@
-﻿using DocumentFormat.OpenXml.Spreadsheet;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -21,6 +20,11 @@ namespace ProGlassAutomation.Models
     /// PATCH 19: Added thread lock
     /// PATCH A1: Centralized Recalculate() method
     /// PATCH A2: Removed Invoice cascade from spec
+    /// FIX: GeneratedDescription LAM branch used PVBThickness twice — now uses InnerThickness
+    /// FIX: Removed unused using DocumentFormat.OpenXml.Spreadsheet
+    /// FIX: RecalculateAllItems now uses BulkUpdateScope to prevent N+1 cascades
+    ///      and removed redundant NotifySurchargeChanged (setting SurchargePercent
+    ///      already triggers item Recalculate)
     /// </remarks>
     public class SpecificationModel : INotifyPropertyChanged, IDisposable
     {
@@ -41,6 +45,9 @@ namespace ProGlassAutomation.Models
         }
 
         // ==================== EVENT SUPPRESSION (PATCH 18) ====================
+        // Note: This flag is checked in Recalculate() and Items_CollectionChanged
+        // but is never set to true within this class. Preserved for backward
+        // compatibility — may be set via external integration or future use.
         private bool _suppressEvents = false;
 
         // ==================== BULK UPDATE MODE (PATCH 8) ====================
@@ -312,6 +319,9 @@ namespace ProGlassAutomation.Models
         }
 
         // ==================== GENERATED DESCRIPTION ====================
+        // FIX: LAM branch previously used PVBThickness for the inner glass position:
+        //   "{PVBThickness}/{InnerThickness} {InnerColor}" → PVBThickness appeared twice
+        // Now correctly shows: "{InnerThickness} {InnerColor}"
         public string GeneratedDescription
         {
             get
@@ -319,7 +329,7 @@ namespace ProGlassAutomation.Models
                 return ModuleType switch
                 {
                     "DGU" => $"{OuterThickness} {OuterColor} {(WorkType == "FT Glass" ? "FT Glass" : "Annealed")} + {SpacerThickness} ASP {(IncludeInSpec ? "with U-Insert" : "")} + {InnerThickness} {InnerColor} {(WorkType == "FT Glass" ? "FT Glass" : "Annealed")}",
-                    "LAM" => $"{OuterThickness} {OuterColor} {(WorkType == "FT Glass" ? "FT Glass" : "Annealed")} + {PVBThickness} PVB ({PVBColor}) + {PVBThickness}/{InnerThickness} {InnerColor} {(WorkType == "FT Glass" ? "FT Glass" : "Annealed")}",
+                    "LAM" => $"{OuterThickness} {OuterColor} {(WorkType == "FT Glass" ? "FT Glass" : "Annealed")} + {PVBThickness} PVB ({PVBColor}) + {InnerThickness} {InnerColor} {(WorkType == "FT Glass" ? "FT Glass" : "Annealed")}",
                     _ => $"{OuterThickness} {OuterColor} {(WorkType == "FT Glass" ? "FT Glass" : "Annealed")}"
                 };
             }
@@ -360,14 +370,24 @@ namespace ProGlassAutomation.Models
             }
         }
 
+        // FIX: Wrapped in BulkUpdateScope to prevent N+1 cascade.
+        // Previously each item.SurchargePercent setter triggered:
+        //   item.Recalculate() → spec.Recalculate() → invoice.CalculateTotals()
+        // And NotifySurchargeChanged triggered it AGAIN. For N items = 2N cascades.
+        // Now: BulkUpdateScope suppresses spec-level cascade during the loop.
+        // Only ONE spec.Recalculate() runs when the scope disposes.
+        // Also removed redundant NotifySurchargeChanged() — setting SurchargePercent
+        // already triggers item.Recalculate() via the property setter.
         private void RecalculateAllItems()
         {
-            foreach (var item in Items)
+            using (BulkUpdateScope())
             {
-                item.SurchargePercent = _surchargePercent;
-                item.NotifySurchargeChanged();
+                foreach (var item in Items)
+                {
+                    item.SurchargePercent = _surchargePercent;
+                }
             }
-            Recalculate();
+            // BulkUpdateScope.Dispose() calls EndBulkUpdate() → Recalculate()
         }
 
         public double SurchargeThreshold => 4;
@@ -465,6 +485,8 @@ namespace ProGlassAutomation.Models
         }
 
         // ==================== LEGACY METHODS (KEEP FOR BACKWARDS COMPATIBILITY) ====================
+        // These are called from ProformaInvoiceViewModel.cs and ProformaInvoiceView.xaml.cs
+        // via different names. All delegate to Recalculate().
         public void CalculateSpecTotals() => Recalculate();
 
         public void CalculateOtherChargesTotal() => Recalculate();

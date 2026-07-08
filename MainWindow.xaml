@@ -293,6 +293,11 @@
                         </Expander>
 
                         <!-- CARD: GLASS ESTIMATION CALCULATORS -->
+                        <!-- FIX: IsExpanded changed from True to False.
+                             Previously this was the only expander that opened by default,
+                             showing the calculator submenu (SGU, DGU, Lamination, etc.)
+                             on application startup. All other expanders correctly default
+                             to collapsed. Now consistent with the rest. -->
                         <Expander Style="{StaticResource StylishExpanderCard}" IsExpanded="False">
                             <Expander.Header>
                                 <StackPanel Orientation="Horizontal">
@@ -445,8 +450,17 @@
         <Grid Grid.Column="1">
 
             <!-- Module Viewport Content Box -->
+            <!-- FIX: Removed Content="{Binding CurrentView}".
+                 The MainWindow code-behind assigns content directly via
+                 MainContent.Content = view in every ShowXxx() method.
+                 Once code-behind sets Content directly, the binding is
+                 permanently broken for that runtime session anyway.
+                 Removing the binding eliminates confusion and prevents
+                 the ViewModel's CurrentView setter from causing
+                 conflicting content assignments. The x:Name is preserved
+                 so code-behind continues to work exactly as before. -->
             <Border x:Name="MainContentBorder" Background="#0B1120" Margin="0">
-                <ContentControl x:Name="MainContent" Content="{Binding CurrentView}"/>
+                <ContentControl x:Name="MainContent"/>
             </Border>
 
             <!-- FLOATING EXPAND RIGHT ARROW BUTTON -->

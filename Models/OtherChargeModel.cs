@@ -21,6 +21,10 @@ namespace ProGlassAutomation.Models
     /// PATCH B1: Merged Value/Amount calculation
     /// PATCH B2: Added guard flag for duplicate events
     /// PATCH D1: Safe spec index parsing
+    /// FIX: LinkedSpecIndices setter now syncs TargetsAllSpecs state
+    ///      (previously setting indices to "0,1" would leave TargetsAllSpecs=true)
+    /// FIX: CalculateAmount removed duplicate PropertyChanged("Amount")
+    ///      (SetProperty already fires it)
     /// </remarks>
     public class OtherChargeModel : INotifyPropertyChanged, IDisposable
     {
@@ -114,7 +118,7 @@ namespace ProGlassAutomation.Models
                 if (SetProperty(ref _value, value))
                 {
                     OnPropertyChanged(nameof(ValueDisplay));
-                    CalculateAmount(); // KEEP ORIGINAL METHOD
+                    CalculateAmount();
                 }
             }
         }
@@ -128,7 +132,7 @@ namespace ProGlassAutomation.Models
                 if (SetProperty(ref _rate, value))
                 {
                     OnPropertyChanged(nameof(RateDisplay));
-                    CalculateAmount(); // KEEP ORIGINAL METHOD
+                    CalculateAmount();
                 }
             }
         }
@@ -208,11 +212,14 @@ namespace ProGlassAutomation.Models
         public bool IsLMBased => Type == "lm" || Type == "lm1" || Type == "lm2" || Type == "sqm" || Type == "sqm1" || Type == "sqm2";
         public bool IsHoleType => Type == "1x" || Type == "2x";
 
-        // ==================== CALCULATE AMOUNT (ORIGINAL - KEEP AS IS) ====================
+        // ==================== CALCULATE AMOUNT ====================
+        // FIX: Removed duplicate OnPropertyChanged(nameof(Amount)).
+        // SetProperty inside the Amount setter already fires PropertyChanged("Amount").
+        // Only OnPropertyChanged(nameof(AmountDisplay)) is needed since AmountDisplay
+        // depends on Amount but is a separate computed property not driven by SetProperty.
         public void CalculateAmount()
         {
             Amount = Math.Round(Value * Rate, 2);
-            OnPropertyChanged(nameof(Amount));
             OnPropertyChanged(nameof(AmountDisplay));
         }
 
@@ -230,10 +237,31 @@ namespace ProGlassAutomation.Models
             get => _linkedSpecIndices;
             set
             {
-                _linkedSpecIndices = value ?? "";
+                string newValue = value ?? "";
+
+                // Skip if unchanged
+                if (_linkedSpecIndices == newValue) return;
+
+                _linkedSpecIndices = newValue;
+
+                // FIX: Sync TargetsAllSpecs state.
+                // Previously, setting LinkedSpecIndices = "0,1" would notify
+                // TargetsAllSpecs changed but NOT update the backing field,
+                // leaving TargetsAllSpecs=true while specific indices were set.
+                // Now: if specific indices are provided, TargetsAllSpecs becomes false.
+                // If indices are cleared, leave TargetsAllSpecs as-is (the
+                // TargetsAllSpecs setter handles the "set to All" case).
+                if (!string.IsNullOrWhiteSpace(_linkedSpecIndices))
+                {
+                    if (_targetsAllSpecs)
+                    {
+                        _targetsAllSpecs = false;
+                        OnPropertyChanged(nameof(TargetsAllSpecs));
+                    }
+                }
+
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(LinkedSpecsDisplay));
-                OnPropertyChanged(nameof(TargetsAllSpecs));
             }
         }
 
@@ -385,7 +413,7 @@ namespace ProGlassAutomation.Models
                 IsManualOverride = IsManualOverride
             };
 
-            clone.CalculateAmount(); // KEEP ORIGINAL METHOD
+            clone.CalculateAmount();
             return clone;
         }
 
@@ -402,7 +430,7 @@ namespace ProGlassAutomation.Models
             LinkedSpecIndices = other.LinkedSpecIndices;
             IsManualOverride = other.IsManualOverride;
 
-            CalculateAmount(); // KEEP ORIGINAL METHOD
+            CalculateAmount();
         }
     }
 }

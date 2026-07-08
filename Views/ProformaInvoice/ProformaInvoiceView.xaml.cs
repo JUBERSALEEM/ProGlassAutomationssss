@@ -145,7 +145,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         }
 
         // ═══════════════════════════════════════════════════════
-        // CONSTRUCTOR (with ✏️ UNDO/REDO Ctrl+Z / Ctrl+Y wiring)
+        // CONSTRUCTOR
         // ═══════════════════════════════════════════════════════
         public ProformaInvoiceView()
         {
@@ -159,13 +159,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
             Unloaded += ProformaInvoiceView_Unloaded;
 
-            // ✏️ UNDO/REDO — Use PreviewKeyDown at the UserControl level
-            //
-            // Why not InputBindings? Because WPF's InputBindings only fire
-            // when the UserControl (or a non-focusable child) has focus.
-            // When a TextBox has focus, the TextBox swallows the key event
-            // BEFORE InputBindings can see it. Preview events fire FIRST
-            // (tunneling down) so we get a chance before TextBox handles it.
             PreviewKeyDown += ProformaInvoiceView_PreviewKeyDown;
 
             Dispatcher.BeginInvoke(new Action(() =>
@@ -208,6 +201,7 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             {
                 Debug.WriteLine($"{LOG} GetCurrentTrim error: {ex.Message}");
             }
+
             return _trimTable.ContainsKey("6mm")
                 ? _trimTable["6mm"]
                 : new TrimSettings { LM = 15, RM = 15, TM = 15, BM = 15, Kerf = 0 };
@@ -247,6 +241,9 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         private void ProformaInvoiceView_Unloaded(object sender, RoutedEventArgs e)
         {
             Unloaded -= ProformaInvoiceView_Unloaded;
+
+            // FIX: Unsubscribe key handler on unload to avoid stale handler references
+            PreviewKeyDown -= ProformaInvoiceView_PreviewKeyDown;
 
             try
             {
@@ -404,6 +401,21 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             catch (Exception ex)
             {
                 Debug.WriteLine($"{LOG} BtnClearSheets_Click error: {ex.Message}");
+            }
+        }
+
+        // FIX: Handler added because XAML now wires Presets button to this method.
+        // Preserves UI behavior without introducing incomplete preset logic.
+        private void BtnPresets_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                txtOptStatus.Text = "Sheet presets coming soon";
+                MessageBox.Show("Sheet presets module coming soon.", "Presets", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"{LOG} BtnPresets_Click error: {ex.Message}");
             }
         }
 
@@ -1045,7 +1057,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     return;
                 }
 
-                // ✏️ UNDO — take snapshot BEFORE paste so Ctrl+Z restores pre-paste state
                 _viewModel?.TakeSnapshot($"Paste {rawRows.Length} rows into '{spec.SpecificationName}'");
 
                 var defaults = CaptureRowDefaults(spec);
@@ -1258,7 +1269,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                     return;
                 }
 
-                // ✏️ UNDO — take snapshot before paste
                 _viewModel?.TakeSnapshot($"Paste {rows.Length} rows into '{spec.SpecificationName}'");
 
                 bool skipHeader = rows[0].ToLower().Contains("glass") || rows[0].ToLower().Contains("width") ||
@@ -1327,34 +1337,22 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
         // ═══════════════════════════════════════════════════════
         // ✏️ UNDO/REDO — UserControl-level keyboard handler
-        //
-        // Tunnels DOWN from UserControl to focused element, so we see
-        // Ctrl+Z and Ctrl+Y BEFORE the focused TextBox swallows them.
-        //
-        // We handle the key (and stop further propagation) ONLY when:
-        //   - It's Ctrl+Z or Ctrl+Y
-        //   - The focus is NOT inside a DataGrid cell editor
-        //     (DataGrid cells get WPF's native TextBox per-char undo)
         // ═══════════════════════════════════════════════════════
         private void ProformaInvoiceView_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             try
             {
-                // Only intercept Ctrl+Z and Ctrl+Y
                 bool isCtrlZ = (e.Key == Key.Z && Keyboard.Modifiers == ModifierKeys.Control);
                 bool isCtrlY = (e.Key == Key.Y && Keyboard.Modifiers == ModifierKeys.Control);
 
                 if (!isCtrlZ && !isCtrlY) return;
 
-                // Don't intercept when typing inside a DataGrid cell —
-                // let WPF's TextBox handle per-character undo natively
                 if (IsCellInEditMode())
                 {
                     Debug.WriteLine($"{LOG} Ctrl+{(isCtrlZ ? "Z" : "Y")} — cell in edit mode, letting WPF handle it");
                     return;
                 }
 
-                // Fire our app-level undo/redo
                 if (isCtrlZ)
                 {
                     if (_viewModel?.CanUndo == true)
@@ -1388,11 +1386,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
             }
         }
 
-        // ═══════════════════════════════════════════════════════
-        // ✏️ UNDO — Detect if a DataGrid cell is currently in edit mode
-        // (cursor blinking inside a TextBox). If so, our app-level Ctrl+Z
-        // is suppressed so WPF's native per-character undo can run.
-        // ═══════════════════════════════════════════════════════
         private bool IsCellInEditMode()
         {
             try
@@ -1400,21 +1393,14 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 var focused = Keyboard.FocusedElement as DependencyObject;
                 if (focused == null) return false;
 
-                // Walk visual tree up looking for a DataGridCell in editing mode.
-                // Only blocks app-level Ctrl+Z when cursor is INSIDE a DataGrid cell editor —
-                // NOT when focused on regular TextBoxes (Customer Name, Project Name, etc.)
                 while (focused != null)
                 {
                     if (focused is DataGridCell cell && cell.IsEditing)
                         return true;
 
-                    // CRITICAL: stop walking once we hit a non-DataGrid container,
-                    // so a regular TextBox inside a Customer/Project panel doesn't accidentally
-                    // match a far-up DataGridCell ancestor in some weird layout.
                     if (focused is System.Windows.Controls.Primitives.DataGridCellsPresenter ||
                         focused is DataGrid)
                     {
-                        // we're inside the DataGrid surface but not in an editing cell
                         return false;
                     }
 
@@ -1431,10 +1417,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
         // ═══════════════════════════════════════════════════════
         // ✏️ UNDO — Cell-edit tracking with pre-edit value memory
-        //
-        // BeginningEdit fires when you CLICK a cell, even if you don't
-        // change anything. So we remember the original value here and
-        // only snapshot in CellEditEnding if it actually changed.
         // ═══════════════════════════════════════════════════════
         private object? _preEditValue;
         private Models.InvoiceItemModel? _preEditItem;
@@ -1448,7 +1430,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
 
                 string columnHeader = e.Column?.Header?.ToString() ?? "cell";
 
-                // Remember pre-edit value so we can compare on commit
                 _preEditItem = item;
                 _preEditColumn = columnHeader;
                 _preEditValue = GetCellValueForUndo(item, columnHeader);
@@ -1467,7 +1448,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         {
             try
             {
-                // Only snapshot on real commit, not Escape
                 if (e.EditAction != DataGridEditAction.Commit)
                 {
                     _preEditValue = null;
@@ -1482,14 +1462,12 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                 _preEditItem = null;
                 _preEditValue = null;
 
-                // Defer to background so the binding has time to write the new value
                 Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, new Action(() =>
                 {
                     try
                     {
                         object? newValue = GetCellValueForUndo(item, column);
 
-                        // CRITICAL: only snapshot if value actually changed
                         if (Equals(originalValue, newValue))
                         {
                             Debug.WriteLine($"{LOG} CellEditEnding: no change in {column} (was '{originalValue}', still '{newValue}') — no snapshot");
@@ -1499,12 +1477,6 @@ namespace ProGlassAutomation.Views.ProformaInvoice
                         var spec = FindSpecification(item);
                         if (spec == null) return;
 
-                        // Take snapshot of CURRENT (post-edit) state.
-                        // When user does Ctrl+Z, it pops this snapshot and restores it.
-                        // But we want pre-edit state restored. So:
-                        // 1. Temporarily revert to pre-edit
-                        // 2. Take snapshot (captures pre-edit state)
-                        // 3. Re-apply new value
                         SetCellValueForUndo(item, column, originalValue);
                         _viewModel?.TakeSnapshot($"Edit {column} in '{spec.SpecificationName}'");
                         SetCellValueForUndo(item, column, newValue);

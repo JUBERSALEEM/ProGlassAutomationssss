@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 using System.Threading;
 
 namespace ProGlassAutomation.Models
@@ -19,6 +19,10 @@ namespace ProGlassAutomation.Models
     /// PATCH 19: Added thread lock for concurrent access
     /// PATCH 20: Fixed surcharge - only applies when per-item SQM > 4
     /// PATCH 21: Fixed TotalSQM/TotalLM - now uses only W1×H1 (not sum of both)
+    /// FIX: Changed System.Text.Json.Serialization.JsonIgnore → Newtonsoft.Json.JsonIgnore
+    ///      (project uses Newtonsoft for all serialization)
+    /// FIX: SurchargePercent setter no longer temporarily disables BulkUpdateMode
+    ///      (was breaking BulkUpdateScope and causing redundant PropertyChanged events)
     /// </remarks>
     public class InvoiceItemModel : INotifyPropertyChanged, IDisposable
     {
@@ -221,23 +225,16 @@ namespace ProGlassAutomation.Models
                 {
                     if (SetProperty(ref _surchargePercent, value))
                     {
-                        // Temporarily disable bulk update to ensure recalculation
-                        bool wasBulkUpdating = _isBulkUpdating;
-                        _isBulkUpdating = false;
-
+                        // FIX: Do not temporarily disable BulkUpdateMode.
+                        // Recalculate() already sets SurchargeAmount, DisplayPrice,
+                        // TotalPrice, FinalPrice via their property setters (which fire
+                        // PropertyChanged). Manual OnPropertyChanged calls were redundant.
+                        // EndBulkUpdate() calls Recalculate() when scope ends, so
+                        // calculations are deferred correctly during bulk operations.
                         Recalculate();
 
                         // PATCH A2: Only notify spec level - invoice handled by ViewModel
                         Specification?.CalculateTotals();
-                        // REMOVED: Specification?.Invoice?.CalculateTotals(); // Caused StackOverflow!
-
-                        // Force all property notifications
-                        OnPropertyChanged(nameof(SurchargeAmount));
-                        OnPropertyChanged(nameof(DisplayPrice));
-                        OnPropertyChanged(nameof(TotalPrice));
-                        OnPropertyChanged(nameof(FinalPrice));
-
-                        _isBulkUpdating = wasBulkUpdating;
                     }
                 }
             }

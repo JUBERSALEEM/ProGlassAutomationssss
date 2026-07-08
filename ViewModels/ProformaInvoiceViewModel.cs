@@ -103,20 +103,18 @@ namespace ProGlassAutomation.ViewModels
         // ✏️ UNDO / REDO STATE — Excel-style, whole-invoice snapshots
         // ═══════════════════════════════════════════════════════
         private const int MAX_UNDO_HISTORY = 50;
-        private const int COALESCE_WINDOW_MS = 500; // typing within 500ms on same field = 1 snapshot
+        private const int COALESCE_WINDOW_MS = 500;
         private readonly Stack<UndoSnapshot> _undoStack = new();
         private readonly Stack<UndoSnapshot> _redoStack = new();
         private bool _isRestoringSnapshot = false;
 
-        // Coalescing: track last snapshot's source field + timestamp
         private string _lastSnapshotKey = "";
         private DateTime _lastSnapshotTime = DateTime.MinValue;
 
-        // Snapshot now captures the WHOLE invoice (Specifications + all top-level fields)
         private class UndoSnapshot
         {
             public string Description { get; set; } = "";
-            public string InvoiceJson { get; set; } = "";          // full invoice (incl. specs, charges, all fields)
+            public string InvoiceJson { get; set; } = "";
             public int SelectedSpecId { get; set; }
         }
         // ═══════════════════════════════════════════════════════
@@ -153,6 +151,13 @@ namespace ProGlassAutomation.ViewModels
         }
 
         protected void OnPropertyChanged([CallerMemberName] string? propertyName = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        protected bool Set<T>(ref T field, T value, params string[] props)
+        {
+            if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+            field = value;
+            foreach (var p in props) OnPropertyChanged(p);
+            return true;
+        }
         protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null) { if (Equals(field, value)) return false; field = value; OnPropertyChanged(propertyName); return true; }
 
         private void EnqueueStatus(string message)
@@ -190,8 +195,6 @@ namespace ProGlassAutomation.ViewModels
 
         // ═══════════════════════════════════════════════════════
         // ✏️ UNDO — Invoice property listener
-        // Catches changes to: Customer*, Project*, LPO, Attention,
-        // Contact, Notes, Color, Status, InvoiceNo, InvoiceDate, ValidUntil
         // ═══════════════════════════════════════════════════════
         private static readonly HashSet<string> _trackedInvoiceFields = new()
         {
@@ -223,7 +226,6 @@ namespace ProGlassAutomation.ViewModels
             if (propName is null)
                 return;
 
-            // ✏️ UNDO — auto-snapshot when tracked invoice fields change
             if (_trackedInvoiceFields.Contains(propName))
             {
                 TakeSnapshotCoalesced($"Edit {FriendlyName(propName)}", $"Invoice.{propName}");
@@ -245,7 +247,6 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // Map raw property names to user-friendly labels for status bar
         private static string FriendlyName(string propName) => propName switch
         {
             "InvoiceNo" => "Invoice No",
@@ -285,12 +286,23 @@ namespace ProGlassAutomation.ViewModels
 
         private string GetNextSequentialInvoiceNo() { _currentPINumber++; return $"PI-{DateTime.Now.Year}-{_currentPINumber:D2}"; }
 
+        // ═══════════════════════════════════════════════════════
+        // FIX: Invoice property setter now detaches ALL old handlers
+        // before replacing. Previously, old spec event handlers leaked
+        // when Invoice was replaced (e.g., during NewInvoice or OpenInvoice).
+        // Also notifies dependent properties after replacement.
+        // ═══════════════════════════════════════════════════════
         private ProformaInvoiceModel? _invoice = new();
         public ProformaInvoiceModel Invoice
         {
             get => _invoice ??= new ProformaInvoiceModel();
             set
             {
+                // FIX: Detach all event handlers from old invoice's specs
+                // before replacing. This prevents stale handlers from firing
+                // on garbage-collected spec instances.
+                DetachAllEventHandlers();
+
                 if (_invoice != null)
                     _invoice.PropertyChanged -= OnInvoicePropertyChanged;
 
@@ -302,6 +314,12 @@ namespace ProGlassAutomation.ViewModels
                     _invoice.PropertyChanged += OnInvoicePropertyChanged;
                     SubscribeToOtherChargeChanges();
                 }
+
+                // FIX: Notify all properties that depend on the Invoice instance
+                OnPropertyChanged(nameof(HasUnsavedChanges));
+                OnPropertyChanged(nameof(IsLocked));
+                OnPropertyChanged(nameof(SelectedSpecificationOtherCharges));
+                RaiseAllInvoiceTotalsChanged();
             }
         }
 
@@ -324,7 +342,15 @@ namespace ProGlassAutomation.ViewModels
 
         public bool HasNoCharges => SelectedSpecificationOtherCharges == null || SelectedSpecificationOtherCharges.Count == 0;
 
-        public string CompanyName { get; set; } = "PROGLASS AUTOMATION";
+        // ═══════════════════════════════════════════════════════
+        // FIX: Company properties converted from auto-properties to
+        // proper properties with backing fields + SetProperty.
+        // These are set programmatically during LoadFromExistingInvoice
+        // and OpenInvoice, AND bound in XAML. Without PropertyChanged,
+        // the UI would not update when the VM sets these values.
+        // ═══════════════════════════════════════════════════════
+        private string _companyName = "PROGLASS AUTOMATION";
+        public string CompanyName { get => _companyName; set => SetProperty(ref _companyName, value); }
 
         private bool _isJobOrder;
         public bool IsJobOrder
@@ -357,9 +383,16 @@ namespace ProGlassAutomation.ViewModels
         private JobOrderViewModel _jobOrderVM = null!;
         public JobOrderViewModel JobOrderVM { get => _jobOrderVM; set => SetProperty(ref _jobOrderVM, value); }
 
-        public string CompanyTRN { get; set; } = "100458979400003";
-        public string CompanyLocation { get; set; } = "Dubai, UAE";
-        public string CompanyPhone { get; set; } = "+971-50-123-4567";
+        // FIX: Same as CompanyName — set programmatically during load,
+        // bound in XAML. Requires PropertyChanged for UI update.
+        private string _companyTRN = "100458979400003";
+        public string CompanyTRN { get => _companyTRN; set => SetProperty(ref _companyTRN, value); }
+
+        private string _companyLocation = "Dubai, UAE";
+        public string CompanyLocation { get => _companyLocation; set => SetProperty(ref _companyLocation, value); }
+
+        private string _companyPhone = "+971-50-123-4567";
+        public string CompanyPhone { get => _companyPhone; set => SetProperty(ref _companyPhone, value); }
 
         private bool _isFilePanelOpen;
         public bool IsFilePanelOpen { get => _isFilePanelOpen; set => SetProperty(ref _isFilePanelOpen, value); }
@@ -764,45 +797,42 @@ namespace ProGlassAutomation.ViewModels
             Debug.WriteLine($"[ProformaInvoiceVM] Created new invoice: {Invoice.InvoiceNo}");
         }
 
-        public void LoadFromExistingInvoice(ProformaInvoiceModel invoice)
+        // ═══════════════════════════════════════════════════════
+        // FIX: Extracted shared invoice loading logic from
+        // LoadFromExistingInvoice and LoadFromProformaInvoice.
+        // Both methods contained ~40 identical lines of field copying,
+        // spec deep-cloning, and post-load setup. Now they share a
+        // single private method, reducing duplication and ensuring
+        // consistent behavior.
+        // ═══════════════════════════════════════════════════════
+        private void LoadInvoiceDataCore(ProformaInvoiceModel source)
         {
-            if (invoice == null)
-            {
-                Debug.WriteLine("[ProformaInvoiceVM] LoadFromExistingInvoice: invoice is null!");
-                return;
-            }
-            Debug.WriteLine($"[ProformaInvoiceVM] Loading invoice: {invoice.InvoiceNo}");
-
             ClearUndoHistory();
 
             using (BulkUpdateScope())
             {
-                Invoice.InvoiceNo = invoice.InvoiceNo;
-                Invoice.InvoiceDate = invoice.InvoiceDate;
-                Invoice.ValidUntil = invoice.ValidUntil;
-                Invoice.CustomerName = invoice.CustomerName ?? "";
-                Invoice.CustomerTRN = invoice.CustomerTRN ?? "";
-                Invoice.CustomerReference = invoice.CustomerReference ?? "";
-                Invoice.Salesman = invoice.Salesman ?? "";
-                Invoice.CustomerAddress = invoice.CustomerAddress ?? "";
-                Invoice.ProjectName = invoice.ProjectName ?? "";
-                Invoice.ProjectNo = invoice.ProjectNo ?? "";
-                Invoice.ProjectLocation = invoice.ProjectLocation ?? "";
-                Invoice.LPONo = invoice.LPONo ?? "";
-                Invoice.AttentionName = invoice.AttentionName ?? "";
-                Invoice.ContactNo = invoice.ContactNo ?? "";
-                Invoice.Color = invoice.Color ?? "";
-                Invoice.Notes = invoice.Notes ?? "";
-                Invoice.Status = invoice.Status ?? "Pending";
-                Invoice.IsConvertedToJobOrder = invoice.IsConvertedToJobOrder;
-                CompanyName = invoice.CompanyName ?? "PROGLASS AUTOMATION";
-                CompanyTRN = invoice.CompanyTRN ?? "100458979400003";
-                CompanyLocation = invoice.CompanyLocation ?? "Dubai, UAE";
-                CompanyPhone = invoice.CompanyPhone ?? "+971-50-123-4567";
+                Invoice.InvoiceNo = source.InvoiceNo;
+                Invoice.InvoiceDate = source.InvoiceDate;
+                Invoice.ValidUntil = source.ValidUntil;
+                Invoice.CustomerName = source.CustomerName ?? "";
+                Invoice.CustomerTRN = source.CustomerTRN ?? "";
+                Invoice.CustomerReference = source.CustomerReference ?? "";
+                Invoice.Salesman = source.Salesman ?? "";
+                Invoice.CustomerAddress = source.CustomerAddress ?? "";
+                Invoice.ProjectName = source.ProjectName ?? "";
+                Invoice.ProjectNo = source.ProjectNo ?? "";
+                Invoice.ProjectLocation = source.ProjectLocation ?? "";
+                Invoice.LPONo = source.LPONo ?? "";
+                Invoice.AttentionName = source.AttentionName ?? "";
+                Invoice.ContactNo = source.ContactNo ?? "";
+                Invoice.Color = source.Color ?? "";
+                Invoice.Notes = source.Notes ?? "";
+                Invoice.Status = source.Status ?? "Pending";
+
                 Invoice.Specifications.Clear();
-                if (invoice.Specifications != null)
+                if (source.Specifications != null)
                 {
-                    foreach (var srcSpec in invoice.Specifications)
+                    foreach (var srcSpec in source.Specifications)
                     {
                         var newSpec = srcSpec.DeepClone();
                         newSpec.Invoice = Invoice;
@@ -812,14 +842,35 @@ namespace ProGlassAutomation.ViewModels
                     }
                 }
             }
+
             ReconstructAfterLoad();
             SelectedTargetSpecification = Invoice.Specifications.FirstOrDefault();
             SelectedSpecificationId = SelectedTargetSpecification?.Id ?? 0;
             Invoice.CalculateTotals();
             Invoice.IsDirty = false;
-            CurrentFileName = invoice.InvoiceNo ?? "Loaded Invoice";
+            CurrentFileName = source.InvoiceNo ?? "Loaded Invoice";
 
             ClearUndoHistory();
+        }
+
+        public void LoadFromExistingInvoice(ProformaInvoiceModel invoice)
+        {
+            if (invoice == null)
+            {
+                Debug.WriteLine("[ProformaInvoiceVM] LoadFromExistingInvoice: invoice is null!");
+                return;
+            }
+            Debug.WriteLine($"[ProformaInvoiceVM] Loading invoice: {invoice.InvoiceNo}");
+
+            LoadInvoiceDataCore(invoice);
+
+            // Copy company and conversion fields specific to full invoice load
+            CompanyName = invoice.CompanyName ?? "PROGLASS AUTOMATION";
+            CompanyTRN = invoice.CompanyTRN ?? "100458979400003";
+            CompanyLocation = invoice.CompanyLocation ?? "Dubai, UAE";
+            CompanyPhone = invoice.CompanyPhone ?? "+971-50-123-4567";
+            Invoice.IsConvertedToJobOrder = invoice.IsConvertedToJobOrder;
+
             Debug.WriteLine($"[ProformaInvoiceVM] Loaded: {Invoice.InvoiceNo}");
         }
 
@@ -887,9 +938,6 @@ namespace ProGlassAutomation.ViewModels
                 LoadSavedFiles();
 
                 Invoice.IsDirty = false;
-                // ✏️ UNDO — Excel KEEPS history after save, so we don't clear it
-                // (uncomment next line if you want to clear history on save instead)
-                // ClearUndoHistory();
                 StatusMessage = $"✅ Saved: {CurrentFileName}";
 
                 InvoiceSaved?.Invoke(Invoice);
@@ -1357,11 +1405,17 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
+        // ═══════════════════════════════════════════════════════
+        // FIX: Changed key from $"Spec_{spec.Id}" to $"Spec_{spec.GetHashCode()}".
+        // spec.Id can collide after remove + add (e.g., remove spec 0, add new
+        // spec → new spec gets Id=0, same as removed one). GetHashCode returns
+        // a unique value per object instance, preventing silent handler skips.
+        // ═══════════════════════════════════════════════════════
         private void AttachSpecificationHandlers(SpecificationModel spec)
         {
             if (spec == null) return;
 
-            string handlerKey = $"Spec_{spec.Id}";
+            string handlerKey = $"Spec_{spec.GetHashCode()}";
             if (_attachedHandlers.Contains(handlerKey)) return;
             _attachedHandlers.Add(handlerKey);
 
@@ -1407,9 +1461,17 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
+        // ═══════════════════════════════════════════════════════
+        // FIX: Also remove from _attachedHandlers tracking set when
+        // detaching an individual spec. Previously, detached spec keys
+        // remained as orphans in the set.
+        // ═══════════════════════════════════════════════════════
         private void DetachSpecificationHandlers(SpecificationModel spec)
         {
             if (spec == null) return;
+
+            _attachedHandlers.Remove($"Spec_{spec.GetHashCode()}");
+
             spec.PropertyChanged -= Spec_PropertyChanged;
 
             if (spec.Items != null)
@@ -1452,7 +1514,6 @@ namespace ProGlassAutomation.ViewModels
             {
                 string propName = e.PropertyName ?? string.Empty;
 
-                // ✏️ UNDO — snapshot when user-editable spec fields change
                 if (propName == nameof(SpecificationModel.SpecificationName) ||
                     propName == nameof(SpecificationModel.BasePrice) ||
                     propName == nameof(SpecificationModel.SurchargePercent))
@@ -1543,7 +1604,6 @@ namespace ProGlassAutomation.ViewModels
                     e.PropertyName == nameof(OtherChargeModel.Value) ||
                     e.PropertyName == nameof(OtherChargeModel.Name))
                 {
-                    // ✏️ UNDO — snapshot charge edits
                     TakeSnapshotCoalesced(
                         $"Edit charge '{charge.Name}' ({e.PropertyName})",
                         $"Charge_{charge.GetHashCode()}.{e.PropertyName}");
@@ -2426,50 +2486,7 @@ namespace ProGlassAutomation.ViewModels
 
             try
             {
-                ClearUndoHistory();
-
-                using (BulkUpdateScope())
-                {
-                    Invoice.InvoiceNo = pi.InvoiceNo;
-                    Invoice.InvoiceDate = pi.InvoiceDate;
-                    Invoice.ValidUntil = pi.ValidUntil;
-                    Invoice.CustomerName = pi.CustomerName ?? "";
-                    Invoice.CustomerTRN = pi.CustomerTRN ?? "";
-                    Invoice.CustomerReference = pi.CustomerReference ?? "";
-                    Invoice.Salesman = pi.Salesman ?? "";
-                    Invoice.CustomerAddress = pi.CustomerAddress ?? "";
-                    Invoice.ProjectName = pi.ProjectName ?? "";
-                    Invoice.ProjectNo = pi.ProjectNo ?? "";
-                    Invoice.ProjectLocation = pi.ProjectLocation ?? "";
-                    Invoice.LPONo = pi.LPONo ?? "";
-                    Invoice.AttentionName = pi.AttentionName ?? "";
-                    Invoice.ContactNo = pi.ContactNo ?? "";
-                    Invoice.Color = pi.Color ?? "";
-                    Invoice.Notes = pi.Notes ?? "";
-                    Invoice.Status = pi.Status ?? "Pending";
-
-                    Invoice.Specifications.Clear();
-                    if (pi.Specifications != null)
-                    {
-                        foreach (var piSpec in pi.Specifications)
-                        {
-                            var newSpec = piSpec.DeepClone();
-                            newSpec.Invoice = Invoice;
-                            foreach (var item in newSpec.Items)
-                                item.Specification = newSpec;
-                            Invoice.Specifications.Add(newSpec);
-                        }
-                    }
-                }
-
-                ReconstructAfterLoad();
-                SelectedTargetSpecification = Invoice.Specifications.FirstOrDefault();
-                SelectedSpecificationId = SelectedTargetSpecification?.Id ?? 0;
-                Invoice.CalculateTotals();
-                Invoice.IsDirty = false;
-                CurrentFileName = pi.InvoiceNo ?? "Loaded Invoice";
-
-                ClearUndoHistory();
+                LoadInvoiceDataCore(pi);
                 Debug.WriteLine($"[PIViewModel] Loaded {Invoice.Specifications.Count} specs with full reconstruction");
             }
             catch (Exception ex)
@@ -2503,14 +2520,10 @@ namespace ProGlassAutomation.ViewModels
         public bool CanUndo => _undoStack.Count > 0 && !_isRestoringSnapshot;
         public bool CanRedo => _redoStack.Count > 0 && !_isRestoringSnapshot;
 
-        /// <summary>
-        /// Captures the current WHOLE invoice state as a snapshot.
-        /// Excel-style: every committed change = one snapshot.
-        /// </summary>
         public void TakeSnapshot(string description)
         {
             if (_isRestoringSnapshot) return;
-            if (_isBulkUpdating) return; // skip during bulk updates (e.g., paste, load)
+            if (_isBulkUpdating) return;
             if (Invoice == null) return;
 
             try
@@ -2548,17 +2561,11 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        /// <summary>
-        /// Like TakeSnapshot, but coalesces rapid changes on the same field
-        /// within COALESCE_WINDOW_MS into a single snapshot.
-        /// Excel uses this for typing — one snapshot per field per "edit session".
-        /// </summary>
         public void TakeSnapshotCoalesced(string description, string fieldKey)
         {
             if (_isRestoringSnapshot) return;
             if (_isBulkUpdating) return;
 
-            // If same field was just snapshotted within the window, skip
             if (_lastSnapshotKey == fieldKey &&
                 (DateTime.Now - _lastSnapshotTime).TotalMilliseconds < COALESCE_WINDOW_MS)
             {
@@ -2567,7 +2574,7 @@ namespace ProGlassAutomation.ViewModels
             }
 
             TakeSnapshot(description);
-            _lastSnapshotKey = fieldKey; // remember field-level key for next coalesce check
+            _lastSnapshotKey = fieldKey;
         }
 
         public void Undo()
@@ -2630,10 +2637,6 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        /// <summary>
-        /// Restore the WHOLE Invoice from snapshot JSON.
-        /// Covers Customer/Project/LPO/Notes/Specs/Charges — everything.
-        /// </summary>
         private void RestoreSnapshot(UndoSnapshot snapshot)
         {
             if (snapshot == null || string.IsNullOrEmpty(snapshot.InvoiceJson)) return;
@@ -2648,7 +2651,6 @@ namespace ProGlassAutomation.ViewModels
 
                 using (BulkUpdateScope())
                 {
-                    // Copy scalar invoice fields
                     Invoice.InvoiceNo = restored.InvoiceNo;
                     Invoice.InvoiceDate = restored.InvoiceDate;
                     Invoice.ValidUntil = restored.ValidUntil;
@@ -2668,7 +2670,6 @@ namespace ProGlassAutomation.ViewModels
                     Invoice.Notes = restored.Notes;
                     Invoice.IsConvertedToJobOrder = restored.IsConvertedToJobOrder;
 
-                    // Replace specifications wholesale
                     Invoice.Specifications.Clear();
                     if (restored.Specifications != null)
                     {
@@ -2695,7 +2696,6 @@ namespace ProGlassAutomation.ViewModels
                                               ?? Invoice.Specifications.FirstOrDefault();
                 SelectedSpecificationId = SelectedTargetSpecification?.Id ?? 0;
 
-                // Notify everything that may have changed
                 OnPropertyChanged(nameof(Invoice));
                 OnPropertyChanged(nameof(SelectedTargetSpecification));
                 OnPropertyChanged(nameof(SelectedSpecificationOtherCharges));

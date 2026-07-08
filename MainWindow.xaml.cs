@@ -105,7 +105,10 @@ namespace ProGlassAutomation
             // Window events
             this.Deactivated += MainWindow_Deactivated;
             this.Closing += MainWindow_Closing;
-            this.Loaded += MainWindow_Loaded;
+
+            // FIX: Removed `this.Loaded += MainWindow_Loaded;` 
+            // The XAML already wires `Loaded="Window_Loaded"`, which calls MainWindow_Loaded.
+            // Leaving this here caused the Loaded event to fire twice.
 
             // Watch for license changes
             _viewModel.PropertyChanged += (s, e) =>
@@ -114,7 +117,13 @@ namespace ProGlassAutomation
                     UpdateLicenseStatus();
             };
 
+            // Update license UI
             UpdateLicenseStatus();
+
+            // FIX: Removed `ShowDashboard();` which creates a NEW DashboardView instance.
+            // MainViewModel already created a DashboardView in its constructor and set it to CurrentView.
+            // We just grab the one the ViewModel already created to prevent double instantiation.
+            MainContent.Content = _viewModel.CurrentView;
         }
 
         // ==================== PERFORMANCE METHODS ====================
