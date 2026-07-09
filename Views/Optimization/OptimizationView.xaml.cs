@@ -7,61 +7,94 @@ namespace ProGlassAutomation.Views.Optimization
 {
     public partial class OptimizationView : UserControl
     {
-        private readonly OptimizationViewModel _viewModel;
+        private readonly OptimizationViewModel _vm;
 
         public OptimizationView()
         {
             InitializeComponent();
-            _viewModel = new OptimizationViewModel();
-            DataContext = _viewModel;
+
+            _vm = new OptimizationViewModel();
+            DataContext = _vm;
+
+            dgStock.ItemsSource = _vm.StockSheets;
+            dgParts.ItemsSource = _vm.Parts;
         }
 
         private void RunOptimization_Click(object sender, RoutedEventArgs e)
         {
-            if (!double.TryParse(txtKerf.Text, out double kerf))
-            {
-                MessageBox.Show("Invalid Kerf value.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
+            _vm.RunOptimizationCommand.Execute(null);
 
-            if (!double.TryParse(txtTrim.Text, out double trim))
-            {
-                MessageBox.Show("Invalid Trim value.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
+            txtUtilization.Text = _vm.Utilization + "%";
+            txtWaste.Text = _vm.Waste + "%";
 
-            _viewModel.SetTrimSettings(trim, trim, trim, trim, kerf, 0);
-
-            _viewModel.RunOptimizationCommand.Execute(null);
-
-            txtUtilization.Text = _viewModel.Utilization + "%";
-            txtWaste.Text = _viewModel.Waste + "%";
-            txtCost.Text = _viewModel.Cost.ToString("F2");
-
-            LayoutCanvas.Children.Clear();
+            ShowTab("Layout");
+            UpdateReport();
         }
 
-        // =====================================================
-        // Compatibility Surface for ProformaInvoice
-        // =====================================================
+        private void TabStock_Click(object sender, RoutedEventArgs e) => ShowTab("Stock");
+        private void TabParts_Click(object sender, RoutedEventArgs e) => ShowTab("Parts");
+        private void TabLayout_Click(object sender, RoutedEventArgs e) => ShowTab("Layout");
+        private void TabReport_Click(object sender, RoutedEventArgs e) => ShowTab("Report");
 
-        public int SheetsUsed => _viewModel.SheetsUsed;
+        private void ShowTab(string tab)
+        {
+            pnlStockTab.Visibility = Visibility.Collapsed;
+            pnlPartsTab.Visibility = Visibility.Collapsed;
+            pnlLayoutTab.Visibility = Visibility.Collapsed;
+            pnlReportTab.Visibility = Visibility.Collapsed;
 
-        public double AverageUtilization => _viewModel.AverageUtilization;
+            btnTabStock.Style = (Style)Resources["SegmentTabInactive"];
+            btnTabParts.Style = (Style)Resources["SegmentTabInactive"];
+            btnTabLayout.Style = (Style)Resources["SegmentTabInactive"];
+            btnTabReport.Style = (Style)Resources["SegmentTabInactive"];
 
-        public List<OptimizationResult> GetResultsList()
-            => _viewModel.GetResultsList();
+            switch (tab)
+            {
+                case "Stock":
+                    pnlStockTab.Visibility = Visibility.Visible;
+                    btnTabStock.Style = (Style)Resources["SegmentTabActive"];
+                    break;
+                case "Parts":
+                    pnlPartsTab.Visibility = Visibility.Visible;
+                    btnTabParts.Style = (Style)Resources["SegmentTabActive"];
+                    break;
+                case "Layout":
+                    pnlLayoutTab.Visibility = Visibility.Visible;
+                    btnTabLayout.Style = (Style)Resources["SegmentTabActive"];
+                    break;
+                case "Report":
+                    pnlReportTab.Visibility = Visibility.Visible;
+                    btnTabReport.Style = (Style)Resources["SegmentTabActive"];
+                    break;
+            }
+        }
 
-        public void ImportInvoiceItems(List<InvoiceItemModel> items)
-            => _viewModel.ImportInvoiceItems(items);
+        private void UpdateReport()
+        {
+            if (_vm.LastResult == null)
+            {
+                txtReport.Text = "Run optimization to generate report";
+                return;
+            }
 
-        public void RunOptimizationFromInvoice()
-            => _viewModel.RunOptimizationFromInvoice();
+            var r = _vm.LastResult;
 
-        public void SetStockSheet(double width, double height)
-            => _viewModel.SetStockSheet(width, height);
+            txtReport.Text =
+                $"Sheet Reference: {r.Ref}\n" +
+                $"Sheet Size: {r.L} x {r.W} mm\n" +
+                $"Area Used: {r.Area:N0} mm²\n" +
+                $"Utilization: {r.Util}%\n" +
+                $"Waste: {r.Waste}%\n" +
+                $"Parts Placed: {r.PlacedParts?.Count ?? 0}";
+        }
 
+        public int SheetsUsed => _vm.SheetsUsed;
+        public double AverageUtilization => _vm.AverageUtilization;
+        public List<OptimizationResult> GetResultsList() => _vm.GetResultsList();
+        public void ImportInvoiceItems(List<InvoiceItemModel> items) => _vm.ImportInvoiceItems(items);
+        public void RunOptimizationFromInvoice() { _vm.RunOptimizationFromInvoice(); ShowTab("Layout"); UpdateReport(); }
+        public void SetStockSheet(double width, double height) => _vm.SetStockSheet(width, height);
         public void SetTrimSettings(double lr, double br, double tr, double rm, double kerf, double breakout)
-            => _viewModel.SetTrimSettings(lr, br, tr, rm, kerf, breakout);
+            => _vm.SetTrimSettings(lr, br, tr, rm, kerf, breakout);
     }
 }

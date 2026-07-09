@@ -7,32 +7,27 @@ namespace ProGlassAutomation.Views.Optimization
 {
     public class OptimizationServices
     {
-        private const double DefaultCostPerSquareMeter = 250.0;
+        private const double DefaultCostPerSquareMillimeter = 0.00025;
 
         public double CalculateCost(double usedAreaSquareMillimeters)
         {
             if (usedAreaSquareMillimeters <= 0)
                 return 0;
 
-            double usedSquareMeters = usedAreaSquareMillimeters / 1_000_000.0;
-
-            double cost = usedSquareMeters * DefaultCostPerSquareMeter;
-
-            return Math.Round(cost, 2);
+            return Math.Round(usedAreaSquareMillimeters * DefaultCostPerSquareMillimeter, 2);
         }
 
         public void ExportToCsv(string filePath, OptimizationResult result)
         {
-            if (result == null)
+            if (result == null || string.IsNullOrEmpty(filePath))
                 return;
 
             var inv = CultureInfo.InvariantCulture;
+            var sb = new StringBuilder();
 
-            using var writer = new StreamWriter(filePath, false, Encoding.UTF8);
+            sb.AppendLine("Ref,L,W,Area,Utilization,Waste");
 
-            writer.WriteLine("Ref,SheetLength,SheetWidth,UsedArea,Utilization,Waste");
-
-            writer.WriteLine(string.Join(",",
+            sb.AppendLine(string.Join(",",
                 Escape(result.Ref),
                 result.L.ToString(inv),
                 result.W.ToString(inv),
@@ -40,17 +35,19 @@ namespace ProGlassAutomation.Views.Optimization
                 result.Util.ToString(inv),
                 result.Waste.ToString(inv)
             ));
+
+            File.WriteAllText(filePath, sb.ToString(), Encoding.UTF8);
         }
 
-        private static string Escape(string value)
+        private string Escape(string v)
         {
-            if (string.IsNullOrEmpty(value))
-                return string.Empty;
+            if (string.IsNullOrEmpty(v))
+                return "";
 
-            if (value.Contains(",") || value.Contains("\""))
-                return "\"" + value.Replace("\"", "\"\"") + "\"";
+            if (v.Contains(",") || v.Contains("\"") || v.Contains("\n"))
+                return "\"" + v.Replace("\"", "\"\"") + "\"";
 
-            return value;
+            return v;
         }
     }
 }

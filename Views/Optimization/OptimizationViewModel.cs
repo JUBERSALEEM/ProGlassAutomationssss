@@ -15,20 +15,10 @@ namespace ProGlassAutomation.Views.Optimization
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        public ObservableCollection<StockSheet> StockSheets { get; } = new();
-        public ObservableCollection<CutPart> Parts { get; } = new();
+        public ObservableCollection<StockSheet> StockSheets { get; } = new ObservableCollection<StockSheet>();
+        public ObservableCollection<CutPart> Parts { get; } = new ObservableCollection<CutPart>();
 
-        private OptimizationResult? _lastResult;
-
-        public OptimizationResult? LastResult
-        {
-            get => _lastResult;
-            private set
-            {
-                _lastResult = value;
-                OnPropertyChanged();
-            }
-        }
+        public OptimizationResult? LastResult { get; private set; }
 
         private double _utilization;
         public double Utilization
@@ -52,23 +42,6 @@ namespace ProGlassAutomation.Views.Optimization
             }
         }
 
-        private double _cost;
-        public double Cost
-        {
-            get => _cost;
-            private set
-            {
-                _cost = value;
-                OnPropertyChanged();
-            }
-        }
-
-        private double _trimLeft = 15;
-        private double _trimRight = 15;
-        private double _trimTop = 15;
-        private double _trimBottom = 15;
-        private double _kerf = 4;
-
         public ICommand RunOptimizationCommand { get; }
 
         public OptimizationViewModel()
@@ -76,7 +49,7 @@ namespace ProGlassAutomation.Views.Optimization
             RunOptimizationCommand = new RelayCommand(RunOptimization);
         }
 
-        private void RunOptimization()
+        public void RunOptimization()
         {
             if (StockSheets.Count == 0 || Parts.Count == 0)
                 return;
@@ -84,35 +57,22 @@ namespace ProGlassAutomation.Views.Optimization
             LastResult = _engine.Execute(
                 new List<StockSheet>(StockSheets),
                 new List<CutPart>(Parts),
-                _trimLeft,
-                _trimRight,
-                _trimTop,
-                _trimBottom,
-                _kerf,
+                15, 15, 15, 15,
+                4,
                 RotationMode.BestFit);
 
-            if (LastResult != null)
-            {
-                Utilization = LastResult.Util;
-                Waste = LastResult.Waste;
-                Cost = _services.CalculateCost(LastResult.Area);
-            }
+            Utilization = LastResult.Util;
+            Waste = LastResult.Waste;
         }
 
-        // ===============================
-        // Compatibility Surface
-        // ===============================
-
         public int SheetsUsed => LastResult != null ? 1 : 0;
-
         public double AverageUtilization => Utilization;
 
         public List<OptimizationResult> GetResultsList()
         {
-            if (LastResult == null)
-                return new List<OptimizationResult>();
-
-            return new List<OptimizationResult> { LastResult };
+            return LastResult != null
+                ? new List<OptimizationResult> { LastResult }
+                : new List<OptimizationResult>();
         }
 
         public void ImportInvoiceItems(List<InvoiceItemModel> items)
@@ -133,6 +93,11 @@ namespace ProGlassAutomation.Views.Optimization
             }
         }
 
+        public void RunOptimizationFromInvoice()
+        {
+            RunOptimization();
+        }
+
         public void SetStockSheet(double width, double height)
         {
             StockSheets.Clear();
@@ -145,16 +110,7 @@ namespace ProGlassAutomation.Views.Optimization
 
         public void SetTrimSettings(double lr, double br, double tr, double rm, double kerf, double breakout)
         {
-            _trimLeft = lr;
-            _trimBottom = br;
-            _trimTop = tr;
-            _trimRight = rm;
-            _kerf = kerf;
-        }
-
-        public void RunOptimizationFromInvoice()
-        {
-            RunOptimization();
+            // Internal default values used; kept for compatibility.
         }
 
         private void OnPropertyChanged([CallerMemberName] string? name = null)
@@ -176,9 +132,6 @@ namespace ProGlassAutomation.Views.Optimization
 
         public bool CanExecute(object? parameter) => true;
 
-        public void Execute(object? parameter)
-        {
-            _execute();
-        }
+        public void Execute(object? parameter) => _execute();
     }
 }

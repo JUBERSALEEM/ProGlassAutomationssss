@@ -4,171 +4,82 @@ using System.Linq;
 
 namespace ProGlassAutomation.Views.Optimization
 {
-    public enum RotationMode
-    {
-        None,
-        Rotate90,
-        BestFit
-    }
+    public enum RotationMode { None, Rotate90, BestFit }
 
     public class OptimizationEngine
     {
         public OptimizationResult Execute(
-            List<StockSheet> stockSheets,
-            List<CutPart> parts,
-            double trimLeft,
-            double trimRight,
-            double trimTop,
-            double trimBottom,
-            double kerf,
-            RotationMode rotationMode)
+            List<StockSheet> stockSheets, List<CutPart> parts,
+            double trimLeft, double trimRight, double trimTop, double trimBottom,
+            double kerf, RotationMode rotationMode)
         {
             var result = new OptimizationResult();
-
-            if (stockSheets == null || parts == null)
-                return result;
-
-            if (!stockSheets.Any() || !parts.Any())
-                return result;
+            if (stockSheets == null || parts == null || !stockSheets.Any() || !parts.Any()) return result;
 
             var sheet = stockSheets.First();
+            double uw = sheet.L - trimLeft - trimRight;
+            double uh = sheet.W - trimTop - trimBottom;
+            if (uw <= 0 || uh <= 0) return result;
 
-            double usableWidth = sheet.L - trimLeft - trimRight;
-            double usableHeight = sheet.W - trimTop - trimBottom;
+            var expanded = ExpandParts(parts);
+            var placed = new List<PlacedPart>();
+            double cx = 0, cy = 0, rh = 0;
 
-            if (usableWidth <= 0 || usableHeight <= 0)
-                return result;
-
-            var expandedParts = ExpandParts(parts);
-
-            var placedParts = new List<PlacedPart>();
-
-            double currentX = 0;
-            double currentY = 0;
-            double rowHeight = 0;
-
-            foreach (var part in expandedParts)
+            foreach (var part in expanded)
             {
-                var oriented = GetOrientedSize(part.L, part.W, usableWidth, usableHeight, rotationMode);
+                var o = GetOrientedSize(part.L, part.W, uw, uh, rotationMode);
+                double pw = o.Width, ph = o.Height;
 
-                double partWidth = oriented.Width;
-                double partHeight = oriented.Height;
+                if (cx + pw > uw) { cx = 0; cy += rh + kerf; rh = 0; }
+                if (cy + ph > uh) break;
 
-                if (currentX + partWidth > usableWidth)
-                {
-                    currentX = 0;
-                    currentY += rowHeight + kerf;
-                    rowHeight = 0;
-                }
-
-                if (currentY + partHeight > usableHeight)
-                    break;
-
-                placedParts.Add(new PlacedPart
-                {
-                    X = currentX,
-                    Y = currentY,
-                    L = partWidth,
-                    W = partHeight
-                });
-
-                currentX += partWidth + kerf;
-
-                if (partHeight > rowHeight)
-                    rowHeight = partHeight;
+                placed.Add(new PlacedPart { X = cx, Y = cy, L = pw, W = ph });
+                cx += pw + kerf;
+                if (ph > rh) rh = ph;
             }
 
-            double usedArea = placedParts.Sum(p => p.L * p.W);
-            double totalArea = usableWidth * usableHeight;
-
-            double utilization = totalArea > 0
-                ? (usedArea / totalArea) * 100.0
-                : 0;
+            double used = placed.Sum(p => p.L * p.W);
+            double total = uw * uh;
+            double util = total > 0 ? (used / total) * 100 : 0;
 
             result.Ref = "S1";
             result.L = sheet.L;
             result.W = sheet.W;
-            result.Area = usedArea;
-            result.Util = Math.Round(utilization, 2);
-            result.Waste = Math.Round(100 - utilization, 2);
-            result.PlacedParts = placedParts;
-
+            result.Area = used;
+            result.Util = Math.Round(util, 2);
+            result.Waste = Math.Round(100 - util, 2);
+            result.PlacedParts = placed;
             return result;
         }
 
         private List<CutPart> ExpandParts(List<CutPart> parts)
         {
-            var result = new List<CutPart>();
-
+            var list = new List<CutPart>();
             foreach (var p in parts)
-            {
-                int qty = Math.Max(1, p.Qty);
-
-                for (int i = 0; i < qty; i++)
-                {
-                    result.Add(new CutPart
-                    {
-                        L = p.L,
-                        W = p.W,
-                        Qty = 1
-                    });
-                }
-            }
-
-            return result;
+                for (int i = 0; i < Math.Max(1, p.Qty); i++)
+                    list.Add(new CutPart { L = p.L, W = p.W, Qty = 1 });
+            return list;
         }
 
-        private (double Width, double Height) GetOrientedSize(
-            double width,
-            double height,
-            double maxWidth,
-            double maxHeight,
-            RotationMode mode)
+        private (double Width, double Height) GetOrientedSize(double w, double h, double mw, double mh, RotationMode mode)
         {
             switch (mode)
             {
-                case RotationMode.None:
-                    return (width, height);
-
-                case RotationMode.Rotate90:
-                    return (height, width);
-
-                case RotationMode.BestFit:
+                case RotationMode.None: return (w, h);
+                case RotationMode.Rotate90: return (h, w);
                 default:
-                    bool normalFits = width <= maxWidth && height <= maxHeight;
-                    bool rotatedFits = height <= maxWidth && width <= maxHeight;
-
-                    if (normalFits && !rotatedFits)
-                        return (width, height);
-
-                    if (!normalFits && rotatedFits)
-                        return (height, width);
-
-                    return (width <= height) ? (width, height) : (height, width);
+                    bool nf = w <= mw && h <= mh;
+                    bool rf = h <= mw && w <= mh;
+                    if (nf && !rf) return (w, h);
+                    if (!nf && rf) return (h, w);
+                    return (w <= h) ? (w, h) : (h, w);
             }
         }
     }
 
-    public class StockSheet
-    {
-        public double L { get; set; }
-        public double W { get; set; }
-    }
-
-    public class CutPart
-    {
-        public double L { get; set; }
-        public double W { get; set; }
-        public int Qty { get; set; }
-    }
-
-    public class PlacedPart
-    {
-        public double X { get; set; }
-        public double Y { get; set; }
-        public double L { get; set; }
-        public double W { get; set; }
-    }
+    public class StockSheet { public double L { get; set; } public double W { get; set; } }
+    public class CutPart { public double L { get; set; } public double W { get; set; } public int Qty { get; set; } }
+    public class PlacedPart { public double X { get; set; } public double Y { get; set; } public double L { get; set; } public double W { get; set; } }
 
     public class OptimizationResult
     {
