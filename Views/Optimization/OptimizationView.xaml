@@ -6,39 +6,56 @@
              mc:Ignorable="d"
              d:DesignHeight="800"
              d:DesignWidth="1200"
-             Background="#0F172A">
+             Background="#F4F6F8">
 
     <UserControl.Resources>
 
-        <SolidColorBrush x:Key="PanelBrush" Color="#1E293B"/>
-        <SolidColorBrush x:Key="CardBrush" Color="#334155"/>
-        <SolidColorBrush x:Key="PrimaryBrush" Color="#3B82F6"/>
-        <SolidColorBrush x:Key="AccentBrush" Color="#10B981"/>
-        <SolidColorBrush x:Key="DangerBrush" Color="#EF4444"/>
-        <SolidColorBrush x:Key="TextPrimary" Color="#F8FAFC"/>
-        <SolidColorBrush x:Key="TextSecondary" Color="#94A3B8"/>
+        <!-- Light Professional Palette -->
+        <SolidColorBrush x:Key="PanelBrush" Color="White"/>
+        <SolidColorBrush x:Key="CardBrush" Color="#FAFBFC"/>
+        <SolidColorBrush x:Key="PrimaryBrush" Color="#2563EB"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="#16A34A"/>
+        <SolidColorBrush x:Key="DangerBrush" Color="#DC2626"/>
+        <SolidColorBrush x:Key="BorderBrushLight" Color="#E5E7EB"/>
+        <SolidColorBrush x:Key="TextPrimary" Color="#111827"/>
+        <SolidColorBrush x:Key="TextSecondary" Color="#6B7280"/>
 
+        <!-- Smooth Button Style -->
         <Style TargetType="Button">
-            <Setter Property="Padding" Value="8,4"/>
-            <Setter Property="Margin" Value="0,6,0,0"/>
-            <Setter Property="Background" Value="#1E293B"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Margin" Value="0,8,0,0"/>
+            <Setter Property="Background" Value="#2563EB"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#334155"/>
-            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
+        <!-- Smooth TextBox Style -->
         <Style TargetType="TextBox">
-            <Setter Property="Margin" Value="0,4,0,8"/>
-            <Setter Property="Padding" Value="6,4"/>
-            <Setter Property="Background" Value="#0F172A"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#334155"/>
+            <Setter Property="Margin" Value="0,6,0,12"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Foreground" Value="#111827"/>
+            <Setter Property="BorderBrush" Value="#D1D5DB"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
 
     </UserControl.Resources>
 
-    <Grid Margin="16">
+    <Grid Margin="24">
 
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -49,70 +66,85 @@
         <!-- Header -->
         <Border Grid.Row="0"
                 Background="{StaticResource PanelBrush}"
-                CornerRadius="6"
-                Padding="12">
+                BorderBrush="{StaticResource BorderBrushLight}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="16">
+
             <TextBlock Text="Optimization Module"
-                       FontSize="18"
+                       FontSize="20"
                        FontWeight="Bold"
                        Foreground="{StaticResource TextPrimary}"/>
         </Border>
 
         <!-- KPI Section -->
-        <Grid Grid.Row="1" Margin="0,12,0,12">
+        <Grid Grid.Row="1" Margin="0,20,0,20">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
+            <!-- Utilization -->
             <Border Grid.Column="0"
                     Background="{StaticResource CardBrush}"
-                    CornerRadius="6"
-                    Padding="12"
-                    Margin="0,0,8,0">
+                    BorderBrush="{StaticResource BorderBrushLight}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="16"
+                    Margin="0,0,10,0">
                 <StackPanel>
                     <TextBlock Text="Utilization"
                                Foreground="{StaticResource TextSecondary}"
-                               FontSize="12"/>
+                               FontSize="13"/>
                     <TextBlock x:Name="txtUtilization"
                                Text="0%"
-                               FontSize="22"
+                               FontSize="26"
                                FontWeight="Bold"
-                               Foreground="{StaticResource TextPrimary}"/>
+                               Foreground="{StaticResource TextPrimary}"
+                               Margin="0,4,0,0"/>
                 </StackPanel>
             </Border>
 
+            <!-- Waste -->
             <Border Grid.Column="1"
                     Background="{StaticResource CardBrush}"
-                    CornerRadius="6"
-                    Padding="12"
-                    Margin="8,0">
+                    BorderBrush="{StaticResource BorderBrushLight}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="16"
+                    Margin="10,0">
                 <StackPanel>
                     <TextBlock Text="Waste"
                                Foreground="{StaticResource TextSecondary}"
-                               FontSize="12"/>
+                               FontSize="13"/>
                     <TextBlock x:Name="txtWaste"
                                Text="0%"
-                               FontSize="22"
+                               FontSize="26"
                                FontWeight="Bold"
-                               Foreground="{StaticResource DangerBrush}"/>
+                               Foreground="{StaticResource DangerBrush}"
+                               Margin="0,4,0,0"/>
                 </StackPanel>
             </Border>
 
+            <!-- Cost -->
             <Border Grid.Column="2"
                     Background="{StaticResource CardBrush}"
-                    CornerRadius="6"
-                    Padding="12"
-                    Margin="8,0,0,0">
+                    BorderBrush="{StaticResource BorderBrushLight}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="16"
+                    Margin="10,0,0,0">
                 <StackPanel>
-                    <TextBlock Text="Cost"
+                    <TextBlock Text="Estimated Cost"
                                Foreground="{StaticResource TextSecondary}"
-                               FontSize="12"/>
+                               FontSize="13"/>
                     <TextBlock x:Name="txtCost"
                                Text="0.00"
-                               FontSize="22"
+                               FontSize="26"
                                FontWeight="Bold"
-                               Foreground="{StaticResource AccentBrush}"/>
+                               Foreground="{StaticResource AccentBrush}"
+                               Margin="0,4,0,0"/>
                 </StackPanel>
             </Border>
         </Grid>
@@ -120,18 +152,26 @@
         <!-- Main Content -->
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="320"/>
+                <ColumnDefinition Width="340"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Left Panel -->
+            <!-- Left Settings Panel -->
             <Border Grid.Column="0"
                     Background="{StaticResource PanelBrush}"
-                    CornerRadius="6"
-                    Padding="12"
-                    Margin="0,0,12,0">
+                    BorderBrush="{StaticResource BorderBrushLight}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="18"
+                    Margin="0,0,16,0">
 
                 <StackPanel>
+
+                    <TextBlock Text="Settings"
+                               FontSize="15"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource TextPrimary}"
+                               Margin="0,0,0,12"/>
 
                     <TextBlock Text="Kerf (mm)"
                                Foreground="{StaticResource TextSecondary}"/>
@@ -142,26 +182,41 @@
                     <TextBox x:Name="txtTrim" Text="15"/>
 
                     <Button Content="Run Optimization"
-                            Background="{StaticResource PrimaryBrush}"
                             Click="RunOptimization_Click"/>
 
                 </StackPanel>
 
             </Border>
 
-            <!-- Right Panel -->
+            <!-- Right Preview Panel -->
             <Border Grid.Column="1"
-                    Background="#0B1220"
-                    CornerRadius="6"
-                    Padding="12">
+                    Background="White"
+                    BorderBrush="{StaticResource BorderBrushLight}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="18">
 
                 <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
                     <TextBlock Text="Layout Preview"
+                               FontSize="15"
+                               FontWeight="SemiBold"
                                Foreground="{StaticResource TextPrimary}"
-                               FontWeight="Bold"/>
-                    <Canvas x:Name="LayoutCanvas"
-                            Margin="0,28,0,0"
-                            Background="#0F172A"/>
+                               Margin="0,0,0,12"/>
+
+                    <Border Grid.Row="1"
+                            Background="#F9FAFB"
+                            BorderBrush="#E5E7EB"
+                            BorderThickness="1"
+                            CornerRadius="6">
+                        <Canvas x:Name="LayoutCanvas"
+                                Background="#F9FAFB"/>
+                    </Border>
+
                 </Grid>
 
             </Border>
