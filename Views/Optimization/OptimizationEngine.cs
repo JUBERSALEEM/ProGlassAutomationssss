@@ -16,10 +16,6 @@ namespace ProGlassAutomation.Views.Optimization
     {
         private const double Eps = 1e-6;
 
-        // ═══════════════════════════════════════════════════════
-        // PUBLIC API
-        // ═══════════════════════════════════════════════════════
-
         public OptimizationResult Execute(
             List<StockSheet> stockSheets,
             List<CutPart> parts,
@@ -33,14 +29,17 @@ namespace ProGlassAutomation.Views.Optimization
             var sw = Stopwatch.StartNew();
             var result = new OptimizationResult();
 
+            Debug.WriteLine($"[OptEngine] Execute STARTED");
+            Debug.WriteLine($"  stocks={stockSheets?.Count ?? 0}, parts={parts?.Count ?? 0}, rotation={rotationMode}");
+
             if (stockSheets == null || parts == null || !stockSheets.Any() || !parts.Any())
             {
+                Debug.WriteLine($"  [OptEngine] EARLY RETURN: stocks or parts null/empty");
                 sw.Stop();
                 result.RuntimeMs = sw.ElapsedMilliseconds;
                 return result;
             }
 
-            // Expand stock inventory (each sheet instance separately)
             var stockQueue = new List<StockSheet>();
             foreach (var s in stockSheets)
             {
@@ -50,36 +49,38 @@ namespace ProGlassAutomation.Views.Optimization
                     stockQueue.Add(new StockSheet { L = s.L, W = s.W, Qty = 1 });
                 }
             }
+            Debug.WriteLine($"  stockQueue.Count after expand={stockQueue.Count}");
 
-            // Sort stock by area descending (largest first)
-            stockQueue = stockQueue.OrderByDescending(s => s.L * s.W).ToList();
-
-            // Expand parts by quantity
             var expandedParts = ExpandParts(parts);
-
-            // Sort parts by area descending (largest first), with rotation handling
             expandedParts = expandedParts.OrderByDescending(p => p.L * p.W).ToList();
+            Debug.WriteLine($"  expandedParts.Count={expandedParts.Count}");
 
-            var allPlaced = new List<PlacedPart>();
+            if (expandedParts.Count > 0)
+                Debug.WriteLine($"  first part: {expandedParts[0].L}x{expandedParts[0].W}");
+
             var sheetResults = new List<OptimizationResult>();
             int totalSheetsUsed = 0;
             int totalPartsPlaced = 0;
             double totalUsedArea = 0;
             double totalSheetArea = 0;
-
-            int sheetIndex = 0;
             int partIndex = 0;
+            int iteration = 0;
 
             while (partIndex < expandedParts.Count && stockQueue.Count > 0)
             {
+                iteration++;
                 var stock = stockQueue[0];
                 stockQueue.RemoveAt(0);
 
                 double usableW = stock.L - trimLeft - trimRight;
                 double usableH = stock.W - trimTop - trimBottom;
+                Debug.WriteLine($"  [Iter {iteration}] stock {stock.L}x{stock.W}, usable {usableW}x{usableH}, partIndex={partIndex}");
 
                 if (usableW <= 0 || usableH <= 0)
+                {
+                    Debug.WriteLine($"    skipping: usable <= 0");
                     continue;
+                }
 
                 var sheetPlacements = new List<PlacedPart>();
                 var freeRects = new List<RectF>
@@ -87,74 +88,113 @@ namespace ProGlassAutomation.Views.Optimization
                     new RectF(trimLeft, trimTop, usableW, usableH)
                 };
 
-                while (partIndex < expandedParts.Count)
+                int currentSheetIndex = totalSheetsUsed;
+
+                bool placedAny = true;
+                int innerIter = 0;
+                while (partIndex < expandedParts.Count && placedAny)
                 {
-                    var part = expandedParts[partIndex];
-                    var bestFit = FindBestPlacement(part, freeRects, rotationMode, kerf);
+                    innerIter++;
+                    placedAny = false;
 
-                    if (bestFit == null)
-                        break; // No more parts fit on this sheet
+                    PlacementFit? best = null;
+                    int bestPartIndex = -1;
+                    int partCandidatesChecked = 0;
 
-                    var oriented = GetOrientedSize(part.L, part.W, rotationMode);
-                    double pw = oriented.Width;
-                    double ph = oriented.Height;
-
-                    var placement = new PlacedPart
+                    for (int pIdx = partIndex; pIdx < expandedParts.Count; pIdx++)
                     {
-                        X = bestFit.X,
-                        Y = bestFit.Y,
-                        L = pw,
-                        W = ph
-                    };
-                    sheetPlacements.Add(placement);
-                    allPlaced.Add(placement);
+                        var part = expandedParts[pIdx];
+                        var fit = FindBestPlacement(part, freeRects, rotationMode);
+                        partCandidatesChecked++;
+                        if (fit == null) continue;
+
+                        if (best == null || fit.Score < best.Score)
+                        {
+                            best = fit;
+                            bestPartIndex = pIdx;
+                        }
+                    }
+
+                    if (best == null)
+                    {
+                        Debug.WriteLine($"    [Inner iter {innerIter}] NO fit found for any of {expandedParts.Count - partIndex} remaining parts on {freeRects.Count} freeRects");
+                        break;
+                    }
+
+                    double pw = best.Width;
+                    double ph = best.Height;
+
+                    if (best.X + pw > stock.L - trimRight + Eps ||
+                        best.Y + ph > stock.W - trimBottom + Eps)
+                    {
+                        Debug.WriteLine($"    [Inner iter {innerIter}] bounds check failed: X={best.X} W={pw} Y={best.Y} H={ph}");
+                        break;
+                    }
+
+                    var chosenPart = expandedParts[bestPartIndex];
+                    Debug.WriteLine($"    [Inner iter {innerIter}] Placing {chosenPart.L}x{chosenPart.W} at ({best.X},{best.Y}) size ({pw}x{ph}) rotated={best.IsRotated}");
+
+                    sheetPlacements.Add(new PlacedPart
+                    {
+                        X = best.X,
+                        Y = best.Y,
+                        L = pw - kerf,
+                        W = ph - kerf,
+                        Rotated = best.IsRotated,
+                        SheetIndex = currentSheetIndex
+                    });
+
                     totalPartsPlaced++;
                     totalUsedArea += pw * ph;
 
-                    // Update free rects (guillotine-style split)
-                    freeRects = UpdateFreeRects(freeRects, bestFit.X, bestFit.Y, pw, ph, kerf);
+                    freeRects = UpdateFreeRects(freeRects, best.X, best.Y, pw, ph);
                     partIndex++;
+                    placedAny = true;
                 }
+
+                Debug.WriteLine($"  [Iter {iteration}] sheetPlacements.Count={sheetPlacements.Count}");
 
                 if (sheetPlacements.Count > 0)
                 {
                     totalSheetsUsed++;
                     totalSheetArea += stock.L * stock.W;
 
+                    double usedArea = sheetPlacements.Sum(p => p.L * p.W);
                     sheetResults.Add(new OptimizationResult
                     {
-                        Ref = $"S{sheetIndex + 1}",
+                        Ref = $"S{totalSheetsUsed}",
                         L = stock.L,
                         W = stock.W,
-                        Area = sheetPlacements.Sum(p => p.L * p.W),
-                        Util = Math.Round((sheetPlacements.Sum(p => p.L * p.W) / (stock.L * stock.W)) * 100, 2),
-                        Waste = Math.Round(100 - (sheetPlacements.Sum(p => p.L * p.W) / (stock.L * stock.W)) * 100, 2),
+                        Area = usedArea,
+                        Util = Math.Round((usedArea / (stock.L * stock.W)) * 100, 2),
+                        Waste = Math.Round(100 - (usedArea / (stock.L * stock.W)) * 100, 2),
                         PlacedParts = sheetPlacements
                     });
-                    sheetIndex++;
                 }
             }
 
-            // Build consolidated result (first sheet as primary, with all placements)
+            Debug.WriteLine($"  Loop done. totalPartsPlaced={totalPartsPlaced}, totalUsedArea={totalUsedArea}");
+
             if (sheetResults.Count > 0)
             {
                 result.Ref = sheetResults[0].Ref;
                 result.L = sheetResults[0].L;
                 result.W = sheetResults[0].W;
-                result.Area = totalUsedArea;
+                result.Area = result.PlacedParts.Sum(p => p.L * p.W);
                 result.Util = totalSheetArea > 0 ? Math.Round((totalUsedArea / totalSheetArea) * 100, 2) : 0;
                 result.Waste = totalSheetArea > 0 ? Math.Round(100 - (totalUsedArea / totalSheetArea) * 100, 2) : 0;
-                result.PlacedParts = allPlaced;
+                result.PlacedParts = sheetResults.SelectMany(s => s.PlacedParts).ToList();
+            }
+            else
+            {
+                Debug.WriteLine($"  [OptEngine] sheetResults is EMPTY - no parts placed!");
             }
 
             sw.Stop();
             result.RuntimeMs = sw.ElapsedMilliseconds;
+            Debug.WriteLine($"[OptEngine] DONE. Util={result.Util}%, Waste={result.Waste}%, PlacedParts={result.PlacedParts?.Count ?? 0}");
             return result;
         }
-
-        // ═══════════════════════════════════════════════════════
-        // PART EXPANSION
-        // ═══════════════════════════════════════════════════════
 
         private List<CutPart> ExpandParts(List<CutPart> parts)
         {
@@ -164,6 +204,7 @@ namespace ProGlassAutomation.Views.Optimization
             foreach (var p in parts)
             {
                 int qty = Math.Max(1, p.Qty);
+                Debug.WriteLine($"  Expanding part {p.L}x{p.W} x{qty}");
                 for (int i = 0; i < qty; i++)
                 {
                     list.Add(new CutPart
@@ -177,190 +218,84 @@ namespace ProGlassAutomation.Views.Optimization
             return list;
         }
 
-        // ═══════════════════════════════════════════════════════
-        // ROTATION
-        // ═══════════════════════════════════════════════════════
-
-        private (double Width, double Height) GetOrientedSize(double w, double h, RotationMode mode)
+        private List<(double W, double H, bool Rotated)> GetOrientations(double w, double h, RotationMode mode)
         {
-            switch (mode)
+            var list = new List<(double, double, bool)>();
+
+            if (mode == RotationMode.None)
             {
-                case RotationMode.None:
-                    return (w, h);
-                case RotationMode.Rotate90:
-                    return (h, w);
-                case RotationMode.BestFit:
-                default:
-                    // Best fit = use orientation that minimizes wasted area
-                    if (w <= h) return (w, h);
-                    return (w, h); // prefer original unless it doesn't fit (handled by FindBestPlacement)
+                list.Add((w, h, false));
             }
+            else if (mode == RotationMode.Rotate90)
+            {
+                list.Add((h, w, true));
+            }
+            else
+            {
+                list.Add((w, h, false));
+                if (Math.Abs(w - h) > Eps)
+                    list.Add((h, w, true));
+            }
+
+            return list;
         }
 
-        // ═══════════════════════════════════════════════════════
-        // PLACEMENT (Best Short Side Fit heuristic)
-        // ═══════════════════════════════════════════════════════
+        private class PlacementFit
+        {
+            public double X { get; set; }
+            public double Y { get; set; }
+            public double Width { get; set; }
+            public double Height { get; set; }
+            public bool IsRotated { get; set; }
+            public double Score { get; set; }
+        }
 
-        private PlacementFit? FindBestPlacement(CutPart part, List<RectF> freeRects, RotationMode mode, double kerf)
+        private PlacementFit? FindBestPlacement(
+            CutPart part,
+            List<RectF> freeRects,
+            RotationMode mode)
         {
             PlacementFit? best = null;
             double bestScore = double.MaxValue;
 
-            var orientations = GetAllOrientations(part.L, part.W, mode);
+            var orientations = GetOrientations(part.L, part.W, mode);
 
             foreach (var rect in freeRects)
             {
                 foreach (var o in orientations)
                 {
-                    double pw = o.Width + kerf;
-                    double ph = o.Height + kerf;
+                    if (o.W > rect.Width + Eps || o.H > rect.Height + Eps)
+                        continue;
 
-                    if (pw <= rect.Width + Eps && ph <= rect.Height + Eps)
+                    double leftoverW = rect.Width - o.W;
+                    double leftoverH = rect.Height - o.H;
+                    double shortSide = Math.Min(leftoverW, leftoverH);
+                    double longSide = Math.Max(leftoverW, leftoverH);
+
+                    double score = (rect.Y * 1000)
+                                 + (rect.X * 0.1)
+                                 + (shortSide * 1)
+                                 + (longSide * 0.01)
+                                 + (o.Rotated ? 50 : 0);
+
+                    if (score < bestScore - Eps)
                     {
-                        // Best Short Side Fit heuristic: minimize the leftover area
-                        double leftoverW = rect.Width - pw;
-                        double leftoverH = rect.Height - ph;
-                        double score = Math.Min(leftoverW, leftoverH);
-
-                        // Bonus: bottom-left positioning
-                        score += (rect.Y + rect.X) * 0.001;
-
-                        if (score < bestScore)
+                        bestScore = score;
+                        best = new PlacementFit
                         {
-                            bestScore = score;
-                            best = new PlacementFit
-                            {
-                                X = rect.X,
-                                Y = rect.Y,
-                                Width = o.Width,
-                                Height = o.Height
-                            };
-                        }
+                            X = rect.X,
+                            Y = rect.Y,
+                            Width = o.W,
+                            Height = o.H,
+                            IsRotated = o.Rotated,
+                            Score = score
+                        };
                     }
                 }
             }
 
             return best;
         }
-
-        private List<(double Width, double Height)> GetAllOrientations(double w, double h, RotationMode mode)
-        {
-            var list = new List<(double, double)>();
-            if (mode == RotationMode.None)
-            {
-                list.Add((w, h));
-            }
-            else if (mode == RotationMode.Rotate90)
-            {
-                list.Add((h, w));
-            }
-            else // BestFit
-            {
-                list.Add((w, h));
-                if (Math.Abs(w - h) > Eps)
-                    list.Add((h, w));
-            }
-            return list;
-        }
-
-        // ═══════════════════════════════════════════════════════
-        // FREE RECT MANAGEMENT (Guillotine-style split)
-        // ═══════════════════════════════════════════════════════
-
-        private List<RectF> UpdateFreeRects(List<RectF> freeRects, double x, double y, double w, double h, double kerf)
-        {
-            var result = new List<RectF>();
-            double usedRight = x + w + kerf;
-            double usedBottom = y + h + kerf;
-
-            foreach (var rect in freeRects)
-            {
-                // Check if used rect intersects this free rect
-                if (usedRight <= rect.X + Eps || x >= rect.X + rect.Width - Eps ||
-                    usedBottom <= rect.Y + Eps || y >= rect.Y + rect.Height - Eps)
-                {
-                    // No intersection, keep this free rect
-                    result.Add(rect);
-                    continue;
-                }
-
-                // Split: generate up to 4 sub-rectangles
-                // Right split
-                if (usedRight < rect.X + rect.Width - Eps)
-                {
-                    result.Add(new RectF(
-                        usedRight,
-                        rect.Y,
-                        rect.X + rect.Width - usedRight,
-                        rect.Height
-                    ));
-                }
-
-                // Bottom split
-                if (usedBottom < rect.Y + rect.Height - Eps)
-                {
-                    result.Add(new RectF(
-                        rect.X,
-                        usedBottom,
-                        rect.Width,
-                        rect.Y + rect.Height - usedBottom
-                    ));
-                }
-
-                // Top split
-                if (y > rect.Y + Eps)
-                {
-                    result.Add(new RectF(
-                        rect.X,
-                        rect.Y,
-                        rect.Width,
-                        y - rect.Y
-                    ));
-                }
-
-                // Left split
-                if (x > rect.X + Eps)
-                {
-                    result.Add(new RectF(
-                        rect.X,
-                        rect.Y,
-                        x - rect.X,
-                        rect.Height
-                    ));
-                }
-            }
-
-            // Prune: remove rects contained within others
-            return PruneFreeRects(result);
-        }
-
-        private List<RectF> PruneFreeRects(List<RectF> rects)
-        {
-            var result = new List<RectF>();
-            foreach (var r in rects)
-            {
-                bool contained = false;
-                foreach (var other in rects)
-                {
-                    if (r == other) continue;
-                    if (r.X >= other.X - Eps &&
-                        r.Y >= other.Y - Eps &&
-                        r.X + r.Width <= other.X + other.Width + Eps &&
-                        r.Y + r.Height <= other.Y + other.Height + Eps)
-                    {
-                        contained = true;
-                        break;
-                    }
-                }
-                if (!contained && r.Width > Eps && r.Height > Eps)
-                    result.Add(r);
-            }
-            return result;
-        }
-
-        // ═══════════════════════════════════════════════════════
-        // INTERNAL TYPES
-        // ═══════════════════════════════════════════════════════
 
         private class RectF
         {
@@ -376,18 +311,69 @@ namespace ProGlassAutomation.Views.Optimization
             }
         }
 
-        private class PlacementFit
+        private List<RectF> UpdateFreeRects(List<RectF> freeRects, double x, double y, double w, double h)
         {
-            public double X { get; set; }
-            public double Y { get; set; }
-            public double Width { get; set; }
-            public double Height { get; set; }
+            var result = new List<RectF>();
+            double usedRight = x + w;
+            double usedBottom = y + h;
+
+            foreach (var rect in freeRects)
+            {
+                if (usedRight <= rect.X + Eps || x >= rect.X + rect.Width - Eps ||
+                    usedBottom <= rect.Y + Eps || y >= rect.Y + rect.Height - Eps)
+                {
+                    result.Add(rect);
+                    continue;
+                }
+
+                if (x > rect.X + Eps)
+                    result.Add(new RectF(rect.X, rect.Y, x - rect.X, rect.Height));
+
+                if (usedRight < rect.X + rect.Width - Eps)
+                    result.Add(new RectF(usedRight, rect.Y, rect.X + rect.Width - usedRight, rect.Height));
+
+                if (y > rect.Y + Eps)
+                    result.Add(new RectF(rect.X, rect.Y, rect.Width, y - rect.Y));
+
+                if (usedBottom < rect.Y + rect.Height - Eps)
+                    result.Add(new RectF(rect.X, usedBottom, rect.Width, rect.Y + rect.Height - usedBottom));
+            }
+
+            return PruneFreeRects(result);
+        }
+
+        private List<RectF> PruneFreeRects(List<RectF> rects)
+        {
+            if (rects == null || rects.Count == 0) return rects ?? new List<RectF>();
+
+            var kept = new List<RectF>();
+            foreach (var r in rects)
+            {
+                if (r.Width <= Eps || r.Height <= Eps) continue;
+
+                bool contained = false;
+                for (int j = 0; j < rects.Count; j++)
+                {
+                    var b = rects[j];
+                    if (ReferenceEquals(r, b)) continue;
+                    if (b.Width <= Eps || b.Height <= Eps) continue;
+
+                    if (r.X >= b.X - Eps &&
+                        r.Y >= b.Y - Eps &&
+                        r.X + r.Width <= b.X + b.Width + Eps &&
+                        r.Y + r.Height <= b.Y + b.Height + Eps)
+                    {
+                        contained = true;
+                        break;
+                    }
+                }
+
+                if (!contained) kept.Add(r);
+            }
+
+            return kept;
         }
     }
-
-    // ═══════════════════════════════════════════════════════
-    // PUBLIC MODELS
-    // ═══════════════════════════════════════════════════════
 
     public class StockSheet
     {
@@ -410,6 +396,7 @@ namespace ProGlassAutomation.Views.Optimization
         public double L { get; set; }
         public double W { get; set; }
         public bool Rotated { get; set; }
+        public int SheetIndex { get; set; }
     }
 
     public class OptimizationResult

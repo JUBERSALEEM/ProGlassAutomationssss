@@ -23,14 +23,12 @@ namespace ProGlassAutomation.Views.Optimization
 
         public double CalculateTotalCost(OptimizationResult result)
         {
-            if (result == null)
-                return 0;
-
+            if (result == null) return 0;
             return CalculateCost(result.Area);
         }
 
         // ═══════════════════════════════════════════════════════
-        // CSV EXPORT
+        // CSV EXPORT (full multi-section)
         // ═══════════════════════════════════════════════════════
 
         public void ExportToCsv(string filePath, OptimizationResult result)
@@ -41,13 +39,11 @@ namespace ProGlassAutomation.Views.Optimization
             var inv = CultureInfo.InvariantCulture;
             var sb = new StringBuilder();
 
-            // ── HEADER ──────────────────────────────────────────
             sb.AppendLine("=== OPTIMIZATION RESULT ===");
             sb.AppendLine($"Generated,{DateTime.Now.ToString(inv)}");
             sb.AppendLine($"RuntimeMs,{result.RuntimeMs.ToString(inv)}");
             sb.AppendLine();
 
-            // ── SUMMARY ─────────────────────────────────────────
             sb.AppendLine("=== SUMMARY ===");
             sb.AppendLine("Ref,L,W,Area,Utilization,Waste,PlacedCount");
             int placedCount = result.PlacedParts?.Count ?? 0;
@@ -62,23 +58,33 @@ namespace ProGlassAutomation.Views.Optimization
             ));
             sb.AppendLine();
 
-            // ── PLACEMENTS DETAIL ──────────────────────────────
             if (result.PlacedParts != null && result.PlacedParts.Count > 0)
             {
                 sb.AppendLine("=== PLACEMENTS ===");
-                sb.AppendLine("X,Y,Width,Height");
+                sb.AppendLine("X,Y,Width,Height,Rotated");
                 foreach (var p in result.PlacedParts)
                 {
                     sb.AppendLine(string.Join(",",
                         p.X.ToString("F2", inv),
                         p.Y.ToString("F2", inv),
                         p.L.ToString("F2", inv),
-                        p.W.ToString("F2", inv)
+                        p.W.ToString("F2", inv),
+                        p.Rotated.ToString()
                     ));
                 }
             }
 
             File.WriteAllText(filePath, sb.ToString(), Encoding.UTF8);
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // TEXT EXPORT
+        // ═══════════════════════════════════════════════════════
+
+        public void ExportToText(string filePath, string reportText)
+        {
+            if (string.IsNullOrEmpty(filePath) || reportText == null) return;
+            File.WriteAllText(filePath, reportText, Encoding.UTF8);
         }
 
         // ═══════════════════════════════════════════════════════
@@ -107,12 +113,9 @@ namespace ProGlassAutomation.Views.Optimization
 
         private string Escape(string v)
         {
-            if (string.IsNullOrEmpty(v))
-                return "";
-
+            if (string.IsNullOrEmpty(v)) return "";
             if (v.Contains(",") || v.Contains("\"") || v.Contains("\n") || v.Contains("\r"))
                 return "\"" + v.Replace("\"", "\"\"") + "\"";
-
             return v;
         }
     }

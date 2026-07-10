@@ -1,0 +1,86 @@
+﻿<Window x:Class="ProGlassAutomation.Views.Optimization.ReportDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Optimization Report"
+        Height="800" Width="1100"
+        WindowStartupLocation="CenterOwner"
+        Background="#F8FAFC"
+        FontFamily="Segoe UI">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="White" CornerRadius="8" Padding="20" Margin="0,0,0,12" BorderBrush="#E5E7EB" BorderThickness="1">
+            <StackPanel>
+                <TextBlock Text="Optimization Report" FontSize="20" FontWeight="Bold" Foreground="#0F172A"/>
+                <TextBlock x:Name="txtReportSubtitle" Text="Detailed breakdown of optimization result" FontSize="12" Foreground="#6B7280" Margin="0,4,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Report Content -->
+        <Border Grid.Row="1" Background="White" CornerRadius="8" BorderBrush="#E5E7EB" BorderThickness="1" Padding="20">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <!-- Summary KPIs -->
+                    <UniformGrid Columns="4" Rows="1" Margin="0,0,0,20">
+                        <Border Background="#F0F9FF" CornerRadius="8" Padding="16" Margin="0,0,4,0">
+                            <StackPanel>
+                                <TextBlock Text="GROSS YIELD" FontSize="10" FontWeight="Bold" Foreground="#6B7280"/>
+                                <TextBlock x:Name="txtGrossYield" Text="0%" FontSize="24" FontWeight="Bold" Foreground="#10B981" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Background="#FEF2F2" CornerRadius="8" Padding="16" Margin="4,0">
+                            <StackPanel>
+                                <TextBlock Text="SCRAP" FontSize="10" FontWeight="Bold" Foreground="#6B7280"/>
+                                <TextBlock x:Name="txtScrap" Text="0%" FontSize="24" FontWeight="Bold" Foreground="#EF4444" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Background="#FEF3C7" CornerRadius="8" Padding="16" Margin="4,0">
+                            <StackPanel>
+                                <TextBlock Text="SHEETS USED" FontSize="10" FontWeight="Bold" Foreground="#6B7280"/>
+                                <TextBlock x:Name="txtSheetsUsed" Text="0" FontSize="24" FontWeight="Bold" Foreground="#D97706" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Background="#F3F4F6" CornerRadius="8" Padding="16" Margin="4,0,0,0">
+                            <StackPanel>
+                                <TextBlock Text="RUNTIME" FontSize="10" FontWeight="Bold" Foreground="#6B7280"/>
+                                <TextBlock x:Name="txtRuntime" Text="0 ms" FontSize="24" FontWeight="Bold" Foreground="#0F172A" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </UniformGrid>
+
+                    <!-- Per-Sheet DataGrid -->
+                    <TextBlock Text="PER-SHEET BREAKDOWN" FontSize="11" FontWeight="Bold" Foreground="#6B7280" Margin="0,0,0,8"/>
+                    <DataGrid x:Name="dgLayouts" AutoGenerateColumns="False" CanUserAddRows="False" MaxHeight="250" Margin="0,0,0,20">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Sheet #" Binding="{Binding SheetNum}" Width="80"/>
+                            <DataGridTextColumn Header="Dimensions" Binding="{Binding Dimensions}" Width="*"/>
+                            <DataGridTextColumn Header="Pieces" Binding="{Binding GlassCount}" Width="80"/>
+                            <DataGridTextColumn Header="Rotated 90°" Binding="{Binding Rotated90}" Width="100"/>
+                            <DataGridTextColumn Header="Yield %" Binding="{Binding YieldText}" Width="100"/>
+                            <DataGridTextColumn Header="Used (m²)" Binding="{Binding UsedNet, StringFormat=F3}" Width="100"/>
+                            <DataGridTextColumn Header="Scrap (m²)" Binding="{Binding ScrapWaste, StringFormat=F3}" Width="100"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <!-- Text Report -->
+                    <TextBlock Text="FULL TEXT REPORT" FontSize="11" FontWeight="Bold" Foreground="#6B7280" Margin="0,0,0,8"/>
+                    <Border Background="#0F172A" CornerRadius="6" Padding="16">
+                        <TextBlock x:Name="txtFullReport" Foreground="#94A3B8" FontFamily="Consolas, Segoe UI" FontSize="12" TextWrapping="Wrap" Text="No report available"/>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <!-- Footer -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Content="Copy Report" Click="Copy_Click" Background="White" Foreground="#0F172A" BorderBrush="#E5E7EB" BorderThickness="1" Padding="14,10" Margin="0,0,8,0" FontWeight="SemiBold" Cursor="Hand"/>
+            <Button Content="Save as CSV" Click="Save_Click" Background="#0F172A" Foreground="White" Padding="14,10" Margin="0,0,8,0" FontWeight="SemiBold" Cursor="Hand"/>
+            <Button Content="Close" Click="Close_Click" Background="White" Foreground="#0F172A" BorderBrush="#E5E7EB" BorderThickness="1" Padding="20,10" FontWeight="SemiBold" Cursor="Hand"/>
+        </StackPanel>
+    </Grid>
+</Window>
