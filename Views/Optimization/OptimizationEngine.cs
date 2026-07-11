@@ -29,17 +29,14 @@ namespace ProGlassAutomation.Views.Optimization
             var sw = Stopwatch.StartNew();
             var result = new OptimizationResult();
 
-            Debug.WriteLine($"[OptEngine] Execute STARTED");
-            Debug.WriteLine($"  stocks={stockSheets?.Count ?? 0}, parts={parts?.Count ?? 0}, rotation={rotationMode}");
-
             if (stockSheets == null || parts == null || !stockSheets.Any() || !parts.Any())
             {
-                Debug.WriteLine($"  [OptEngine] EARLY RETURN: stocks or parts null/empty");
                 sw.Stop();
                 result.RuntimeMs = sw.ElapsedMilliseconds;
                 return result;
             }
 
+            // Expand stock inventory (each sheet instance separately by Qty)
             var stockQueue = new List<StockSheet>();
             foreach (var s in stockSheets)
             {
@@ -49,14 +46,9 @@ namespace ProGlassAutomation.Views.Optimization
                     stockQueue.Add(new StockSheet { L = s.L, W = s.W, Qty = 1 });
                 }
             }
-            Debug.WriteLine($"  stockQueue.Count after expand={stockQueue.Count}");
 
             var expandedParts = ExpandParts(parts);
             expandedParts = expandedParts.OrderByDescending(p => p.L * p.W).ToList();
-            Debug.WriteLine($"  expandedParts.Count={expandedParts.Count}");
-
-            if (expandedParts.Count > 0)
-                Debug.WriteLine($"  first part: {expandedParts[0].L}x{expandedParts[0].W}");
 
             var sheetResults = new List<OptimizationResult>();
             int totalSheetsUsed = 0;
@@ -64,23 +56,17 @@ namespace ProGlassAutomation.Views.Optimization
             double totalUsedArea = 0;
             double totalSheetArea = 0;
             int partIndex = 0;
-            int iteration = 0;
 
             while (partIndex < expandedParts.Count && stockQueue.Count > 0)
             {
-                iteration++;
                 var stock = stockQueue[0];
                 stockQueue.RemoveAt(0);
 
                 double usableW = stock.L - trimLeft - trimRight;
                 double usableH = stock.W - trimTop - trimBottom;
-                Debug.WriteLine($"  [Iter {iteration}] stock {stock.L}x{stock.W}, usable {usableW}x{usableH}, partIndex={partIndex}");
 
                 if (usableW <= 0 || usableH <= 0)
-                {
-                    Debug.WriteLine($"    skipping: usable <= 0");
                     continue;
-                }
 
                 var sheetPlacements = new List<PlacedPart>();
                 var freeRects = new List<RectF>
@@ -91,21 +77,17 @@ namespace ProGlassAutomation.Views.Optimization
                 int currentSheetIndex = totalSheetsUsed;
 
                 bool placedAny = true;
-                int innerIter = 0;
                 while (partIndex < expandedParts.Count && placedAny)
                 {
-                    innerIter++;
                     placedAny = false;
 
                     PlacementFit? best = null;
                     int bestPartIndex = -1;
-                    int partCandidatesChecked = 0;
 
                     for (int pIdx = partIndex; pIdx < expandedParts.Count; pIdx++)
                     {
                         var part = expandedParts[pIdx];
                         var fit = FindBestPlacement(part, freeRects, rotationMode);
-                        partCandidatesChecked++;
                         if (fit == null) continue;
 
                         if (best == null || fit.Score < best.Score)
@@ -115,24 +97,15 @@ namespace ProGlassAutomation.Views.Optimization
                         }
                     }
 
-                    if (best == null)
-                    {
-                        Debug.WriteLine($"    [Inner iter {innerIter}] NO fit found for any of {expandedParts.Count - partIndex} remaining parts on {freeRects.Count} freeRects");
+                    if (best == null || bestPartIndex < 0)
                         break;
-                    }
 
                     double pw = best.Width;
                     double ph = best.Height;
 
                     if (best.X + pw > stock.L - trimRight + Eps ||
                         best.Y + ph > stock.W - trimBottom + Eps)
-                    {
-                        Debug.WriteLine($"    [Inner iter {innerIter}] bounds check failed: X={best.X} W={pw} Y={best.Y} H={ph}");
                         break;
-                    }
-
-                    var chosenPart = expandedParts[bestPartIndex];
-                    Debug.WriteLine($"    [Inner iter {innerIter}] Placing {chosenPart.L}x{chosenPart.W} at ({best.X},{best.Y}) size ({pw}x{ph}) rotated={best.IsRotated}");
 
                     sheetPlacements.Add(new PlacedPart
                     {
@@ -151,8 +124,6 @@ namespace ProGlassAutomation.Views.Optimization
                     partIndex++;
                     placedAny = true;
                 }
-
-                Debug.WriteLine($"  [Iter {iteration}] sheetPlacements.Count={sheetPlacements.Count}");
 
                 if (sheetPlacements.Count > 0)
                 {
@@ -173,8 +144,6 @@ namespace ProGlassAutomation.Views.Optimization
                 }
             }
 
-            Debug.WriteLine($"  Loop done. totalPartsPlaced={totalPartsPlaced}, totalUsedArea={totalUsedArea}");
-
             if (sheetResults.Count > 0)
             {
                 result.Ref = sheetResults[0].Ref;
@@ -185,14 +154,9 @@ namespace ProGlassAutomation.Views.Optimization
                 result.Waste = totalSheetArea > 0 ? Math.Round(100 - (totalUsedArea / totalSheetArea) * 100, 2) : 0;
                 result.PlacedParts = sheetResults.SelectMany(s => s.PlacedParts).ToList();
             }
-            else
-            {
-                Debug.WriteLine($"  [OptEngine] sheetResults is EMPTY - no parts placed!");
-            }
 
             sw.Stop();
             result.RuntimeMs = sw.ElapsedMilliseconds;
-            Debug.WriteLine($"[OptEngine] DONE. Util={result.Util}%, Waste={result.Waste}%, PlacedParts={result.PlacedParts?.Count ?? 0}");
             return result;
         }
 
@@ -204,11 +168,11 @@ namespace ProGlassAutomation.Views.Optimization
             foreach (var p in parts)
             {
                 int qty = Math.Max(1, p.Qty);
-                Debug.WriteLine($"  Expanding part {p.L}x{p.W} x{qty}");
                 for (int i = 0; i < qty; i++)
                 {
                     list.Add(new CutPart
                     {
+                        Label = p.Label ?? "",
                         L = p.L,
                         W = p.W,
                         Qty = 1
@@ -382,8 +346,10 @@ namespace ProGlassAutomation.Views.Optimization
         public int Qty { get; set; } = 1;
     }
 
+    // ✅ FIX: Added Label field so PartsDialog can bind to it
     public class CutPart
     {
+        public string Label { get; set; } = "";
         public double L { get; set; }
         public double W { get; set; }
         public int Qty { get; set; } = 1;

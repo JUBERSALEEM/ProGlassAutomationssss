@@ -1,7 +1,10 @@
 ﻿using System;
-using System.Globalization;
+using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
 using ProGlassAutomation.Models;
 
 namespace ProGlassAutomation.Views.Optimization
@@ -9,74 +12,177 @@ namespace ProGlassAutomation.Views.Optimization
     public partial class PartsDialog : Window
     {
         private readonly OptimizationViewModel _vm;
-        private CutPart? _editing;
 
         public PartsDialog(OptimizationViewModel vm)
         {
             InitializeComponent();
             _vm = vm;
-            dgParts.ItemsSource = _vm.Parts;
+            DataContext = _vm;
+            icParts.ItemsSource = _vm.DemandParts;
+
+            // Hook into the ItemsControl's loaded event to ensure
+            // event handlers are attached AFTER the visual tree is built
+            icParts.Loaded += (s, e) => AttachExcelHandlers();
+
+            UpdateStats();
         }
 
-        private void Add_Click(object sender, RoutedEventArgs e)
+        // Attach GotFocus/KeyDown handlers to ALL existing and future
+        // ExcelCell TextBoxes inside the ItemsControl via AddHandler
+        private void AttachExcelHandlers()
         {
-            string label = txtLabel.Text?.Trim() ?? "";
-            if (string.IsNullOrEmpty(label)) label = "Untitled";
-
-            if (!double.TryParse(txtWidth.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out double w) || w <= 0)
-            {
-                MessageBox.Show("Enter valid width.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-            if (!double.TryParse(txtHeight.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out double h) || h <= 0)
-            {
-                MessageBox.Show("Enter valid height.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            if (_editing == null)
-            {
-                _vm.Parts.Add(new CutPart { L = w, W = h, Qty = 1 });
-            }
-            else
-            {
-                _editing.L = w;
-                _editing.W = h;
-                _editing = null;
-                btnAdd.Content = "+ Add Part";
-            }
-
-            ClearForm();
+            // Walk the visual tree to find all TextBoxes named tbLabel, tbL, tbW, tbQty
+            AttachHandlersToChildren(icParts);
         }
 
-        private void Edit_Click(object sender, RoutedEventArgs e)
+        private void AttachHandlersToChildren(DependencyObject parent)
         {
-            if (sender is Button btn && btn.DataContext is CutPart part)
+            int count = VisualTreeHelper.GetChildrenCount(parent);
+            for (int i = 0; i < count; i++)
             {
-                _editing = part;
-                txtLabel.Text = "Part";  // No Label on CutPart; we just update dimensions
-                txtWidth.Text = part.L.ToString();
-                txtHeight.Text = part.W.ToString();
-                btnAdd.Content = "✓ Update";
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is TextBox tb && !string.IsNullOrEmpty(tb.Name))
+                {
+                    if (tb.Name == "tbLabel" || tb.Name == "tbL" || tb.Name == "tbW" || tb.Name == "tbQty")
+                    {
+                        // AddHandler ensures the handler is called
+                        tb.AddHandler(TextBox.GotFocusEvent, new RoutedEventHandler(Cell_GotFocus));
+                        tb.AddHandler(TextBox.PreviewKeyDownEvent, new KeyEventHandler(Cell_KeyDown));
+                    }
+                }
+                AttachHandlersToChildren(child);
             }
+        }
+
+        // ✅ FIX: Tab = Select All via GotFocus (works reliably with Tab and click)
+        private void Cell_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (sender is TextBox tb)
+            {
+                // Use Dispatcher.BeginInvoke to ensure selection happens
+                // AFTER focus is fully set, avoiding race conditions
+                tb.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    tb.SelectAll();
+                }), System.Windows.Threading.DispatcherPriority.Input);
+            }
+        }
+
+        // Excel-style key navigation
+        // Enter = move down to same column
+        // Tab = handled by GotFocus select all
+        private void Cell_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Enter) return;
+            if (sender is not TextBox tb) return;
+
+            e.Handled = true;
+
+            var itemsControl = FindVisualParent<ItemsControl>(tb);
+            if (itemsControl == null) return;
+
+            var row = FindVisualParent<ContentPresenter>(tb);
+            if (row == null) return;
+
+            int currentIndex = itemsControl.ItemContainerGenerator.IndexFromContainer(row);
+            int nextIndex = currentIndex + 1;
+
+            // Auto-add empty row if at the last row
+            if (nextIndex >= itemsControl.Items.Count)
+            {
+                AddEmptyRow();
+                nextIndex = itemsControl.Items.Count - 1;
+            }
+
+            var nextRow = itemsControl.ItemContainerGenerator.ContainerFromIndex(nextIndex) as FrameworkElement;
+            if (nextRow == null) return;
+
+            var nextTb = FindVisualChildByName<TextBox>(nextRow, tb.Name);
+            if (nextTb != null)
+            {
+                nextTb.Focus();
+                nextTb.SelectAll();
+            }
+        }
+
+        // Add an empty row (no fake data)
+        private void AddEmptyRow()
+        {
+            _vm.DemandParts.Add(new DemandPart
+            {
+                Label = "",
+                L = 0,
+                W = 0,
+                Qty = 0
+            });
+            UpdateStats();
+        }
+
+        // Helper: find visual parent by type
+        private static T? FindVisualParent<T>(DependencyObject? child) where T : DependencyObject
+        {
+            var current = child;
+            while (current != null)
+            {
+                if (current is T t) return t;
+                current = VisualTreeHelper.GetParent(current);
+            }
+            return null;
+        }
+
+        // Helper: find visual child by name and type
+        private static T? FindVisualChildByName<T>(DependencyObject parent, string name) where T : FrameworkElement
+        {
+            int count = VisualTreeHelper.GetChildrenCount(parent);
+            for (int i = 0; i < count; i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T t && (t as FrameworkElement)?.Name == name)
+                    return t;
+                var found = FindVisualChildByName<T>(child, name);
+                if (found != null) return found;
+            }
+            return null;
+        }
+
+        // BUTTON HANDLERS use _vm.DemandParts
+        private void AddPart_Click(object sender, RoutedEventArgs e)
+        {
+            AddEmptyRow();
         }
 
         private void Delete_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button btn && btn.DataContext is CutPart part)
+            if (sender is Button btn && btn.Tag is DemandPart part)
             {
-                var r = MessageBox.Show($"Delete part ({part.L}×{part.W})?", "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question);
-                if (r == MessageBoxResult.Yes) _vm.Parts.Remove(part);
+                _vm.DemandParts.Remove(part);
+                UpdateStats();
             }
         }
 
         private void Close_Click(object sender, RoutedEventArgs e) => Close();
 
-        private void ClearForm()
+        // STATS UPDATER
+        private void UpdateStats()
         {
-            txtLabel.Text = "Glass Panel";
-            txtWidth.Text = "1000";
-            txtHeight.Text = "800";
+            if (txtPartTypes != null) txtPartTypes.Text = _vm.DemandParts.Count.ToString();
+            if (txtTotalPieces != null) txtTotalPieces.Text = _vm.DemandParts.Sum(p => p.Qty).ToString();
+            if (txtTotalArea != null)
+                txtTotalArea.Text = $"{_vm.DemandParts.Sum(p => p.L * p.W * p.Qty) / 1_000_000.0:N3} m²";
+            if (txtUniqueDims != null)
+                txtUniqueDims.Text = $"{_vm.DemandParts.Select(p => $"{p.L}x{p.W}").Distinct().Count()} sizes";
+            if (txtLargest != null)
+            {
+                if (_vm.DemandParts.Count > 0)
+                {
+                    var max = _vm.DemandParts.OrderByDescending(p => p.L * p.W).First();
+                    txtLargest.Text = $"{max.Label} ({max.L:N0}×{max.W:N0} mm)";
+                }
+                else
+                {
+                    txtLargest.Text = "—";
+                }
+            }
         }
     }
 }

@@ -35,6 +35,7 @@ namespace ProGlassAutomation.Views.Optimization
         {
             try
             {
+                // ✅ FIX: Use the DemandParts collection from the VM
                 var dlg = new PartsDialog(_vm) { Owner = Window.GetWindow(this) };
                 dlg.ShowDialog();
             }

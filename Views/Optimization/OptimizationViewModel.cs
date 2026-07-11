@@ -17,10 +17,19 @@ namespace ProGlassAutomation.Views.Optimization
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
+        // ═══════════════════════════════════════════════════════
+        // COLLECTIONS
+        // ═══════════════════════════════════════════════════════
         public ObservableCollection<StockSheetViewModel> StockSheets { get; } = new ObservableCollection<StockSheetViewModel>();
         public ObservableCollection<CutPart> Parts { get; } = new ObservableCollection<CutPart>();
         public ObservableCollection<LayoutRowVM> Layouts { get; } = new ObservableCollection<LayoutRowVM>();
 
+        // ✅ DemandParts: Excel-style UI collection
+        public ObservableCollection<DemandPart> DemandParts { get; } = new ObservableCollection<DemandPart>();
+
+        // ═══════════════════════════════════════════════════════
+        // RESULT
+        // ═══════════════════════════════════════════════════════
         private OptimizationResult? _lastResult;
         public OptimizationResult? LastResult
         {
@@ -54,48 +63,35 @@ namespace ProGlassAutomation.Views.Optimization
             }
         }
 
+        // ═══════════════════════════════════════════════════════
+        // KPI PROPERTIES (Engine results)
+        // ═══════════════════════════════════════════════════════
         private int _stockSheetCount = 0;
         public int StockSheetCount
         {
             get => _stockSheetCount;
-            private set
-            {
-                _stockSheetCount = value;
-                OnPropertyChanged(nameof(StockSheetCount));
-            }
+            private set { _stockSheetCount = value; OnPropertyChanged(nameof(StockSheetCount)); }
         }
 
         private int _partCount = 0;
         public int PartCount
         {
             get => _partCount;
-            private set
-            {
-                _partCount = value;
-                OnPropertyChanged(nameof(PartCount));
-            }
+            private set { _partCount = value; OnPropertyChanged(nameof(PartCount)); }
         }
 
         private double _utilization;
         public double Utilization
         {
             get => _utilization;
-            private set
-            {
-                _utilization = value;
-                OnPropertyChanged(nameof(Utilization));
-            }
+            private set { _utilization = value; OnPropertyChanged(nameof(Utilization)); }
         }
 
         private double _waste;
         public double Waste
         {
             get => _waste;
-            private set
-            {
-                _waste = value;
-                OnPropertyChanged(nameof(Waste));
-            }
+            private set { _waste = value; OnPropertyChanged(nameof(Waste)); }
         }
 
         public int SheetsUsed => LastSheets?.Count ?? 0;
@@ -105,20 +101,46 @@ namespace ProGlassAutomation.Views.Optimization
         public bool HasContent
         {
             get => _hasContent;
-            private set
+            private set { _hasContent = value; OnPropertyChanged(nameof(HasContent)); }
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // DARK ACCENT PALETTE (used for status indicators, badges, etc.)
+        // ═══════════════════════════════════════════════════════
+        public string DarkRedBrush => "#7F1D1D";
+        public string DarkGreenBrush => "#065F46";
+
+        // ═══════════════════════════════════════════════════════
+        // DEMAND PARTS SUMMARY PROPERTIES (for PartsDialog footer)
+        // ═══════════════════════════════════════════════════════
+        public int PartTypesCount => DemandParts?.Count ?? 0;
+        public int TotalPartsToCut => DemandParts?.Sum(p => p.Qty) ?? 0;
+        public double TotalPartsArea => DemandParts?.Sum(p => (p.L * p.W * p.Qty) / 1_000_000.0) ?? 0;
+        public int UniqueDimensionsCount => DemandParts?.Select(p => $"{p.L}x{p.W}").Distinct().Count() ?? 0;
+
+        public string LargestPieceLabel
+        {
+            get
             {
-                _hasContent = value;
-                OnPropertyChanged(nameof(HasContent));
+                if (DemandParts == null || DemandParts.Count == 0) return "—";
+                var max = DemandParts.OrderByDescending(p => p.L * p.W).First();
+                return $"{max.Label} ({max.L:N0}×{max.W:N0} mm)";
             }
         }
 
+        // ═══════════════════════════════════════════════════════
+        // COMMANDS
+        // ═══════════════════════════════════════════════════════
         public ICommand AddStockCommand { get; }
         public ICommand AddPartCommand { get; }
+        public ICommand AddDemandPartCommand { get; }
 
         public OptimizationViewModel()
         {
             AddStockCommand = new RelayCommand(AddStock);
             AddPartCommand = new RelayCommand(AddPart);
+            AddDemandPartCommand = new RelayCommand(AddDemandPart);
+            DemandParts.CollectionChanged += (s, e) => SyncEnginePartsFromDemand();
         }
 
         private void AddStock()
@@ -133,6 +155,11 @@ namespace ProGlassAutomation.Views.Optimization
             UpdateCounts();
         }
 
+        private void AddDemandPart()
+        {
+            DemandParts.Add(new DemandPart { Label = "", L = 0, W = 0, Qty = 0 });
+        }
+
         private void UpdateCounts()
         {
             StockSheetCount = StockSheets.Sum(s => s.Qty);
@@ -140,10 +167,25 @@ namespace ProGlassAutomation.Views.Optimization
             HasContent = StockSheets.Count > 0 || Parts.Count > 0;
         }
 
-        // ═══════════════════════════════════════════════════════
-        // OPTIMIZATION
-        // ═══════════════════════════════════════════════════════
+        // Sync engine Parts from DemandParts
+        private void SyncEnginePartsFromDemand()
+        {
+            Parts.Clear();
+            foreach (var dp in DemandParts)
+            {
+                Parts.Add(new CutPart
+                {
+                    L = dp.L,
+                    W = dp.W,
+                    Qty = dp.Qty
+                });
+            }
+            UpdateCounts();
+        }
 
+        // ═══════════════════════════════════════════════════════
+        // OPTIMIZATION (Engine)
+        // ═══════════════════════════════════════════════════════
         public bool RunOptimizationSync(
             double kerf, double trim,
             double breakL, double breakR,
@@ -188,8 +230,7 @@ namespace ProGlassAutomation.Views.Optimization
 
                 var result = _engine.Execute(
                     stocks, partsCopy,
-                    breakL, breakR, breakT, breakB,
-                    kerf, rotMode);
+                    breakL, breakR, breakT, breakB, kerf, rotMode);
 
                 LastResult = result;
                 Utilization = result?.Util ?? 0;
@@ -201,7 +242,6 @@ namespace ProGlassAutomation.Views.Optimization
 
                 PopulateLayoutsGrid();
                 UpdateCounts();
-
                 return true;
             }
             catch (Exception ex)
@@ -258,7 +298,6 @@ namespace ProGlassAutomation.Views.Optimization
 
                 PopulateLayoutsGrid();
                 UpdateCounts();
-
                 return true;
             }
             catch (Exception ex)
@@ -268,7 +307,7 @@ namespace ProGlassAutomation.Views.Optimization
             }
         }
 
-        // ✅ Group by SheetIndex from engine (not Y-coordinate heuristic)
+        // Group by SheetIndex from engine
         private List<SheetResult> GenerateSheetsFromResult(
             List<StockSheet> stocks, List<CutPart> parts, OptimizationResult? result,
             double breakL, double breakR, double breakT, double breakB,
@@ -277,14 +316,11 @@ namespace ProGlassAutomation.Views.Optimization
             var sheets = new List<SheetResult>();
             if (result == null || result.PlacedParts == null || result.PlacedParts.Count == 0)
                 return sheets;
-
-            if (stocks == null || stocks.Count == 0)
-                return sheets;
+            if (stocks == null || stocks.Count == 0) return sheets;
 
             double stockL = stocks[0].L;
             double stockW = stocks[0].W;
 
-            // Group by SheetIndex (each part knows which physical sheet it belongs to)
             var sheetGroups = result.PlacedParts
                 .GroupBy(p => p.SheetIndex)
                 .OrderBy(g => g.Key)
@@ -294,9 +330,7 @@ namespace ProGlassAutomation.Views.Optimization
             {
                 var group = sheetGroups[i].ToList();
                 double usedArea = group.Sum(p => p.L * p.W);
-                double util = stockL * stockW > 0
-                    ? (usedArea / (stockL * stockW)) * 100
-                    : 0;
+                double util = stockL * stockW > 0 ? (usedArea / (stockL * stockW)) * 100 : 0;
 
                 sheets.Add(new SheetResult
                 {
@@ -311,7 +345,6 @@ namespace ProGlassAutomation.Views.Optimization
                     PlacedParts = group
                 });
             }
-
             return sheets;
         }
 
@@ -338,15 +371,11 @@ namespace ProGlassAutomation.Views.Optimization
         }
 
         // ═══════════════════════════════════════════════════════
-        // PROFORMA INVOICE IMPORT - ALL items are PARTS, stock set separately
+        // PROFORMA INVOICE IMPORT
         // ═══════════════════════════════════════════════════════
         public void ImportInvoiceItems(List<InvoiceItemModel> items)
         {
             if (items == null) return;
-
-            // ✅ FIX: All items are PARTS. Stock is set separately via SetStockSheet.
-            // The old code wrongly classified items > 2000mm as stock, which
-            // caused 1000x3100 parts to be lost.
             Parts.Clear();
             foreach (var item in items)
             {
@@ -358,16 +387,12 @@ namespace ProGlassAutomation.Views.Optimization
                     Qty = item.Qty > 0 ? item.Qty : 1
                 });
             }
-
             UpdateCounts();
         }
 
         public void RunOptimizationFromInvoice()
         {
-            try
-            {
-                RunOptimizationSync(4, 10, 15, 15, 15, 15, 15, 2, 95);
-            }
+            try { RunOptimizationSync(4, 10, 15, 15, 15, 15, 15, 2, 95); }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[OptimizationViewModel] RunOptimizationFromInvoice: {ex.Message}");
@@ -377,16 +402,9 @@ namespace ProGlassAutomation.Views.Optimization
         public void SetStockSheet(double width, double height)
         {
             if (width <= 0 || height <= 0) return;
-
-            // ✅ FIX: If matching stock exists, preserve it. Don't clear.
             var existing = StockSheets.FirstOrDefault(s =>
                 Math.Abs(s.L - width) < 0.01 && Math.Abs(s.W - height) < 0.01);
-
-            if (existing != null)
-            {
-                UpdateCounts();
-                return;
-            }
+            if (existing != null) { UpdateCounts(); return; }
 
             StockSheets.Clear();
             StockSheets.Add(new StockSheetViewModel
@@ -411,7 +429,6 @@ namespace ProGlassAutomation.Views.Optimization
         public void ExportCsv(string filePath)
         {
             if (LastResult == null || string.IsNullOrEmpty(filePath)) return;
-
             var sb = new System.Text.StringBuilder();
             sb.AppendLine("=== MaxNest Optimization Report ===");
             sb.AppendLine($"Generated,{DateTime.Now}");
@@ -421,14 +438,12 @@ namespace ProGlassAutomation.Views.Optimization
             sb.AppendLine($"Utilization,{LastResult.Util}%");
             sb.AppendLine($"Waste,{LastResult.Waste}%");
             sb.AppendLine($"Parts Placed,{LastResult.PlacedParts?.Count ?? 0}");
-
             System.IO.File.WriteAllText(filePath, sb.ToString());
         }
 
         public string BuildReport()
         {
             if (LastResult == null) return "No optimization result available.";
-
             var sb = new System.Text.StringBuilder();
             sb.AppendLine("=== MaxNest Report ===");
             sb.AppendLine($"Sheet,{LastResult.L} x {LastResult.W} mm");
@@ -465,12 +480,7 @@ namespace ProGlassAutomation.Views.Optimization
         private int _qty;
         private double _pricePerM2;
 
-        public int Index
-        {
-            get => _index;
-            set { _index = value; OnPropertyChanged(); }
-        }
-
+        public int Index { get => _index; set { _index = value; OnPropertyChanged(); } }
         public double L
         {
             get => _l;
@@ -482,7 +492,6 @@ namespace ProGlassAutomation.Views.Optimization
                 OnPropertyChanged(nameof(UnitPrice));
             }
         }
-
         public double W
         {
             get => _w;
@@ -494,13 +503,7 @@ namespace ProGlassAutomation.Views.Optimization
                 OnPropertyChanged(nameof(UnitPrice));
             }
         }
-
-        public int Qty
-        {
-            get => _qty;
-            set { _qty = value; OnPropertyChanged(); }
-        }
-
+        public int Qty { get => _qty; set { _qty = value; OnPropertyChanged(); } }
         public double PricePerM2
         {
             get => _pricePerM2;
@@ -511,7 +514,6 @@ namespace ProGlassAutomation.Views.Optimization
                 OnPropertyChanged(nameof(UnitPrice));
             }
         }
-
         public double Area => (L * W) / 1_000_000.0;
         public double UnitPrice => Area * PricePerM2;
 
@@ -532,30 +534,10 @@ namespace ProGlassAutomation.Views.Optimization
         private double _usedNet;
         private double _scrapWaste;
 
-        public int SheetNum
-        {
-            get => _sheetNum;
-            set { _sheetNum = value; OnPropertyChanged(); }
-        }
-
-        public string Dimensions
-        {
-            get => _dimensions;
-            set { _dimensions = value; OnPropertyChanged(); }
-        }
-
-        public int GlassCount
-        {
-            get => _glassCount;
-            set { _glassCount = value; OnPropertyChanged(); }
-        }
-
-        public int Rotated90
-        {
-            get => _rotated90;
-            set { _rotated90 = value; OnPropertyChanged(); }
-        }
-
+        public int SheetNum { get => _sheetNum; set { _sheetNum = value; OnPropertyChanged(); } }
+        public string Dimensions { get => _dimensions; set { _dimensions = value; OnPropertyChanged(); } }
+        public int GlassCount { get => _glassCount; set { _glassCount = value; OnPropertyChanged(); } }
+        public int Rotated90 { get => _rotated90; set { _rotated90 = value; OnPropertyChanged(); } }
         public double YieldPct
         {
             get => _yieldPct;
@@ -566,20 +548,9 @@ namespace ProGlassAutomation.Views.Optimization
                 OnPropertyChanged(nameof(YieldText));
             }
         }
-
         public string YieldText => $"{YieldPct:0.0}%";
-
-        public double UsedNet
-        {
-            get => _usedNet;
-            set { _usedNet = value; OnPropertyChanged(); }
-        }
-
-        public double ScrapWaste
-        {
-            get => _scrapWaste;
-            set { _scrapWaste = value; OnPropertyChanged(); }
-        }
+        public double UsedNet { get => _usedNet; set { _usedNet = value; OnPropertyChanged(); } }
+        public double ScrapWaste { get => _scrapWaste; set { _scrapWaste = value; OnPropertyChanged(); } }
 
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string? name = null)
