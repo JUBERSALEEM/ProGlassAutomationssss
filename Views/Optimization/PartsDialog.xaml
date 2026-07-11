@@ -14,10 +14,8 @@
         <SolidColorBrush x:Key="PrimaryBlue" Color="#2563EB"/>
         <SolidColorBrush x:Key="DangerBg" Color="#7F1D1D"/>
         <SolidColorBrush x:Key="DangerHover" Color="#B91C1C"/>
-        <SolidColorBrush x:Key="SuccessBg" Color="#065F46"/>
-        <SolidColorBrush x:Key="SuccessHover" Color="#047857"/>
 
-        <!-- Pill-Style Excel Cell (Light Theme) -->
+        <!-- Pill-Style Excel Cell -->
         <Style x:Key="ExcelCell" TargetType="TextBox">
             <Setter Property="Padding" Value="12,8"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
@@ -47,7 +45,7 @@
             </Setter>
         </Style>
 
-        <!-- ✅ Delete Button: Dark Red Professional Theme -->
+        <!-- ✅ Dark Red Delete Button (2026 Glassmorphism) -->
         <Style x:Key="DeleteButton" TargetType="Button">
             <Setter Property="Background" Value="#7F1D1D"/>
             <Setter Property="Foreground" Value="White"/>
@@ -73,7 +71,7 @@
             </Setter>
         </Style>
 
-        <!-- KPI Card: Light Theme -->
+        <!-- KPI Card -->
         <Style x:Key="SummaryCard" TargetType="Border">
             <Setter Property="Background" Value="White"/>
             <Setter Property="CornerRadius" Value="12"/>
@@ -84,7 +82,6 @@
         </Style>
     </Window.Resources>
 
-    <!-- Main container: LIGHT Theme + Inner glassmorphism card -->
     <Border CornerRadius="16" Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Margin="16">
         <Border.Effect>
             <DropShadowEffect BlurRadius="30" ShadowDepth="2" Opacity="0.1"/>
@@ -99,7 +96,7 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- 1. HEADER (Light Theme) -->
+            <!-- 1. HEADER with working Download Template and Import CSV buttons -->
             <Grid Grid.Row="0" Margin="0,0,0,24">
                 <StackPanel VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal">
@@ -111,7 +108,8 @@
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Content="Download Template" Background="#F1F5F9" Foreground="#475569" Padding="15,8" Margin="0,0,8,0" BorderBrush="#CBD5E1" BorderThickness="1">
+                    <!-- ✅ WORKING Download Template button -->
+                    <Button Content="Download Template" Click="DownloadTemplate_Click" Background="#F1F5F9" Foreground="#475569" Padding="15,8" Margin="0,0,8,0" BorderBrush="#CBD5E1" BorderThickness="1" Cursor="Hand">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
                                 <Border Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
@@ -120,7 +118,8 @@
                             </ControlTemplate>
                         </Button.Template>
                     </Button>
-                    <Button Content="Import CSV / Excel" Background="#DBEAFE" Foreground="#2563EB" Padding="15,8" Margin="0,0,8,0" BorderBrush="#3B82F6" BorderThickness="1">
+                    <!-- ✅ WORKING Import CSV/Excel button -->
+                    <Button Content="Import CSV / Excel" Click="ImportCsv_Click" Background="#DBEAFE" Foreground="#2563EB" Padding="15,8" Margin="0,0,8,0" BorderBrush="#3B82F6" BorderThickness="1" Cursor="Hand">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
                                 <Border Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
@@ -129,7 +128,7 @@
                             </ControlTemplate>
                         </Button.Template>
                     </Button>
-                    <Button Content="+ Add Part" Click="AddPart_Click" Background="#2563EB" Foreground="White" Padding="20,10" FontWeight="Bold">
+                    <Button Content="+ Add Part" Click="AddPart_Click" Background="#2563EB" Foreground="White" Padding="20,10" FontWeight="Bold" Cursor="Hand">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
                                 <Border Background="{TemplateBinding Background}" CornerRadius="8">
@@ -142,7 +141,7 @@
                 </StackPanel>
             </Grid>
 
-            <!-- 2. COLUMN HEADERS (Light) -->
+            <!-- 2. COLUMN HEADERS -->
             <UniformGrid Grid.Row="1" Columns="7" Margin="10,0,10,12">
                 <TextBlock Text="COLOR" FontSize="10" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center"/>
                 <TextBlock Text="REF ID" FontSize="10" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center"/>
@@ -153,7 +152,7 @@
                 <TextBlock Text="ACTION" FontSize="10" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center"/>
             </UniformGrid>
 
-            <!-- 3. SPREADSHEET ROWS (Light Cards) -->
+            <!-- 3. SPREADSHEET ROWS with Excel-style navigation -->
             <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
                 <ItemsControl x:Name="icParts">
                     <ItemsControl.ItemTemplate>
@@ -166,7 +165,6 @@
                                     <TextBox x:Name="tbL" Text="{Binding L, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ExcelCell}" Margin="5,0" GotFocus="Cell_GotFocus" PreviewKeyDown="Cell_KeyDown" Tag="{Binding}"/>
                                     <TextBox x:Name="tbW" Text="{Binding W, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ExcelCell}" Margin="5,0" GotFocus="Cell_GotFocus" PreviewKeyDown="Cell_KeyDown" Tag="{Binding}"/>
                                     <TextBox x:Name="tbQty" Text="{Binding Qty, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ExcelCell}" Margin="5,0" GotFocus="Cell_GotFocus" PreviewKeyDown="Cell_KeyDown" Tag="{Binding}"/>
-                                    <!-- ✅ DARK RED Delete Button (light theme overall) -->
                                     <Button Content="Delete" Click="Delete_Click" Style="{StaticResource DeleteButton}" Tag="{Binding}"/>
                                 </UniformGrid>
                             </Border>
@@ -175,7 +173,7 @@
                 </ItemsControl>
             </ScrollViewer>
 
-            <!-- 4. SUMMARY DASHBOARD (Light Cards) -->
+            <!-- 4. SUMMARY DASHBOARD -->
             <UniformGrid Grid.Row="3" Columns="4" Margin="0,20,0,0">
                 <Border Style="{StaticResource SummaryCard}">
                     <StackPanel>

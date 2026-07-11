@@ -36,25 +36,25 @@ namespace ProGlassAutomation.Views.Optimization
             set { _id = value; OnPropertyChanged(); }
         }
 
-        private string _label = "Glass Panel";
+        private string _label = "";
         public string Label
         {
             get => _label;
             set { _label = value; OnPropertyChanged(); }
         }
 
-        private double _width = 1000;
+        private double _l;
         public double L
         {
-            get => _width;
-            set { _width = value; OnPropertyChanged(); }
+            get => _l;
+            set { _l = value; OnPropertyChanged(); }
         }
 
-        private double _height = 800;
+        private double _w;
         public double W
         {
-            get => _height;
-            set { _height = value; OnPropertyChanged(); }
+            get => _w;
+            set { _w = value; OnPropertyChanged(); }
         }
 
         private int _qty = 1;
