@@ -371,11 +371,13 @@ namespace ProGlassAutomation.Views.Optimization
         }
 
         // ═══════════════════════════════════════════════════════
-        // PROFORMA INVOICE IMPORT
+        // PROFORMA INVOICE IMPORT — Populates BOTH Parts and DemandParts
         // ═══════════════════════════════════════════════════════
         public void ImportInvoiceItems(List<InvoiceItemModel> items)
         {
             if (items == null) return;
+
+            // 1) Engine parts collection (for the optimization engine)
             Parts.Clear();
             foreach (var item in items)
             {
@@ -387,6 +389,23 @@ namespace ProGlassAutomation.Views.Optimization
                     Qty = item.Qty > 0 ? item.Qty : 1
                 });
             }
+
+            // 2) UI parts collection (for the "Parts of Glass" dialog)
+            //    Each item gets a fresh DemandPart with auto-incrementing
+            //    ID and a randomly assigned pastel color (set in ctor).
+            DemandParts.Clear();
+            foreach (var item in items)
+            {
+                if (item == null) continue;
+                DemandParts.Add(new DemandPart
+                {
+                    Label = string.IsNullOrEmpty(item.GlassRef) ? "Part" : item.GlassRef,
+                    L = item.Width1,
+                    W = item.Height1,
+                    Qty = item.Qty > 0 ? item.Qty : 1
+                });
+            }
+
             UpdateCounts();
         }
 
@@ -520,7 +539,7 @@ namespace ProGlassAutomation.Views.Optimization
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string? name = null)
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));  // ✅ CORRECT
         }
     }
 
@@ -555,7 +574,7 @@ namespace ProGlassAutomation.Views.Optimization
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string? name = null)
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));  // ✅ CORRECT
         }
     }
 
