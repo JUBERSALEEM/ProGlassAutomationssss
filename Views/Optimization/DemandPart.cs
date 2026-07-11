@@ -19,7 +19,31 @@ namespace ProGlassAutomation.Views.Optimization
         public DemandPart()
         {
             Id = _nextId++;
+            SrNo = Id; // Auto-set SrNo to the same value as Id
             UI_Color = _palette[_rand.Next(_palette.Length)];
+        }
+
+        private int _id;
+        public int Id
+        {
+            get => _id;
+            set
+            {
+                _id = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(SrNo));
+            }
+        }
+
+        private int _srNo;
+        public int SrNo
+        {
+            get => _srNo;
+            set
+            {
+                _srNo = value;
+                OnPropertyChanged();
+            }
         }
 
         private string _uiColor = "#FCD34D";
@@ -27,13 +51,6 @@ namespace ProGlassAutomation.Views.Optimization
         {
             get => _uiColor;
             set { _uiColor = value; OnPropertyChanged(); }
-        }
-
-        private int _id;
-        public int Id
-        {
-            get => _id;
-            set { _id = value; OnPropertyChanged(); }
         }
 
         private string _label = "";

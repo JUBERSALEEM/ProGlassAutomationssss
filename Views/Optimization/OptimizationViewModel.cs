@@ -17,7 +17,7 @@ namespace ProGlassAutomation.Views.Optimization
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        // ═══════════════════════════════════════════════════════
+        // ══════════════════════════════════════════════════════
         // COLLECTIONS
         // ═══════════════════════════════════════════════════════
         public ObservableCollection<StockSheetViewModel> StockSheets { get; } = new ObservableCollection<StockSheetViewModel>();
@@ -27,9 +27,9 @@ namespace ProGlassAutomation.Views.Optimization
         // ✅ DemandParts: Excel-style UI collection
         public ObservableCollection<DemandPart> DemandParts { get; } = new ObservableCollection<DemandPart>();
 
-        // ═══════════════════════════════════════════════════════
+        // ══════════════════════════════════════════════════════
         // RESULT
-        // ═══════════════════════════════════════════════════════
+        // ══════════════════════════════════════════════════════
         private OptimizationResult? _lastResult;
         public OptimizationResult? LastResult
         {
@@ -115,7 +115,10 @@ namespace ProGlassAutomation.Views.Optimization
         // ═══════════════════════════════════════════════════════
         public int PartTypesCount => DemandParts?.Count ?? 0;
         public int TotalPartsToCut => DemandParts?.Sum(p => p.Qty) ?? 0;
+
+        // ✅ Correct SQM formula: (Length_mm × Width_mm × Qty) ÷ 1,000,000 = m²
         public double TotalPartsArea => DemandParts?.Sum(p => (p.L * p.W * p.Qty) / 1_000_000.0) ?? 0;
+
         public int UniqueDimensionsCount => DemandParts?.Select(p => $"{p.L}x{p.W}").Distinct().Count() ?? 0;
 
         public string LargestPieceLabel
@@ -160,11 +163,19 @@ namespace ProGlassAutomation.Views.Optimization
             DemandParts.Add(new DemandPart { Label = "", L = 0, W = 0, Qty = 0 });
         }
 
+        // ✅ FIX: UpdateCounts now notifies ALL computed summary properties
         private void UpdateCounts()
         {
             StockSheetCount = StockSheets.Sum(s => s.Qty);
             PartCount = Parts.Sum(p => p.Qty);
             HasContent = StockSheets.Count > 0 || Parts.Count > 0;
+
+            // Force UI to re-evaluate computed summary properties (SQM, Counts, etc.)
+            OnPropertyChanged(nameof(PartTypesCount));
+            OnPropertyChanged(nameof(TotalPartsToCut));
+            OnPropertyChanged(nameof(TotalPartsArea));
+            OnPropertyChanged(nameof(UniqueDimensionsCount));
+            OnPropertyChanged(nameof(LargestPieceLabel));
         }
 
         // Sync engine Parts from DemandParts
@@ -379,6 +390,7 @@ namespace ProGlassAutomation.Views.Optimization
 
             // 1) Engine parts collection (for the optimization engine)
             Parts.Clear();
+            int index = 1;
             foreach (var item in items)
             {
                 if (item == null) continue;
@@ -388,22 +400,24 @@ namespace ProGlassAutomation.Views.Optimization
                     W = item.Height1,
                     Qty = item.Qty > 0 ? item.Qty : 1
                 });
+                index++;
             }
 
             // 2) UI parts collection (for the "Parts of Glass" dialog)
-            //    Each item gets a fresh DemandPart with auto-incrementing
-            //    ID and a randomly assigned pastel color (set in ctor).
             DemandParts.Clear();
+            int srNo = 1;
             foreach (var item in items)
             {
                 if (item == null) continue;
                 DemandParts.Add(new DemandPart
                 {
+                    SrNo = srNo,
                     Label = string.IsNullOrEmpty(item.GlassRef) ? "Part" : item.GlassRef,
                     L = item.Width1,
                     W = item.Height1,
                     Qty = item.Qty > 0 ? item.Qty : 1
                 });
+                srNo++;
             }
 
             UpdateCounts();
@@ -539,7 +553,7 @@ namespace ProGlassAutomation.Views.Optimization
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string? name = null)
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));  // ✅ CORRECT
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
     }
 
@@ -574,7 +588,7 @@ namespace ProGlassAutomation.Views.Optimization
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string? name = null)
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));  // ✅ CORRECT
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
     }
 

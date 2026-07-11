@@ -160,7 +160,7 @@
                             <Border Background="White" CornerRadius="12" Margin="0,0,0,8" Padding="10,8" BorderBrush="#E2E8F0" BorderThickness="1">
                                 <UniformGrid Columns="7">
                                     <Border Width="22" Height="22" Background="{Binding UI_Color, FallbackValue=#CBD5E1}" CornerRadius="6" HorizontalAlignment="Center"/>
-                                    <TextBox Text="{Binding Id}" Style="{StaticResource ExcelCell}" Margin="5,0" IsReadOnly="True" Opacity="0.5"/>
+                                    <TextBox Text="{Binding SrNo}" Style="{StaticResource ExcelCell}" Margin="5,0" IsReadOnly="True" Opacity="0.5"/>
                                     <TextBox x:Name="tbLabel" Text="{Binding Label, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ExcelCell}" Margin="5,0" HorizontalContentAlignment="Left" GotFocus="Cell_GotFocus" PreviewKeyDown="Cell_KeyDown" Tag="{Binding}"/>
                                     <TextBox x:Name="tbL" Text="{Binding L, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ExcelCell}" Margin="5,0" GotFocus="Cell_GotFocus" PreviewKeyDown="Cell_KeyDown" Tag="{Binding}"/>
                                     <TextBox x:Name="tbW" Text="{Binding W, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ExcelCell}" Margin="5,0" GotFocus="Cell_GotFocus" PreviewKeyDown="Cell_KeyDown" Tag="{Binding}"/>
