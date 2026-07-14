@@ -107,8 +107,11 @@ namespace ProGlassAutomation.Views.Optimization
                         best.Y + ph > stock.W - trimBottom + Eps)
                         break;
 
+                    // ✅ FIX: Copy Label from source CutPart into PlacedPart
+                    var sourcePart = expandedParts[bestPartIndex];
                     sheetPlacements.Add(new PlacedPart
                     {
+                        Label = sourcePart.Label ?? "",
                         X = best.X,
                         Y = best.Y,
                         L = pw - kerf,
@@ -339,6 +342,10 @@ namespace ProGlassAutomation.Views.Optimization
         }
     }
 
+    // ══════════════════════════════════════════════════════
+    // MODEL CLASSES
+    // ══════════════════════════════════════════════════════
+
     public class StockSheet
     {
         public double L { get; set; }
@@ -346,7 +353,6 @@ namespace ProGlassAutomation.Views.Optimization
         public int Qty { get; set; } = 1;
     }
 
-    // ✅ FIX: Added Label field so PartsDialog can bind to it
     public class CutPart
     {
         public string Label { get; set; } = "";
@@ -355,8 +361,10 @@ namespace ProGlassAutomation.Views.Optimization
         public int Qty { get; set; } = 1;
     }
 
+    // ✅ FIX: Added Label property (was missing — caused CS0117 in VM)
     public class PlacedPart
     {
+        public string Label { get; set; } = "";
         public double X { get; set; }
         public double Y { get; set; }
         public double L { get; set; }

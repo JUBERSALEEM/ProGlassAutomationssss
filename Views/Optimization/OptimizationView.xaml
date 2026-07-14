@@ -4,167 +4,472 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
-             d:DesignHeight="800" d:DesignWidth="1300"
-             Background="#F8FAFC"
-             FontFamily="Segoe UI">
+             d:DesignHeight="900" d:DesignWidth="1400"
+             Background="#F4F6FB"
+             FontFamily="Segoe UI"
+             TextOptions.TextFormattingMode="Display"
+             TextOptions.TextRenderingMode="ClearType"
+             UseLayoutRounding="True"
+             SnapsToDevicePixels="True">
 
     <UserControl.Resources>
-        <SolidColorBrush x:Key="PrimaryBrush" Color="#2563EB"/>
-        <SolidColorBrush x:Key="AccentBrush" Color="#10B981"/>
-        <SolidColorBrush x:Key="DangerBrush" Color="#EF4444"/>
-        <SolidColorBrush x:Key="BorderSoft" Color="#E5E7EB"/>
-        <SolidColorBrush x:Key="TextPrimary" Color="#0F172A"/>
-        <SolidColorBrush x:Key="TextSecondary" Color="#6B7280"/>
+        <!-- 2026 Light Palette -->
+        <SolidColorBrush x:Key="BackgroundBrush" Color="#F4F6FB"/>
+        <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="SurfaceMutedBrush" Color="#F1F5F9"/>
+        <SolidColorBrush x:Key="SurfaceSunkenBrush" Color="#F8FAFC"/>
+        <SolidColorBrush x:Key="BorderBrush" Color="#E2E8F0"/>
+        <SolidColorBrush x:Key="BorderHoverBrush" Color="#CBD5E1"/>
 
-        <Style TargetType="Button">
-            <Setter Property="Padding" Value="10,8"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="BorderThickness" Value="0"/>
+        <SolidColorBrush x:Key="PrimaryBrush" Color="#4F46E5"/>
+        <SolidColorBrush x:Key="PrimaryHoverBrush" Color="#4338CA"/>
+        <SolidColorBrush x:Key="PrimarySoftBrush" Color="#EEF2FF"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="#059669"/>
+        <SolidColorBrush x:Key="AccentHoverBrush" Color="#047857"/>
+        <SolidColorBrush x:Key="AccentSoftBrush" Color="#ECFDF5"/>
+        <SolidColorBrush x:Key="DangerBrush" Color="#DC2626"/>
+        <SolidColorBrush x:Key="WarningBrush" Color="#D97706"/>
+
+        <SolidColorBrush x:Key="TextPrimaryBrush" Color="#0B1220"/>
+        <SolidColorBrush x:Key="TextSecondaryBrush" Color="#475569"/>
+        <SolidColorBrush x:Key="TextMutedBrush" Color="#94A3B8"/>
+        <SolidColorBrush x:Key="TextOnPrimaryBrush" Color="#FFFFFF"/>
+
+        <LinearGradientBrush x:Key="PrimaryGradient" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#4F46E5" Offset="0"/>
+            <GradientStop Color="#7C3AED" Offset="1"/>
+        </LinearGradientBrush>
+
+        <LinearGradientBrush x:Key="AccentGradient" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#10B981" Offset="0"/>
+            <GradientStop Color="#0EA5E9" Offset="1"/>
+        </LinearGradientBrush>
+
+        <LinearGradientBrush x:Key="HeroGradient" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#1E1B4B" Offset="0"/>
+            <GradientStop Color="#312E81" Offset="0.5"/>
+            <GradientStop Color="#4C1D95" Offset="1"/>
+        </LinearGradientBrush>
+
+        <LinearGradientBrush x:Key="DangerGradient" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#F43F5E" Offset="0"/>
+            <GradientStop Color="#F97316" Offset="1"/>
+        </LinearGradientBrush>
+
+        <!-- Card style -->
+        <Style x:Key="CardBorder" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="14"/>
+            <Setter Property="Padding" Value="24"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="#0F172A" Opacity="0.05" BlurRadius="18" ShadowDepth="0"/>
+                </Setter.Value>
+            </Setter>
         </Style>
 
-        <!-- ✅ FIX: BorderBrush uses Value, not Color -->
-        <Style TargetType="TextBox">
-            <Setter Property="Padding" Value="10,8"/>
-            <Setter Property="Background" Value="White"/>
-            <Setter Property="Foreground" Value="#0F172A"/>
-            <Setter Property="BorderBrush" Value="#E5E7EB"/>
+        <!-- KPI Card -->
+        <Style x:Key="KpiCard" TargetType="Border" BasedOn="{StaticResource CardBorder}">
+            <Setter Property="Padding" Value="0"/>
+        </Style>
+
+        <!-- Primary Button -->
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource PrimaryGradient}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextOnPrimaryBrush}"/>
+            <Setter Property="Padding" Value="22,13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="13.5"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                CornerRadius="10" Padding="{TemplateBinding Padding}">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#4F46E5" Opacity="0.3" BlurRadius="16" ShadowDepth="0"/>
+                            </Border.Effect>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{StaticResource PrimaryHoverBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Accent Button -->
+        <Style x:Key="AccentButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+            <Setter Property="Background" Value="{StaticResource AccentGradient}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                CornerRadius="10" Padding="{TemplateBinding Padding}">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#10B981" Opacity="0.3" BlurRadius="16" ShadowDepth="0"/>
+                            </Border.Effect>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{StaticResource AccentHoverBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Ghost / Outline Button -->
+        <Style x:Key="GhostButton" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+            <Setter Property="Padding" Value="20,12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="13.5"/>
+            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CaretBrush" Value="#2563EB"/>
-            <Setter Property="SelectionBrush" Value="#2563EB"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="10" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{StaticResource PrimarySoftBrush}"/>
+                                <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
+                                <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Dark Button -->
+        <Style x:Key="DarkButton" TargetType="Button">
+            <Setter Property="Background" Value="#0F172A"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="20,12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="13.5"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                CornerRadius="10" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#1E293B"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- TextBox -->
+        <Style TargetType="TextBox">
+            <Setter Property="Padding" Value="14,11"/>
+            <Setter Property="Background" Value="{StaticResource SurfaceSunkenBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CaretBrush" Value="{StaticResource PrimaryBrush}"/>
+            <Setter Property="SelectionBrush" Value="{StaticResource PrimaryBrush}"/>
+            <Setter Property="FontSize" Value="13.5"/>
+            <Setter Property="FontWeight" Value="Normal"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="10" Padding="{TemplateBinding Padding}">
+                            <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
+                                <Setter TargetName="bd" Property="Background" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource BorderHoverBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- RadioButton -->
+        <Style TargetType="RadioButton">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+            <Setter Property="FontSize" Value="13.5"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="bd" Background="{StaticResource SurfaceMutedBrush}"
+                                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                                CornerRadius="10" Padding="18,16">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{StaticResource PrimarySoftBrush}"/>
+                                <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Section Title -->
+        <Style x:Key="SectionTitle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+        </Style>
+
+        <!-- Label -->
+        <Style x:Key="Label" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
+        </Style>
+
+        <!-- TextBlock base -->
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
         </Style>
     </UserControl.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <StackPanel MaxWidth="1200" Margin="32" HorizontalAlignment="Center">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
-            <!-- HEADER + ACTIONS -->
-            <Border Background="White" CornerRadius="12" Padding="24" Margin="0,0,0,16" BorderBrush="#E5E7EB" BorderThickness="1">
-                <Grid>
+        <!-- HERO HEADER (full width) -->
+        <Border Grid.Row="0" Background="{StaticResource HeroGradient}" Padding="40,32">
+            <Border.Effect>
+                <DropShadowEffect Color="#1E1B4B" Opacity="0.15" BlurRadius="20" ShadowDepth="0"/>
+            </Border.Effect>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <Border Background="#312E81" CornerRadius="6" Padding="12,5"
+                            HorizontalAlignment="Left" Margin="0,0,0,14">
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse Width="8" Height="8" Fill="{StaticResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="OPTIMIZATION ENGINE" FontSize="11" FontWeight="Bold"
+                                       Foreground="{StaticResource AccentBrush}"/>
+                        </StackPanel>
+                    </Border>
+                    <TextBlock Text="Smart Glass Optimization" FontSize="34" FontWeight="Bold"
+                               Foreground="White"/>
+                    <TextBlock Text="Precision 2D nesting · 0° and 90° complex fitting" 
+                               FontSize="15" Foreground="#C7D2FE" Margin="0,8,0,0"/>
+                </StackPanel>
+
+                <WrapPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
+                    <Button Content="Stock Sheets" Click="OpenStockDialog_Click" Style="{StaticResource GhostButton}" Margin="0,0,10,0"/>
+                    <Button Content="Parts" Click="OpenPartsDialog_Click" Style="{StaticResource GhostButton}" Margin="0,0,10,0"/>
+                    <Button Content="2D Layout" Click="OpenLayoutDialog_Click" Style="{StaticResource AccentButton}" Margin="0,0,10,0"/>
+                    <Button Content="Report" Click="OpenReportDialog_Click" Style="{StaticResource DarkButton}" Margin="0,0,10,0"/>
+                    <Button Content="Run Optimization" Click="RunOptimization_Click" Style="{StaticResource PrimaryButton}"/>
+                </WrapPanel>
+            </Grid>
+        </Border>
+
+        <!-- CONTENT (full width, padded) -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                      Background="{StaticResource BackgroundBrush}">
+            <StackPanel Margin="40,28,40,40">
+
+                <!-- KPI CARDS (full width row) -->
+                <UniformGrid Columns="4" Rows="1">
+                    <Border Style="{StaticResource KpiCard}" Margin="0,0,8,0">
+                        <Grid>
+                            <Rectangle Width="4" HorizontalAlignment="Left" Fill="{StaticResource PrimaryGradient}"/>
+                            <StackPanel Margin="24,24,24,24">
+                                <TextBlock Text="STOCK SHEETS" Style="{StaticResource Label}"/>
+                                <TextBlock Text="{Binding StockSheetCount, Mode=OneWay, StringFormat=N0}"
+                                           FontSize="38" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,14,0,0"/>
+                                <TextBlock Text="Available panels" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,6,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource KpiCard}" Margin="8,0">
+                        <Grid>
+                            <Rectangle Width="4" HorizontalAlignment="Left" Fill="{StaticResource AccentGradient}"/>
+                            <StackPanel Margin="24,24,24,24">
+                                <TextBlock Text="PARTS TO CUT" Style="{StaticResource Label}"/>
+                                <TextBlock Text="{Binding PartCount, Mode=OneWay, StringFormat=N0}"
+                                           FontSize="38" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,14,0,0"/>
+                                <TextBlock Text="Demand items" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,6,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource KpiCard}" Margin="8,0">
+                        <Grid>
+                            <Rectangle Width="4" HorizontalAlignment="Left" Fill="{StaticResource AccentBrush}"/>
+                            <StackPanel Margin="24,24,24,24">
+                                <TextBlock Text="UTILIZATION" Style="{StaticResource Label}"/>
+                                <TextBlock Text="{Binding Utilization, Mode=OneWay, StringFormat={}{0:0.##}%}"
+                                           FontSize="38" FontWeight="Bold" Foreground="{StaticResource AccentBrush}" Margin="0,14,0,0"/>
+                                <TextBlock Text="Material efficiency" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,6,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource KpiCard}" Margin="8,0,0,0">
+                        <Grid>
+                            <Rectangle Width="4" HorizontalAlignment="Left" Fill="{StaticResource DangerGradient}"/>
+                            <StackPanel Margin="24,24,24,24">
+                                <TextBlock Text="WASTE" Style="{StaticResource Label}"/>
+                                <TextBlock Text="{Binding Waste, Mode=OneWay, StringFormat={}{0:0.##}%}"
+                                           FontSize="38" FontWeight="Bold" Foreground="{StaticResource DangerBrush}" Margin="0,14,0,0"/>
+                                <TextBlock Text="Unused material" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,6,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </UniformGrid>
+
+                <!-- SETTINGS + ROTATION row -->
+                <Grid Margin="0,28,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                        <TextBlock Text="Smart Glass Optimization" FontSize="22" FontWeight="Bold" Foreground="#0F172A"/>
-                        <TextBlock Text="Precision 2D nesting · 0° and 90° complex fitting" FontSize="12" Foreground="#6B7280" Margin="0,2,0,0"/>
-                    </StackPanel>
-                    <StackPanel Grid.Column="1" Orientation="Horizontal">
-                        <Button Content="Manage Stock Sheets" Click="OpenStockDialog_Click" Background="White" Foreground="#0F172A" BorderBrush="#E5E7EB" BorderThickness="1" Margin="0,0,8,0"/>
-                        <Button Content="Manage Parts" Click="OpenPartsDialog_Click" Background="White" Foreground="#0F172A" BorderBrush="#E5E7EB" BorderThickness="1" Margin="0,0,8,0"/>
-                        <Button Content="View 2D Layout" Click="OpenLayoutDialog_Click" Background="#10B981" Foreground="White" Margin="0,0,8,0"/>
-                        <Button Content="View Report" Click="OpenReportDialog_Click" Background="#0F172A" Foreground="White" Margin="0,0,8,0"/>
-                        <Button Content="Run Optimization" Click="RunOptimization_Click" Background="#2563EB" Foreground="White" FontWeight="Bold"/>
-                    </StackPanel>
+
+                    <!-- SETTINGS -->
+                    <Border Grid.Column="0" Style="{StaticResource CardBorder}" Margin="0,0,10,0">
+                        <StackPanel>
+                            <TextBlock Text="Cutting Settings" Style="{StaticResource SectionTitle}" Margin="0,0,0,20"/>
+                            <UniformGrid Columns="2" Rows="3">
+                                <StackPanel Margin="0,0,10,16">
+                                    <TextBlock Text="KERF (MM)" Style="{StaticResource Label}" Margin="0,0,0,10"/>
+                                    <TextBox x:Name="txtKerf" Text="4"/>
+                                </StackPanel>
+                                <StackPanel Margin="10,0,0,16">
+                                    <TextBlock Text="TRIM (MM)" Style="{StaticResource Label}" Margin="0,0,0,10"/>
+                                    <TextBox x:Name="txtTrim" Text="10"/>
+                                </StackPanel>
+                                <StackPanel Margin="0,0,10,16">
+                                    <TextBlock Text="BREAKOUT LEFT (MM)" Style="{StaticResource Label}" Margin="0,0,0,10"/>
+                                    <TextBox x:Name="txtBreakLeft" Text="15"/>
+                                </StackPanel>
+                                <StackPanel Margin="10,0,0,16">
+                                    <TextBlock Text="BREAKOUT RIGHT (MM)" Style="{StaticResource Label}" Margin="0,0,0,10"/>
+                                    <TextBox x:Name="txtBreakRight" Text="15"/>
+                                </StackPanel>
+                                <StackPanel Margin="0,0,10,0">
+                                    <TextBlock Text="BREAKOUT TOP (MM)" Style="{StaticResource Label}" Margin="0,0,0,10"/>
+                                    <TextBox x:Name="txtBreakTop" Text="15"/>
+                                </StackPanel>
+                                <StackPanel Margin="10,0,0,0">
+                                    <TextBlock Text="BREAKOUT BOTTOM (MM)" Style="{StaticResource Label}" Margin="0,0,0,10"/>
+                                    <TextBox x:Name="txtBreakBottom" Text="15"/>
+                                </StackPanel>
+                            </UniformGrid>
+                            <StackPanel Margin="0,8,0,0">
+                                <TextBlock Text="MIN BREAKOUT (MM)" Style="{StaticResource Label}" Margin="0,0,0,10"/>
+                                <TextBox x:Name="txtBreakMin" Text="15"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ROTATION -->
+                    <Border Grid.Column="1" Style="{StaticResource CardBorder}" Margin="10,0,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Rotation Mode" Style="{StaticResource SectionTitle}" Margin="0,0,0,8"/>
+                            <TextBlock Text="Select how parts may be oriented on stock" 
+                                       FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,20"/>
+                            <StackPanel>
+                                <RadioButton x:Name="rbRot0" Content="0° Only — Keep exact orientation" GroupName="Rotation" Checked="Rotation_Changed" Margin="0,0,0,12"/>
+                                <RadioButton x:Name="rbRot90" Content="90° Only — Force 90° rotation" GroupName="Rotation" Checked="Rotation_Changed" Margin="0,0,0,12"/>
+                                <RadioButton x:Name="rbRotComplex" Content="Complex 0° + 90° — Automatic best fit" GroupName="Rotation" IsChecked="True" Checked="Rotation_Changed"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
                 </Grid>
-            </Border>
 
-            <!-- KPI CARDS — bound to ViewModel -->
-            <UniformGrid Columns="4" Rows="1" Margin="0,0,0,16">
-                <Border Background="White" CornerRadius="12" Padding="20" Margin="0,0,8,0" BorderBrush="#E5E7EB" BorderThickness="1">
-                    <StackPanel>
-                        <TextBlock Text="STOCK SHEETS" FontSize="10" FontWeight="Bold" Foreground="#6B7280"/>
-                        <TextBlock Text="{Binding StockSheetCount, Mode=OneWay, StringFormat=N0}"
-                                   FontSize="28" FontWeight="Bold" Foreground="#0F172A" Margin="0,8,0,0"/>
-                    </StackPanel>
+                <!-- QUICK ACTIONS -->
+                <Border Style="{StaticResource CardBorder}" Margin="0,20,0,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="Quick Actions" Style="{StaticResource SectionTitle}" Margin="0,0,0,8"/>
+                            <TextBlock x:Name="txtEmptyState"
+                                       Text="No stock or parts added yet. Click 'Manage Stock Sheets' or 'Manage Parts' to begin, or import from ProformaInvoice."
+                                       FontSize="13.5" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasContent}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+                        <Button Grid.Column="1" Content="Import from ProformaInvoice" Click="ImportFromProforma_Click"
+                                Style="{StaticResource PrimaryButton}" VerticalAlignment="Center"/>
+                    </Grid>
                 </Border>
-                <Border Background="White" CornerRadius="12" Padding="20" Margin="4,0" BorderBrush="#E5E7EB" BorderThickness="1">
-                    <StackPanel>
-                        <TextBlock Text="PARTS TO CUT" FontSize="10" FontWeight="Bold" Foreground="#6B7280"/>
-                        <TextBlock Text="{Binding PartCount, Mode=OneWay, StringFormat=N0}"
-                                   FontSize="28" FontWeight="Bold" Foreground="#0F172A" Margin="0,8,0,0"/>
-                    </StackPanel>
-                </Border>
-                <Border Background="White" CornerRadius="12" Padding="20" Margin="4,0" BorderBrush="#E5E7EB" BorderThickness="1">
-                    <StackPanel>
-                        <TextBlock Text="UTILIZATION" FontSize="10" FontWeight="Bold" Foreground="#6B7280"/>
-                        <TextBlock Text="{Binding Utilization, Mode=OneWay, StringFormat={}{0:0.##}%}"
-                                   FontSize="28" FontWeight="Bold" Foreground="#10B981" Margin="0,8,0,0"/>
-                    </StackPanel>
-                </Border>
-                <Border Background="White" CornerRadius="12" Padding="20" Margin="8,0,0,0" BorderBrush="#E5E7EB" BorderThickness="1">
-                    <StackPanel>
-                        <TextBlock Text="WASTE" FontSize="10" FontWeight="Bold" Foreground="#6B7280"/>
-                        <TextBlock Text="{Binding Waste, Mode=OneWay, StringFormat={}{0:0.##}%}"
-                                   FontSize="28" FontWeight="Bold" Foreground="#EF4444" Margin="0,8,0,0"/>
-                    </StackPanel>
-                </Border>
-            </UniformGrid>
 
-            <!-- SETTINGS -->
-            <Border Background="White" CornerRadius="12" Padding="24" Margin="0,0,0,16" BorderBrush="#E5E7EB" BorderThickness="1">
-                <StackPanel>
-                    <TextBlock Text="Cutting Settings" FontSize="16" FontWeight="Bold" Foreground="#0F172A" Margin="0,0,0,12"/>
-                    <UniformGrid Columns="4" Rows="1">
-                        <StackPanel Margin="0,0,8,0">
-                            <TextBlock Text="KERF (MM)" FontSize="10" FontWeight="Bold" Foreground="#6B7280" Margin="0,0,0,6"/>
-                            <TextBox x:Name="txtKerf" Text="4"/>
-                        </StackPanel>
-                        <StackPanel Margin="4,0">
-                            <TextBlock Text="TRIM (MM)" FontSize="10" FontWeight="Bold" Foreground="#6B7280" Margin="0,0,0,6"/>
-                            <TextBox x:Name="txtTrim" Text="10"/>
-                        </StackPanel>
-                        <StackPanel Margin="4,0">
-                            <TextBlock Text="BREAKOUT LEFT (MM)" FontSize="10" FontWeight="Bold" Foreground="#6B7280" Margin="0,0,0,6"/>
-                            <TextBox x:Name="txtBreakLeft" Text="15"/>
-                        </StackPanel>
-                        <StackPanel Margin="8,0,0,0">
-                            <TextBlock Text="BREAKOUT RIGHT (MM)" FontSize="10" FontWeight="Bold" Foreground="#6B7280" Margin="0,0,0,6"/>
-                            <TextBox x:Name="txtBreakRight" Text="15"/>
-                        </StackPanel>
-                    </UniformGrid>
-                    <UniformGrid Columns="3" Rows="1" Margin="0,12,0,0">
-                        <StackPanel Margin="0,0,8,0">
-                            <TextBlock Text="BREAKOUT TOP (MM)" FontSize="10" FontWeight="Bold" Foreground="#6B7280" Margin="0,0,0,6"/>
-                            <TextBox x:Name="txtBreakTop" Text="15"/>
-                        </StackPanel>
-                        <StackPanel Margin="4,0">
-                            <TextBlock Text="BREAKOUT BOTTOM (MM)" FontSize="10" FontWeight="Bold" Foreground="#6B7280" Margin="0,0,0,6"/>
-                            <TextBox x:Name="txtBreakBottom" Text="15"/>
-                        </StackPanel>
-                        <StackPanel Margin="8,0,0,0">
-                            <TextBlock Text="MIN BREAKOUT (MM)" FontSize="10" FontWeight="Bold" Foreground="#6B7280" Margin="0,0,0,6"/>
-                            <TextBox x:Name="txtBreakMin" Text="15"/>
-                        </StackPanel>
-                    </UniformGrid>
-                </StackPanel>
-            </Border>
-
-            <!-- ROTATION -->
-            <Border Background="White" CornerRadius="12" Padding="24" Margin="0,0,0,16" BorderBrush="#E5E7EB" BorderThickness="1">
-                <StackPanel>
-                    <TextBlock Text="Rotation Mode" FontSize="16" FontWeight="Bold" Foreground="#0F172A" Margin="0,0,0,12"/>
-                    <UniformGrid Columns="3" Rows="1">
-                        <RadioButton x:Name="rbRot0" Content="0° Only — Keep exact orientation" GroupName="Rotation" Margin="0,0,8,0" Checked="Rotation_Changed"/>
-                        <RadioButton x:Name="rbRot90" Content="90° Only — Force 90° rotation" GroupName="Rotation" Margin="4,0" Checked="Rotation_Changed"/>
-                        <RadioButton x:Name="rbRotComplex" Content="Complex 0° + 90° — Automatic best fit" GroupName="Rotation" IsChecked="True" Margin="8,0,0,0" Checked="Rotation_Changed"/>
-                    </UniformGrid>
-                </StackPanel>
-            </Border>
-
-            <!-- QUICK ACTIONS — empty state with proper DataTrigger -->
-            <Border Background="White" CornerRadius="12" Padding="24" Margin="0,0,0,16" BorderBrush="#E5E7EB" BorderThickness="1">
-                <StackPanel>
-                    <TextBlock Text="Quick Actions" FontSize="16" FontWeight="Bold" Foreground="#0F172A" Margin="0,0,0,12"/>
-                    <TextBlock x:Name="txtEmptyState"
-                               Text="No stock or parts added yet. Click 'Manage Stock Sheets' or 'Manage Parts' to begin, or import from ProformaInvoice."
-                               FontSize="13" Foreground="#6B7280" TextWrapping="Wrap" Margin="0,0,0,12">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Visibility" Value="Visible"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding HasContent}" Value="True">
-                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
-                    <Button Content="Import from ProformaInvoice" Click="ImportFromProforma_Click" Background="White" Foreground="#0F172A" BorderBrush="#E5E7EB" BorderThickness="1" HorizontalAlignment="Left"/>
-                </StackPanel>
-            </Border>
-
-        </StackPanel>
-    </ScrollViewer>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
 </UserControl>
