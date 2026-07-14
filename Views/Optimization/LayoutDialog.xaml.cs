@@ -17,6 +17,8 @@ namespace ProGlassAutomation.Views.Optimization
         {
             InitializeComponent();
             _vm = vm;
+            DataContext = _vm;  // ✅ FIX: so {Binding Layouts} resolves to _vm.Layouts
+
             _currentSheetIndex = 0;
 
             // ✅ Wire DataGrid row double-click → navigate to that sheet

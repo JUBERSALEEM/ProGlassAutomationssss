@@ -2,8 +2,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Optimization Report"
-        MinHeight="700" MinWidth="1100"
-        Height="780" Width="1300"
+        MinHeight="640" MinWidth="1100"
+        Height="720" Width="1300"
         WindowStartupLocation="CenterOwner"
         Background="#F4F6FB"
         FontFamily="Segoe UI"
@@ -25,9 +25,7 @@
         <SolidColorBrush x:Key="AccentHoverBrush" Color="#047857"/>
         <SolidColorBrush x:Key="AccentSoftBrush" Color="#ECFDF5"/>
         <SolidColorBrush x:Key="DangerBrush" Color="#DC2626"/>
-        <SolidColorBrush x:Key="DangerSoftBrush" Color="#FEF2F2"/>
         <SolidColorBrush x:Key="WarningBrush" Color="#D97706"/>
-        <SolidColorBrush x:Key="WarningSoftBrush" Color="#FEF3C7"/>
         <SolidColorBrush x:Key="TextPrimaryBrush" Color="#0B1220"/>
         <SolidColorBrush x:Key="TextSecondaryBrush" Color="#475569"/>
         <SolidColorBrush x:Key="TextMutedBrush" Color="#94A3B8"/>
@@ -41,11 +39,6 @@
         <LinearGradientBrush x:Key="AccentGradient" StartPoint="0,0" EndPoint="1,1">
             <GradientStop Color="#10B981" Offset="0"/>
             <GradientStop Color="#0EA5E9" Offset="1"/>
-        </LinearGradientBrush>
-
-        <LinearGradientBrush x:Key="DangerGradient" StartPoint="0,0" EndPoint="1,1">
-            <GradientStop Color="#F43F5E" Offset="0"/>
-            <GradientStop Color="#F97316" Offset="1"/>
         </LinearGradientBrush>
 
         <LinearGradientBrush x:Key="HeroGradient" StartPoint="0,0" EndPoint="1,0">
@@ -62,12 +55,6 @@
             <Setter Property="Padding" Value="20"/>
         </Style>
 
-        <Style x:Key="SectionTitle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
-        </Style>
-
         <Style x:Key="Label" TargetType="TextBlock">
             <Setter Property="FontSize" Value="10"/>
             <Setter Property="FontWeight" Value="Bold"/>
@@ -78,101 +65,12 @@
             <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
         </Style>
 
-        <!-- KPI card style with left accent strip -->
-        <Style x:Key="KpiCard" TargetType="Border">
-            <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
-            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="12"/>
-            <Setter Property="Padding" Value="0"/>
-            <Setter Property="Margin" Value="0,0,8,0"/>
-            <Setter Property="Effect">
-                <Setter.Value>
-                    <DropShadowEffect Color="#0F172A" Opacity="0.05" BlurRadius="14" ShadowDepth="0"/>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- Primary Button -->
-        <Style x:Key="PrimaryButton" TargetType="Button">
-            <Setter Property="Background" Value="{StaticResource PrimaryGradient}"/>
-            <Setter Property="Foreground" Value="{StaticResource TextOnPrimaryBrush}"/>
-            <Setter Property="Padding" Value="18,10"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="12.5"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="bd" Background="{TemplateBinding Background}"
-                                CornerRadius="8" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="bd" Property="Background" Value="{StaticResource PrimaryHoverBrush}"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- Accent Button -->
-        <Style x:Key="AccentButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
-            <Setter Property="Background" Value="{StaticResource AccentGradient}"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="bd" Background="{TemplateBinding Background}"
-                                CornerRadius="8" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="bd" Property="Background" Value="{StaticResource AccentHoverBrush}"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- Dark Button -->
-        <Style x:Key="DarkButton" TargetType="Button">
-            <Setter Property="Background" Value="#0F172A"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="18,10"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="12.5"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="bd" Background="{TemplateBinding Background}"
-                                CornerRadius="8" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
-                                              TextElement.Foreground="{TemplateBinding Foreground}"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="bd" Property="Background" Value="#1E293B"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- Ghost Button -->
         <Style x:Key="GhostButton" TargetType="Button">
             <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
             <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
-            <Setter Property="Padding" Value="18,10"/>
+            <Setter Property="Padding" Value="14,8"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="FontSize" Value="12"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Template">
@@ -195,7 +93,31 @@
             </Setter>
         </Style>
 
-        <!-- ✅ DataGrid — fixed selection highlight, proportional widths -->
+        <Style x:Key="AccentButton" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource AccentGradient}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextOnPrimaryBrush}"/>
+            <Setter Property="Padding" Value="14,8"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{StaticResource AccentHoverBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style TargetType="DataGrid">
             <Setter Property="Background" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -209,8 +131,8 @@
             <Setter Property="CanUserResizeRows" Value="False"/>
             <Setter Property="CanUserSortColumns" Value="False"/>
             <Setter Property="CanUserReorderColumns" Value="False"/>
-            <Setter Property="RowHeight" Value="40"/>
-            <Setter Property="ColumnHeaderHeight" Value="42"/>
+            <Setter Property="RowHeight" Value="34"/>
+            <Setter Property="ColumnHeaderHeight" Value="38"/>
             <Setter Property="FontSize" Value="12.5"/>
             <Setter Property="IsReadOnly" Value="True"/>
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -231,11 +153,10 @@
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
         </Style>
 
-        <!-- ✅ FIX: Full cell background highlight on selection -->
         <Style TargetType="DataGridCell">
             <Setter Property="BorderBrush" Value="#E2E8F0"/>
             <Setter Property="BorderThickness" Value="0,0,1,0"/>
-            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="Padding" Value="10,6"/>
             <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
@@ -278,119 +199,217 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+
+        <Style TargetType="TabControl">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabControl">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" Background="White" CornerRadius="12,12,0,0"
+                                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1,1,1,0"
+                                    Padding="12,12,12,0">
+                                <TabPanel IsItemsHost="True" Background="Transparent"/>
+                            </Border>
+                            <Border Grid.Row="1" Background="White" CornerRadius="0,0,12,12"
+                                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1,0,1,1">
+                                <ContentPresenter ContentSource="SelectedContent"/>
+                            </Border>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="TabItem">
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+            <Setter Property="Padding" Value="20,10"/>
+            <Setter Property="Margin" Value="0,0,4,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="bd" Background="Transparent" CornerRadius="8,8,0,0"
+                                Padding="{TemplateBinding Padding}" Margin="{TemplateBinding Margin}">
+                            <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{StaticResource PrimaryBrush}"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{StaticResource PrimarySoftBrush}"/>
+                                <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}"/>
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsSelected" Value="True"/>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="bd" Property="Background" Value="{StaticResource PrimaryBrush}"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- HERO HEADER -->
-        <Border Grid.Row="0" Background="{StaticResource HeroGradient}" Padding="28,22">
-            <StackPanel VerticalAlignment="Center">
-                <Border Background="#312E81" CornerRadius="5" Padding="10,4"
-                        HorizontalAlignment="Left" Margin="0,0,0,8">
-                    <TextBlock Text="OPTIMIZATION REPORT" FontSize="10" FontWeight="Bold"
-                               Foreground="{StaticResource AccentBrush}"/>
-                </Border>
-                <TextBlock Text="Performance Report" FontSize="22" FontWeight="Bold" Foreground="White"/>
-                <TextBlock x:Name="txtReportSubtitle" Text="Detailed breakdown of optimization result"
-                           FontSize="12" Foreground="#C7D2FE" Margin="0,2,0,0"/>
-            </StackPanel>
-        </Border>
+        <Border Grid.Row="0" Background="{StaticResource HeroGradient}" Padding="28,18">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-        <!-- KPI CARDS (4 cards) -->
-        <UniformGrid Grid.Row="1" Columns="4" Rows="1" Margin="20,16,20,12">
-            <Border Style="{StaticResource KpiCard}">
-                <Grid>
-                    <Rectangle Width="4" HorizontalAlignment="Left" Fill="{StaticResource AccentGradient}"/>
-                    <StackPanel Margin="20,16,20,16">
-                        <TextBlock Text="GROSS YIELD" Style="{StaticResource Label}"/>
-                        <TextBlock x:Name="txtGrossYield" Text="0%" FontSize="26" FontWeight="Bold"
-                                   Foreground="{StaticResource AccentBrush}" Margin="0,8,0,0"/>
-                        <TextBlock Text="Material efficiency" FontSize="10.5" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,4,0,0"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
-            <Border Style="{StaticResource KpiCard}">
-                <Grid>
-                    <Rectangle Width="4" HorizontalAlignment="Left" Fill="{StaticResource DangerGradient}"/>
-                    <StackPanel Margin="20,16,20,16">
-                        <TextBlock Text="SCRAP" Style="{StaticResource Label}"/>
-                        <TextBlock x:Name="txtScrap" Text="0%" FontSize="26" FontWeight="Bold"
-                                   Foreground="{StaticResource DangerBrush}" Margin="0,8,0,0"/>
-                        <TextBlock Text="Unused material" FontSize="10.5" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,4,0,0"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
-            <Border Style="{StaticResource KpiCard}">
-                <Grid>
-                    <Rectangle Width="4" HorizontalAlignment="Left" Fill="{StaticResource WarningBrush}"/>
-                    <StackPanel Margin="20,16,20,16">
-                        <TextBlock Text="SHEETS USED" Style="{StaticResource Label}"/>
-                        <TextBlock x:Name="txtSheetsUsed" Text="0" FontSize="26" FontWeight="Bold"
-                                   Foreground="{StaticResource WarningBrush}" Margin="0,8,0,0"/>
-                        <TextBlock Text="After optimization" FontSize="10.5" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,4,0,0"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
-            <Border Style="{StaticResource KpiCard}">
-                <Grid>
-                    <Rectangle Width="4" HorizontalAlignment="Left" Fill="{StaticResource PrimaryGradient}"/>
-                    <StackPanel Margin="20,16,20,16">
-                        <TextBlock Text="RUNTIME" Style="{StaticResource Label}"/>
-                        <TextBlock x:Name="txtRuntime" Text="0 ms" FontSize="26" FontWeight="Bold"
-                                   Foreground="{StaticResource PrimaryBrush}" Margin="0,8,0,0"/>
-                        <TextBlock Text="Engine execution" FontSize="10.5" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,4,0,0"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
-        </UniformGrid>
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <Border Background="#312E81" CornerRadius="5" Padding="10,4"
+                            HorizontalAlignment="Left" Margin="0,0,0,6">
+                        <TextBlock Text="OPTIMIZATION REPORT" FontSize="10" FontWeight="Bold"
+                                   Foreground="{StaticResource AccentBrush}"/>
+                    </Border>
+                    <TextBlock Text="Optimization Report" FontSize="20" FontWeight="Bold" Foreground="White"/>
+                    <TextBlock x:Name="txtSubtitle" Text="Generated results from the engine"
+                               FontSize="11" Foreground="#C7D2FE" Margin="0,2,0,0"/>
+                </StackPanel>
 
-        <!-- REPORT CONTENT -->
-        <Border Grid.Row="2" Style="{StaticResource CardBorder}" Margin="20,0,20,12" Padding="0">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <StackPanel Margin="20">
-                    <!-- Per-Sheet DataGrid -->
-                    <TextBlock Text="PER-SHEET BREAKDOWN" Style="{StaticResource Label}" Margin="0,0,0,10"/>
-
-                    <DataGrid x:Name="dgLayouts" MaxHeight="240">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Sheet #"        Binding="{Binding SheetNum}"                  Width="0.8*"/>
-                            <DataGridTextColumn Header="Dimensions"     Binding="{Binding Dimensions}"                Width="2.5*"/>
-                            <DataGridTextColumn Header="Pieces"         Binding="{Binding GlassCount}"                Width="1.0*"/>
-                            <DataGridTextColumn Header="Rotated 90°"   Binding="{Binding Rotated90}"                 Width="1.2*"/>
-                            <DataGridTextColumn Header="Yield %"       Binding="{Binding YieldText}"                 Width="1.2*"/>
-                            <DataGridTextColumn Header="Used (m²)"     Binding="{Binding UsedNet, StringFormat=F3}"  Width="1.3*"/>
-                            <DataGridTextColumn Header="Scrap (m²)"    Binding="{Binding ScrapWaste, StringFormat=F3}" Width="1.3*"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
-
-                    <!-- Text Report Header -->
-                    <TextBlock Text="FULL TEXT REPORT" Style="{StaticResource Label}" Margin="0,20,0,10"/>
-
-                    <!-- Console-style report -->
-                    <Border Background="#0F172A" CornerRadius="10" Padding="20,16">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="280">
-                            <TextBlock x:Name="txtFullReport" Foreground="#94A3B8"
-                                       FontFamily="Cascadia Mono, Consolas, Courier New"
-                                       FontSize="12" TextWrapping="Wrap" LineHeight="18"
-                                       Text="No report available"/>
-                        </ScrollViewer>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Background="#312E81" CornerRadius="8" Padding="12,6" Margin="0,0,8,0">
+                        <StackPanel>
+                            <TextBlock Text="SHEETS" FontSize="9" FontWeight="Bold"
+                                       Foreground="#94A3B8" HorizontalAlignment="Center"/>
+                            <TextBlock x:Name="txtSheets" Text="0" FontSize="16" FontWeight="Bold"
+                                       Foreground="White" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="#312E81" CornerRadius="8" Padding="12,6" Margin="0,0,8,0">
+                        <StackPanel>
+                            <TextBlock Text="UTILIZATION" FontSize="9" FontWeight="Bold"
+                                       Foreground="#94A3B8" HorizontalAlignment="Center"/>
+                            <TextBlock x:Name="txtUtil" Text="0%" FontSize="16" FontWeight="Bold"
+                                       Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="#312E81" CornerRadius="8" Padding="12,6" Margin="0,0,8,0">
+                        <StackPanel>
+                            <TextBlock Text="WASTE" FontSize="9" FontWeight="Bold"
+                                       Foreground="#94A3B8" HorizontalAlignment="Center"/>
+                            <TextBlock x:Name="txtWaste" Text="0%" FontSize="16" FontWeight="Bold"
+                                       Foreground="#FCA5A5" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="#312E81" CornerRadius="8" Padding="12,6">
+                        <StackPanel>
+                            <TextBlock Text="PLACED" FontSize="9" FontWeight="Bold"
+                                       Foreground="#94A3B8" HorizontalAlignment="Center"/>
+                            <TextBlock x:Name="txtPlaced" Text="0" FontSize="16" FontWeight="Bold"
+                                       Foreground="White" HorizontalAlignment="Center"/>
+                        </StackPanel>
                     </Border>
                 </StackPanel>
-            </ScrollViewer>
+            </Grid>
         </Border>
 
-        <!-- ACTION BUTTONS -->
-        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="20,0,20,16">
-            <Button Content="Copy Report" Click="Copy_Click" Style="{StaticResource GhostButton}" Margin="0,0,8,0"/>
-            <Button Content="Save as CSV" Click="Save_Click" Style="{StaticResource AccentButton}" Margin="0,0,8,0"/>
-            <Button Content="Close" Click="Close_Click" Style="{StaticResource DarkButton}"/>
-        </StackPanel>
+        <Grid Grid.Row="1" Margin="20,16,20,12">
+            <TabControl x:Name="tabControl">
+                <TabItem Header="📊 Per-Sheet Breakdown">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Border Grid.Row="0" Background="{StaticResource PrimarySoftBrush}" 
+                                Padding="20,14" BorderBrush="{StaticResource BorderBrush}" 
+                                BorderThickness="0,0,0,1">
+                            <StackPanel>
+                                <TextBlock Text="Detailed Metrics for Every Sheet" FontSize="14" FontWeight="Bold"
+                                           Foreground="{StaticResource PrimaryBrush}"/>
+                                <TextBlock Text="Each row shows the optimization result for one stock sheet — pieces placed, rotated, and area consumed."
+                                           FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+                        <DataGrid Grid.Row="1" x:Name="dgBreakdown" ItemsSource="{Binding Layouts}"
+                                  Background="White" BorderThickness="0">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Sheet #"    Binding="{Binding SheetNum}"                  Width="0.7*"/>
+                                <DataGridTextColumn Header="Dimensions" Binding="{Binding Dimensions}"                Width="1.8*"/>
+                                <DataGridTextColumn Header="Glass"      Binding="{Binding GlassCount}"                Width="0.8*"/>
+                                <DataGridTextColumn Header="Rotated"    Binding="{Binding Rotated90}"                 Width="0.8*"/>
+                                <DataGridTextColumn Header="Yield %"    Binding="{Binding YieldText}"                 Width="0.9*"/>
+                                <DataGridTextColumn Header="Used (m²)"  Binding="{Binding UsedNet, StringFormat=F3}"  Width="1.0*"/>
+                                <DataGridTextColumn Header="Waste (m²)" Binding="{Binding ScrapWaste, StringFormat=F3}" Width="1.0*"/>
+                                <DataGridTextColumn Header="Efficiency" Binding="{Binding YieldText}"                 Width="1.0*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="📄 Full Text Report">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Border Grid.Row="0" Background="{StaticResource AccentSoftBrush}" 
+                                Padding="20,14" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                            <StackPanel>
+                                <TextBlock Text="Human-Readable Summary" FontSize="14" FontWeight="Bold"
+                                           Foreground="{StaticResource AccentBrush}"/>
+                                <TextBlock Text="Plain-text breakdown. Use Copy to clipboard or Save to file."
+                                           FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Row="1" Background="{StaticResource SurfaceSunkenBrush}" 
+                                BorderBrush="{StaticResource BorderBrush}" BorderThickness="0">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="20,16">
+                                <TextBox x:Name="txtFullReport" IsReadOnly="True" 
+                                         Background="Transparent" BorderThickness="0"
+                                         FontFamily="Consolas, Cascadia Code, Segoe UI"
+                                         FontSize="12.5" Foreground="{StaticResource TextPrimaryBrush}"
+                                         TextWrapping="Wrap" AcceptsReturn="True"
+                                         VerticalScrollBarVisibility="Disabled"
+                                         HorizontalScrollBarVisibility="Disabled"
+                                         Padding="0"/>
+                            </ScrollViewer>
+                        </Border>
+                    </Grid>
+                </TabItem>
+            </TabControl>
+        </Grid>
+
+        <Border Grid.Row="2" Style="{StaticResource CardBorder}" Margin="20,0,20,16" Padding="14,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" x:Name="txtFooterInfo" Text="Generated by MaxNest optimization engine."
+                           FontSize="11" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Content="📋 Copy" Click="Copy_Click" Style="{StaticResource GhostButton}" Margin="0,0,8,0"/>
+                    <Button Content="💾 Save" Click="Save_Click" Style="{StaticResource GhostButton}" Margin="0,0,8,0"/>
+                    <Button Content="Close" Click="Close_Click" Style="{StaticResource AccentButton}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
     </Grid>
 </Window>

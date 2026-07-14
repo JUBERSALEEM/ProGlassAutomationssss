@@ -2,7 +2,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace ProGlassAutomation.Views.Optimization
+namespace ProGlassAutomation.Models
 {
     public class DemandPart : INotifyPropertyChanged
     {
@@ -19,7 +19,7 @@ namespace ProGlassAutomation.Views.Optimization
         public DemandPart()
         {
             Id = _nextId++;
-            SrNo = Id; // Auto-set SrNo to the same value as Id
+            SrNo = Id;
             UI_Color = _palette[_rand.Next(_palette.Length)];
         }
 
@@ -39,11 +39,7 @@ namespace ProGlassAutomation.Views.Optimization
         public int SrNo
         {
             get => _srNo;
-            set
-            {
-                _srNo = value;
-                OnPropertyChanged();
-            }
+            set { _srNo = value; OnPropertyChanged(); }
         }
 
         private string _uiColor = "#FCD34D";
@@ -64,14 +60,24 @@ namespace ProGlassAutomation.Views.Optimization
         public double L
         {
             get => _l;
-            set { _l = value; OnPropertyChanged(); }
+            set
+            {
+                _l = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(Area));  // ✅ notify Area
+            }
         }
 
         private double _w;
         public double W
         {
             get => _w;
-            set { _w = value; OnPropertyChanged(); }
+            set
+            {
+                _w = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(Area));  // ✅ notify Area
+            }
         }
 
         private int _qty = 1;
@@ -80,6 +86,9 @@ namespace ProGlassAutomation.Views.Optimization
             get => _qty;
             set { _qty = value; OnPropertyChanged(); }
         }
+
+        // ✅ Computed property for binding
+        public double Area => (L * W) / 1_000_000.0;
 
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string? name = null)

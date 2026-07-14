@@ -16,6 +16,7 @@ namespace ProGlassAutomation.Views.Optimization
         {
             InitializeComponent();
             _vm = vm;
+            DataContext = _vm;  // ✅ FIX: so {Binding DemandParts} resolves
             dgParts.ItemsSource = _vm.DemandParts;
 
             _vm.DemandParts.CollectionChanged += (s, e) => UpdateSummary();
