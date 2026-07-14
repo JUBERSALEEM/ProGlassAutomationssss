@@ -82,6 +82,44 @@ namespace ProGlassAutomation.Views.Optimization
             }
         }
 
+        // ✅ NEW: Stock Margins dialog handler (used by BOTH header and card buttons)
+        private void OpenStockMargins_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var dlg = new StockMarginDialog
+                {
+                    Owner = Window.GetWindow(this)
+                };
+
+                if (dlg.ShowDialog() == true)
+                {
+                    // Push preset values into the form fields
+                    txtBreakLeft.Text = dlg.LM.ToString("0", CultureInfo.InvariantCulture);
+                    txtBreakRight.Text = dlg.RM.ToString("0", CultureInfo.InvariantCulture);
+                    txtBreakTop.Text = dlg.TM.ToString("0", CultureInfo.InvariantCulture);
+                    txtBreakBottom.Text = dlg.BM.ToString("0", CultureInfo.InvariantCulture);
+                    txtBreakMin.Text = Math.Min(dlg.LM, Math.Min(dlg.RM, Math.Min(dlg.TM, dlg.BM)))
+                                              .ToString("0", CultureInfo.InvariantCulture);
+
+                    // Show confirmation with the applied values
+                    MessageBox.Show(
+                        $"Applied {dlg.SelectedThickness} mm thickness preset:\n\n" +
+                        $"  Left margin:    {dlg.LM} mm\n" +
+                        $"  Right margin:   {dlg.RM} mm\n" +
+                        $"  Top margin:     {dlg.TM} mm\n" +
+                        $"  Bottom margin:  {dlg.BM} mm\n\n" +
+                        $"You can still fine-tune the values before running optimization.",
+                        "Stock Margins Applied",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[OptimizationView] OpenStockMargins: {ex.Message}");
+            }
+        }
+
         private void RunOptimization_Click(object sender, RoutedEventArgs e)
         {
             if (_vm.StockSheets.Count == 0 || _vm.Parts.Count == 0)

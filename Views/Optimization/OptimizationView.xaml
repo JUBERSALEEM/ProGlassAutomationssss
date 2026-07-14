@@ -13,7 +13,6 @@
              SnapsToDevicePixels="True">
 
     <UserControl.Resources>
-        <!-- 2026 Light Palette -->
         <SolidColorBrush x:Key="BackgroundBrush" Color="#F4F6FB"/>
         <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF"/>
         <SolidColorBrush x:Key="SurfaceMutedBrush" Color="#F1F5F9"/>
@@ -29,6 +28,7 @@
         <SolidColorBrush x:Key="AccentSoftBrush" Color="#ECFDF5"/>
         <SolidColorBrush x:Key="DangerBrush" Color="#DC2626"/>
         <SolidColorBrush x:Key="WarningBrush" Color="#D97706"/>
+        <SolidColorBrush x:Key="WarningSoftBrush" Color="#FEF3C7"/>
 
         <SolidColorBrush x:Key="TextPrimaryBrush" Color="#0B1220"/>
         <SolidColorBrush x:Key="TextSecondaryBrush" Color="#475569"/>
@@ -54,6 +54,11 @@
         <LinearGradientBrush x:Key="DangerGradient" StartPoint="0,0" EndPoint="1,1">
             <GradientStop Color="#F43F5E" Offset="0"/>
             <GradientStop Color="#F97316" Offset="1"/>
+        </LinearGradientBrush>
+
+        <LinearGradientBrush x:Key="WarningGradient" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#F59E0B" Offset="0"/>
+            <GradientStop Color="#D97706" Offset="1"/>
         </LinearGradientBrush>
 
         <!-- Card style -->
@@ -126,6 +131,35 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="bd" Property="Background" Value="{StaticResource AccentHoverBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ✅ NEW: Warning (amber) button for Stock Margins -->
+        <Style x:Key="WarningButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+            <Setter Property="Background" Value="{StaticResource WarningGradient}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                CornerRadius="10" Padding="{TemplateBinding Padding}">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#F59E0B" Opacity="0.3" BlurRadius="16" ShadowDepth="0"/>
+                            </Border.Effect>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{StaticResource WarningBrush}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="bd" Property="Opacity" Value="0.9"/>
@@ -323,6 +357,8 @@
                     <Button Content="Parts" Click="OpenPartsDialog_Click" Style="{StaticResource GhostButton}" Margin="0,0,10,0"/>
                     <Button Content="2D Layout" Click="OpenLayoutDialog_Click" Style="{StaticResource AccentButton}" Margin="0,0,10,0"/>
                     <Button Content="Report" Click="OpenReportDialog_Click" Style="{StaticResource DarkButton}" Margin="0,0,10,0"/>
+                    <!-- ✅ NEW: Stock Margins button (amber/warning) -->
+                    <Button Content="⚙ Stock Margins" Click="OpenStockMargins_Click" Style="{StaticResource WarningButton}" Margin="0,0,10,0"/>
                     <Button Content="Run Optimization" Click="RunOptimization_Click" Style="{StaticResource PrimaryButton}"/>
                 </WrapPanel>
             </Grid>
@@ -334,7 +370,7 @@
             <StackPanel Margin="40,28,40,40">
 
                 <!-- ═══════════════════════════════════════════════════ -->
-                <!-- KPI CARDS — 5 cards including the new SHEETS USED -->
+                <!-- KPI CARDS — 5 cards including SHEETS USED -->
                 <!-- ═══════════════════════════════════════════════════ -->
                 <UniformGrid Columns="5" Rows="1">
                     <Border Style="{StaticResource KpiCard}" Margin="0,0,6,0">
@@ -354,8 +390,7 @@
                             <Rectangle Width="4" HorizontalAlignment="Left" Fill="#6366F1"/>
                             <StackPanel Margin="20,22,20,22">
                                 <TextBlock Text="SHEETS USED" Style="{StaticResource Label}"/>
-                                <TextBlock x:Name="txtSheetsUsed"
-                                           Text="{Binding SheetsUsed, Mode=OneWay, StringFormat=N0}"
+                                <TextBlock Text="{Binding SheetsUsed, Mode=OneWay, StringFormat=N0}"
                                            FontSize="34" FontWeight="Bold" Foreground="#6366F1" Margin="0,12,0,0"/>
                                 <TextBlock Text="After optimization" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,4,0,0"/>
                             </StackPanel>
@@ -406,10 +441,20 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- SETTINGS -->
+                    <!-- SETTINGS — with Stock Margins button at top-right -->
                     <Border Grid.Column="0" Style="{StaticResource CardBorder}" Margin="0,0,10,0">
                         <StackPanel>
-                            <TextBlock Text="Cutting Settings" Style="{StaticResource SectionTitle}" Margin="0,0,0,20"/>
+                            <Grid Margin="0,0,0,20">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Cutting Settings" Style="{StaticResource SectionTitle}" VerticalAlignment="Center"/>
+                                <!-- ✅ NEW: Stock Margins button inside the card (next to fields) -->
+                                <Button Grid.Column="1" Content="⚙ Stock Margins" Click="OpenStockMargins_Click"
+                                        Style="{StaticResource WarningButton}" Padding="14,7" FontSize="12"/>
+                            </Grid>
+
                             <UniformGrid Columns="2" Rows="3">
                                 <StackPanel Margin="0,0,10,16">
                                     <TextBlock Text="KERF (MM)" Style="{StaticResource Label}" Margin="0,0,0,10"/>

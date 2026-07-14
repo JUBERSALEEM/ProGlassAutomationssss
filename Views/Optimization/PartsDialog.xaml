@@ -1,43 +1,95 @@
 ﻿<Window x:Class="ProGlassAutomation.Views.Optimization.PartsDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Parts of Glass"
-        Height="800" Width="1150"
+        Title="Manage Parts to Cut"
+        MinHeight="640" MinWidth="1100"
+        Height="720" Width="1300"
         WindowStartupLocation="CenterOwner"
-        Background="#F8FAFC"
-        FontFamily="Segoe UI">
-    <Window.Resources>
-        <SolidColorBrush x:Key="MainBg" Color="#F8FAFC"/>
-        <SolidColorBrush x:Key="AccentNavy" Color="#0F172A"/>
-        <SolidColorBrush x:Key="TextMuted" Color="#64748B"/>
-        <SolidColorBrush x:Key="BorderLight" Color="#E2E8F0"/>
-        <SolidColorBrush x:Key="PrimaryBlue" Color="#2563EB"/>
-        <SolidColorBrush x:Key="DangerBg" Color="#7F1D1D"/>
-        <SolidColorBrush x:Key="DangerHover" Color="#B91C1C"/>
+        Background="#F4F6FB"
+        FontFamily="Segoe UI"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True">
 
-        <!-- Pill-Style Excel Cell -->
-        <Style x:Key="ExcelCell" TargetType="TextBox">
-            <Setter Property="Padding" Value="12,8"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
-            <Setter Property="HorizontalContentAlignment" Value="Center"/>
-            <Setter Property="Background" Value="#F8FAFC"/>
-            <Setter Property="Foreground" Value="#0F172A"/>
-            <Setter Property="BorderBrush" Value="#CBD5E1"/>
-            <Setter Property="CaretBrush" Value="#2563EB"/>
-            <Setter Property="SelectionBrush" Value="#2563EB"/>
-            <Setter Property="FontSize" Value="13"/>
+    <Window.Resources>
+        <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="SurfaceSunkenBrush" Color="#F8FAFC"/>
+        <SolidColorBrush x:Key="SurfaceMutedBrush" Color="#F1F5F9"/>
+        <SolidColorBrush x:Key="BorderBrush" Color="#E2E8F0"/>
+        <SolidColorBrush x:Key="BorderHoverBrush" Color="#CBD5E1"/>
+        <SolidColorBrush x:Key="PrimaryBrush" Color="#4F46E5"/>
+        <SolidColorBrush x:Key="PrimaryHoverBrush" Color="#4338CA"/>
+        <SolidColorBrush x:Key="PrimarySoftBrush" Color="#EEF2FF"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="#059669"/>
+        <SolidColorBrush x:Key="AccentHoverBrush" Color="#047857"/>
+        <SolidColorBrush x:Key="DangerBrush" Color="#DC2626"/>
+        <SolidColorBrush x:Key="WarningBrush" Color="#D97706"/>
+        <SolidColorBrush x:Key="TextPrimaryBrush" Color="#0B1220"/>
+        <SolidColorBrush x:Key="TextSecondaryBrush" Color="#475569"/>
+        <SolidColorBrush x:Key="TextMutedBrush" Color="#94A3B8"/>
+        <SolidColorBrush x:Key="TextOnPrimaryBrush" Color="#FFFFFF"/>
+
+        <LinearGradientBrush x:Key="PrimaryGradient" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#4F46E5" Offset="0"/>
+            <GradientStop Color="#7C3AED" Offset="1"/>
+        </LinearGradientBrush>
+
+        <LinearGradientBrush x:Key="AccentGradient" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#10B981" Offset="0"/>
+            <GradientStop Color="#0EA5E9" Offset="1"/>
+        </LinearGradientBrush>
+
+        <LinearGradientBrush x:Key="HeroGradient" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#1E1B4B" Offset="0"/>
+            <GradientStop Color="#312E81" Offset="0.5"/>
+            <GradientStop Color="#4C1D95" Offset="1"/>
+        </LinearGradientBrush>
+
+        <Style x:Key="CardBorder" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="20"/>
+        </Style>
+
+        <Style x:Key="SectionTitle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="17"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+        </Style>
+
+        <Style x:Key="Label" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
+        </Style>
+
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+        </Style>
+
+        <Style TargetType="TextBox">
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="Background" Value="{StaticResource SurfaceSunkenBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CaretBrush" Value="{StaticResource PrimaryBrush}"/>
+            <Setter Property="FontSize" Value="12.5"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
-                        <Border x:Name="border" Background="{TemplateBinding Background}"
+                        <Border x:Name="bd" Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="1" CornerRadius="10">
-                            <ScrollViewer x:Name="PART_ContentHost" Focusable="false"/>
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsFocused" Value="True">
-                                <Setter TargetName="border" Property="BorderBrush" Value="#2563EB"/>
-                                <Setter TargetName="border" Property="Background" Value="White"/>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -45,25 +97,24 @@
             </Setter>
         </Style>
 
-        <!-- ✅ Dark Red Delete Button (2026 Glassmorphism) -->
-        <Style x:Key="DeleteButton" TargetType="Button">
-            <Setter Property="Background" Value="#7F1D1D"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="FontSize" Value="11"/>
+        <Style x:Key="AccentButton" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource AccentGradient}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextOnPrimaryBrush}"/>
+            <Setter Property="Padding" Value="14,8"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Padding" Value="14,5"/>
+            <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}"
-                                CornerRadius="6" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                CornerRadius="8" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#B91C1C"/>
+                                <Setter TargetName="bd" Property="Background" Value="{StaticResource AccentHoverBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -71,143 +122,275 @@
             </Setter>
         </Style>
 
-        <!-- KPI Card -->
-        <Style x:Key="SummaryCard" TargetType="Border">
-            <Setter Property="Background" Value="White"/>
-            <Setter Property="CornerRadius" Value="12"/>
-            <Setter Property="Padding" Value="16,12"/>
-            <Setter Property="BorderBrush" Value="#E2E8F0"/>
+        <Style x:Key="GhostButton" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+            <Setter Property="Padding" Value="14,8"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Margin" Value="0,0,10,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{StaticResource PrimarySoftBrush}"/>
+                                <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="EditButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="6,3"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                CornerRadius="5" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{StaticResource PrimarySoftBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="DeleteButton" TargetType="Button" BasedOn="{StaticResource EditButton}">
+            <Setter Property="Foreground" Value="{StaticResource DangerBrush}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                CornerRadius="5" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#FEF2F2"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ✅ DataGrid — fixed selection highlight, proportional widths -->
+        <Style TargetType="DataGrid">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="GridLinesVisibility" Value="All"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#E2E8F0"/>
+            <Setter Property="VerticalGridLinesBrush" Value="#E2E8F0"/>
+            <Setter Property="HeadersVisibility" Value="Column"/>
+            <Setter Property="AutoGenerateColumns" Value="False"/>
+            <Setter Property="CanUserAddRows" Value="False"/>
+            <Setter Property="CanUserResizeColumns" Value="False"/>
+            <Setter Property="CanUserResizeRows" Value="False"/>
+            <Setter Property="CanUserSortColumns" Value="False"/>
+            <Setter Property="CanUserReorderColumns" Value="False"/>
+            <Setter Property="RowHeight" Value="40"/>
+            <Setter Property="ColumnHeaderHeight" Value="42"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="SelectionMode" Value="Single"/>
+            <Setter Property="SelectionUnit" Value="FullRow"/>
+            <Setter Property="HorizontalScrollBarVisibility" Value="Disabled"/>
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+        </Style>
+
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#F1F5F9"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="10.5"/>
+            <Setter Property="Padding" Value="10,10"/>
+            <Setter Property="BorderBrush" Value="#E2E8F0"/>
+            <Setter Property="BorderThickness" Value="0,0,1,1"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
+
+        <!-- ✅ FIX: Full cell background highlight on selection -->
+        <Style TargetType="DataGridCell">
+            <Setter Property="BorderBrush" Value="#E2E8F0"/>
+            <Setter Property="BorderThickness" Value="0,0,1,0"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridCell">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#EEF2FF"/>
+                    <Setter Property="Foreground" Value="#4F46E5"/>
+                    <Setter Property="BorderBrush" Value="#C7D2FE"/>
+                </Trigger>
+                <MultiTrigger>
+                    <MultiTrigger.Conditions>
+                        <Condition Property="IsSelected" Value="True"/>
+                        <Condition Property="Selector.IsSelectionActive" Value="False"/>
+                    </MultiTrigger.Conditions>
+                    <Setter Property="Background" Value="#F1F5F9"/>
+                    <Setter Property="Foreground" Value="#0F172A"/>
+                    <Setter Property="BorderBrush" Value="#E2E8F0"/>
+                </MultiTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style TargetType="DataGridRow">
+            <Setter Property="Background" Value="White"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#F8FAFC"/>
+                </Trigger>
+            </Style.Triggers>
         </Style>
     </Window.Resources>
 
-    <Border CornerRadius="16" Background="White" BorderBrush="#E2E8F0" BorderThickness="1" Margin="16">
-        <Border.Effect>
-            <DropShadowEffect BlurRadius="30" ShadowDepth="2" Opacity="0.1"/>
-        </Border.Effect>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
-        <Grid Margin="24">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
+        <!-- HERO HEADER -->
+        <Border Grid.Row="0" Background="{StaticResource HeroGradient}" Padding="28,22">
+            <StackPanel VerticalAlignment="Center">
+                <Border Background="#312E81" CornerRadius="5" Padding="10,4"
+                        HorizontalAlignment="Left" Margin="0,0,0,8">
+                    <TextBlock Text="PARTS INVENTORY" FontSize="10" FontWeight="Bold"
+                               Foreground="{StaticResource AccentBrush}"/>
+                </Border>
+                <TextBlock Text="Parts to Cut" FontSize="22" FontWeight="Bold" Foreground="White"/>
+                <TextBlock Text="Manage individual glass parts required for cutting"
+                           FontSize="12" Foreground="#C7D2FE" Margin="0,2,0,0"/>
+            </StackPanel>
+        </Border>
 
-            <!-- 1. HEADER with working Download Template and Import CSV buttons -->
-            <Grid Grid.Row="0" Margin="0,0,0,24">
-                <StackPanel VerticalAlignment="Center">
-                    <StackPanel Orientation="Horizontal">
-                        <Border Width="32" Height="32" Background="#FEF3C7" CornerRadius="8" Margin="0,0,12,0">
-                            <TextBlock Text="▦" Foreground="#D97706" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="18"/>
-                        </Border>
-                        <TextBlock Text="Parts of Glass" FontSize="22" FontWeight="Bold" Foreground="#0F172A"/>
+        <!-- ADD/EDIT FORM -->
+        <Border Grid.Row="1" Style="{StaticResource CardBorder}" Margin="20,16,20,12">
+            <StackPanel>
+                <TextBlock Text="Add or Edit Part" Style="{StaticResource SectionTitle}" Margin="0,0,0,14"/>
+                <UniformGrid Columns="5" Rows="1">
+                    <StackPanel Margin="0,0,6,0">
+                        <TextBlock Text="SR.NO" Style="{StaticResource Label}" Margin="0,0,0,6"/>
+                        <TextBox x:Name="txtSrNo" Text="1"/>
                     </StackPanel>
-                </StackPanel>
+                    <StackPanel Margin="6,0">
+                        <TextBlock Text="LABEL" Style="{StaticResource Label}" Margin="0,0,0,6"/>
+                        <TextBox x:Name="txtLabel" Text="Glass-001"/>
+                    </StackPanel>
+                    <StackPanel Margin="6,0">
+                        <TextBlock Text="LENGTH (MM)" Style="{StaticResource Label}" Margin="0,0,0,6"/>
+                        <TextBox x:Name="txtLength" Text="1000"/>
+                    </StackPanel>
+                    <StackPanel Margin="6,0">
+                        <TextBlock Text="WIDTH (MM)" Style="{StaticResource Label}" Margin="0,0,0,6"/>
+                        <TextBox x:Name="txtWidth" Text="800"/>
+                    </StackPanel>
+                    <StackPanel Margin="6,0,0,0">
+                        <TextBlock Text="QTY" Style="{StaticResource Label}" Margin="0,0,0,6"/>
+                        <TextBox x:Name="txtQty" Text="1"/>
+                    </StackPanel>
+                </UniformGrid>
 
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <!-- ✅ WORKING Download Template button -->
-                    <Button Content="Download Template" Click="DownloadTemplate_Click" Background="#F1F5F9" Foreground="#475569" Padding="15,8" Margin="0,0,8,0" BorderBrush="#CBD5E1" BorderThickness="1" Cursor="Hand">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
-                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
-                    <!-- ✅ WORKING Import CSV/Excel button -->
-                    <Button Content="Import CSV / Excel" Click="ImportCsv_Click" Background="#DBEAFE" Foreground="#2563EB" Padding="15,8" Margin="0,0,8,0" BorderBrush="#3B82F6" BorderThickness="1" Cursor="Hand">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
-                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
-                    <Button Content="+ Add Part" Click="AddPart_Click" Background="#2563EB" Foreground="White" Padding="20,10" FontWeight="Bold" Cursor="Hand">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border Background="{TemplateBinding Background}" CornerRadius="8">
-                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
-                    <Button Content="✕" Click="Close_Click" Margin="15,0,0,0" Background="Transparent" Foreground="#64748B" FontSize="18" Cursor="Hand"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
+                    <Button x:Name="btnCancel" Content="Cancel" Click="Cancel_Click"
+                            Style="{StaticResource GhostButton}" Margin="0,0,8,0" Visibility="Collapsed"/>
+                    <Button x:Name="btnAdd" Content="+ Add Part" Click="Add_Click" Style="{StaticResource AccentButton}"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- DATAGRID — proportional '*' widths, full selection highlight -->
+        <Border Grid.Row="2" Margin="20,0,20,12" Background="White" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="12">
+            <DataGrid x:Name="dgParts" ItemsSource="{Binding DemandParts}">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="SR.NO"    Binding="{Binding SrNo}"            Width="0.8*"/>
+                    <DataGridTextColumn Header="Label"    Binding="{Binding Label}"           Width="3.5*"/>
+                    <DataGridTextColumn Header="L (mm)"   Binding="{Binding L, StringFormat=N0}" Width="1.5*"/>
+                    <DataGridTextColumn Header="W (mm)"   Binding="{Binding W, StringFormat=N0}" Width="1.5*"/>
+                    <DataGridTextColumn Header="Qty"      Binding="{Binding Qty}"             Width="1.0*"/>
+                    <DataGridTemplateColumn Header="Actions" Width="1.6*">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Button Content="Edit" Click="Edit_Click" Style="{StaticResource EditButton}" Margin="0,0,2,0" Tag="{Binding}"/>
+                                    <Button Content="Delete" Click="Delete_Click" Style="{StaticResource DeleteButton}" Tag="{Binding}"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <!-- SUMMARY FOOTER -->
+        <Border Grid.Row="3" Style="{StaticResource CardBorder}" Margin="20,0,20,12" Padding="16,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="PART TYPES" Style="{StaticResource Label}"/>
+                    <TextBlock x:Name="txtPartTypes" Text="0" FontSize="18" FontWeight="Bold" Margin="0,4,0,0"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1">
+                    <TextBlock Text="TOTAL PIECES" Style="{StaticResource Label}"/>
+                    <TextBlock x:Name="txtTotalPieces" Text="0" FontSize="18" FontWeight="Bold" Foreground="{StaticResource AccentBrush}" Margin="0,4,0,0"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="TOTAL AREA (M²)" Style="{StaticResource Label}"/>
+                    <TextBlock x:Name="txtTotalArea" Text="0.000" FontSize="18" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" Margin="0,4,0,0"/>
+                </StackPanel>
+                <StackPanel Grid.Column="3">
+                    <TextBlock Text="UNIQUE DIMS" Style="{StaticResource Label}"/>
+                    <TextBlock x:Name="txtUniqueDims" Text="0" FontSize="18" FontWeight="Bold" Foreground="{StaticResource WarningBrush}" Margin="0,4,0,0"/>
                 </StackPanel>
             </Grid>
+        </Border>
 
-            <!-- 2. COLUMN HEADERS -->
-            <UniformGrid Grid.Row="1" Columns="7" Margin="10,0,10,12">
-                <TextBlock Text="COLOR" FontSize="10" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center"/>
-                <TextBlock Text="REF ID" FontSize="10" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center"/>
-                <TextBlock Text="PART DESCRIPTION" FontSize="10" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Left" Margin="10,0,0,0"/>
-                <TextBlock Text="WIDTH (MM)" FontSize="10" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center"/>
-                <TextBlock Text="HEIGHT (MM)" FontSize="10" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center"/>
-                <TextBlock Text="QTY (PCS)" FontSize="10" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center"/>
-                <TextBlock Text="ACTION" FontSize="10" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Center"/>
-            </UniformGrid>
-
-            <!-- 3. SPREADSHEET ROWS with Excel-style navigation -->
-            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
-                <ItemsControl x:Name="icParts">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border Background="White" CornerRadius="12" Margin="0,0,0,8" Padding="10,8" BorderBrush="#E2E8F0" BorderThickness="1">
-                                <UniformGrid Columns="7">
-                                    <Border Width="22" Height="22" Background="{Binding UI_Color, FallbackValue=#CBD5E1}" CornerRadius="6" HorizontalAlignment="Center"/>
-                                    <TextBox Text="{Binding SrNo}" Style="{StaticResource ExcelCell}" Margin="5,0" IsReadOnly="True" Opacity="0.5"/>
-                                    <TextBox x:Name="tbLabel" Text="{Binding Label, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ExcelCell}" Margin="5,0" HorizontalContentAlignment="Left" GotFocus="Cell_GotFocus" PreviewKeyDown="Cell_KeyDown" Tag="{Binding}"/>
-                                    <TextBox x:Name="tbL" Text="{Binding L, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ExcelCell}" Margin="5,0" GotFocus="Cell_GotFocus" PreviewKeyDown="Cell_KeyDown" Tag="{Binding}"/>
-                                    <TextBox x:Name="tbW" Text="{Binding W, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ExcelCell}" Margin="5,0" GotFocus="Cell_GotFocus" PreviewKeyDown="Cell_KeyDown" Tag="{Binding}"/>
-                                    <TextBox x:Name="tbQty" Text="{Binding Qty, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ExcelCell}" Margin="5,0" GotFocus="Cell_GotFocus" PreviewKeyDown="Cell_KeyDown" Tag="{Binding}"/>
-                                    <Button Content="Delete" Click="Delete_Click" Style="{StaticResource DeleteButton}" Tag="{Binding}"/>
-                                </UniformGrid>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
-
-            <!-- 4. SUMMARY DASHBOARD -->
-            <UniformGrid Grid.Row="3" Columns="4" Margin="0,20,0,0">
-                <Border Style="{StaticResource SummaryCard}">
-                    <StackPanel>
-                        <TextBlock Text="PART TYPES" FontSize="10" FontWeight="Bold" Foreground="#64748B"/>
-                        <TextBlock x:Name="txtPartTypes" Text="0" FontSize="20" FontWeight="Bold" Foreground="#0F172A" Margin="0,4,0,0"/>
-                    </StackPanel>
-                </Border>
-                <Border Style="{StaticResource SummaryCard}">
-                    <StackPanel>
-                        <TextBlock Text="TOTAL GLASS PIECES" FontSize="10" FontWeight="Bold" Foreground="#64748B"/>
-                        <TextBlock x:Name="txtTotalPieces" Text="0" FontSize="20" FontWeight="Bold" Foreground="#2563EB" Margin="0,4,0,0"/>
-                    </StackPanel>
-                </Border>
-                <Border Style="{StaticResource SummaryCard}">
-                    <StackPanel>
-                        <TextBlock Text="DEMAND NET AREA" FontSize="10" FontWeight="Bold" Foreground="#64748B"/>
-                        <TextBlock x:Name="txtTotalArea" Text="0.000 m²" FontSize="20" FontWeight="Bold" Foreground="#10B981" Margin="0,4,0,0"/>
-                    </StackPanel>
-                </Border>
-                <Border Style="{StaticResource SummaryCard}" Margin="0">
-                    <StackPanel>
-                        <TextBlock Text="UNIQUE DIMENSIONS" FontSize="10" FontWeight="Bold" Foreground="#64748B"/>
-                        <TextBlock x:Name="txtUniqueDims" Text="0 sizes" FontSize="20" FontWeight="Bold" Foreground="#F59E0B" Margin="0,4,0,0"/>
-                    </StackPanel>
-                </Border>
-            </UniformGrid>
-
-            <!-- 5. FOOTER -->
-            <Border Grid.Row="4" Background="#F1F5F9" CornerRadius="10" Padding="12" Margin="0,15,0,0">
-                <DockPanel>
-                    <TextBlock Text="Largest Single Glass Piece:" Foreground="#64748B" FontSize="11"/>
-                    <TextBlock x:Name="txtLargest" Text="—" HorizontalAlignment="Right" FontWeight="Bold" Foreground="#0F172A" FontSize="11"/>
-                </DockPanel>
-            </Border>
-        </Grid>
-    </Border>
+        <!-- CLOSE -->
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="20,0,20,16">
+            <Button Content="Close" Click="Close_Click" Style="{StaticResource GhostButton}"/>
+        </StackPanel>
+    </Grid>
 </Window>
