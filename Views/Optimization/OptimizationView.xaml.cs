@@ -110,7 +110,7 @@ namespace ProGlassAutomation.Views.Optimization
                 if (success)
                 {
                     int placedCount = _vm.LastResult?.PlacedParts?.Count ?? 0;
-                    int sheetCount = _vm.LastSheets?.Count ?? 0;
+                    int sheetCount = _vm.SheetsUsed;
                     MessageBox.Show(
                         $"Optimization complete!\n\nTotal Parts Placed: {placedCount}\nSheets Used: {sheetCount}\nUtilization: {_vm.Utilization:0.##}%\nWaste: {_vm.Waste:0.##}%\n\nClick 'View 2D Layout' or 'View Report' to see results.",
                         "Success", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -140,7 +140,6 @@ namespace ProGlassAutomation.Views.Optimization
             }
         }
 
-        // ═══════════ PROFORMA INVOICE COMPATIBILITY ═══════════
         public int SheetsUsed => _vm.SheetsUsed;
         public double AverageUtilization => _vm.AverageUtilization;
         public List<OptimizationResult> GetResultsList() => _vm.GetResultsList();

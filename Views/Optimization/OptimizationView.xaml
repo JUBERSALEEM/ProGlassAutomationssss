@@ -333,49 +333,67 @@
                       Background="{StaticResource BackgroundBrush}">
             <StackPanel Margin="40,28,40,40">
 
-                <!-- KPI CARDS (full width row) -->
-                <UniformGrid Columns="4" Rows="1">
-                    <Border Style="{StaticResource KpiCard}" Margin="0,0,8,0">
+                <!-- ═══════════════════════════════════════════════════ -->
+                <!-- KPI CARDS — 5 cards including the new SHEETS USED -->
+                <!-- ═══════════════════════════════════════════════════ -->
+                <UniformGrid Columns="5" Rows="1">
+                    <Border Style="{StaticResource KpiCard}" Margin="0,0,6,0">
                         <Grid>
                             <Rectangle Width="4" HorizontalAlignment="Left" Fill="{StaticResource PrimaryGradient}"/>
-                            <StackPanel Margin="24,24,24,24">
-                                <TextBlock Text="STOCK SHEETS" Style="{StaticResource Label}"/>
+                            <StackPanel Margin="20,22,20,22">
+                                <TextBlock Text="STOCK AVAILABLE" Style="{StaticResource Label}"/>
                                 <TextBlock Text="{Binding StockSheetCount, Mode=OneWay, StringFormat=N0}"
-                                           FontSize="38" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,14,0,0"/>
-                                <TextBlock Text="Available panels" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,6,0,0"/>
+                                           FontSize="34" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,12,0,0"/>
+                                <TextBlock Text="Panels in inventory" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,4,0,0"/>
                             </StackPanel>
                         </Grid>
                     </Border>
-                    <Border Style="{StaticResource KpiCard}" Margin="8,0">
+
+                    <Border Style="{StaticResource KpiCard}" Margin="6,0">
+                        <Grid>
+                            <Rectangle Width="4" HorizontalAlignment="Left" Fill="#6366F1"/>
+                            <StackPanel Margin="20,22,20,22">
+                                <TextBlock Text="SHEETS USED" Style="{StaticResource Label}"/>
+                                <TextBlock x:Name="txtSheetsUsed"
+                                           Text="{Binding SheetsUsed, Mode=OneWay, StringFormat=N0}"
+                                           FontSize="34" FontWeight="Bold" Foreground="#6366F1" Margin="0,12,0,0"/>
+                                <TextBlock Text="After optimization" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <Border Style="{StaticResource KpiCard}" Margin="6,0">
                         <Grid>
                             <Rectangle Width="4" HorizontalAlignment="Left" Fill="{StaticResource AccentGradient}"/>
-                            <StackPanel Margin="24,24,24,24">
+                            <StackPanel Margin="20,22,20,22">
                                 <TextBlock Text="PARTS TO CUT" Style="{StaticResource Label}"/>
                                 <TextBlock Text="{Binding PartCount, Mode=OneWay, StringFormat=N0}"
-                                           FontSize="38" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,14,0,0"/>
-                                <TextBlock Text="Demand items" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,6,0,0"/>
+                                           FontSize="34" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,12,0,0"/>
+                                <TextBlock Text="Demand items" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,4,0,0"/>
                             </StackPanel>
                         </Grid>
                     </Border>
-                    <Border Style="{StaticResource KpiCard}" Margin="8,0">
+
+                    <Border Style="{StaticResource KpiCard}" Margin="6,0">
                         <Grid>
                             <Rectangle Width="4" HorizontalAlignment="Left" Fill="{StaticResource AccentBrush}"/>
-                            <StackPanel Margin="24,24,24,24">
+                            <StackPanel Margin="20,22,20,22">
                                 <TextBlock Text="UTILIZATION" Style="{StaticResource Label}"/>
                                 <TextBlock Text="{Binding Utilization, Mode=OneWay, StringFormat={}{0:0.##}%}"
-                                           FontSize="38" FontWeight="Bold" Foreground="{StaticResource AccentBrush}" Margin="0,14,0,0"/>
-                                <TextBlock Text="Material efficiency" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,6,0,0"/>
+                                           FontSize="34" FontWeight="Bold" Foreground="{StaticResource AccentBrush}" Margin="0,12,0,0"/>
+                                <TextBlock Text="Material efficiency" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,4,0,0"/>
                             </StackPanel>
                         </Grid>
                     </Border>
-                    <Border Style="{StaticResource KpiCard}" Margin="8,0,0,0">
+
+                    <Border Style="{StaticResource KpiCard}" Margin="6,0,0,0">
                         <Grid>
                             <Rectangle Width="4" HorizontalAlignment="Left" Fill="{StaticResource DangerGradient}"/>
-                            <StackPanel Margin="24,24,24,24">
+                            <StackPanel Margin="20,22,20,22">
                                 <TextBlock Text="WASTE" Style="{StaticResource Label}"/>
                                 <TextBlock Text="{Binding Waste, Mode=OneWay, StringFormat={}{0:0.##}%}"
-                                           FontSize="38" FontWeight="Bold" Foreground="{StaticResource DangerBrush}" Margin="0,14,0,0"/>
-                                <TextBlock Text="Unused material" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,6,0,0"/>
+                                           FontSize="34" FontWeight="Bold" Foreground="{StaticResource DangerBrush}" Margin="0,12,0,0"/>
+                                <TextBlock Text="Unused material" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,4,0,0"/>
                             </StackPanel>
                         </Grid>
                     </Border>
