@@ -1,5 +1,7 @@
 ﻿// Data/Database/DbHelper.cs
+using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.Data.Sqlite;
+using Newtonsoft.Json;
 using ProGlassAutomation.Models;
 using ProGlassAutomation.ViewModels;
 using System;
@@ -8,7 +10,6 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Newtonsoft.Json;
 
 namespace ProGlassAutomation.Data.Database
 {
@@ -880,14 +881,15 @@ VALUES ($d, $ud, $c, $pi, $cr, $t, $ps, $drs, $q, $s, $st, $sm, $cl, $n, $cd)";
             Execute(conn =>
             {
                 using SqliteCommand cmd = conn.CreateCommand();
-                cmd.CommandText = @"INSERT INTO Deliveries (SourceId, Date, Company, PINumber, CustomerReference, TypeOfWork, OrderQty, OrderSQM, Salesman, Status, Notes, CreatedDate, UpdatedDate)
-VALUES ($sid, $d, $c, $pi, $cr, $t, $q, $s, $sm, $st, $n, $cd, $ud)";
+                cmd.CommandText = @"INSERT INTO Deliveries (SourceId, Date, Company, PINumber, CustomerReference, TypeOfWork, Color, OrderQty, OrderSQM, Salesman, Status, Notes, CreatedDate, UpdatedDate)
+VALUES ($sid, $d, $c, $pi, $cr, $t, $clr, $q, $s, $sm, $st, $n, $cd, $ud)";
                 _ = cmd.Parameters.AddWithValue("$sid", d.SourceId);
                 _ = cmd.Parameters.AddWithValue("$d", d.Date.ToString("yyyy-MM-dd HH:mm:ss"));
                 _ = cmd.Parameters.AddWithValue("$c", d.Company ?? "");
                 _ = cmd.Parameters.AddWithValue("$pi", d.PINumber ?? "");
                 _ = cmd.Parameters.AddWithValue("$cr", d.CustomerReference ?? "");
                 _ = cmd.Parameters.AddWithValue("$t", d.TypeOfWork ?? "");
+                _ = cmd.Parameters.AddWithValue("$clr", d.Color ?? "");
                 _ = cmd.Parameters.AddWithValue("$q", d.OrderQty);
                 _ = cmd.Parameters.AddWithValue("$s", d.OrderSQM);
                 _ = cmd.Parameters.AddWithValue("$sm", d.Salesman ?? "");
@@ -904,13 +906,14 @@ VALUES ($sid, $d, $c, $pi, $cr, $t, $q, $s, $sm, $st, $n, $cd, $ud)";
             Execute(conn =>
             {
                 using SqliteCommand cmd = conn.CreateCommand();
-                cmd.CommandText = @"UPDATE Deliveries SET Date = $d, Company = $c, PINumber = $pi, CustomerReference = $cr, TypeOfWork = $t, OrderQty = $q, OrderSQM = $s, Salesman = $sm, Status = $st, Notes = $n, UpdatedDate = $ud WHERE Id = $id";
+                cmd.CommandText = @"UPDATE Deliveries SET Date = $d, Company = $c, PINumber = $pi, CustomerReference = $cr, TypeOfWork = $t, Color = $clr, OrderQty = $q, OrderSQM = $s, Salesman = $sm, Status = $st, Notes = $n, UpdatedDate = $ud WHERE Id = $id";
                 _ = cmd.Parameters.AddWithValue("$id", d.Id);
                 _ = cmd.Parameters.AddWithValue("$d", d.Date.ToString("yyyy-MM-dd HH:mm:ss"));
                 _ = cmd.Parameters.AddWithValue("$c", d.Company ?? "");
                 _ = cmd.Parameters.AddWithValue("$pi", d.PINumber ?? "");
                 _ = cmd.Parameters.AddWithValue("$cr", d.CustomerReference ?? "");
                 _ = cmd.Parameters.AddWithValue("$t", d.TypeOfWork ?? "");
+                _ = cmd.Parameters.AddWithValue("$clr", d.Color ?? "");
                 _ = cmd.Parameters.AddWithValue("$q", d.OrderQty);
                 _ = cmd.Parameters.AddWithValue("$s", d.OrderSQM);
                 _ = cmd.Parameters.AddWithValue("$sm", d.Salesman ?? "");
@@ -931,22 +934,24 @@ VALUES ($sid, $d, $c, $pi, $cr, $t, $q, $s, $sm, $st, $n, $cd, $ud)";
                 using SqliteDataReader r = cmd.ExecuteReader();
                 while (r.Read())
                 {
+                    // CORRECT schema: 0=Id, 1=SourceId, 2=Date, 3=Company, 4=PINumber, 5=CustomerReference, 6=TypeOfWork, 7=Color, 8=OrderQty, 9=OrderSQM, 10=Salesman, 11=Status, 12=Notes, 13=CreatedDate, 14=UpdatedDate
                     var delivery = new Delivery
                     {
                         Id = r.GetInt32(0),
                         SourceId = r.IsDBNull(1) ? 0 : r.GetInt32(1),
-                        Date = DateTime.TryParse(r.GetString(2), out DateTime d) ? d : DateTime.Today,
+                        Date = DateTime.TryParse(r.IsDBNull(2) ? "" : r.GetString(2), out DateTime d) ? d : DateTime.Today,
                         Company = r.IsDBNull(3) ? "" : r.GetString(3),
                         PINumber = r.IsDBNull(4) ? "" : r.GetString(4),
                         CustomerReference = r.IsDBNull(5) ? "" : r.GetString(5),
                         TypeOfWork = r.IsDBNull(6) ? "" : r.GetString(6),
-                        OrderQty = r.GetInt32(7),
-                        OrderSQM = r.GetDouble(8),
-                        Salesman = r.IsDBNull(9) ? "" : r.GetString(9),
-                        Status = r.IsDBNull(10) ? "" : r.GetString(10),
-                        Notes = r.IsDBNull(11) ? "" : r.GetString(11),
-                        CreatedDate = DateTime.TryParse(r.GetString(12), out DateTime cd) ? cd : DateTime.Today,
-                        UpdatedDate = DateTime.TryParse(r.GetString(13), out DateTime ud) ? ud : DateTime.Today
+                        Color = r.IsDBNull(7) ? "" : r.GetString(7),                    // ✅ ADDED
+                        OrderQty = r.IsDBNull(8) ? 0 : r.GetInt32(8),                  // ✅ Fixed: 7→8
+                        OrderSQM = r.IsDBNull(9) ? 0.0 : r.GetDouble(9),               // ✅ Fixed: 8→9
+                        Salesman = r.IsDBNull(10) ? "" : r.GetString(10),              // ✅ Fixed: 9→10
+                        Status = r.IsDBNull(11) ? "" : r.GetString(11),                // ✅ Fixed: 10→11
+                        Notes = r.IsDBNull(12) ? "" : r.GetString(12),                 // ✅ Fixed: 11→12
+                        CreatedDate = DateTime.TryParse(r.IsDBNull(13) ? "" : r.GetString(13), out DateTime cd) ? cd : DateTime.Today,  // ✅ Fixed: 12→13
+                        UpdatedDate = DateTime.TryParse(r.IsDBNull(14) ? "" : r.GetString(14), out DateTime ud) ? ud : DateTime.Today   // ✅ Fixed: 13→14
                     };
 
                     // ✅ FIX: Load DeliveryItems for each delivery
@@ -1028,19 +1033,20 @@ VALUES ($oid, $d, $dq, $ds, $rq, $rs, $dr, $v, $n, $cd)";
                 using SqliteDataReader r = cmd.ExecuteReader();
                 while (r.Read())
                 {
+                    // Schema: 0=Id, 1=OrderId, 2=DeliveryDate, 3=DeliveredQty, 4=DeliveredSQM, 5=ReturnedQty, 6=ReturnedSQM, 7=Driver, 8=Vehicle, 9=Notes, 10=CreatedDate
                     list.Add(new DeliveryItem
                     {
                         Id = r.GetInt32(0),
                         OrderId = r.GetInt32(1),
-                        DeliveryDate = DateTime.TryParse(r.GetString(2), out DateTime d) ? d : DateTime.Today,
-                        DeliveredQty = r.GetInt32(3),
-                        DeliveredSQM = r.GetDouble(4),
-                        ReturnedQty = r.GetInt32(5),
-                        ReturnedSQM = r.GetDouble(6),
+                        DeliveryDate = DateTime.TryParse(r.IsDBNull(2) ? "" : r.GetString(2), out DateTime d) ? d : DateTime.Today,
+                        DeliveredQty = r.IsDBNull(3) ? 0 : r.GetInt32(3),
+                        DeliveredSQM = r.IsDBNull(4) ? 0.0 : r.GetDouble(4),
+                        ReturnedQty = r.IsDBNull(5) ? 0 : r.GetInt32(5),
+                        ReturnedSQM = r.IsDBNull(6) ? 0.0 : r.GetDouble(6),
                         Driver = r.IsDBNull(7) ? "" : r.GetString(7),
                         Vehicle = r.IsDBNull(8) ? "" : r.GetString(8),
                         Notes = r.IsDBNull(9) ? "" : r.GetString(9),
-                        CreatedDate = DateTime.TryParse(r.GetString(10), out DateTime cd) ? cd : DateTime.Today
+                        CreatedDate = DateTime.TryParse(r.IsDBNull(10) ? "" : r.GetString(10), out DateTime cd) ? cd : DateTime.Today
                     });
                 }
                 return list;
@@ -2041,9 +2047,10 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
                         InvoiceDate = DateTime.TryParse(r.IsDBNull(10) ? "" : r.GetString(10), out DateTime pd) ? pd : DateTime.Now,
                         ValidUntil = DateTime.TryParse(r.IsDBNull(11) ? "" : r.GetString(11), out DateTime vu) ? vu : DateTime.Now.AddDays(30),
                         Status = r.IsDBNull(12) ? "Draft" : r.GetString(12),
-                        TotalAmount = r.GetDouble(13),
-                        VATAmount = r.GetDouble(15),
-                        NetAmount = r.GetDouble(16),
+                        TotalAmount = r.IsDBNull(13) ? 0 : r.GetDouble(13),
+                        VATPercent = r.IsDBNull(14) ? 5 : r.GetDouble(14),
+                        VATAmount = r.IsDBNull(15) ? 0 : r.GetDouble(15),
+                        NetAmount = r.IsDBNull(16) ? 0 : r.GetDouble(16),
                         CompanyName = r.IsDBNull(17) ? "" : r.GetString(17),
                         CompanyTRN = r.IsDBNull(18) ? "" : r.GetString(18),
                         CompanyLocation = r.IsDBNull(19) ? "" : r.GetString(19),
@@ -2074,19 +2081,20 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
                 items.Add(new ProformaInvoiceItemModel
                 {
                     Id = r.GetInt32(0),
-                    SrNo = r.GetInt32(2),
+                    // Schema: 0=Id, 1=ProformaInvoiceId, 2=SrNo, 3=GlassRef, 4=Width1, 5=Height1, 6=Width2, 7=Height2, 8=Qty, 9=SQM, 10=TotalSQM, 11=Price, 12=TotalPrice, 13=SurchargePercent, 14=SurchargeThreshold
+                    SrNo = r.IsDBNull(2) ? 0 : r.GetInt32(2),
                     GlassRef = r.IsDBNull(3) ? "" : r.GetString(3),
-                    Width1 = r.GetDouble(4),
-                    Height1 = r.GetDouble(5),
-                    Width2 = r.GetDouble(6),
-                    Height2 = r.GetDouble(7),
-                    Qty = r.GetInt32(8),
-                    SQM = r.GetDouble(9),
-                    TotalSQM = r.GetDouble(10),
-                    Price = r.GetDouble(11),
-                    TotalPrice = r.GetDouble(12),
-                    SurchargePercent = r.GetDouble(13),
-                    SurchargeThreshold = r.GetDouble(14)
+                    Width1 = r.IsDBNull(4) ? 0 : r.GetDouble(4),
+                    Height1 = r.IsDBNull(5) ? 0 : r.GetDouble(5),
+                    Width2 = r.IsDBNull(6) ? 0 : r.GetDouble(6),
+                    Height2 = r.IsDBNull(7) ? 0 : r.GetDouble(7),
+                    Qty = r.IsDBNull(8) ? 0 : r.GetInt32(8),
+                    SQM = r.IsDBNull(9) ? 0 : r.GetDouble(9),
+                    TotalSQM = r.IsDBNull(10) ? 0 : r.GetDouble(10),
+                    Price = r.IsDBNull(11) ? 0 : r.GetDouble(11),
+                    TotalPrice = r.IsDBNull(12) ? 0 : r.GetDouble(12),
+                    SurchargePercent = r.IsDBNull(13) ? 0 : r.GetDouble(13),
+                    SurchargeThreshold = r.IsDBNull(14) ? 0 : r.GetDouble(14)
                 });
             }
             return items;
@@ -2326,10 +2334,10 @@ VALUES ($cat, $th, $col, $hex, $w, $h, $sqm, $pp, $sp, $ts, $us, $bs, $act, $sup
                         JODate = DateTime.TryParse(r.IsDBNull(6) ? "" : r.GetString(6), out DateTime jd) ? jd : DateTime.Now,
                         RequiredDate = DateTime.TryParse(r.IsDBNull(7) ? "" : r.GetString(7), out DateTime rd) ? rd : DateTime.Now.AddDays(7),
                         Status = r.IsDBNull(8) ? "Pending" : r.GetString(8),
-                        TotalQty = r.GetInt32(9),
-                        ReleasedQty = r.GetInt32(10),
-                        BalanceQty = r.GetInt32(11),
-                        TotalAmount = r.GetDouble(12),
+                        TotalQty = r.IsDBNull(9) ? 0 : r.GetInt32(9),
+                        ReleasedQty = r.IsDBNull(10) ? 0 : r.GetInt32(10),
+                        BalanceQty = r.IsDBNull(11) ? 0 : r.GetInt32(11),
+                        TotalAmount = r.IsDBNull(12) ? 0 : r.GetDouble(12),
                         Notes = r.IsDBNull(13) ? "" : r.GetString(13),
                         ClientTRN = r.IsDBNull(14) ? "" : r.GetString(14),
                         ClientAddress = r.IsDBNull(15) ? "" : r.GetString(15),
@@ -2529,8 +2537,8 @@ WHERE Id = $id";
                         VehicleNumber = r.IsDBNull(8) ? "" : r.GetString(8),
                         DriverName = r.IsDBNull(9) ? "" : r.GetString(9),
                         Notes = r.IsDBNull(10) ? "" : r.GetString(10),
-                        TotalQty = r.GetInt32(11),
-                        DeliveredQty = r.GetInt32(12)
+                        TotalQty = r.IsDBNull(11) ? 0 : r.GetInt32(11),
+                        DeliveredQty = r.IsDBNull(12) ? 0 : r.GetInt32(12)
                     };
                     d.Items = GetDeliveryOrderItems(d.Id, conn);
                     list.Add(d);
@@ -2690,12 +2698,12 @@ VALUES ($inv, $piId, $joId, $doId, $cn, $ctr, $ca, $idate, $dd, $st, $ps, $sub, 
                         DueDate = DateTime.TryParse(r.IsDBNull(9) ? "" : r.GetString(9), out DateTime dd) ? dd : DateTime.Now.AddDays(30),
                         Status = r.IsDBNull(10) ? "Pending" : r.GetString(10),
                         PaymentStatus = r.IsDBNull(11) ? "Unpaid" : r.GetString(11),
-                        SubTotal = r.GetDouble(12),
-                        VATPercent = r.GetDouble(13),
-                        VATAmount = r.GetDouble(14),
-                        TotalAmount = r.GetDouble(15),
-                        PaidAmount = r.GetDouble(16),
-                        BalanceAmount = r.GetDouble(17),
+                        SubTotal = r.IsDBNull(12) ? 0 : r.GetDouble(12),
+                        VATPercent = r.IsDBNull(13) ? 5 : r.GetDouble(13),
+                        VATAmount = r.IsDBNull(14) ? 0 : r.GetDouble(14),
+                        TotalAmount = r.IsDBNull(15) ? 0 : r.GetDouble(15),
+                        PaidAmount = r.IsDBNull(16) ? 0 : r.GetDouble(16),
+                        BalanceAmount = r.IsDBNull(17) ? 0 : r.GetDouble(17),
                         Notes = r.IsDBNull(18) ? "" : r.GetString(18)
                     };
                     ti.Items = GetTaxInvoiceItems(ti.Id, conn);
@@ -3373,6 +3381,7 @@ VALUES ($inv, $piId, $joId, $doId, $cn, $ctr, $ca, $idate, $dd, $st, $ps, $sub, 
         public DateTime ValidUntil { get; set; } = DateTime.Now.AddDays(30);
         public string Status { get; set; } = "Draft";
         public double TotalAmount { get; set; }
+        public double VATPercent { get; set; } = 5;        // ✅ ADDED
         public double VATAmount { get; set; }
         public double NetAmount { get; set; }
         public string CompanyName { get; set; } = "";

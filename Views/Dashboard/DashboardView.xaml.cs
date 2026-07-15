@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using ProGlassAutomation.ViewModels;
 using ProGlassAutomation.Data.Database;
+using ProGlassAutomation.Models;
 
 namespace ProGlassAutomation.Views.Dashboard
 {
@@ -34,44 +35,49 @@ namespace ProGlassAutomation.Views.Dashboard
             }
         }
 
-        private void SyncBalance_Click(object sender, RoutedEventArgs e)
-        {
-            try { _viewModel.Sync(); }
-            catch (Exception ex) { MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
-        }
-
-        private void Refresh_Click(object sender, RoutedEventArgs e)
-        {
-            try { _viewModel.LoadData(); }
-            catch (Exception ex) { MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
-        }
+        // ✅ Sync button now uses the command from ViewModel (with IsSyncing state)
+        // No more separate SyncBalance_Click and Refresh_Click handlers - they all use SyncCommand
 
         private void ShowSalesmen_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                var dailyWorks = DbHelper.GetAllDailyWork();
-                var deliveries = DbHelper.GetAllDeliveries();
-                var pis = DbHelper.GetAllProformaInvoices();
+                var piList = SharedViewModels.ProformaInvoiceListVM;
+                var joList = SharedViewModels.JobOrderListVM;
+                var dwList = SharedViewModels.DailyWorksVM;
 
-                var dwSalesmen = dailyWorks.Where(d => !string.IsNullOrEmpty(d.Salesman)).Select(d => d.Salesman).Distinct().ToList();
-                var delSalesmen = deliveries.Where(d => !string.IsNullOrEmpty(d.Salesman)).Select(d => d.Salesman).Distinct().ToList();
-                var piSalesmen = pis.Where(p => !string.IsNullOrEmpty(p.Salesman)).Select(p => p.Salesman).Distinct().ToList();
-                var allSalesmen = dwSalesmen.Union(delSalesmen).Union(piSalesmen).Distinct().OrderBy(s => s).ToList();
+                var piSalesmen = piList?.AllInvoices?
+                    .Where(i => !string.IsNullOrEmpty(i.Salesman))
+                    .Select(i => i.Salesman).Distinct().ToList() ?? new System.Collections.Generic.List<string>();
 
-                var result = "SALESMEN LIST\n===============================\n\n";
-                int index = 1;
+                var joSalesmen = joList?.JobOrders?
+                    .Where(j => !string.IsNullOrEmpty(j.Salesman))
+                    .Select(j => j.Salesman).Distinct().ToList() ?? new System.Collections.Generic.List<string>();
+
+                var dwSalesmen = dwList?.DailyWorks?
+                    .Where(d => !string.IsNullOrEmpty(d.Salesman))
+                    .Select(d => d.Salesman).Distinct().ToList() ?? new System.Collections.Generic.List<string>();
+
+                var allSalesmen = piSalesmen.Union(joSalesmen).Union(dwSalesmen).Distinct().OrderBy(s => s).ToList();
+
+                var result = "SALES TEAM SUMMARY\n===============================\n\n";
+                int idx = 1;
                 foreach (var s in allSalesmen)
                 {
-                    var dwCount = dailyWorks.Count(d => d.Salesman == s);
-                    var delCount = deliveries.Count(d => d.Salesman == s);
-                    var piCount = pis.Count(p => p.Salesman == s && p.Status == "Confirmed");
-                    var piTotal = pis.Where(p => p.Salesman == s && p.Status == "Confirmed").Sum(p => p.NetAmount);
-                    result += $"{index}. {s}\n   DailyWork: {dwCount} | Deliveries: {delCount}\n   Confirmed PIs: {piCount} | Total: AED {piTotal:N0}\n\n";
-                    index++;
+                    var piCount = piList?.AllInvoices?.Count(i => i.Salesman == s && i.Status == "Confirmed") ?? 0;
+                    var piTotal = piList?.AllInvoices?
+                        .Where(i => i.Salesman == s && i.Status == "Confirmed")
+                        .Sum(i => (decimal)i.NetTotal) ?? 0;
+                    var joCount = joList?.JobOrders?.Count(j => j.Salesman == s) ?? 0;
+                    var dwCount = dwList?.DailyWorks?.Count(d => d.Salesman == s) ?? 0;
+
+                    result += $"{idx}. {s}\n";
+                    result += $"   PIs: {piCount} ({piTotal:N0} AED) | JOs: {joCount} | DWs: {dwCount}\n\n";
+                    idx++;
                 }
-                result += "===============================\nTotal Salesmen: " + allSalesmen.Count;
-                MessageBox.Show(result, "Salesmen List", MessageBoxButton.OK, MessageBoxImage.Information);
+                result += "===============================\nTotal Active: " + allSalesmen.Count;
+
+                MessageBox.Show(result, "Sales Team", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex) { MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
         }

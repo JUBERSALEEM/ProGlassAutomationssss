@@ -6,17 +6,76 @@
              FontFamily="Segoe UI">
 
     <UserControl.Resources>
-        <!-- Local pill button (no BasedOn) -->
-        <Style x:Key="LocalPillButton" TargetType="Button">
+        <!-- Modern Filter Button Style -->
+        <Style x:Key="FilterButton" TargetType="Button">
             <Setter Property="Padding" Value="16,9"/>
             <Setter Property="Margin" Value="0,0,8,0"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="BorderBrush" Value="#E2E8F0"/>
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="Foreground" Value="#475569"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" CornerRadius="10"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.7"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Action Button Style (Sync, Sales Team) -->
+        <Style x:Key="ActionButton" TargetType="Button">
+            <Setter Property="Padding" Value="16,9"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" CornerRadius="10"
+                                Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border" Property="Opacity" Value="0.6"/>
+                                <Setter Property="Cursor" Value="Wait"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Modern KPI Card Style -->
+        <Style x:Key="KPICard" TargetType="Border">
+            <Setter Property="Background" Value="#FFFFFF"/>
+            <Setter Property="CornerRadius" Value="16"/>
+            <Setter Property="Padding" Value="22"/>
+            <Setter Property="BorderBrush" Value="#E2E8F0"/>
+            <Setter Property="BorderThickness" Value="1"/>
         </Style>
     </UserControl.Resources>
 
@@ -57,11 +116,31 @@
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center">
-                        <Border Background="#ECFDF5" BorderBrush="#10B981" BorderThickness="1"
+                        <!-- Live/Syncing/Synced indicator -->
+                        <Border Background="{Binding StatusBadgeBg}" BorderBrush="{Binding StatusBadgeBorder}" BorderThickness="1"
                                 CornerRadius="20" Padding="12,6" HorizontalAlignment="Right">
                             <StackPanel Orientation="Horizontal">
-                                <Ellipse Width="8" Height="8" Fill="#10B981" Margin="0,0,6,0"/>
-                                <TextBlock Text="LIVE" FontSize="11" FontWeight="Bold" Foreground="#047857"/>
+                                <Ellipse Width="8" Height="8" Fill="{Binding StatusDotColor}" Margin="0,0,6,0"
+                                         VerticalAlignment="Center">
+                                    <Ellipse.Style>
+                                        <Style TargetType="Ellipse">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsSyncing}" Value="True">
+                                                    <DataTrigger.EnterActions>
+                                                        <BeginStoryboard>
+                                                            <Storyboard>
+                                                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                                 From="1.0" To="0.3" Duration="0:0:0.6"
+                                                                                 AutoReverse="True" RepeatBehavior="Forever"/>
+                                                            </Storyboard>
+                                                        </BeginStoryboard>
+                                                    </DataTrigger.EnterActions>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Ellipse.Style>
+                                </Ellipse>
+                                <TextBlock Text="{Binding StatusText}" FontSize="11" FontWeight="Bold" Foreground="{Binding StatusTextColor}"/>
                             </StackPanel>
                         </Border>
                         <TextBlock Text="{Binding LastUpdate}" FontSize="11" Foreground="#94A3B8"
@@ -85,39 +164,62 @@
                     </Grid.ColumnDefinitions>
 
                     <WrapPanel VerticalAlignment="Center">
-                        <Button Content="Today" Padding="16,9" Margin="0,0,8,0" BorderThickness="1" BorderBrush="#E2E8F0"
+                        <Button Content="Today" Style="{StaticResource FilterButton}"
                                 Background="{Binding DayFilterBg}" Foreground="{Binding DayFilterFg}"
-                                FontSize="12" FontWeight="SemiBold" Cursor="Hand"
                                 Command="{Binding DayFilterCommand}"/>
-                        <Button Content="This Week" Padding="16,9" Margin="0,0,8,0" BorderThickness="1" BorderBrush="#E2E8F0"
+                        <Button Content="This Week" Style="{StaticResource FilterButton}"
                                 Background="{Binding WeekFilterBg}" Foreground="{Binding WeekFilterFg}"
-                                FontSize="12" FontWeight="SemiBold" Cursor="Hand"
                                 Command="{Binding WeekFilterCommand}"/>
-                        <Button Content="This Month" Padding="16,9" Margin="0,0,8,0" BorderThickness="1" BorderBrush="#E2E8F0"
+                        <Button Content="This Month" Style="{StaticResource FilterButton}"
                                 Background="{Binding MonthFilterBg}" Foreground="{Binding MonthFilterFg}"
-                                FontSize="12" FontWeight="SemiBold" Cursor="Hand"
                                 Command="{Binding MonthFilterCommand}"/>
-                        <Button Content="This Year" Padding="16,9" Margin="0,0,8,0" BorderThickness="1" BorderBrush="#E2E8F0"
+                        <Button Content="This Year" Style="{StaticResource FilterButton}"
                                 Background="{Binding YearFilterBg}" Foreground="{Binding YearFilterFg}"
-                                FontSize="12" FontWeight="SemiBold" Cursor="Hand"
                                 Command="{Binding YearFilterCommand}"/>
                     </WrapPanel>
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                        <Button Content="⟳  Sync" Padding="16,9" Margin="0,0,8,0" BorderThickness="0"
-                                Background="#3B82F6" Foreground="White" FontSize="12" FontWeight="SemiBold" Cursor="Hand"
-                                Click="SyncBalance_Click"/>
-                        <Button Content="👥  Sales Team" Padding="16,9" Margin="0,0,8,0" BorderThickness="0"
-                                Background="#8B5CF6" Foreground="White" FontSize="12" FontWeight="SemiBold" Cursor="Hand"
+                        <!-- SYNC BUTTON (with syncing + success states) -->
+                        <Button Style="{StaticResource ActionButton}"
+                                Background="{Binding SyncButtonBackground}"
+                                Command="{Binding SyncCommand}"
+                                IsEnabled="{Binding IsSyncing, Converter={StaticResource InverseBoolConverter}}"
+                                ToolTip="Sync all data from database">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding SyncButtonIcon}" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsSyncing}" Value="True">
+                                                    <DataTrigger.EnterActions>
+                                                        <BeginStoryboard>
+                                                            <Storyboard>
+                                                                <DoubleAnimation Storyboard.TargetProperty="(TextBlock.RenderTransform).(RotateTransform.Angle)"
+                                                                                 From="0" To="360" Duration="0:0:1.2"
+                                                                                 RepeatBehavior="Forever"/>
+                                                            </Storyboard>
+                                                        </BeginStoryboard>
+                                                    </DataTrigger.EnterActions>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                    <TextBlock.RenderTransform>
+                                        <RotateTransform/>
+                                    </TextBlock.RenderTransform>
+                                </TextBlock>
+                                <TextBlock Text="{Binding SyncButtonText}" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Button Content="👥  Sales Team" Style="{StaticResource ActionButton}"
+                                Background="#8B5CF6"
                                 Click="ShowSalesmen_Click"/>
-                        <Button Content="↻  Refresh" Padding="16,9" Margin="0,0,0,0" BorderThickness="0"
-                                Background="#10B981" Foreground="White" FontSize="12" FontWeight="SemiBold" Cursor="Hand"
-                                Click="Refresh_Click"/>
                     </StackPanel>
                 </Grid>
             </Border>
 
-            <!-- ============ KPI ROW ============ -->
+            <!-- ============ KPI ROW (Main Metrics) ============ -->
             <Grid Margin="0,0,0,20">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -127,16 +229,14 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- Total Revenue -->
-                <Border Grid.Column="0" Background="#FFFFFF" CornerRadius="16" Padding="20" Margin="0,0,10,0"
-                        BorderBrush="#E2E8F0" BorderThickness="1">
+                <Border Grid.Column="0" Style="{StaticResource KPICard}" Margin="0,0,10,0">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.06" Color="#0F172A"/>
                     </Border.Effect>
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
                             <Border Width="36" Height="36" CornerRadius="10" Background="#DBEAFE">
-                                <TextBlock Text="TR" FontSize="13" FontWeight="Bold" Foreground="#2563EB"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock Text="💰" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <TextBlock Text="Total Revenue" FontSize="11" FontWeight="SemiBold" Foreground="#94A3B8"
                                        VerticalAlignment="Center" Margin="10,0,0,0"/>
@@ -151,16 +251,14 @@
                 </Border>
 
                 <!-- Orders -->
-                <Border Grid.Column="1" Background="#FFFFFF" CornerRadius="16" Padding="20" Margin="0,0,10,0"
-                        BorderBrush="#E2E8F0" BorderThickness="1">
+                <Border Grid.Column="1" Style="{StaticResource KPICard}" Margin="0,0,10,0">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.06" Color="#0F172A"/>
                     </Border.Effect>
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
                             <Border Width="36" Height="36" CornerRadius="10" Background="#D1FAE5">
-                                <TextBlock Text="JO" FontSize="13" FontWeight="Bold" Foreground="#059669"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock Text="📦" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <TextBlock Text="Orders" FontSize="11" FontWeight="SemiBold" Foreground="#94A3B8"
                                        VerticalAlignment="Center" Margin="10,0,0,0"/>
@@ -175,16 +273,14 @@
                 </Border>
 
                 <!-- Salesmen -->
-                <Border Grid.Column="2" Background="#FFFFFF" CornerRadius="16" Padding="20" Margin="0,0,10,0"
-                        BorderBrush="#E2E8F0" BorderThickness="1">
+                <Border Grid.Column="2" Style="{StaticResource KPICard}" Margin="0,0,10,0">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.06" Color="#0F172A"/>
                     </Border.Effect>
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
                             <Border Width="36" Height="36" CornerRadius="10" Background="#EDE9FE">
-                                <TextBlock Text="TM" FontSize="13" FontWeight="Bold" Foreground="#7C3AED"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock Text="👤" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <TextBlock Text="Salesmen" FontSize="11" FontWeight="SemiBold" Foreground="#94A3B8"
                                        VerticalAlignment="Center" Margin="10,0,0,0"/>
@@ -195,16 +291,14 @@
                 </Border>
 
                 <!-- Pending Quotes -->
-                <Border Grid.Column="3" Background="#FFFFFF" CornerRadius="16" Padding="20"
-                        BorderBrush="#E2E8F0" BorderThickness="1">
+                <Border Grid.Column="3" Style="{StaticResource KPICard}">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.06" Color="#0F172A"/>
                     </Border.Effect>
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
                             <Border Width="36" Height="36" CornerRadius="10" Background="#FEF3C7">
-                                <TextBlock Text="PQ" FontSize="13" FontWeight="Bold" Foreground="#D97706"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock Text="⏰" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <TextBlock Text="Pending Quotes" FontSize="11" FontWeight="SemiBold" Foreground="#94A3B8"
                                        VerticalAlignment="Center" Margin="10,0,0,0"/>
@@ -224,37 +318,53 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <Border Grid.Column="0" Background="#FFFFFF" CornerRadius="16" Padding="20" Margin="0,0,10,0"
-                        BorderBrush="#E2E8F0" BorderThickness="1">
+                <Border Grid.Column="0" Style="{StaticResource KPICard}" Margin="0,0,10,0">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.06" Color="#0F172A"/>
                     </Border.Effect>
                     <StackPanel>
-                        <TextBlock Text="PENDING DELIVERIES" FontSize="11" FontWeight="SemiBold" Foreground="#94A3B8" Margin="0,0,0,12"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <Border Width="32" Height="32" CornerRadius="8" Background="#FEF3C7">
+                                <TextBlock Text="⏳" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="PENDING DELIVERIES" FontSize="11" FontWeight="SemiBold" Foreground="#94A3B8"
+                                       VerticalAlignment="Center" Margin="10,0,0,0"/>
+                        </StackPanel>
                         <TextBlock Text="{Binding DelPending}" FontSize="32" FontWeight="Bold" Foreground="#D97706"/>
                         <TextBlock Text="In progress" FontSize="11" Foreground="#94A3B8" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Border>
 
-                <Border Grid.Column="1" Background="#FFFFFF" CornerRadius="16" Padding="20" Margin="0,0,10,0"
-                        BorderBrush="#E2E8F0" BorderThickness="1">
+                <Border Grid.Column="1" Style="{StaticResource KPICard}" Margin="0,0,10,0">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.06" Color="#0F172A"/>
                     </Border.Effect>
                     <StackPanel>
-                        <TextBlock Text="COMPLETED DELIVERIES" FontSize="11" FontWeight="SemiBold" Foreground="#94A3B8" Margin="0,0,0,12"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <Border Width="32" Height="32" CornerRadius="8" Background="#D1FAE5">
+                                <TextBlock Text="✓" FontSize="16" FontWeight="Bold" Foreground="#059669"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="COMPLETED DELIVERIES" FontSize="11" FontWeight="SemiBold" Foreground="#94A3B8"
+                                       VerticalAlignment="Center" Margin="10,0,0,0"/>
+                        </StackPanel>
                         <TextBlock Text="{Binding DelCompleted}" FontSize="32" FontWeight="Bold" Foreground="#059669"/>
                         <TextBlock Text="Delivered successfully" FontSize="11" Foreground="#94A3B8" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Border>
 
-                <Border Grid.Column="2" Background="#FFFFFF" CornerRadius="16" Padding="20"
-                        BorderBrush="#E2E8F0" BorderThickness="1">
+                <Border Grid.Column="2" Style="{StaticResource KPICard}">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.06" Color="#0F172A"/>
                     </Border.Effect>
                     <StackPanel>
-                        <TextBlock Text="TOTAL DELIVERIES" FontSize="11" FontWeight="SemiBold" Foreground="#94A3B8" Margin="0,0,0,12"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <Border Width="32" Height="32" CornerRadius="8" Background="#DBEAFE">
+                                <TextBlock Text="📋" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="TOTAL DELIVERIES" FontSize="11" FontWeight="SemiBold" Foreground="#94A3B8"
+                                       VerticalAlignment="Center" Margin="10,0,0,0"/>
+                        </StackPanel>
                         <TextBlock Text="{Binding DelTotal}" FontSize="32" FontWeight="Bold" Foreground="#0F172A"/>
                         <TextBlock Text="All orders" FontSize="11" Foreground="#94A3B8" Margin="0,4,0,0"/>
                     </StackPanel>
@@ -271,24 +381,21 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <Border Grid.Column="0" Background="#FFFFFF" CornerRadius="16" Padding="20" Margin="0,0,10,0"
-                        BorderBrush="#E2E8F0" BorderThickness="1">
+                <Border Grid.Column="0" Style="{StaticResource KPICard}" Margin="0,0,10,0">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.06" Color="#0F172A"/>
                     </Border.Effect>
                     <StackPanel>
                         <Border Width="32" Height="32" CornerRadius="8" Background="#DBEAFE" HorizontalAlignment="Left" Margin="0,0,0,12">
-                            <TextBlock Text="QTY" FontSize="10" FontWeight="Bold" Foreground="#2563EB"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <TextBlock Text="📊" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <TextBlock Text="Total Order Qty" FontSize="11" FontWeight="SemiBold" Foreground="#94A3B8" Margin="0,0,0,8"/>
                         <TextBlock Text="{Binding DeliveryTotalQty}" FontSize="28" FontWeight="Bold" Foreground="#2563EB"/>
-                        <TextBlock Text="{Binding DeliveryCount, StringFormat='{}{0} orders'}" FontSize="11" Foreground="#94A3B8" Margin="0,4,0,0"/>
+                        <TextBlock Text="{Binding DelTotal, StringFormat='{}{0} orders'}" FontSize="11" Foreground="#94A3B8" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Border>
 
-                <Border Grid.Column="1" Background="#FFFFFF" CornerRadius="16" Padding="20" Margin="0,0,10,0"
-                        BorderBrush="#E2E8F0" BorderThickness="1">
+                <Border Grid.Column="1" Style="{StaticResource KPICard}" Margin="0,0,10,0">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.06" Color="#0F172A"/>
                     </Border.Effect>
@@ -303,8 +410,7 @@
                     </StackPanel>
                 </Border>
 
-                <Border Grid.Column="2" Background="#FFFFFF" CornerRadius="16" Padding="20" Margin="0,0,10,0"
-                        BorderBrush="#E2E8F0" BorderThickness="1">
+                <Border Grid.Column="2" Style="{StaticResource KPICard}" Margin="0,0,10,0">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.06" Color="#0F172A"/>
                     </Border.Effect>
@@ -319,8 +425,7 @@
                     </StackPanel>
                 </Border>
 
-                <Border Grid.Column="3" Background="#FFFFFF" CornerRadius="16" Padding="20"
-                        BorderBrush="#E2E8F0" BorderThickness="1">
+                <Border Grid.Column="3" Style="{StaticResource KPICard}">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.06" Color="#0F172A"/>
                     </Border.Effect>
@@ -343,14 +448,13 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <Border Grid.Column="0" Background="#FFFFFF" CornerRadius="16" Padding="20" Margin="0,0,10,0"
-                        BorderBrush="#E2E8F0" BorderThickness="1">
+                <Border Grid.Column="0" Style="{StaticResource KPICard}" Margin="0,0,10,0">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.06" Color="#0F172A"/>
                     </Border.Effect>
                     <StackPanel>
                         <TextBlock Text="Production Trend" FontSize="15" FontWeight="Bold" Foreground="#0F172A"/>
-                        <TextBlock Text="Daily production movement" FontSize="12" Foreground="#94A3B8" Margin="0,0,0,18"/>
+                        <TextBlock Text="Daily delivery + job order quantities" FontSize="12" Foreground="#94A3B8" Margin="0,0,0,18"/>
                         <Border Background="#F8FAFC" CornerRadius="12" Padding="12" Height="280" BorderBrush="#E2E8F0" BorderThickness="1">
                             <lvc:CartesianChart Series="{Binding DailyTrendSeries}"
                                                 XAxes="{Binding DailyTrendXAxes}"
@@ -360,14 +464,13 @@
                     </StackPanel>
                 </Border>
 
-                <Border Grid.Column="1" Background="#FFFFFF" CornerRadius="16" Padding="20" Margin="10,0,0,0"
-                        BorderBrush="#E2E8F0" BorderThickness="1">
+                <Border Grid.Column="1" Style="{StaticResource KPICard}" Margin="10,0,0,0">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.06" Color="#0F172A"/>
                     </Border.Effect>
                     <StackPanel>
                         <TextBlock Text="Salesman Performance" FontSize="15" FontWeight="Bold" Foreground="#0F172A"/>
-                        <TextBlock Text="Revenue by team member" FontSize="12" Foreground="#94A3B8" Margin="0,0,0,18"/>
+                        <TextBlock Text="Confirmed PI revenue by team member" FontSize="12" Foreground="#94A3B8" Margin="0,0,0,18"/>
                         <Border Background="#F8FAFC" CornerRadius="12" Padding="12" Height="280" BorderBrush="#E2E8F0" BorderThickness="1">
                             <lvc:CartesianChart Series="{Binding SalesmanChartSeries}"
                                                 XAxes="{Binding SalesmanChartXAxes}"
@@ -399,7 +502,6 @@
                                         Background="#F8FAFC" CornerRadius="12"
                                         BorderBrush="#E2E8F0" BorderThickness="1">
                                     <StackPanel>
-                                        <!-- ✅ InitialConverter from App.xaml -->
                                         <Border Width="32" Height="32" CornerRadius="16" Background="#DBEAFE" HorizontalAlignment="Left" Margin="0,0,0,10">
                                             <TextBlock Text="{Binding Name, Converter={StaticResource InitialConverter}}"
                                                        FontSize="12" FontWeight="Bold" Foreground="#2563EB"
@@ -427,7 +529,7 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- Proforma Invoices -->
-                <Border Grid.Column="0" Background="#FFFFFF" CornerRadius="16" Padding="20" Margin="0,0,10,0"
+                <Border Grid.Column="0" Style="{StaticResource KPICard}" Margin="0,0,10,0"
                         BorderBrush="#EC4899" BorderThickness="0,0,0,3">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.06" Color="#0F172A"/>
@@ -435,8 +537,7 @@
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
                             <Border Width="44" Height="44" CornerRadius="12" Background="#FCE7F3">
-                                <TextBlock Text="PI" FontSize="16" FontWeight="Bold" Foreground="#DB2777"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock Text="📄" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
                                 <TextBlock Text="Proforma Invoices" FontSize="14" FontWeight="Bold" Foreground="#0F172A"/>
@@ -470,7 +571,7 @@
                 </Border>
 
                 <!-- Job Orders -->
-                <Border Grid.Column="1" Background="#FFFFFF" CornerRadius="16" Padding="20" Margin="0,0,10,0"
+                <Border Grid.Column="1" Style="{StaticResource KPICard}" Margin="0,0,10,0"
                         BorderBrush="#8B5CF6" BorderThickness="0,0,0,3">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.06" Color="#0F172A"/>
@@ -478,8 +579,7 @@
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
                             <Border Width="44" Height="44" CornerRadius="12" Background="#EDE9FE">
-                                <TextBlock Text="JO" FontSize="16" FontWeight="Bold" Foreground="#7C3AED"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock Text="📋" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
                                 <TextBlock Text="Job Orders" FontSize="14" FontWeight="Bold" Foreground="#0F172A"/>
@@ -509,7 +609,7 @@
                 </Border>
 
                 <!-- Deliveries -->
-                <Border Grid.Column="2" Background="#FFFFFF" CornerRadius="16" Padding="20"
+                <Border Grid.Column="2" Style="{StaticResource KPICard}"
                         BorderBrush="#F97316" BorderThickness="0,0,0,3">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.06" Color="#0F172A"/>
@@ -517,8 +617,7 @@
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
                             <Border Width="44" Height="44" CornerRadius="12" Background="#FFEDD5">
-                                <TextBlock Text="DL" FontSize="16" FontWeight="Bold" Foreground="#EA580C"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock Text="🚚" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
                                 <TextBlock Text="Deliveries" FontSize="14" FontWeight="Bold" Foreground="#0F172A"/>
@@ -557,8 +656,7 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <Border Grid.Column="0" Background="#FFFFFF" CornerRadius="16" Padding="20" Margin="0,0,10,0"
-                        BorderBrush="#E2E8F0" BorderThickness="1">
+                <Border Grid.Column="0" Style="{StaticResource KPICard}" Margin="0,0,10,0">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.06" Color="#0F172A"/>
                     </Border.Effect>
@@ -574,8 +672,7 @@
                     </StackPanel>
                 </Border>
 
-                <Border Grid.Column="1" Background="#FFFFFF" CornerRadius="16" Padding="20" Margin="0,0,10,0"
-                        BorderBrush="#E2E8F0" BorderThickness="1">
+                <Border Grid.Column="1" Style="{StaticResource KPICard}" Margin="0,0,10,0">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.06" Color="#0F172A"/>
                     </Border.Effect>
@@ -591,8 +688,7 @@
                     </StackPanel>
                 </Border>
 
-                <Border Grid.Column="2" Background="#FFFFFF" CornerRadius="16" Padding="20"
-                        BorderBrush="#E2E8F0" BorderThickness="1">
+                <Border Grid.Column="2" Style="{StaticResource KPICard}">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.06" Color="#0F172A"/>
                     </Border.Effect>
@@ -605,49 +701,6 @@
                                        VerticalAlignment="Center" Margin="10,0,0,0"/>
                         </StackPanel>
                         <TextBlock Text="{Binding AnnualBalance}" FontSize="22" FontWeight="Bold" Foreground="#7C3AED"/>
-                    </StackPanel>
-                </Border>
-            </Grid>
-
-            <!-- ============ STATUS BAR ============ -->
-            <Grid Margin="0,0,0,12">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="360"/>
-                </Grid.ColumnDefinitions>
-
-                <Border Grid.Column="0" Background="#FFFFFF" CornerRadius="16" Padding="20" Margin="0,0,12,0"
-                        BorderBrush="#E2E8F0" BorderThickness="1">
-                    <Border.Effect>
-                        <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.06" Color="#0F172A"/>
-                    </Border.Effect>
-                    <StackPanel>
-                        <TextBlock Text="Database Stats" FontSize="14" FontWeight="Bold" Foreground="#0F172A" Margin="0,0,0,12"/>
-                        <TextBlock x:Name="DbStatsText" Text="Loading..." FontSize="11" Foreground="#64748B"
-                                   TextWrapping="Wrap" MinHeight="60" FontFamily="Consolas"/>
-                    </StackPanel>
-                </Border>
-
-                <Border Grid.Column="1" Background="#FFFFFF" CornerRadius="16" Padding="20"
-                        BorderBrush="#E2E8F0" BorderThickness="1">
-                    <Border.Effect>
-                        <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.06" Color="#0F172A"/>
-                    </Border.Effect>
-                    <StackPanel>
-                        <TextBlock Text="Service Status" FontSize="14" FontWeight="Bold" Foreground="#0F172A" Margin="0,0,0,14"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                            <Ellipse Width="10" Height="10" Fill="#10B981" VerticalAlignment="Center"/>
-                            <TextBlock Text="Database Online" FontSize="12" Foreground="#059669"
-                                       FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                            <Ellipse Width="10" Height="10" Fill="#10B981" VerticalAlignment="Center"/>
-                            <TextBlock Text="System Active" FontSize="12" Foreground="#059669"
-                                       FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <Border Background="#F1F5F9" CornerRadius="6" Padding="8,6" Margin="0,6,0,0">
-                            <TextBlock Text="{Binding LastUpdate}" FontSize="10" Foreground="#94A3B8" FontFamily="Consolas"/>
-                        </Border>
                     </StackPanel>
                 </Border>
             </Grid>
