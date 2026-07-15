@@ -571,22 +571,59 @@ namespace ProGlassAutomation.Converters
 
             return status switch
             {
-                "Draft" => new SolidColorBrush(Color.FromRgb(107, 114, 128)),       // Gray - #6B7280
-                "Sent" => new SolidColorBrush(Color.FromRgb(59, 130, 246)),         // Blue - #3B82F6
-                "Pending" => new SolidColorBrush(Color.FromRgb(245, 158, 11)),     // Amber - #F59E0B
-                "Hold" => new SolidColorBrush(Color.FromRgb(245, 158, 11)),           // Amber - #F59E0B
-                "Confirmed" => new SolidColorBrush(Color.FromRgb(34, 197, 94)),      // Green - #22C55E
-                "Revised" => new SolidColorBrush(Color.FromRgb(139, 92, 246)),       // Purple - #8B5CF6
-                "In Progress" => new SolidColorBrush(Color.FromRgb(59, 130, 246)), // Blue - #3B82F6
-                "Converted To JO" => new SolidColorBrush(Color.FromRgb(20, 184, 166)), // Teal - #14B8A6
-                "Partial Delivered" => new SolidColorBrush(Color.FromRgb(251, 191, 36)), // Amber - #FBBF24
-                "Delivered" => new SolidColorBrush(Color.FromRgb(34, 197, 94)),        // Green - #22C55E
-                "Invoiced" => new SolidColorBrush(Color.FromRgb(59, 130, 246)),       // Blue - #3B82F6
-                "Completed" => new SolidColorBrush(Color.FromRgb(22, 163, 74)),      // Dark Green - #16A34A
-                "Cancelled" => new SolidColorBrush(Color.FromRgb(239, 68, 68)),   // Red - #EF4444
-                "Voided" => new SolidColorBrush(Color.FromRgb(156, 163, 175)),        // Gray - #9CA3AF
-                _ => new SolidColorBrush(Color.FromRgb(107, 114, 128))             // Default Gray
+                "Draft" => new SolidColorBrush(Color.FromRgb(107, 114, 128)),
+                "Sent" => new SolidColorBrush(Color.FromRgb(59, 130, 246)),
+                "Pending" => new SolidColorBrush(Color.FromRgb(245, 158, 11)),
+                "Hold" => new SolidColorBrush(Color.FromRgb(245, 158, 11)),
+                "Confirmed" => new SolidColorBrush(Color.FromRgb(34, 197, 94)),
+                "Revised" => new SolidColorBrush(Color.FromRgb(139, 92, 246)),
+                "In Progress" => new SolidColorBrush(Color.FromRgb(59, 130, 246)),
+                "Converted To JO" => new SolidColorBrush(Color.FromRgb(20, 184, 166)),
+                "Partial Delivered" => new SolidColorBrush(Color.FromRgb(251, 191, 36)),
+                "Delivered" => new SolidColorBrush(Color.FromRgb(34, 197, 94)),
+                "Invoiced" => new SolidColorBrush(Color.FromRgb(59, 130, 246)),
+                "Completed" => new SolidColorBrush(Color.FromRgb(22, 163, 74)),
+                "Cancelled" => new SolidColorBrush(Color.FromRgb(239, 68, 68)),
+                "Voided" => new SolidColorBrush(Color.FromRgb(156, 163, 175)),
+                _ => new SolidColorBrush(Color.FromRgb(107, 114, 128))
             };
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    // ==================== INITIAL CONVERTER (NEW) ====================
+
+    /// <summary>
+    /// Extracts the first letter (initial) of a name, skipping titles like "Mr", "Ms"
+    /// Example: "Mr Pradeep" → "P", "Ms Maya" → "M", "Aftab" → "A"
+    /// </summary>
+    public class InitialConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is string s && !string.IsNullOrEmpty(s))
+            {
+                // Skip titles like "Mr", "Ms", "Mrs", "Dr"
+                var parts = s.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+                string target = parts[0];
+                foreach (var part in parts)
+                {
+                    var lower = part.ToLower();
+                    if (lower != "mr" && lower != "ms" && lower != "mrs" && lower != "dr" && lower != "miss")
+                    {
+                        target = part;
+                        break;
+                    }
+                }
+
+                return target.Substring(0, 1).ToUpper();
+            }
+            return "?";
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

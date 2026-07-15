@@ -36,26 +36,14 @@ namespace ProGlassAutomation.Views.Dashboard
 
         private void SyncBalance_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                _viewModel.Sync();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            try { _viewModel.Sync(); }
+            catch (Exception ex) { MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
         }
 
         private void Refresh_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                _viewModel.LoadData();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            try { _viewModel.LoadData(); }
+            catch (Exception ex) { MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
         }
 
         private void ShowSalesmen_Click(object sender, RoutedEventArgs e)
@@ -66,18 +54,12 @@ namespace ProGlassAutomation.Views.Dashboard
                 var deliveries = DbHelper.GetAllDeliveries();
                 var pis = DbHelper.GetAllProformaInvoices();
 
-                var dwSalesmen = dailyWorks.Where(d => !string.IsNullOrEmpty(d.Salesman))
-                                       .Select(d => d.Salesman).Distinct().ToList();
-                var delSalesmen = deliveries.Where(d => !string.IsNullOrEmpty(d.Salesman))
-                                    .Select(d => d.Salesman).Distinct().ToList();
-                var piSalesmen = pis.Where(p => !string.IsNullOrEmpty(p.Salesman))
-                                 .Select(p => p.Salesman).Distinct().ToList();
-
+                var dwSalesmen = dailyWorks.Where(d => !string.IsNullOrEmpty(d.Salesman)).Select(d => d.Salesman).Distinct().ToList();
+                var delSalesmen = deliveries.Where(d => !string.IsNullOrEmpty(d.Salesman)).Select(d => d.Salesman).Distinct().ToList();
+                var piSalesmen = pis.Where(p => !string.IsNullOrEmpty(p.Salesman)).Select(p => p.Salesman).Distinct().ToList();
                 var allSalesmen = dwSalesmen.Union(delSalesmen).Union(piSalesmen).Distinct().OrderBy(s => s).ToList();
 
-                var result = "SALESMEN LIST\n";
-                result += "===============================\n\n";
-
+                var result = "SALESMEN LIST\n===============================\n\n";
                 int index = 1;
                 foreach (var s in allSalesmen)
                 {
@@ -85,22 +67,13 @@ namespace ProGlassAutomation.Views.Dashboard
                     var delCount = deliveries.Count(d => d.Salesman == s);
                     var piCount = pis.Count(p => p.Salesman == s && p.Status == "Confirmed");
                     var piTotal = pis.Where(p => p.Salesman == s && p.Status == "Confirmed").Sum(p => p.NetAmount);
-
-                    result += $"{index}. {s}\n";
-                    result += $"   DailyWork: {dwCount} | Deliveries: {delCount}\n";
-                    result += $"   Confirmed PIs: {piCount} | Total: AED {piTotal:N0}\n\n";
+                    result += $"{index}. {s}\n   DailyWork: {dwCount} | Deliveries: {delCount}\n   Confirmed PIs: {piCount} | Total: AED {piTotal:N0}\n\n";
                     index++;
                 }
-
-                result += "===============================\n";
-                result += $"Total Salesmen: {allSalesmen.Count}";
-
+                result += "===============================\nTotal Salesmen: " + allSalesmen.Count;
                 MessageBox.Show(result, "Salesmen List", MessageBoxButton.OK, MessageBoxImage.Information);
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            catch (Exception ex) { MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
         }
     }
 }
