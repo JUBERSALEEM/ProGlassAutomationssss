@@ -43,8 +43,9 @@ namespace ProGlassAutomation.Views.ProformaInvoice
         {
             _isInitialized = true;
 
-            // ✅ FIX: Call LoadData() on first load (if data not yet loaded)
-            if (_viewModel != null && _viewModel.AllInvoices.Count == 0)
+            // ✅ FIX: Always reload data when view is shown
+            // This ensures data appears even if it wasn't there when VM was constructed
+            if (_viewModel != null)
             {
                 _viewModel.LoadData();
             }

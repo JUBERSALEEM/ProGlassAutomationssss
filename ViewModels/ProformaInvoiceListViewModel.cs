@@ -51,7 +51,7 @@ namespace ProGlassAutomation.ViewModels
             CustRefOptions = new ObservableCollection<CustRefOption>();
 
             InitializeCommands();
-            LoadInvoicesFromFolder(_defaultFolderPath);
+            // ✅ Don't load in constructor - let view's Loaded event trigger LoadData()
         }
 
         private bool _isLoading;
@@ -216,19 +216,21 @@ namespace ProGlassAutomation.ViewModels
             ResetDateRangeCommand = new RelayCommand(_ => { DateFrom = null; DateTo = null; });
         }
 
-        // ==================== PUBLIC LOAD DATA (For external triggers) ====================
+        // ==================== PUBLIC LOAD DATA (Called from view) ====================
         public void LoadData()
         {
             try
             {
+                System.Diagnostics.Debug.WriteLine($"[PI] LoadData() called. Folder: {_defaultFolderPath}");
                 IsLoading = true;
-                LoadInvoicesFromFolder(_defaultFolderPath);
+                LoadInvoicesFromFolderInternal(_defaultFolderPath);
                 ApplyFilters();
                 CalculateStatistics();
+                System.Diagnostics.Debug.WriteLine($"[PI] LoadData() complete. AllInvoices: {AllInvoices.Count}, Filtered: {FilteredInvoices.Count}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[DashboardVM] LoadData error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[PI] LoadData error: {ex.Message}");
             }
             finally
             {
@@ -262,7 +264,6 @@ namespace ProGlassAutomation.ViewModels
             catch (Exception ex) { MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
         }
 
-        // ✅ FIX: Changed parameter back to `invoice` (not `inv`)
         private void ExecuteViewInvoice(ProformaInvoiceModel? invoice) => ExecuteEditInvoice(invoice);
 
         private void ExecuteDeleteInvoice(ProformaInvoiceModel? invoice)
@@ -319,7 +320,6 @@ namespace ProGlassAutomation.ViewModels
                 MessageBox.Show($"Exported {FilteredInvoices.Count} invoices to {dialog.FileName}");
         }
 
-        // ==================== REFRESH (Preserves all filter state) ====================
         private void ExecuteRefresh(object? parameter)
         {
             try
@@ -441,15 +441,13 @@ namespace ProGlassAutomation.ViewModels
             ApplyFilters();
         }
 
-        // ==================== APPLY FILTERS (Single-pass, optimized) ====================
         public void ApplyFilters()
         {
             if (_bulkUpdateCount > 0) return;
-            if (HasDateRangeError) return; // ✅ Don't apply if date range is invalid
+            if (HasDateRangeError) return;
 
             var query = AllInvoices.AsEnumerable();
 
-            // Search filter
             if (!string.IsNullOrWhiteSpace(SearchText))
             {
                 var s = SearchText.ToLower();
@@ -460,7 +458,6 @@ namespace ProGlassAutomation.ViewModels
                     (i.CustomerReference?.ToLower().Contains(s) ?? false));
             }
 
-            // ComboBox filters
             if (!string.IsNullOrWhiteSpace(SelectedStatus))
                 query = query.Where(i => i.Status == SelectedStatus);
             if (!string.IsNullOrWhiteSpace(SelectedSalesman))
@@ -469,14 +466,11 @@ namespace ProGlassAutomation.ViewModels
                 query = query.Where(i => i.CustomerName == SelectedCustomer);
             if (!string.IsNullOrWhiteSpace(SelectedCustRef))
                 query = query.Where(i => i.CustomerReference == SelectedCustRef);
-
-            // Date range
             if (DateFrom.HasValue)
                 query = query.Where(i => i.InvoiceDate >= DateFrom.Value);
             if (DateTo.HasValue)
                 query = query.Where(i => i.InvoiceDate <= DateTo.Value.AddDays(1));
 
-            // Status checkboxes (HashSet for performance)
             var allowedStatuses = new HashSet<string>();
             if (FilterDraft) allowedStatuses.Add("Draft");
             if (FilterSent) allowedStatuses.Add("Sent");
@@ -491,7 +485,6 @@ namespace ProGlassAutomation.ViewModels
             if (FilterConvertedToJO)
                 query = query.Where(i => i.IsConvertedToJobOrder);
 
-            // ✅ Stable order
             var filteredList = query
                 .OrderByDescending(i => i.InvoiceDate)
                 .ThenByDescending(i => i.InvoiceNo)
@@ -505,7 +498,7 @@ namespace ProGlassAutomation.ViewModels
                 CalculateStatistics();
         }
 
-        // ==================== LOAD FROM FOLDER (Parallel, deduplicated) ====================
+        // ==================== LOAD FROM FOLDER (ROBUST VERSION) ====================
         private void LoadInvoicesFromFolder(string folderPath)
         {
             LoadInvoicesFromFolderInternal(folderPath);
@@ -524,11 +517,18 @@ namespace ProGlassAutomation.ViewModels
 
                 if (!Directory.Exists(folderPath))
                 {
+                    System.Diagnostics.Debug.WriteLine($"[PI] Data folder doesn't exist, creating: {folderPath}");
                     Directory.CreateDirectory(folderPath);
                     return;
                 }
 
-                var settings = new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore };
+                var settings = new JsonSerializerSettings
+                {
+                    ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                    NullValueHandling = NullValueHandling.Ignore,
+                    MissingMemberHandling = MissingMemberHandling.Ignore
+                };
+
                 var salesmen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 var customers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 var custRefs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -538,35 +538,68 @@ namespace ProGlassAutomation.ViewModels
                 var fileTimes = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
 
                 var files = Directory.GetFiles(folderPath, "*.json");
+                System.Diagnostics.Debug.WriteLine($"[PI] Found {files.Length} JSON files");
+
+                int successCount = 0;
+                int failCount = 0;
+
                 Parallel.ForEach(files, file =>
                 {
                     try
                     {
                         var json = File.ReadAllText(file);
-                        var invoice = JsonConvert.DeserializeObject<ProformaInvoiceModel>(json, settings);
-                        if (invoice != null && !string.IsNullOrWhiteSpace(invoice.InvoiceNo))
+
+                        if (string.IsNullOrWhiteSpace(json))
                         {
-                            var fileTime = File.GetLastWriteTime(file);
-                            lock (invoiceDict)
+                            System.Diagnostics.Debug.WriteLine($"[PI] Empty file: {file}");
+                            return;
+                        }
+
+                        var invoice = JsonConvert.DeserializeObject<ProformaInvoiceModel>(json, settings);
+
+                        // ✅ FIX: Validate the deserialized invoice
+                        if (invoice == null)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[PI] Failed to deserialize: {file}");
+                            Interlocked.Increment(ref failCount);
+                            return;
+                        }
+
+                        if (string.IsNullOrWhiteSpace(invoice.InvoiceNo))
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[PI] Invoice has no InvoiceNo: {file}");
+                            Interlocked.Increment(ref failCount);
+                            return;
+                        }
+
+                        var fileTime = File.GetLastWriteTime(file);
+                        lock (invoiceDict)
+                        {
+                            if (!invoiceDict.ContainsKey(invoice.InvoiceNo))
                             {
-                                if (!invoiceDict.ContainsKey(invoice.InvoiceNo))
+                                invoiceDict[invoice.InvoiceNo] = invoice;
+                                fileTimes[invoice.InvoiceNo] = fileTime;
+                            }
+                            else
+                            {
+                                if (fileTime > fileTimes[invoice.InvoiceNo])
                                 {
                                     invoiceDict[invoice.InvoiceNo] = invoice;
                                     fileTimes[invoice.InvoiceNo] = fileTime;
                                 }
-                                else
-                                {
-                                    if (fileTime > fileTimes[invoice.InvoiceNo])
-                                    {
-                                        invoiceDict[invoice.InvoiceNo] = invoice;
-                                        fileTimes[invoice.InvoiceNo] = fileTime;
-                                    }
-                                }
                             }
                         }
+
+                        Interlocked.Increment(ref successCount);
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[PI] Error reading {file}: {ex.Message}");
+                        Interlocked.Increment(ref failCount);
+                    }
                 });
+
+                System.Diagnostics.Debug.WriteLine($"[PI] Deserialization: {successCount} success, {failCount} failed");
 
                 // ✅ Stable ordering
                 var uniqueInvoices = invoiceDict.Values
@@ -574,12 +607,22 @@ namespace ProGlassAutomation.ViewModels
                     .ThenByDescending(i => i.InvoiceNo)
                     .ToList();
 
+                System.Diagnostics.Debug.WriteLine($"[PI] Adding {uniqueInvoices.Count} unique invoices to AllInvoices");
+
                 foreach (var invoice in uniqueInvoices)
                 {
+                    // ✅ Safety check - ensure invoice is not null
+                    if (invoice == null) continue;
+
                     AllInvoices.Add(invoice);
-                    if (!string.IsNullOrWhiteSpace(invoice.Salesman)) salesmen.Add(invoice.Salesman);
-                    if (!string.IsNullOrWhiteSpace(invoice.CustomerName)) customers.Add(invoice.CustomerName);
-                    if (!string.IsNullOrWhiteSpace(invoice.CustomerReference)) custRefs.Add(invoice.CustomerReference);
+
+                    // ✅ Safe property access
+                    if (!string.IsNullOrWhiteSpace(invoice.Salesman))
+                        salesmen.Add(invoice.Salesman);
+                    if (!string.IsNullOrWhiteSpace(invoice.CustomerName))
+                        customers.Add(invoice.CustomerName);
+                    if (!string.IsNullOrWhiteSpace(invoice.CustomerReference))
+                        custRefs.Add(invoice.CustomerReference);
                 }
 
                 foreach (var s in salesmen.OrderBy(x => x))
@@ -588,6 +631,12 @@ namespace ProGlassAutomation.ViewModels
                     CustomerOptions.Add(new CustomerOption { Name = c });
                 foreach (var r in custRefs.OrderBy(x => x))
                     CustRefOptions.Add(new CustRefOption { Reference = r });
+
+                System.Diagnostics.Debug.WriteLine($"[PI] Load complete. AllInvoices: {AllInvoices.Count}, FilteredInvoices: {FilteredInvoices.Count}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[PI] LoadInvoicesFromFolderInternal error: {ex.Message}");
             }
             finally
             {
@@ -595,7 +644,6 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // ==================== UPDATE STATUS (Called from Editor) ====================
         public void UpdateStatus(ProformaInvoiceModel invoice, string newStatus)
         {
             if (invoice == null || string.IsNullOrWhiteSpace(newStatus)) return;
@@ -619,34 +667,48 @@ namespace ProGlassAutomation.ViewModels
         {
             try
             {
+                if (invoice == null || string.IsNullOrWhiteSpace(invoice.InvoiceNo))
+                {
+                    System.Diagnostics.Debug.WriteLine("[PI] Cannot save: invoice or InvoiceNo is null/empty");
+                    return;
+                }
+
                 string folder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data");
                 if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+
                 var settings = new JsonSerializerSettings
                 {
                     ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                    NullValueHandling = NullValueHandling.Include,
                     Formatting = Formatting.Indented
                 };
+
                 var json = JsonConvert.SerializeObject(invoice, settings);
-                File.WriteAllText(GetInvoiceFilePath(invoice.InvoiceNo), json);
+                var filePath = GetInvoiceFilePath(invoice.InvoiceNo);
+                File.WriteAllText(filePath, json);
+                System.Diagnostics.Debug.WriteLine($"[PI] Saved invoice: {filePath}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"SaveInvoice Error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[PI] SaveInvoice Error: {ex.Message}");
             }
         }
 
         private string GetInvoiceFilePath(string invoiceNo)
         {
+            if (string.IsNullOrWhiteSpace(invoiceNo))
+                return null;
+
             string folder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data");
             return Path.Combine(folder, $"{invoiceNo}.json");
         }
 
-        // ==================== STATISTICS (Single-pass optimization) ====================
         private void CalculateStatistics()
         {
             int total = 0, converted = 0, draft = 0, sent = 0, confirmed = 0, hold = 0, completed = 0;
             foreach (var inv in FilteredInvoices)
             {
+                if (inv == null) continue;
                 total++;
                 if (inv.IsConvertedToJobOrder) converted++;
                 switch (inv.Status)
@@ -675,7 +737,7 @@ namespace ProGlassAutomation.ViewModels
             {
                 foreach (var invoice in AllInvoices)
                 {
-                    if (invoice.IsDirty)
+                    if (invoice != null && invoice.IsDirty)
                     {
                         SaveInvoice(invoice);
                         invoice.IsDirty = false;
@@ -685,7 +747,6 @@ namespace ProGlassAutomation.ViewModels
             catch { }
         }
 
-        // ==================== INOTIFYPROPERTYCHANGED ====================
         public event PropertyChangedEventHandler? PropertyChanged;
         public void OnPropertyChanged([CallerMemberName] string? propertyName = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
@@ -698,13 +759,11 @@ namespace ProGlassAutomation.ViewModels
             return true;
         }
 
-        // ==================== HELPER CLASSES ====================
         public class StatusOption { public string Label { get; set; } = ""; public string Value { get; set; } = ""; }
         public class SalesmanOption { public string Name { get; set; } = ""; }
         public class CustomerOption { public string Name { get; set; } = ""; }
         public class CustRefOption { public string Reference { get; set; } = ""; }
 
-        // ==================== RELAYCOMMAND ====================
         public class RelayCommand : ICommand
         {
             private readonly Action<object?> _execute;
