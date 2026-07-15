@@ -19,8 +19,9 @@ namespace ProGlassAutomation.ViewModels
         private readonly string _defaultFolderPath;
         private System.Threading.Timer? _searchTimer;
         private int _bulkUpdateCount;
+        private bool _suppressStatsUpdate;
+        private bool _isLoadingFromFolder;
 
-        // EditableStatusOptions for DataGrid ComboBox
         public ObservableCollection<string> EditableStatusOptions { get; } = new ObservableCollection<string>
         {
             "Draft", "Sent", "Confirmed", "Hold", "Revised", "Completed", "Cancelled"
@@ -53,22 +54,12 @@ namespace ProGlassAutomation.ViewModels
             LoadInvoicesFromFolder(_defaultFolderPath);
         }
 
-        // ==================== ISLOADING ====================
         private bool _isLoading;
-        public bool IsLoading
-        {
-            get => _isLoading;
-            set { if (SetProperty(ref _isLoading, value)) OnPropertyChanged(); }
-        }
+        public bool IsLoading { get => _isLoading; set => SetProperty(ref _isLoading, value); }
 
         private bool _hasNoInvoices = true;
-        public bool HasNoInvoices
-        {
-            get => _hasNoInvoices;
-            set { if (SetProperty(ref _hasNoInvoices, value)) OnPropertyChanged(); }
-        }
+        public bool HasNoInvoices { get => _hasNoInvoices; set => SetProperty(ref _hasNoInvoices, value); }
 
-        // COLLECTIONS
         public ObservableCollection<ProformaInvoiceModel> AllInvoices { get; }
         public ObservableCollection<ProformaInvoiceModel> FilteredInvoices { get; }
         public ObservableCollection<StatusOption> StatusOptions { get; }
@@ -77,13 +68,8 @@ namespace ProGlassAutomation.ViewModels
         public ObservableCollection<CustRefOption> CustRefOptions { get; }
 
         private ProformaInvoiceModel? _selectedInvoice;
-        public ProformaInvoiceModel? SelectedInvoice
-        {
-            get => _selectedInvoice;
-            set { if (SetProperty(ref _selectedInvoice, value)) OnPropertyChanged(); }
-        }
+        public ProformaInvoiceModel? SelectedInvoice { get => _selectedInvoice; set => SetProperty(ref _selectedInvoice, value); }
 
-        // ==================== SEARCH ====================
         private string _searchText = "";
         public string SearchText
         {
@@ -94,167 +80,106 @@ namespace ProGlassAutomation.ViewModels
                 {
                     _searchTimer?.Dispose();
                     _searchTimer = new System.Threading.Timer(
-                        _ =>
-                        {
-                            Application.Current.Dispatcher.BeginInvoke(
-                                System.Windows.Threading.DispatcherPriority.Background,
-                                (Action)(() => ApplyFiltersIfNotBusy()));
-                        },
+                        _ => Application.Current.Dispatcher.BeginInvoke(
+                            System.Windows.Threading.DispatcherPriority.Background,
+                            (Action)(() => ApplyFilters())),
                         null, 300, Timeout.Infinite);
                 }
             }
         }
 
         private string? _selectedStatus;
-        public string? SelectedStatus
-        {
-            get => _selectedStatus;
-            set { if (SetProperty(ref _selectedStatus, value)) ApplyFiltersIfNotBusy(); }
-        }
-
+        public string? SelectedStatus { get => _selectedStatus; set { if (SetProperty(ref _selectedStatus, value)) ApplyFilters(); } }
         private string? _selectedSalesman;
-        public string? SelectedSalesman
-        {
-            get => _selectedSalesman;
-            set { if (SetProperty(ref _selectedSalesman, value)) ApplyFiltersIfNotBusy(); }
-        }
-
+        public string? SelectedSalesman { get => _selectedSalesman; set { if (SetProperty(ref _selectedSalesman, value)) ApplyFilters(); } }
         private string? _selectedCustomer;
-        public string? SelectedCustomer
-        {
-            get => _selectedCustomer;
-            set { if (SetProperty(ref _selectedCustomer, value)) ApplyFiltersIfNotBusy(); }
-        }
-
+        public string? SelectedCustomer { get => _selectedCustomer; set { if (SetProperty(ref _selectedCustomer, value)) ApplyFilters(); } }
         private string? _selectedCustRef;
-        public string? SelectedCustRef
-        {
-            get => _selectedCustRef;
-            set { if (SetProperty(ref _selectedCustRef, value)) ApplyFiltersIfNotBusy(); }
-        }
+        public string? SelectedCustRef { get => _selectedCustRef; set { if (SetProperty(ref _selectedCustRef, value)) ApplyFilters(); } }
 
+        // ==================== DATE RANGE (With Validation) ====================
         private DateTime? _dateFrom;
         public DateTime? DateFrom
         {
             get => _dateFrom;
-            set { if (SetProperty(ref _dateFrom, value)) ApplyFiltersIfNotBusy(); }
+            set
+            {
+                if (SetProperty(ref _dateFrom, value))
+                {
+                    ValidateDateRange();
+                    ApplyFilters();
+                }
+            }
         }
 
         private DateTime? _dateTo;
         public DateTime? DateTo
         {
             get => _dateTo;
-            set { if (SetProperty(ref _dateTo, value)) ApplyFiltersIfNotBusy(); }
+            set
+            {
+                if (SetProperty(ref _dateTo, value))
+                {
+                    ValidateDateRange();
+                    ApplyFilters();
+                }
+            }
         }
+
+        private bool _hasDateRangeError;
+        public bool HasDateRangeError
+        {
+            get => _hasDateRangeError;
+            set
+            {
+                if (SetProperty(ref _hasDateRangeError, value))
+                    OnPropertyChanged(nameof(DateRangeErrorMessage));
+            }
+        }
+
+        public string DateRangeErrorMessage =>
+            _hasDateRangeError ? "⚠ 'From' date must be before 'To' date" : "";
+
+        private void ValidateDateRange()
+        {
+            HasDateRangeError = _dateFrom.HasValue && _dateTo.HasValue && _dateFrom > _dateTo;
+        }
+
+        public bool IsDateFilterActive => _dateFrom.HasValue || _dateTo.HasValue;
 
         // ==================== FILTER CHECKBOXES ====================
         private bool _filterDraft = true;
-        public bool FilterDraft
-        {
-            get => _filterDraft;
-            set { if (SetProperty(ref _filterDraft, value)) ApplyFiltersIfNotBusy(); }
-        }
-
+        public bool FilterDraft { get => _filterDraft; set { if (SetProperty(ref _filterDraft, value)) ApplyFilters(); } }
         private bool _filterSent = true;
-        public bool FilterSent
-        {
-            get => _filterSent;
-            set { if (SetProperty(ref _filterSent, value)) ApplyFiltersIfNotBusy(); }
-        }
-
+        public bool FilterSent { get => _filterSent; set { if (SetProperty(ref _filterSent, value)) ApplyFilters(); } }
         private bool _filterConfirmed = true;
-        public bool FilterConfirmed
-        {
-            get => _filterConfirmed;
-            set { if (SetProperty(ref _filterConfirmed, value)) ApplyFiltersIfNotBusy(); }
-        }
-
+        public bool FilterConfirmed { get => _filterConfirmed; set { if (SetProperty(ref _filterConfirmed, value)) ApplyFilters(); } }
         private bool _filterHold = true;
-        public bool FilterHold
-        {
-            get => _filterHold;
-            set { if (SetProperty(ref _filterHold, value)) ApplyFiltersIfNotBusy(); }
-        }
-
+        public bool FilterHold { get => _filterHold; set { if (SetProperty(ref _filterHold, value)) ApplyFilters(); } }
         private bool _filterRevised = true;
-        public bool FilterRevised
-        {
-            get => _filterRevised;
-            set { if (SetProperty(ref _filterRevised, value)) ApplyFiltersIfNotBusy(); }
-        }
-
+        public bool FilterRevised { get => _filterRevised; set { if (SetProperty(ref _filterRevised, value)) ApplyFilters(); } }
         private bool _filterCompleted = true;
-        public bool FilterCompleted
-        {
-            get => _filterCompleted;
-            set { if (SetProperty(ref _filterCompleted, value)) ApplyFiltersIfNotBusy(); }
-        }
-
+        public bool FilterCompleted { get => _filterCompleted; set { if (SetProperty(ref _filterCompleted, value)) ApplyFilters(); } }
         private bool _filterCancelled = false;
-        public bool FilterCancelled
-        {
-            get => _filterCancelled;
-            set { if (SetProperty(ref _filterCancelled, value)) ApplyFiltersIfNotBusy(); }
-        }
-
+        public bool FilterCancelled { get => _filterCancelled; set { if (SetProperty(ref _filterCancelled, value)) ApplyFilters(); } }
         private bool _filterConvertedToJO = false;
-        public bool FilterConvertedToJO
-        {
-            get => _filterConvertedToJO;
-            set { if (SetProperty(ref _filterConvertedToJO, value)) ApplyFiltersIfNotBusy(); }
-        }
+        public bool FilterConvertedToJO { get => _filterConvertedToJO; set { if (SetProperty(ref _filterConvertedToJO, value)) ApplyFilters(); } }
 
-        // ==================== STATISTICS ====================
         private int _totalInvoiceCount;
-        public int TotalInvoiceCount
-        {
-            get => _totalInvoiceCount;
-            set { if (SetProperty(ref _totalInvoiceCount, value)) OnPropertyChanged(); }
-        }
-
+        public int TotalInvoiceCount { get => _totalInvoiceCount; set => SetProperty(ref _totalInvoiceCount, value); }
         private int _convertedToJOCount;
-        public int ConvertedToJOCount
-        {
-            get => _convertedToJOCount;
-            set { if (SetProperty(ref _convertedToJOCount, value)) OnPropertyChanged(); }
-        }
-
+        public int ConvertedToJOCount { get => _convertedToJOCount; set => SetProperty(ref _convertedToJOCount, value); }
         private int _draftCount;
-        public int DraftCount
-        {
-            get => _draftCount;
-            set { if (SetProperty(ref _draftCount, value)) OnPropertyChanged(); }
-        }
-
+        public int DraftCount { get => _draftCount; set => SetProperty(ref _draftCount, value); }
         private int _sentCount;
-        public int SentCount
-        {
-            get => _sentCount;
-            set { if (SetProperty(ref _sentCount, value)) OnPropertyChanged(); }
-        }
-
+        public int SentCount { get => _sentCount; set => SetProperty(ref _sentCount, value); }
         private int _confirmedCount;
-        public int ConfirmedCount
-        {
-            get => _confirmedCount;
-            set { if (SetProperty(ref _confirmedCount, value)) OnPropertyChanged(); }
-        }
-
+        public int ConfirmedCount { get => _confirmedCount; set => SetProperty(ref _confirmedCount, value); }
         private int _holdCount;
-        public int HoldCount
-        {
-            get => _holdCount;
-            set { if (SetProperty(ref _holdCount, value)) OnPropertyChanged(); }
-        }
-
+        public int HoldCount { get => _holdCount; set => SetProperty(ref _holdCount, value); }
         private int _completedCount;
-        public int CompletedCount
-        {
-            get => _completedCount;
-            set { if (SetProperty(ref _completedCount, value)) OnPropertyChanged(); }
-        }
+        public int CompletedCount { get => _completedCount; set => SetProperty(ref _completedCount, value); }
 
-        // ==================== COMMANDS ====================
         public ICommand? NewInvoiceCommand { get; private set; }
         public ICommand? EditInvoiceCommand { get; private set; }
         public ICommand? ViewInvoiceCommand { get; private set; }
@@ -269,14 +194,15 @@ namespace ProGlassAutomation.ViewModels
         public ICommand? QuickFilterTodayCommand { get; private set; }
         public ICommand? QuickFilterThisYearCommand { get; private set; }
         public ICommand? QuickFilterAllTimeCommand { get; private set; }
+        public ICommand? ResetDateRangeCommand { get; private set; }
 
         private void InitializeCommands()
         {
             NewInvoiceCommand = new RelayCommand(_ => ExecuteNewInvoice(_));
-            EditInvoiceCommand = new RelayCommand<ProformaInvoiceModel>(_ => ExecuteEditInvoice(_));
-            ViewInvoiceCommand = new RelayCommand<ProformaInvoiceModel>(_ => ExecuteViewInvoice(_));
-            DeleteInvoiceCommand = new RelayCommand<ProformaInvoiceModel>(_ => ExecuteDeleteInvoice(_));
-            CreateJobOrderCommand = new RelayCommand<ProformaInvoiceModel>(_ => ExecuteCreateJobOrder(_));
+            EditInvoiceCommand = new RelayCommand<ProformaInvoiceModel>(inv => ExecuteEditInvoice(inv));
+            ViewInvoiceCommand = new RelayCommand<ProformaInvoiceModel>(inv => ExecuteViewInvoice(inv));
+            DeleteInvoiceCommand = new RelayCommand<ProformaInvoiceModel>(inv => ExecuteDeleteInvoice(inv));
+            CreateJobOrderCommand = new RelayCommand<ProformaInvoiceModel>(inv => ExecuteCreateJobOrder(inv));
             OpenFolderCommand = new RelayCommand(_ => ExecuteOpenFolder(_));
             ExportAllCommand = new RelayCommand(_ => ExecuteExportAll(_));
             RefreshCommand = new RelayCommand(_ => ExecuteRefresh(_));
@@ -287,19 +213,38 @@ namespace ProGlassAutomation.ViewModels
             QuickFilterTodayCommand = new RelayCommand(_ => { DateFrom = DateTime.Today; DateTo = DateTime.Today; });
             QuickFilterThisYearCommand = new RelayCommand(_ => { DateFrom = new DateTime(DateTime.Today.Year, 1, 1); DateTo = DateTime.Today; });
             QuickFilterAllTimeCommand = new RelayCommand(_ => { DateFrom = null; DateTo = null; });
+            ResetDateRangeCommand = new RelayCommand(_ => { DateFrom = null; DateTo = null; });
+        }
+
+        // ==================== PUBLIC LOAD DATA (For external triggers) ====================
+        public void LoadData()
+        {
+            try
+            {
+                IsLoading = true;
+                LoadInvoicesFromFolder(_defaultFolderPath);
+                ApplyFilters();
+                CalculateStatistics();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DashboardVM] LoadData error: {ex.Message}");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
         }
 
         // ==================== EXECUTE METHODS ====================
-
         private void ExecuteNewInvoice(object? parameter)
         {
             try
             {
                 SharedViewModels.ProformaInvoiceVM.CreateNewInvoice();
-                var editorVM = SharedViewModels.ProformaInvoiceVM;
-                var editorView = new ProGlassAutomation.Views.ProformaInvoice.ProformaInvoiceView { DataContext = editorVM };
-                var mainWindow = Application.Current.MainWindow as MainWindow;
-                mainWindow?.SetContent(editorView);
+                var editorView = new ProGlassAutomation.Views.ProformaInvoice.ProformaInvoiceView
+                { DataContext = SharedViewModels.ProformaInvoiceVM };
+                (Application.Current.MainWindow as MainWindow)?.SetContent(editorView);
             }
             catch (Exception ex) { MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
         }
@@ -310,42 +255,42 @@ namespace ProGlassAutomation.ViewModels
             try
             {
                 SharedViewModels.ProformaInvoiceVM.LoadFromExistingInvoice(invoice);
-                var editorVM = SharedViewModels.ProformaInvoiceVM;
-                var editorView = new ProGlassAutomation.Views.ProformaInvoice.ProformaInvoiceView { DataContext = editorVM };
-                var mainWindow = Application.Current.MainWindow as MainWindow;
-                mainWindow?.SetContent(editorView);
+                var editorView = new ProGlassAutomation.Views.ProformaInvoice.ProformaInvoiceView
+                { DataContext = SharedViewModels.ProformaInvoiceVM };
+                (Application.Current.MainWindow as MainWindow)?.SetContent(editorView);
             }
             catch (Exception ex) { MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
         }
 
+        // ✅ FIX: Changed parameter back to `invoice` (not `inv`)
         private void ExecuteViewInvoice(ProformaInvoiceModel? invoice) => ExecuteEditInvoice(invoice);
 
         private void ExecuteDeleteInvoice(ProformaInvoiceModel? invoice)
         {
             if (invoice == null) return;
-            var result = MessageBox.Show($"Delete invoice {invoice.InvoiceNo}?", "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-            if (result == MessageBoxResult.Yes)
+            var result = MessageBox.Show($"Delete invoice {invoice.InvoiceNo}?", "Confirm Delete",
+                MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (result != MessageBoxResult.Yes) return;
+            try
             {
-                try
+                var filePath = GetInvoiceFilePath(invoice.InvoiceNo);
+                if (File.Exists(filePath))
                 {
-                    var filePath = GetInvoiceFilePath(invoice.InvoiceNo);
-                    if (File.Exists(filePath))
-                    {
-                        var backupFolder = Path.Combine(_defaultFolderPath, "Deleted");
-                        if (!Directory.Exists(backupFolder)) Directory.CreateDirectory(backupFolder);
-                        File.Move(filePath, Path.Combine(backupFolder, $"{invoice.InvoiceNo}_{DateTime.Now:yyyyMMddHHmmss}.json"));
-                    }
-                    AllInvoices.Remove(invoice);
-                    ApplyFilters();
+                    var backupFolder = Path.Combine(_defaultFolderPath, "Deleted");
+                    if (!Directory.Exists(backupFolder)) Directory.CreateDirectory(backupFolder);
+                    File.Move(filePath, Path.Combine(backupFolder, $"{invoice.InvoiceNo}_{DateTime.Now:yyyyMMddHHmmss}.json"));
                 }
-                catch (Exception ex) { MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
+                AllInvoices.Remove(invoice);
+                ApplyFilters();
             }
+            catch (Exception ex) { MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
         }
 
         private void ExecuteCreateJobOrder(ProformaInvoiceModel? invoice)
         {
             if (invoice == null) return;
-            var result = MessageBox.Show($"Create Job Order from {invoice.InvoiceNo}?\nCustomer: {invoice.CustomerName}\nAmount: {invoice.NetTotal:N0}",
+            var result = MessageBox.Show(
+                $"Create Job Order from {invoice.InvoiceNo}?\nCustomer: {invoice.CustomerName}\nAmount: {invoice.NetTotal:N0}",
                 "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (result != MessageBoxResult.Yes) return;
             try
@@ -353,9 +298,9 @@ namespace ProGlassAutomation.ViewModels
                 var jobOrderVM = SharedViewModels.JobOrderVM;
                 jobOrderVM.ClearForNewJobOrder();
                 jobOrderVM.LoadFromProformaInvoice(invoice);
-                var jobOrderView = new ProGlassAutomation.Views.JobOrder.JobOrderView { DataContext = jobOrderVM };
-                var mainWindow = Application.Current.MainWindow as MainWindow;
-                mainWindow?.SetContent(jobOrderView);
+                var jobOrderView = new ProGlassAutomation.Views.JobOrder.JobOrderView
+                { DataContext = jobOrderVM };
+                (Application.Current.MainWindow as MainWindow)?.SetContent(jobOrderView);
             }
             catch (Exception ex) { MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
         }
@@ -363,126 +308,159 @@ namespace ProGlassAutomation.ViewModels
         private void ExecuteOpenFolder(object? parameter)
         {
             var dialog = new Microsoft.Win32.OpenFolderDialog { InitialDirectory = _defaultFolderPath };
-            if (dialog.ShowDialog() == true) { LoadInvoicesFromFolder(dialog.FolderName); }
+            if (dialog.ShowDialog() == true) LoadInvoicesFromFolder(dialog.FolderName);
         }
 
         private void ExecuteExportAll(object? parameter)
         {
-            var dialog = new Microsoft.Win32.SaveFileDialog { Filter = "Excel|*.xlsx", FileName = $"Invoices_{DateTime.Now:yyyyMMdd}" };
-            if (dialog.ShowDialog() == true) MessageBox.Show($"Exported {FilteredInvoices.Count} invoices to {dialog.FileName}");
+            var dialog = new Microsoft.Win32.SaveFileDialog
+            { Filter = "Excel|*.xlsx", FileName = $"Invoices_{DateTime.Now:yyyyMMdd}" };
+            if (dialog.ShowDialog() == true)
+                MessageBox.Show($"Exported {FilteredInvoices.Count} invoices to {dialog.FileName}");
         }
 
+        // ==================== REFRESH (Preserves all filter state) ====================
         private void ExecuteRefresh(object? parameter)
         {
-            // Save current filter state
-            var savedSearch = SearchText;
-            var savedStatus = SelectedStatus;
-            var savedSalesman = SelectedSalesman;
-            var savedCustomer = SelectedCustomer;
-            var savedCustRef = SelectedCustRef;
-            var savedDateFrom = DateFrom;
-            var savedDateTo = DateTo;
-            var savedFilterDraft = FilterDraft;
-            var savedFilterSent = FilterSent;
-            var savedFilterConfirmed = FilterConfirmed;
-            var savedFilterHold = FilterHold;
-            var savedFilterRevised = FilterRevised;
-            var savedFilterCompleted = FilterCompleted;
-            var savedFilterCancelled = FilterCancelled;
-            var savedFilterConvertedToJO = FilterConvertedToJO;
+            try
+            {
+                IsLoading = true;
 
-            IsLoading = true;
-            LoadInvoicesFromFolder(_defaultFolderPath);
+                var savedSearch = _searchText;
+                var savedStatus = _selectedStatus;
+                var savedSalesman = _selectedSalesman;
+                var savedCustomer = _selectedCustomer;
+                var savedCustRef = _selectedCustRef;
+                var savedDateFrom = _dateFrom;
+                var savedDateTo = _dateTo;
+                var savedFilterDraft = _filterDraft;
+                var savedFilterSent = _filterSent;
+                var savedFilterConfirmed = _filterConfirmed;
+                var savedFilterHold = _filterHold;
+                var savedFilterRevised = _filterRevised;
+                var savedFilterCompleted = _filterCompleted;
+                var savedFilterCancelled = _filterCancelled;
+                var savedFilterConvertedToJO = _filterConvertedToJO;
+                var savedSelectedInvoice = SelectedInvoice;
 
-            // Restore filter state
-            _searchText = savedSearch;
-            _selectedStatus = savedStatus;
-            _selectedSalesman = savedSalesman;
-            _selectedCustomer = savedCustomer;
-            _selectedCustRef = savedCustRef;
-            _dateFrom = savedDateFrom;
-            _dateTo = savedDateTo;
-            _filterDraft = savedFilterDraft;
-            _filterSent = savedFilterSent;
-            _filterConfirmed = savedFilterConfirmed;
-            _filterHold = savedFilterHold;
-            _filterRevised = savedFilterRevised;
-            _filterCompleted = savedFilterCompleted;
-            _filterCancelled = savedFilterCancelled;
-            _filterConvertedToJO = savedFilterConvertedToJO;
+                _isLoadingFromFolder = true;
+                _suppressStatsUpdate = true;
+                _bulkUpdateCount++;
 
-            // Notify all properties
-            OnPropertyChanged(nameof(SearchText));
-            OnPropertyChanged(nameof(SelectedStatus));
-            OnPropertyChanged(nameof(SelectedSalesman));
-            OnPropertyChanged(nameof(SelectedCustomer));
-            OnPropertyChanged(nameof(SelectedCustRef));
-            OnPropertyChanged(nameof(DateFrom));
-            OnPropertyChanged(nameof(DateTo));
-            OnPropertyChanged(nameof(FilterDraft));
-            OnPropertyChanged(nameof(FilterSent));
-            OnPropertyChanged(nameof(FilterConfirmed));
-            OnPropertyChanged(nameof(FilterHold));
-            OnPropertyChanged(nameof(FilterRevised));
-            OnPropertyChanged(nameof(FilterCompleted));
-            OnPropertyChanged(nameof(FilterCancelled));
-            OnPropertyChanged(nameof(FilterConvertedToJO));
+                try
+                {
+                    LoadInvoicesFromFolderInternal(_defaultFolderPath);
 
-            // Re-apply filters
-            ApplyFilters();
+                    _searchText = savedSearch;
+                    _selectedStatus = savedStatus;
+                    _selectedSalesman = savedSalesman;
+                    _selectedCustomer = savedCustomer;
+                    _selectedCustRef = savedCustRef;
+                    _dateFrom = savedDateFrom;
+                    _dateTo = savedDateTo;
+                    _filterDraft = savedFilterDraft;
+                    _filterSent = savedFilterSent;
+                    _filterConfirmed = savedFilterConfirmed;
+                    _filterHold = savedFilterHold;
+                    _filterRevised = savedFilterRevised;
+                    _filterCompleted = savedFilterCompleted;
+                    _filterCancelled = savedFilterCancelled;
+                    _filterConvertedToJO = savedFilterConvertedToJO;
+
+                    OnPropertyChanged(nameof(SearchText));
+                    OnPropertyChanged(nameof(SelectedStatus));
+                    OnPropertyChanged(nameof(SelectedSalesman));
+                    OnPropertyChanged(nameof(SelectedCustomer));
+                    OnPropertyChanged(nameof(SelectedCustRef));
+                    OnPropertyChanged(nameof(DateFrom));
+                    OnPropertyChanged(nameof(DateTo));
+                    OnPropertyChanged(nameof(FilterDraft));
+                    OnPropertyChanged(nameof(FilterSent));
+                    OnPropertyChanged(nameof(FilterConfirmed));
+                    OnPropertyChanged(nameof(FilterHold));
+                    OnPropertyChanged(nameof(FilterRevised));
+                    OnPropertyChanged(nameof(FilterCompleted));
+                    OnPropertyChanged(nameof(FilterCancelled));
+                    OnPropertyChanged(nameof(FilterConvertedToJO));
+                    OnPropertyChanged(nameof(IsDateFilterActive));
+                    ValidateDateRange();
+
+                    ApplyFilters();
+
+                    if (savedSelectedInvoice != null)
+                    {
+                        var match = FilteredInvoices.FirstOrDefault(i => i.InvoiceNo == savedSelectedInvoice.InvoiceNo);
+                        if (match != null) SelectedInvoice = match;
+                    }
+                }
+                finally
+                {
+                    _bulkUpdateCount--;
+                    _suppressStatsUpdate = false;
+                    _isLoadingFromFolder = false;
+                }
+            }
+            finally
+            {
+                IsLoading = false;
+            }
         }
 
         private void ExecuteClearFilters(object? parameter)
         {
-            SearchText = "";
-            SelectedStatus = null;
-            SelectedSalesman = null;
-            SelectedCustomer = null;
-            SelectedCustRef = null;
-            DateFrom = null;
-            DateTo = null;
-            FilterDraft = true;
-            FilterSent = true;
-            FilterConfirmed = true;
-            FilterHold = true;
-            FilterRevised = true;
-            FilterCompleted = true;
-            FilterCancelled = false;
-            FilterConvertedToJO = false;
+            _suppressStatsUpdate = true;
+            try
+            {
+                _searchText = "";
+                OnPropertyChanged(nameof(SearchText));
+                _selectedStatus = _selectedSalesman = _selectedCustomer = _selectedCustRef = null;
+                OnPropertyChanged(nameof(SelectedStatus));
+                OnPropertyChanged(nameof(SelectedSalesman));
+                OnPropertyChanged(nameof(SelectedCustomer));
+                OnPropertyChanged(nameof(SelectedCustRef));
+                _dateFrom = _dateTo = null;
+                ValidateDateRange();
+                OnPropertyChanged(nameof(DateFrom));
+                OnPropertyChanged(nameof(DateTo));
+                OnPropertyChanged(nameof(IsDateFilterActive));
+                _filterDraft = _filterSent = _filterConfirmed = _filterHold = _filterRevised = _filterCompleted = true;
+                _filterCancelled = _filterConvertedToJO = false;
+                OnPropertyChanged(nameof(FilterDraft));
+                OnPropertyChanged(nameof(FilterSent));
+                OnPropertyChanged(nameof(FilterConfirmed));
+                OnPropertyChanged(nameof(FilterHold));
+                OnPropertyChanged(nameof(FilterRevised));
+                OnPropertyChanged(nameof(FilterCompleted));
+                OnPropertyChanged(nameof(FilterCancelled));
+                OnPropertyChanged(nameof(FilterConvertedToJO));
+            }
+            finally
+            {
+                _suppressStatsUpdate = false;
+            }
+            ApplyFilters();
         }
 
-        // ==================== APPLY FILTERS ====================
-
-        private void ApplyFiltersIfNotBusy()
-        {
-            if (_bulkUpdateCount > 0) return;
-            _bulkUpdateCount++;
-
-            Application.Current.Dispatcher.BeginInvoke(
-                System.Windows.Threading.DispatcherPriority.Background,
-                (Action)(() =>
-                {
-                    _bulkUpdateCount--;
-                    ApplyFilters();
-                }));
-        }
-
+        // ==================== APPLY FILTERS (Single-pass, optimized) ====================
         public void ApplyFilters()
         {
             if (_bulkUpdateCount > 0) return;
+            if (HasDateRangeError) return; // ✅ Don't apply if date range is invalid
 
-            FilteredInvoices.Clear();
             var query = AllInvoices.AsEnumerable();
 
+            // Search filter
             if (!string.IsNullOrWhiteSpace(SearchText))
             {
                 var s = SearchText.ToLower();
-                query = query.Where(i => (i.InvoiceNo?.ToLower().Contains(s) ?? false)
-                    || (i.CustomerName?.ToLower().Contains(s) ?? false)
-                    || (i.ProjectName?.ToLower().Contains(s) ?? false)
-                    || (i.CustomerReference?.ToLower().Contains(s) ?? false));
+                query = query.Where(i =>
+                    (i.InvoiceNo?.ToLower().Contains(s) ?? false) ||
+                    (i.CustomerName?.ToLower().Contains(s) ?? false) ||
+                    (i.ProjectName?.ToLower().Contains(s) ?? false) ||
+                    (i.CustomerReference?.ToLower().Contains(s) ?? false));
             }
 
+            // ComboBox filters
             if (!string.IsNullOrWhiteSpace(SelectedStatus))
                 query = query.Where(i => i.Status == SelectedStatus);
             if (!string.IsNullOrWhiteSpace(SelectedSalesman))
@@ -491,37 +469,54 @@ namespace ProGlassAutomation.ViewModels
                 query = query.Where(i => i.CustomerName == SelectedCustomer);
             if (!string.IsNullOrWhiteSpace(SelectedCustRef))
                 query = query.Where(i => i.CustomerReference == SelectedCustRef);
+
+            // Date range
             if (DateFrom.HasValue)
                 query = query.Where(i => i.InvoiceDate >= DateFrom.Value);
             if (DateTo.HasValue)
                 query = query.Where(i => i.InvoiceDate <= DateTo.Value.AddDays(1));
 
-            query = query.Where(i =>
-                (i.Status == "Draft" && FilterDraft)
-                || (i.Status == "Sent" && FilterSent)
-                || (i.Status == "Confirmed" && FilterConfirmed)
-                || (i.Status == "Hold" && FilterHold)
-                || (i.Status == "Revised" && FilterRevised)
-                || (i.Status == "Completed" && FilterCompleted)
-                || (i.Status == "Cancelled" && FilterCancelled));
+            // Status checkboxes (HashSet for performance)
+            var allowedStatuses = new HashSet<string>();
+            if (FilterDraft) allowedStatuses.Add("Draft");
+            if (FilterSent) allowedStatuses.Add("Sent");
+            if (FilterConfirmed) allowedStatuses.Add("Confirmed");
+            if (FilterHold) allowedStatuses.Add("Hold");
+            if (FilterRevised) allowedStatuses.Add("Revised");
+            if (FilterCompleted) allowedStatuses.Add("Completed");
+            if (FilterCancelled) allowedStatuses.Add("Cancelled");
+
+            query = query.Where(i => allowedStatuses.Contains(i.Status ?? ""));
 
             if (FilterConvertedToJO)
                 query = query.Where(i => i.IsConvertedToJobOrder);
 
-            var filteredList = query.OrderByDescending(i => i.InvoiceDate).ToList();
+            // ✅ Stable order
+            var filteredList = query
+                .OrderByDescending(i => i.InvoiceDate)
+                .ThenByDescending(i => i.InvoiceNo)
+                .ToList();
 
+            FilteredInvoices.Clear();
             foreach (var inv in filteredList)
                 FilteredInvoices.Add(inv);
 
-            CalculateStatistics();
+            if (!_suppressStatsUpdate)
+                CalculateStatistics();
         }
 
-        // ==================== LOAD FROM FOLDER ====================
-
+        // ==================== LOAD FROM FOLDER (Parallel, deduplicated) ====================
         private void LoadInvoicesFromFolder(string folderPath)
+        {
+            LoadInvoicesFromFolderInternal(folderPath);
+        }
+
+        private void LoadInvoicesFromFolderInternal(string folderPath)
         {
             try
             {
+                _isLoadingFromFolder = true;
+
                 AllInvoices.Clear();
                 SalesmanOptions.Clear();
                 CustomerOptions.Clear();
@@ -530,68 +525,89 @@ namespace ProGlassAutomation.ViewModels
                 if (!Directory.Exists(folderPath))
                 {
                     Directory.CreateDirectory(folderPath);
-                    IsLoading = false;
                     return;
                 }
 
                 var settings = new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore };
+                var salesmen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var customers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var custRefs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-                var invoices = new List<ProformaInvoiceModel>();
+                // ✅ Deduplication using file modification time
+                var invoiceDict = new Dictionary<string, ProformaInvoiceModel>(StringComparer.OrdinalIgnoreCase);
+                var fileTimes = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
 
-                foreach (var file in Directory.GetFiles(folderPath, "*.json"))
+                var files = Directory.GetFiles(folderPath, "*.json");
+                Parallel.ForEach(files, file =>
                 {
                     try
                     {
                         var json = File.ReadAllText(file);
                         var invoice = JsonConvert.DeserializeObject<ProformaInvoiceModel>(json, settings);
-                        if (invoice != null) invoices.Add(invoice);
+                        if (invoice != null && !string.IsNullOrWhiteSpace(invoice.InvoiceNo))
+                        {
+                            var fileTime = File.GetLastWriteTime(file);
+                            lock (invoiceDict)
+                            {
+                                if (!invoiceDict.ContainsKey(invoice.InvoiceNo))
+                                {
+                                    invoiceDict[invoice.InvoiceNo] = invoice;
+                                    fileTimes[invoice.InvoiceNo] = fileTime;
+                                }
+                                else
+                                {
+                                    if (fileTime > fileTimes[invoice.InvoiceNo])
+                                    {
+                                        invoiceDict[invoice.InvoiceNo] = invoice;
+                                        fileTimes[invoice.InvoiceNo] = fileTime;
+                                    }
+                                }
+                            }
+                        }
                     }
                     catch { }
-                }
+                });
 
-                foreach (var invoice in invoices)
+                // ✅ Stable ordering
+                var uniqueInvoices = invoiceDict.Values
+                    .OrderByDescending(i => i.InvoiceDate)
+                    .ThenByDescending(i => i.InvoiceNo)
+                    .ToList();
+
+                foreach (var invoice in uniqueInvoices)
                 {
                     AllInvoices.Add(invoice);
+                    if (!string.IsNullOrWhiteSpace(invoice.Salesman)) salesmen.Add(invoice.Salesman);
+                    if (!string.IsNullOrWhiteSpace(invoice.CustomerName)) customers.Add(invoice.CustomerName);
+                    if (!string.IsNullOrWhiteSpace(invoice.CustomerReference)) custRefs.Add(invoice.CustomerReference);
                 }
 
-                foreach (var s in AllInvoices.Where(i => !string.IsNullOrWhiteSpace(i.Salesman)).Select(i => i.Salesman!).Distinct().OrderBy(x => x))
+                foreach (var s in salesmen.OrderBy(x => x))
                     SalesmanOptions.Add(new SalesmanOption { Name = s });
-
-                foreach (var c in AllInvoices.Where(i => !string.IsNullOrWhiteSpace(i.CustomerName)).Select(i => i.CustomerName!).Distinct().OrderBy(x => x))
+                foreach (var c in customers.OrderBy(x => x))
                     CustomerOptions.Add(new CustomerOption { Name = c });
-
-                foreach (var r in AllInvoices.Where(i => !string.IsNullOrWhiteSpace(i.CustomerReference)).Select(i => i.CustomerReference!).Distinct().OrderBy(x => x))
+                foreach (var r in custRefs.OrderBy(x => x))
                     CustRefOptions.Add(new CustRefOption { Reference = r });
             }
             finally
             {
-                IsLoading = false;
-                ApplyFilters();
+                _isLoadingFromFolder = false;
             }
         }
 
-        // ==================== UPDATE STATUS ====================
-
+        // ==================== UPDATE STATUS (Called from Editor) ====================
         public void UpdateStatus(ProformaInvoiceModel invoice, string newStatus)
         {
             if (invoice == null || string.IsNullOrWhiteSpace(newStatus)) return;
             if (invoice.Status == newStatus) return;
-
             try
             {
-                // Update in memory
                 invoice.Status = newStatus;
-
-                // Update in collection
                 var existing = AllInvoices.FirstOrDefault(i => i.InvoiceNo == invoice.InvoiceNo);
                 if (existing != null) existing.Status = newStatus;
-
-                // Save to file
                 SaveInvoice(invoice);
-
-                // 🔴 FIX: Force synchronous statistics recalculation
-                _bulkUpdateCount = 0;  // Reset bulk counter to allow synchronous update
-                CalculateStatistics();  // Direct call - no dispatcher delay
+                if (!_suppressStatsUpdate)
+                    CalculateStatistics();
             }
             catch (Exception ex)
             {
@@ -599,21 +615,17 @@ namespace ProGlassAutomation.ViewModels
             }
         }
 
-        // ==================== SAVE INVOICE ====================
-
         public void SaveInvoice(ProformaInvoiceModel invoice)
         {
             try
             {
                 string folder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data");
                 if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
-
                 var settings = new JsonSerializerSettings
                 {
                     ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
                     Formatting = Formatting.Indented
                 };
-
                 var json = JsonConvert.SerializeObject(invoice, settings);
                 File.WriteAllText(GetInvoiceFilePath(invoice.InvoiceNo), json);
             }
@@ -629,30 +641,32 @@ namespace ProGlassAutomation.ViewModels
             return Path.Combine(folder, $"{invoiceNo}.json");
         }
 
-        // ==================== CALCULATE STATISTICS ====================
-
+        // ==================== STATISTICS (Single-pass optimization) ====================
         private void CalculateStatistics()
         {
+            int total = 0, converted = 0, draft = 0, sent = 0, confirmed = 0, hold = 0, completed = 0;
+            foreach (var inv in FilteredInvoices)
+            {
+                total++;
+                if (inv.IsConvertedToJobOrder) converted++;
+                switch (inv.Status)
+                {
+                    case "Draft": draft++; break;
+                    case "Sent": sent++; break;
+                    case "Confirmed": confirmed++; break;
+                    case "Hold": hold++; break;
+                    case "Completed": completed++; break;
+                }
+            }
+
             TotalInvoiceCount = AllInvoices.Count;
-            ConvertedToJOCount = FilteredInvoices.Count(i => i.IsConvertedToJobOrder);
+            ConvertedToJOCount = converted;
+            DraftCount = draft;
+            SentCount = sent;
+            ConfirmedCount = confirmed;
+            HoldCount = hold;
+            CompletedCount = completed;
             HasNoInvoices = FilteredInvoices.Count == 0;
-
-            // 🔴 FIX: Count from FilteredInvoices, not AllInvoices!
-            DraftCount = FilteredInvoices.Count(i => i.Status == "Draft");
-            SentCount = FilteredInvoices.Count(i => i.Status == "Sent");
-            ConfirmedCount = FilteredInvoices.Count(i => i.Status == "Confirmed");
-            HoldCount = FilteredInvoices.Count(i => i.Status == "Hold");
-            CompletedCount = FilteredInvoices.Count(i => i.Status == "Completed");
-
-            // 🔴 FORCE UI UPDATE - FIXED CASE-SENSITIVE NAMES!
-            OnPropertyChanged(nameof(TotalInvoiceCount));
-            OnPropertyChanged(nameof(DraftCount));      // uppercase D - FIXED!
-            OnPropertyChanged(nameof(SentCount));      // uppercase S
-            OnPropertyChanged(nameof(ConfirmedCount)); // uppercase C
-            OnPropertyChanged(nameof(HoldCount));    // uppercase H - FIXED!
-            OnPropertyChanged(nameof(CompletedCount)); // uppercase C
-            OnPropertyChanged(nameof(ConvertedToJOCount));
-            OnPropertyChanged(nameof(HasNoInvoices));
         }
 
         public void SaveOnExit()
@@ -672,9 +686,7 @@ namespace ProGlassAutomation.ViewModels
         }
 
         // ==================== INOTIFYPROPERTYCHANGED ====================
-
         public event PropertyChangedEventHandler? PropertyChanged;
-
         public void OnPropertyChanged([CallerMemberName] string? propertyName = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
@@ -687,28 +699,23 @@ namespace ProGlassAutomation.ViewModels
         }
 
         // ==================== HELPER CLASSES ====================
-
         public class StatusOption { public string Label { get; set; } = ""; public string Value { get; set; } = ""; }
         public class SalesmanOption { public string Name { get; set; } = ""; }
         public class CustomerOption { public string Name { get; set; } = ""; }
         public class CustRefOption { public string Reference { get; set; } = ""; }
 
         // ==================== RELAYCOMMAND ====================
-
         public class RelayCommand : ICommand
         {
             private readonly Action<object?> _execute;
             private readonly Func<object?, bool>? _canExecute;
-
             public RelayCommand(Action<object?> execute, Func<object?, bool>? canExecute = null)
             {
                 _execute = execute ?? throw new ArgumentNullException(nameof(execute));
                 _canExecute = canExecute;
             }
-
             public bool CanExecute(object? parameter) => _canExecute?.Invoke(parameter) ?? true;
             public void Execute(object? parameter) => _execute(parameter);
-
             public event EventHandler? CanExecuteChanged
             {
                 add => CommandManager.RequerySuggested += value;
@@ -720,16 +727,13 @@ namespace ProGlassAutomation.ViewModels
         {
             private readonly Action<T?> _execute;
             private readonly Func<T?, bool>? _canExecute;
-
             public RelayCommand(Action<T?> execute, Func<T?, bool>? canExecute = null)
             {
                 _execute = execute;
                 _canExecute = canExecute;
             }
-
             public bool CanExecute(object? parameter) => _canExecute?.Invoke((T?)parameter) ?? true;
             public void Execute(object? parameter) => _execute((T?)parameter);
-
             public event EventHandler? CanExecuteChanged
             {
                 add => CommandManager.RequerySuggested += value;

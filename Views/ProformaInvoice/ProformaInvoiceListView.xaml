@@ -4,67 +4,73 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
-             Background="#F1F5F9">
+             Background="#F1F5F9"
+             FontFamily="Segoe UI">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
 
-        <!-- ==================== MAIN DATA GRID STYLE ==================== -->
+        <!-- ==================== COMPACT MODERN DATA GRID (SheetStore Style) ==================== -->
         <Style x:Key="ModernDataGrid" TargetType="DataGrid">
             <Setter Property="Background" Value="White"/>
-            <Setter Property="BorderBrush" Value="#CBD5E1"/>
+            <Setter Property="BorderBrush" Value="#94A3B8"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
-            <Setter Property="HorizontalGridLinesBrush" Value="#E2E8F0"/>
-            <Setter Property="VerticalGridLinesBrush" Value="Transparent"/>
+            <Setter Property="GridLinesVisibility" Value="All"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#CBD5E1"/>
+            <Setter Property="VerticalGridLinesBrush" Value="#E2E8F0"/>
             <Setter Property="RowBackground" Value="White"/>
             <Setter Property="AlternatingRowBackground" Value="#F8FAFC"/>
             <Setter Property="RowHeaderWidth" Value="0"/>
-            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontSize" Value="11"/>
             <Setter Property="FontFamily" Value="Segoe UI"/>
-            <Setter Property="HeadersVisibility" Value="Column"/>
             <Setter Property="SelectionMode" Value="Single"/>
             <Setter Property="SelectionUnit" Value="FullRow"/>
             <Setter Property="CanUserAddRows" Value="False"/>
             <Setter Property="CanUserDeleteRows" Value="False"/>
             <Setter Property="AutoGenerateColumns" Value="False"/>
             <Setter Property="IsReadOnly" Value="True"/>
-            <Setter Property="RowHeight" Value="44"/>
-            <Setter Property="ColumnHeaderHeight" Value="46"/>
-            <Setter Property="Margin" Value="0"/>
-            <Setter Property="Padding" Value="0"/>
+            <Setter Property="RowHeight" Value="36"/>
+            <Setter Property="ColumnHeaderHeight" Value="42"/>
+            <Setter Property="MinColumnWidth" Value="55"/>
+            <Setter Property="HorizontalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="EnableRowVirtualization" Value="True"/>
+            <Setter Property="EnableColumnVirtualization" Value="True"/>
+            <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling"/>
         </Style>
 
-        <!-- ==================== CELL STYLE ==================== -->
+        <!-- ==================== COMPACT CELL ==================== -->
         <Style x:Key="GridCell" TargetType="DataGridCell">
-            <Setter Property="Padding" Value="10,8"/>
-            <Setter Property="BorderThickness" Value="0,0,1,0"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="BorderThickness" Value="0,0,1,1"/>
             <Setter Property="BorderBrush" Value="#E2E8F0"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
-            <Setter Property="FontSize" Value="13"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="DataGridCell">
-                        <Border Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}" 
-                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
-                            <ContentPresenter VerticalAlignment="Center"/>
+                        <Border Padding="{TemplateBinding Padding}"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center"/>
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="#3B82F6"/>
-                    <Setter Property="Foreground" Value="White"/>
+                    <Setter Property="Background" Value="#DBEAFE"/>
+                    <Setter Property="Foreground" Value="#1E40AF"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
 
-        <!-- ==================== ROW STYLE ==================== -->
+        <!-- ==================== COMPACT ROW ==================== -->
         <Style x:Key="GridRow" TargetType="DataGridRow">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Cursor" Value="Hand"/>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
                     <Setter Property="Background" Value="#F1F5F9"/>
@@ -72,96 +78,218 @@
                 <Trigger Property="IsSelected" Value="True">
                     <Setter Property="Background" Value="#DBEAFE"/>
                 </Trigger>
-                <Trigger Property="AlternationIndex" Value="1">
-                    <Setter Property="Background" Value="#F8FAFC"/>
-                </Trigger>
             </Style.Triggers>
         </Style>
 
-        <!-- ==================== COLUMN HEADER STYLE ==================== -->
+        <!-- ==================== SLATE GRAY COLUMN HEADER (No Black!) ==================== -->
         <Style x:Key="ColumnHeader" TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="#1E40AF"/>
+            <Setter Property="Background" Value="#475569"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Padding" Value="10,12"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="Padding" Value="8,6"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
-            <Setter Property="BorderBrush" Value="#1E3A8A"/>
-            <Setter Property="BorderThickness" Value="0,0,1,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="BorderBrush" Value="#334155"/>
+            <Setter Property="BorderThickness" Value="0,0,1,2"/>
+            <Setter Property="MinHeight" Value="42"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridColumnHeader">
+                        <Grid Background="{TemplateBinding Background}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Border Grid.Column="0"
+                                    Background="{TemplateBinding Background}"
+                                    Padding="{TemplateBinding Padding}">
+                                <TextBlock Text="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}"
+                                           Foreground="{TemplateBinding Foreground}"
+                                           FontWeight="{TemplateBinding FontWeight}"
+                                           FontSize="{TemplateBinding FontSize}"
+                                           TextAlignment="Center"
+                                           TextWrapping="Wrap"
+                                           TextTrimming="CharacterEllipsis"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
+                            </Border>
+
+                            <Path x:Name="SortArrow"
+                                  Grid.Column="1"
+                                  Data="M 0,4 L 4,0 L 8,4"
+                                  Fill="White"
+                                  Visibility="Collapsed"
+                                  Margin="2,0,6,0"
+                                  VerticalAlignment="Center"/>
+                        </Grid>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="SortDirection" Value="Ascending">
+                                <Setter TargetName="SortArrow" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="SortArrow" Property="Data" Value="M 0,0 L 4,4 L 8,0"/>
+                            </Trigger>
+
+                            <Trigger Property="SortDirection" Value="Descending">
+                                <Setter TargetName="SortArrow" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="SortArrow" Property="Data" Value="M 0,4 L 4,0 L 8,4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
-        <!-- ==================== STATS CARD STYLE ==================== -->
-        <Style x:Key="StatsCard" TargetType="Border">
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="Padding" Value="12,16"/>
-            <Setter Property="Margin" Value="0,0,8,0"/>
+        <!-- ==================== MODERN DATEPICKER ==================== -->
+        <Style x:Key="ModernDatePicker" TargetType="DatePicker">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#CBD5E1"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="MinHeight" Value="32"/>
+            <Setter Property="Padding" Value="6,4"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
         </Style>
 
-        <!-- ==================== TEXT STYLES ==================== -->
-        <Style x:Key="CellText" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="#334155"/>
-            <Setter Property="FontSize" Value="13"/>
+        <!-- ==================== DATE LABEL ==================== -->
+        <Style x:Key="DateLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="9"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#94A3B8"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <!-- ==================== COMBOBOX STYLES ==================== -->
+        <Style x:Key="ModernComboBox" TargetType="ComboBox">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#CBD5E1"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="MinHeight" Value="32"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
+
+        <!-- ==================== COMPACT CELL TEXT STYLES ==================== -->
+        <Style x:Key="CellText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#475569"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
         </Style>
 
         <Style x:Key="CellTextBold" TargetType="TextBlock">
             <Setter Property="Foreground" Value="#1E40AF"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="11"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
         </Style>
 
         <Style x:Key="CellDate" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="#475569"/>
-            <Setter Property="FontWeight" Value="Medium"/>
-            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="#64748B"/>
+            <Setter Property="FontWeight" Value="Normal"/>
+            <Setter Property="FontSize" Value="11"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
         </Style>
 
         <Style x:Key="CellCompany" TargetType="TextBlock">
             <Setter Property="Foreground" Value="#1E293B"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontSize" Value="11"/>
             <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
         </Style>
 
         <Style x:Key="CellAmount" TargetType="TextBlock">
             <Setter Property="Foreground" Value="#0891B2"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontSize" Value="11"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+
+        <!-- ==================== STATS CARD ==================== -->
+        <Style x:Key="StatsCard" TargetType="Border">
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="10,12"/>
+            <Setter Property="Margin" Value="3,0"/>
+            <Setter Property="BorderThickness" Value="0"/>
         </Style>
 
         <Style x:Key="StatValue" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="26"/>
+            <Setter Property="FontSize" Value="20"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
 
         <Style x:Key="StatLabel" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontSize" Value="9"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="HorizontalAlignment" Value="Center"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="Margin" Value="0,4,0,0"/>
+            <Setter Property="Opacity" Value="0.75"/>
+            <Setter Property="Margin" Value="0,2,0,0"/>
         </Style>
 
-        <!-- ==================== BUTTON STYLES ==================== -->
+        <!-- ==================== HEADER BUTTONS (Light theme) ==================== -->
         <Style x:Key="HeaderButton" TargetType="Button">
-            <Setter Property="Background" Value="#2563EB"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Padding" Value="14,8"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="MinHeight" Value="32"/>
+            <Setter Property="MinWidth" Value="80"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="border" Background="{TemplateBinding Background}"
+                                CornerRadius="6" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="HeaderButtonLight" TargetType="Button" BasedOn="{StaticResource HeaderButton}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#E2E8F0"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}"
+                                BorderBrush="#475569" BorderThickness="1"
+                                CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#1E293B"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="#64748B"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#334155"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -169,103 +297,133 @@
 
         <Style x:Key="HeaderButtonNew" TargetType="Button" BasedOn="{StaticResource HeaderButton}">
             <Setter Property="Background" Value="#10B981"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#059669"/>
-                </Trigger>
-            </Style.Triggers>
+            <Setter Property="ToolTip" Value="Create a new proforma invoice (Ctrl+N)"/>
+        </Style>
+
+        <Style x:Key="HeaderButtonExport" TargetType="Button" BasedOn="{StaticResource HeaderButton}">
+            <Setter Property="Background" Value="#8B5CF6"/>
+            <Setter Property="ToolTip" Value="Export filtered invoices to Excel (Ctrl+E)"/>
         </Style>
 
         <Style x:Key="HeaderButtonRefresh" TargetType="Button" BasedOn="{StaticResource HeaderButton}">
-            <Setter Property="Background" Value="#64748B"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#475569"/>
-                </Trigger>
-            </Style.Triggers>
+            <Setter Property="Background" Value="#3B82F6"/>
+            <Setter Property="ToolTip" Value="Refresh data from folder (F5)"/>
         </Style>
 
+        <Style x:Key="HeaderButtonOpen" TargetType="Button" BasedOn="{StaticResource HeaderButtonLight}">
+            <Setter Property="ToolTip" Value="Open different folder (Ctrl+F)"/>
+        </Style>
+
+        <!-- ==================== QUICK FILTER (Amber pills) ==================== -->
         <Style x:Key="QuickFilterBtn" TargetType="Button">
-            <Setter Property="Background" Value="#DBEAFE"/>
-            <Setter Property="Foreground" Value="#1E40AF"/>
+            <Setter Property="Background" Value="#FEF3C7"/>
+            <Setter Property="Foreground" Value="#78350F"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="11"/>
-            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="Padding" Value="10,5"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Margin" Value="0,0,4,0"/>
+            <Setter Property="Margin" Value="0,0,5,0"/>
+            <Setter Property="MinWidth" Value="50"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="border" Background="{TemplateBinding Background}"
+                                CornerRadius="5" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#FDE68A"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#FCD34D"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
 
+        <!-- ==================== COMPACT ACTION BUTTONS (DataGrid) ==================== -->
         <Style x:Key="ActionBtn" TargetType="Button">
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="11"/>
-            <Setter Property="Padding" Value="10,5"/>
-            <Setter Property="MinHeight" Value="26"/>
+            <Setter Property="FontSize" Value="9"/>
+            <Setter Property="Padding" Value="6,3"/>
+            <Setter Property="MinHeight" Value="22"/>
+            <Setter Property="MinWidth" Value="38"/>
             <Setter Property="Margin" Value="0,0,3,0"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="border" Background="{TemplateBinding Background}"
+                                CornerRadius="4" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
 
         <Style x:Key="BtnView" TargetType="Button" BasedOn="{StaticResource ActionBtn}">
-            <Setter Property="Background" Value="#3B82F6"/>
+            <Setter Property="Background" Value="#1E40AF"/>
+            <Setter Property="ToolTip" Value="View invoice details"/>
         </Style>
 
         <Style x:Key="BtnEdit" TargetType="Button" BasedOn="{StaticResource ActionBtn}">
-            <Setter Property="Background" Value="#F59E0B"/>
+            <Setter Property="Background" Value="#D97706"/>
+            <Setter Property="ToolTip" Value="Edit this invoice"/>
         </Style>
 
         <Style x:Key="BtnDelete" TargetType="Button" BasedOn="{StaticResource ActionBtn}">
-            <Setter Property="Background" Value="#EF4444"/>
+            <Setter Property="Background" Value="#DC2626"/>
+            <Setter Property="ToolTip" Value="Delete this invoice"/>
         </Style>
 
         <Style x:Key="BtnJO" TargetType="Button" BasedOn="{StaticResource ActionBtn}">
-            <Setter Property="Background" Value="#8B5CF6"/>
+            <Setter Property="Background" Value="#7C3AED"/>
+            <Setter Property="ToolTip" Value="Create Job Order from this invoice (Ctrl+J)"/>
         </Style>
 
-        <Style x:Key="FilterCombobox" TargetType="ComboBox">
+        <Style x:Key="ClearFilterBtn" TargetType="Button">
             <Setter Property="Background" Value="White"/>
-            <Setter Property="BorderBrush" Value="#CBD5E1"/>
+            <Setter Property="Foreground" Value="#DC2626"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="Padding" Value="12,7"/>
+            <Setter Property="BorderBrush" Value="#FECACA"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="10,8"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="MinHeight" Value="36"/>
-        </Style>
-
-        <Style x:Key="FilterLabel" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="11"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Foreground" Value="#475569"/>
-            <Setter Property="Margin" Value="0,0,0,4"/>
-        </Style>
-
-        <Style x:Key="FilterCheckbox" TargetType="CheckBox">
-            <Setter Property="FontSize" Value="11"/>
-            <Setter Property="Foreground" Value="#475569"/>
-            <Setter Property="Margin" Value="0,2,8,2"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="MinHeight" Value="30"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#FEF2F2"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
     </UserControl.Resources>
 
-    <Grid Margin="16">
+    <Grid Margin="12">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -273,275 +431,349 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- ==================== HEADER SECTION ==================== -->
-        <Border Grid.Row="0" Margin="0,0,0,12" Background="#1E40AF" CornerRadius="10" Padding="20,16">
+        <!-- ==================== HEADER (Light theme, not black) ==================== -->
+        <Border Grid.Row="0" Margin="0,0,0,10" CornerRadius="10"
+                ToolTip="Proforma Invoice Management">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#1E40AF" Offset="0"/>
+                    <GradientStop Color="#3B82F6" Offset="1"/>
+                </LinearGradientBrush>
+            </Border.Background>
             <Border.Effect>
-                <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.2" Color="#1E40AF"/>
+                <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.15" Color="#1E40AF"/>
             </Border.Effect>
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+            <Grid Margin="18,12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-                <!-- Left: Title -->
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Background="#DBEAFE" CornerRadius="8" Padding="12,8" Margin="0,0,14,0">
-                        <TextBlock Text="📄" FontSize="24"/>
-                    </Border>
-                    <StackPanel VerticalAlignment="Center">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="PROFORMA INVOICES" FontSize="22" FontWeight="Bold" Foreground="White"/>
-                            <Border Background="#FEF9C3" CornerRadius="4" Padding="8,3" Margin="10,0,0,0" VerticalAlignment="Center">
-                                <TextBlock Text="MANAGEMENT" FontSize="10" FontWeight="Bold" Foreground="#B45309"/>
-                            </Border>
+                <!-- ROW 1: Title + Action Buttons -->
+                <Grid Grid.Row="0" Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Background="#FBBF24" CornerRadius="8" Padding="9,6" Margin="0,0,10,0">
+                            <TextBlock Text="📄" FontSize="16"/>
+                        </Border>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="Proforma Invoices" FontSize="17" FontWeight="Bold" Foreground="White"/>
+                            <TextBlock Text="Create, track and manage invoices" FontSize="10" Foreground="#BFDBFE" Margin="0,1,0,0"/>
                         </StackPanel>
-                        <TextBlock Text="Create, Track and Manage Invoices" FontSize="12" Foreground="#BFDBFE" Margin="0,3,0,0"/>
                     </StackPanel>
-                </StackPanel>
 
-                <!-- Center: Filters & Search -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
-                    <!-- Quick Filters -->
-                    <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Content="+ New" Style="{StaticResource HeaderButtonNew}" Command="{Binding NewInvoiceCommand}" Margin="0,0,8,0"/>
+                        <Button Content="Export" Style="{StaticResource HeaderButtonExport}" Command="{Binding ExportAllCommand}" Margin="0,0,8,0"/>
+                        <Button Content="Open" Style="{StaticResource HeaderButtonOpen}" Command="{Binding OpenFolderCommand}" Margin="0,0,8,0"/>
+                        <Button Content="Refresh" Style="{StaticResource HeaderButtonRefresh}" Command="{Binding RefreshCommand}"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- ROW 2: Quick Filters + Search -->
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" ToolTip="Quick date filters">
                         <Button Content="Today" Style="{StaticResource QuickFilterBtn}" Command="{Binding QuickFilterTodayCommand}"/>
                         <Button Content="Week" Style="{StaticResource QuickFilterBtn}" Command="{Binding QuickFilterThisWeekCommand}"/>
                         <Button Content="Month" Style="{StaticResource QuickFilterBtn}" Command="{Binding QuickFilterThisMonthCommand}"/>
                         <Button Content="Year" Style="{StaticResource QuickFilterBtn}" Command="{Binding QuickFilterThisYearCommand}"/>
+                        <Button Content="All" Style="{StaticResource QuickFilterBtn}" Command="{Binding QuickFilterAllTimeCommand}"/>
                     </StackPanel>
 
-                    <!-- Search Box -->
-                    <Border Background="White" CornerRadius="6" Padding="4" MinWidth="200">
+                    <Border Grid.Column="1" Background="White" CornerRadius="6" Padding="3" MinWidth="240"
+                            ToolTip="Search by PI number, customer, project, or reference">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <Border Background="#3B82F6" CornerRadius="4" Padding="8,6" Margin="2">
-                                <TextBlock Text="🔍" FontSize="14"/>
+                            <Border Background="#FBBF24" CornerRadius="4" Padding="6,4" Margin="2">
+                                <TextBlock Text="🔍" FontSize="10"/>
                             </Border>
-                            <TextBox Grid.Column="1" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
-                                    BorderThickness="0" VerticalAlignment="Center" Padding="8,6" FontSize="13" Background="Transparent"
-                                    GotFocus="SearchTextBox_GotFocus"/>
+                            <TextBox Grid.Column="1" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                    BorderThickness="0" VerticalAlignment="Center" HorizontalAlignment="Stretch"
+                                    Padding="6,4" FontSize="11" Background="Transparent" GotFocus="SearchTextBox_GotFocus"/>
                         </Grid>
                     </Border>
-                </StackPanel>
-
-                <!-- Right: Action Buttons -->
-                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Content="+ New" Style="{StaticResource HeaderButtonNew}" Command="{Binding NewInvoiceCommand}" Margin="0,0,6,0"/>
-                    <Button Content="Export" Style="{StaticResource HeaderButton}" Command="{Binding ExportAllCommand}" Margin="0,0,6,0"/>
-                    <Button Content="Refresh" Style="{StaticResource HeaderButtonRefresh}" Command="{Binding RefreshCommand}"/>
-                </StackPanel>
+                </Grid>
             </Grid>
         </Border>
 
-        <!-- ==================== FILTER BAR ==================== -->
-        <Border Grid.Row="1" Margin="0,0,0,12" Background="White" CornerRadius="10" Padding="16,12">
+        <!-- ==================== FILTER BAR (Compact, clean) ==================== -->
+        <Border Grid.Row="1" Margin="0,0,0,10" Background="White" CornerRadius="8" Padding="14,10">
             <Border.Effect>
-                <DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.1"/>
+                <DropShadowEffect BlurRadius="6" ShadowDepth="1" Opacity="0.05" Color="#0F172A"/>
             </Border.Effect>
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="1.2*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Customer Filter -->
-                <StackPanel Grid.Column="1" Margin="0,0,12,0">
-                    <TextBlock Text="CUSTOMER" Style="{StaticResource FilterLabel}"/>
-                    <ComboBox Style="{StaticResource FilterCombobox}" ItemsSource="{Binding CustomerOptions}" 
+                <!-- CUSTOMER -->
+                <StackPanel Grid.Column="0" Margin="0,0,8,0" ToolTip="Filter invoices by customer name">
+                    <TextBlock Text="CUSTOMER" FontSize="8" FontWeight="Bold"
+                               Foreground="#64748B" Margin="0,0,0,4" HorizontalAlignment="Center"/>
+                    <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding CustomerOptions}"
                              SelectedValue="{Binding SelectedCustomer}" SelectedValuePath="Name" DisplayMemberPath="Name"/>
                 </StackPanel>
 
-                <!-- Salesman Filter -->
-                <StackPanel Grid.Column="2" Margin="0,0,12,0">
-                    <TextBlock Text="SALESMAN" Style="{StaticResource FilterLabel}"/>
-                    <ComboBox Style="{StaticResource FilterCombobox}" ItemsSource="{Binding SalesmanOptions}" 
+                <!-- SALESMAN -->
+                <StackPanel Grid.Column="1" Margin="0,0,8,0" ToolTip="Filter invoices by salesman">
+                    <TextBlock Text="SALESMAN" FontSize="8" FontWeight="Bold"
+                               Foreground="#64748B" Margin="0,0,0,4" HorizontalAlignment="Center"/>
+                    <ComboBox Style="{StaticResource ModernComboBox}" ItemsSource="{Binding SalesmanOptions}"
                              SelectedValue="{Binding SelectedSalesman}" SelectedValuePath="Name" DisplayMemberPath="Name"/>
                 </StackPanel>
 
-                <!-- Date Range -->
-                <StackPanel Grid.Column="3" Margin="0,0,12,0">
-                    <TextBlock Text="DATE RANGE" Style="{StaticResource FilterLabel}"/>
-                    <StackPanel Orientation="Horizontal">
-                        <DatePicker SelectedDate="{Binding DateFrom}" Width="100" Margin="0,0,6,0" Background="White" BorderBrush="#CBD5E1"/>
-                        <DatePicker SelectedDate="{Binding DateTo}" Width="100" Background="White" BorderBrush="#CBD5E1"/>
-                    </StackPanel>
+                <!-- DATE RANGE (Clean unified) -->
+                <StackPanel Grid.Column="2" Margin="0,0,8,0" ToolTip="Filter invoices by date range">
+                    <TextBlock Text="DATE RANGE" FontSize="8" FontWeight="Bold"
+                               Foreground="#64748B" Margin="0,0,0,4" HorizontalAlignment="Center"/>
+
+                    <Border Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1"
+                            CornerRadius="6" Padding="0" MinHeight="32">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Grid Grid.Column="0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="FROM" Style="{StaticResource DateLabel}"
+                                           Margin="8,0,4,0" VerticalAlignment="Center"/>
+                                <DatePicker Grid.Column="1" SelectedDate="{Binding DateFrom}"
+                                            Style="{StaticResource ModernDatePicker}"
+                                            BorderThickness="0" Background="Transparent" Margin="0,2,4,2"
+                                            VerticalAlignment="Center" FontSize="11"/>
+                            </Grid>
+
+                            <Border Grid.Column="1" Background="#E2E8F0" Width="1" Margin="2,6"/>
+
+                            <Grid Grid.Column="2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="TO" Style="{StaticResource DateLabel}"
+                                           Margin="8,0,4,0" VerticalAlignment="Center"/>
+                                <DatePicker Grid.Column="1" SelectedDate="{Binding DateTo}"
+                                            Style="{StaticResource ModernDatePicker}"
+                                            BorderThickness="0" Background="Transparent" Margin="0,2,4,2"
+                                            VerticalAlignment="Center" FontSize="11"/>
+                            </Grid>
+                        </Grid>
+                    </Border>
                 </StackPanel>
 
-                <!-- Clear Button -->
-                <Button Grid.Column="4" Content="Clear Filters" Command="{Binding ClearFiltersCommand}" 
-                        Padding="16,10" Background="#EF4444" Foreground="White" FontWeight="SemiBold" 
-                        BorderThickness="0" Cursor="Hand" VerticalAlignment="Bottom">
-                    <Button.Template>
-                        <ControlTemplate TargetType="Button">
-                            <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
-                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                        </ControlTemplate>
-                    </Button.Template>
-                </Button>
+                <!-- CLEAR BUTTON -->
+                <StackPanel Grid.Column="3" VerticalAlignment="Bottom">
+                    <TextBlock Text=" " FontSize="8" Margin="0,0,0,4"/>
+                    <Button Content="✕ Clear" Style="{StaticResource ClearFilterBtn}" Command="{Binding ClearFiltersCommand}"
+                            ToolTip="Reset all filters to default"/>
+                </StackPanel>
             </Grid>
         </Border>
 
-        <!-- ==================== DATA GRID ==================== -->
-        <Border Grid.Row="2" Background="White" CornerRadius="10" Padding="1">
+        <!-- ==================== DATA GRID (SheetStore-inspired widths) ==================== -->
+        <Border Grid.Row="2" Background="White" CornerRadius="8" Padding="1"
+                BorderBrush="#CBD5E1" BorderThickness="1"
+                ToolTip="List of all proforma invoices matching your filters">
             <Border.Effect>
-                <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.1"/>
+                <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.06" Color="#0F172A"/>
             </Border.Effect>
 
-            <DataGrid ItemsSource="{Binding FilteredInvoices}" 
-                      SelectedItem="{Binding SelectedInvoice}" 
-                      Style="{StaticResource ModernDataGrid}" 
-                      CellStyle="{StaticResource GridCell}" 
+            <DataGrid ItemsSource="{Binding FilteredInvoices}"
+                      SelectedItem="{Binding SelectedInvoice}"
+                      Style="{StaticResource ModernDataGrid}"
+                      CellStyle="{StaticResource GridCell}"
                       RowStyle="{StaticResource GridRow}"
+                      ColumnHeaderStyle="{StaticResource ColumnHeader}"
                       BorderThickness="0"
-                      AlternationCount="2"
-                      MouseDoubleClick="DataGrid_MouseDoubleClick" 
+                      MouseDoubleClick="DataGrid_MouseDoubleClick"
                       PreviewKeyDown="DataGrid_PreviewKeyDown">
                 <DataGrid.Columns>
-                    <!-- PI NO -->
-                    <DataGridTemplateColumn Header="PI NO" Width="115">
+                    <!-- # (Row Number) - 45px -->
+                    <DataGridTemplateColumn Header="#" Width="45" MinWidth="45" MaxWidth="45">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=Item.Id}"
+                                           HorizontalAlignment="Center" Foreground="#64748B"
+                                           FontSize="10" FontWeight="SemiBold"
+                                           Tag="{Binding RelativeSource={RelativeSource AncestorType=ItemsControl}, Path=Items}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- PI NO - 0.8* (auto) -->
+                    <DataGridTemplateColumn Header="PI NO" Width="0.8*" MinWidth="100">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding InvoiceNo}" Style="{StaticResource CellTextBold}"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
-                        <DataGridTemplateColumn.HeaderStyle>
-                            <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource ColumnHeader}"/>
-                        </DataGridTemplateColumn.HeaderStyle>
                     </DataGridTemplateColumn>
 
-                    <!-- DATE -->
-                    <DataGridTemplateColumn Header="DATE" Width="105">
+                    <!-- DATE - 0.8* -->
+                    <DataGridTemplateColumn Header="DATE" Width="0.8*" MinWidth="95">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding InvoiceDate, StringFormat='{}{0:dd-MMM-yyyy}'}" Style="{StaticResource CellDate}"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
-                        <DataGridTemplateColumn.HeaderStyle>
-                            <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource ColumnHeader}"/>
-                        </DataGridTemplateColumn.HeaderStyle>
                     </DataGridTemplateColumn>
 
-                    <!-- CUSTOMER -->
-                    <DataGridTemplateColumn Header="CUSTOMER" Width="*">
+                    <!-- CUSTOMER - 1.3* (wider) -->
+                    <DataGridTemplateColumn Header="CUSTOMER" Width="1.3*" MinWidth="120">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding CustomerName}" Style="{StaticResource CellCompany}" ToolTip="{Binding CustomerName}"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
-                        <DataGridTemplateColumn.HeaderStyle>
-                            <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource ColumnHeader}"/>
-                        </DataGridTemplateColumn.HeaderStyle>
                     </DataGridTemplateColumn>
 
-                    <!-- CUST REF -->
-                    <DataGridTemplateColumn Header="CUST REF" Width="95">
+                    <!-- CUST REF - 0.9* -->
+                    <DataGridTemplateColumn Header="CUST REF" Width="0.9*" MinWidth="90">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding CustomerReference}" Style="{StaticResource CellText}"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
-                        <DataGridTemplateColumn.HeaderStyle>
-                            <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource ColumnHeader}"/>
-                        </DataGridTemplateColumn.HeaderStyle>
                     </DataGridTemplateColumn>
 
-                    <!-- PROJECT -->
-                    <DataGridTemplateColumn Header="PROJECT" Width="100">
+                    <!-- PROJECT - 1* -->
+                    <DataGridTemplateColumn Header="PROJECT" Width="1*" MinWidth="100">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding ProjectName}" Style="{StaticResource CellText}"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
-                        <DataGridTemplateColumn.HeaderStyle>
-                            <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource ColumnHeader}"/>
-                        </DataGridTemplateColumn.HeaderStyle>
                     </DataGridTemplateColumn>
 
-                    <!-- SALESMAN -->
-                    <DataGridTemplateColumn Header="SALESMAN" Width="95">
+                    <!-- SALESMAN - 0.8* -->
+                    <DataGridTemplateColumn Header="SALESMAN" Width="0.8*" MinWidth="90">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding Salesman}" Style="{StaticResource CellText}"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
-                        <DataGridTemplateColumn.HeaderStyle>
-                            <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource ColumnHeader}"/>
-                        </DataGridTemplateColumn.HeaderStyle>
                     </DataGridTemplateColumn>
 
-                    <!-- STATUS -->
-                    <DataGridTemplateColumn Header="STATUS" Width="125">
+                    <!-- STATUS PILL - 0.7* -->
+                    <DataGridTemplateColumn Header="STATUS" Width="0.7*" MinWidth="85">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <ComboBox ItemsSource="{Binding DataContext.EditableStatusOptions, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-                                         SelectedItem="{Binding Status, Mode=OneWay}" 
-                                         BorderBrush="#3B82F6" 
-                                         BorderThickness="1" 
-                                         Padding="6,4" 
-                                         FontSize="11" 
-                                         MinHeight="28" 
-                                         Background="White"
-                                         IsEditable="False" 
-                                         SelectionChanged="StatusComboBox_SelectionChanged"/>
+                                <Border CornerRadius="10" Padding="8,2" Margin="2,0"
+                                        HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="#F1F5F9"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Status}" Value="Draft">
+                                                    <Setter Property="Background" Value="#F1F5F9"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Status}" Value="Sent">
+                                                    <Setter Property="Background" Value="#DBEAFE"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Status}" Value="Confirmed">
+                                                    <Setter Property="Background" Value="#D1FAE5"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Status}" Value="Hold">
+                                                    <Setter Property="Background" Value="#FEF3C7"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Status}" Value="Completed">
+                                                    <Setter Property="Background" Value="#D1FAE5"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Status}" Value="Cancelled">
+                                                    <Setter Property="Background" Value="#FEE2E2"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <TextBlock Text="{Binding Status}" FontSize="9" FontWeight="SemiBold" HorizontalAlignment="Center">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#475569"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Sent">
+                                                        <Setter Property="Foreground" Value="#1E40AF"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Confirmed">
+                                                        <Setter Property="Foreground" Value="#047857"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Hold">
+                                                        <Setter Property="Foreground" Value="#B45309"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Completed">
+                                                        <Setter Property="Foreground" Value="#047857"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Cancelled">
+                                                        <Setter Property="Foreground" Value="#B91C1C"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Border>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
-                        <DataGridTemplateColumn.HeaderStyle>
-                            <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource ColumnHeader}"/>
-                        </DataGridTemplateColumn.HeaderStyle>
                     </DataGridTemplateColumn>
 
-                    <!-- AMOUNT -->
-                    <DataGridTemplateColumn Header="NET TOTAL" Width="110">
+                    <!-- NET TOTAL - 0.9* -->
+                    <DataGridTemplateColumn Header="NET TOTAL" Width="0.9*" MinWidth="100">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding NetTotal, StringFormat=N0}" Style="{StaticResource CellAmount}"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
-                        <DataGridTemplateColumn.HeaderStyle>
-                            <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource ColumnHeader}"/>
-                        </DataGridTemplateColumn.HeaderStyle>
                     </DataGridTemplateColumn>
 
-                    <!-- ACTIONS -->
-                    <DataGridTemplateColumn Header="ACTIONS" Width="175">
+                    <!-- ACTIONS - 170px fixed -->
+                    <DataGridTemplateColumn Header="ACTIONS" Width="170" MinWidth="170" MaxWidth="170">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                    <Button Content="View" Style="{StaticResource BtnView}" 
-                                           Command="{Binding DataContext.EditInvoiceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Button Content="View" Style="{StaticResource BtnView}"
+                                           Command="{Binding DataContext.EditInvoiceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                            CommandParameter="{Binding}"/>
-                                    <Button Content="Edit" Style="{StaticResource BtnEdit}" 
-                                           Command="{Binding DataContext.EditInvoiceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                    <Button Content="Edit" Style="{StaticResource BtnEdit}"
+                                           Command="{Binding DataContext.EditInvoiceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                            CommandParameter="{Binding}"/>
-                                    <Button Content="Del" Style="{StaticResource BtnDelete}" 
-                                           Command="{Binding DataContext.DeleteInvoiceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                    <Button Content="Del" Style="{StaticResource BtnDelete}"
+                                           Command="{Binding DataContext.DeleteInvoiceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                            CommandParameter="{Binding}"/>
-                                    <Button Content="JO" Style="{StaticResource BtnJO}" 
-                                           Command="{Binding DataContext.CreateJobOrderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-                                           CommandParameter="{Binding}"/>
+                                    <Button Content="JO" Style="{StaticResource BtnJO}"
+                                           Command="{Binding DataContext.CreateJobOrderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                           CommandParameter="{Binding}" Margin="0"/>
                                 </StackPanel>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
-                        <DataGridTemplateColumn.HeaderStyle>
-                            <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource ColumnHeader}"/>
-                        </DataGridTemplateColumn.HeaderStyle>
                     </DataGridTemplateColumn>
                 </DataGrid.Columns>
             </DataGrid>
         </Border>
 
-        <!-- ==================== STATS BAR ==================== -->
-        <Border Grid.Row="3" Margin="0,12,0,0" Background="White" CornerRadius="10" Padding="16,12">
+        <!-- ==================== STATS BAR (SheetStore-inspired) ==================== -->
+        <Border Grid.Row="3" Margin="0,10,0,0" Background="White" CornerRadius="8" Padding="12,10"
+                ToolTip="Real-time statistics">
             <Border.Effect>
-                <DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.1"/>
+                <DropShadowEffect BlurRadius="6" ShadowDepth="1" Opacity="0.05" Color="#0F172A"/>
             </Border.Effect>
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -553,67 +785,43 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- TOTAL -->
-                <Border Grid.Column="0" Style="{StaticResource StatsCard}" Background="#DBEAFE">
-                    <Border.BorderBrush>
-                        <SolidColorBrush Color="#3B82F6"/>
-                    </Border.BorderBrush>
-                    <StackPanel HorizontalAlignment="Center">
+                <Border Grid.Column="0" Style="{StaticResource StatsCard}" Background="#F1F5F9" ToolTip="Total invoices">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                         <TextBlock Text="{Binding TotalInvoiceCount}" Style="{StaticResource StatValue}" Foreground="#1E40AF"/>
-                        <TextBlock Text="TOTAL" Style="{StaticResource StatLabel}" Foreground="#1E40AF"/>
+                        <TextBlock Text="TOTAL" Style="{StaticResource StatLabel}" Foreground="#475569"/>
                     </StackPanel>
                 </Border>
 
-                <!-- FILTERED -->
-                <Border Grid.Column="1" Style="{StaticResource StatsCard}" Background="#E0F2FE">
-                    <Border.BorderBrush>
-                        <SolidColorBrush Color="#0EA5E9"/>
-                    </Border.BorderBrush>
-                    <StackPanel HorizontalAlignment="Center">
-                        <TextBlock Text="{Binding FilteredInvoices.Count}" Style="{StaticResource StatValue}" Foreground="#0284C7"/>
-                        <TextBlock Text="FILTERED" Style="{StaticResource StatLabel}" Foreground="#0369A1"/>
+                <Border Grid.Column="1" Style="{StaticResource StatsCard}" Background="#DBEAFE" ToolTip="Filtered count">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding FilteredInvoices.Count}" Style="{StaticResource StatValue}" Foreground="#1E40AF"/>
+                        <TextBlock Text="FILTERED" Style="{StaticResource StatLabel}" Foreground="#2563EB"/>
                     </StackPanel>
                 </Border>
 
-                <!-- DRAFT -->
-                <Border Grid.Column="2" Style="{StaticResource StatsCard}" Background="#F1F5F9">
-                    <Border.BorderBrush>
-                        <SolidColorBrush Color="#64748B"/>
-                    </Border.BorderBrush>
-                    <StackPanel HorizontalAlignment="Center">
+                <Border Grid.Column="2" Style="{StaticResource StatsCard}" Background="#F1F5F9" ToolTip="Drafts">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                         <TextBlock Text="{Binding DraftCount}" Style="{StaticResource StatValue}" Foreground="#475569"/>
-                        <TextBlock Text="DRAFT" Style="{StaticResource StatLabel}" Foreground="#475569"/>
+                        <TextBlock Text="DRAFT" Style="{StaticResource StatLabel}" Foreground="#64748B"/>
                     </StackPanel>
                 </Border>
 
-                <!-- SENT -->
-                <Border Grid.Column="3" Style="{StaticResource StatsCard}" Background="#FEF3C7">
-                    <Border.BorderBrush>
-                        <SolidColorBrush Color="#F59E0B"/>
-                    </Border.BorderBrush>
-                    <StackPanel HorizontalAlignment="Center">
+                <Border Grid.Column="3" Style="{StaticResource StatsCard}" Background="#FEF3C7" ToolTip="Sent">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                         <TextBlock Text="{Binding SentCount}" Style="{StaticResource StatValue}" Foreground="#B45309"/>
                         <TextBlock Text="SENT" Style="{StaticResource StatLabel}" Foreground="#92400E"/>
                     </StackPanel>
                 </Border>
 
-                <!-- CONFIRMED -->
-                <Border Grid.Column="4" Style="{StaticResource StatsCard}" Background="#D1FAE5">
-                    <Border.BorderBrush>
-                        <SolidColorBrush Color="#059669"/>
-                    </Border.BorderBrush>
-                    <StackPanel HorizontalAlignment="Center">
+                <Border Grid.Column="4" Style="{StaticResource StatsCard}" Background="#D1FAE5" ToolTip="Confirmed">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                         <TextBlock Text="{Binding ConfirmedCount}" Style="{StaticResource StatValue}" Foreground="#047857"/>
                         <TextBlock Text="CONFIRMED" Style="{StaticResource StatLabel}" Foreground="#065F46"/>
                     </StackPanel>
                 </Border>
 
-                <!-- CONVERTED -->
-                <Border Grid.Column="5" Style="{StaticResource StatsCard}" Background="#EDE9FE" Margin="0">
-                    <Border.BorderBrush>
-                        <SolidColorBrush Color="#8B5CF6"/>
-                    </Border.BorderBrush>
-                    <StackPanel HorizontalAlignment="Center">
+                <Border Grid.Column="5" Style="{StaticResource StatsCard}" Background="#EDE9FE" ToolTip="Converted to JO">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                         <TextBlock Text="{Binding ConvertedToJOCount}" Style="{StaticResource StatValue}" Foreground="#7C3AED"/>
                         <TextBlock Text="CONVERTED" Style="{StaticResource StatLabel}" Foreground="#6D28D9"/>
                     </StackPanel>
@@ -622,10 +830,11 @@
         </Border>
 
         <!-- ==================== LOADING OVERLAY ==================== -->
-        <Border Grid.RowSpan="4" Background="#80000000" 
+        <Border Grid.RowSpan="4" Background="#99000000"
                 Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}, FallbackValue=Collapsed}">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                <TextBlock Text="Loading..." FontSize="24" Foreground="White" FontWeight="SemiBold"/>
+                <TextBlock Text="⏳" FontSize="42" Foreground="#FBBF24" HorizontalAlignment="Center"/>
+                <TextBlock Text="Loading invoices..." FontSize="14" Foreground="White" FontWeight="SemiBold" Margin="0,10,0,0" HorizontalAlignment="Center"/>
             </StackPanel>
         </Border>
 
