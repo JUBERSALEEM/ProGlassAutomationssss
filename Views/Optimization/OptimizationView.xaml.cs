@@ -257,8 +257,18 @@ namespace ProGlassAutomation.Views.Optimization
                 _rotationPolicy = (RotationPolicy)cmbRotation.SelectedIndex;
             }
 
+            NestingStrategy strategy = NestingStrategy.ComplexIQ200V7;
+            if (cmbStrategy != null && cmbStrategy.SelectedItem is ComboBoxItem strategyItem && strategyItem.Tag != null)
+            {
+                if (int.TryParse(strategyItem.Tag.ToString(), out int val))
+                {
+                    strategy = (NestingStrategy)val;
+                }
+            }
+
             _engine.Configure(_lr, _rm, _tr, _br, _kerf, _breakout);
             _engine.SetRotationPolicy(_rotationPolicy);
+            _engine.SetStrategy(strategy);
 
             if (_stockSheets.Count == 0 || _cutParts.Count == 0)
             {
@@ -936,8 +946,18 @@ namespace ProGlassAutomation.Views.Optimization
                 _rotationPolicy = (RotationPolicy)cmbRotation.SelectedIndex;
             }
 
+            NestingStrategy strategy = NestingStrategy.ComplexIQ200V7;
+            if (cmbStrategy != null && cmbStrategy.SelectedItem is ComboBoxItem strategyItem && strategyItem.Tag != null)
+            {
+                if (int.TryParse(strategyItem.Tag.ToString(), out int val))
+                {
+                    strategy = (NestingStrategy)val;
+                }
+            }
+
             _engine.Configure(_lr, _rm, _tr, _br, _kerf, _breakout);
             _engine.SetRotationPolicy(_rotationPolicy);
+            _engine.SetStrategy(strategy);
             MessageBox.Show("Settings saved.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
@@ -1213,8 +1233,18 @@ namespace ProGlassAutomation.Views.Optimization
                 return;
             }
 
+            NestingStrategy strategy = NestingStrategy.ComplexIQ200V7;
+            if (cmbStrategy != null && cmbStrategy.SelectedItem is ComboBoxItem strategyItem && strategyItem.Tag != null)
+            {
+                if (int.TryParse(strategyItem.Tag.ToString(), out int val))
+                {
+                    strategy = (NestingStrategy)val;
+                }
+            }
+
             _engine.Configure(_lr, _rm, _tr, _br, _kerf, _breakout);
             _engine.SetRotationPolicy(_rotationPolicy);
+            _engine.SetStrategy(strategy);
 
             try
             {

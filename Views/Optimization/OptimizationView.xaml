@@ -506,10 +506,17 @@
                                     <StackPanel Margin="0,0,0,10">
                                         <TextBlock Text="Nesting Strategy" FontSize="10.5" FontWeight="Bold"
                                                    Foreground="{StaticResource TextSub}" Margin="0,0,0,4"/>
-                                        <ComboBox SelectedIndex="0">
-                                            <ComboBoxItem Content="Complex IQ200V7 (Dynamic Score)"/>
-                                            <ComboBoxItem Content="Best Area Packing Strategy"/>
-                                            <ComboBoxItem Content="Short Side Fit Layout"/>
+                                        <ComboBox x:Name="cmbStrategy" SelectedIndex="0">
+                                            <ComboBoxItem Content="Complex IQ200V7 (Dynamic Score)" Tag="10"/>
+                                            <ComboBoxItem Content="Best Area Packing Strategy" Tag="0"/>
+                                            <ComboBoxItem Content="Short Side Fit Layout" Tag="1"/>
+                                            <ComboBoxItem Content="Long Side Fit Layout" Tag="2"/>
+                                            <ComboBoxItem Content="Guillotine Cut Strategy" Tag="3"/>
+                                            <ComboBoxItem Content="Skyline Column Nesting" Tag="4"/>
+                                            <ComboBoxItem Content="Bottom Left Corner Packing" Tag="5"/>
+                                            <ComboBoxItem Content="Best Perimeter Alignment" Tag="6"/>
+                                            <ComboBoxItem Content="Complex Skyline Algorithm" Tag="11"/>
+                                            <ComboBoxItem Content="Complex Best Fit Algorithm" Tag="12"/>
                                         </ComboBox>
                                         <TextBlock Text="✨ Combined altitude &amp; aspect scoring (v7.3)"
                                                    FontSize="9.5" FontWeight="Bold" Foreground="#29B6FF" Margin="0,4,0,0"/>
@@ -518,10 +525,16 @@
                                     <StackPanel Margin="0,0,0,10">
                                         <TextBlock Text="Rotation Policy" FontSize="10.5" FontWeight="Bold"
                                                    Foreground="{StaticResource TextSub}" Margin="0,0,0,4"/>
-                                        <ComboBox x:Name="cmbRotation" SelectedIndex="0">
-                                            <ComboBoxItem Content="Rotate 90° (Default — Prioritize Rotated)"/>
+                                        <ComboBox x:Name="cmbRotation" SelectedIndex="2">
                                             <ComboBoxItem Content="None (Force Aligned Only)"/>
+                                            <ComboBoxItem Content="Rotate 90° (Default — Prioritize Rotated)"/>
                                             <ComboBoxItem Content="Best Fit Alignment"/>
+                                            <ComboBoxItem Content="First Fit Alignment"/>
+                                            <ComboBoxItem Content="Strip Fill Strategy"/>
+                                            <ComboBoxItem Content="Column Fill Strategy"/>
+                                            <ComboBoxItem Content="Row Fill Strategy"/>
+                                            <ComboBoxItem Content="Dynamic Best Choice"/>
+                                            <ComboBoxItem Content="Complex Enterprise Rotation"/>
                                         </ComboBox>
                                     </StackPanel>
 

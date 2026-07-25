@@ -136,7 +136,22 @@ namespace ProGlassAutomation.Views.Optimization
         {
             var list = new List<Orientation>();
 
-            if (_rotationPolicy == RotationPolicy.None)
+            bool isPatternGlass = !string.IsNullOrEmpty(part.Ref) && (
+                part.Ref.IndexOf("pattern", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                part.Ref.IndexOf("reeded", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                part.Ref.IndexOf("fluted", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                part.Ref.IndexOf("rain", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                part.Ref.IndexOf("satin", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                part.Ref.IndexOf("grain", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                part.Ref.IndexOf("direction", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                part.Ref.IndexOf("linear", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                part.Ref.IndexOf("texture", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                part.Ref.IndexOf("design", StringComparison.OrdinalIgnoreCase) >= 0
+            );
+
+            bool allowRotation = part.Rot && !isPatternGlass && _rotationPolicy != RotationPolicy.None;
+
+            if (!allowRotation)
             {
                 list.Add(new Orientation { Width = part.L, Height = part.W, IsRotated = false });
                 return list;
@@ -149,18 +164,7 @@ namespace ProGlassAutomation.Views.Optimization
             }
 
             list.Add(new Orientation { Width = part.L, Height = part.W, IsRotated = false });
-
-            if (part.Rot ||
-                _rotationPolicy == RotationPolicy.BestFit ||
-                _rotationPolicy == RotationPolicy.FirstFit ||
-                _rotationPolicy == RotationPolicy.StripFill ||
-                _rotationPolicy == RotationPolicy.ColumnFill ||
-                _rotationPolicy == RotationPolicy.RowFill ||
-                _rotationPolicy == RotationPolicy.DynamicBest ||
-                _rotationPolicy == RotationPolicy.ComplexRotation)
-            {
-                list.Add(new Orientation { Width = part.W, Height = part.L, IsRotated = true });
-            }
+            list.Add(new Orientation { Width = part.W, Height = part.L, IsRotated = true });
 
             return list;
         }
@@ -1577,18 +1581,22 @@ namespace ProGlassAutomation.Views.Optimization
             double partsAreaOnRemnants = 0;
             int partIndex = 0;
 
-            foreach (var remnant in usableRemnants)
+            var originalRotationPolicy = _rotationPolicy;
+
+            try
             {
-                var remnantFreeRects = new List<MaxRect> { new MaxRect(remnant.X, remnant.Y, remnant.Width, remnant.Height) };
-                var placedOnRemnant = new List<(double X, double Y, double W, double H)>();
-
-                foreach (var part in unplacedParts)
+                foreach (var remnant in usableRemnants)
                 {
-                    if (part.IsPlaced) continue;
+                    var remnantFreeRects = new List<MaxRect> { new MaxRect(remnant.X, remnant.Y, remnant.Width, remnant.Height) };
+                    var placedOnRemnant = new List<(double X, double Y, double W, double H)>();
 
-                    _rotationPolicy = partIndex < 6 ? RotationPolicy.Rotate90 : RotationPolicy.None;
+                    foreach (var part in unplacedParts)
+                    {
+                        if (part.IsPlaced) continue;
 
-                    var orientations = GetAllowedOrientations(part);
+                        _rotationPolicy = partIndex < 6 ? RotationPolicy.Rotate90 : RotationPolicy.None;
+
+                        var orientations = GetAllowedOrientations(part);
 
                     MaxRect bestRect = null;
                     bool rotated = false;
@@ -1651,6 +1659,11 @@ namespace ProGlassAutomation.Views.Optimization
 
                     partIndex++;
                 }
+            }
+            }
+            finally
+            {
+                _rotationPolicy = originalRotationPolicy;
             }
 
             _totalPartsUnplaced = unplacedParts.Count(p => !p.IsPlaced);
