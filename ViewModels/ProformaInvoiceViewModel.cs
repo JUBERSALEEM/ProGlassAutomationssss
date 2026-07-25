@@ -5,6 +5,8 @@ using Newtonsoft.Json;
 using ProGlassAutomation.Models;
 using ProGlassAutomation.Services;
 using ProGlassAutomation.Views.ProformaInvoice;
+using ProGlassAutomation.ViewModels.ProformaInvoice.Models;
+using ProGlassAutomation.ViewModels.ProformaInvoice.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -21,53 +23,6 @@ using SpecModel = ProGlassAutomation.Models.SpecificationModel;
 
 namespace ProGlassAutomation.ViewModels
 {
-    public class DimensionOption { public string Value { get; set; } = ""; public string Label { get; set; } = ""; }
-    public class ChargeTypeOption { public string Value { get; set; } = ""; public string Label { get; set; } = ""; }
-
-    public enum ChargeType
-    {
-        LM, LM1, LM2,
-        SQM, SQM1, SQM2,
-        QTY, MULTI2
-    }
-
-    public class AirSpacerOption { public string Thickness { get; set; } = ""; public string Type { get; set; } = ""; public double Price { get; set; } public string Display => $"{Thickness}mm {Type} - AED {Price:F2}"; }
-    public class FileListItem { public string FilePath { get; set; } = ""; public string InvoiceNo { get; set; } = ""; public string CustomerName { get; set; } = ""; public DateTime InvoiceDate { get; set; } public double NetTotal { get; set; } public string FileName => Path.GetFileNameWithoutExtension(FilePath); public string DateDisplay => InvoiceDate.ToString("dd MMM yyyy"); public string TotalDisplay => $"AED {NetTotal:N2}"; }
-
-    public class GlassPriceCalculator
-    {
-        public double CalculateSGU(double sheetPrice, double cutting, double tempering, double wasteFactor, double profitPercent, string thickness, string color, string workType, out string description, out string summary)
-        {
-            double step1 = sheetPrice / wasteFactor;
-            double step2 = step1 + cutting + tempering;
-            double final = step2 * (1 + profitPercent / 100.0);
-            description = $"{thickness}mm {color} {workType}";
-            summary = $"({sheetPrice} / {wasteFactor:F2}) + {cutting} + {tempering} = {step2:F2} × {1 + profitPercent / 100.0:F2} = {final:F2}";
-            return Math.Round(final, 2);
-        }
-        public double CalculateDGU(double outerPrice, double innerPrice, double aspPrice, double wasteFactor, double profitPercent, string outerThickness, string outerColor, string workType, string spacerThickness, string spacerType, bool includeUInsert, string innerThickness, string innerColor, out string description, out string summary)
-        {
-            double glassTotal = outerPrice + innerPrice;
-            double step1 = glassTotal / wasteFactor;
-            double step2 = step1 + aspPrice;
-            double final = step2 * (1 + profitPercent / 100.0);
-            string uInsertText = includeUInsert ? " with U-Insert" : "";
-            description = $"{outerThickness}mm {outerColor} {workType} + {spacerThickness}mm {spacerType} ASP{uInsertText} + {innerThickness}mm {innerColor} {workType}";
-            summary = $"(({outerPrice} + {innerPrice}) / {wasteFactor:F2}) + {aspPrice} = {step2:F2} × {1 + profitPercent / 100.0:F2} = {final:F2}";
-            return Math.Round(final, 2);
-        }
-        public double CalculateLAM(double outerPrice, double pvbPrice, double innerPrice, double cutting, double tempering, double wasteFactor, double profitPercent, string outerThickness, string outerColor, string workType, string pvbThickness, string pvbColor, string innerThickness, string innerColor, out string description, out string summary)
-        {
-            double glassTotal = outerPrice + pvbPrice + innerPrice;
-            double step1 = glassTotal / wasteFactor;
-            double step2 = step1 + cutting + tempering;
-            double final = step2 * (1 + profitPercent / 100.0);
-            description = $"{outerThickness}mm {outerColor} {workType} + {pvbThickness}mm PVB ({pvbColor}) + {innerThickness}mm {innerColor} {workType}";
-            summary = $"({outerPrice} + {pvbPrice} + {innerPrice}) / {wasteFactor:F2} + {cutting} + {tempering} = {step2:F2} × {1 + profitPercent / 100.0:F2} = {final:F2}";
-            return Math.Round(final, 2);
-        }
-    }
-
     public class ProformaInvoiceViewModel : INotifyPropertyChanged
     {
         private const string LOG = "[ProformaVM]";
