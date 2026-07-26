@@ -1104,9 +1104,8 @@
                             <TextBlock Text="DRIVER" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <ComboBox Style="{StaticResource ModernComboBox}" 
                                      ItemsSource="{Binding DriverOptions}" 
-                                     SelectedItem="{Binding EditingDeliveryItem.Driver}"
                                      IsEditable="True"
-                                     Text="{Binding EditingDeliveryItem.Driver, UpdateSourceTrigger=LostFocus}"
+                                     Text="{Binding EditingDeliveryItem.Driver, UpdateSourceTrigger=PropertyChanged}"
                                      Background="White"
                                      BorderBrush="#CBD5E1"
                                      BorderThickness="1"/>
@@ -1116,9 +1115,8 @@
                             <TextBlock Text="VEHICLE" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <ComboBox Style="{StaticResource ModernComboBox}" 
                                      ItemsSource="{Binding VehicleOptions}" 
-                                     SelectedItem="{Binding EditingDeliveryItem.Vehicle}"
                                      IsEditable="True"
-                                     Text="{Binding EditingDeliveryItem.Vehicle, UpdateSourceTrigger=LostFocus}"
+                                     Text="{Binding EditingDeliveryItem.Vehicle, UpdateSourceTrigger=PropertyChanged}"
                                      Background="White"
                                      BorderBrush="#CBD5E1"
                                      BorderThickness="1"/>
@@ -1361,9 +1359,8 @@
                             <TextBlock Text="DRIVER" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <ComboBox Style="{StaticResource ModernComboBox}" 
                                      ItemsSource="{Binding DriverOptions}" 
-                                     SelectedItem="{Binding EditingDeliveryItemFromDb.Driver}"
                                      IsEditable="True"
-                                     Text="{Binding EditingDeliveryItemFromDb.Driver, UpdateSourceTrigger=LostFocus}"
+                                     Text="{Binding EditingDeliveryItemFromDb.Driver, UpdateSourceTrigger=PropertyChanged}"
                                      Background="White"
                                      BorderBrush="#CBD5E1"
                                      BorderThickness="1"/>
@@ -1373,9 +1370,8 @@
                             <TextBlock Text="VEHICLE" FontSize="10" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
                             <ComboBox Style="{StaticResource ModernComboBox}" 
                                      ItemsSource="{Binding VehicleOptions}" 
-                                     SelectedItem="{Binding EditingDeliveryItemFromDb.Vehicle}"
                                      IsEditable="True"
-                                     Text="{Binding EditingDeliveryItemFromDb.Vehicle, UpdateSourceTrigger=LostFocus}"
+                                     Text="{Binding EditingDeliveryItemFromDb.Vehicle, UpdateSourceTrigger=PropertyChanged}"
                                      Background="White"
                                      BorderBrush="#CBD5E1"
                                      BorderThickness="1"/>

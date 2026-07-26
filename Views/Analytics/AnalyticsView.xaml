@@ -1,0 +1,110 @@
+<UserControl x:Class="ProGlassAutomation.Views.Analytics.AnalyticsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="800" d:DesignWidth="1200"
+             Background="#F1F5F9">
+
+    <UserControl.Resources>
+        <Style x:Key="MetricCard" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="16"/>
+            <Setter Property="Margin" Value="0,0,10,0"/>
+            <Setter Property="BorderBrush" Value="#E2E8F0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.06"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- HEADER -->
+        <Border Grid.Row="0" CornerRadius="12" Padding="16,12" Margin="0,0,0,16" Background="#8B5CF6">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Background="White" CornerRadius="10" Padding="12,10" Margin="0,0,12,0">
+                        <TextBlock Text="📈" FontSize="20" Foreground="#8B5CF6"/>
+                    </Border>
+                    <StackPanel>
+                        <TextBlock Text="SALES &amp; BUSINESS ANALYTICS" FontSize="20" FontWeight="Bold" Foreground="White"/>
+                        <TextBlock Text="Comprehensive metrics and collection analytics based on finalized tax invoices" FontSize="11" Foreground="#DDD6FE" Margin="0,3,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- KPI ROW -->
+        <Grid Grid.Row="1" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- KPI 1 -->
+            <Border Grid.Column="0" Style="{StaticResource MetricCard}">
+                <StackPanel>
+                    <TextBlock Text="Total Tax Invoices" FontSize="11" Foreground="#64748B" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding TotalTaxInvoices}" FontSize="28" FontWeight="Bold" Foreground="#8B5CF6" Margin="0,6,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- KPI 2 -->
+            <Border Grid.Column="1" Style="{StaticResource MetricCard}">
+                <StackPanel>
+                    <TextBlock Text="Invoiced Amount" FontSize="11" Foreground="#64748B" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding TotalInvoicedAmount, StringFormat='AED {0:N2}'}" FontSize="24" FontWeight="Bold" Foreground="#0F172A" Margin="0,8,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- KPI 3 -->
+            <Border Grid.Column="2" Style="{StaticResource MetricCard}">
+                <StackPanel>
+                    <TextBlock Text="Paid Amount" FontSize="11" Foreground="#64748B" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding TotalPaidAmount, StringFormat='AED {0:N2}'}" FontSize="24" FontWeight="Bold" Foreground="#10B981" Margin="0,8,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- KPI 4 -->
+            <Border Grid.Column="3" Style="{StaticResource MetricCard}">
+                <StackPanel>
+                    <TextBlock Text="Outstanding Balance" FontSize="11" Foreground="#64748B" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding TotalBalanceOutstanding, StringFormat='AED {0:N2}'}" FontSize="24" FontWeight="Bold" Foreground="#EF4444" Margin="0,8,0,0"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- CLIENT LIST -->
+        <Border Grid.Row="2" CornerRadius="12" BorderBrush="#CBD5E1" BorderThickness="1" Background="White" Padding="16">
+            <StackPanel>
+                <TextBlock Text="Client Performance Breakdown" FontSize="14" FontWeight="Bold" Foreground="#0F172A" Margin="0,0,0,12"/>
+                <DataGrid ItemsSource="{Binding SalesByClient}" AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="Horizontal" HeadersVisibility="Column" Height="400">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="CLIENT NAME" Binding="{Binding ClientName}" Width="350"/>
+                        <DataGridTextColumn Header="INVOICED TOTAL" Binding="{Binding InvoicedTotal, StringFormat='AED {0:N2}'}" Width="200"/>
+                        <DataGridTextColumn Header="PAID TOTAL" Binding="{Binding PaidTotal, StringFormat='AED {0:N2}'}" Width="200"/>
+                        <DataGridTextColumn Header="PENDING BALANCE" Binding="{Binding PendingTotal, StringFormat='AED {0:N2}'}" Width="200"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

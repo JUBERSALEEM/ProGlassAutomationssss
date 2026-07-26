@@ -288,6 +288,7 @@
                             <StackPanel Orientation="Vertical">
                                 <Button Style="{StaticResource SidebarSubActionButton}" Content="🧾 Proforma Invoice" Click="MenuItem_ProformaInvoice_Click"/>
                                 <Button Style="{StaticResource SidebarSubActionButton}" Content="📋 Job Orders" Click="MenuItem_JobOrders_Click"/>
+                                <Button Style="{StaticResource SidebarSubActionButton}" Content="🧾 Tax Invoices" Click="MenuItem_TaxInvoice_Click"/>
                                 <Button Style="{StaticResource SidebarSubActionButton}" Content="📜 Invoice History"/>
                             </StackPanel>
                         </Expander>
@@ -333,6 +334,7 @@
                                 </StackPanel>
                             </Expander.Header>
                             <StackPanel Orientation="Vertical">
+                                <Button Style="{StaticResource SidebarSubActionButton}" Content="📈 Sales Analytics" Click="MenuItem_Analytics_Click"/>
                                 <Button Style="{StaticResource SidebarSubActionButton}" Content="📊 Sales Report"/>
                                 <Button Style="{StaticResource SidebarSubActionButton}" Content="📉 Profit Analysis"/>
                             </StackPanel>

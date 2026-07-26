@@ -376,6 +376,31 @@ namespace ProGlassAutomation.ViewModels
                 DelPending = dbDeliveries.Count(x => x.Status == "Pending").ToString();
                 DelCompleted = dbDeliveries.Count(x => x.Status == "Completed").ToString();
 
+                // Dynamic Tax Invoice, Job Order and Proforma Invoice bindings
+                var taxInvoices = DbHelper.GetAllTaxInvoices();
+                var jobOrders = DbHelper.GetAllJobOrders();
+                var proformaInvoices = DbHelper.GetAllProformaInvoices();
+
+                double totalInvoicedSales = taxInvoices.Sum(x => x.TotalAmount);
+                double totalPaidCollections = taxInvoices.Sum(x => x.PaidAmount);
+                double totalOutstandingBalance = taxInvoices.Sum(x => x.BalanceAmount);
+
+                TotalRevenue = $"AED {totalInvoicedSales:N2}";
+                Orders = jobOrders.Count.ToString();
+                JOTotal = jobOrders.Count.ToString();
+                JOCompleted = jobOrders.Count(x => x.Status == "Completed").ToString();
+                JOInProgress = jobOrders.Count(x => x.Status == "In Progress").ToString();
+
+                PITotal = proformaInvoices.Count.ToString();
+                PIConfirmed = proformaInvoices.Count(x => x.Status == "Confirmed").ToString();
+                PIPending = proformaInvoices.Count(x => x.Status == "Pending").ToString();
+                double totalPIValue = proformaInvoices.Sum(x => x.NetAmount);
+                PIValue = $"AED {totalPIValue:N2}";
+
+                DailyBalance = $"AED {totalOutstandingBalance:N2}";
+                MonthlyBalance = $"AED {totalInvoicedSales:N2}";
+                AnnualBalance = $"AED {totalPaidCollections:N2}";
+
                 LastUpdate = $"Last update: {DateTime.Now:HH:mm}";
 
                 // Notify all
@@ -384,6 +409,18 @@ namespace ProGlassAutomation.ViewModels
                 OnPropertyChanged(nameof(DeliveryTotalReturned));
                 OnPropertyChanged(nameof(DeliveryTotalBalance));
                 OnPropertyChanged(nameof(DeliveryProgressPercent));
+                OnPropertyChanged(nameof(TotalRevenue));
+                OnPropertyChanged(nameof(Orders));
+                OnPropertyChanged(nameof(JOTotal));
+                OnPropertyChanged(nameof(JOCompleted));
+                OnPropertyChanged(nameof(JOInProgress));
+                OnPropertyChanged(nameof(PITotal));
+                OnPropertyChanged(nameof(PIConfirmed));
+                OnPropertyChanged(nameof(PIPending));
+                OnPropertyChanged(nameof(PIValue));
+                OnPropertyChanged(nameof(DailyBalance));
+                OnPropertyChanged(nameof(MonthlyBalance));
+                OnPropertyChanged(nameof(AnnualBalance));
             }
             catch (Exception ex)
             {

@@ -121,6 +121,8 @@ namespace ProGlassAutomation.ViewModels
                 "ProformaInvoice" => CreateProformaInvoiceListView(),
                 "JobOrders" => CreateJobOrdersListView(),
                 "JobOrderEdit" => CreateJobOrderEditView(),
+                "TaxInvoice" => new Views.TaxInvoice.TaxInvoiceView { DataContext = new ViewModels.TaxInvoice.TaxInvoiceViewModel() },
+                "Analytics" => new Views.Analytics.AnalyticsView { DataContext = new ViewModels.Analytics.AnalyticsViewModel() },
                 _ => null
             };
 
@@ -476,6 +478,8 @@ namespace ProGlassAutomation.ViewModels
         public void ShowUsers() => Navigate("Users");
         public void ShowBalanceReports() => Navigate("BalanceReports");
         public void ShowJobOrders() => Navigate("JobOrders");
+        public void ShowTaxInvoice() => Navigate("TaxInvoice");
+        public void ShowAnalytics() => Navigate("Analytics");
 
         public void ShowDailyWorks()
         {
@@ -704,6 +708,8 @@ namespace ProGlassAutomation.ViewModels
         public ICommand UsersCommand => new RelayCommand(o => ShowUsers());
         public ICommand ProformaInvoiceCommand => new RelayCommand(o => ShowProformaInvoice());
         public ICommand JobOrdersCommand => new RelayCommand(o => ShowJobOrders());
+        public ICommand TaxInvoiceCommand => new RelayCommand(o => ShowTaxInvoice());
+        public ICommand AnalyticsCommand => new RelayCommand(o => ShowAnalytics());
 
         // ═══════════════════════════════════════════════════════
         // SAVE ALL DATA
