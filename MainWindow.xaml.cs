@@ -364,6 +364,34 @@ namespace ProGlassAutomation
             ShowJobOrders();
         }
 
+        private void MenuItem_TaxInvoice_Click(object sender, RoutedEventArgs e)
+        {
+            CloseCurrentDropdown();
+            try
+            {
+                _viewModel.ShowTaxInvoice();
+                MainContent.Content = _viewModel.CurrentView;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading Tax Invoice: {ex.Message}", "Error");
+            }
+        }
+
+        private void MenuItem_Analytics_Click(object sender, RoutedEventArgs e)
+        {
+            CloseCurrentDropdown();
+            try
+            {
+                _viewModel.ShowAnalytics();
+                MainContent.Content = _viewModel.CurrentView;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading Analytics: {ex.Message}", "Error");
+            }
+        }
+
         private void MenuItem_ActivateLicense_Click(object sender, RoutedEventArgs e)
         {
             CloseCurrentDropdown();

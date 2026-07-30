@@ -10,62 +10,10 @@ using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
 using SkiaSharp;
 using ProGlassAutomation.Data.Database;
+using ProGlassAutomation.ViewModels.Dashboard.Models;
 
 namespace ProGlassAutomation.ViewModels
 {
-    public class KPICard : INotifyPropertyChanged
-    {
-        private double _value;
-        public string Title { get; set; } = "";
-        public double Value
-        {
-            get => _value;
-            set { _value = value; OnPropertyChanged(); }
-        }
-        public string Suffix { get; set; } = "";
-        public double ChangePercent { get; set; }
-        public string ChangeLabel { get; set; } = "";
-        public string Icon { get; set; } = "";
-        public string ColorKey { get; set; } = "Blue";
-
-        public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
-            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-    }
-
-    public class DailyWorkRecord
-    {
-        public int Id { get; set; }
-        public DateTime Date { get; set; }
-        public string Company { get; set; } = "";
-        public string PiNumber { get; set; } = "";
-        public string CustomerReference { get; set; } = "";
-        public string TypeOfWork { get; set; } = "";
-        public string ProductionStatus { get; set; } = "";
-        public int Qty { get; set; }
-        public double Sqm { get; set; }
-        public string Status { get; set; } = "";
-        public string Salesman { get; set; } = "";
-        public string Color { get; set; } = "";
-    }
-
-    public class DeliveryRecord
-    {
-        public int Id { get; set; }
-        public DateTime Date { get; set; }
-        public string Company { get; set; } = "";
-        public string PINumber { get; set; } = "";
-        public string TypeOfWork { get; set; } = "";
-        public string Color { get; set; } = "";
-        public int OrderQty { get; set; }
-        public int TotalDelivered { get; set; }
-        public int TotalReturned { get; set; }
-        public int Balance { get; set; }
-        public double OrderSQM { get; set; }
-        public string Salesman { get; set; } = "";
-        public string Status { get; set; } = "";
-    }
-
     public class DashboardViewModel : INotifyPropertyChanged
     {
         // KPI Cards
@@ -428,6 +376,31 @@ namespace ProGlassAutomation.ViewModels
                 DelPending = dbDeliveries.Count(x => x.Status == "Pending").ToString();
                 DelCompleted = dbDeliveries.Count(x => x.Status == "Completed").ToString();
 
+                // Dynamic Tax Invoice, Job Order and Proforma Invoice bindings
+                var taxInvoices = DbHelper.GetAllTaxInvoices();
+                var jobOrders = DbHelper.GetAllJobOrders();
+                var proformaInvoices = DbHelper.GetAllProformaInvoices();
+
+                double totalInvoicedSales = taxInvoices.Sum(x => x.TotalAmount);
+                double totalPaidCollections = taxInvoices.Sum(x => x.PaidAmount);
+                double totalOutstandingBalance = taxInvoices.Sum(x => x.BalanceAmount);
+
+                TotalRevenue = $"AED {totalInvoicedSales:N2}";
+                Orders = jobOrders.Count.ToString();
+                JOTotal = jobOrders.Count.ToString();
+                JOCompleted = jobOrders.Count(x => x.Status == "Completed").ToString();
+                JOInProgress = jobOrders.Count(x => x.Status == "In Progress").ToString();
+
+                PITotal = proformaInvoices.Count.ToString();
+                PIConfirmed = proformaInvoices.Count(x => x.Status == "Confirmed").ToString();
+                PIPending = proformaInvoices.Count(x => x.Status == "Pending").ToString();
+                double totalPIValue = proformaInvoices.Sum(x => x.NetAmount);
+                PIValue = $"AED {totalPIValue:N2}";
+
+                DailyBalance = $"AED {totalOutstandingBalance:N2}";
+                MonthlyBalance = $"AED {totalInvoicedSales:N2}";
+                AnnualBalance = $"AED {totalPaidCollections:N2}";
+
                 LastUpdate = $"Last update: {DateTime.Now:HH:mm}";
 
                 // Notify all
@@ -436,6 +409,18 @@ namespace ProGlassAutomation.ViewModels
                 OnPropertyChanged(nameof(DeliveryTotalReturned));
                 OnPropertyChanged(nameof(DeliveryTotalBalance));
                 OnPropertyChanged(nameof(DeliveryProgressPercent));
+                OnPropertyChanged(nameof(TotalRevenue));
+                OnPropertyChanged(nameof(Orders));
+                OnPropertyChanged(nameof(JOTotal));
+                OnPropertyChanged(nameof(JOCompleted));
+                OnPropertyChanged(nameof(JOInProgress));
+                OnPropertyChanged(nameof(PITotal));
+                OnPropertyChanged(nameof(PIConfirmed));
+                OnPropertyChanged(nameof(PIPending));
+                OnPropertyChanged(nameof(PIValue));
+                OnPropertyChanged(nameof(DailyBalance));
+                OnPropertyChanged(nameof(MonthlyBalance));
+                OnPropertyChanged(nameof(AnnualBalance));
             }
             catch (Exception ex)
             {
@@ -474,11 +459,5 @@ namespace ProGlassAutomation.ViewModels
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-    }
-
-    public class SalesmanData
-    {
-        public string Name { get; set; } = "";
-        public string Amount { get; set; } = "";
     }
 }

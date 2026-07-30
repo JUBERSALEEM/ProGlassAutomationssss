@@ -7,6 +7,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using ProGlassAutomation.Models;
 using ProGlassAutomation.ViewModels;
+using ProGlassAutomation.ViewModels.DailyWorks.Models;
 
 namespace ProGlassAutomation.Views
 {
