@@ -190,7 +190,7 @@ namespace ProGlassAutomation.Views.Optimization.Algorithms
                                 if (rect.Fits(neededW, neededH))
                                 {
                                     // Guillotine & Best-Fit scoring
-                                    double score = ScorePlacement(rect, neededW, neededH);
+                                    double score = ScorePlacement(rect, neededW, neededH, o.IsRotated);
                                     if (score < bestScore)
                                     {
                                         bestScore = score;
@@ -272,7 +272,7 @@ namespace ProGlassAutomation.Views.Optimization.Algorithms
             };
         }
 
-        private double ScorePlacement(MaxRect rect, double w, double h)
+        private double ScorePlacement(MaxRect rect, double w, double h, bool isRotated)
         {
             // Best-Fit strategy based on remaining short side or area
             double remW = rect.Width - w;
@@ -281,8 +281,18 @@ namespace ProGlassAutomation.Views.Optimization.Algorithms
             double wasteW = (remW < _breakout && remW > 0) ? remW * rect.Height : 0;
             double wasteH = (remH < _breakout && remH > 0) ? remH * rect.Width : 0;
 
+            // GUILLOTINE STRIP ALIGNMENT BONUS (Matching Plus 2D and LiSEC patterns)
+            double edgeBonus = 0;
+            if (remW < 1.0 || remH < 1.0)
+            {
+                edgeBonus -= 150000; // Prefer perfect edge match for clean guillotine cuts
+            }
+
+            // ROTATION PENALTY (Prefer 0 degree over 90 degree unless required)
+            double rotationPenalty = isRotated ? 100 : 0;
+
             // Standard scoring mixes y-coordinate (for bottom-left alignment) and remaining space/waste penalty
-            return rect.Y * 100 + rect.X * 10 + (remW + remH) + (wasteW + wasteH) * 5;
+            return rect.Y * 100 + rect.X * 10 + (remW + remH) + (wasteW + wasteH) * 5 + edgeBonus + rotationPenalty;
         }
 
         private void SplitFreeRect(List<MaxRect> freeRects, MaxRect used, double w, double h)
